@@ -479,3 +479,15 @@ threshold, so lowering it further buys noise rather than recall.
 manual twin hunt the adoption document already prescribes; `doctor` narrows that job and does not replace
 it. Claiming otherwise would be worse than the gap, because a detector believed to be complete stops
 anyone looking.
+
+**Amended 2026-08-05, by the second adoption.** Comparison is now restricted to **within a tier**. A
+generic skill — "find the exemplar to mirror" — names module, service, handler, test, registration and
+naming, which is the vocabulary of *every* architecture document. Run against a real repository it
+matched three unrelated knowledge documents at once and buried the genuine twin sitting beside them. A
+knowledge document and a skill are different kinds of thing, so one restating the other is not
+duplication worth reporting.
+
+That run also vindicated the threshold change: the twin this repository's backlog had predicted for that
+adoption, `windows-dev-gotchas` against canonical `windows-machine`, scores **47%** — found at 0.3 and
+missed entirely at the original 0.5. A test had been passing via the cross-tier bug, matching a local
+*skill* against a canonical *rule*; it now exercises a genuine same-tier case.

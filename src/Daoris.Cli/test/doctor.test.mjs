@@ -47,6 +47,18 @@ carried no risk does not interrupt anyone. And a destructive command earns the
 most caution at the exact moment it stops asking.
 `;
 
+/**
+ * A generic skill: "find the exemplar to mirror". It names module, service, handler, test,
+ * registration and naming — the vocabulary of EVERY architecture document, which is why it matched
+ * three unrelated ones on the second real adoption.
+ */
+const GENERIC_SKILL = `# Find the exemplar to mirror
+
+Name the shape you are adding: a module, a service, a handler, a test, a migration. Search this
+codebase for one already of that shape, read it end to end, and extract its registration, its naming,
+its error handling and the wiring chain across files. New code should read like the code around it.
+`;
+
 const UNRELATED = `# Play queue ordering
 
 The queue preserves insertion order except when shuffle is enabled, in which
@@ -103,14 +115,31 @@ test('a REWRITTEN twin is reported, not just a near-verbatim one', () => {
 });
 
 test("a repo's own skill is checked against canonical skills too", () => {
-  const { canonFx, repoFx } = seeded();
+  // The canonical skill has to exist BEFORE the sync, or it is never locked and never a comparison
+  // target. This test used to pass by matching a canonical RULE across tiers, which was the noise.
+  const canonFx = makeFixture('doctor-skill-canon');
+  canonFx.write('canon.json', '{"version":"0.1.0"}');
   canonFx.write('core/skills/inspect/SKILL.md', CANONICAL);
+
+  const repoFx = makeFixture('doctor-skill-repo');
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));
+  const canon = readCanon(canonFx.root);
+  const manifest = readManifest(repoFx.root);
+  applySync({
+    root: repoFx.root,
+    manifest,
+    canonVersion: canon.version,
+    force: false,
+    plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
+  });
+
   repoFx.write('.claude/skills/look-around/SKILL.md', LOCAL_TWIN);
 
   const twins = look(repoFx);
+
   assert.ok(
-    twins.some((t) => t.local === 'skills/look-around/SKILL.md'),
-    `skills were not scanned: ${JSON.stringify(twins)}`,
+    twins.some((t) => t.local === 'skills/look-around/SKILL.md' && t.canonical === 'skills/inspect/SKILL.md'),
+    `skills were not compared: ${JSON.stringify(twins)}`,
   );
 
   canonFx.cleanup();

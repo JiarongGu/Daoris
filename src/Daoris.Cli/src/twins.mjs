@@ -71,14 +71,20 @@ export function findTwins({ root, manifest, lock }) {
       if (file === INDEX_FILE) continue;
       const target = `${tier}/${file}`;
       const tokens = significantTokens(readText(join(root, manifest.target, tier, file)));
-      (locked.has(target) ? canonical : local).push({ target, tokens });
+      (locked.has(target) ? canonical : local).push({ tier, target, tokens });
     }
   }
 
+  // Compared WITHIN a tier. A knowledge document and a skill are different kinds of thing, so one
+  // restating the other is not duplication worth reporting — and a generic skill ("find the exemplar
+  // to mirror") names module, service, handler and test, which is the vocabulary of every
+  // architecture document. On the second real adoption one such skill matched three unrelated
+  // knowledge documents and buried the genuine twin sitting beside them.
   const twins = [];
   for (const candidate of local) {
     let best = null;
     for (const known of canonical) {
+      if (known.tier !== candidate.tier) continue;
       const score = containment(candidate.tokens, known.tokens);
       if (score >= THRESHOLD && (!best || score > best.score)) {
         best = { local: candidate.target, canonical: known.target, score };
