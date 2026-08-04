@@ -126,7 +126,7 @@ by diverging. The service indexes the second kind.
 
 ## The design is written
 
-**`docs/2026-08-05-daoris-service-design.md`** — read it before writing code. It settles:
+**`docs/2026-08-05-knowledge-service-design.md`** — read it before writing code. It settles:
 
 - **Local-first, sharing as configuration** (D21). One service, two modes, one binary; local needs no
   server, no account and no network, and must stay fully useful alone.

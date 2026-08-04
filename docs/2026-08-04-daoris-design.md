@@ -195,7 +195,7 @@ into the canon; `index` output is deterministic; an over-budget core fails `chec
 
 ## 10. Bootstrap and adoption
 
-1. `git init`, `CLAUDE.md`, `package.json` with the `bin`, and the six commands with tests.
+1. `git init`, `CLAUDE.md`, `package.json` with the `bin`, and the first six commands with tests.
 2. **Daoris carries its own `daoris.json`** and syncs core into its own `.claude/`. A tool that cannot hold
    its own doctrine cannot hold anyone else's.
 3. Seed the canon from both parent repos, file by file.

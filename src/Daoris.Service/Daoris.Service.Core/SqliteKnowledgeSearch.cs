@@ -73,7 +73,7 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
         {
             var entry = SqliteKnowledgeStore.Read(reader);
             var score = match is null ? 0 : -reader.GetDouble(8);
-            hits.Add(new KnowledgeHit(entry, score, Excerpt(entry.Body, query.Text)));
+            hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, Text.Tokenize(query.Text))));
         }
 
         return hits;
@@ -93,13 +93,7 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     /// </remarks>
     internal static string? BuildMatchExpression(string text)
     {
-        var terms = (text ?? string.Empty)
-            .Split([' ', '\t', '\r', '\n', ',', '.', ';', ':', '!', '?', '(', ')', '[', ']', '{', '}',
-                    '"', '\'', '`', '|', '/', '\\', '*', '_', '#', '=', '+', '~', '<', '>', '-'],
-                StringSplitOptions.RemoveEmptyEntries)
-            .Where(t => t.Length > 2)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var terms = Text.Tokenize(text).Distinct(StringComparer.Ordinal).ToList();
 
         if (terms.Count == 0) return null;
 
@@ -139,20 +133,5 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
         }
 
         return (filter.ToString(), parameters);
-    }
-
-    private static string? Excerpt(string body, string text, int window = 180)
-    {
-        var term = (text ?? string.Empty)
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault(t => t.Length > 2 && body.Contains(t, StringComparison.OrdinalIgnoreCase));
-
-        var index = term is null ? -1 : body.IndexOf(term, StringComparison.OrdinalIgnoreCase);
-        if (index < 0) return body.Length <= window ? body : body[..window] + "…";
-
-        var start = Math.Max(0, index - window / 3);
-        var length = Math.Min(window, body.Length - start);
-        var excerpt = body.Substring(start, length).Replace('\n', ' ').Trim();
-        return (start > 0 ? "…" : "") + excerpt + (start + length < body.Length ? "…" : "");
     }
 }

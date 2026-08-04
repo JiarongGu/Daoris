@@ -9,7 +9,8 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Seven commands.** `init` writes a manifest and reports what is available without guessing;
+- **Eight commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+  manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness, index
   freshness and the always-loaded budget; `upstream` promotes a locally-improved file back into the
   canon (`--all` for every edit at once); `index` regenerates `RULES_INDEX.md` from what is on disk;

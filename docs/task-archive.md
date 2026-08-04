@@ -7,7 +7,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ## Part 1 — v0.1: the CLI (2026-08-04)
 
-Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a failing test first.
+Executed from `docs/archive/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a failing test first.
 
 - [x] **T1 — Package skeleton, error type, CLI dispatch**
   ✅ done 2026-08-04 — `package.json` with the `bin`, `bin/daoris.mjs`, `src/errors.mjs`. Exit codes
@@ -183,6 +183,15 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   new content and `sync` refused — advising the contributor to promote an edit they had already promoted.
   Drift now compares bodies rather than whole files. It also correctly refuses to pass while REL2 is
   open, which is the point: the release gate should block on the release blocker.
+
+- [x] **ADOPT5 — the `library-api-design` vocabulary cluster**
+  ✅ done 2026-08-05 — read rather than retuned, and the answer was that the detector is right and the
+  pack rule is not too broad. Of the four flagged documents exactly **one** is a genuine twin, and its
+  own text gives it away: it says it was "adopted from the family's other library, where it's proven",
+  and its headline restates the canonical rule's `enforces` line almost verbatim. The other three are
+  different subjects — wire contracts, hosting invariants, mobile targets — that share library
+  vocabulary because they belong to a library. A repository in one domain will always cluster around
+  the canonical rule for that domain; that is a signal to read, not noise to tune away.
 
 - [x] **ADOPT4 — the generated index was the largest always-loaded file**
   ✅ done 2026-08-05 — measured on the second-adoption rehearsal at 6,793 bytes, larger than any rule,

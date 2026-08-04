@@ -29,7 +29,7 @@ that workflow and is never edited by hand.
 
 ## 0.0.x — doctrine that installs, is checked, and flows back — **built**
 
-Seven commands, a canon of 7 core rules, 5 core skills and 3 packs, 90 tests. Core installs everywhere;
+Eight commands, a canon of 7 core rules, 5 core skills and 3 packs, 116 tests. Core installs everywhere;
 packs are named in the manifest; the repository's own files are invisible to the tool. Drift and adoption
 collisions are distinguished by provenance and both refuse. Retirement removes a rule from every
 repository at once, and a rename is reported as one. `check` is offline by construction and gates on the
@@ -76,7 +76,7 @@ this project's own pathology in a new place. It also makes Daoris the first real
 that runtime, which is worth something on its own — a runtime with no consumer is unvalidated, exactly as
 a pack nobody installs is.
 
-**Local-first; sharing is configuration** (D21, and `docs/2026-08-05-daoris-service-design.md`). One
+**Local-first; sharing is configuration** (D21, and `docs/2026-08-05-knowledge-service-design.md`). One
 service, two modes: local needs no server, no account and no network, and must stay fully useful alone.
 Shared mode is opt-in, indexing is opt-in per repository, and the untracked local directory is a hard
 exclusion rather than a permission — several siblings are private, and centralising their content is
@@ -98,23 +98,15 @@ _Checked against the agent platform's own features before committing further (D1
 billing and access segmentation, its skills are a format rather than a distribution mechanism, and its
 per-project memory is machine-local and untracked. Nothing here is superseded._
 
+**It comes after the canon deliberately**, because indexing content that is still divergent indexes the
+divergence.
+
 _Also checked against generated-wiki tools (D16). They are the complement: a wiki is **derived** from the
 code and fails by going stale, doctrine is **authored** because something went wrong and fails by
 diverging. They meet inside `doc-loader`, which routes first to the repository's own documentation router
 — what a generator maintains — and then to the rules index, which `sync` writes. The dependency runs one
 way: a wiki generated over divergent copies documents the divergence, so canonizing first is what makes
 the generated layer worth having. Prefer pointing at such a tool over growing one._
-
-
-Deliberately *after* the canon exists, because indexing content that is still divergent indexes the
-divergence.
-
-This is where a dependency on **Lyntai** becomes correct rather than premature — semantic memory, the
-embedder seam, the vector store and MCP hosting all already ship there, so the service is mostly
-composition rather than new primitives. D1 rejected that dependency for the *CLI*, because a build gate
-must not depend on a release cadence it does not control; a separate deployable has no such constraint,
-and rebuilding those primitives would produce the second, worse copy D1 was actually written to prevent.
-The CLI keeps its zero dependencies regardless.
 
 ## Long term — repository intelligence
 

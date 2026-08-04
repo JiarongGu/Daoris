@@ -17,7 +17,8 @@ cultivation.
 
 ## Current state
 
-**Built and proven; nothing published.** Seven commands, 72 tests, canon of 6 core rules + 3 packs.
+**Built and proven; nothing published.** Eight commands, 116 tests, a canon of 7 core rules, 5 core
+skills and 3 packs.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
@@ -33,11 +34,11 @@ risk, **authorship** was.
 **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only, with
 `dry_run` defaulting to true. Gates run locally: `npm run verify` and `npm run rehearse`.
 
-- `README.md` — the consuming story: install, the seven commands, the manifest, the three layers.
+- `README.md` — the consuming story: install, the eight commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D12) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D23) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
-- `docs/task-archive.md` — completed work, with outcomes.
+- `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
 ## The model, in three sentences
 

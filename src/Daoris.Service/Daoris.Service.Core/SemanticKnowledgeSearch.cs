@@ -80,13 +80,10 @@ public sealed class SemanticKnowledgeSearch(
             // next refresh removes it, and returning an id that resolves to nothing reads as a bug.
             if (entry is null || !query.Admits(entry)) continue;
 
-            hits.Add(new KnowledgeHit(entry, match.Score, Excerpt(entry.Body)));
+            hits.Add(new KnowledgeHit(entry, match.Score, Text.Excerpt(entry.Body)));
             if (hits.Count == query.Limit) break;
         }
 
         return hits;
     }
-
-    private static string Excerpt(string body, int window = 180) =>
-        body.Length <= window ? body : body[..window].Replace('\n', ' ').Trim() + "…";
 }

@@ -13,9 +13,10 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## Active backlog
 
-_**`Daoris.Cli` is built and proven** — seven commands, 96 tests, a canon of 7 core rules, 5 core skills
-and 3 packs, adopted into Lyntai with its 1337 tests still green. `npm run rehearse` drives the whole
-consumer lifecycle through the packaged artefact, 52/52._
+_**`Daoris.Cli` is built and proven** — eight commands, 116 tests, a canon of 7 core rules, 5 core
+skills and 3 packs, adopted into Lyntai with its 1337 tests still green. `npm run rehearse` drives the
+whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
+searches the family's knowledge — 53 tests, reachable over MCP._
 
 _**It is one of four artefacts, and the only one that exists** (`docs/DECISIONS.md` D20). **Not
 releasing yet:** publishing the CLI alone would invite adoption of a quarter of the project. The devkit
@@ -104,11 +105,6 @@ correct, and never loaded._
   hosting + IPC contracts, from Shenora), `desktop-winforms` (the WinForms shell, from Shenora),
   `durable-jobs` (two repositories). Write each only when a repository is ready to adopt it — a pack that
   no one installs is unvalidated doctrine.
-- [ ] **ADOPT5 — a `library-api-design` vocabulary cluster.** After the tier fix, `doctor` reports four
-  of that repository's knowledge documents against canonical `library-api-design` at 42–57%. Unlike the
-  skill case these are same-tier and plausibly related — they are all library/API-shaped documents — so
-  this needs a read rather than a code change. It may be a genuine signal that the pack rule is too
-  broad, or simply what a shared domain looks like.
 - [ ] **CANON3 — adopt Shenora.** _Rehearsed 2026-08-05 against a scratch consumer carrying its real
   doctrine, because its working tree had eight files of in-flight work. Result: **6 collisions**
   (`sensitive-info`, `persist-working-state`, `skills-workflow`, and the `doc-loader`, `fix-log`,

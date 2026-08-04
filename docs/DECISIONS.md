@@ -340,7 +340,7 @@ asked for one layout and quietly received another is exactly the failure this se
 
 **Decision.** One service, two modes selected by configuration rather than by build: **local** (the
 default — no server, no account, no network) and **shared** (opt-in). Local must stay fully useful
-alone. Full design in `docs/2026-08-05-daoris-service-design.md`.
+alone. Full design in `docs/2026-08-05-knowledge-service-design.md`.
 
 **Why.** Most of the value is cross-repository recall for *one person* working across a dozen checkouts,
 and that needs no server at all. Making sharing the default would have imposed a deployment, an account
