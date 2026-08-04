@@ -12,6 +12,13 @@
     },
     {
       "pack": "core",
+      "source": "core/no-global-memory.md",
+      "target": "rules/no-global-memory.md",
+      "canonVersion": "0.1.0",
+      "sha256": "f38fe516a9588c7cba6cc3f86088d5c6428e73bfe0f1fada6a235b86a1c6745d"
+    },
+    {
+      "pack": "core",
       "source": "core/no-tmp-for-repo-files.md",
       "target": "rules/no-tmp-for-repo-files.md",
       "canonVersion": "0.1.0",
