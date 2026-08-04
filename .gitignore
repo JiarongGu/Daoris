@@ -8,9 +8,10 @@ node_modules/
 _fixtures/
 devtools/_*
 
-# Inherited devtools build output
-**/bin/
-**/obj/
+# Inherited devtools build output. Scoped to devtools/ on purpose: at the repo
+# root, bin/ is this package's CLI entry point, not build output.
+devtools/**/bin/
+devtools/**/obj/
 
 *.log
 .DS_Store
