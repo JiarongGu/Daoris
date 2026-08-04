@@ -19,6 +19,7 @@ export function planSync({ root, manifest, canon, lock }) {
   const selected = selectFiles(canon, manifest.packs);
   const writes = [];
   const drifted = [];
+  const collisions = [];
 
   for (const file of selected) {
     const body = readText(join(canon.root, file.source));
@@ -30,7 +31,13 @@ export function planSync({ root, manifest, canon, lock }) {
     let state = 'create';
     if (existsSync(abs)) {
       const onDisk = sha256(readText(abs));
-      if (entry && onDisk !== entry.sha256) drifted.push(file.target);
+      if (onDisk !== digest) {
+        // In the lock: the repo edited a file daoris owns. Not in the lock: the
+        // repo wrote this file itself, before it ever adopted daoris. The second
+        // is the adoption case, and silently overwriting it would destroy work
+        // the tool never had any claim to.
+        (entry ? drifted : collisions).push(file.target);
+      }
       state = onDisk === digest ? 'unchanged' : 'update';
     }
     writes.push({ ...file, content, sha256: digest, state });
@@ -39,10 +46,19 @@ export function planSync({ root, manifest, canon, lock }) {
   // A file that left the canon leaves every repo — the thing copy-paste can never do.
   const wanted = new Set(selected.map((file) => file.target));
   const deletes = [...locked.keys()].filter((target) => !wanted.has(target));
-  return { writes, deletes, drifted };
+  return { writes, deletes, drifted, collisions };
 }
 
 export function applySync({ root, manifest, plan, canonVersion, force }) {
+  if (plan.collisions.length && !force) {
+    throw new DaorisError(
+      `this repo already has its own ${plan.collisions.join(', ')}\n` +
+        `  daoris did not write those files and will not overwrite them. Move each aside\n` +
+        `  (or fold anything worth keeping into the canon), then 'daoris sync' — or accept\n` +
+        `  the canonical version with 'daoris sync --force'`,
+      1,
+    );
+  }
   if (plan.drifted.length && !force) {
     throw new DaorisError(
       `${plan.drifted.length} vendored file(s) edited locally: ${plan.drifted.join(', ')}\n` +
@@ -87,8 +103,9 @@ export function commandSync({ root, argv, write, packageRoot }) {
     }
     for (const target of plan.deletes) write(`  retire    ${target}`);
     for (const target of plan.drifted) write(`  DRIFTED   ${target}`);
+    for (const target of plan.collisions) write(`  COLLIDES  ${target} (this repo's own)`);
     write(`daoris: ${plan.writes.length} file(s) selected, ${plan.deletes.length} to retire`);
-    return plan.drifted.length ? 1 : 0;
+    return plan.drifted.length || plan.collisions.length ? 1 : 0;
   }
 
   applySync({ root, manifest, plan, canonVersion: canon.version, force: argv.includes('--force') });

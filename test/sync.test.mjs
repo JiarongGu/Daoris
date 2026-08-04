@@ -98,6 +98,41 @@ test('an unchanged file is planned as unchanged, not rewritten', () => {
   fx.repoFx.cleanup();
 });
 
+test('adopting a repo that already owns a canonical filename refuses rather than clobbering', () => {
+  const fx = seed();
+  // The repo wrote its own sensitive-info.md long before it ever heard of daoris.
+  fx.repoFx.write('.claude/rules/sensitive-info.md', 'our own hard-won rule\n');
+
+  const error = captureError(() => run(fx));
+  assert.ok(error instanceof DaorisError);
+  assert.equal(error.exitCode, 1);
+  assert.match(error.message, /sensitive-info/);
+  assert.match(error.message, /already/i);
+  assert.equal(fx.repoFx.read('.claude/rules/sensitive-info.md'), 'our own hard-won rule\n');
+
+  run(fx, true); // --force is the deliberate "yes, take the canonical one"
+  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /Body of sensitive-info/);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('an adopted file identical to the canon is not a collision', () => {
+  const fx = seed();
+  run(fx);
+  const vendored = fx.repoFx.read('.claude/rules/sensitive-info.md');
+  const fresh = seed();
+  fresh.repoFx.write('.claude/rules/sensitive-info.md', vendored);
+  run(fresh); // byte-identical: nothing to warn about
+  assert.deepEqual(
+    readLock(fresh.repoFx.root).entries.map((e) => e.target),
+    ['rules/sensitive-info.md'],
+  );
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+  fresh.canonFx.cleanup();
+  fresh.repoFx.cleanup();
+});
+
 test('sync writes the index too, so a synced repo is immediately consistent', () => {
   const fx = seed();
   run(fx);
