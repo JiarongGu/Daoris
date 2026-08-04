@@ -6,6 +6,7 @@ import { DaorisError } from '../src/errors.mjs';
 import { commandIndex } from '../src/indexgen.mjs';
 import { commandSync } from '../src/materialize.mjs';
 import { commandCheck } from '../src/drift.mjs';
+import { commandUpstream } from '../src/upstream.mjs';
 
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -28,6 +29,7 @@ const commands = {
   index: commandIndex,
   sync: commandSync,
   check: commandCheck,
+  upstream: commandUpstream,
 };
 
 export function runCli(argv, cwd, write = console.log) {
