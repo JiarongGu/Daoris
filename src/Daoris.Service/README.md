@@ -1,12 +1,35 @@
 # Daoris.Service — the cross-repository knowledge service
 
-**Status: ingest, storage and query work.** `Daoris.Service.Core` reads a repository's knowledge into
+**Status: usable from a session.** An MCP server over stdio exposes the index to any agent client. `Daoris.Service.Core` reads a repository's knowledge into
 addressable entries, classifies each as canonical or local, stores them in SQLite, and answers ranked
 queries over FTS5. 37 tests, two of which run against the real sibling repositories rather than
 fixtures.
 
-Indexing the whole family takes **533 ms for 406 entries** into a 7 MB database; queries answer in
+Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database; queries answer in
 **3–10 ms**.
+
+## Running it
+
+```sh
+cd src/Daoris.Service && dotnet build
+# then point an MCP client at:
+#   src/Daoris.Service/Daoris.Service.Mcp/bin/Debug/net10.0/daoris-knowledge.exe
+```
+
+| Tool | Answers |
+|---|---|
+| `knowledge_search` | What has this family already learned about X? |
+| `knowledge_get` | The full text of one entry |
+| `knowledge_repositories` | What is searchable, and how much each repository contributes |
+| `knowledge_refresh` | Re-read every repository from disk |
+
+Configuration is two optional variables, and **there is no URL and no key** — that is shared mode, and
+it does not exist yet:
+
+| | |
+|---|---|
+| `DAORIS_KNOWLEDGE_ROOT` | Where the repositories are. Default: the folder containing this workspace |
+| `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `~/.daoris/knowledge.db` |
 
 ```sh
 cd src/Daoris.Service && dotnet test

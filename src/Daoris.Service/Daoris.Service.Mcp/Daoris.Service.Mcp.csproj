@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A stdio MCP server: the surface a session talks to. Chosen before a web UI because an agent
+       can call it directly, it is less to build, and it makes the index useful DURING development
+       rather than after it. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Daoris.Knowledge.Mcp</RootNamespace>
+    <AssemblyName>daoris-knowledge</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Service.Core\Daoris.Service.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+</Project>

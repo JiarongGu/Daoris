@@ -16,6 +16,11 @@
     <!-- Versions match the cognition sibling's, so the two agree when they end up in one process. -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <!-- The DI + stdio hosting extensions. NOT ModelContextProtocol.AspNetCore: the protocol works
+         over plain streams, so a framework reference on Microsoft.AspNetCore.App would be bought for
+         nothing. The cognition sibling reached the same conclusion for its own MCP host. -->
+    <PackageVersion Include="ModelContextProtocol" Version="1.4.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
