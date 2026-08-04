@@ -28,6 +28,27 @@ it, so indexing it per repository would produce a dozen copies of one rule and c
 local material is what varies, and 124 of those entries are decisions, fixes and task outcomes that no
 sibling repository can currently reach at all.
 
+## The seams
+
+Four extension points, each with one job, so the pieces that are still undecided can be swapped
+without touching the ones that are not.
+
+| Seam | Today | Later |
+|---|---|---|
+| `IKnowledgeSource` | The local filesystem | A git remote, or a devkit gate that pushes |
+| `IKnowledgeStore` | In memory | Embedded single file; a hosted store only if volume demands |
+| `IKnowledgeSearch` | Lexical term overlap | Semantic, then hybrid as a *composition* of the two |
+| `IDisclosurePolicy` | `LocalOnly` — nothing leaves | `Sharing(repositories)` — opt-in per repository |
+
+Two choices worth knowing about:
+
+- **Search returns scored hits, not a list.** Scores are what let two searches be merged, so hybrid
+  is a composition rather than a third implementation.
+- **The disclosure policy is applied at ingest, not at query.** Withheld-at-query means the material
+  is in the store and one forgotten filter discloses it; withheld-at-ingest means it was never there
+  to leak. It is a *type* rather than a paragraph so that shared mode cannot be built without
+  answering it.
+
 ## Design
 
 ## What it is for

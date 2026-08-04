@@ -1,4 +1,4 @@
-using Daoris.Service.Core;
+using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 

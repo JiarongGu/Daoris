@@ -1,4 +1,4 @@
-namespace Daoris.Service.Core;
+namespace Daoris.Knowledge;
 
 /// <summary>One heading and the text beneath it, up to the next heading of the same level.</summary>
 /// <param name="Heading">The heading text, with its leading hashes and whitespace removed.</param>

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Daoris.Service.Core;
+namespace Daoris.Knowledge;
 
 /// <summary>
 /// The set of paths daoris materialized into a repository, read from its <c>daoris.lock</c>.

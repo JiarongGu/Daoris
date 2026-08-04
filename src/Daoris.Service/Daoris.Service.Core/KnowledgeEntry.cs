@@ -1,4 +1,4 @@
-namespace Daoris.Service.Core;
+namespace Daoris.Knowledge;
 
 /// <summary>
 /// What kind of thing a knowledge entry is. The kind decides how it is read, not where it lives:

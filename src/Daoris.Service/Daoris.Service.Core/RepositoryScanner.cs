@@ -1,4 +1,4 @@
-namespace Daoris.Service.Core;
+namespace Daoris.Knowledge;
 
 /// <summary>
 /// Reads one repository's knowledge into entries.
