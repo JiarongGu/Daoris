@@ -26,6 +26,7 @@ const read = (rel) => readFileSync(join(repoRoot, rel), 'utf8');
 const write = (rel, text) => writeFileSync(join(repoRoot, rel), text, 'utf8');
 
 const REPO_REF = 'github:JiarongGu/Daoris#v';
+const CLI_PKG = 'src/Daoris.Cli/package.json'; // the only published package
 const fail = (message) => {
   console.error(`release-prep: ${message}`);
   process.exit(1);
@@ -62,7 +63,7 @@ function stampChangelog(rel, heading) {
 function setVersion(version, today) {
   if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`'${version}' is not a semver triple`);
 
-  write('package.json', read('package.json').replace(/"version": "[^"]+"/, `"version": "${version}"`));
+  write(CLI_PKG, read(CLI_PKG).replace(/"version": "[^"]+"/, `"version": "${version}"`));
   write('canon/canon.json', `{\n  "version": "${version}"\n}\n`);
   write('daoris.json', read('daoris.json').replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`));
   write('README.md', read('README.md').replace(/github:JiarongGu\/Daoris#v[\d.]+/g, `${REPO_REF}${version}`));
@@ -78,7 +79,7 @@ function setVersion(version, today) {
 
 /** Assert every place agrees. The release gate runs this; it never rewrites. */
 function checkAgreement() {
-  const version = JSON.parse(read('package.json')).version;
+  const version = JSON.parse(read(CLI_PKG)).version;
   const problems = [];
 
   if (JSON.parse(read('canon/canon.json')).version !== version) {

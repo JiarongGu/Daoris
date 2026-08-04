@@ -253,6 +253,43 @@ which is the same ordering the roadmap already applies to the knowledge service.
 the way the platform was checked in D15 — parts of that pillar may already exist, and building a second
 worse copy is the failure D1 was written to prevent.
 
+## D20 — Four artefacts in one workspace; the devkit ships as a binary (2026-08-05)
+
+**Decision.** Daoris is a workspace of four artefacts under `src/Daoris.*`, matching the family's layout:
+the **CLI** (npm, Node, zero dependencies), the **devkit** (a .NET AOT binary), the **service**
+(ASP.NET Core), and its two clients — a React **web** app and a **desktop** shell hosting the same build.
+The canon stays at the workspace root, because it is data the whole project shares rather than the CLI's
+private asset.
+
+**Why the devkit reverses the original position.** The design note argued the CLI should stay Node
+because "what devtools actually do is orchestrate subprocesses, and a compiled binary that spawns a build
+buys nothing while costing per-platform artefacts and a release pipeline." That weighed the *execution*
+cost and missed the *distribution* one, which is the only cost this project exists to address:
+
+- Eleven repositories carry a hand-copied `devtools/dev.mjs`, measured 2026-08-05 at **2.6 KB to
+  52.6 KB — a 20× spread**. Nine also carry a config file, which is the part that was meant to differ.
+  The rest is one tool, re-derived and diverged. That is the thesis, one layer below the documents.
+- A .NET repository carrying a Node script has a Node dependency it needs *for tooling alone*.
+- A binary has a version. A pasted script has whatever the paste contained.
+
+The CLI stays Node and zero-dependency regardless: it is a different artefact with a different job, and
+it must keep running in repositories that have no Node dependencies of their own (D8, D10).
+
+**Why the service may depend on the cognition sibling** where D1 refused to. D1 rejected that dependency
+*for the CLI*, because it would have made a build gate depend on a release cadence it does not control.
+The service is a separate deployable with no such constraint, and semantic memory, the embedder seam, the
+vector store and MCP hosting all already ship there. Rebuilding them would produce a second, worse copy —
+which is the failure D1 was actually written to prevent.
+
+**Consequence.** `canon/`, `LICENSE` and `README.md` sit at the root and are staged into the CLI package
+at pack time, because npm's `files` cannot reach outside a package directory and D11 makes shipping the
+canon *inside* the package load-bearing. The rehearsal asserts all three arrive.
+
+**Not decided here:** how a repository declares its gates, how the binary is distributed without losing
+the offline guarantee, and whether the service needs hosting at all — a local-only service queried over
+MCP would answer most of the need without a deployment or a privacy boundary. Each is recorded as an
+open question in the relevant `src/Daoris.*/README.md`, written before any code.
+
 ## D19 — The sync state space is enumerated, not discovered (2026-08-05)
 
 **Decision.** What `sync` does with a file is a function of three inputs — is it in the **lock**, what is

@@ -9,12 +9,23 @@ a real consumer, not on a calendar.
 
 ---
 
+## Four artefacts
+
+Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). Only the first exists:
+
+| | What | State |
+|---|---|---|
+| `Daoris.Cli` | The doctrine tool — npm, Node, zero dependencies | **built and proven** |
+| `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | brief written |
+| `Daoris.Service` | Cross-repository knowledge service | brief written |
+| `Daoris.Web` + `Daoris.Desktop` | One React UI, two shells | brief written |
+
 ## Versions
 
-Nothing has been published, so there is no released version to preserve compatibility with. **Development
-is `0.0.x`; the first release is `0.1.0`.** Work that was once scoped behind a "v0.2" boundary simply
-lands in the first release instead — a version boundary between two unreleased states is bookkeeping
-nobody consumes.
+Nothing has been published, and **the CLI alone is not the product** — releasing it now would invite
+adoption of a quarter of the thing. Development stays at `0.0.x` until there is something whole to adopt.
+The release workflow exists and is manual-only, with `dry_run` defaulting to true; the version belongs to
+that workflow and is never edited by hand.
 
 ## 0.0.x — doctrine that installs, is checked, and flows back — **built**
 
@@ -29,42 +40,46 @@ Proven by adoption into Lyntai rather than by assertion: four collisions and a r
 to `0.0.1` then surfaced D13 — drift was measured against the wrong side, so an improved canonical rule
 could not propagate at all.
 
-## 0.1.0 — the first release: skills, and the workflow rule that references them
+The skills layer that once stood between here and a release is done: `doc-loader` and `pattern-finder`
+start a task, `post-feature` and `fix-log` close one, `caveman` governs output, and `skills-workflow` is
+a seventh core rule. Each was canonized from the copies found across twelve repositories and reduced to
+what they share (D14). The `doc-*` maintenance family is deliberately held (`TASKS.md` CANON4).
 
-Skills were held out of the initial build for a reason: they carry frontmatter the harness interprets,
-and they often need per-repository parameterization (a build command, a package layout). That is a design
-problem, not a copy — and it was the last one standing between here and a release.
+## Next — `Daoris.Devkit`: the same pathology, one layer down
 
-- ~~**The parameterization question.**~~ **Settled (D14).** Answered from a survey of twelve
-  repositories rather than from taste: canonical skills are parameter-free and delegate to the generated
-  index. The substitution map was rejected because the measured spread between copies of the same skill
-  is the adopter's own routing content, which no placeholder supplies. `skill-loader` turned out to be
-  generated content rather than doctrine, which removed the hardest case entirely.
-- ~~**Then `skills-workflow`**~~ — **shipped** as a seventh core rule, at 6 of 11 repositories.
-- ~~**Then the skills themselves**~~ — **shipped:** `doc-loader` and `pattern-finder` start a task,
-  `post-feature` and `fix-log` close one, `caveman` governs output. Each canonized from the copies found
-  across the family and reduced to what they share. The `doc-*` maintenance family is deliberately held
-  (`TASKS.md` CANON4): it automates hand-maintaining documents a generated wiki would own (D16).
-- ~~**The LICENSE**~~ — **done:** MIT, and the rehearsal asserts it ships rather than merely existing.
-- **The GitHub owner** (`TASKS.md` REL1) — an owner decision, not engineering work. **The only thing
-  left before a tag:** `npm run rehearse` passes 51/51 against the packaged artefact, so what is missing
-  is the account to publish under, not working software.
+Eleven repositories carry a hand-copied `devtools/dev.mjs`, measured at **2.6 KB to 52.6 KB — a 20×
+spread**. Nine also carry a config file, which is the part that was *meant* to differ. The rest is one
+tool, re-derived and diverged. This is the strongest evidence in the family and it is the natural next
+artefact: gates get **declared, not copied**.
 
-## 0.2 — the harness layer: gates, not scripts
+- **Shipped as a .NET AOT binary**, reversing the earlier position that the tooling should stay Node
+  (D20). That position weighed the execution cost and missed the distribution one — and distribution is
+  the only cost this project exists to address. A .NET repository carrying a Node script has a Node
+  dependency it needs for tooling alone; a binary has a version, a pasted script has whatever the paste
+  contained.
+- **The CLI stays Node and zero-dependency.** Different artefact, different job: it has to keep running
+  in repositories that have no Node dependencies of their own.
+- Daoris ships the gates that are genuinely universal — sensitive scan, doctrine drift, version
+  authorship, documentation freshness — and each repository declares its own stack gates.
+- Open questions are recorded in `src/Daoris.Devkit/README.md`, written before any code: how a repository
+  declares its gates, and how a binary is distributed without losing the offline guarantee (D8).
 
-The same pathology one level down. Every repository carries a hand-copied devtools script, and those
-copies have diverged further than the documents had. The shape follows this design: gates are
-**declared, not copied**.
+## Then — the knowledge layer: `Daoris.Service`, `Daoris.Web`, `Daoris.Desktop`
 
-- The manifest grows a `verify` block. Daoris ships the gates that are genuinely universal — sensitive
-  scan, doctrine drift, version authorship, documentation freshness — and each repository declares its
-  own stack gates as commands.
-- **The CLI stays Node.** What devtools actually do is orchestrate subprocesses; a compiled binary that
-  spawns a build buys nothing while costing per-platform artifacts and a release pipeline. That is
-  self-defeating for a tool whose purpose is reducing per-repository overhead.
-- **.NET earns its place only where the compiler is required** — see the long-term section below.
+Doctrine is now consistent across repositories, but what each repository *learned* — its decisions, its
+fix log, its task outcomes — is still visible only from inside it. That is how the same problem gets
+solved twice by the same person in two directories.
 
-## 0.3 — the centralized knowledge service
+**One UI, two shells.** A React application over the service, served over HTTP and hosted unchanged
+inside a desktop shell built on the family's desktop runtime. A second hand-written desktop UI would be
+this project's own pathology in a new place. It also makes Daoris the first real external consumer of
+that runtime, which is worth something on its own — a runtime with no consumer is unvalidated, exactly as
+a pack nobody installs is.
+
+Briefs and open questions live in each `src/Daoris.*/README.md`. The sharpest one: **whether the service
+needs hosting at all.** A local-only service queried over MCP would answer most of the need without a
+deployment, an account, or a privacy boundary — and several siblings are private, so centralising their
+content is exactly what `sensitive-info` keeps out of tracked files. Price that before assuming a host.
 
 _Checked against the agent platform's own features before committing further (D15): its workspaces are
 billing and access segmentation, its skills are a format rather than a distribution mechanism, and its
@@ -78,14 +93,15 @@ way: a wiki generated over divergent copies documents the divergence, so canoniz
 the generated layer worth having. Prefer pointing at such a tool over growing one._
 
 
-A service every agent session can query: cross-repository semantic recall over doctrine, decisions, and
-past task outcomes. Deliberately *after* the canon exists, because indexing content that is still
-divergent indexes the divergence.
+Deliberately *after* the canon exists, because indexing content that is still divergent indexes the
+divergence.
 
 This is where a dependency on **Lyntai** becomes correct rather than premature — semantic memory, the
 embedder seam, the vector store and MCP hosting all already ship there, so the service is mostly
-composition rather than new primitives. It remains a separate deployable; the CLI keeps its zero
-dependencies.
+composition rather than new primitives. D1 rejected that dependency for the *CLI*, because a build gate
+must not depend on a release cadence it does not control; a separate deployable has no such constraint,
+and rebuilding those primitives would produce the second, worse copy D1 was actually written to prevent.
+The CLI keeps its zero dependencies regardless.
 
 ## Long term — repository intelligence
 

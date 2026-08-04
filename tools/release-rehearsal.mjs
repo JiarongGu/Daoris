@@ -24,6 +24,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const cliRoot = join(repoRoot, 'src', 'Daoris.Cli'); // the publishable package
 const scratch = join(repoRoot, '_fixtures', 'release-rehearsal');
 const consumer = join(scratch, 'consumer');
 const canonV2 = join(scratch, 'canon-v2');
@@ -80,26 +81,29 @@ rmSync(scratch, { recursive: true, force: true });
 mkdirSync(scratch, { recursive: true });
 
 const packed = execSync(`npm pack --pack-destination "${scratch}"`, {
-  cwd: repoRoot,
+  cwd: cliRoot,
   encoding: 'utf8',
   stdio: ['ignore', 'pipe', 'ignore'], // npm writes its file listing to stderr
 }).trim().split('\n').pop().trim();
 const tarball = join(scratch, packed);
 check('npm pack produced a tarball', existsSync(tarball), tarball);
 
-const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8'));
+const pkg = JSON.parse(readFileSync(join(cliRoot, 'package.json'), 'utf8'));
 const version = pkg.version;
 check(`tarball is named for version ${version}`, packed.includes(version), packed);
 
 // What matters is what SHIPS, not what sits in the checkout. `files` is a
-// whitelist, so anything not named there is only present by npm's own rules.
+// whitelist and cannot reach outside the package, so the canon, the licence and
+// the readme — all of which live at the workspace root — are only present
+// because `prepack` stages them in.
 const shipped = new Set(
   JSON.parse(
     execSync('npm pack --dry-run --json', {
-      cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+      cwd: cliRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
     }),
   )[0].files.map((f) => f.path),
 );
+check('the README ships', shipped.has('README.md'));
 check(
   `a LICENSE ships alongside the "${pkg.license}" declaration in package.json`,
   shipped.has('LICENSE'),

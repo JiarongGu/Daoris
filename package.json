@@ -1,23 +1,20 @@
 {
-  "name": "daoris",
-  "version": "0.0.1",
-  "description": "Cross-repo engineering doctrine: materialize canonical agent rules and knowledge into a repo, and keep them from drifting.",
+  "name": "daoris-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Workspace root. The publishable CLI is src/Daoris.Cli; nothing here is published.",
   "type": "module",
-  "bin": {
-    "daoris": "bin/daoris.mjs"
-  },
+  "workspaces": [
+    "src/Daoris.Cli"
+  ],
   "engines": {
     "node": ">=22"
   },
-  "files": [
-    "bin",
-    "src",
-    "canon"
-  ],
   "scripts": {
-    "test": "node --test",
-    "verify": "node --test && node bin/daoris.mjs check",
-    "rehearse": "node tools/release-rehearsal.mjs"
+    "test": "npm test -w daoris",
+    "verify": "npm test -w daoris && node src/Daoris.Cli/bin/daoris.mjs check",
+    "rehearse": "node tools/release-rehearsal.mjs",
+    "release-prep": "node tools/release-prep.mjs"
   },
   "license": "MIT"
 }

@@ -22,13 +22,16 @@ Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted 
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
 
-**Version `0.1.0`, prepared for the first release.** `test/version.test.mjs` holds `package.json`,
-`canon/canon.json`, `daoris.json` and the README refs in step, and pins the repository reference exactly —
-GitHub's repo is `JiarongGu/Daoris` (capitalised) while the npm package is `daoris`, and a lower-cased ref
-works on a case-insensitive checkout while failing for everyone else.
+**Not released, and not close.** The CLI is complete and proven, but three of the four artefacts do not
+exist yet. Development runs at `0.0.x`.
 
-**`npm run rehearse` is the release gate**, and the tag is the only step left: the remote exists, is
-public, and is empty. See `TASKS.md` REL1.
+**Never edit the version by hand, and never stamp a changelog heading.** Both belong to the release
+workflow (`tools/release-prep.mjs`); the desktop sibling burned a version outright on exactly this. A
+hand-bump leaves every file perfectly consistent and still wrong — consistency was never the property at
+risk, **authorship** was.
+
+**There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only, with
+`dry_run` defaulting to true. Gates run locally: `npm run verify` and `npm run rehearse`.
 
 - `README.md` — the consuming story: install, the seven commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
@@ -51,16 +54,29 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 
 ## Layout
 
+**Four artefacts, one workspace.** Only the first exists today; the other three carry a `README.md`
+stating the brief and the open questions, written before any code.
+
 | Path | Holds |
 |---|---|
-| `bin/daoris.mjs` | Arg parsing, command dispatch, error → exit code |
-| `src/*.mjs` | One module per responsibility; every command is plan-then-apply |
+| `src/Daoris.Cli/` | **The npm package `daoris`** — Node, zero dependencies. `bin/`, `src/`, `test/` |
+| `src/Daoris.Devkit/` | The shared dev toolkit, shipped as a **.NET AOT binary** (not started) |
+| `src/Daoris.Service/` | The cross-repo knowledge service, ASP.NET Core (not started) |
+| `src/Daoris.Web/` | React UI over the service — the only UI (not started) |
+| `src/Daoris.Desktop/` | Desktop shell hosting `Daoris.Web`, on the desktop sibling (not started) |
+| `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |
 | `canon/core/{rules,skills}/` | The always-installed rules and discovery skills |
 | `canon/packs/<name>/` | `pack.json` + `rules/` + `knowledge/` + `skills/` |
 | `canon/CHANGELOG.md` | Why each canon version changed — `status` prints the entries a repo is skipping |
-| `test/*.test.mjs` | `node:test`; fixtures under the gitignored `_fixtures/` |
+| `tools/` | This repository's own release tooling; not shipped |
+
+`canon/`, `LICENSE` and `README.md` live at the root and are **staged into the CLI package at pack
+time** (`tools/stage-package.mjs`, run by `prepack`) — npm's `files` cannot reach outside a package
+directory, and D11 makes shipping the canon *inside* the package load-bearing.
 
 ## Dev loop
+
+Run every command from the **workspace root**, not from a package directory.
 
 - **`npm run verify`** — the "am I done?" gate: every test, then `daoris check` against Daoris's own
   doctrine. Run before claiming a change is complete.

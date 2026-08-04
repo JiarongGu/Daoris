@@ -4,9 +4,13 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText } from '../src/fsx.mjs';
 
-const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+// package.json and the sources are this package's; the canon, the manifest and
+// the README belong to the workspace two levels up.
+const cliRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const repoRoot = dirname(dirname(cliRoot));
 const read = (rel) => readText(join(repoRoot, rel));
-const version = () => JSON.parse(read('package.json')).version;
+const readCli = (rel) => readText(join(cliRoot, rel));
+const version = () => JSON.parse(readCli('package.json')).version;
 
 /**
  * The version appears in four live places, and a bump that misses one is
@@ -42,6 +46,6 @@ test('every shipped reference names the repository exactly', () => {
   const REPO = 'github:JiarongGu/Daoris#v';
   assert.ok(read('daoris.json').includes(REPO));
   assert.ok(read('README.md').includes(REPO));
-  assert.ok(read('src/commands.mjs').includes('github:JiarongGu/Daoris#v'), 'what init writes');
-  assert.equal(/OWNER/.test(read('src/commands.mjs')), false, 'the placeholder must not ship');
+  assert.ok(readCli('src/commands.mjs').includes('github:JiarongGu/Daoris#v'), 'what init writes');
+  assert.equal(/OWNER/.test(readCli('src/commands.mjs')), false, 'the placeholder must not ship');
 });

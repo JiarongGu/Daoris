@@ -13,34 +13,46 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## Active backlog
 
-_**The tool is built and proven** — seven commands, 90 tests, a canon of 7 core rules, 5 core skills and
-3 packs, adopted into Lyntai with its 1337 tests still green. The skills layer is **complete**, and so
-are the tool follow-ups. Nothing is published, so development runs at **`0.0.x`** and the first release is
-**`0.1.0`**._
+_**`Daoris.Cli` is built and proven** — seven commands, 96 tests, a canon of 7 core rules, 5 core skills
+and 3 packs, adopted into Lyntai with its 1337 tests still green. `npm run rehearse` drives the whole
+consumer lifecycle through the packaged artefact, 52/52._
 
-_**Everything remaining needs a decision or another repository, not more code here.** One item blocks the
-tag and is the owner's call; the rest are editorial work inside a consuming repository, or gated on the
-next adoption. `npm run rehearse` passes 51/51 against the packaged artefact, so the release works —
-what is missing is the account to publish it under._
+_**It is one of four artefacts, and the only one that exists** (`docs/DECISIONS.md` D20). **Not
+releasing yet:** publishing the CLI alone would invite adoption of a quarter of the project. The devkit
+is next — eleven repositories carry the same hand-copied dev script at a 20× size spread, which is the
+strongest evidence in the family._
 
-## Part 1 — releasing 0.1.0
+## Part 1 — the next artefact: `Daoris.Devkit`
 
-_Everything in the repository is ready: `npm run verify` and `npm run rehearse` both pass, the owner is
-resolved, the remote exists and is public, and the version is stamped. What is left is pushing, which is
-the owner's to do._
+_The brief and its open questions are in `src/Daoris.Devkit/README.md`, written before any code._
 
-- [ ] **REL3 — push and tag `v0.1.0`.** The remote (`origin` →
-  `https://github.com/JiarongGu/Daoris`) is configured but **empty**, and the local branch is `master`
-  while GitHub creates new repositories with `main` — decide which name the published history carries
-  before the first push, because renaming afterwards breaks every clone. Then tag `v0.1.0` and verify
-  `npx github:JiarongGu/Daoris#v0.1.0 --version` from a clean directory outside this repo. That last
-  command is the only part of the install story `npm run rehearse` cannot cover, because it is the only
-  part that depends on GitHub rather than on this package.
-- [ ] **REL4 — Lyntai's manifest still names the placeholder.** Its `daoris.json` carries
-  `github:OWNER/daoris#…` from the trial adoption. It is part of that repository's uncommitted,
-  pending-review changes (ADOPT3), so it is listed here rather than edited from this side.
+- [ ] **DEV1 — decide how a repository declares its gates.** A `verify` block in `daoris.json`, or a
+  file the devkit owns. The manifest is already the declaration point for packs and the target, so it is
+  the obvious home — but gates are commands rather than documents, and the manifest has stayed data-only
+  so far. Settle before writing the runner.
+- [ ] **DEV2 — decide how the binary reaches a repository without losing the offline guarantee.**
+  `check` never touches the network by construction (D8), and that must survive. A binary cannot ship
+  inside the npm package the way the canon does, so this is genuinely new ground.
+- [ ] **DEV3 — extract the universal gates from the eleven copies.** The survey says the shared set is a
+  sensitive-content scan, doctrine drift, version authorship, and documentation freshness. Everything
+  else is stack-specific and belongs in the repository's own declaration. Same method as the skills:
+  read the extremes, keep only what they share.
+- [ ] **DEV4 — the devtools copy in this repository is untracked and inherited.** 31 MB of a sibling's
+  toolkit, including built binaries, sitting in `devtools/`. It is the raw material for DEV3 and should
+  be read, mined, and then removed — not tracked.
 
-## Part 2 — findings from the Lyntai adoption (2026-08-04)
+## Part 2 — when a release is wanted
+
+_Both prerequisites are done; neither is urgent while three artefacts are unbuilt._
+
+- [ ] **REL3 — push, then decide the branch name first.** `origin` is configured and the remote is
+  **empty**, while local history is on `master` and GitHub creates new repositories with `main`.
+  Renaming after the first push breaks every clone, so choose before pushing.
+- [ ] **REL4 — Lyntai's manifest still names the `OWNER` placeholder** from the trial adoption. It is
+  part of that repository's uncommitted, pending-review changes (ADOPT3), so it is listed here rather
+  than edited from this side.
+
+## Part 3 — findings from the Lyntai adoption (2026-08-04)
 
 _The first real adoption surfaced things no synthetic test could. Both remaining items are editorial work
 inside Lyntai rather than changes here, which is why they are recorded rather than silently fixed._
@@ -58,7 +70,7 @@ inside Lyntai rather than changes here, which is why they are recorded rather th
   generalized rules dropped is preserved in a new local `.claude/rules/repo-mechanics.md`.
   `git checkout .claude/` reverts all of it.
 
-## Part 3 — canon growth
+## Part 4 — canon growth
 
 - [ ] **CANON4 — the `doc-*` maintenance family, deliberately not canonized yet.** `doc-update-technical`
   / `-reference` / `-guide`, `doc-optimize`, `doc-monitor`, `doc-cleanup` appear together in 3
@@ -85,7 +97,7 @@ inside Lyntai rather than changes here, which is why they are recorded rather th
   `windows-dev-gotchas` versus canonical `windows-machine` — the machine-level content is canonical, the
   WebView2/WinForms/devtools items are Shenora's own.
 
-## Part 4 — tool follow-ups
+## Part 5 — tool follow-ups
 
 _Nothing open here._
 

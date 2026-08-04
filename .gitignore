@@ -15,3 +15,9 @@ devtools/**/obj/
 
 *.log
 .DS_Store
+
+# The canon is staged into the CLI package at pack time (tools/stage-canon.mjs);
+# the tracked copy is canon/ at the root.
+src/Daoris.Cli/canon/
+src/Daoris.Cli/LICENSE
+src/Daoris.Cli/README.md

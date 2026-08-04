@@ -12,11 +12,24 @@ const TIERS = ['rules', 'knowledge', 'skills'];
 
 /**
  * The canon ships INSIDE the package, so the pinned ref in a repo's manifest is
- * itself the version pin and no command ever fetches anything. DAORIS_CANON
- * overrides the root for developing Daoris itself.
+ * itself the version pin and no command ever fetches anything (D11). That is the
+ * published layout, staged at pack time by tools/stage-canon.mjs.
+ *
+ * In THIS repository the canon lives at the root instead, because it is data the
+ * whole project shares rather than the CLI's private asset — so a development
+ * checkout falls back to the workspace root. The published case is checked first,
+ * so an installed package can never accidentally resolve someone else's tree.
+ *
+ * DAORIS_CANON overrides both; it is how the tests drive a fixture canon.
  */
 export function resolveCanonRoot(packageRoot) {
-  return process.env.DAORIS_CANON || join(packageRoot, 'canon');
+  if (process.env.DAORIS_CANON) return process.env.DAORIS_CANON;
+
+  const shipped = join(packageRoot, 'canon');
+  if (existsSync(shipped)) return shipped;
+
+  // src/Daoris.Cli -> the workspace root two levels up.
+  return join(packageRoot, '..', '..', 'canon');
 }
 
 /**

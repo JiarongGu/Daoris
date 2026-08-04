@@ -1,0 +1,22 @@
+{
+  "name": "daoris",
+  "version": "0.0.1",
+  "description": "Cross-repo engineering doctrine: materialize canonical agent rules and knowledge into a repo, and keep them from drifting.",
+  "type": "module",
+  "bin": {
+    "daoris": "bin/daoris.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "bin",
+    "src",
+    "canon"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "prepack": "node ../../tools/stage-package.mjs"
+  },
+  "license": "MIT"
+}

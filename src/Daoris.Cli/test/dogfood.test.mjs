@@ -9,7 +9,10 @@ import { readText } from '../src/fsx.mjs';
 import { readManifest, readLock } from '../src/config.mjs';
 import { inspect } from '../src/drift.mjs';
 
-const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+// This package is src/Daoris.Cli; the canon and daoris's own doctrine live at
+// the workspace root, because they are the project's data rather than the CLI's.
+const cliRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const repoRoot = dirname(dirname(cliRoot));
 
 const isSkill = (source) => source.includes('/skills/');
 
