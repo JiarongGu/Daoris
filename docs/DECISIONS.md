@@ -253,6 +253,43 @@ which is the same ordering the roadmap already applies to the knowledge service.
 the way the platform was checked in D15 — parts of that pillar may already exist, and building a second
 worse copy is the failure D1 was written to prevent.
 
+## D19 — The sync state space is enumerated, not discovered (2026-08-05)
+
+**Decision.** What `sync` does with a file is a function of three inputs — is it in the **lock**, what is
+on **disk**, and what the **canon** now says — and all of it is written down here. New behaviour is
+checked against this table before it is implemented.
+
+**Why.** This one area was corrected four times: drift compared against the canon instead of the lock
+(D13), then failed after `upstream`, then failed after `upstream` plus a version bump, then silently
+destroyed a locally-improved rule that was retired upstream. Every fix was correct and every one was
+found by a symptom. Four corrections in one area is not bad luck; it is an unenumerated state space, and
+the remedy is a table rather than a fifth patch.
+
+| In canon | In lock | On disk | Disk vs lock | Disk body vs canon | Outcome |
+|---|---|---|---|---|---|
+| yes | yes | yes | same | same | unchanged |
+| yes | yes | yes | same | differs | **update** — improved upstream, untouched here (D13) |
+| yes | yes | yes | differs | same | **update** — already promoted; only the lock is stale |
+| yes | yes | yes | differs | differs | **drift** — refuse; promote or `--force` |
+| yes | yes | no | — | — | recreate; `check` reports it missing |
+| yes | no | yes | — | same content | adopt silently — byte-identical, nothing to warn about |
+| yes | no | yes | — | differs | **collision** — the repo wrote this first; refuse (D12) |
+| yes | no | no | — | — | create |
+| no | yes | yes | same | — | **retire** — delete it |
+| no | yes | yes | differs | — | **edited retirement** — refuse; `upstream` cannot save it |
+| no | yes | no | — | — | drop the lock entry; nothing to delete |
+| no | no | — | — | — | invisible to the tool (D5) |
+
+Two rows carry the whole safety argument. *Disk differs from lock* means *this repository changed it* and
+is the only thing that ever counts as drift. *Absent from the lock* means *daoris never wrote it*, which
+is what makes a repository's own files safe to keep in the same directory.
+
+**Consequence.** The last row of the table was the fourth bug: retirement is the most destructive thing
+`sync` does and had the weakest guard, because a retained file that drifted refused while a retired one
+was deleted without a word — and at the worst possible moment, since the canonical file the edit belonged
+to is gone, so `upstream` is no longer a route. It now refuses, and advises keeping the edit as a local
+document, which is what the three-layer model was for.
+
 ## D18 — Every path daoris touches must resolve inside the target directory (2026-08-05)
 
 **Decision.** `sync` resolves every write and delete against the target directory and **refuses** any

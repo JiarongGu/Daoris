@@ -1,0 +1,48 @@
+name: verify
+
+# Daoris is meant to sit inside other repositories' build gates, so it has to
+# work where those gates run. Everything here was developed on Windows; this is
+# the first thing that runs it anywhere else.
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['22', '24']
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} · node ${{ matrix.node }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No `npm ci`: daoris has zero runtime dependencies and no lockfile, which
+      # is the property being protected. An install step here would hide its loss.
+      - name: Tests, then daoris check against its own doctrine
+        run: npm run verify
+
+  rehearse:
+    # The artefact test: pack the tarball, install it into a clean repository,
+    # and drive the whole consumer lifecycle through the bin entry.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: rehearse · ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Release rehearsal
+        run: npm run rehearse

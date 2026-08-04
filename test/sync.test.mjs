@@ -174,6 +174,44 @@ test('an unrelated retirement and addition are not called a rename', () => {
  * The lock is generated, so nobody reads it closely in review; a merge-mangled
  * entry or a crafted one in a pull request both reach the same rmSync.
  */
+/**
+ * The state space is lock x disk x canon, and this is the corner that was
+ * missed: a rule the repo had improved, retired upstream in the same cycle.
+ * Drift on a RETAINED file refuses and points at `upstream`; drift on a RETIRED
+ * one deleted it without a word — the more destructive path had the weaker
+ * guard, and it destroys the edit at exactly the moment it can no longer be
+ * promoted, because the canonical file it belonged to is gone.
+ */
+test('retiring a file the repo edited refuses rather than destroying the edit', () => {
+  const fx = seed(['win']);
+  run(fx);
+  const local = join(fx.repoFx.root, '.claude/rules/gotchas.md');
+  fx.repoFx.write('.claude/rules/gotchas.md', `${readText(local)}\nHARD-WON LOCAL IMPROVEMENT.\n`);
+  rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+
+  const error = captureError(() => run(fx));
+  assert.ok(error instanceof DaorisError);
+  assert.equal(error.exitCode, 1);
+  assert.match(error.message, /gotchas/);
+  assert.match(readText(local), /HARD-WON LOCAL IMPROVEMENT/, 'the edit must survive the refusal');
+
+  // --force is the deliberate "yes, I have what I need; drop it".
+  run(fx, true);
+  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), false);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('retiring an untouched file needs no ceremony', () => {
+  const fx = seed(['win']);
+  run(fx);
+  rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+  run(fx);
+  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), false);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
 test('a lock entry cannot reach outside the target directory', () => {
   const fx = seed();
   run(fx);

@@ -45,6 +45,12 @@ The first version: doctrine that installs, is checked, and flows back.
   as two separate changes.
 - **A one-line provenance header** on every materialized file, because an agent that opens a rule needing
   a tweak will otherwise simply edit it. The lock's hash catches the edit either way.
+- **Retiring a file the repository has edited refuses instead of deleting it.** Retirement is the most
+  destructive thing `sync` does and had the weakest guard: a retained file that drifted refused, while a
+  retired one was deleted silently — at the worst moment, since the canonical file the edit belonged to
+  is gone and `upstream` is no longer a route. It now advises keeping the edit as a local document.
+  The full lock × disk × canon state space is enumerated in `docs/DECISIONS.md` D19, so the next gap is
+  found by reading rather than by losing a file.
 - **Every path is confined to the target directory.** `sync` resolves each write and delete against the
   target and refuses anything that escapes it, before touching a file. A lock entry containing `..` could
   otherwise reach arbitrary paths — and the lock is generated, so it is the file nobody reads closely in

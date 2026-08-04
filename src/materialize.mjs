@@ -70,8 +70,19 @@ export function planSync({ root, manifest, canon, lock }) {
   // A file that left the canon leaves every repo — the thing copy-paste can never do.
   const wanted = new Set(selected.map((file) => file.target));
   const deletes = [...locked.keys()].filter((target) => !wanted.has(target));
+
+  // ...but not one the repo has improved. Retirement is the most destructive
+  // thing sync does, and it was the least guarded: a retained file that drifted
+  // refused, while a retired one was deleted silently. It is also the worst
+  // moment to lose an edit, because the canonical file it belonged to is gone,
+  // so `upstream` is no longer a way to save it.
+  const editedRetirements = deletes.filter((target) => {
+    const abs = join(root, manifest.target, target);
+    return existsSync(abs) && sha256(readText(abs)) !== locked.get(target).sha256;
+  });
+
   const renames = detectRenames({ root, manifest, writes, deletes });
-  return { writes, deletes, drifted, collisions, renames };
+  return { writes, deletes, drifted, collisions, renames, editedRetirements };
 }
 
 /**
@@ -191,6 +202,16 @@ export function applySync({ root, manifest, plan, canonVersion, force }) {
       1,
     );
   }
+  if (plan.editedRetirements?.length && !force) {
+    throw new DaorisError(
+      `${plan.editedRetirements.length} file(s) retired upstream, but edited here: ` +
+        `${plan.editedRetirements.join(', ')}\n` +
+        `  these are leaving the canon, so 'daoris upstream' cannot save the edit. Copy each\n` +
+        `  aside to keep it as this repo's own document, then 'daoris sync' — or accept the\n` +
+        `  retirement and lose the edit with 'daoris sync --force'`,
+      1,
+    );
+  }
 
   // Resolve every path BEFORE touching anything, so a bad entry anywhere aborts
   // the whole apply rather than half-applying it.
@@ -245,8 +266,9 @@ export function commandSync({ root, argv, write, packageRoot }) {
     }
     for (const target of plan.drifted) write(`  DRIFTED   ${target}`);
     for (const target of plan.collisions) write(`  COLLIDES  ${target} (this repo's own)`);
+    for (const target of plan.editedRetirements) write(`  AT RISK   ${target} (retired, but edited here)`);
     write(`daoris: ${plan.writes.length} file(s) selected, ${plan.deletes.length} to retire`);
-    return plan.drifted.length || plan.collisions.length ? 1 : 0;
+    return plan.drifted.length || plan.collisions.length || plan.editedRetirements.length ? 1 : 0;
   }
 
   applySync({ root, manifest, plan, canonVersion: canon.version, force: argv.includes('--force') });

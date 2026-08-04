@@ -67,7 +67,9 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
-  **artefact**. Run before tagging.
+  **artefact**. Run before tagging. CI runs both gates on Linux, macOS and Windows.
+- **Changing what `sync` does with a file? Read `docs/DECISIONS.md` D19 first.** That state space is
+  lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - `node --test` — tests only.
 - `node bin/daoris.mjs <command>` — run the CLI against this repository.
 - `DAORIS_CANON=<path>` overrides the canon root; this is how tests drive a fixture canon.
