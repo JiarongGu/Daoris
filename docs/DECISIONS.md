@@ -357,6 +357,29 @@ an awkward seam is a finding for that sibling rather than a workaround here.
 coupled at HEAD are one repository with extra steps, and the family's independence is load-bearing. The
 CLI's isolation is what keeps this safe — a consumer adopting doctrine never acquires any of it.
 
+**Compose capabilities, not surfaces** (clarified 2026-08-05). The line is what each sibling *is*:
+
+- The cognition sibling is a **library**. Its capabilities compose — embeddings, the vector store,
+  routing, semantic recall. Its *serving* surface does not, and asking it to grow one would be asking a
+  library to become an API project.
+- Its MCP host looked like a match by name and is the opposite thing by direction: an **ephemeral,
+  localhost-only HTTP server that provisions tools outward** to a CLI it spawns, for its own internal
+  model use. Daoris needs a **long-lived server other processes connect to**. Same protocol, inverted
+  roles, and nothing shared but the package underneath.
+- So Daoris owns its own serving surfaces — the MCP server, and later the HTTP API — and consumes the
+  siblings only as libraries. What did transfer was the *reasoning* rather than the code: use the
+  protocol package over plain streams and skip the ASP.NET dependency, a conclusion that sibling had
+  already reached and written down.
+
+The general form: **take a sibling's capability; never borrow its role.** A library that grows a serving
+surface to suit one consumer stops being reusable by the next.
+
+**The protocol itself is a library too**, and the official .NET SDK is used rather than hand-rolled:
+`ModelContextProtocol` supplies the DI wiring, the stdio transport and attribute-driven tool discovery.
+Only `ModelContextProtocol.AspNetCore` is skipped, and only for the stdio surface — the protocol works
+over plain streams there, so the framework reference would buy nothing. **When the hosted HTTP surface
+arrives, that package is the right answer for it**, not a second hand-written host.
+
 ## D19 — The sync state space is enumerated, not discovered (2026-08-05)
 
 **Decision.** What `sync` does with a file is a function of three inputs — is it in the **lock**, what is

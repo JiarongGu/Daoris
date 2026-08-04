@@ -64,13 +64,20 @@ without touching the ones that are not.
 |---|---|---|
 | `IKnowledgeSource` | The local filesystem | A git remote, or a devkit gate that pushes |
 | `IKnowledgeStore` | SQLite file, or in memory for tests | A hosted store only if volume ever demands one |
-| `IKnowledgeSearch` | FTS5 + BM25, or term overlap over any store | Semantic, then hybrid as a *composition* of the two |
+| `IKnowledgeSearch` | FTS5 + BM25, semantic, and hybrid fusing both | An embedder that is not a test double |
 | `IDisclosurePolicy` | `LocalOnly` — nothing leaves | `Sharing(repositories)` — opt-in per repository |
 
 Two choices worth knowing about:
 
 - **Search returns scored hits, not a list.** Scores are what let two searches be merged, so hybrid
   is a composition rather than a third implementation.
+- **Hybrid fuses on rank, not on score.** BM25 returns an unbounded figure and cosine similarity a
+  number in [-1, 1]; adding them compares quantities that mean different things, and whichever has the
+  larger range silently wins. Reciprocal rank fusion uses only each result's position in its own list.
+- **Semantic search is optional and degrades.** The embedder is app-provided, so with none configured
+  the service is lexical-only and local mode still works with nothing installed. If either half fails
+  the other still answers — an index that returns nothing because an endpoint is down is worse than one
+  that returns half of what it knows.
 - **The disclosure policy is applied at ingest, not at query.** Withheld-at-query means the material
   is in the store and one forgotten filter discloses it; withheld-at-ingest means it was never there
   to leak. It is a *type* rather than a paragraph so that shared mode cannot be built without

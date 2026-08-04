@@ -13,6 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The cognition sibling, consumed as a LIBRARY and at a RELEASED version (D22): IEmbedder and
+         IVectorStore are the seams semantic search needs, and rebuilding either would be the second
+         worse copy D1 was written to prevent. Its serving surfaces are deliberately NOT used. -->
+    <PackageVersion Include="Lyntai.Core" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Versions match the cognition sibling's, so the two agree when they end up in one process. -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
