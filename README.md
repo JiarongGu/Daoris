@@ -55,6 +55,11 @@ ever fetches anything, and `check` therefore works with no network at all.
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
 promote every locally-edited canonical file at once.
 
+**`--force` is the only way to lose work here**, so it names every file it overwrites or discards. Daoris
+otherwise refuses in all three destructive cases: a file you edited, a file you wrote before adopting,
+and a file being retired upstream that you had improved — that last one being the worst moment to lose an
+edit, since the canonical file it belonged to is gone and `upstream` can no longer save it.
+
 `doctor` exists because of the one thing the lock cannot catch: a repository's own rule that says the same
 thing as a canonical one under a different name is *local*, and local is invisible by design. Word overlap
 is a crude signal, so it only ever reports — a false positive that failed a build would be worse than the

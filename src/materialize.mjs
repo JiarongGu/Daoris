@@ -271,7 +271,18 @@ export function commandSync({ root, argv, write, packageRoot }) {
     return plan.drifted.length || plan.collisions.length || plan.editedRetirements.length ? 1 : 0;
   }
 
-  applySync({ root, manifest, plan, canonVersion: canon.version, force: argv.includes('--force') });
+  const force = argv.includes('--force');
+
+  // --force is the only way to lose work with this tool. A refusal names the
+  // file it is protecting; the override that overrules that refusal has to name
+  // it too, or nothing anywhere records what was destroyed.
+  if (force) {
+    for (const target of plan.drifted) write(`  overwrote ${target} (local edit discarded)`);
+    for (const target of plan.collisions) write(`  overwrote ${target} (this repo's own file)`);
+    for (const target of plan.editedRetirements) write(`  discarded ${target} (retired, edited here)`);
+  }
+
+  applySync({ root, manifest, plan, canonVersion: canon.version, force });
   for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
   const retired = plan.deletes.length - plan.renames.length;
   write(`daoris: synced ${plan.writes.length} file(s); retired ${retired}`);

@@ -6,7 +6,7 @@ import { makeFixture, captureError } from './_fixture.mjs';
 import { readCanon } from '../src/canon.mjs';
 import { readText } from '../src/fsx.mjs';
 import { readManifest, readLock } from '../src/config.mjs';
-import { planSync, applySync } from '../src/materialize.mjs';
+import { planSync, applySync, commandSync } from '../src/materialize.mjs';
 import { DaorisError } from '../src/errors.mjs';
 
 const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\nBody of ${name}.\n`;
@@ -238,6 +238,33 @@ test('a lock entry cannot reach outside the target directory', () => {
   assert.match(error.message, /IMPORTANT\.md/);
   assert.equal(existsSync(outside), true, 'and the file must still be there');
 
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+/**
+ * --force is the only way to lose work with this tool, and it was silent about
+ * doing so. A refusal names the file; the override that overrules the refusal
+ * should name it too, or the record of what was destroyed exists nowhere.
+ */
+test('--force names what it destroys', () => {
+  const fx = seed(['win']);
+  process.env.DAORIS_CANON = fx.canonFx.root;
+  const out = [];
+  const write = (s) => out.push(s);
+  commandSync({ root: fx.repoFx.root, argv: [], write, packageRoot: '' });
+
+  fx.repoFx.write('.claude/rules/sensitive-info.md', 'hand-edited\n');
+  rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+  fx.repoFx.write('.claude/rules/gotchas.md', 'edited, and being retired\n');
+
+  out.length = 0;
+  assert.equal(commandSync({ root: fx.repoFx.root, argv: ['--force'], write, packageRoot: '' }), 0);
+  const text = out.join('\n');
+  assert.match(text, /overwrote\s+rules\/sensitive-info\.md/, text);
+  assert.match(text, /discarded\s+rules\/gotchas\.md/, text);
+
+  delete process.env.DAORIS_CANON;
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

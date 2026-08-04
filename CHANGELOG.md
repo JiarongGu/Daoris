@@ -45,6 +45,9 @@ The first version: doctrine that installs, is checked, and flows back.
   as two separate changes.
 - **A one-line provenance header** on every materialized file, because an agent that opens a rule needing
   a tweak will otherwise simply edit it. The lock's hash catches the edit either way.
+- **`--force` names what it destroys.** It is the only way to lose work with this tool, and it was
+  silent about doing so. A refusal names the file it is protecting; the override that overrules that
+  refusal now names it too, or nothing anywhere records what went.
 - **Retiring a file the repository has edited refuses instead of deleting it.** Retirement is the most
   destructive thing `sync` does and had the weakest guard: a retained file that drifted refused, while a
   retired one was deleted silently — at the worst moment, since the canonical file the edit belonged to
