@@ -2,7 +2,7 @@
 name: post-feature
 description: Audit a finished feature or fix before proposing a commit — every layer the change touched has its counterpart, the records it made stale are updated, and any reusable pattern it revealed is written down. Use when the implementation looks done. Skip for typos and one-line tweaks.
 ---
-<!-- daoris: core/core/skills/post-feature/SKILL.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
+<!-- daoris: core/core/skills/post-feature/SKILL.md @ 0.1.0 — canonical; edit via `daoris upstream` -->
 
 # post-feature
 

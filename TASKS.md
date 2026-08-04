@@ -23,16 +23,22 @@ tag and is the owner's call; the rest are editorial work inside a consuming repo
 next adoption. `npm run rehearse` passes 51/51 against the packaged artefact, so the release works —
 what is missing is the account to publish it under._
 
-## Part 1 — release blocker (one, and it needs an owner decision)
+## Part 1 — releasing 0.1.0
 
-- [ ] **REL1 — the GitHub owner.** `OWNER` is a literal placeholder in the places that ship:
-  `src/commands.mjs:36` (what every future `daoris init` writes into a consumer's manifest),
-  `daoris.json:2`, `README.md` (install lines + ecosystem links), and Lyntai's `daoris.json:2`. Test
-  fixtures may keep the placeholder. Once decided: replace, add the remote, tag the release, and verify
-  `npx github:<owner>/daoris#<tag> --version` works from a clean directory. `test/version.test.mjs` holds
-  the four live refs in step, so only the owner half is manual. _`npm run rehearse` now covers everything
-  up to the tag — packing, installing into a clean repository, and the whole consumer lifecycle through
-  the `bin` entry — so what remains untested is only whether GitHub serves the tag._
+_Everything in the repository is ready: `npm run verify` and `npm run rehearse` both pass, the owner is
+resolved, the remote exists and is public, and the version is stamped. What is left is pushing, which is
+the owner's to do._
+
+- [ ] **REL3 — push and tag `v0.1.0`.** The remote (`origin` →
+  `https://github.com/JiarongGu/Daoris`) is configured but **empty**, and the local branch is `master`
+  while GitHub creates new repositories with `main` — decide which name the published history carries
+  before the first push, because renaming afterwards breaks every clone. Then tag `v0.1.0` and verify
+  `npx github:JiarongGu/Daoris#v0.1.0 --version` from a clean directory outside this repo. That last
+  command is the only part of the install story `npm run rehearse` cannot cover, because it is the only
+  part that depends on GitHub rather than on this package.
+- [ ] **REL4 — Lyntai's manifest still names the placeholder.** Its `daoris.json` carries
+  `github:OWNER/daoris#…` from the trial adoption. It is part of that repository's uncommitted,
+  pending-review changes (ADOPT3), so it is listed here rather than edited from this side.
 
 ## Part 2 — findings from the Lyntai adoption (2026-08-04)
 

@@ -14,8 +14,8 @@ Three public projects, deliberately independent:
 
 | | |
 |---|---|
-| [Lyntai](https://github.com/OWNER/Lyntai) | LLM cognition — providers, routing, memory, evaluation |
-| [Shenora](https://github.com/OWNER/Shenora) | Desktop runtime — the shell an application is built in |
+| [Lyntai](https://github.com/JiarongGu/Lyntai) | LLM cognition — providers, routing, memory, evaluation |
+| [Shenora](https://github.com/JiarongGu/Shenora) | Desktop runtime — the shell an application is built in |
 | **Daoris** | Engineering doctrine — how the work itself is done |
 
 Daoris takes no dependency on either. It is the only one of the three that installs *into* the others.
@@ -32,13 +32,10 @@ differed in 12 of 19 files.
 Nothing to install. Every command runs through `npx` against a pinned reference:
 
 ```sh
-npx github:OWNER/daoris#v0.0.1 init     # write daoris.json, report available packs
-npx github:OWNER/daoris#v0.0.1 sync     # materialize the doctrine, write daoris.lock
-npx github:OWNER/daoris#v0.0.1 check    # the gate — offline, exit 1 on drift
+npx github:JiarongGu/Daoris#v0.1.0 init     # write daoris.json, report available packs
+npx github:JiarongGu/Daoris#v0.1.0 sync     # materialize the doctrine, write daoris.lock
+npx github:JiarongGu/Daoris#v0.1.0 check    # the gate — offline, exit 1 on drift
 ```
-
-> **Not yet published.** Daoris is at `0.0.x` — in development, no tag pushed, and `OWNER` is still a
-> placeholder. The first release is `0.1.0`; the reference above moves with the version.
 
 The canon ships **inside the package**, so the pinned reference is itself the version pin — no command
 ever fetches anything, and `check` therefore works with no network at all.
@@ -73,7 +70,7 @@ still wants a read-through by hand; `doctor` shortens that job rather than repla
 
 ```json
 {
-  "source": "github:OWNER/daoris#v0.0.1",
+  "source": "github:JiarongGu/Daoris#v0.1.0",
   "packs": ["dotnet-library"],
   "target": ".claude",
   "coreBudgetBytes": 24000

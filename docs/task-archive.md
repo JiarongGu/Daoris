@@ -158,6 +158,14 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   always long is a list nobody reads. Also fixed `init`/`status` not reporting a repository's own skills
   as local.
 
+- [x] **REL1 — the GitHub owner**
+  ✅ done 2026-08-05 — `JiarongGu`, confirmed against the public siblings rather than taken on trust:
+  `github.com/JiarongGu/Shenora` and a release URL in Sonora both name it. The repository is
+  `JiarongGu/**D**aoris` — capitalised, while the npm package is `daoris` — so a test now pins the exact
+  reference and asserts the placeholder cannot ship. A lower-cased ref is the kind of mistake that works
+  on a case-insensitive checkout and fails for everyone else. Version stamped `0.1.0` across all four
+  live places at the same time.
+
 - [x] **REL2 — the LICENSE**
   ✅ done 2026-08-05 — MIT, copyright the repository's git author. It was open only because MIT requires
   a *named* holder and putting a real name in a tracked file was the owner's call, not a default anyone

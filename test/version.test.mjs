@@ -23,15 +23,25 @@ test("daoris's own manifest pins the version it is", () => {
 });
 
 test('the README install lines name the current version', () => {
-  const refs = [...read('README.md').matchAll(/daoris#v(\d+\.\d+\.\d+)/g)].map((m) => m[1]);
+  const refs = [...read('README.md').matchAll(/Daoris#v(\d+\.\d+\.\d+)/g)].map((m) => m[1]);
   assert.ok(refs.length >= 3, 'the README should show the pinned install reference');
   for (const ref of refs) assert.equal(ref, version());
 });
 
+test('the version is a semver triple', () => {
+  assert.match(version(), /^\d+\.\d+\.\d+$/);
+});
+
 /**
- * Pre-release, so nothing is published and nothing may claim to be. The first
- * release is 0.1.0; everything before it is 0.0.x.
+ * `npx` resolves the ref in `source` literally, and GitHub's repository name is
+ * capitalised while the npm package name is not. A lower-cased ref is the kind
+ * of mistake that works on a case-insensitive checkout and fails for everyone
+ * else, so it is pinned rather than left to chance.
  */
-test('development versions are 0.0.x', () => {
-  assert.match(version(), /^0\.0\.\d+$/);
+test('every shipped reference names the repository exactly', () => {
+  const REPO = 'github:JiarongGu/Daoris#v';
+  assert.ok(read('daoris.json').includes(REPO));
+  assert.ok(read('README.md').includes(REPO));
+  assert.ok(read('src/commands.mjs').includes('github:JiarongGu/Daoris#v'), 'what init writes');
+  assert.equal(/OWNER/.test(read('src/commands.mjs')), false, 'the placeholder must not ship');
 });

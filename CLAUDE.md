@@ -22,14 +22,13 @@ Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted 
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
 
-**Versions: development is `0.0.x`; the first release is `0.1.0`.** Nothing is tagged, so there is no
-compatibility to preserve and no reason to spend a version boundary between two unreleased states — the
-skills layer lands *in* the first release. `test/version.test.mjs` holds `package.json`, `canon/canon.json`,
-`daoris.json` and the README refs in step.
+**Version `0.1.0`, prepared for the first release.** `test/version.test.mjs` holds `package.json`,
+`canon/canon.json`, `daoris.json` and the README refs in step, and pins the repository reference exactly —
+GitHub's repo is `JiarongGu/Daoris` (capitalised) while the npm package is `daoris`, and a lower-cased ref
+works on a case-insensitive checkout while failing for everyone else.
 
-**The first release still needs two owner decisions** — the GitHub account (`OWNER` is a literal
-placeholder in `src/commands.mjs`, both manifests, and the README) and the LICENSE copyright holder. See
-`TASKS.md`.
+**`npm run rehearse` is the release gate**, and the tag is the only step left: the remote exists, is
+public, and is empty. See `TASKS.md` REL1.
 
 - `README.md` — the consuming story: install, the seven commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.

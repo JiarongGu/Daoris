@@ -3,7 +3,7 @@
 All notable changes to Daoris are recorded here. Entries are written under `## Unreleased` and stamped
 with the version and date at release.
 
-## Unreleased — first release
+## 0.1.0 — 2026-08-05
 
 The first version: doctrine that installs, is checked, and flows back.
 

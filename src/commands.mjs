@@ -42,7 +42,7 @@ export function commandInit({ root, write, packageRoot }) {
   const canon = readCanon(resolveCanonRoot(packageRoot));
 
   writeManifest(root, {
-    source: `github:OWNER/daoris#v${canon.version}`,
+    source: `github:JiarongGu/Daoris#v${canon.version}`,
     packs: [],
     target: DEFAULT_TARGET,
     coreBudgetBytes: 24000,
