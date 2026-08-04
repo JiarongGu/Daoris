@@ -92,13 +92,6 @@ inside Lyntai rather than changes here, which is why they are recorded rather th
   hosting + IPC contracts, from Shenora), `desktop-winforms` (the WinForms shell, from Shenora),
   `durable-jobs` (two repositories). Write each only when a repository is ready to adopt it — a pack that
   no one installs is unvalidated doctrine.
-- [ ] **ADOPT4 — the generated index is now the largest always-loaded file.** Measured on the
-  second-adoption rehearsal: `RULES_INDEX.md` is **6,793 bytes**, larger than any individual rule, and
-  it grows with every skill because a skill's `description` is long by design — that text is the
-  harness's trigger, so it cannot be terse. Skill *bodies* stay free until invoked, but their
-  descriptions are paid for on every session. Worth deciding before the skill set grows further:
-  either a more compact index row for skills, or an explicit budget line for the index so the cost is
-  visible rather than blamed on the rules.
 - [ ] **ADOPT5 — a `library-api-design` vocabulary cluster.** After the tier fix, `doctor` reports four
   of that repository's knowledge documents against canonical `library-api-design` at 42–57%. Unlike the
   skill case these are same-tier and plausibly related — they are all library/API-shaped documents — so

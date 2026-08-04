@@ -40,10 +40,30 @@ function skillRows(root, target, locked) {
     const { meta } = parseFrontmatter(text, SKILL_FIELDS);
     const mark = locked.has(`skills/${file}`) ? '' : ' _(local)_';
     lines.push(
-      `| [${name}](../skills/${file})${mark} | ${meta ? meta.description : '⚠ needs frontmatter'} |`,
+      `| [${name}](../skills/${file})${mark} | ${meta ? summarize(meta.description) : '⚠ needs frontmatter'} |`,
     );
   }
   return lines;
+}
+
+/**
+ * The first sentence, capped.
+ *
+ * A skill's `description` is the harness's TRIGGER text: long by design, because it has to match
+ * against however a person phrases the request. The index is a ROSTER — it answers "what is this
+ * skill", not "should this skill fire" — so copying the trigger whole pays for it twice, once where
+ * the harness reads it and again on every session that loads the always-loaded index. Measured on
+ * the second adoption, the skills table was 46% of an index that had itself become the largest
+ * always-loaded file in the repository.
+ */
+function summarize(description, limit = 110) {
+  const text = description.trim();
+  if (text.length <= limit) return text;
+  // A plain cap on a word boundary, deliberately not sentence detection: "e.g." and "i.e." end a
+  // sentence as far as a regex is concerned, and the first row this shipped on was truncated at one —
+  // which reads as a complete thought that stops making sense rather than as a visible cut.
+  const cut = text.lastIndexOf(' ', limit);
+  return `${text.slice(0, cut > 40 ? cut : limit).trimEnd()}…`;
 }
 
 /**

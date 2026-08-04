@@ -184,6 +184,18 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   Drift now compares bodies rather than whole files. It also correctly refuses to pass while REL2 is
   open, which is the point: the release gate should block on the release blocker.
 
+- [x] **ADOPT4 — the generated index was the largest always-loaded file**
+  ✅ done 2026-08-05 — measured on the second-adoption rehearsal at 6,793 bytes, larger than any rule,
+  with the skills table 46% of it. The cause was paying for a skill's `description` twice: it is the
+  harness's **trigger** text, long by necessity because it must match however a person phrases a
+  request, and the index was copying it whole into a file loaded on every session. The index is a
+  *roster* — it answers "what is this skill", not "should this skill fire" — so it now carries a
+  capped summary and the trigger stays in the skill. This repository's own core fell 19,291 → 18,308
+  bytes on six skills; a repository with more saves proportionally more.
+  Shipped with a bug and fixed in the same change: the first version cut on sentence boundaries and
+  truncated a row at "e.g.", which reads as a complete thought that stops making sense rather than as
+  a visible cut. A plain word-boundary cap has no such trap.
+
 - [x] **CANON4 (part) — `post-feature` canonized**
   ✅ done 2026-08-05 — the four copies looked least alike of any skill surveyed: one is a stack-specific
   checklist (migrations, DI, translation parity, component layering), another a detection procedure over

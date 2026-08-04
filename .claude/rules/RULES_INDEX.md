@@ -25,9 +25,9 @@ Rows marked _(local)_ are this repo's own and are never synced.
 
 | Skill | Use when |
 |---|---|
-| [add-pack](../skills/add-pack/SKILL.md) _(local)_ | Use when adding a new pack to the Daoris canon (a stack-specific set of rules and knowledge, e.g. desktop-app, web-webview, durable-jobs). Covers the layout, the project-agnostic constraint, frontmatter, and the adoption gate. |
-| [caveman](../skills/caveman/SKILL.md) | Terse output mode — strips prose to essentials while keeping every technical detail exact, and stops compressing where compression is dangerous. Use when asked to be brief, concise, or token-efficient, or when invoked directly. Not a style preference; it carries safety carve-outs. |
-| [doc-loader](../skills/doc-loader/SKILL.md) | Load the documents a task actually needs before touching code — the repository's own doc router plus every on-demand knowledge document whose "applies when" matches. Use at the START of any non-trivial task, because on-demand documents are not auto-loaded and an unread match is a missing contract. |
-| [fix-log](../skills/fix-log/SKILL.md) | After landing a non-trivial bug or regression fix, record its root cause, fix, and verification in the repository's fix log. Also use to review past fixes or trace when a behaviour regressed. Use as part of "done", before moving on — not later. |
-| [pattern-finder](../skills/pattern-finder/SKILL.md) | Find the existing exemplar to mirror before writing a new unit that has the same shape as something already in the codebase — a module, a handler, a test, a migration, a tooling script. Use before writing new code, so it reads like the code around it instead of introducing a second convention. |
-| [post-feature](../skills/post-feature/SKILL.md) | Audit a finished feature or fix before proposing a commit — every layer the change touched has its counterpart, the records it made stale are updated, and any reusable pattern it revealed is written down. Use when the implementation looks done. Skip for typos and one-line tweaks. |
+| [add-pack](../skills/add-pack/SKILL.md) _(local)_ | Use when adding a new pack to the Daoris canon (a stack-specific set of rules and knowledge, e.g. desktop-app,… |
+| [caveman](../skills/caveman/SKILL.md) | Terse output mode — strips prose to essentials while keeping every technical detail exact, and stops… |
+| [doc-loader](../skills/doc-loader/SKILL.md) | Load the documents a task actually needs before touching code — the repository's own doc router plus every… |
+| [fix-log](../skills/fix-log/SKILL.md) | After landing a non-trivial bug or regression fix, record its root cause, fix, and verification in the… |
+| [pattern-finder](../skills/pattern-finder/SKILL.md) | Find the existing exemplar to mirror before writing a new unit that has the same shape as something already in… |
+| [post-feature](../skills/post-feature/SKILL.md) | Audit a finished feature or fix before proposing a commit — every layer the change touched has its… |

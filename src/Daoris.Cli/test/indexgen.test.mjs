@@ -69,6 +69,33 @@ test('the index lists skills by directory name and description', () => {
   fx.cleanup();
 });
 
+/**
+ * The index is always-loaded, and a skill's `description` is the harness's TRIGGER text — long by
+ * design, because it has to match against whatever a person asks. Copying it whole into the index
+ * pays for it twice: once where the harness reads it, once on every session that loads the index.
+ * Measured on the second adoption, the skills table was 46% of an index that had become the largest
+ * always-loaded file in the repository.
+ *
+ * The roster needs to say what each skill IS. What it triggers on stays in the skill.
+ */
+test('the index summarizes a skill rather than repeating its whole trigger', () => {
+  const fx = seedRepo();
+  const long = 'Load the documents a task needs before touching code. '
+    + 'Use at the START of any non-trivial task, because on-demand documents are not auto-loaded '
+    + 'and an unread match is a missing contract, which is the failure this exists to prevent.';
+  fx.write('.claude/skills/verbose/SKILL.md', `---\nname: verbose\ndescription: ${long}\n---\n\nSteps.\n`);
+
+  const row = buildIndex({ root: fx.root, target: '.claude', lock: LOCK })
+    .split('\n')
+    .find((line) => line.includes('[verbose]'));
+
+  assert.ok(row, 'the skill must still be listed');
+  assert.match(row, /Load the documents a task needs before touching code/);
+  assert.equal(row.includes('missing contract'), false, 'the trigger tail belongs in the skill');
+  assert.ok(row.length < 200, `row was ${row.length} chars`);
+  fx.cleanup();
+});
+
 test("a repo's own skill is marked local, a canonical one is not", () => {
   const fx = seedRepo();
   const text = buildIndex({ root: fx.root, target: '.claude', lock: LOCK });
