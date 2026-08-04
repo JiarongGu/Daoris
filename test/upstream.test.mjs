@@ -5,7 +5,7 @@ import { makeFixture, captureError } from './_fixture.mjs';
 import { readCanon } from '../src/canon.mjs';
 import { readManifest, readLock } from '../src/config.mjs';
 import { planSync, applySync } from '../src/materialize.mjs';
-import { upstreamFile } from '../src/upstream.mjs';
+import { upstreamFile, upstreamAll } from '../src/upstream.mjs';
 import { readText } from '../src/fsx.mjs';
 import { DaorisError } from '../src/errors.mjs';
 
@@ -75,6 +75,64 @@ test('a local file has nothing to upstream and says so', () => {
   assert.ok(error instanceof DaorisError);
   assert.equal(error.exitCode, 2);
   assert.match(error.message, /local/i);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('upstreamAll promotes every drifted file and leaves clean ones alone', () => {
+  const canonFx = makeFixture('up-all-canon');
+  canonFx.write('canon.json', '{"version":"0.1.0"}');
+  canonFx.write('core/one.md', doc('one'));
+  canonFx.write('core/two.md', doc('two'));
+  canonFx.write('core/three.md', doc('three'));
+
+  const repoFx = makeFixture('up-all-repo');
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));
+  const canon = readCanon(canonFx.root);
+  const manifest = readManifest(repoFx.root);
+  applySync({
+    root: repoFx.root,
+    manifest,
+    canonVersion: canon.version,
+    force: false,
+    plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
+  });
+
+  // Edit two of the three.
+  for (const name of ['one', 'three']) {
+    repoFx.write(
+      `.claude/rules/${name}.md`,
+      `<!-- daoris: core/core/${name}.md @ 0.1.0 -->\n${doc(name)}IMPROVED ${name}.\n`,
+    );
+  }
+
+  const promoted = upstreamAll({
+    root: repoFx.root,
+    manifest: readManifest(repoFx.root),
+    lock: readLock(repoFx.root),
+    canonRoot: canonFx.root,
+  });
+
+  assert.deepEqual(promoted.map((r) => r.source).sort(), ['core/one.md', 'core/three.md']);
+  assert.match(readText(join(canonFx.root, 'core/one.md')), /IMPROVED one/);
+  assert.match(readText(join(canonFx.root, 'core/three.md')), /IMPROVED three/);
+  assert.equal(/IMPROVED/.test(readText(join(canonFx.root, 'core/two.md'))), false);
+
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+test('upstreamAll on a clean repo promotes nothing', () => {
+  const fx = synced();
+  assert.deepEqual(
+    upstreamAll({
+      root: fx.repoFx.root,
+      manifest: readManifest(fx.repoFx.root),
+      lock: readLock(fx.repoFx.root),
+      canonRoot: fx.canonFx.root,
+    }),
+    [],
+  );
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

@@ -76,6 +76,16 @@ export function commandStatus({ root, write, packageRoot }) {
 
   const local = localDocs(root, manifest.target);
   if (local.length) write(`  local         ${local.join(', ')}`);
-  if (!existsSync(canonRoot)) write(`  canon source  unavailable at '${canonRoot}' (check still works)`);
+
+  // status may reach the canon; `check` deliberately may not (D8), which is why
+  // "a newer canon exists" is reported here and never gates a build.
+  if (!existsSync(canonRoot)) {
+    write(`  canon source  unavailable at '${canonRoot}' (check still works)`);
+  } else if (lock) {
+    const shipped = readCanon(canonRoot).version;
+    if (shipped !== lock.canonVersion) {
+      write(`  update        canon ${shipped} available (lock has ${lock.canonVersion}) — run 'daoris sync'`);
+    }
+  }
   return 0;
 }

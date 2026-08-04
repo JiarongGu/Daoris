@@ -52,6 +52,47 @@ test('init refuses to overwrite an existing manifest', () => {
   repoFx.cleanup();
 });
 
+test('status says when the shipped canon is newer than the lock', () => {
+  const canonFx = canonFixture();
+  const repoFx = makeFixture('cmd-status-stale');
+  repoFx.write('daoris.json', '{"source":"s","packs":[]}');
+  repoFx.write(
+    'daoris.lock',
+    JSON.stringify({ version: 1, canonVersion: '0.0.9', source: 's', entries: [] }),
+  );
+  process.env.DAORIS_CANON = canonFx.root;
+
+  const out = [];
+  assert.equal(commandStatus({ root: repoFx.root, write: (s) => out.push(s), packageRoot: '' }), 0);
+  const text = out.join('\n');
+  assert.match(text, /0\.0\.9/);
+  assert.match(text, /0\.1\.0/);
+  assert.match(text, /update available|daoris sync/i);
+
+  delete process.env.DAORIS_CANON;
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+test('status is silent about updates when the lock matches the canon', () => {
+  const canonFx = canonFixture();
+  const repoFx = makeFixture('cmd-status-current');
+  repoFx.write('daoris.json', '{"source":"s","packs":[]}');
+  repoFx.write(
+    'daoris.lock',
+    JSON.stringify({ version: 1, canonVersion: '0.1.0', source: 's', entries: [] }),
+  );
+  process.env.DAORIS_CANON = canonFx.root;
+
+  const out = [];
+  commandStatus({ root: repoFx.root, write: (s) => out.push(s), packageRoot: '' });
+  assert.equal(/update available/i.test(out.join('\n')), false);
+
+  delete process.env.DAORIS_CANON;
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
 test('status reports packs, drift, and local files without failing', () => {
   const canonFx = canonFixture();
   const repoFx = makeFixture('cmd-status');
