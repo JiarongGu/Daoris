@@ -13,18 +13,20 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## Active backlog
 
-_**v0.1 is built and proven** — six commands, 58 tests, 6 core rules + 3 packs, adopted into Lyntai with
-its 1337 tests still green. It is **not released**: two items below block that, and both need an owner
-decision. Everything else here is either a finding from the Lyntai adoption or v0.2 scope._
+_**The tool is built and proven** — seven commands, 72 tests, 6 core rules + 3 packs, adopted into Lyntai
+with its 1337 tests still green. Nothing is published, so development runs at **`0.0.x`** and the first
+release is **`0.1.0`**; the skills layer below lands in it rather than behind a later version boundary.
+Two items need an owner decision before any tag._
 
 ## Part 1 — release blockers (both need an owner decision)
 
 - [ ] **REL1 — the GitHub owner.** `OWNER` is a literal placeholder in the places that ship:
   `src/commands.mjs:36` (what every future `daoris init` writes into a consumer's manifest),
   `daoris.json:2`, `README.md` (install lines + ecosystem links), and Lyntai's `daoris.json:2`. Test
-  fixtures may keep the placeholder. Once decided: replace, add the remote, tag `v0.1.0`, and verify
-  `npx github:<owner>/daoris#v0.1.0 --version` works from a clean directory — the install story is
-  untested until that command runs.
+  fixtures may keep the placeholder. Once decided: replace, add the remote, tag the release, and verify
+  `npx github:<owner>/daoris#<tag> --version` works from a clean directory — the install story is
+  untested until that command runs. `test/version.test.mjs` holds the four live refs in step, so only the
+  owner half is manual.
 - [ ] **REL2 — the LICENSE.** `package.json` declares MIT but there is no `LICENSE` file, and MIT
   requires a named copyright holder. Naming a person in a tracked file is the owner's call.
 
@@ -50,8 +52,8 @@ silently fixed, because each is editorial work on someone's doctrine._
 
 - [ ] **CANON1 — `skills-workflow` is the most-duplicated and most-diverged rule in the family.** It
   appears in five of six repositories at sizes from 1.3 KB to 6.0 KB, which is the strongest canon signal
-  observed so far *and* the clearest evidence of drift. It is deliberately deferred to v0.2 with the rest
-  of skills, because canonizing a workflow rule without canonizing the skills it references would install
+  observed so far *and* the clearest evidence of drift. It is sequenced with the rest of the skills layer
+  in `0.1.0`, because canonizing a workflow rule without canonizing the skills it references would install
   a rule that points at nothing.
 - [ ] **CANON2 — pack candidates with two repositories agreeing.** From the survey: `desktop-app`
   (screenshot hygiene, desktop testing, UI layering — a private sibling pair), `web-webview` (WebView2

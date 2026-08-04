@@ -1,4 +1,4 @@
-<!-- daoris: core/core/no-tmp-for-repo-files.md @ 0.1.0 — canonical; edit via `daoris upstream` -->
+<!-- daoris: core/core/no-tmp-for-repo-files.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 ---
 name: no-tmp-for-repo-files
 applies_when: composing a repository file, or needing a scratch, probe, or dump file

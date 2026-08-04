@@ -1,4 +1,4 @@
-<!-- daoris: core/core/sensitive-info.md @ 0.1.0 — canonical; edit via `daoris upstream` -->
+<!-- daoris: core/core/sensitive-info.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 ---
 name: sensitive-info
 applies_when: writing any tracked file or commit message, or rewriting history

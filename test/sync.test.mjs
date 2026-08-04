@@ -81,6 +81,38 @@ test('a locally-drifted file is refused without --force and overwritten with it'
   fx.repoFx.cleanup();
 });
 
+test('a canon improvement reaches an untouched repo without --force', () => {
+  const fx = seed();
+  run(fx);
+  // The rule got better upstream. The repo did nothing at all.
+  fx.canonFx.write('core/sensitive-info.md', doc('sensitive-info').replace('Body of', 'IMPROVED body of'));
+  run(fx);
+  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /IMPROVED body of sensitive-info/);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('a canon version bump alone is not drift', () => {
+  const fx = seed();
+  run(fx);
+  fx.canonFx.write('canon.json', '{"version":"0.2.0"}');
+  const canon = readCanon(fx.canonFx.root);
+  const plan = planSync({
+    root: fx.repoFx.root,
+    manifest: readManifest(fx.repoFx.root),
+    canon,
+    lock: readLock(fx.repoFx.root),
+  });
+  // Only the provenance header moved. Reporting that as "you edited this" would
+  // accuse every consumer of an edit nobody made.
+  assert.deepEqual(plan.drifted, []);
+  assert.deepEqual(plan.collisions, []);
+  run(fx);
+  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /@ 0\.2\.0 /);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
 test('an unchanged file is planned as unchanged, not rewritten', () => {
   const fx = seed();
   run(fx);

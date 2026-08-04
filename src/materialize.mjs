@@ -31,14 +31,21 @@ export function planSync({ root, manifest, canon, lock }) {
     let state = 'create';
     if (existsSync(abs)) {
       const onDisk = sha256(readText(abs));
-      if (onDisk !== digest) {
-        // In the lock: the repo edited a file daoris owns. Not in the lock: the
-        // repo wrote this file itself, before it ever adopted daoris. The second
-        // is the adoption case, and silently overwriting it would destroy work
-        // the tool never had any claim to.
-        (entry ? drifted : collisions).push(file.target);
-      }
       state = onDisk === digest ? 'unchanged' : 'update';
+
+      if (entry) {
+        // In the lock, so compare against what daoris last WROTE, not against
+        // what the canon says now. A file still matching its lock entry is
+        // untouched, and the difference is an upstream improvement — refusing
+        // that would break the very direction the tool exists to serve, and
+        // would accuse every consumer of an edit nobody made.
+        if (onDisk !== entry.sha256) drifted.push(file.target);
+      } else if (onDisk !== digest) {
+        // Not in the lock: the repo wrote this file itself, before it ever
+        // adopted daoris. Silently overwriting it would destroy work the tool
+        // never had any claim to.
+        collisions.push(file.target);
+      }
     }
     writes.push({ ...file, content, sha256: digest, state });
   }

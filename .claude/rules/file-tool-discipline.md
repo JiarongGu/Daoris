@@ -1,4 +1,4 @@
-<!-- daoris: core/core/file-tool-discipline.md @ 0.1.0 — canonical; edit via `daoris upstream` -->
+<!-- daoris: core/core/file-tool-discipline.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 ---
 name: file-tool-discipline
 applies_when: inspecting files, or running a destructive or irreversible command

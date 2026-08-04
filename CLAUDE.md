@@ -17,15 +17,21 @@ cultivation.
 
 ## Current state
 
-**v0.1 built and proven; not yet released.** Seven commands, 66 tests, canon of 6 core rules + 3 packs.
+**Built and proven; nothing published.** Seven commands, 72 tests, canon of 6 core rules + 3 packs.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
 
-**Release is blocked on two owner decisions** — the GitHub account (`OWNER` is a literal placeholder in
-`src/commands.mjs`, both manifests, and the README) and the LICENSE copyright holder. See `TASKS.md`.
+**Versions: development is `0.0.x`; the first release is `0.1.0`.** Nothing is tagged, so there is no
+compatibility to preserve and no reason to spend a version boundary between two unreleased states — the
+skills layer lands *in* the first release. `test/version.test.mjs` holds `package.json`, `canon/canon.json`,
+`daoris.json` and the README refs in step.
 
-- `README.md` — the consuming story: install, the six commands, the manifest, the three layers.
+**The first release still needs two owner decisions** — the GitHub account (`OWNER` is a literal
+placeholder in `src/commands.mjs`, both manifests, and the README) and the LICENSE copyright holder. See
+`TASKS.md`.
+
+- `README.md` — the consuming story: install, the seven commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
 - `docs/DECISIONS.md` — the numbered decision log (D1–D12) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).

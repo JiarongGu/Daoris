@@ -32,6 +32,11 @@ The first version: doctrine that installs, is checked, and flows back.
   repository edited something Daoris owns. A file *not* in the lock at a canonical path is a *collision* —
   the repository wrote it before adopting Daoris. Both stop the sync; they carry different advice,
   because they are different mistakes.
+- **Drift is measured against the lock, not against the current canon.** Comparing on-disk content to
+  freshly-rendered canonical content made "the repository edited this" and "the canon improved" the same
+  observation, so an improved rule could not propagate: every consumer's `sync` exited 1 over an edit
+  nobody made. Now the lock's recorded hash answers "did this repository change it" and the canon answers
+  "is there something new to install." See `docs/DECISIONS.md` D13.
 - **Retirement.** A file removed from the canon is removed from every repository on the next sync — the
   one thing copy-paste can never do.
 - **A one-line provenance header** on every materialized file, because an agent that opens a rule needing

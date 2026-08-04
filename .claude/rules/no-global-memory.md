@@ -1,4 +1,4 @@
-<!-- daoris: core/core/no-global-memory.md @ 0.1.0 — canonical; edit via `daoris upstream` -->
+<!-- daoris: core/core/no-global-memory.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 ---
 name: no-global-memory
 applies_when: about to save a project fact to the assistant's global or cross-project memory

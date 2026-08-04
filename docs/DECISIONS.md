@@ -127,3 +127,26 @@ lock, so a repository's *first* sync silently overwrote a rule it had written it
 no warning. Two of the repositories due to adopt already have exactly such a file. The two cases look
 identical to a hash check and are completely different mistakes: one is "you edited my file", the other
 is "I am about to destroy yours".
+
+## D13 — Drift is measured against the lock, not against the current canon (2026-08-04)
+
+**Decision.** For a file already in the lock, `sync` compares what is on disk to the hash the lock
+recorded — what Daoris last *wrote*. A difference between the file and what the canon says *now* is an
+update, not drift.
+
+**Why.** The original check compared on-disk content to the newly-rendered canonical content, which made
+the two indistinguishable. The consequence was the worst one available to this tool: **an improved
+canonical rule could not propagate.** Every consuming repository's `sync` would exit 1 accusing it of a
+local edit and advising `daoris upstream`, for an edit nobody made — and the only way through was
+`--force`, documented as "discard your local edit." One-way push at least distributes; this distributed
+nothing.
+
+Found by bumping the version to `0.0.1`, which changes only the provenance header: all six of Daoris's
+own rules were reported `DRIFTED` while byte-identical to what the previous canon wrote. Untested because
+every drift test edited the repository's copy first — the clean-repo case, which is the common one, had
+no coverage at all.
+
+**Consequence.** The three states are now distinguished by what they are compared against: on-disk versus
+**lock** answers "did this repository change it", on-disk versus **canon** answers "is there something new
+to install", and absence from the lock answers "is this file even ours" (D5, D12). Two tests hold it: a
+canon improvement reaching an untouched repository, and a version bump alone not reading as drift.

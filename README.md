@@ -5,8 +5,8 @@ materialized into each repository, kept from drifting — and improved from wher
 discovered.
 
 道衍 is *propagation and unfolding*: doctrine flows outward into the repositories, and refinements found
-in a repository flow back and evolve the canon. Both directions ship in v0.1, because a one-way push
-would be distribution, not cultivation.
+in a repository flow back and evolve the canon. Both directions ship in the first release, because a
+one-way push would be distribution, not cultivation.
 
 ## Ecosystem
 
@@ -32,10 +32,13 @@ differed in 12 of 19 files.
 Nothing to install. Every command runs through `npx` against a pinned reference:
 
 ```sh
-npx github:OWNER/daoris#v0.1.0 init     # write daoris.json, report available packs
-npx github:OWNER/daoris#v0.1.0 sync     # materialize the doctrine, write daoris.lock
-npx github:OWNER/daoris#v0.1.0 check    # the gate — offline, exit 1 on drift
+npx github:OWNER/daoris#v0.0.1 init     # write daoris.json, report available packs
+npx github:OWNER/daoris#v0.0.1 sync     # materialize the doctrine, write daoris.lock
+npx github:OWNER/daoris#v0.0.1 check    # the gate — offline, exit 1 on drift
 ```
+
+> **Not yet published.** Daoris is at `0.0.x` — in development, no tag pushed, and `OWNER` is still a
+> placeholder. The first release is `0.1.0`; the reference above moves with the version.
 
 The canon ships **inside the package**, so the pinned reference is itself the version pin — no command
 ever fetches anything, and `check` therefore works with no network at all.
@@ -64,7 +67,7 @@ duplication it warns about.
 
 ```json
 {
-  "source": "github:OWNER/daoris#v0.1.0",
+  "source": "github:OWNER/daoris#v0.0.1",
   "packs": ["dotnet-library"],
   "target": ".claude",
   "coreBudgetBytes": 24000

@@ -1,4 +1,4 @@
-<!-- daoris: core/core/persist-working-state.md @ 0.1.0 — canonical; edit via `daoris upstream` -->
+<!-- daoris: core/core/persist-working-state.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 ---
 name: persist-working-state
 applies_when: any multi-step task — at each decision, finding, or milestone

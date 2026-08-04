@@ -209,13 +209,18 @@ carried files is described as a pre-wipe history backup and may be the only copy
 
 ## 11. Out of scope for v0.1
 
+> **Amended 2026-08-04.** Nothing was ever published, so the version boundaries below buy nothing:
+> development is `0.0.x` and the first release is `0.1.0`. **Skills move into that first release** — see
+> `ROADMAP.md`. The rest of this section stands, with its "v0.2" naming shifted one place down.
+
 - **Skills.** They carry frontmatter the harness interprets and often need per-repo parameterization (a build
-  command, a package layout). That is a design problem, not a copy — v0.2.
+  command, a package layout). That is a design problem, not a copy — deferred past the initial build,
+  now in scope for the first release.
 - **Owning regions of `CLAUDE.md`.** It is the most repo-specific file in every project, and partial ownership
   of a hand-written file is where sync tools start fighting their users.
 - **The centralized knowledge service (cross-repo RAG).** A separate sub-project with its own spec; it would
   build on Lyntai's semantic memory, embedder seam, vector store and MCP hosting rather than reinventing them.
-- **The harness layer — gates and devtools.** Named here as the intended **v0.2**, because the
+- **The harness layer — gates and devtools.** The phase after the first release, because the
   observation behind it is the same one that motivates v0.1: every repo carries a hand-copied
   `devtools` script, and those copies have diverged further than the documents have. The shape follows
   this design one level down — gates get **declared, not copied**. The manifest grows a `verify` block;

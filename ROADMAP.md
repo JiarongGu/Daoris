@@ -9,23 +9,30 @@ a real consumer, not on a calendar.
 
 ---
 
-## v0.1 — doctrine that installs, is checked, and flows back — **built, not yet released**
+## Versions
 
-Six commands, a canon of 6 core rules and 3 packs, 58 tests. Core installs everywhere; packs are named in
-the manifest; the repository's own files are invisible to the tool. Drift and adoption collisions are
+Nothing has been published, so there is no released version to preserve compatibility with. **Development
+is `0.0.x`; the first release is `0.1.0`.** Work that was once scoped behind a "v0.2" boundary simply
+lands in the first release instead — a version boundary between two unreleased states is bookkeeping
+nobody consumes.
+
+## 0.0.x — doctrine that installs, is checked, and flows back — **built**
+
+Seven commands, a canon of 6 core rules and 3 packs, 72 tests. Core installs everywhere; packs are named
+in the manifest; the repository's own files are invisible to the tool. Drift and adoption collisions are
 distinguished by provenance and both refuse. Retirement removes a rule from every repository at once.
 `check` is offline by construction and gates on the always-loaded byte budget.
 
 Proven by adoption into Lyntai rather than by assertion: four collisions and a renamed twin surfaced, its
-1337 tests stayed green, and the budget gate caught a real 45% overage on first contact.
+1337 tests stayed green, and the budget gate caught a real 45% overage on first contact. The version bump
+to `0.0.1` then surfaced D13 — drift was measured against the wrong side, so an improved canonical rule
+could not propagate at all.
 
-Release is blocked only on the GitHub owner and the LICENSE holder — see `TASKS.md` Part 1.
+## 0.1.0 — the first release: skills, and the workflow rule that references them
 
-## v0.2 — skills, and the workflow rules that reference them
-
-Skills were held out of v0.1 for a reason: they carry frontmatter the harness interprets, and they often
-need per-repository parameterization (a build command, a package layout). That is a design problem, not a
-copy.
+Skills were held out of the initial build for a reason: they carry frontmatter the harness interprets,
+and they often need per-repository parameterization (a build command, a package layout). That is a design
+problem, not a copy — and it is the last one standing between here and a release.
 
 - **The parameterization question first.** A skill that says "run the build" needs to know how, and the
   answer differs per repository. Either skills stay parameter-free and delegate to a repository-local
@@ -35,8 +42,10 @@ copy.
   family, and unshippable until the skills it references are canonical.
 - **Then the skills themselves**, starting with the ones that already exist in three or more
   repositories.
+- **Then the two release blockers** — the GitHub owner and the LICENSE holder (`TASKS.md` Part 1). Both
+  need an owner decision, and neither is engineering work.
 
-## v0.3 — the harness layer: gates, not scripts
+## 0.2 — the harness layer: gates, not scripts
 
 The same pathology one level down. Every repository carries a hand-copied devtools script, and those
 copies have diverged further than the documents had. The shape follows this design: gates are
@@ -50,7 +59,7 @@ copies have diverged further than the documents had. The shape follows this desi
   self-defeating for a tool whose purpose is reducing per-repository overhead.
 - **.NET earns its place only where the compiler is required** — see the long-term section below.
 
-## v0.4 — the centralized knowledge service
+## 0.3 — the centralized knowledge service
 
 A service every agent session can query: cross-repository semantic recall over doctrine, decisions, and
 past task outcomes. Deliberately *after* the canon exists, because indexing content that is still
