@@ -1,0 +1,16 @@
+# Private, machine-specific, or otherwise never-tracked material.
+# `local/` holds absolute paths and private sibling names — it must never enter history.
+local/
+
+node_modules/
+
+# Scratch: fixtures, probes, dumps. Never OS temp (see the doctrine's no-tmp rule).
+_fixtures/
+devtools/_*
+
+# Inherited devtools build output
+**/bin/
+**/obj/
+
+*.log
+.DS_Store
