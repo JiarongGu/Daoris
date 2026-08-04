@@ -1,14 +1,19 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { listMarkdown } from './fsx.mjs';
+import { listFiles, listMarkdown } from './fsx.mjs';
 import { readCanon, resolveCanonRoot } from './canon.mjs';
 import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.mjs';
+import { planChanges } from './materialize.mjs';
 import { inspect } from './drift.mjs';
 import { DaorisError } from './errors.mjs';
 
 const DEFAULT_TARGET = '.claude';
 
-/** Everything under the target dir that the lock does not claim is this repo's own. */
+/**
+ * Everything under the target dir that the lock does not claim is this repo's
+ * own. Skills count: a repo's own skill is exactly as invisible to the tool as
+ * its own rule, and just as much worth naming before a first sync.
+ */
 function localDocs(root, target) {
   const locked = lockIndex(readLock(root));
   const found = [];
@@ -17,6 +22,9 @@ function localDocs(root, target) {
       if (file === 'RULES_INDEX.md') continue;
       if (!locked.has(`${tier}/${file}`)) found.push(`${tier}/${file}`);
     }
+  }
+  for (const file of listFiles(join(root, target, 'skills'))) {
+    if (file.endsWith('/SKILL.md') && !locked.has(`skills/${file}`)) found.push(`skills/${file}`);
   }
   return found;
 }
@@ -82,9 +90,20 @@ export function commandStatus({ root, write, packageRoot }) {
   if (!existsSync(canonRoot)) {
     write(`  canon source  unavailable at '${canonRoot}' (check still works)`);
   } else if (lock) {
-    const shipped = readCanon(canonRoot).version;
-    if (shipped !== lock.canonVersion) {
-      write(`  update        canon ${shipped} available (lock has ${lock.canonVersion}) — run 'daoris sync'`);
+    const canon = readCanon(canonRoot);
+    if (canon.version !== lock.canonVersion) {
+      write(
+        `  update        canon ${canon.version} available (lock has ${lock.canonVersion}) — run 'daoris sync'`,
+      );
+      // Naming what moved is the difference between a prompt to act and a
+      // prompt to investigate. All of it comes from the lock, so it stays offline.
+      const changes = planChanges({ root, manifest, canon, lock });
+      for (const target of changes.changed) write(`                  changed  ${target}`);
+      for (const target of changes.added) write(`                  new      ${target}`);
+      for (const target of changes.retired) write(`                  retired  ${target}`);
+      if (!changes.changed.length && !changes.added.length && !changes.retired.length) {
+        write('                  (version only — no document changed)');
+      }
     }
   }
   return 0;

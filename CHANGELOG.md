@@ -74,7 +74,18 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Seven core rules**, each confirmed by appearing independently in multiple repositories in the family:
   `sensitive-info`, `task-lifecycle`, `no-tmp-for-repo-files`, `file-tool-discipline`,
   `persist-working-state`, `no-global-memory`, `skills-workflow`.
-- **Two core skills**, `doc-loader` and `pattern-finder`, each present in six repositories.
+- **Four core skills.** `doc-loader` and `pattern-finder` (six repositories each), `fix-log` (three, whose
+  copies sit within 100 bytes of one another, so the invariant was nearly the whole file), and `caveman`
+  (five) — canonized for its **carve-outs** rather than its terseness: never compress a destructive or
+  irreversible action, a security finding, or an order-sensitive sequence, and never write a durable
+  artefact in the mode at all. A compressed warning reads as fluent English right until someone approves
+  it without registering the consequence.
+- **`status` names what a pending update would change** — `changed` / `new` / `retired` per file, instead
+  of only reporting that a newer canon exists. Computed from the lock, so it stays offline; the
+  provenance header is excluded, so a pure version bump reports "version only" rather than listing every
+  file and training people to skip the list.
+- **A repository's own skills are reported as local** by `init` and `status`, as its own rules already
+  were.
 - **Three packs.** `windows-machine` (traps that succeed wrongly rather than failing),
   `dotnet-library` (package boundaries, naming, DI variation points, shipping registries, and API design),
   `storage-sql` (type affinity on read, migration numbering, full-text search for scripts without word

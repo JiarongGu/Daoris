@@ -50,24 +50,12 @@ silently fixed, because each is editorial work on someone's doctrine._
 
 ## Part 3 — canon growth
 
-- [ ] **CANON4 — the discovery trio is two-thirds canonized; the rest of the frequent skills are not.**
-  From the twelve-repository survey (`local/`, untracked): `post-feature` appears in 4, `fix-log` in 3,
-  and a six-strong `doc-update-*` / `doc-optimize` / `doc-monitor` / `doc-cleanup` family in 3. Each needs
-  the same treatment `doc-loader` got — extract the invariant procedure, leave the routing content local.
-  `fix-log` is the strongest candidate: its three copies are within 100 bytes of each other, so the
-  invariant is nearly the whole file.
-- [ ] **CANON5 — `caveman` is a core skill candidate, at five repositories.** _Re-analyzed 2026-08-04;
-  the first reading, that it belonged in global memory, was wrong._ It is not a taste — it is an output
-  protocol with a measurable goal (token cost) and **safety carve-outs earned the hard way**: never
-  compress a destructive-action warning or an irreversible-action confirmation, never compress a
-  multi-step sequence where fragment order risks a misread, never abbreviate an identifier, a path, or a
-  commit message. Those carve-outs are the canonical part, and they are precisely the "trap that succeeds
-  wrongly" that canon-authoring prizes — a compressed security warning renders perfectly and is still
-  wrong. Global memory would strip exactly them: a fresh clone would get terseness without the guardrails.
-  The five copies split into a conservative variant (explicit invoke only, gate preserved) and a
-  persistent one (intensity levels, classical-Chinese modes); canonize the protocol and the carve-outs,
-  leave intensity presets local. `no-global-memory` has been sharpened with the distinguishing test —
-  would a fresh clone be defective without it — and promoted back into the canon.
+- [ ] **CANON4 — frequent skills still to canonize.** From the twelve-repository survey (`local/`,
+  untracked), and after `fix-log` landed: `post-feature` appears in 4, and a `doc-update-*` /
+  `doc-optimize` / `doc-monitor` / `doc-cleanup` family in 3. Each needs the same treatment `doc-loader`
+  got — extract the invariant procedure, leave the routing content local. The `doc-*` family is worth
+  weighing against a generated-wiki tool first (D16): if a generator maintains those documents, a skill
+  for hand-maintaining them is doctrine for the wrong workflow.
 - [ ] **CANON6 — `scripts-live-in-repo` is a merged renamed twin of two core rules.** Present in 3
   repositories; its first half is canonical `no-tmp-for-repo-files` and its second half is canonical
   `file-tool-discipline`. No new core rule — but those repositories will collide on adoption, and the
@@ -89,11 +77,11 @@ silently fixed, because each is editorial work on someone's doctrine._
   "multiple developers" by never becoming a service: doctrine is a tracked file, so a clone carries it,
   review touches it, and a move preserves it — the substrate solves the problem, which is exactly why
   a hosted shared workspace would be worse here (accounts, outside review, does not survive the tool).
-  What is genuinely thin is **coordination**: when a canon change lands, a consuming repository learns
-  about it only by someone running `status`, and there is no per-consumer account of *what* changed or
-  why. Options, cheapest first: have `status` name the changed files rather than just reporting that a
-  newer canon exists; let `sync` print the canon's changelog entries between the locked version and the
-  new one. Neither needs a network — the canon ships in the package (D11). Do not build notification. Retirement removes a file and creation adds one, so a canonical
+  What is genuinely thin is **coordination**. _`status` now names the changed files (done 2026-08-05);
+  what remains is the **why**._ A consumer sees `changed rules/sensitive-info.md` and still has to guess
+  what moved and whether it matters. Next cheapest step: ship a per-file or per-version note in the canon
+  that `sync` and `status` can print between the locked version and the new one. Stays offline — the
+  canon ships in the package (D11). Do not build notification. Retirement removes a file and creation adds one, so a canonical
   file that is *renamed* upstream lands in consumers as a delete plus an add — losing nothing, but also
   telling the consumer nothing about why. A `renamedFrom` field in `pack.json` would let the plan say
   "renamed" instead.

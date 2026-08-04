@@ -134,6 +134,30 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   became a table in `RULES_INDEX.md` instead. The hardest parameterization case disappeared rather than
   being parameterized.
 
+- [x] **CANON5 — `caveman` is a core skill candidate, at five repositories** _(was: mis-filed doctrine)_
+  ✅ done 2026-08-05 — the first reading, that it belonged in the assistant's global memory as a
+  communication preference, was **wrong**, and correcting it produced the better rule. It is an output
+  protocol, and its **carve-outs** are the canonical part: never compress a destructive or irreversible
+  action, a security finding, or an order-sensitive sequence; never write a durable artefact in the mode
+  at all. Global memory would have stripped exactly those — a fresh clone would inherit the terseness
+  without the guardrails. `no-global-memory` gained the distinguishing test that fell out of it (would a
+  fresh clone be defective without this?) and was promoted back through `upstream`, which is what exposed
+  the return path still demanding `--force`.
+
+- [x] **CANON4 (part) — `fix-log` canonized**
+  ✅ done 2026-08-05 — three copies within 100 bytes of one another, so the invariant really was nearly
+  the whole file; only the log's location and the sibling references were local. Written to say that the
+  value is the *mechanism*, which version control cannot supply: a diff shows `<` became `<=` and never
+  shows that the boundary was wrong because the timestamp was inclusive.
+
+- [x] **TOOL4 (part) — `status` names what a pending update would change**
+  ✅ done 2026-08-05 — the idea came from reading how a generated-wiki tool stays fresh (it diffs commits
+  since its last run). The lock is a better marker than commit history: it records a per-file hash, so
+  the answer is exact and survives a shallow clone. Bodies are compared with the provenance header
+  stripped, so a pure version bump reports "version only" instead of listing every file — a list that is
+  always long is a list nobody reads. Also fixed `init`/`status` not reporting a repository's own skills
+  as local.
+
 ## Part 4 — earlier release prep
 
 - [x] **T16 — Release prep**

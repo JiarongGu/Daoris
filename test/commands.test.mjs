@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { makeFixture, captureError } from './_fixture.mjs';
 import { readManifest } from '../src/config.mjs';
 import { commandInit, commandStatus } from '../src/commands.mjs';
+import { readCanon } from '../src/canon.mjs';
+import { planSync, applySync } from '../src/materialize.mjs';
 import { DaorisError } from '../src/errors.mjs';
 
 const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\nx\n`;
@@ -87,6 +89,47 @@ test('status is silent about updates when the lock matches the canon', () => {
   const out = [];
   commandStatus({ root: repoFx.root, write: (s) => out.push(s), packageRoot: '' });
   assert.equal(/update available/i.test(out.join('\n')), false);
+
+  delete process.env.DAORIS_CANON;
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+/**
+ * "A newer canon exists" is not actionable on its own. The lock already records
+ * a per-file hash, so what actually changed is computable offline — no network
+ * and no git. The provenance header is excluded deliberately: a version bump
+ * rewrites every header, and reporting all of them as changes is noise that
+ * trains people to stop reading the list.
+ */
+test('status names what changed, ignoring a pure version bump', () => {
+  const canonFx = canonFixture();
+  const repoFx = makeFixture('cmd-status-changes');
+  repoFx.write('daoris.json', '{"source":"s","packs":["win"]}');
+  process.env.DAORIS_CANON = canonFx.root;
+
+  // Sync, then move the canon on: one rule reworded, one rule added.
+  const manifest = readManifest(repoFx.root);
+  const before = readCanon(canonFx.root);
+  applySync({
+    root: repoFx.root,
+    manifest,
+    canonVersion: before.version,
+    force: false,
+    plan: planSync({ root: repoFx.root, manifest, canon: before, lock: null }),
+  });
+
+  canonFx.write('canon.json', '{"version":"0.2.0"}');
+  canonFx.write('core/rules/sensitive-info.md', `${doc('sensitive-info')}REWORDED\n`);
+  canonFx.write('core/rules/task-lifecycle.md', doc('task-lifecycle'));
+
+  const out = [];
+  commandStatus({ root: repoFx.root, write: (s) => out.push(s), packageRoot: '' });
+  const text = out.join('\n');
+  assert.match(text, /changed\s+rules\/sensitive-info\.md/);
+  assert.match(text, /new\s+rules\/task-lifecycle\.md/);
+  // gotchas.md is untouched — only its header version moved.
+  assert.equal(/gotchas/.test(text), false, 'a header-only difference is not a change');
 
   delete process.env.DAORIS_CANON;
   canonFx.cleanup();

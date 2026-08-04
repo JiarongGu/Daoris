@@ -54,10 +54,24 @@
     },
     {
       "pack": "core",
+      "source": "core/skills/caveman/SKILL.md",
+      "target": "skills/caveman/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "696cae3e4e1b9282e0c6e2864c0c82cb4aad668e7695511c84e26e796be61079"
+    },
+    {
+      "pack": "core",
       "source": "core/skills/doc-loader/SKILL.md",
       "target": "skills/doc-loader/SKILL.md",
       "canonVersion": "0.0.1",
       "sha256": "3e4e1d55527a270e0ec7ba8bc8410328572abef8bf5ef3dc5f83bb471f139c37"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/fix-log/SKILL.md",
+      "target": "skills/fix-log/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "3d31678e3ad8237a409524aa0d96b10e68b3a8935dc3a3bf443c05348d36275f"
     },
     {
       "pack": "core",

@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.mjs';
-import { makeHeader, withHeader } from './document.mjs';
+import { makeHeader, stripHeader, withHeader } from './document.mjs';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.mjs';
 import { lockIndex, readLock, readManifest, writeLock } from './config.mjs';
 import { buildIndex, writeIndex } from './indexgen.mjs';
@@ -64,6 +64,41 @@ export function planSync({ root, manifest, canon, lock }) {
   const wanted = new Set(selected.map((file) => file.target));
   const deletes = [...locked.keys()].filter((target) => !wanted.has(target));
   return { writes, deletes, drifted, collisions };
+}
+
+/**
+ * What actually changed in the doctrine since this repo last synced.
+ *
+ * Computed from the lock and the shipped canon, so it needs no network and no
+ * version control — the lock already records a per-file hash, which is a better
+ * marker than "commits since last run" because it survives a shallow clone.
+ *
+ * Bodies are compared with the provenance header stripped: a version bump
+ * rewrites every header, and listing all of them as changes is noise that
+ * teaches people to stop reading the list. A file the repo has edited itself is
+ * skipped rather than guessed at — that is drift, and it is reported as drift.
+ */
+export function planChanges({ root, manifest, canon, lock }) {
+  const locked = lockIndex(lock);
+  const selected = selectFiles(canon, manifest.packs);
+  const added = [];
+  const changed = [];
+
+  for (const file of selected) {
+    const entry = locked.get(file.target);
+    if (!entry) {
+      added.push(file.target);
+      continue;
+    }
+    const abs = join(root, manifest.target, file.target);
+    if (!existsSync(abs)) continue;
+    const onDisk = readText(abs);
+    if (sha256(onDisk) !== entry.sha256) continue;
+    if (stripHeader(onDisk) !== readText(join(canon.root, file.source))) changed.push(file.target);
+  }
+
+  const wanted = new Set(selected.map((file) => file.target));
+  return { added, changed, retired: [...locked.keys()].filter((t) => !wanted.has(t)) };
 }
 
 export function applySync({ root, manifest, plan, canonVersion, force }) {

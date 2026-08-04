@@ -52,7 +52,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `check` | Drift, staleness, index freshness, core budget. **Offline.** Exit 1 on any failure |
 | `upstream <file>` | Promotes a locally-improved canonical file back into the canon |
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
-| `status` | Human summary: packs, versions, drift, local files, available updates |
+| `status` | Human summary: packs, versions, drift, local files, and what a pending update would change |
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
