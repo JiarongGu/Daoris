@@ -8,6 +8,18 @@ discovered.
 in a repository flow back and evolve the canon. Both directions ship in v0.1, because a one-way push
 would be distribution, not cultivation.
 
+## Ecosystem
+
+Three public projects, deliberately independent:
+
+| | |
+|---|---|
+| [Lyntai](https://github.com/OWNER/Lyntai) | LLM cognition — providers, routing, memory, evaluation |
+| [Shenora](https://github.com/OWNER/Shenora) | Desktop runtime — the shell an application is built in |
+| **Daoris** | Engineering doctrine — how the work itself is done |
+
+Daoris takes no dependency on either. It is the only one of the three that installs *into* the others.
+
 ## The problem
 
 The same doctrine gets independently re-derived in every repository, and the copies diverge. A rule that

@@ -47,5 +47,6 @@ The first version: doctrine that installs, is checked, and flows back.
 ### Proven
 
 - Daoris carries its own manifest and syncs core into its own `.claude/`; a test asserts it stays clean.
-- Adopted into a released .NET library sibling: 4 collisions surfaced and resolved deliberately, 3 packs
-  installed, its own 1337 tests still green — and the budget gate immediately caught a real 45% overage.
+- Adopted into **Lyntai** (a released .NET library): 4 collisions surfaced and resolved deliberately, a
+  renamed twin found, 3 packs installed, its own 1337 tests still green — and the budget gate immediately
+  caught a real 45% overage on first contact.
