@@ -290,6 +290,37 @@ the offline guarantee, and whether the service needs hosting at all — a local-
 MCP would answer most of the need without a deployment or a privacy boundary. Each is recorded as an
 open question in the relevant `src/Daoris.*/README.md`, written before any code.
 
+## D23 — One harness is supported; the others are detected, not guessed at (2026-08-05)
+
+**Decision.** Daoris targets the **Claude Code** harness, and says so. Other harnesses are **detected
+and reported** — never partially generated. A second implementation gets written the day a repository
+actually adopts one, and not before.
+
+**Why.** Every tier decision in this tool is one harness's behaviour rather than a universal truth.
+`rules/` is always-loaded and `knowledge/` is not because that harness decides by path (D7); a skill's
+`description` is a trigger because that harness parses it; the provenance header sits *under* the
+frontmatter because that harness needs the frontmatter at byte 0 (D14). None of that is true of a
+harness that reads `AGENTS.md`.
+
+**And the failure is silent, which is what makes it worth a guard.** Install this tree in a repository
+whose agent reads a different file and every document is present, correct, and never loaded. There is
+no error, no missing file, and nothing to notice — the worst shape a failure can take. So `analyze`
+reports which harness a repository shows signs of, names the evidence, and states plainly that what
+Daoris installs will be invisible to the others.
+
+**A contract check for the same reason.** `verifyHarnessContract` checks only the things that fail
+silently: a skill without frontmatter installs and never fires; a skill file outside a skill directory
+can never be invoked; a rule nested one level down is simply not read. Anything that would fail loudly
+needs no check, because the failure is its own report.
+
+**Rejected:** guessing at a translation into another layout. A half-generated `AGENTS.md` would be
+doctrine nobody chose, in a format nobody verified, and it would look like support — which is worse
+than an honest gap, because an honest gap gets fixed the day it is hit.
+
+**Consequence.** This is the seam a second harness grows from, and building it now would be building
+for a consumer that does not exist — the same reasoning that keeps a pack unwritten until a repository
+is ready to install it.
+
 ## D21 — The knowledge service is local-first, with sharing as configuration (2026-08-05)
 
 **Decision.** One service, two modes selected by configuration rather than by build: **local** (the

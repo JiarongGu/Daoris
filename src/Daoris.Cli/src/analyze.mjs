@@ -5,6 +5,7 @@ import { withHeader, makeHeader } from './document.mjs';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.mjs';
 import { lockIndex, readLock, readManifest } from './config.mjs';
 import { significantTokens, containment } from './twins.mjs';
+import { harnessVerdict, verifyHarnessContract } from './harness.mjs';
 
 const DEFAULT_TARGET = '.claude';
 const TIERS = ['rules', 'knowledge', 'skills'];
@@ -178,6 +179,8 @@ export function analyze({ root, canon, packs, target, budgetLimit, lock = null }
   const { collisions, updates } = findCollisions(root, target, canon, packs, canon.version, locked);
   return {
     target,
+    harness: harnessVerdict(root),
+    contract: verifyHarnessContract(root, target),
     existing,
     suggested: suggestPacks(root, canon),
     collisions,
@@ -220,6 +223,27 @@ export function commandAnalyze({ root, argv, write, packageRoot }) {
     report.existing.rules.length + report.existing.knowledge.length + report.existing.skills.length;
 
   write(`daoris: analysing '${root}' against canon ${canon.version}`);
+  write('');
+
+  // Which harness this repository is for, before anything about what would be installed. Daoris
+  // targets one, and a tree installed for a different one loads nothing — silently, with every file
+  // present and correct.
+  const { supported, others } = report.harness;
+  if (supported.length) {
+    write(`  harness         ${supported.map((h) => h.name).join(', ')} — supported`);
+  } else {
+    write('  harness         none detected — daoris installs the Claude Code layout');
+  }
+  if (others.length) {
+    write(`  ALSO SEEN       ${others.map((h) => `${h.name} (${h.evidence.join(', ')})`).join('; ')}`);
+    write('                  daoris does not generate those layouts. What it installs will be');
+    write('                  invisible to them — present, correct, and never loaded.');
+  }
+  if (report.contract.length) {
+    write('');
+    write('  contract problems — these fail SILENTLY, so they are worth fixing first:');
+    for (const problem of report.contract) write(`    ${problem}`);
+  }
   write('');
   write(`  already here    ${report.existing.rules.length} rule(s), ` +
         `${report.existing.knowledge.length} knowledge, ${report.existing.skills.length} skill(s)`);

@@ -70,7 +70,19 @@ inside Lyntai rather than changes here, which is why they are recorded rather th
   generalized rules dropped is preserved in a new local `.claude/rules/repo-mechanics.md`.
   `git checkout .claude/` reverts all of it.
 
-## Part 4 — canon growth
+## Part 4 — other agent harnesses (deliberately not built)
+
+_Daoris targets Claude Code (D23). The others are detected and reported; a second implementation gets
+written the day a repository actually adopts one. Detection exists so the gap is loud rather than
+silent — installing this tree for a harness that reads a different file leaves every document present,
+correct, and never loaded._
+
+- [ ] **HARNESS1 — a second layout, when one is needed.** `src/harness.mjs` holds the signals and the
+  contract checks; a second implementation slots in beside the Claude one. Do not start until a real
+  repository wants it: the layout, the always-loaded semantics and the trigger mechanism all differ,
+  and guessing at them produces doctrine nobody chose in a format nobody verified.
+
+## Part 5 — canon growth
 
 - [ ] **CANON4 — the `doc-*` maintenance family, deliberately not canonized yet.** `doc-update-technical`
   / `-reference` / `-guide`, `doc-optimize`, `doc-monitor`, `doc-cleanup` appear together in 3
@@ -107,7 +119,7 @@ inside Lyntai rather than changes here, which is why they are recorded rather th
   `windows-dev-gotchas` versus canonical `windows-machine` — the machine-level content is canonical, the
   WebView2/WinForms/devtools items are Shenora's own.
 
-## Part 5 — tool follow-ups
+## Part 6 — tool follow-ups
 
 _Nothing open here._
 
