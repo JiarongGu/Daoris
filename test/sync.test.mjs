@@ -1,0 +1,109 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { join } from 'node:path';
+import { rmSync } from 'node:fs';
+import { makeFixture, captureError } from './_fixture.mjs';
+import { readCanon } from '../src/canon.mjs';
+import { readManifest, readLock } from '../src/config.mjs';
+import { planSync, applySync } from '../src/materialize.mjs';
+import { DaorisError } from '../src/errors.mjs';
+
+const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\nBody of ${name}.\n`;
+
+function seed(packs = []) {
+  const canonFx = makeFixture('sync-canon');
+  canonFx.write('canon.json', '{"version":"0.1.0"}');
+  canonFx.write('core/sensitive-info.md', doc('sensitive-info'));
+  canonFx.write('packs/win/pack.json', '{"name":"win","description":"Windows"}');
+  canonFx.write('packs/win/rules/gotchas.md', doc('gotchas'));
+
+  const repoFx = makeFixture('sync-repo');
+  repoFx.write('daoris.json', JSON.stringify({ source: 'github:OWNER/daoris#v0.1.0', packs }));
+  repoFx.write('.claude/rules/house-style.md', doc('house-style'));
+  return { canonFx, repoFx };
+}
+
+function run({ canonFx, repoFx }, force = false) {
+  const canon = readCanon(canonFx.root);
+  const manifest = readManifest(repoFx.root);
+  const plan = planSync({ root: repoFx.root, manifest, canon, lock: readLock(repoFx.root) });
+  return applySync({ root: repoFx.root, manifest, plan, canonVersion: canon.version, force });
+}
+
+test('a fresh sync writes the tree, the header, and the lock', () => {
+  const fx = seed(['win']);
+  run(fx);
+  const written = fx.repoFx.read('.claude/rules/sensitive-info.md');
+  assert.match(written, /^<!-- daoris: core\/core\/sensitive-info\.md @ 0\.1\.0 /);
+  assert.match(written, /Body of sensitive-info/);
+  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), true);
+  assert.deepEqual(
+    readLock(fx.repoFx.root).entries.map((e) => e.target).sort(),
+    ['rules/gotchas.md', 'rules/sensitive-info.md'],
+  );
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('a local file is never touched and never enters the lock', () => {
+  const fx = seed();
+  const before = fx.repoFx.read('.claude/rules/house-style.md');
+  run(fx);
+  assert.equal(fx.repoFx.read('.claude/rules/house-style.md'), before);
+  assert.equal(readLock(fx.repoFx.root).entries.some((e) => e.target.includes('house-style')), false);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('retiring a canonical file removes it from the repo on the next sync', () => {
+  const fx = seed(['win']);
+  run(fx);
+  rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+  run(fx);
+  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), false);
+  assert.equal(readLock(fx.repoFx.root).entries.some((e) => e.target.includes('gotchas')), false);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('a locally-drifted file is refused without --force and overwritten with it', () => {
+  const fx = seed();
+  run(fx);
+  fx.repoFx.write('.claude/rules/sensitive-info.md', 'hand-edited\n');
+  const error = captureError(() => run(fx));
+  assert.ok(error instanceof DaorisError);
+  assert.equal(error.exitCode, 1);
+  assert.match(error.message, /sensitive-info/);
+  assert.match(error.message, /--force/);
+  run(fx, true);
+  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /Body of sensitive-info/);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('an unchanged file is planned as unchanged, not rewritten', () => {
+  const fx = seed();
+  run(fx);
+  const canon = readCanon(fx.canonFx.root);
+  const plan = planSync({
+    root: fx.repoFx.root,
+    manifest: readManifest(fx.repoFx.root),
+    canon,
+    lock: readLock(fx.repoFx.root),
+  });
+  assert.ok(plan.writes.every((w) => w.state === 'unchanged'));
+  assert.deepEqual(plan.deletes, []);
+  assert.deepEqual(plan.drifted, []);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('sync writes the index too, so a synced repo is immediately consistent', () => {
+  const fx = seed();
+  run(fx);
+  const index = fx.repoFx.read('.claude/rules/RULES_INDEX.md');
+  assert.match(index, /sensitive-info/);
+  assert.match(index, /house-style.*\(local\)/);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});

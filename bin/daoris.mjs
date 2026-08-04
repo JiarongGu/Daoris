@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { DaorisError } from '../src/errors.mjs';
 import { commandIndex } from '../src/indexgen.mjs';
+import { commandSync } from '../src/materialize.mjs';
 
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -24,6 +25,7 @@ Options:
 /** Commands are registered here as they land. @returns {number} process exit code */
 const commands = {
   index: commandIndex,
+  sync: commandSync,
 };
 
 export function runCli(argv, cwd, write = console.log) {
