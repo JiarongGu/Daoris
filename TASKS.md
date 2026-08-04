@@ -50,11 +50,22 @@ silently fixed, because each is editorial work on someone's doctrine._
 
 ## Part 3 — canon growth
 
-- [ ] **CANON1 — `skills-workflow` is the most-duplicated and most-diverged rule in the family.** It
-  appears in five of six repositories at sizes from 1.3 KB to 6.0 KB, which is the strongest canon signal
-  observed so far *and* the clearest evidence of drift. It is sequenced with the rest of the skills layer
-  in `0.1.0`, because canonizing a workflow rule without canonizing the skills it references would install
-  a rule that points at nothing.
+- [ ] **CANON4 — the discovery trio is two-thirds canonized; the rest of the frequent skills are not.**
+  From the twelve-repository survey (`local/`, untracked): `post-feature` appears in 4, `fix-log` in 3,
+  and a six-strong `doc-update-*` / `doc-optimize` / `doc-monitor` / `doc-cleanup` family in 3. Each needs
+  the same treatment `doc-loader` got — extract the invariant procedure, leave the routing content local.
+  `fix-log` is the strongest candidate: its three copies are within 100 bytes of each other, so the
+  invariant is nearly the whole file.
+- [ ] **CANON5 — `caveman` is mis-filed doctrine, in five repositories.** It is a communication-style
+  preference, and by `no-global-memory`'s own table that is the one thing belonging in the assistant's
+  global memory rather than a repository. It is not canon material; the fix is to move it to the user's
+  global config once and delete the five copies. Recorded because it is the counterexample that sharpens
+  the rule, and because deleting someone's file is their call.
+- [ ] **CANON6 — `scripts-live-in-repo` is a merged renamed twin of two core rules.** Present in 3
+  repositories; its first half is canonical `no-tmp-for-repo-files` and its second half is canonical
+  `file-tool-discipline`. No new core rule — but those repositories will collide on adoption, and the
+  genuinely local mechanics it also carries (allow-list rules, a `cd` prefix defeating them) must be
+  preserved locally rather than dropped. `daoris doctor` should flag it; verify that it does.
 - [ ] **CANON2 — pack candidates with two repositories agreeing.** From the survey: `desktop-app`
   (screenshot hygiene, desktop testing, UI layering — a private sibling pair), `web-webview` (WebView2
   hosting + IPC contracts, from Shenora), `desktop-winforms` (the WinForms shell, from Shenora),

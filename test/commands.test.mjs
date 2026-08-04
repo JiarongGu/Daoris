@@ -10,7 +10,7 @@ const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\nx\
 function canonFixture() {
   const fx = makeFixture('cmd-canon');
   fx.write('canon.json', '{"version":"0.1.0"}');
-  fx.write('core/sensitive-info.md', doc('sensitive-info'));
+  fx.write('core/rules/sensitive-info.md', doc('sensitive-info'));
   fx.write('packs/win/pack.json', '{"name":"win","description":"Windows machine traps"}');
   fx.write('packs/win/rules/gotchas.md', doc('gotchas'));
   return fx;

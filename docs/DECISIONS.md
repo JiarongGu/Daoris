@@ -150,3 +150,37 @@ no coverage at all.
 **lock** answers "did this repository change it", on-disk versus **canon** answers "is there something new
 to install", and absence from the lock answers "is this file even ours" (D5, D12). Two tests hold it: a
 canon improvement reaching an untouched repository, and a version bump alone not reading as drift.
+
+## D14 — Canonical skills are parameter-free and delegate to the generated index (2026-08-04)
+
+**Decision.** A canonical skill contains only the procedure that is invariant across repositories. It
+names no path, no build command, and no roster of other skills. Where it needs repository specifics it
+sends the agent to the **generated index**, which `sync` already writes from that repository's own disk.
+There is no substitution map in the manifest, and no template placeholders in canon files.
+
+**Why.** Surveyed twelve repositories carrying doctrine — 134 skills, including one deliberately outside
+the family's stack (a daily-work Angular/React application). Three skills appear in six repositories
+each: `doc-loader`, `pattern-finder`, `skill-loader`. That is the strongest frequency signal observed,
+and their copies have diverged the furthest: `pattern-finder` runs from 1,826 to 12,041 bytes, a 6.6×
+spread.
+
+Reading the extremes settled the question. All copies of `doc-loader` share the *same ~15-line
+procedure*; the entire 5× spread is the repository's own routing content — one names its report features
+and twenty knowledge files, another names its job lanes and migrations. **A substitution map could have
+supplied one path and would have left the other six kilobytes exactly where they already are.** It solves
+the cheap tenth of the problem and adds a second source of truth that can silently disagree with the
+files — the same failure that got a `tier` field rejected in D7.
+
+The delegation half is not a design so much as an observation: all six copies already do it, in nearly
+the same words — *open the index, scan the "Applies when" column, read every matched document.* One
+states outright that its own shortcut table is not authoritative and the generated index is. Six
+independent authors converged on it, and Daoris already generates that index.
+
+**Consequence.** `skill-loader` is not canon content at all — its body is "which skills does this
+repository have", which is a **generated index**, exactly like `RULES_INDEX.md`. The hardest
+parameterization case disappears rather than being parameterized. It also has to be generated, because
+the roster is not fixed: one repository's workflow rule names four discovery skills where another names
+three, so a canonical rule that hard-coded the roster would be wrong on arrival.
+
+**Rejected:** a manifest substitution map (solves a tenth of the spread, adds a second source of truth);
+per-repository skill templates (the divergence *is* the content, so templating it canonizes nothing).

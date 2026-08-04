@@ -79,7 +79,7 @@ path, version, and content hash. Both are tracked, so a reviewer sees exactly wh
 
 ## Three layers
 
-- **Core** — universal workflow rules. Every repository gets these; there is no opting out.
+- **Core** — universal workflow rules and discovery skills. Every repository gets these; no opting out.
 - **Packs** — stack-specific sets, named in the manifest.
 - **Local** — the repository's own documents. Never synced, never touched, and listed in the generated
   index marked `(local)`.
@@ -91,8 +91,16 @@ a silent overwrite.
 ## Two things worth knowing
 
 **The tier is the directory.** Files in `rules/` are always-loaded context; files in `knowledge/` are read
-on demand. The agent harness decides that by path, so Daoris does not carry a redundant `tier` field —
-and because the tier is measurable, `check` reports the always-loaded footprint and fails over a budget.
+on demand; `skills/<name>/SKILL.md` is invoked by name. The agent harness decides that by path, so Daoris
+does not carry a redundant `tier` field — and because the tier is measurable, `check` reports the
+always-loaded footprint and fails over a budget.
+
+**Canonical skills are parameter-free.** A skill states only the procedure that holds in every
+repository and sends the reader to the generated index for anything local — there is no substitution map
+in the manifest. Surveying twelve repositories showed why: copies of the same skill ranged over a 6.6×
+size spread, and the shared part was ~15 lines. The rest was each repository's own routing content, which
+no placeholder could have supplied. The index's skills table is what a hand-written "here are our skills"
+skill used to be, except that it is generated and therefore never stale.
 
 **Every vendored file carries a one-line provenance header.** Not decoration: an agent that opens a rule
 needing a tweak will otherwise simply edit it, which is exactly how the copies diverged. The header says

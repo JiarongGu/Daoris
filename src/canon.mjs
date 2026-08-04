@@ -3,7 +3,12 @@ import { join } from 'node:path';
 import { listMarkdown, readText } from './fsx.mjs';
 import { DaorisError } from './errors.mjs';
 
-const TIERS = ['rules', 'knowledge'];
+/**
+ * The three tiers, and the whole of the tier model. `rules/` is always-loaded,
+ * `knowledge/` is read on demand, `skills/` is invoked by name — and the harness
+ * decides each by path, which is why there is no `tier` field (D7).
+ */
+const TIERS = ['rules', 'knowledge', 'skills'];
 
 /**
  * The canon ships INSIDE the package, so the pinned ref in a repo's manifest is
@@ -15,16 +20,28 @@ export function resolveCanonRoot(packageRoot) {
 }
 
 /**
- * The layout is the contract, and the directory is the tier:
+ * Every tier of one pack, as source -> target pairs. Core is laid out exactly
+ * like a pack, so this reads both:
  *
- *   core/<f>.md                  -> rules/<f>.md      (always installed)
- *   packs/<name>/rules/<f>.md    -> rules/<f>.md
- *   packs/<name>/knowledge/<f>.md-> knowledge/<f>.md
+ *   core/rules/<f>.md                  -> rules/<f>.md      (always installed)
+ *   core/skills/<n>/SKILL.md           -> skills/<n>/SKILL.md
+ *   packs/<name>/rules/<f>.md          -> rules/<f>.md
+ *   packs/<name>/knowledge/<f>.md      -> knowledge/<f>.md
+ *   packs/<name>/skills/<n>/SKILL.md   -> skills/<n>/SKILL.md
  *
- * There is deliberately no `tier` field anywhere — the harness decides the tier
- * by path (it auto-loads rules/ and not knowledge/), so a second source of
- * truth would only be something to disagree with.
+ * The listing is recursive, so a skill's directory comes along with it and the
+ * skills tier needs no special case.
  */
+function tierFiles(canonRoot, pack, prefix) {
+  const files = [];
+  for (const tier of TIERS) {
+    for (const file of listMarkdown(join(canonRoot, prefix, tier))) {
+      files.push({ pack, source: `${prefix}/${tier}/${file}`, target: `${tier}/${file}` });
+    }
+  }
+  return files;
+}
+
 export function readCanon(canonRoot) {
   if (!existsSync(canonRoot)) throw new DaorisError(`no canon at '${canonRoot}'`);
   const version = JSON.parse(readText(join(canonRoot, 'canon.json'))).version;
@@ -32,31 +49,20 @@ export function readCanon(canonRoot) {
 
   packs.set('core', {
     name: 'core',
-    description: 'Universal workflow rules every repo gets.',
-    files: listMarkdown(join(canonRoot, 'core')).map((file) => ({
-      pack: 'core',
-      source: `core/${file}`,
-      target: `rules/${file}`,
-    })),
+    description: 'Universal workflow rules and discovery skills every repo gets.',
+    files: tierFiles(canonRoot, 'core', 'core'),
   });
 
   const packsDir = join(canonRoot, 'packs');
   if (existsSync(packsDir)) {
     for (const entry of readdirSync(packsDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      const dir = join(packsDir, entry.name);
-      const manifest = JSON.parse(readText(join(dir, 'pack.json')));
-      const files = [];
-      for (const tier of TIERS) {
-        for (const file of listMarkdown(join(dir, tier))) {
-          files.push({
-            pack: entry.name,
-            source: `packs/${entry.name}/${tier}/${file}`,
-            target: `${tier}/${file}`,
-          });
-        }
-      }
-      packs.set(entry.name, { name: entry.name, description: manifest.description, files });
+      const manifest = JSON.parse(readText(join(packsDir, entry.name, 'pack.json')));
+      packs.set(entry.name, {
+        name: entry.name,
+        description: manifest.description,
+        files: tierFiles(canonRoot, entry.name, `packs/${entry.name}`),
+      });
     }
   }
   return { version, root: canonRoot, packs };

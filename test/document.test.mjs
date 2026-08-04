@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeHeader, stripHeader, parseFrontmatter } from '../src/document.mjs';
+import { makeHeader, withHeader, stripHeader, parseFrontmatter } from '../src/document.mjs';
 
 const FM = `---
 name: sensitive-info
@@ -19,9 +19,35 @@ test('makeHeader names the pack, source, and version', () => {
 });
 
 test('stripHeader removes only a daoris header line', () => {
-  const withHeader = `${makeHeader('core', 'core/a.md', '0.1.0')}\n${FM}`;
-  assert.equal(stripHeader(withHeader), FM);
+  const stamped = `${makeHeader('core', 'core/a.md', '0.1.0')}\n${FM}`;
+  assert.equal(stripHeader(stamped), FM);
   assert.equal(stripHeader(FM), FM);
+});
+
+/**
+ * The harness reads a document's frontmatter to decide whether to surface it at
+ * all, and frontmatter is only frontmatter when it starts at the first byte. A
+ * provenance comment above the opening fence silently turns a skill into an
+ * unreachable one — so the header goes under the closing fence instead.
+ */
+test('withHeader puts the header under the frontmatter, never above it', () => {
+  const header = makeHeader('core', 'core/skills/doc-loader/SKILL.md', '0.0.1');
+  const stamped = withHeader(header, FM);
+  assert.equal(stamped.startsWith('---\n'), true, 'frontmatter must start at byte 0');
+  assert.match(stamped, /---\n<!-- daoris: /);
+  assert.equal(parseFrontmatter(stamped).meta.name, 'sensitive-info');
+});
+
+test('withHeader falls back to the top when there is no frontmatter', () => {
+  const header = makeHeader('core', 'core/a.md', '0.0.1');
+  assert.equal(withHeader(header, '# Plain\n'), `${header}\n# Plain\n`);
+});
+
+test('a stamped document round-trips back to its canonical body', () => {
+  const header = makeHeader('core', 'core/a.md', '0.0.1');
+  for (const body of [FM, '# Plain\n', '---\nunclosed: true\n']) {
+    assert.equal(stripHeader(withHeader(header, body)), body, `round-trip failed for: ${body}`);
+  }
 });
 
 test('parseFrontmatter reads the three index fields', () => {

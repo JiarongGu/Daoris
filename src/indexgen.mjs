@@ -1,11 +1,12 @@
 import { join } from 'node:path';
 import { listMarkdown, readText, writeTextAtomic } from './fsx.mjs';
-import { parseFrontmatter, stripHeader } from './document.mjs';
+import { parseFrontmatter, stripHeader, SKILL_FIELDS } from './document.mjs';
 import { lockIndex, readLock, readManifest } from './config.mjs';
 
 export const INDEX_PATH = 'rules/RULES_INDEX.md';
 const INDEX_FILE = 'RULES_INDEX.md';
 const TABLE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
+const SKILL_TABLE_HEAD = '| Skill | Use when |\n|---|---|';
 
 function rows(root, target, tier, locked) {
   const lines = [];
@@ -18,6 +19,28 @@ function rows(root, target, tier, locked) {
       meta
         ? `| ${link}${mark} | ${meta.applies_when} | ${meta.enforces} |`
         : `| ${link}${mark} | ⚠ needs frontmatter | ⚠ needs frontmatter |`,
+    );
+  }
+  return lines;
+}
+
+/**
+ * A skill is a directory, so the directory is its name and `SKILL.md` is an
+ * implementation detail the roster should never show. This table is what makes
+ * a hand-written "here are our skills" skill unnecessary: its content was always
+ * generated (D14), and only a generated roster can be right in a repo whose
+ * skill set the canon has never seen.
+ */
+function skillRows(root, target, locked) {
+  const lines = [];
+  for (const file of listMarkdown(join(root, target, 'skills'))) {
+    if (!file.endsWith('/SKILL.md')) continue;
+    const name = file.slice(0, -'/SKILL.md'.length);
+    const text = stripHeader(readText(join(root, target, 'skills', file)));
+    const { meta } = parseFrontmatter(text, SKILL_FIELDS);
+    const mark = locked.has(`skills/${file}`) ? '' : ' _(local)_';
+    lines.push(
+      `| [${name}](../skills/${file})${mark} | ${meta ? meta.description : '⚠ needs frontmatter'} |`,
     );
   }
   return lines;
@@ -44,6 +67,11 @@ export function buildIndex({ root, target, lock }) {
     '',
     TABLE_HEAD,
     ...rows(root, target, 'knowledge', locked),
+    '',
+    '## Skills (invoke by name)',
+    '',
+    SKILL_TABLE_HEAD,
+    ...skillRows(root, target, locked),
     '',
   ].join('\n');
 }

@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.mjs';
-import { makeHeader } from './document.mjs';
+import { makeHeader, withHeader } from './document.mjs';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.mjs';
 import { lockIndex, readLock, readManifest, writeLock } from './config.mjs';
 import { buildIndex, writeIndex } from './indexgen.mjs';
@@ -23,7 +23,7 @@ export function planSync({ root, manifest, canon, lock }) {
 
   for (const file of selected) {
     const body = readText(join(canon.root, file.source));
-    const content = `${makeHeader(file.pack, file.source, canon.version)}\n${body}`;
+    const content = withHeader(makeHeader(file.pack, file.source, canon.version), body);
     const digest = sha256(content);
     const abs = join(root, manifest.target, file.target);
     const entry = locked.get(file.target);

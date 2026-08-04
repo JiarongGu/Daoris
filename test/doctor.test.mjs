@@ -40,7 +40,7 @@ crossfade windows at track boundaries.
 function seeded() {
   const canonFx = makeFixture('doctor-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
-  canonFx.write('core/file-tool-discipline.md', CANONICAL);
+  canonFx.write('core/rules/file-tool-discipline.md', CANONICAL);
 
   const repoFx = makeFixture('doctor-repo');
   repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));

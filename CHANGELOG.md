@@ -44,11 +44,27 @@ The first version: doctrine that installs, is checked, and flows back.
 - Atomic, BOM-less, LF writes throughout; exit codes are the contract (`0` clean, `1` policy failure,
   `2` tool error).
 
+### Skills
+
+- **A third tier.** `skills/<name>/SKILL.md` installs, retires and drift-checks like everything else, and
+  core is now laid out exactly like a pack (`core/rules/`, `core/skills/`) so one code path reads both.
+- **Canonical skills are parameter-free** and delegate to the generated index; there is no substitution
+  map in the manifest. Decided from a survey of twelve repositories and 134 skills — see
+  `docs/DECISIONS.md` D14.
+- **The index gained a skills table**, which is what a hand-written "here are our skills" skill always
+  was: generated content. It marks the repository's own skills `(local)` like every other row.
+- **The provenance header moves under the frontmatter.** Frontmatter is only frontmatter at byte 0 — the
+  harness parses a skill's `description` to decide whether to surface it, so a comment above the opening
+  fence would have made every canonical skill silently unreachable, with no error anywhere.
+- **`skills-workflow` is now a core rule** — it appears in six of eleven surveyed repositories, tying
+  `sensitive-info` as the strongest signal in the family, and its copies diverge the most.
+
 ### The canon
 
-- **Six core rules**, each confirmed by appearing independently in multiple repositories in the family:
+- **Seven core rules**, each confirmed by appearing independently in multiple repositories in the family:
   `sensitive-info`, `task-lifecycle`, `no-tmp-for-repo-files`, `file-tool-discipline`,
-  `persist-working-state`, `no-global-memory`.
+  `persist-working-state`, `no-global-memory`, `skills-workflow`.
+- **Two core skills**, `doc-loader` and `pattern-finder`, each present in six repositories.
 - **Three packs.** `windows-machine` (traps that succeed wrongly rather than failing),
   `dotnet-library` (package boundaries, naming, DI variation points, shipping registries, and API design),
   `storage-sql` (type affinity on read, migration numbering, full-text search for scripts without word

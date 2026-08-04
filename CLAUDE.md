@@ -42,8 +42,13 @@ placeholder in `src/commands.mjs`, both manifests, and the README) and the LICEN
 **Core** installs into every repository with no opt-out; **packs** are named in the manifest; **local**
 documents are the repository's own and are never synced or touched. `daoris.lock` is the authority —
 anything absent from it is invisible to the tool, which is what makes a repository's own files safe.
-**The tier is the directory**: `rules/` is always-loaded context, `knowledge/` is read on demand, and the
-agent harness decides that by path — so there is no `tier` field to disagree with.
+**The tier is the directory**: `rules/` is always-loaded context, `knowledge/` is read on demand,
+`skills/` is invoked by name, and the agent harness decides that by path — so there is no `tier` field to
+disagree with.
+
+Two consequences worth knowing before touching materialization: **drift is measured against the lock**,
+never against the current canon (D13) — otherwise an improved rule cannot propagate. And **a skill's
+provenance header goes under its frontmatter** (D14), because frontmatter is only frontmatter at byte 0.
 
 ## Layout
 
@@ -51,8 +56,8 @@ agent harness decides that by path — so there is no `tier` field to disagree w
 |---|---|
 | `bin/daoris.mjs` | Arg parsing, command dispatch, error → exit code |
 | `src/*.mjs` | One module per responsibility; every command is plan-then-apply |
-| `canon/core/*.md` | The always-installed rules |
-| `canon/packs/<name>/` | `pack.json` + `rules/` + `knowledge/` |
+| `canon/core/{rules,skills}/` | The always-installed rules and discovery skills |
+| `canon/packs/<name>/` | `pack.json` + `rules/` + `knowledge/` + `skills/` |
 | `test/*.test.mjs` | `node:test`; fixtures under the gitignored `_fixtures/` |
 
 ## Dev loop

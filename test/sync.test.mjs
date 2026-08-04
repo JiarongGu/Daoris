@@ -13,7 +13,7 @@ const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\n
 function seed(packs = []) {
   const canonFx = makeFixture('sync-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
-  canonFx.write('core/sensitive-info.md', doc('sensitive-info'));
+  canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info'));
   canonFx.write('packs/win/pack.json', '{"name":"win","description":"Windows"}');
   canonFx.write('packs/win/rules/gotchas.md', doc('gotchas'));
 
@@ -34,7 +34,9 @@ test('a fresh sync writes the tree, the header, and the lock', () => {
   const fx = seed(['win']);
   run(fx);
   const written = fx.repoFx.read('.claude/rules/sensitive-info.md');
-  assert.match(written, /^<!-- daoris: core\/core\/sensitive-info\.md @ 0\.1\.0 /);
+  // Frontmatter first, provenance under it — never above (see document.mjs).
+  assert.equal(written.startsWith('---\n'), true);
+  assert.match(written, /---\n<!-- daoris: core\/core\/rules\/sensitive-info\.md @ 0\.1\.0 /);
   assert.match(written, /Body of sensitive-info/);
   assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), true);
   assert.deepEqual(
@@ -85,7 +87,7 @@ test('a canon improvement reaches an untouched repo without --force', () => {
   const fx = seed();
   run(fx);
   // The rule got better upstream. The repo did nothing at all.
-  fx.canonFx.write('core/sensitive-info.md', doc('sensitive-info').replace('Body of', 'IMPROVED body of'));
+  fx.canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info').replace('Body of', 'IMPROVED body of'));
   run(fx);
   assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /IMPROVED body of sensitive-info/);
   fx.canonFx.cleanup();

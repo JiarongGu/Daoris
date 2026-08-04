@@ -6,6 +6,7 @@ import { readCanon } from '../src/canon.mjs';
 import { readManifest, readLock } from '../src/config.mjs';
 import { planSync, applySync } from '../src/materialize.mjs';
 import { upstreamFile, upstreamAll } from '../src/upstream.mjs';
+import { makeHeader, withHeader } from '../src/document.mjs';
 import { readText } from '../src/fsx.mjs';
 import { DaorisError } from '../src/errors.mjs';
 
@@ -14,7 +15,7 @@ const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\n
 function synced() {
   const canonFx = makeFixture('up-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
-  canonFx.write('core/sensitive-info.md', doc('sensitive-info'));
+  canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info'));
 
   const repoFx = makeFixture('up-repo');
   repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));
@@ -41,14 +42,17 @@ const promote = ({ canonFx, repoFx }, file) =>
   });
 
 const edited = () =>
-  `<!-- daoris: core/core/sensitive-info.md @ 0.1.0 -->\n${doc('sensitive-info')}IMPROVED.\n`;
+  withHeader(
+    makeHeader('core', 'core/rules/sensitive-info.md', '0.1.0'),
+    `${doc('sensitive-info')}IMPROVED.\n`,
+  );
 
 test('a local edit lands in the canon without the provenance header', () => {
   const fx = synced();
   fx.repoFx.write('.claude/rules/sensitive-info.md', edited());
   const result = promote(fx, 'rules/sensitive-info.md');
-  const canonText = readText(join(fx.canonFx.root, 'core/sensitive-info.md'));
-  assert.equal(result.source, 'core/sensitive-info.md');
+  const canonText = readText(join(fx.canonFx.root, 'core/rules/sensitive-info.md'));
+  assert.equal(result.source, 'core/rules/sensitive-info.md');
   assert.match(canonText, /IMPROVED\./);
   assert.equal(canonText.startsWith('---\n'), true);
   fx.canonFx.cleanup();
@@ -82,9 +86,9 @@ test('a local file has nothing to upstream and says so', () => {
 test('upstreamAll promotes every drifted file and leaves clean ones alone', () => {
   const canonFx = makeFixture('up-all-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
-  canonFx.write('core/one.md', doc('one'));
-  canonFx.write('core/two.md', doc('two'));
-  canonFx.write('core/three.md', doc('three'));
+  canonFx.write('core/rules/one.md', doc('one'));
+  canonFx.write('core/rules/two.md', doc('two'));
+  canonFx.write('core/rules/three.md', doc('three'));
 
   const repoFx = makeFixture('up-all-repo');
   repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));
@@ -102,7 +106,10 @@ test('upstreamAll promotes every drifted file and leaves clean ones alone', () =
   for (const name of ['one', 'three']) {
     repoFx.write(
       `.claude/rules/${name}.md`,
-      `<!-- daoris: core/core/${name}.md @ 0.1.0 -->\n${doc(name)}IMPROVED ${name}.\n`,
+      withHeader(
+        makeHeader('core', `core/rules/${name}.md`, '0.1.0'),
+        `${doc(name)}IMPROVED ${name}.\n`,
+      ),
     );
   }
 
@@ -113,10 +120,13 @@ test('upstreamAll promotes every drifted file and leaves clean ones alone', () =
     canonRoot: canonFx.root,
   });
 
-  assert.deepEqual(promoted.map((r) => r.source).sort(), ['core/one.md', 'core/three.md']);
-  assert.match(readText(join(canonFx.root, 'core/one.md')), /IMPROVED one/);
-  assert.match(readText(join(canonFx.root, 'core/three.md')), /IMPROVED three/);
-  assert.equal(/IMPROVED/.test(readText(join(canonFx.root, 'core/two.md'))), false);
+  assert.deepEqual(promoted.map((r) => r.source).sort(), [
+    'core/rules/one.md',
+    'core/rules/three.md',
+  ]);
+  assert.match(readText(join(canonFx.root, 'core/rules/one.md')), /IMPROVED one/);
+  assert.match(readText(join(canonFx.root, 'core/rules/three.md')), /IMPROVED three/);
+  assert.equal(/IMPROVED/.test(readText(join(canonFx.root, 'core/rules/two.md'))), false);
 
   canonFx.cleanup();
   repoFx.cleanup();

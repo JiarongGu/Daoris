@@ -97,6 +97,45 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   adopter it independently reports the `dev-conventions` / `dotnet-package-layout` overlap at 58%, which
   is the finding that previously required reading the generated index end to end.
 
+## Part 3 — the skills layer (2026-08-04)
+
+- [x] **T20 — Development versions are 0.0.x; drift is measured against the lock**
+  ✅ done 2026-08-04 — nothing was ever published, so a version boundary between two unreleased states
+  bought nothing; the skills layer moved into the first release. Bumping the version surfaced a real bug
+  behind it: `sync` compared on-disk content to the *current canon* rather than to the lock, so an
+  improved canonical rule could not propagate — every consumer would have exited 1 over an edit nobody
+  made. `docs/DECISIONS.md` D13. A version test now holds the four live refs in step.
+
+- [x] **T21 — Survey twelve repositories for skills, decide the parameterization question**
+  ✅ done 2026-08-04 — twice the scope of the original survey (134 skills), and deliberately including a
+  daily-work Angular/React application outside the family's stack. Three skills appear in six
+  repositories each; their copies span up to 6.6×. Reading the extremes settled it: the shared procedure
+  is ~15 lines and the whole spread is each repository's own routing content, which no substitution map
+  could supply. Parameter-free, delegating to the generated index — `docs/DECISIONS.md` D14. Evidence in
+  the untracked `local/` survey.
+
+- [x] **T22 — Skills as a third tier**
+  ✅ done 2026-08-04 — `skills/<name>/SKILL.md` installs, retires and drift-checks like anything else,
+  and core was restructured to `core/rules/` + `core/skills/` so one code path reads core and packs
+  alike. The provenance header had to move under the frontmatter: the harness parses `description` to
+  decide whether to surface a skill, so a comment at byte 0 would have made every canonical skill
+  silently unreachable. Confirmed live — the harness listed both new skills with descriptions intact.
+
+- [x] **CANON1 — `skills-workflow` is the most-duplicated and most-diverged rule in the family**
+  ✅ done 2026-08-04 — the wider survey strengthened the case rather than weakening it: 6 of 11
+  repositories, tying `sensitive-info` for the strongest signal, with variants from a 5-line note to an
+  81-line blocking protocol. Canonized with the roster left to the generated index, because one
+  repository's version names four discovery skills where another names three — a hard-coded roster would
+  have been wrong on arrival.
+
+- [x] **ADOPT2/T19 follow-through — `skill-loader` is not canon at all**
+  ✅ done 2026-08-04 — present in six repositories, so it looked like the strongest possible pack
+  candidate. Its body is "which skills does this repository have", which is generated content, so it
+  became a table in `RULES_INDEX.md` instead. The hardest parameterization case disappeared rather than
+  being parameterized.
+
+## Part 4 — earlier release prep
+
 - [x] **T16 — Release prep**
   ✅ done 2026-08-04 (partial) — `CHANGELOG.md` written, sensitive scan clean across every tracked file,
   final verify green. The two items needing an owner decision — the GitHub account and the LICENSE

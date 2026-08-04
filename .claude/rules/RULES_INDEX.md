@@ -11,6 +11,7 @@ Rows marked _(local)_ are this repo's own and are never synced.
 | [no-tmp-for-repo-files](no-tmp-for-repo-files.md) | composing a repository file, or needing a scratch, probe, or dump file | compose finals with the file-writing tools; scratch goes in a gitignored repo directory, never OS temp |
 | [persist-working-state](persist-working-state.md) | any multi-step task — at each decision, finding, or milestone | checkpoint in-progress state to its durable home in the repository as you go, not at the end |
 | [sensitive-info](sensitive-info.md) | writing any tracked file or commit message, or rewriting history | no machine paths, no private repo names, no credentials; a committed leak is a history problem |
+| [skills-workflow](skills-workflow.md) | starting any non-trivial task, and whenever a follow-up changes its scope | run the discovery skills before exploring code, actually read what they route you to, and re-run them when the scope moves |
 | [task-lifecycle](task-lifecycle.md) | adding or finishing a task, or editing the backlog | the backlog holds OPEN work only; a finished task MOVES to the archive; three records, three jobs |
 
 ## Knowledge (read on demand)
@@ -19,3 +20,11 @@ Rows marked _(local)_ are this repo's own and are never synced.
 |---|---|---|
 | [adoption](../knowledge/adoption.md) _(local)_ | onboarding a repository onto daoris for the first time | resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally; never let adoption silently rewrite doctrine |
 | [canon-authoring](../knowledge/canon-authoring.md) _(local)_ | writing or changing a canon file, or adding a pack | project-agnostic content, frontmatter that matches the filename, principle-and-reason not mechanism |
+
+## Skills (invoke by name)
+
+| Skill | Use when |
+|---|---|
+| [add-pack](../skills/add-pack/SKILL.md) _(local)_ | Use when adding a new pack to the Daoris canon (a stack-specific set of rules and knowledge, e.g. desktop-app, web-webview, durable-jobs). Covers the layout, the project-agnostic constraint, frontmatter, and the adoption gate. |
+| [doc-loader](../skills/doc-loader/SKILL.md) | Load the documents a task actually needs before touching code — the repository's own doc router plus every on-demand knowledge document whose "applies when" matches. Use at the START of any non-trivial task, because on-demand documents are not auto-loaded and an unread match is a missing contract. |
+| [pattern-finder](../skills/pattern-finder/SKILL.md) | Find the existing exemplar to mirror before writing a new unit that has the same shape as something already in the codebase — a module, a handler, a test, a migration, a tooling script. Use before writing new code, so it reads like the code around it instead of introducing a second convention. |

@@ -52,7 +52,33 @@ silent. Tests assert `name` matches the filename, so a rename that misses the fr
   here only if nearly every task needs it. The core budget is measured and gated for this reason.
 - **`knowledge/` is read on demand** — the right home for anything long, or anything that only matters
   when touching one area.
+- **`skills/` is invoked by name** — a procedure, not a rule. Only its `description` is ever loaded
+  unasked, so a skill's body is cheap and its description is not.
 - There is no `tier` field; the directory *is* the tier (`docs/DECISIONS.md` D7).
+
+### Writing a skill
+
+A skill lives at `skills/<name>/SKILL.md` — the **directory** is the name, and every file is `SKILL.md`.
+
+```yaml
+---
+name: <must match the DIRECTORY name>
+description: <what it does, and when to use it — this is the trigger>
+---
+```
+
+- **The frontmatter is the harness's, not ours.** It parses `description` to decide whether to surface
+  the skill at all, so a skill without one installs, costs bytes, and silently never fires. Write the
+  description for the moment of matching: what it does *and* when to reach for it.
+- **The provenance header goes UNDER the closing `---`,** because frontmatter is only frontmatter when it
+  starts at the first byte. `withHeader` does this; never hand-stamp a skill.
+- **Canonical skills are parameter-free** (`docs/DECISIONS.md` D14). No paths, no build commands, no
+  roster of other skills. Where a skill needs repository specifics, send the reader to the **generated
+  index** — it is built from the adopter's own disk, so it is right in repositories the canon has never
+  seen. Measured evidence: across twelve repositories the shared procedure was ~15 lines and the rest was
+  each repository's own routing content, which no substitution could have supplied.
+- **A roster is generated, never written.** "Which skills does this repository have" is the index's job.
+  A hand-written version is wrong the moment anyone adds a skill.
 
 ### Adding a pack
 

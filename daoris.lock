@@ -5,45 +5,66 @@
   "entries": [
     {
       "pack": "core",
-      "source": "core/file-tool-discipline.md",
+      "source": "core/rules/file-tool-discipline.md",
       "target": "rules/file-tool-discipline.md",
       "canonVersion": "0.0.1",
-      "sha256": "2d8c12d1506a3e93ba67249e8600803e99101c68b27bfb204060f0297000ff3b"
+      "sha256": "95b400b368bed720e2d34df74deaa940e4ee9afe1eb03b79b21b399d0e52d363"
     },
     {
       "pack": "core",
-      "source": "core/no-global-memory.md",
+      "source": "core/rules/no-global-memory.md",
       "target": "rules/no-global-memory.md",
       "canonVersion": "0.0.1",
-      "sha256": "37b279115fd96db53b313ccd5e7fd1bb950ca84703f2a77bbdc069bc4f037168"
+      "sha256": "432907d8e8d21c6bfba3a1f03104a2d98e927e5e887e8dabdf73a667f8bf5824"
     },
     {
       "pack": "core",
-      "source": "core/no-tmp-for-repo-files.md",
+      "source": "core/rules/no-tmp-for-repo-files.md",
       "target": "rules/no-tmp-for-repo-files.md",
       "canonVersion": "0.0.1",
-      "sha256": "98323844c60835c7cf7cecd3bb1dd9a78c187ba5f5cc412a4de08f9b0f10a816"
+      "sha256": "9cf14072ceaf6519f74e3a0fc14d0095d00f8ca7ee53bc8409af44862f49504e"
     },
     {
       "pack": "core",
-      "source": "core/persist-working-state.md",
+      "source": "core/rules/persist-working-state.md",
       "target": "rules/persist-working-state.md",
       "canonVersion": "0.0.1",
-      "sha256": "86305c2d1b73b129eaa195ad860ea8060331604c4ee6085bf412fcb29636dcbb"
+      "sha256": "15636362ef404fc9d9b80745d9adf8fc598c40053c9bd89afc6632acb2f4513b"
     },
     {
       "pack": "core",
-      "source": "core/sensitive-info.md",
+      "source": "core/rules/sensitive-info.md",
       "target": "rules/sensitive-info.md",
       "canonVersion": "0.0.1",
-      "sha256": "3efbd24d7b4c4b6869947f0044565b2ff32cf0246a351119fe8ef56bc6c8ca79"
+      "sha256": "c0cfd28f9275f5e7e7d25e8c30aca2d1ec784811fc9bf779db71abcfdcd1cd6e"
     },
     {
       "pack": "core",
-      "source": "core/task-lifecycle.md",
+      "source": "core/rules/skills-workflow.md",
+      "target": "rules/skills-workflow.md",
+      "canonVersion": "0.0.1",
+      "sha256": "cd52b99cff12240f449936238861193c05df0c9dca32a460872624ffc2efa299"
+    },
+    {
+      "pack": "core",
+      "source": "core/rules/task-lifecycle.md",
       "target": "rules/task-lifecycle.md",
       "canonVersion": "0.0.1",
-      "sha256": "22e48765dce4b404be04158817c1998b596dcaccf14a9413a97889b39d13d5b2"
+      "sha256": "fefaa9477428dd51e1c71271369790ce1636c61afa4155736db5ebc5b9df8e1a"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/doc-loader/SKILL.md",
+      "target": "skills/doc-loader/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "3e4e1d55527a270e0ec7ba8bc8410328572abef8bf5ef3dc5f83bb471f139c37"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/pattern-finder/SKILL.md",
+      "target": "skills/pattern-finder/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "03156a1f6d740e54601f68f10b6b4ac72eace5d3e5c4e4801cb9475f6c202fb2"
     }
   ]
 }

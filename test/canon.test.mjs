@@ -7,11 +7,13 @@ import { DaorisError } from '../src/errors.mjs';
 function seedCanon() {
   const fx = makeFixture('canon');
   fx.write('canon.json', '{"version":"0.1.0"}');
-  fx.write('core/sensitive-info.md', 'core rule\n');
-  fx.write('core/task-lifecycle.md', 'core rule\n');
+  fx.write('core/rules/sensitive-info.md', 'core rule\n');
+  fx.write('core/rules/task-lifecycle.md', 'core rule\n');
+  fx.write('core/skills/doc-loader/SKILL.md', 'core skill\n');
   fx.write('packs/dotnet-library/pack.json', '{"name":"dotnet-library","description":"NuGet library"}');
   fx.write('packs/dotnet-library/rules/dev-conventions.md', 'pack rule\n');
   fx.write('packs/dotnet-library/knowledge/storage.md', 'pack knowledge\n');
+  fx.write('packs/dotnet-library/skills/add-provider/SKILL.md', 'pack skill\n');
   fx.write('packs/dotnet-library/README.txt', 'ignored\n');
   return fx;
 }
@@ -21,7 +23,7 @@ test('readCanon reads the version, its own root, core, and packs', () => {
   const canon = readCanon(fx.root);
   assert.equal(canon.version, '0.1.0');
   assert.equal(canon.root, fx.root);
-  assert.equal(canon.packs.get('core').files.length, 2);
+  assert.equal(canon.packs.get('core').files.length, 3);
   assert.equal(canon.packs.get('dotnet-library').description, 'NuGet library');
   fx.cleanup();
 });
@@ -35,6 +37,23 @@ test('the source directory is the target directory', () => {
     'rules/dev-conventions.md',
     'rules/sensitive-info.md',
     'rules/task-lifecycle.md',
+    'skills/add-provider/SKILL.md',
+    'skills/doc-loader/SKILL.md',
+  ]);
+  fx.cleanup();
+});
+
+/**
+ * Core is laid out exactly like a pack, so the tier is the directory there too
+ * (D7) and one code path reads both.
+ */
+test('core carries tiers of its own, skills included', () => {
+  const fx = seedCanon();
+  const core = readCanon(fx.root).packs.get('core').files;
+  assert.deepEqual(core.map((f) => `${f.source} -> ${f.target}`).sort(), [
+    'core/rules/sensitive-info.md -> rules/sensitive-info.md',
+    'core/rules/task-lifecycle.md -> rules/task-lifecycle.md',
+    'core/skills/doc-loader/SKILL.md -> skills/doc-loader/SKILL.md',
   ]);
   fx.cleanup();
 });
@@ -42,7 +61,11 @@ test('the source directory is the target directory', () => {
 test('core is selected without being asked for', () => {
   const fx = seedCanon();
   const files = selectFiles(readCanon(fx.root), []);
-  assert.deepEqual(files.map((f) => f.target), ['rules/sensitive-info.md', 'rules/task-lifecycle.md']);
+  assert.deepEqual(files.map((f) => f.target), [
+    'rules/sensitive-info.md',
+    'rules/task-lifecycle.md',
+    'skills/doc-loader/SKILL.md',
+  ]);
   assert.ok(files.every((f) => f.pack === 'core'));
   fx.cleanup();
 });

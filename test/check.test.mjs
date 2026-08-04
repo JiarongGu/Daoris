@@ -13,7 +13,7 @@ const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\n
 function synced(packs = [], coreBudgetBytes = 24000) {
   const canonFx = makeFixture('check-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
-  canonFx.write('core/sensitive-info.md', doc('sensitive-info'));
+  canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info'));
   canonFx.write('packs/win/pack.json', '{"name":"win","description":"Windows"}');
   canonFx.write('packs/win/rules/gotchas.md', doc('gotchas'));
 
