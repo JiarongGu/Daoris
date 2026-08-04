@@ -1,5 +1,5 @@
 {
-  "source": "github:JiarongGu/Daoris#v0.1.0",
+  "source": "github:JiarongGu/Daoris#v0.0.1",
   "packs": [],
   "target": ".claude",
   "coreBudgetBytes": 24000

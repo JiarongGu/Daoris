@@ -1,6 +1,6 @@
 {
   "name": "daoris",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Cross-repo engineering doctrine: materialize canonical agent rules and knowledge into a repo, and keep them from drifting.",
   "type": "module",
   "bin": {

@@ -9,7 +9,7 @@ adopting repository should do about it — a line that only repeats the filename
 `changed` list did not already say. This file ships inside the package, so nothing here touches the
 network.
 
-## 0.1.0
+## Unreleased
 
 - The first canon: seven workflow rules, and five skills — `doc-loader` and `pattern-finder` to start a
   task, `post-feature` and `fix-log` to close one, `caveman` for terse output. Nothing to upgrade from
