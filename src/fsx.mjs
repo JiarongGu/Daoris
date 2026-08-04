@@ -29,16 +29,18 @@ export function sha256(text) {
   return createHash('sha256').update(normalize(text), 'utf8').digest('hex');
 }
 
-/** Sorted, '/'-separated, recursive, .md only. An absent directory yields []. */
-export function listMarkdown(dir) {
+/** Sorted, '/'-separated, recursive. An absent directory yields []. */
+export function listFiles(dir, keep = () => true) {
   if (!existsSync(dir)) return [];
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      out.push(...listMarkdown(join(dir, entry.name)).map((path) => `${entry.name}/${path}`));
-    } else if (entry.name.endsWith('.md')) {
+      out.push(...listFiles(join(dir, entry.name), keep).map((path) => `${entry.name}/${path}`));
+    } else if (keep(entry.name)) {
       out.push(entry.name);
     }
   }
   return out.sort();
 }
+
+export const listMarkdown = (dir) => listFiles(dir, (name) => name.endsWith('.md'));

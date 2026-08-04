@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { listMarkdown, readText } from './fsx.mjs';
+import { listFiles, listMarkdown, readText } from './fsx.mjs';
 import { DaorisError } from './errors.mjs';
 
 /**
@@ -35,7 +35,12 @@ export function resolveCanonRoot(packageRoot) {
 function tierFiles(canonRoot, pack, prefix) {
   const files = [];
   for (const tier of TIERS) {
-    for (const file of listMarkdown(join(canonRoot, prefix, tier))) {
+    // A skill is a directory, not a document: the platform lets it carry a
+    // reference doc, a template, or a script it invokes through its own
+    // directory variable. Shipping only the SKILL.md would install a skill
+    // whose first step runs a file that never arrived.
+    const list = tier === 'skills' ? listFiles : listMarkdown;
+    for (const file of list(join(canonRoot, prefix, tier))) {
       files.push({ pack, source: `${prefix}/${tier}/${file}`, target: `${tier}/${file}` });
     }
   }

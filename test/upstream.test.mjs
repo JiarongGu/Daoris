@@ -147,7 +147,14 @@ test('upstreamAll on a clean repo promotes nothing', () => {
   fx.repoFx.cleanup();
 });
 
-test('after upstreaming, a re-sync reports no drift', () => {
+/**
+ * The return path has to close without --force. Once the edit is IN the canon,
+ * the file on disk already is what the canon would write — there is nothing to
+ * reconcile, only a stale lock hash. Demanding --force here would tell the
+ * person who just contributed an improvement to "discard your local edit",
+ * which is both wrong and the exact advice most likely to lose the work.
+ */
+test('after upstreaming, a re-sync closes the loop without --force', () => {
   const fx = synced();
   fx.repoFx.write('.claude/rules/sensitive-info.md', edited());
   promote(fx, 'rules/sensitive-info.md');
@@ -159,7 +166,8 @@ test('after upstreaming, a re-sync reports no drift', () => {
     canon,
     lock: readLock(fx.repoFx.root),
   });
-  applySync({ root: fx.repoFx.root, manifest, plan, canonVersion: canon.version, force: true });
+  assert.deepEqual(plan.drifted, [], 'a file already matching the canon is not drift');
+  applySync({ root: fx.repoFx.root, manifest, plan, canonVersion: canon.version, force: false });
   const after = planSync({
     root: fx.repoFx.root,
     manifest,

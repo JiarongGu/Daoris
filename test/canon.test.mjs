@@ -18,6 +18,25 @@ function seedCanon() {
   return fx;
 }
 
+/**
+ * A skill is a directory, and the platform lets it carry supporting files: a
+ * reference document, a template, a script invoked via ${CLAUDE_SKILL_DIR}.
+ * Materializing only the SKILL.md would install a skill whose first action is
+ * to run a file that is not there — broken in the consumer, working here.
+ */
+test("a skill's supporting files travel with it", () => {
+  const fx = seedCanon();
+  fx.write('core/skills/doc-loader/reference.md', 'detail\n');
+  fx.write('core/skills/doc-loader/scripts/probe.sh', 'echo hi\n');
+
+  const targets = readCanon(fx.root).packs.get('core').files.map((f) => f.target);
+  assert.ok(targets.includes('skills/doc-loader/reference.md'), 'reference doc was dropped');
+  assert.ok(targets.includes('skills/doc-loader/scripts/probe.sh'), 'script was dropped');
+  // Non-markdown outside a skill is still not canon material.
+  assert.equal(targets.some((t) => t.endsWith('README.txt')), false);
+  fx.cleanup();
+});
+
 test('readCanon reads the version, its own root, core, and packs', () => {
   const fx = seedCanon();
   const canon = readCanon(fx.root);

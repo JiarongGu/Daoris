@@ -23,7 +23,11 @@ export function planSync({ root, manifest, canon, lock }) {
 
   for (const file of selected) {
     const body = readText(join(canon.root, file.source));
-    const content = withHeader(makeHeader(file.pack, file.source, canon.version), body);
+    // Only markdown gets stamped: an HTML comment in a script is a syntax
+    // error, and the lock's hash catches an edit to it either way (D6).
+    const content = file.target.endsWith('.md')
+      ? withHeader(makeHeader(file.pack, file.source, canon.version), body)
+      : body;
     const digest = sha256(content);
     const abs = join(root, manifest.target, file.target);
     const entry = locked.get(file.target);
@@ -39,7 +43,13 @@ export function planSync({ root, manifest, canon, lock }) {
         // untouched, and the difference is an upstream improvement — refusing
         // that would break the very direction the tool exists to serve, and
         // would accuse every consumer of an edit nobody made.
-        if (onDisk !== entry.sha256) drifted.push(file.target);
+        //
+        // A file matching the NEW canon is likewise not drift, whatever the
+        // lock says: that is the state right after `upstream`, where the edit
+        // has already become canonical and only the lock hash is stale. Demand
+        // --force there and the return path ends by telling the contributor to
+        // discard the improvement they just promoted.
+        if (onDisk !== entry.sha256 && onDisk !== digest) drifted.push(file.target);
       } else if (onDisk !== digest) {
         // Not in the lock: the repo wrote this file itself, before it ever
         // adopted daoris. Silently overwriting it would destroy work the tool

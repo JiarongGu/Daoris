@@ -58,6 +58,16 @@ The first version: doctrine that installs, is checked, and flows back.
   fence would have made every canonical skill silently unreachable, with no error anywhere.
 - **`skills-workflow` is now a core rule** — it appears in six of eleven surveyed repositories, tying
   `sensitive-info` as the strongest signal in the family, and its copies diverge the most.
+- **A skill's supporting files travel with it.** A skill is a directory, and the platform lets it carry a
+  reference document, a template, or a script it invokes through its own directory variable. Only the
+  `SKILL.md` was being materialized, so such a skill would have installed with its first step pointing at
+  a file that never arrived. Markdown is stamped with the provenance header; other files are copied
+  verbatim, because an HTML comment in a script is a syntax error.
+- **The return path closes without `--force`.** After `upstream`, the file on disk already *is* what the
+  canon would write, so only the lock hash is stale — but `sync` read that as drift and demanded
+  `--force`, whose documented meaning is "discard your local edit". The last step of contributing an
+  improvement advised throwing it away. A file matching the current canon is no longer drift whatever the
+  lock says.
 
 ### The canon
 

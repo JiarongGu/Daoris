@@ -56,11 +56,18 @@ silently fixed, because each is editorial work on someone's doctrine._
   the same treatment `doc-loader` got — extract the invariant procedure, leave the routing content local.
   `fix-log` is the strongest candidate: its three copies are within 100 bytes of each other, so the
   invariant is nearly the whole file.
-- [ ] **CANON5 — `caveman` is mis-filed doctrine, in five repositories.** It is a communication-style
-  preference, and by `no-global-memory`'s own table that is the one thing belonging in the assistant's
-  global memory rather than a repository. It is not canon material; the fix is to move it to the user's
-  global config once and delete the five copies. Recorded because it is the counterexample that sharpens
-  the rule, and because deleting someone's file is their call.
+- [ ] **CANON5 — `caveman` is a core skill candidate, at five repositories.** _Re-analyzed 2026-08-04;
+  the first reading, that it belonged in global memory, was wrong._ It is not a taste — it is an output
+  protocol with a measurable goal (token cost) and **safety carve-outs earned the hard way**: never
+  compress a destructive-action warning or an irreversible-action confirmation, never compress a
+  multi-step sequence where fragment order risks a misread, never abbreviate an identifier, a path, or a
+  commit message. Those carve-outs are the canonical part, and they are precisely the "trap that succeeds
+  wrongly" that canon-authoring prizes — a compressed security warning renders perfectly and is still
+  wrong. Global memory would strip exactly them: a fresh clone would get terseness without the guardrails.
+  The five copies split into a conservative variant (explicit invoke only, gate preserved) and a
+  persistent one (intensity levels, classical-Chinese modes); canonize the protocol and the carve-outs,
+  leave intensity presets local. `no-global-memory` has been sharpened with the distinguishing test —
+  would a fresh clone be defective without it — and promoted back into the canon.
 - [ ] **CANON6 — `scripts-live-in-repo` is a merged renamed twin of two core rules.** Present in 3
   repositories; its first half is canonical `no-tmp-for-repo-files` and its second half is canonical
   `file-tool-discipline`. No new core rule — but those repositories will collide on adoption, and the

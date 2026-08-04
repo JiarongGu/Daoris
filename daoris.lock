@@ -15,7 +15,7 @@
       "source": "core/rules/no-global-memory.md",
       "target": "rules/no-global-memory.md",
       "canonVersion": "0.0.1",
-      "sha256": "432907d8e8d21c6bfba3a1f03104a2d98e927e5e887e8dabdf73a667f8bf5824"
+      "sha256": "d481196b2751725947827ac4520927eeae4735ede19d23d0b916db0a9c5fb359"
     },
     {
       "pack": "core",

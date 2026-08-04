@@ -184,3 +184,38 @@ three, so a canonical rule that hard-coded the roster would be wrong on arrival.
 
 **Rejected:** a manifest substitution map (solves a tenth of the spread, adds a second source of truth);
 per-repository skill templates (the divergence *is* the content, so templating it canonizes nothing).
+
+**Confirmed by the platform, after the fact.** The agent harness supplies a variable resolving to a
+skill's own directory, which is exactly the one parameter that could not be avoided — a skill invoking a
+script it ships with. The platform had already solved it without a substitution map, so a manifest field
+would have been a second, worse mechanism for the only case that needed one.
+
+## D15 — The platform overlaps the format, not the problem (2026-08-04)
+
+**Decision.** Daoris stays as scoped. The agent platform's own features are adopted where they are the
+better mechanism (the skill format and its open standard, the skill-directory variable), and nothing in
+the roadmap is withdrawn on account of them.
+
+**Why.** Checked before building further, because building a distribution layer the platform is about to
+ship would be waste. It is not shipping one.
+
+- **Workspaces** are API-key, billing, rate-limit and access segmentation. They are not a knowledge
+  feature at all, and the name is the only thing they share with this problem.
+- **Skills** are a *format* — a directory with a `SKILL.md`, now an open standard shared across tools.
+  A format is a container, not a distribution mechanism: it says how to write a procedure down, and
+  nothing about how the same procedure stays consistent across a dozen repositories.
+- **Per-project assistant memory** is machine-local and untracked. It is convenient and it fails every
+  clause of `no-global-memory`: a teammate never sees it, review never touches it, moving the project
+  loses it. That it is now automatic makes the rule more necessary, not less.
+- **Plugins and marketplaces** are the genuine adjacency — a real distribution channel for skills. Worth
+  revisiting as an *output* (emit a plugin from the canon), never as a replacement: distribution is the
+  half of 衍 that was already easy.
+
+**What remains unaddressed by any of it:** detecting that copies have diverged; removing a retired rule
+from every repository at once; a return path that promotes an improvement back; a measured budget on the
+always-loaded tier; distinguishing "you edited my file" from "I am about to destroy yours"; and covering
+the always-loaded and on-demand tiers rather than skills alone. That list is the whole thesis, and none
+of it is a platform feature.
+
+**Consequence.** Because canonical skills are parameter-free (D14), they conform to the open standard and
+carry beyond one vendor — a portability dividend from a decision made on entirely different grounds.

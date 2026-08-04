@@ -61,6 +61,11 @@ copies have diverged further than the documents had. The shape follows this desi
 
 ## 0.3 — the centralized knowledge service
 
+_Checked against the agent platform's own features before committing further (D15): its workspaces are
+billing and access segmentation, its skills are a format rather than a distribution mechanism, and its
+per-project memory is machine-local and untracked. Nothing here is superseded._
+
+
 A service every agent session can query: cross-repository semantic recall over doctrine, decisions, and
 past task outcomes. Deliberately *after* the canon exists, because indexing content that is still
 divergent indexes the divergence.
