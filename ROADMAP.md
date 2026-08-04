@@ -32,18 +32,18 @@ could not propagate at all.
 
 Skills were held out of the initial build for a reason: they carry frontmatter the harness interprets,
 and they often need per-repository parameterization (a build command, a package layout). That is a design
-problem, not a copy — and it is the last one standing between here and a release.
+problem, not a copy — and it was the last one standing between here and a release.
 
-- **The parameterization question first.** A skill that says "run the build" needs to know how, and the
-  answer differs per repository. Either skills stay parameter-free and delegate to a repository-local
-  command, or the manifest grows a small substitution map. Decide before writing any skill into the
-  canon; the wrong answer here is expensive to unwind.
-- **Then `skills-workflow`** (`TASKS.md` CANON1) — the most-duplicated and most-diverged rule in the
-  family, and unshippable until the skills it references are canonical.
-- **Then the skills themselves**, starting with the ones that already exist in three or more
-  repositories.
-- **Then the two release blockers** — the GitHub owner and the LICENSE holder (`TASKS.md` Part 1). Both
-  need an owner decision, and neither is engineering work.
+- ~~**The parameterization question.**~~ **Settled (D14).** Answered from a survey of twelve
+  repositories rather than from taste: canonical skills are parameter-free and delegate to the generated
+  index. The substitution map was rejected because the measured spread between copies of the same skill
+  is the adopter's own routing content, which no placeholder supplies. `skill-loader` turned out to be
+  generated content rather than doctrine, which removed the hardest case entirely.
+- ~~**Then `skills-workflow`**~~ — **shipped** as a seventh core rule, at 6 of 11 repositories.
+- **The rest of the frequent skills** (`TASKS.md` CANON4) — `fix-log` first, whose three copies sit
+  within 100 bytes of each other, so the invariant is nearly the whole file.
+- **The two release blockers** — the GitHub owner and the LICENSE holder (`TASKS.md` Part 1). Both need
+  an owner decision, and neither is engineering work.
 
 ## 0.2 — the harness layer: gates, not scripts
 
