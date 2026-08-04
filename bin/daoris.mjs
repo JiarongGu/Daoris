@@ -8,6 +8,7 @@ import { commandSync } from '../src/materialize.mjs';
 import { commandCheck } from '../src/drift.mjs';
 import { commandUpstream } from '../src/upstream.mjs';
 import { commandInit, commandStatus } from '../src/commands.mjs';
+import { commandDoctor } from '../src/twins.mjs';
 
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -19,10 +20,13 @@ const USAGE = `daoris <command> [options]
   upstream <file>      promote a locally-edited canonical file back to the canon
   index                regenerate RULES_INDEX.md from what is on disk
   status               human summary of packs, drift, and local files
+  doctor               report local documents that look like canonical ones
+                       under a different name (advisory; never fails)
 
 Options:
   --dry-run            print the plan; write nothing
   --force              overwrite locally-drifted files (sync only)
+  --all                promote every drifted file (upstream only)
   --help, --version`;
 
 /** Commands are registered here as they land. @returns {number} process exit code */
@@ -33,6 +37,7 @@ const commands = {
   upstream: commandUpstream,
   init: commandInit,
   status: commandStatus,
+  doctor: commandDoctor,
 };
 
 export function runCli(argv, cwd, write = console.log) {

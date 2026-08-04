@@ -1,0 +1,98 @@
+import { join } from 'node:path';
+import { listMarkdown, readText } from './fsx.mjs';
+import { parseFrontmatter, stripHeader } from './document.mjs';
+import { lockIndex, readLock, readManifest } from './config.mjs';
+
+const INDEX_FILE = 'RULES_INDEX.md';
+const TIERS = ['rules', 'knowledge'];
+
+/** Words this common carry no signal about what a document is about. */
+const STOPWORDS = new Set([
+  'that', 'this', 'with', 'from', 'they', 'them', 'then', 'than', 'have', 'has', 'been', 'were',
+  'when', 'what', 'which', 'while', 'where', 'because', 'into', 'onto', 'over', 'under', 'about',
+  'there', 'their', 'would', 'could', 'should', 'must', 'never', 'always', 'every', 'each', 'only',
+  'also', 'more', 'most', 'some', 'such', 'very', 'just', 'even', 'does', 'done', 'will', 'like',
+  'apply', 'applies', 'rule', 'rules', 'name', 'enforces', 'when',
+]);
+
+/** Deduped significant words — the crude signal that two documents cover the same ground. */
+export function significantTokens(text) {
+  const body = stripHeader(text);
+  const { body: withoutFrontmatter } = parseFrontmatter(body);
+  const words = (withoutFrontmatter || body).toLowerCase().match(/[a-z][a-z-]{3,}/g) ?? [];
+  return new Set(words.filter((word) => !STOPWORDS.has(word)));
+}
+
+/**
+ * Containment rather than Jaccard: a short local rule that restates a long
+ * canonical one is still a twin, and Jaccard would score it low purely for
+ * being shorter.
+ */
+export function containment(a, b) {
+  if (!a.size || !b.size) return 0;
+  let shared = 0;
+  for (const token of a) if (b.has(token)) shared += 1;
+  return shared / Math.min(a.size, b.size);
+}
+
+const THRESHOLD = 0.5;
+
+/**
+ * Report local documents that appear to restate a canonical one under a
+ * different name.
+ *
+ * This is the one failure the rest of the tool structurally cannot see: the
+ * twin is local, and local is invisible by design (D5). It surfaced on the very
+ * first real adoption and was only caught by reading the generated index.
+ *
+ * Deliberately advisory. Word overlap is a crude signal, and a false positive
+ * that failed a build would be worse than the duplication it warns about.
+ */
+export function findTwins({ root, manifest, lock }) {
+  const locked = lockIndex(lock);
+
+  const canonical = [];
+  const local = [];
+  for (const tier of TIERS) {
+    for (const file of listMarkdown(join(root, manifest.target, tier))) {
+      if (file === INDEX_FILE) continue;
+      const target = `${tier}/${file}`;
+      const tokens = significantTokens(readText(join(root, manifest.target, tier, file)));
+      (locked.has(target) ? canonical : local).push({ target, tokens });
+    }
+  }
+
+  const twins = [];
+  for (const candidate of local) {
+    let best = null;
+    for (const known of canonical) {
+      const score = containment(candidate.tokens, known.tokens);
+      if (score >= THRESHOLD && (!best || score > best.score)) {
+        best = { local: candidate.target, canonical: known.target, score };
+      }
+    }
+    if (best) twins.push(best);
+  }
+  return twins.sort((a, b) => b.score - a.score);
+}
+
+export function commandDoctor({ root, write }) {
+  const manifest = readManifest(root);
+  const twins = findTwins({ root, manifest, lock: readLock(root) });
+
+  if (!twins.length) {
+    write('daoris: no suspected duplicates between this repo\'s own documents and the canon');
+    return 0;
+  }
+
+  write('daoris: suspected duplicates — advisory only, nothing is changed');
+  write('');
+  for (const twin of twins) {
+    write(`  ${twin.local}`);
+    write(`    looks like ${twin.canonical} (${Math.round(twin.score * 100)}% shared vocabulary)`);
+  }
+  write('');
+  write('  If they are the same rule under two names, delete the local one and check whether');
+  write("  this repo's entry document referenced it by name. If they genuinely differ, ignore this.");
+  return 0;
+}
