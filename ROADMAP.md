@@ -45,8 +45,10 @@ problem, not a copy — and it was the last one standing between here and a rele
   `post-feature` and `fix-log` close one, `caveman` governs output. Each canonized from the copies found
   across the family and reduced to what they share. The `doc-*` maintenance family is deliberately held
   (`TASKS.md` CANON4): it automates hand-maintaining documents a generated wiki would own (D16).
-- **The two release blockers** — the GitHub owner and the LICENSE holder (`TASKS.md` Part 1). Both need
-  an owner decision, and neither is engineering work. **They are the only thing left before a tag.**
+- ~~**The LICENSE**~~ — **done:** MIT, and the rehearsal asserts it ships rather than merely existing.
+- **The GitHub owner** (`TASKS.md` REL1) — an owner decision, not engineering work. **The only thing
+  left before a tag:** `npm run rehearse` passes 51/51 against the packaged artefact, so what is missing
+  is the account to publish under, not working software.
 
 ## 0.2 — the harness layer: gates, not scripts
 

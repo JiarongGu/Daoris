@@ -158,6 +158,13 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   always long is a list nobody reads. Also fixed `init`/`status` not reporting a repository's own skills
   as local.
 
+- [x] **REL2 — the LICENSE**
+  ✅ done 2026-08-05 — MIT, copyright the repository's git author. It was open only because MIT requires
+  a *named* holder and putting a real name in a tracked file was the owner's call, not a default anyone
+  else should pick. The rehearsal's check was strengthened at the same time: what matters is that the
+  licence **ships**, not that it sits in the checkout — `files` is a whitelist, so a licence declared in
+  `package.json` and absent from the tarball would leave recipients without the terms.
+
 - [x] **T23 — Rehearse the release against the packaged artefact** _(unplanned; from "test how this will
   work" before tagging)_
   ✅ done 2026-08-05 — `tools/release-rehearsal.mjs`, wired as `npm run rehearse`. Everything else tests

@@ -18,11 +18,12 @@ _**The tool is built and proven** — seven commands, 90 tests, a canon of 7 cor
 are the tool follow-ups. Nothing is published, so development runs at **`0.0.x`** and the first release is
 **`0.1.0`**._
 
-_**Everything remaining needs a decision or another repository, not more code here.** Two items block the
-tag and are the owner's call; the rest are editorial work inside a consuming repository, or gated on the
-next adoption._
+_**Everything remaining needs a decision or another repository, not more code here.** One item blocks the
+tag and is the owner's call; the rest are editorial work inside a consuming repository, or gated on the
+next adoption. `npm run rehearse` passes 51/51 against the packaged artefact, so the release works —
+what is missing is the account to publish it under._
 
-## Part 1 — release blockers (both need an owner decision)
+## Part 1 — release blocker (one, and it needs an owner decision)
 
 - [ ] **REL1 — the GitHub owner.** `OWNER` is a literal placeholder in the places that ship:
   `src/commands.mjs:36` (what every future `daoris init` writes into a consumer's manifest),
@@ -32,9 +33,6 @@ next adoption._
   the four live refs in step, so only the owner half is manual. _`npm run rehearse` now covers everything
   up to the tag — packing, installing into a clean repository, and the whole consumer lifecycle through
   the `bin` entry — so what remains untested is only whether GitHub serves the tag._
-- [ ] **REL2 — the LICENSE.** `package.json` declares MIT but there is no `LICENSE` file, and MIT
-  requires a named copyright holder. Naming a person in a tracked file is the owner's call. _`npm run
-  rehearse` fails on exactly this and nothing else, so the release stays blocked until it is answered._
 
 ## Part 2 — findings from the Lyntai adoption (2026-08-04)
 

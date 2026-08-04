@@ -87,13 +87,29 @@ const packed = execSync(`npm pack --pack-destination "${scratch}"`, {
 const tarball = join(scratch, packed);
 check('npm pack produced a tarball', existsSync(tarball), tarball);
 
-const version = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')).version;
+const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8'));
+const version = pkg.version;
 check(`tarball is named for version ${version}`, packed.includes(version), packed);
-check(
-  'a LICENSE ships alongside the MIT declaration in package.json',
-  existsSync(join(repoRoot, 'LICENSE')),
-  'blocked on TASKS.md REL2 — MIT needs a named copyright holder, which is the owner\'s call',
+
+// What matters is what SHIPS, not what sits in the checkout. `files` is a
+// whitelist, so anything not named there is only present by npm's own rules.
+const shipped = new Set(
+  JSON.parse(
+    execSync('npm pack --dry-run --json', {
+      cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    }),
+  )[0].files.map((f) => f.path),
 );
+check(
+  `a LICENSE ships alongside the "${pkg.license}" declaration in package.json`,
+  shipped.has('LICENSE'),
+  'a licence declared but not distributed leaves recipients without the terms',
+);
+check('the canon ships', [...shipped].some((p) => p.startsWith('canon/core/rules/')));
+check('canon skills ship as nested directories', shipped.has('canon/core/skills/doc-loader/SKILL.md'));
+check('the canon changelog ships', shipped.has('canon/CHANGELOG.md'));
+check('private material does not ship', ![...shipped].some((p) => p.startsWith('local/')));
+check('test fixtures do not ship', ![...shipped].some((p) => p.startsWith('_fixtures/')));
 
 // --------------------------------------------------------------- 2. install
 
