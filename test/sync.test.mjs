@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { rmSync } from 'node:fs';
 import { makeFixture, captureError } from './_fixture.mjs';
 import { readCanon } from '../src/canon.mjs';
+import { readText } from '../src/fsx.mjs';
 import { readManifest, readLock } from '../src/config.mjs';
 import { planSync, applySync } from '../src/materialize.mjs';
 import { DaorisError } from '../src/errors.mjs';
@@ -111,6 +112,54 @@ test('a canon version bump alone is not drift', () => {
   assert.deepEqual(plan.collisions, []);
   run(fx);
   assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /@ 0\.2\.0 /);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+/**
+ * A canonical file renamed upstream reaches consumers as a delete plus an add,
+ * which loses nothing and explains nothing. Detected by content rather than
+ * declared in metadata: a ledger can claim a rename that never happened, and
+ * this cannot — it is reading what actually moved, the way version control does.
+ */
+test('a renamed canonical file is reported as a rename, not a delete plus an add', () => {
+  const fx = seed(['win']);
+  run(fx);
+  const body = readText(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+  rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+  fx.canonFx.write('packs/win/rules/windows-traps.md', body);
+
+  const canon = readCanon(fx.canonFx.root);
+  const plan = planSync({
+    root: fx.repoFx.root,
+    manifest: readManifest(fx.repoFx.root),
+    canon,
+    lock: readLock(fx.repoFx.root),
+  });
+  assert.deepEqual(plan.renames, [{ from: 'rules/gotchas.md', to: 'rules/windows-traps.md' }]);
+
+  // The outcome is unchanged — only the explanation improves.
+  run(fx);
+  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), false);
+  assert.equal(fx.repoFx.exists('.claude/rules/windows-traps.md'), true);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+test('an unrelated retirement and addition are not called a rename', () => {
+  const fx = seed(['win']);
+  run(fx);
+  rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+  fx.canonFx.write('packs/win/rules/something-else.md', doc('something-else'));
+
+  const plan = planSync({
+    root: fx.repoFx.root,
+    manifest: readManifest(fx.repoFx.root),
+    canon: readCanon(fx.canonFx.root),
+    lock: readLock(fx.repoFx.root),
+  });
+  assert.deepEqual(plan.renames, []);
+  assert.deepEqual(plan.deletes, ['rules/gotchas.md']);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

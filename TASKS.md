@@ -84,10 +84,7 @@ silently fixed, because each is editorial work on someone's doctrine._
   what remains is the **why**._ A consumer sees `changed rules/sensitive-info.md` and still has to guess
   what moved and whether it matters. Next cheapest step: ship a per-file or per-version note in the canon
   that `sync` and `status` can print between the locked version and the new one. Stays offline — the
-  canon ships in the package (D11). Do not build notification. Retirement removes a file and creation adds one, so a canonical
-  file that is *renamed* upstream lands in consumers as a delete plus an add — losing nothing, but also
-  telling the consumer nothing about why. A `renamedFrom` field in `pack.json` would let the plan say
-  "renamed" instead.
+  canon ships in the package (D11). Do not build notification.
 
 ---
 

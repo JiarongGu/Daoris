@@ -2,6 +2,7 @@ import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.mjs';
 import { makeHeader, stripHeader, withHeader } from './document.mjs';
+import { significantTokens, containment } from './twins.mjs';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.mjs';
 import { lockIndex, readLock, readManifest, writeLock } from './config.mjs';
 import { buildIndex, writeIndex } from './indexgen.mjs';
@@ -63,7 +64,48 @@ export function planSync({ root, manifest, canon, lock }) {
   // A file that left the canon leaves every repo — the thing copy-paste can never do.
   const wanted = new Set(selected.map((file) => file.target));
   const deletes = [...locked.keys()].filter((target) => !wanted.has(target));
-  return { writes, deletes, drifted, collisions };
+  const renames = detectRenames({ root, manifest, writes, deletes });
+  return { writes, deletes, drifted, collisions, renames };
+}
+
+/**
+ * A canonical file renamed upstream arrives as a delete plus an add, which loses
+ * nothing and explains nothing. Pair them up by CONTENT rather than by a
+ * declared `renamedFrom` field: a metadata ledger is a second source of truth
+ * that can claim a rename which never happened, while content cannot lie about
+ * what moved. This is how version control has always done it, for the same reason.
+ *
+ * Reporting only — the delete and the create still happen exactly as before.
+ * Deliberately conservative: below the bar it stays a retirement plus an
+ * addition, which is the honest description of two unrelated changes.
+ */
+const RENAME_SIMILARITY = 0.6;
+
+function detectRenames({ root, manifest, writes, deletes }) {
+  const created = writes.filter((write) => write.state === 'create');
+  if (!created.length || !deletes.length) return [];
+
+  const renames = [];
+  const claimed = new Set();
+  for (const from of deletes) {
+    const abs = join(root, manifest.target, from);
+    if (!existsSync(abs)) continue;
+    const old = significantTokens(readText(abs));
+
+    let best = null;
+    for (const write of created) {
+      if (claimed.has(write.target)) continue;
+      const score = containment(old, significantTokens(write.content));
+      if (score >= RENAME_SIMILARITY && (!best || score > best.score)) {
+        best = { target: write.target, score };
+      }
+    }
+    if (best) {
+      claimed.add(best.target);
+      renames.push({ from, to: best.target });
+    }
+  }
+  return renames;
 }
 
 /**
@@ -149,11 +191,21 @@ export function commandSync({ root, argv, write, packageRoot }) {
   const canon = readCanon(resolveCanonRoot(packageRoot));
   const plan = planSync({ root, manifest, canon, lock: readLock(root) });
 
+  // A rename is reported in place of the delete and the add it is made of,
+  // because "these two are the same rule" is the part a reader cannot recover.
+  const renamedFrom = new Set(plan.renames.map((rename) => rename.from));
+  const renamedTo = new Set(plan.renames.map((rename) => rename.to));
+
   if (argv.includes('--dry-run')) {
+    for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
     for (const entry of plan.writes) {
-      if (entry.state !== 'unchanged') write(`  ${entry.state.padEnd(9)} ${entry.target}`);
+      if (entry.state !== 'unchanged' && !renamedTo.has(entry.target)) {
+        write(`  ${entry.state.padEnd(9)} ${entry.target}`);
+      }
     }
-    for (const target of plan.deletes) write(`  retire    ${target}`);
+    for (const target of plan.deletes) {
+      if (!renamedFrom.has(target)) write(`  retire    ${target}`);
+    }
     for (const target of plan.drifted) write(`  DRIFTED   ${target}`);
     for (const target of plan.collisions) write(`  COLLIDES  ${target} (this repo's own)`);
     write(`daoris: ${plan.writes.length} file(s) selected, ${plan.deletes.length} to retire`);
@@ -161,6 +213,8 @@ export function commandSync({ root, argv, write, packageRoot }) {
   }
 
   applySync({ root, manifest, plan, canonVersion: canon.version, force: argv.includes('--force') });
-  write(`daoris: synced ${plan.writes.length} file(s); retired ${plan.deletes.length}`);
+  for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
+  const retired = plan.deletes.length - plan.renames.length;
+  write(`daoris: synced ${plan.writes.length} file(s); retired ${retired}`);
   return 0;
 }

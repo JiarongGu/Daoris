@@ -39,6 +39,10 @@ The first version: doctrine that installs, is checked, and flows back.
   "is there something new to install." See `docs/DECISIONS.md` D13.
 - **Retirement.** A file removed from the canon is removed from every repository on the next sync — the
   one thing copy-paste can never do.
+- **A renamed canonical file is reported as a rename**, not as a retirement plus an unrelated addition.
+  Detected by pairing content rather than by a declared field, so it cannot claim a move that did not
+  happen, and it covers core as well as packs. Conservative by design: an uncertain pair stays described
+  as two separate changes.
 - **A one-line provenance header** on every materialized file, because an agent that opens a rule needing
   a tweak will otherwise simply edit it. The lock's hash catches the edit either way.
 - Atomic, BOM-less, LF writes throughout; exit codes are the contract (`0` clean, `1` policy failure,

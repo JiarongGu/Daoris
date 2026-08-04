@@ -158,6 +158,14 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   always long is a list nobody reads. Also fixed `init`/`status` not reporting a repository's own skills
   as local.
 
+- [x] **TOOL1 — `sync` cannot rename**
+  ✅ done 2026-08-05 — solved by **detection rather than declaration**. The task proposed a `renamedFrom`
+  field in `pack.json`, which would not have covered core (it has no `pack.json`) and would have been a
+  second source of truth able to claim a rename that never happened. Pairing the delete with the add by
+  content cannot lie about what moved, which is why version control has always done it that way. Reuses
+  the containment function written for `doctor`, at a deliberately conservative 0.6 — below that it stays
+  an honest "retire plus create". Reporting only: the outcome is byte-for-byte what it was.
+
 ## Part 4 — earlier release prep
 
 - [x] **T16 — Release prep**
