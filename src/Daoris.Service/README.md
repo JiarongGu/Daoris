@@ -1,8 +1,12 @@
 # Daoris.Service — the cross-repository knowledge service
 
-**Status: ingest and query work, in memory.** `Daoris.Service.Core` reads a repository's knowledge into
-addressable entries, classifies each as canonical or local, and answers scored queries across the lot.
-24 tests, two of which run against the real sibling repositories rather than fixtures.
+**Status: ingest, storage and query work.** `Daoris.Service.Core` reads a repository's knowledge into
+addressable entries, classifies each as canonical or local, stores them in SQLite, and answers ranked
+queries over FTS5. 37 tests, two of which run against the real sibling repositories rather than
+fixtures.
+
+Indexing the whole family takes **533 ms for 406 entries** into a 7 MB database; queries answer in
+**3–10 ms**.
 
 ```sh
 cd src/Daoris.Service && dotnet test
@@ -36,8 +40,8 @@ without touching the ones that are not.
 | Seam | Today | Later |
 |---|---|---|
 | `IKnowledgeSource` | The local filesystem | A git remote, or a devkit gate that pushes |
-| `IKnowledgeStore` | In memory | Embedded single file; a hosted store only if volume demands |
-| `IKnowledgeSearch` | Lexical term overlap | Semantic, then hybrid as a *composition* of the two |
+| `IKnowledgeStore` | SQLite file, or in memory for tests | A hosted store only if volume ever demands one |
+| `IKnowledgeSearch` | FTS5 + BM25, or term overlap over any store | Semantic, then hybrid as a *composition* of the two |
 | `IDisclosurePolicy` | `LocalOnly` — nothing leaves | `Sharing(repositories)` — opt-in per repository |
 
 Two choices worth knowing about:

@@ -1,10 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Ingest, classification and query. No package dependencies: the first slices need no
-       embeddings, no vector store and no model, and adding them before a query needs them pays
-       their cost for nothing. The cognition sibling arrives with semantic search (D22). -->
+  <!-- Ingest, classification, storage and query. The cognition sibling arrives with semantic search
+       (D22); until a query needs embeddings, adding it would pay its cost for nothing. -->
   <PropertyGroup>
     <RootNamespace>Daoris.Knowledge</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The FTS5 match-expression builder is tested directly: it is the piece that turns arbitrary
+         human text into query syntax, so it is where a malformed input would surface. -->
+    <InternalsVisibleTo Include="Daoris.Service.Tests" />
+  </ItemGroup>
 
 </Project>
