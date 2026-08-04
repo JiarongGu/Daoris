@@ -92,7 +92,24 @@ inside Lyntai rather than changes here, which is why they are recorded rather th
   hosting + IPC contracts, from Shenora), `desktop-winforms` (the WinForms shell, from Shenora),
   `durable-jobs` (two repositories). Write each only when a repository is ready to adopt it — a pack that
   no one installs is unvalidated doctrine.
-- [ ] **CANON3 — adopt Shenora.** The second adopter, and the one that validates the desktop and webview
+- [ ] **ADOPT4 — the generated index is now the largest always-loaded file.** Measured on the
+  second-adoption rehearsal: `RULES_INDEX.md` is **6,793 bytes**, larger than any individual rule, and
+  it grows with every skill because a skill's `description` is long by design — that text is the
+  harness's trigger, so it cannot be terse. Skill *bodies* stay free until invoked, but their
+  descriptions are paid for on every session. Worth deciding before the skill set grows further:
+  either a more compact index row for skills, or an explicit budget line for the index so the cost is
+  visible rather than blamed on the rules.
+- [ ] **ADOPT5 — a `library-api-design` vocabulary cluster.** After the tier fix, `doctor` reports four
+  of that repository's knowledge documents against canonical `library-api-design` at 42–57%. Unlike the
+  skill case these are same-tier and plausibly related — they are all library/API-shaped documents — so
+  this needs a read rather than a code change. It may be a genuine signal that the pack rule is too
+  broad, or simply what a shared domain looks like.
+- [ ] **CANON3 — adopt Shenora.** _Rehearsed 2026-08-05 against a scratch consumer carrying its real
+  doctrine, because its working tree had eight files of in-flight work. Result: **6 collisions**
+  (`sensitive-info`, `persist-working-state`, `skills-workflow`, and the `doc-loader`, `fix-log`,
+  `pattern-finder` skills), a clean sync once resolved, and a **48% budget overage** — 35,529 bytes
+  against a 24,000 limit. The real adoption is the same steps against the real tree, once its work is
+  committed._ The second adopter, and the one that validates the desktop and webview
   packs. Expect collisions on `sensitive-info` and `persist-working-state`, and a renamed twin in
   `windows-dev-gotchas` versus canonical `windows-machine` — the machine-level content is canonical, the
   WebView2/WinForms/devtools items are Shenora's own.
