@@ -85,7 +85,15 @@ silently fixed, because each is editorial work on someone's doctrine._
 
 ## Part 4 — tool follow-ups
 
-- [ ] **TOOL1 — `sync` cannot rename.** Retirement removes a file and creation adds one, so a canonical
+- [ ] **TOOL4 — the many-developers axis is thinner than the many-repositories one.** Daoris answers
+  "multiple developers" by never becoming a service: doctrine is a tracked file, so a clone carries it,
+  review touches it, and a move preserves it — the substrate solves the problem, which is exactly why
+  a hosted shared workspace would be worse here (accounts, outside review, does not survive the tool).
+  What is genuinely thin is **coordination**: when a canon change lands, a consuming repository learns
+  about it only by someone running `status`, and there is no per-consumer account of *what* changed or
+  why. Options, cheapest first: have `status` name the changed files rather than just reporting that a
+  newer canon exists; let `sync` print the canon's changelog entries between the locked version and the
+  new one. Neither needs a network — the canon ships in the package (D11). Do not build notification. Retirement removes a file and creation adds one, so a canonical
   file that is *renamed* upstream lands in consumers as a delete plus an add — losing nothing, but also
   telling the consumer nothing about why. A `renamedFrom` field in `pack.json` would let the plan say
   "renamed" instead.

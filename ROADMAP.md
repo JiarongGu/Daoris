@@ -65,6 +65,13 @@ _Checked against the agent platform's own features before committing further (D1
 billing and access segmentation, its skills are a format rather than a distribution mechanism, and its
 per-project memory is machine-local and untracked. Nothing here is superseded._
 
+_Also checked against generated-wiki tools (D16). They are the complement: a wiki is **derived** from the
+code and fails by going stale, doctrine is **authored** because something went wrong and fails by
+diverging. They meet inside `doc-loader`, which routes first to the repository's own documentation router
+— what a generator maintains — and then to the rules index, which `sync` writes. The dependency runs one
+way: a wiki generated over divergent copies documents the divergence, so canonizing first is what makes
+the generated layer worth having. Prefer pointing at such a tool over growing one._
+
 
 A service every agent session can query: cross-repository semantic recall over doctrine, decisions, and
 past task outcomes. Deliberately *after* the canon exists, because indexing content that is still

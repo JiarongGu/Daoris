@@ -219,3 +219,36 @@ of it is a platform feature.
 
 **Consequence.** Because canonical skills are parameter-free (D14), they conform to the open standard and
 carry beyond one vendor — a portability dividend from a decision made on entirely different grounds.
+
+## D16 — Generated wikis are the complement, not the competitor (2026-08-05)
+
+**Decision.** Daoris stays on *authored doctrine* and does not grow a documentation generator. Where a
+generated wiki exists it is treated as an input the canon points at, never as something the canon owns.
+
+**Why.** The "LLM wiki" pattern — an agent that reads a corpus and maintains a structured, interlinked
+wiki that compounds instead of being re-derived per query — now has several codebase implementations.
+It looks adjacent enough to be worth stating why it is not the same problem.
+
+| | Generated wiki | Daoris |
+|---|---|---|
+| Where it comes from | **Derived** from a source of truth | **Authored**, because something went wrong once |
+| Can it be regenerated? | Yes — cheap, therefore disposable | No. The incident is not in the code |
+| Failure mode | Staleness | Divergence across copies |
+| Question answered | "What *is* this codebase?" | "How do we work, and why?" |
+
+No generator produces `sensitive-info` or `no-tmp-for-repo-files`: a codebase does not contain the leak
+or the mangled encoding that motivated them. The converse holds just as firmly — hand-maintaining an
+architecture map that a generator can rebuild from the source is how documentation rots.
+
+**They compose, and in a specific place.** The `doc-loader` skill routes a task first to *the
+repository's own documentation router* and then to the generated rules index. The first of those is
+precisely what a wiki generator produces and keeps fresh; the second is what `sync` writes. One skill,
+fed from both sides, neither of which the other could supply.
+
+**And the dependency runs one way.** A wiki generated over six divergent copies of the same rule
+faithfully documents the divergence. Canonizing first is what makes the generated layer worth having,
+which is the same ordering the roadmap already applies to the knowledge service.
+
+**Consequence.** Before building the long-term repository-intelligence work, check it against these tools
+the way the platform was checked in D15 — parts of that pillar may already exist, and building a second
+worse copy is the failure D1 was written to prevent.
