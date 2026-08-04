@@ -11,6 +11,18 @@ public sealed record ConvergenceCandidate(IReadOnlyList<KnowledgeEntry> Entries,
     /// <summary>The repositories involved, which is what makes this worth a person's attention.</summary>
     public IReadOnlyList<string> Repositories =>
         Entries.Select(e => e.Repository).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+
+    /// <summary>
+    /// A copy rather than a convergence — the same document, pasted.
+    /// </summary>
+    /// <remarks>
+    /// Worth separating, because the two are different findings with different work attached. A copy
+    /// is easy to spot by name and easy to canonize; a convergence is two people reaching the same
+    /// conclusion in different words, which nobody can find by looking. Run against a real family the
+    /// copies dominate at any useful threshold and crowd the convergences out of the top of the list —
+    /// so the caller is told which is which rather than left to infer it from a score.
+    /// </remarks>
+    public bool IsIdenticalCopy => Similarity >= 0.999;
 }
 
 /// <summary>How hard to look.</summary>
@@ -67,17 +79,19 @@ public sealed class ConvergenceDetector(IKnowledgeStore store, IEmbedder embedde
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var candidates = new List<ConvergenceCandidate>();
 
-        // Embedded in one batch per seed rather than per pair: the vector store already holds every
-        // entry from the refresh, so this only ever embeds the seed text.
+        // Embed every seed FIRST, in batches. One call per entry is what the naive version did, and
+        // on a real corpus it was four hundred sequential HTTP round trips — slow enough to time out
+        // rather than merely be inefficient. The library's primitive is a batch precisely because
+        // that is what real endpoints reward.
+        var vectorsBySeed = await EmbedAllAsync(considered, ct).ConfigureAwait(false);
+
         foreach (var seed in considered)
         {
             ct.ThrowIfCancellationRequested();
             if (seen.Contains(seed.Id)) continue;
 
-            var vector = await embedder.EmbedAsync(SemanticKnowledgeSearch.Embeddable(seed), ct)
-                .ConfigureAwait(false);
             var matches = await vectors
-                .SearchAsync(SemanticKnowledgeSearch.Collection, vector, 12, ct)
+                .SearchAsync(SemanticKnowledgeSearch.Collection, vectorsBySeed[seed.Id], 12, ct)
                 .ConfigureAwait(false);
 
             var group = new List<KnowledgeEntry> { seed };
@@ -107,5 +121,31 @@ public sealed class ConvergenceDetector(IKnowledgeStore store, IEmbedder embedde
             .ThenByDescending(c => c.Entries.Count)
             .Take(options.MaxCandidates)
             .ToList();
+    }
+
+    /// <summary>
+    /// Every entry's vector, batched.
+    /// </summary>
+    /// <remarks>
+    /// These vectors already exist — the refresh put them in the store — but the vector-store seam
+    /// offers upsert, search and delete, not fetch-by-id, so they are recomputed. Batching makes that
+    /// cheap enough not to matter; adding a fetch to someone else's interface to save it would not be.
+    /// </remarks>
+    private async Task<Dictionary<string, float[]>> EmbedAllAsync(
+        IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct, int batchSize = 32)
+    {
+        var byId = new Dictionary<string, float[]>(StringComparer.Ordinal);
+        for (var offset = 0; offset < entries.Count; offset += batchSize)
+        {
+            ct.ThrowIfCancellationRequested();
+            var batch = entries.Skip(offset).Take(batchSize).ToList();
+            var embedded = await embedder
+                .EmbedAsync(batch.Select(SemanticKnowledgeSearch.Embeddable).ToList(), ct)
+                .ConfigureAwait(false);
+
+            for (var i = 0; i < batch.Count; i++) byId[batch[i].Id] = embedded[i];
+        }
+
+        return byId;
     }
 }

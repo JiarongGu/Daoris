@@ -102,6 +102,73 @@ public sealed class KnowledgeTools(KnowledgeService service)
         return text.ToString();
     }
 
+    [McpServerTool(Name = "knowledge_convergence")]
+    [Description(
+        "Find where different repositories learned the SAME lesson independently, including when they "
+        + "wrote it in completely different words. Use when deciding what should become shared "
+        + "doctrine, or before writing a rule that another repository may already have. Requires "
+        + "semantic search to be enabled.")]
+    public async Task<string> ConvergenceAsync(
+        [Description("How similar a pair must be, 0 to 1. Higher is stricter. Default 0.82.")]
+        double minimumSimilarity = 0.82,
+        [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task. Comma-separated; omit for all.")]
+        string? kinds = null,
+        [Description("Maximum groups to return. Default 15.")] int limit = 15,
+        CancellationToken ct = default)
+    {
+        var candidates = await service.FindConvergenceAsync(
+            new ConvergenceOptions(minimumSimilarity, ParseKinds(kinds), Math.Clamp(limit, 1, 50)), ct)
+            .ConfigureAwait(false);
+
+        if (candidates is null)
+        {
+            return "Convergence needs semantic search, which is not enabled. "
+                 + "Set DAORIS_EMBED_MODEL and call `knowledge_refresh`.";
+        }
+
+        if (candidates.Count == 0)
+        {
+            return $"No repositories converge above {minimumSimilarity:0.00}. "
+                 + "Lower the threshold to see weaker overlaps — the right value depends on the "
+                 + "embedding model, so it is worth sweeping rather than trusting a default.";
+        }
+
+        // Convergences first. Copies are the easy finding and there are usually more of them, so
+        // ordering by score alone buries the one a person could not have found by looking.
+        var convergent = candidates.Where(c => !c.IsIdenticalCopy).ToList();
+        var copies = candidates.Where(c => c.IsIdenticalCopy).ToList();
+
+        var text = new StringBuilder("A prompt to look, not a merge.\n\n");
+
+        if (convergent.Count > 0)
+        {
+            text.AppendLine($"## Convergent — same lesson, different words ({convergent.Count})");
+            text.AppendLine("The hard case: nobody finds these by reading file names.\n");
+            foreach (var candidate in convergent) Append(text, candidate);
+        }
+
+        if (copies.Count > 0)
+        {
+            text.AppendLine($"## Identical copies ({copies.Count})");
+            text.AppendLine("The same document, pasted. Easy to canonize; easy to forget exists.\n");
+            foreach (var candidate in copies) Append(text, candidate);
+        }
+
+        text.AppendLine("Read each group before acting. What they share may be canonical; what differs "
+                      + "is usually the repository's own and must stay local.");
+        return text.ToString();
+
+        static void Append(StringBuilder text, ConvergenceCandidate candidate)
+        {
+            text.AppendLine($"### {string.Join(" ↔ ", candidate.Repositories)}  ({candidate.Similarity:0.000})");
+            foreach (var entry in candidate.Entries)
+            {
+                text.AppendLine($"- `{entry.Repository}` {entry.Kind} **{entry.Title}** — `{entry.RelativePath}`");
+            }
+            text.AppendLine();
+        }
+    }
+
     [McpServerTool(Name = "knowledge_refresh")]
     [Description("Re-read every repository from disk and rebuild the index. Use after doctrine or decisions have changed; it takes about a second.")]
     public async Task<string> RefreshAsync(CancellationToken ct = default)

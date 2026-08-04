@@ -56,6 +56,20 @@ public sealed class KnowledgeService(
             .ToList();
     }
 
+    /// <summary>
+    /// Where different repositories learned the same lesson independently.
+    /// </summary>
+    /// <returns>Null when semantic search is not configured — the caller can then say so, which is
+    /// more useful than an empty list that looks like "nothing converges".</returns>
+    public async Task<IReadOnlyList<ConvergenceCandidate>?> FindConvergenceAsync(
+        ConvergenceOptions? options = null, CancellationToken ct = default)
+    {
+        if (embedder is null || vectors is null) return null;
+        await EnsureIndexedAsync(ct).ConfigureAwait(false);
+        return await new ConvergenceDetector(store, embedder, vectors)
+            .FindAsync(options, ct).ConfigureAwait(false);
+    }
+
     /// <summary>Re-read every repository and rebuild the index.</summary>
     public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)
     {
