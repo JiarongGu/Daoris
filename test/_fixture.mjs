@@ -4,6 +4,19 @@ import { fileURLToPath } from 'node:url';
 
 const FIXTURE_ROOT = join(dirname(dirname(fileURLToPath(import.meta.url))), '_fixtures');
 
+/**
+ * Return the error a function throws, so its exitCode and message can be
+ * asserted. `assert.throws` returns undefined, so it cannot be used for this.
+ */
+export function captureError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  throw new Error('expected a throw, but the call returned normally');
+}
+
 /** A scratch repo under _fixtures/ — never OS temp. */
 export function makeFixture(name) {
   const root = join(FIXTURE_ROOT, name);
