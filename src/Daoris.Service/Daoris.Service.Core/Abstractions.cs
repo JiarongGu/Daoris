@@ -80,4 +80,10 @@ public interface IDisclosurePolicy
 /// <param name="Repositories">How many repositories it yielded.</param>
 /// <param name="Entries">How many entries were stored.</param>
 /// <param name="Withheld">How many the disclosure policy excluded.</param>
-public sealed record IndexReport(string Source, int Repositories, int Entries, int Withheld);
+/// <param name="SemanticError">
+/// Why semantic indexing did not happen, or null if it did (or was never configured). Carried rather
+/// than thrown: the lexical index is complete and usable either way, and taking a whole refresh down
+/// for the optional half would trade the feature that works for the one that does not.
+/// </param>
+public sealed record IndexReport(
+    string Source, int Repositories, int Entries, int Withheld, string? SemanticError = null);

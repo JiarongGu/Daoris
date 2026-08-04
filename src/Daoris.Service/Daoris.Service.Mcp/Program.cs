@@ -1,6 +1,10 @@
 using System.Text;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
+using Lyntai;
+using Lyntai.Embeddings;
+using Lyntai.Memory;
+using Lyntai.Providers.OpenAiCompatible;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -51,8 +55,35 @@ Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
 var store = await SqliteKnowledgeStore.OpenAsync(databasePath).ConfigureAwait(false);
 
 builder.Services.AddSingleton<IKnowledgeStore>(store);
-builder.Services.AddSingleton<IKnowledgeSearch>(new SqliteKnowledgeSearch(store));
 builder.Services.AddSingleton<IKnowledgeSource>(FileSystemKnowledgeSource.UnderFolder(repositoryRoot));
+
+// Lexical always works and needs nothing installed. Semantic is opt-in: naming a model turns it on,
+// and hybrid then fuses the two. Silence leaves the service lexical-only rather than half-configured,
+// because a knowledge index that will not start without an embedding endpoint is not local-first.
+var embedModel = Environment.GetEnvironmentVariable("DAORIS_EMBED_MODEL");
+var embedUrl = Environment.GetEnvironmentVariable("DAORIS_EMBED_URL") ?? "http://localhost:11434";
+
+IKnowledgeSearch search = new SqliteKnowledgeSearch(store);
+if (!string.IsNullOrWhiteSpace(embedModel))
+{
+    // The cognition sibling's embedder, consumed as a library (D22): it already speaks Ollama's
+    // native /api/embed and the OpenAI-compatible shape, batches, and needs no key for a local
+    // endpoint. Writing a second one would be the worse copy D1 exists to prevent.
+    var embedder = new HttpEmbedder(
+        id: "daoris-embed",
+        config: new OpenAiCompatibleEmbedderOptions { BaseUrl = embedUrl, Model = embedModel },
+        httpFactory: () => new HttpClient(),
+        options: new LyntaiOptions());
+
+    var vectors = new InMemoryVectorStore();
+    builder.Services.AddSingleton<IEmbedder>(embedder);
+    builder.Services.AddSingleton<IVectorStore>(vectors);
+    builder.Services.AddSingleton(new ConvergenceDetector(store, embedder, vectors));
+
+    search = new HybridKnowledgeSearch(search, new SemanticKnowledgeSearch(store, embedder, vectors));
+}
+
+builder.Services.AddSingleton(search);
 // Nothing is leaving this machine, so nothing is withheld. Shared mode replaces exactly this line.
 builder.Services.AddSingleton(DisclosurePolicy.LocalOnly);
 builder.Services.AddSingleton<KnowledgeService>();

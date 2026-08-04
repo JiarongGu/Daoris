@@ -35,6 +35,14 @@ it does not exist yet:
 |---|---|
 | `DAORIS_KNOWLEDGE_ROOT` | Where the repositories are. Default: the folder containing this workspace |
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `~/.daoris/knowledge.db` |
+| `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
+| `DAORIS_EMBED_URL` | Embedding endpoint. Default: `http://localhost:11434` (Ollama) |
+
+Semantic recall is opt-in and never required. Naming a model turns it on and hybrid fuses it with the
+lexical index; leaving it unset keeps the service lexical-only rather than half-configured, because an
+index that will not start without an embedding endpoint is not local-first. If the endpoint is
+unreachable or misconfigured, the refresh still completes and reports the reason — verified against a
+local server started without `--embeddings`, which is what the failure actually looks like.
 
 ```sh
 cd src/Daoris.Service && dotnet test

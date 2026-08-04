@@ -14,11 +14,20 @@ public sealed record RepositorySummary(string Repository, int Total, int Local, 
 /// It refreshes on first use if the index is empty, because an empty index that requires a separate
 /// setup call is a first run that looks broken.
 /// </remarks>
-public sealed class KnowledgeService(IKnowledgeStore store, IKnowledgeSearch search, IKnowledgeSource source, IDisclosurePolicy? disclosure = null)
+public sealed class KnowledgeService(
+    IKnowledgeStore store,
+    IKnowledgeSearch search,
+    IKnowledgeSource source,
+    IDisclosurePolicy? disclosure = null,
+    Lyntai.Embeddings.IEmbedder? embedder = null,
+    Lyntai.Memory.IVectorStore? vectors = null)
 {
     private readonly KnowledgeIndex _index = new(store, disclosure);
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
     private bool _everRefreshed;
+
+    /// <summary>Whether semantic recall is available, which depends on an embedder being configured.</summary>
+    public bool SemanticEnabled => embedder is not null && vectors is not null;
 
     public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
@@ -54,8 +63,35 @@ public sealed class KnowledgeService(IKnowledgeStore store, IKnowledgeSearch sea
         try
         {
             var report = await _index.RefreshAsync(source, ct).ConfigureAwait(false);
+
+            // Embedding happens here rather than inside the index, because it is the expensive,
+            // optional half: the store is usable the moment the refresh returns, and semantic recall
+            // arrives when it arrives.
+            string? semanticError = null;
+            if (embedder is not null && vectors is not null)
+            {
+                try
+                {
+                    var entries = await store.AllAsync(ct).ConfigureAwait(false);
+                    await SemanticKnowledgeSearch.IndexAsync(entries, embedder, vectors, ct: ct)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw; // the caller's, not a failure to absorb
+                }
+                catch (Exception error)
+                {
+                    // The lexical index is complete and usable. Failing the whole refresh because an
+                    // embedding endpoint is unreachable, misconfigured or slow would trade the half
+                    // that works for the half that does not — and it did, on the first real run,
+                    // against a local server started without embeddings enabled.
+                    semanticError = error.Message;
+                }
+            }
+
             _everRefreshed = true;
-            return report;
+            return report with { SemanticError = semanticError };
         }
         finally
         {

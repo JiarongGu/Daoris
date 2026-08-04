@@ -108,7 +108,13 @@ public sealed class KnowledgeTools(KnowledgeService service)
     {
         var report = await service.RefreshAsync(ct).ConfigureAwait(false);
         var withheld = report.Withheld > 0 ? $", {report.Withheld} withheld by policy" : "";
-        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.";
+        var recall = report.SemanticError is { Length: > 0 } error
+            ? $"Lexical recall only — semantic indexing failed and was skipped: {error}"
+            : service.SemanticEnabled
+                ? "Lexical and semantic recall are both active."
+                : "Lexical recall only — set DAORIS_EMBED_MODEL to enable semantic search, which is "
+                  + "what finds two repositories that reached the same conclusion in different words.";
+        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.\n{recall}";
     }
 
     private static IReadOnlySet<EntryKind>? ParseKinds(string? value)
