@@ -4,9 +4,9 @@ import { listFiles, listMarkdown, readText } from './fsx.mjs';
 import { DaorisError } from './errors.mjs';
 
 /**
- * The three tiers, and the whole of the tier model. `rules/` is always-loaded,
- * `knowledge/` is read on demand, `skills/` is invoked by name — and the harness
- * decides each by path, which is why there is no `tier` field (D7).
+ * The canon's own vocabulary for what a document IS: always-loaded, read-on-demand, or invoked by
+ * name. Where each one lands on disk is the harness's business (src/harness.mjs), which is why this
+ * list describes doctrine rather than directories — and why there is still no `tier` field (D7).
  */
 const TIERS = ['rules', 'knowledge', 'skills'];
 

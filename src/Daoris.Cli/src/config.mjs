@@ -2,12 +2,16 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText, writeTextAtomic } from './fsx.mjs';
 import { DaorisError } from './errors.mjs';
+import { DEFAULT_HARNESS, resolveHarness } from './harness.mjs';
 
 export const MANIFEST_FILE = 'daoris.json';
 export const LOCK_FILE = 'daoris.lock';
 export const LOCK_VERSION = 1;
 
-const DEFAULTS = { packs: [], target: '.claude', coreBudgetBytes: 24000 };
+// `harness` names which agent layout to generate. It defaults rather than being required, because a
+// manifest written before harnesses existed must keep working — and because there is one supported
+// value today (D23), so demanding it would be ceremony.
+const DEFAULTS = { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudgetBytes: 24000 };
 
 export function readManifest(root) {
   const file = join(root, MANIFEST_FILE);
@@ -16,6 +20,11 @@ export function readManifest(root) {
   }
   const manifest = { ...DEFAULTS, ...JSON.parse(readText(file)) };
   if (!manifest.source) throw new DaorisError(`${MANIFEST_FILE} has no 'source'`);
+
+  // Resolve here so an unknown name fails at the edge, naming what exists, rather than deeper down
+  // where the message would be about a missing directory.
+  manifest.harnessDescriptor = resolveHarness(manifest.harness);
+  manifest.target ??= manifest.harnessDescriptor.defaultTarget;
   return manifest;
 }
 

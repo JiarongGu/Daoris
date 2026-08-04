@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { listMarkdown, readText, sha256 } from './fsx.mjs';
 import { readLock, readManifest } from './config.mjs';
 import { INDEX_PATH, buildIndex } from './indexgen.mjs';
+import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from './harness.mjs';
 
 /**
  * Pure local hashing against the lock — no network, no canon, no package
@@ -23,12 +24,14 @@ export function inspect({ root, manifest, lock }) {
   const syncedPacks = new Set((lock?.entries ?? []).map((entry) => entry.pack));
   const stalePacks = manifest.packs.filter((pack) => !syncedPacks.has(pack));
 
-  // The tier is the directory, so the always-loaded footprint is measurable.
-  const rulesDir = join(root, manifest.target, 'rules');
-  const coreBytes = listMarkdown(rulesDir).reduce(
-    (sum, file) => sum + statSync(join(rulesDir, file)).size,
-    0,
-  );
+  // The tier is the directory, so the always-loaded footprint is measurable — and WHICH tiers those
+  // are is the harness's answer, not a constant here.
+  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS];
+  let coreBytes = 0;
+  for (const tier of alwaysLoadedTiers(harness)) {
+    const dir = join(root, manifest.target, harness.tiers[tier].dir);
+    coreBytes += listMarkdown(dir).reduce((sum, file) => sum + statSync(join(dir, file)).size, 0);
+  }
   const overBudget = coreBytes > manifest.coreBudgetBytes;
 
   const indexFile = join(root, manifest.target, INDEX_PATH);
@@ -50,7 +53,7 @@ export function commandCheck({ root, write }) {
   }
   if (report.overBudget) {
     write(
-      `  budget    ${manifest.target}/rules is ${report.coreBytes} bytes ` +
+      `  budget    ${manifest.target} always-loaded is ${report.coreBytes} bytes ` +
         `(limit ${manifest.coreBudgetBytes})`,
     );
   }

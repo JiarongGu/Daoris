@@ -2,8 +2,11 @@ import { join } from 'node:path';
 import { listMarkdown, readText, writeTextAtomic } from './fsx.mjs';
 import { parseFrontmatter, stripHeader, SKILL_FIELDS } from './document.mjs';
 import { lockIndex, readLock, readManifest } from './config.mjs';
+import { HARNESSES, DEFAULT_HARNESS } from './harness.mjs';
 
-export const INDEX_PATH = 'rules/RULES_INDEX.md';
+// Kept as the default for callers that have no manifest to hand; the manifest's harness is
+// authoritative wherever one exists.
+export const INDEX_PATH = HARNESSES[DEFAULT_HARNESS].indexPath;
 const INDEX_FILE = 'RULES_INDEX.md';
 const TABLE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
 const SKILL_TABLE_HEAD = '| Skill | Use when |\n|---|---|';

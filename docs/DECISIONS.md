@@ -321,6 +321,21 @@ than an honest gap, because an honest gap gets fixed the day it is hit.
 for a consumer that does not exist — the same reasoning that keeps a pack unwritten until a repository
 is ready to install it.
 
+**Amended 2026-08-05: switching is a first-class concept, with one implementation.** Every harness fact
+had been a constant scattered across six modules, each quietly asserting one tool's conventions as
+universal — the target directory, the tier names, which tier is always-loaded, the skill entry file,
+the required frontmatter, the index path, where the provenance header goes. They now live in one
+descriptor, and the manifest selects with `"harness": "claude-code"`.
+
+The canon keeps its own vocabulary — a document is a **rule**, **knowledge**, or a **skill** — because
+that describes the *doctrine*. Where each lands on disk is the harness's translation. That separation
+is what makes a second harness an addition rather than an excavation, and it is worth having before
+the second exists precisely because it is cheap now and expensive later.
+
+An unknown harness is a **tool error naming what exists**, never a silent fallback: a repository that
+asked for one layout and quietly received another is exactly the failure this seam prevents. A
+*recognised but ungenerated* one says so specifically, and points at this decision.
+
 ## D21 — The knowledge service is local-first, with sharing as configuration (2026-08-05)
 
 **Decision.** One service, two modes selected by configuration rather than by build: **local** (the

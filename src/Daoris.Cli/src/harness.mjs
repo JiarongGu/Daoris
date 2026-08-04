@@ -2,83 +2,167 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown, readText } from './fsx.mjs';
 import { parseFrontmatter, stripHeader, SKILL_FIELDS } from './document.mjs';
+import { DaorisError } from './errors.mjs';
 
 /**
- * Which agent harness a repository is set up for.
+ * How a given agent harness expects doctrine to be laid out on disk.
  *
- * Daoris targets **one** harness today, and says so rather than pretending otherwise. Every tier
- * decision in this tool is that harness's behaviour, not a universal truth: `rules/` is always-loaded
- * and `knowledge/` is not because that harness decides by path (D7), and a skill's `description` is a
- * trigger because that harness parses it. Install the same tree for a harness that reads
- * `AGENTS.md`, and it loads nothing — silently, with every file present and correct.
+ * The canon speaks one vocabulary — a document is a **rule** (always loaded), **knowledge** (read on
+ * demand) or a **skill** (invoked by name) — and that vocabulary is about the *doctrine*, not about
+ * any tool. A harness descriptor is the translation: where each tier lands, what a skill's entry file
+ * is called, which frontmatter fields it must carry, where the generated index goes.
  *
- * So the others are **detected and reported, never guessed at**. When one of them is actually adopted,
- * this is the seam that grows a second implementation; until then, an honest "not supported" beats a
- * layout that looks installed and does nothing.
+ * Everything in here was previously a constant scattered across six modules, each quietly asserting
+ * one harness's conventions as though they were universal. Naming them in one place is what makes a
+ * second harness an addition rather than an excavation.
+ *
+ * **One implementation ships** (D23). The others are detected and reported so the gap is loud: a tree
+ * installed for the wrong harness is present, correct, and never loaded — a failure with nothing to
+ * notice. Writing a second descriptor is deliberately deferred until a repository actually wants it,
+ * because the layout, the always-loaded semantics and the trigger mechanism all differ, and guessing
+ * produces doctrine nobody chose in a format nobody verified.
  */
-const SIGNALS = [
-  {
+export const HARNESSES = {
+  'claude-code': {
     id: 'claude-code',
     name: 'Claude Code',
     supported: true,
-    look: ['.claude', 'CLAUDE.md'],
+
+    /** Files whose presence says a repository is set up for this harness. */
+    detect: ['.claude', 'CLAUDE.md'],
+
+    /** Where doctrine lives, when the manifest does not say otherwise. */
+    defaultTarget: '.claude',
+
+    /**
+     * The tier is the directory, because this harness decides by path (D7). `alwaysLoaded` is what
+     * the byte budget measures — the context every session pays for.
+     */
+    tiers: {
+      rules: { dir: 'rules', alwaysLoaded: true },
+      knowledge: { dir: 'knowledge', alwaysLoaded: false },
+      skills: {
+        dir: 'skills',
+        alwaysLoaded: false,
+        // A skill is a directory whose entry point is this file; the rest are supporting material.
+        entryFile: 'SKILL.md',
+        // What the harness itself requires. `description` is the trigger it matches on.
+        frontmatter: SKILL_FIELDS,
+      },
+    },
+
+    /** The generated roster, relative to the target. It sits in an always-loaded tier by design. */
+    indexPath: 'rules/RULES_INDEX.md',
+
+    /**
+     * Frontmatter must start at byte 0 or this harness does not see it, so the provenance line goes
+     * beneath the closing fence rather than above the opening one (D14).
+     */
+    headerPlacement: 'below-frontmatter',
   },
-  { id: 'agents-md', name: 'the AGENTS.md convention', supported: false, look: ['AGENTS.md'] },
-  { id: 'cursor', name: 'Cursor', supported: false, look: ['.cursor', '.cursorrules'] },
-  { id: 'gemini-cli', name: 'Gemini CLI', supported: false, look: ['GEMINI.md', '.gemini'] },
-  { id: 'copilot', name: 'GitHub Copilot', supported: false, look: ['.github/copilot-instructions.md'] },
-  { id: 'aider', name: 'Aider', supported: false, look: ['.aider.conf.yml', 'CONVENTIONS.md'] },
+};
+
+/** Harnesses Daoris knows the signals for but does not generate a layout for. */
+const UNSUPPORTED_SIGNALS = [
+  { id: 'agents-md', name: 'the AGENTS.md convention', detect: ['AGENTS.md'] },
+  { id: 'cursor', name: 'Cursor', detect: ['.cursor', '.cursorrules'] },
+  { id: 'gemini-cli', name: 'Gemini CLI', detect: ['GEMINI.md', '.gemini'] },
+  { id: 'copilot', name: 'GitHub Copilot', detect: ['.github/copilot-instructions.md'] },
+  { id: 'aider', name: 'Aider', detect: ['.aider.conf.yml', 'CONVENTIONS.md'] },
 ];
+
+export const DEFAULT_HARNESS = 'claude-code';
+
+/**
+ * The descriptor a manifest asks for.
+ *
+ * An unknown name is a tool error naming what exists, rather than a silent fallback to the default:
+ * a repository that asked for a harness and got another one is exactly the silent-wrong-layout
+ * failure this whole seam exists to prevent.
+ */
+export function resolveHarness(id = DEFAULT_HARNESS) {
+  const harness = HARNESSES[id];
+  if (harness) return harness;
+
+  const known = Object.keys(HARNESSES).join(', ');
+  const detected = UNSUPPORTED_SIGNALS.find((s) => s.id === id);
+  throw new DaorisError(
+    detected
+      ? `harness '${id}' (${detected.name}) is recognised but not generated by daoris yet.\n` +
+        `  Supported: ${known}. Adding one is a descriptor in src/harness.mjs — see docs/DECISIONS.md D23.`
+      : `unknown harness '${id}' — available: ${known}`,
+  );
+}
+
+/** The tier names, in the order everything iterates them. */
+export const tierNames = (harness) => Object.keys(harness.tiers);
+
+/** Tiers whose bytes are loaded on every session — what the budget measures. */
+export const alwaysLoadedTiers = (harness) =>
+  Object.entries(harness.tiers).filter(([, tier]) => tier.alwaysLoaded).map(([name]) => name);
 
 /** Every harness this repository shows a sign of, with the evidence that said so. */
 export function detectHarnesses(root) {
   const found = [];
-  for (const signal of SIGNALS) {
-    const evidence = signal.look.filter((path) => existsSync(join(root, path)));
+  for (const harness of Object.values(HARNESSES)) {
+    const evidence = harness.detect.filter((path) => existsSync(join(root, path)));
     if (evidence.length) {
-      found.push({ id: signal.id, name: signal.name, supported: signal.supported, evidence });
+      found.push({ id: harness.id, name: harness.name, supported: true, evidence });
+    }
+  }
+  for (const signal of UNSUPPORTED_SIGNALS) {
+    const evidence = signal.detect.filter((path) => existsSync(join(root, path)));
+    if (evidence.length) {
+      found.push({ id: signal.id, name: signal.name, supported: false, evidence });
     }
   }
   return found;
 }
 
 /**
- * What the supported harness requires of a materialized tree, checked rather than assumed.
+ * What a materialized tree must satisfy for this harness, checked rather than assumed.
  *
- * These are the contracts that fail *silently* when broken: a skill whose frontmatter cannot be
- * parsed is not an error anywhere, it simply never fires. Anything that would fail loudly does not
- * need a check here.
+ * Only things that fail **silently** are checked here: a skill whose frontmatter cannot be parsed is
+ * not an error anywhere, it simply never fires. Anything that would fail loudly is its own report.
  */
-export function verifyHarnessContract(root, target) {
+export function verifyHarnessContract(root, target, harness = HARNESSES[DEFAULT_HARNESS]) {
   const problems = [];
+  const skills = harness.tiers.skills;
 
-  const skillsDir = join(root, target, 'skills');
-  for (const file of listFiles(skillsDir)) {
-    if (!file.endsWith('/SKILL.md')) {
-      // A stray markdown file directly under skills/ is a skill nobody can invoke.
-      if (file.endsWith('.md') && !file.includes('/')) {
-        problems.push(`skills/${file} is not inside a skill directory, so it can never be invoked`);
+  if (skills) {
+    const dir = join(root, target, skills.dir);
+    const suffix = `/${skills.entryFile}`;
+    for (const file of listFiles(dir)) {
+      if (!file.endsWith(suffix)) {
+        if (file.endsWith('.md') && !file.includes('/')) {
+          problems.push(
+            `${skills.dir}/${file} is not inside a skill directory, so it can never be invoked`,
+          );
+        }
+        continue;
       }
-      continue;
-    }
 
-    const text = readText(join(skillsDir, file));
-    if (!text.startsWith('---\n')) {
-      problems.push(`skills/${file} does not begin with frontmatter, so the harness will not surface it`);
-      continue;
-    }
-    const { meta } = parseFrontmatter(stripHeader(text), SKILL_FIELDS);
-    if (!meta) {
-      problems.push(`skills/${file} is missing 'name' or 'description' — it installs but never fires`);
+      const text = readText(join(dir, file));
+      if (!text.startsWith('---\n')) {
+        problems.push(`${skills.dir}/${file} does not begin with frontmatter, so the harness will not surface it`);
+        continue;
+      }
+      const { meta } = parseFrontmatter(stripHeader(text), skills.frontmatter);
+      if (!meta) {
+        const fields = skills.frontmatter.map((f) => `'${f}'`).join(' or ');
+        problems.push(`${skills.dir}/${file} is missing ${fields} — it installs but never fires`);
+      }
     }
   }
 
-  // The always-loaded tier is a directory, so a rule filed under knowledge/ is simply never loaded.
-  for (const tier of ['rules', 'knowledge']) {
-    if (!existsSync(join(root, target, tier))) continue;
-    for (const file of listMarkdown(join(root, target, tier))) {
+  // The tier is the directory, so a document one level down is simply never read.
+  for (const [name, tier] of Object.entries(harness.tiers)) {
+    if (tier.entryFile) continue; // skills are directories on purpose
+    const dir = join(root, target, tier.dir);
+    if (!existsSync(dir)) continue;
+    for (const file of listMarkdown(dir)) {
       if (file.includes('/')) {
-        problems.push(`${tier}/${file} is nested, and only the top level of ${tier}/ is read`);
+        problems.push(`${name}/${file} is nested, and only the top level of ${tier.dir}/ is read`);
       }
     }
   }
@@ -89,7 +173,9 @@ export function verifyHarnessContract(root, target) {
 /** A one-line verdict for a report: which harness this looks like, and whether that is supported. */
 export function harnessVerdict(root) {
   const detected = detectHarnesses(root);
-  const supported = detected.filter((h) => h.supported);
-  const others = detected.filter((h) => !h.supported);
-  return { detected, supported, others };
+  return {
+    detected,
+    supported: detected.filter((h) => h.supported),
+    others: detected.filter((h) => !h.supported),
+  };
 }

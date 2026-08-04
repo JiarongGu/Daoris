@@ -6,6 +6,7 @@ import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from 
 import { planChanges } from './materialize.mjs';
 import { notesBetween } from './notes.mjs';
 import { inspect } from './drift.mjs';
+import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from './harness.mjs';
 import { DaorisError } from './errors.mjs';
 
 const DEFAULT_TARGET = '.claude';
@@ -15,17 +16,24 @@ const DEFAULT_TARGET = '.claude';
  * own. Skills count: a repo's own skill is exactly as invisible to the tool as
  * its own rule, and just as much worth naming before a first sync.
  */
-function localDocs(root, target) {
+function localDocs(root, target, harness = HARNESSES[DEFAULT_HARNESS]) {
   const locked = lockIndex(readLock(root));
+  const indexFile = harness.indexPath.split('/').pop();
   const found = [];
-  for (const tier of ['rules', 'knowledge']) {
-    for (const file of listMarkdown(join(root, target, tier))) {
-      if (file === 'RULES_INDEX.md') continue;
-      if (!locked.has(`${tier}/${file}`)) found.push(`${tier}/${file}`);
+
+  for (const tier of Object.values(harness.tiers)) {
+    const dir = join(root, target, tier.dir);
+    if (tier.entryFile) {
+      const suffix = `/${tier.entryFile}`;
+      for (const file of listFiles(dir)) {
+        if (file.endsWith(suffix) && !locked.has(`${tier.dir}/${file}`)) found.push(`${tier.dir}/${file}`);
+      }
+    } else {
+      for (const file of listMarkdown(dir)) {
+        if (file === indexFile) continue;
+        if (!locked.has(`${tier.dir}/${file}`)) found.push(`${tier.dir}/${file}`);
+      }
     }
-  }
-  for (const file of listFiles(join(root, target, 'skills'))) {
-    if (file.endsWith('/SKILL.md') && !locked.has(`skills/${file}`)) found.push(`skills/${file}`);
   }
   return found;
 }
@@ -71,6 +79,7 @@ export function commandStatus({ root, write, packageRoot }) {
   const lock = readLock(root);
   const canonRoot = resolveCanonRoot(packageRoot);
 
+  write(`  harness       ${manifest.harnessDescriptor.name}`);
   write(`  source        ${manifest.source}`);
   write(`  packs         ${['core', ...manifest.packs].join(', ')}`);
   write(`  canon         ${lock ? `${lock.canonVersion} (${lock.entries.length} files)` : 'never synced'}`);
@@ -83,7 +92,7 @@ export function commandStatus({ root, write, packageRoot }) {
     if (report.stalePacks.length) write(`  stale packs   ${report.stalePacks.join(', ')}`);
   }
 
-  const local = localDocs(root, manifest.target);
+  const local = localDocs(root, manifest.target, manifest.harnessDescriptor);
   if (local.length) write(`  local         ${local.join(', ')}`);
 
   // status may reach the canon; `check` deliberately may not (D8), which is why
