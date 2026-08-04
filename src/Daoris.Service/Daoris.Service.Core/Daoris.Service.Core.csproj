@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ingest and classification. No dependencies: the first slice needs no embeddings, no vector
+       store and no model, and adding them before a query needs them pays their cost for nothing. -->
+
+</Project>

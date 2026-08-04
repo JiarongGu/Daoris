@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Daoris.Service.Core/Daoris.Service.Core.csproj" />
+  <Project Path="Daoris.Service.Tests/Daoris.Service.Tests.csproj" />
+</Solution>

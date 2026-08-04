@@ -21,3 +21,8 @@ devtools/**/obj/
 src/Daoris.Cli/canon/
 src/Daoris.Cli/LICENSE
 src/Daoris.Cli/README.md
+
+# .NET build output. Scoped to the service tree deliberately: src/Daoris.Cli/bin is the CLI's
+# entry point, not build output, and a blanket bin/ rule would untrack it.
+src/Daoris.Service/**/bin/
+src/Daoris.Service/**/obj/

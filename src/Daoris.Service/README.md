@@ -1,6 +1,34 @@
 # Daoris.Service — the cross-repository knowledge service
 
-**Status: not started.** This document is the brief.
+**Status: ingest works.** `Daoris.Service.Core` reads a repository's knowledge into addressable
+entries and classifies each as canonical or local. 13 tests, including two that run against the real
+sibling repositories rather than fixtures.
+
+```sh
+cd src/Daoris.Service && dotnet test
+```
+
+## What it finds today
+
+Scanned across the family, 2026-08-05:
+
+| Kind | Local | Canonical |
+|---|---:|---:|
+| Rule | 101 | 15 |
+| Skill | 96 | 5 |
+| Knowledge | 62 | 2 |
+| Decision | 58 | 0 |
+| Task outcome | 53 | 0 |
+| Fix | 13 | 0 |
+| **Total** | **383** | **22** |
+
+**405 entries across 11 repositories, and 94% of them are local** — which is the premise of the whole
+index, measured rather than assumed. Canonical content is identical in every repository that installs
+it, so indexing it per repository would produce a dozen copies of one rule and call that a corpus. The
+local material is what varies, and 124 of those entries are decisions, fixes and task outcomes that no
+sibling repository can currently reach at all.
+
+## Design
 
 ## What it is for
 

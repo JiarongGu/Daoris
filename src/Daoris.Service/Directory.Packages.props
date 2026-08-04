@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    Central package versions for the service tree.
+
+    The cognition sibling is deliberately ABSENT for now. The first slice ingests and classifies
+    knowledge, which needs no embeddings, no vector store and no model — and adding the dependency
+    before there is a query that needs it would be paying its cost for nothing. It arrives when
+    semantic search does (see DECISIONS.md D22).
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>

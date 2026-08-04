@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    Shared build settings for the service tree. Mirrors the family's convention so anyone moving
+    between these repositories meets the same setup.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- BOM-less UTF-8 sources mojibake on a CJK-locale machine without this: csc reads them as ANSI.
+         Inherited from the family rather than rediscovered. -->
+    <CodePage>65001</CodePage>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Nothing here is published. The service is a deployable; the only package this repository
+         ships is the CLI, which is Node. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>
