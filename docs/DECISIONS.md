@@ -323,6 +323,20 @@ assumption.
 to secure and the desktop shell is the product. That is recorded as the first open question, to be
 priced before anything is deployed.
 
+**Access, when it is hosted.** Two kinds of consumer, two credentials — conflating them is how one of
+them ends up badly served, either a machine pushed through an interactive login or a person handed a
+static secret. Machines authenticate with an **API key from the environment**
+(`DAORIS_SERVICE_URL` + `DAORIS_SERVICE_KEY`, consistent with the existing `DAORIS_CANON`); people
+authenticate with **OIDC**. The sibling's auth setup already reserves the seam for an API-key mode beside
+its OIDC one, so this fills in a shape the family designed for rather than inventing one.
+
+Keys are per-person, read-only, expiring by default, stored as a hash with a short non-secret prefix kept
+for audit, and redacted on every path *including failures* — a sibling once passed a key on a command
+line whose failure branch printed the whole command, exposing it on exactly the run most likely to be
+pasted somewhere. **Absence of a URL means local**, silently: a consumer must never have to opt out of
+talking to a server, and `DAORIS_SERVICE_URL` must not change what the CLI does — worth a test rather
+than a rule, since D8 is the invariant it would break.
+
 ## D22 — The knowledge layer is built by composing the two siblings (2026-08-05)
 
 **Decision.** `Daoris.Service` and `Daoris.Desktop` consume the family's cognition and desktop libraries

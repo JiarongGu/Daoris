@@ -56,7 +56,8 @@ the database provider is configuration and the default needs no database at all.
 |---|---|---|
 | Runs | On the developer's machine | Somewhere the team can reach |
 | Store | Embedded, single file | See §6 |
-| Auth | None — the OS account is the boundary | Required. See §5 |
+| Auth | None — the OS account is the boundary | API key for machines, OIDC for people. See §5 |
+| Configured by | Nothing — it is the default | `DAORIS_SERVICE_URL` + `DAORIS_SERVICE_KEY` |
 | Network | Never | Yes |
 | Purpose | Recall across *your* repositories | Recall across *the team's* |
 
@@ -73,7 +74,9 @@ Three properties the CLI has today, which the service must not quietly cost:
 
 - **`check` never touches the network** (D8). The service is a separate process; the CLI must never
   gain a dependency on it, in either mode. A repository with no service configured behaves exactly as it
-  does now.
+  does now — and so does one *with* a service configured, because **`DAORIS_SERVICE_URL` must not change
+  what the CLI does.** The devkit, the agent client and the UI consume the service; the gate does not.
+  This is worth a test rather than a rule: set both variables and assert `check` behaves identically.
 - **Private stays private.** Several repositories in this family are private, and `sensitive-info`
   keeps machine paths and private project names out of *tracked* files. A service that indexes those
   repositories centralises precisely the material that rule exists to contain. See §4.
@@ -112,15 +115,63 @@ development scheme and real OIDC, and the development scheme is honoured **only 
 environment** — a committed `Auth:Mode=Dev` cannot activate in a deployment. That inversion is the part
 worth copying: the insecure mode is not merely discouraged, it is unreachable where it would matter.
 
+### 5a. Two kinds of consumer, two credentials
+
+Conflating them is how one of the two ends up badly served — a machine forced through an interactive
+login, or a person handed a static secret.
+
+| Consumer | Example | Credential |
+|---|---|---|
+| **Machine** | A devkit gate, an agent session over MCP, a script | **API key**, from the environment |
+| **Person** | The web app, the desktop shell | **OIDC**, delegated to the team's existing identity provider |
+
+The sibling's auth setup already leaves the seam open for exactly this — its scheme switch carries a
+placeholder for an API-key mode next to the OIDC one — so this is filling in a shape the family has
+already designed for rather than inventing one.
+
+### 5b. Machine access: URL and key from the environment
+
+```sh
+DAORIS_SERVICE_URL=https://…      # absent ⇒ local mode. Absence is the default, and it is silent.
+DAORIS_SERVICE_KEY=dk_…           # never in a tracked file
+```
+
+Consistent with `DAORIS_CANON`, which is how the canon root is already overridden.
+
+- **Absence means local.** No URL configured anywhere is not an error and not a warning — it is the
+  default mode. A consumer must never have to opt *out* of talking to a server.
+- **The key lives only in the environment.** `sensitive-info` puts credentials in the environment or a
+  secret store, never in a tracked file — and `daoris.json` is tracked. The manifest **may** name a
+  default service URL, because infrastructure is not a secret and a team default is worth being
+  discoverable; the environment variable overrides it. The key has no such option.
+- **Keys are per-person and per-machine, never shared.** A shared key cannot be revoked without
+  disrupting everyone, which in practice means it is never revoked.
+- **Store a hash, show the key once**, with a short non-secret prefix retained for identification so a
+  key can be named in an audit log or revocation list without ever being logged in full.
+- **Expire by default, and make rotation cheap.** A credential that cannot be rotated without a
+  redeploy is a credential that will not be rotated.
+- **Read-only.** Writes are narrow anyway (below), so a machine key should carry no ability to mutate.
+- **Redact in every path, including failures.** A near-miss worth inheriting: in a sibling, a helper
+  passed an API key on a command line, and the failure branch printed the whole command — so the key
+  would have been exposed on exactly the run most likely to be pasted into a chat.
+
+### 5c. The rest
+
 - **Identity is delegated, never invented.** OIDC against whatever the team already uses. This project
   should not own passwords, and an IdP-agnostic validator means changing provider is configuration.
-- **Authorization mirrors repository access.** The question "may this person read this repository's
-  knowledge" already has an answer — the source host's permissions. Deriving from it means there is no
-  second access-control model to drift out of step with the first. **Inventing a separate one is the
-  mistake to avoid**, because it will disagree, and it will disagree silently.
+- **Authorization mirrors repository access,** whichever credential arrived. The question "may this
+  principal read this repository's knowledge" already has an answer — the source host's permissions.
+  **Inventing a separate model is the mistake to avoid**, because it will disagree, and it will disagree
+  silently. A key is therefore issued *as* a principal with repository access, not as a grant of its own.
 - **Writes are narrow.** The service ingests and answers. It never edits doctrine, so a compromised
   instance leaks rather than corrupts — and the repositories remain the source of truth.
-- **Transport is TLS; secrets live in the environment**, never in a tracked file (`sensitive-info`).
+- **Transport is TLS; secrets live in the environment**, never in a tracked file.
+
+**What a leaked key costs, stated plainly.** It grants read access to whatever its principal could read,
+which is the team's accumulated engineering knowledge — the thing this service exists to concentrate.
+That is the argument for short expiry, per-person issuance, and read-only scope. It is also the second
+argument for §4: the private class is never indexed in shared mode at all, so the worst case excludes the
+material that would hurt most.
 
 ## 6. Storage
 
