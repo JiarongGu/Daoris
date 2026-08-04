@@ -86,6 +86,12 @@ The first version: doctrine that installs, is checked, and flows back.
   file and training people to skip the list.
 - **A repository's own skills are reported as local** by `init` and `status`, as its own rules already
   were.
+- **`doctor` scans skills, and its threshold is now set by measurement.** Checked against sixteen real
+  pairs across the family: near-verbatim copies score 72–74%, twins that were *rewritten* rather than
+  copied land at 34–43%, and unrelated documents at 7–16%. The old 0.5 sat above the middle band and
+  caught 2 of 11; 0.3 catches 7 with no false positive. The threshold is asymmetric on purpose — the
+  command is advisory, so a false positive costs a dismissed line and a miss costs lasting duplication.
+  It also now states the duplicate it *cannot* find: word overlap detects restatement, not convergence.
 - **Three packs.** `windows-machine` (traps that succeed wrongly rather than failing),
   `dotnet-library` (package boundaries, naming, DI variation points, shipping registries, and API design),
   `storage-sql` (type affinity on read, migration numbering, full-text search for scripts without word

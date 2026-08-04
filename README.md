@@ -63,6 +63,12 @@ thing as a canonical one under a different name is *local*, and local is invisib
 is a crude signal, so it only ever reports — a false positive that failed a build would be worse than the
 duplication it warns about.
 
+Its threshold is set from measurement against real sibling documents, not taste: near-verbatim copies
+score ~73%, twins that were *rewritten* rather than copied land at 34–43%, and unrelated documents at
+7–16%. It finds **restatement, not convergence** — a document that reaches the same principle through an
+entirely different vocabulary scores like an unrelated one, and no threshold separates those. Adoption
+still wants a read-through by hand; `doctor` shortens that job rather than replacing it.
+
 ## The manifest
 
 ```json

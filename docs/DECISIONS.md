@@ -252,3 +252,38 @@ which is the same ordering the roadmap already applies to the knowledge service.
 **Consequence.** Before building the long-term repository-intelligence work, check it against these tools
 the way the platform was checked in D15 — parts of that pillar may already exist, and building a second
 worse copy is the failure D1 was written to prevent.
+
+## D17 — The twin threshold is set by measurement, and its blind spot is documented (2026-08-05)
+
+**Decision.** `doctor`'s containment threshold drops from 0.5 to 0.3, the skills tier is scanned, and the
+class of duplicate it *cannot* find is stated in the tool's own description rather than left for someone
+to discover.
+
+**Why.** The 0.5 threshold was a guess, and checking it against sixteen real pairs across the family
+showed it was set above the band that matters. Near-verbatim copies score 72-74% and were always caught.
+Twins that were **rewritten** rather than copied land at 34-43% — and those are the ones worth finding,
+because nobody recognises them by eye either. Unrelated documents sit at 7-16%. At 0.5: 2 caught, 9
+missed. At 0.3: **7 caught, 4 missed, no false positives.**
+
+The threshold is deliberately asymmetric. `doctor` is advisory and always exits 0 (D12 reasoning), so a
+false positive costs one dismissed line while a miss costs duplication that persists indefinitely.
+
+**It bought a false positive immediately, on this repository.** Running `doctor` here now reports
+`canon-authoring` as looking like `persist-working-state` at 33%. They are not the same rule — but the
+suspicion is defensible rather than nonsense, since both are substantially about writing durable records
+and both name the decisions log. That is what 0.3 buys: a reader spends a moment dismissing a plausible
+suggestion. It is the trade that was chosen, and it belongs in the record rather than being tuned away
+after the fact — a threshold justified by a sample and then quietly raised at the first inconvenience
+would be neither measured nor honest.
+
+**The blind spot is structural, not a tuning problem.** All four remaining misses are one class:
+documents that reach the same principle through an entirely *different vocabulary*. The clearest case
+found in the survey merges two canonical rules but discusses allow-listing, tooling directories and
+screen captures where the canonical pair discusses tools, temporary directories and shells — 24% and 23%,
+inside the unrelated band. A real twin at 15% cannot be separated from an unrelated pair at 15% by any
+threshold, so lowering it further buys noise rather than recall.
+
+**Consequence.** Word overlap detects *restatement*, not *convergence*. Adoption still requires the
+manual twin hunt the adoption document already prescribes; `doctor` narrows that job and does not replace
+it. Claiming otherwise would be worse than the gap, because a detector believed to be complete stops
+anyone looking.

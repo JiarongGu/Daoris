@@ -4,7 +4,7 @@ import { parseFrontmatter, stripHeader } from './document.mjs';
 import { lockIndex, readLock, readManifest } from './config.mjs';
 
 const INDEX_FILE = 'RULES_INDEX.md';
-const TIERS = ['rules', 'knowledge'];
+const TIERS = ['rules', 'knowledge', 'skills'];
 
 /** Words this common carry no signal about what a document is about. */
 const STOPWORDS = new Set([
@@ -35,7 +35,20 @@ export function containment(a, b) {
   return shared / Math.min(a.size, b.size);
 }
 
-const THRESHOLD = 0.5;
+/**
+ * Set from measurement against real sibling documents, not taste. Across eleven
+ * known pairs: near-verbatim copies score 72-74%, twins that were REWRITTEN
+ * rather than copied land at 34-43%, and unrelated documents sit at 7-16%. The
+ * original 0.5 sat above the middle band, so it caught only the easy copies and
+ * missed every twin whose wording had drifted — which is precisely the set worth
+ * finding, since nobody recognises those by eye either.
+ *
+ * 0.3 catches the rewritten band with no false positive in that sample. It is
+ * chosen asymmetrically on purpose: `doctor` is advisory and always exits 0, so
+ * a false positive costs one dismissed line while a miss costs duplication that
+ * lasts indefinitely.
+ */
+const THRESHOLD = 0.3;
 
 /**
  * Report local documents that appear to restate a canonical one under a
@@ -94,5 +107,8 @@ export function commandDoctor({ root, write }) {
   write('');
   write('  If they are the same rule under two names, delete the local one and check whether');
   write("  this repo's entry document referenced it by name. If they genuinely differ, ignore this.");
+  write('');
+  write('  This finds restatement, not convergence: a document reaching the same principle in a');
+  write('  different vocabulary scores like an unrelated one. Still worth a read-through by hand.');
   return 0;
 }

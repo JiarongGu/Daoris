@@ -30,6 +30,23 @@ approval system and never prompt for a read that was never risky. Destructive
 commands deserve care precisely when they stop prompting.
 `;
 
+/**
+ * The band that actually matters. Measured against real sibling documents, a
+ * near-verbatim twin scores ~70% and is easy; genuine twins that were REWRITTEN
+ * rather than copied land around 35-45%, while unrelated documents sit at
+ * 8-16%. A threshold above that middle band misses the twins most worth finding
+ * — the ones nobody recognises as duplicates precisely because the wording
+ * diverged.
+ */
+const LOCAL_PARAPHRASE = `# Inspection belongs in the dedicated tools, not the shell
+
+Reach for the dedicated read and search tools whenever you are inspecting files.
+Keep the shell for the work that genuinely needs a shell: builds, suites, version
+control. Because those tools are wired into the approval system, a read that
+carried no risk does not interrupt anyone. And a destructive command earns the
+most caution at the exact moment it stops asking.
+`;
+
 const UNRELATED = `# Play queue ordering
 
 The queue preserves insertion order except when shuffle is enabled, in which
@@ -68,6 +85,33 @@ test('a local rule that duplicates a canonical one under another name is reporte
   assert.equal(twins[0].local, 'rules/minimise-bash-prompts.md');
   assert.equal(twins[0].canonical, 'rules/file-tool-discipline.md');
   assert.ok(twins[0].score > 0.5, `score was ${twins[0].score}`);
+
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+test('a REWRITTEN twin is reported, not just a near-verbatim one', () => {
+  const { canonFx, repoFx } = seeded();
+  repoFx.write('.claude/rules/inspection-hygiene.md', LOCAL_PARAPHRASE);
+
+  const twins = look(repoFx);
+  assert.equal(twins.length, 1, 'a paraphrased twin is the case worth catching');
+  assert.equal(twins[0].canonical, 'rules/file-tool-discipline.md');
+
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+test("a repo's own skill is checked against canonical skills too", () => {
+  const { canonFx, repoFx } = seeded();
+  canonFx.write('core/skills/inspect/SKILL.md', CANONICAL);
+  repoFx.write('.claude/skills/look-around/SKILL.md', LOCAL_TWIN);
+
+  const twins = look(repoFx);
+  assert.ok(
+    twins.some((t) => t.local === 'skills/look-around/SKILL.md'),
+    `skills were not scanned: ${JSON.stringify(twins)}`,
+  );
 
   canonFx.cleanup();
   repoFx.cleanup();
