@@ -88,6 +88,9 @@ The first version: doctrine that installs, is checked, and flows back.
   of only reporting that a newer canon exists. Computed from the lock, so it stays offline; the
   provenance header is excluded, so a pure version bump reports "version only" rather than listing every
   file and training people to skip the list.
+- **…and why it changed.** The canon carries its own `CHANGELOG.md`, and `status` prints the entries for
+  exactly the versions a repository is skipping. Which files moved is computable; whether it *matters* is
+  a sentence only the author of the change can write, so the canon ships it alongside the documents.
 - **A repository's own skills are reported as local** by `init` and `status`, as its own rules already
   were.
 - **`doctor` scans skills, and its threshold is now set by measurement.** Checked against sixteen real

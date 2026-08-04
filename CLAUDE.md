@@ -58,6 +58,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 | `src/*.mjs` | One module per responsibility; every command is plan-then-apply |
 | `canon/core/{rules,skills}/` | The always-installed rules and discovery skills |
 | `canon/packs/<name>/` | `pack.json` + `rules/` + `knowledge/` + `skills/` |
+| `canon/CHANGELOG.md` | Why each canon version changed — `status` prints the entries a repo is skipping |
 | `test/*.test.mjs` | `node:test`; fixtures under the gitignored `_fixtures/` |
 
 ## Dev loop

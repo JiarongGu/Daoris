@@ -136,6 +136,40 @@ test('status names what changed, ignoring a pure version bump', () => {
   repoFx.cleanup();
 });
 
+/**
+ * The other half of the same problem: knowing sensitive-info changed does not
+ * tell you whether to care. Only the author of the change can say that, so the
+ * canon carries it and ships it in the package.
+ */
+test('status prints why the canon changed, for the versions being skipped', () => {
+  const canonFx = canonFixture();
+  const repoFx = makeFixture('cmd-status-why');
+  repoFx.write('daoris.json', '{"source":"s","packs":[]}');
+  repoFx.write(
+    'daoris.lock',
+    JSON.stringify({ version: 1, canonVersion: '0.1.0', source: 's', entries: [] }),
+  );
+  canonFx.write('canon.json', '{"version":"0.3.0"}');
+  canonFx.write(
+    'CHANGELOG.md',
+    '# Canon changelog\n\n## 0.3.0\n\n- Now covers commit messages.\n\n## 0.2.0\n\n- Retired the legacy layout rule.\n\n## 0.1.0\n\n- The first canon.\n',
+  );
+  process.env.DAORIS_CANON = canonFx.root;
+
+  const out = [];
+  commandStatus({ root: repoFx.root, write: (s) => out.push(s), packageRoot: '' });
+  const text = out.join('\n');
+  assert.match(text, /why 0\.2\.0/);
+  assert.match(text, /Retired the legacy layout rule/);
+  assert.match(text, /why 0\.3\.0/);
+  assert.match(text, /Now covers commit messages/);
+  assert.equal(/why 0\.1\.0/.test(text), false, 'the version already installed is not news');
+
+  delete process.env.DAORIS_CANON;
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
 test('status reports packs, drift, and local files without failing', () => {
   const canonFx = canonFixture();
   const repoFx = makeFixture('cmd-status');

@@ -4,6 +4,7 @@ import { listFiles, listMarkdown } from './fsx.mjs';
 import { readCanon, resolveCanonRoot } from './canon.mjs';
 import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.mjs';
 import { planChanges } from './materialize.mjs';
+import { notesBetween } from './notes.mjs';
 import { inspect } from './drift.mjs';
 import { DaorisError } from './errors.mjs';
 
@@ -103,6 +104,14 @@ export function commandStatus({ root, write, packageRoot }) {
       for (const target of changes.retired) write(`                  retired  ${target}`);
       if (!changes.changed.length && !changes.added.length && !changes.retired.length) {
         write('                  (version only — no document changed)');
+      }
+
+      // Which files moved comes from the lock; whether it MATTERS is a sentence
+      // only the author of the change can write, so the canon carries it.
+      for (const note of notesBetween(canonRoot, lock.canonVersion, canon.version)) {
+        write('');
+        write(`  why ${note.version}`);
+        for (const line of note.body.split('\n')) write(line ? `    ${line}` : '');
       }
     }
   }

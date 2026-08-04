@@ -76,15 +76,7 @@ silently fixed, because each is editorial work on someone's doctrine._
 
 ## Part 4 — tool follow-ups
 
-- [ ] **TOOL4 — the many-developers axis is thinner than the many-repositories one.** Daoris answers
-  "multiple developers" by never becoming a service: doctrine is a tracked file, so a clone carries it,
-  review touches it, and a move preserves it — the substrate solves the problem, which is exactly why
-  a hosted shared workspace would be worse here (accounts, outside review, does not survive the tool).
-  What is genuinely thin is **coordination**. _`status` now names the changed files (done 2026-08-05);
-  what remains is the **why**._ A consumer sees `changed rules/sensitive-info.md` and still has to guess
-  what moved and whether it matters. Next cheapest step: ship a per-file or per-version note in the canon
-  that `sync` and `status` can print between the locked version and the new one. Stays offline — the
-  canon ships in the package (D11). Do not build notification.
+_Nothing open here._
 
 ---
 

@@ -158,6 +158,16 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   always long is a list nobody reads. Also fixed `init`/`status` not reporting a repository's own skills
   as local.
 
+- [x] **TOOL4 — coordination across many developers, not just many repositories**
+  ✅ done 2026-08-05 — the many-*developers* half needed no feature: doctrine is a tracked file, so a
+  clone carries it, review touches it, and a move preserves it. That is precisely why a hosted shared
+  space would be *worse* here, and it is the same argument `no-global-memory` makes one level down.
+  What was genuinely thin was coordination, closed in two parts: `status` now names which files a pending
+  update would change (computed from the lock, the idea borrowed from how a wiki generator diffs since
+  its last run), and `canon/CHANGELOG.md` now carries **why** — printed for exactly the versions being
+  skipped. Both stay offline, because the canon ships in the package (D11). Notification was deliberately
+  not built.
+
 - [x] **TOOL1 — `sync` cannot rename**
   ✅ done 2026-08-05 — solved by **detection rather than declaration**. The task proposed a `renamedFrom`
   field in `pack.json`, which would not have covered core (it has no `pack.json`) and would have been a
