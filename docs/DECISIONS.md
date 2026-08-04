@@ -253,6 +253,28 @@ which is the same ordering the roadmap already applies to the knowledge service.
 the way the platform was checked in D15 — parts of that pillar may already exist, and building a second
 worse copy is the failure D1 was written to prevent.
 
+## D18 — Every path daoris touches must resolve inside the target directory (2026-08-05)
+
+**Decision.** `sync` resolves every write and delete against the target directory and **refuses** any
+path that escapes it, before touching anything. Refuses rather than sanitises.
+
+**Why.** D5 established that anything absent from the lock is invisible to the tool. Its complement was
+assumed and never enforced: everything *present* in the lock was trusted as a relative path under the
+target. A lock entry containing `..` therefore reached arbitrary files — verified before the fix by
+deleting a file at the repository root and another in the parent directory, from a `sync` whose only
+output was a retirement count.
+
+The lock is **generated**, which is what makes this worse than it first sounds. Nobody reads a generated
+file closely in review, so a merge-mangled entry and a deliberately crafted one in a pull request arrive
+at the same `rmSync`, and retirement reports a number rather than a path.
+
+Sanitising was rejected: a path that tried to leave the target is not a path to quietly correct, it is
+evidence the lock is corrupt or hostile, and continuing would discard that evidence. Paths are also all
+resolved *before* the first write, so a bad entry aborts the whole apply instead of half-applying it.
+
+**Consequence.** Found by asking whether the tool was ready for production rather than by a test —
+which is the reason to ask that question deliberately rather than infer it from a passing suite.
+
 ## D17 — The twin threshold is set by measurement, and its blind spot is documented (2026-08-05)
 
 **Decision.** `doctor`'s containment threshold drops from 0.5 to 0.3, the skills tier is scanned, and the

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { rmSync } from 'node:fs';
+import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { makeFixture, captureError } from './_fixture.mjs';
 import { readCanon } from '../src/canon.mjs';
 import { readText } from '../src/fsx.mjs';
@@ -160,6 +160,46 @@ test('an unrelated retirement and addition are not called a rename', () => {
   });
   assert.deepEqual(plan.renames, []);
   assert.deepEqual(plan.deletes, ['rules/gotchas.md']);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+/**
+ * D5 says anything absent from the lock is invisible to the tool. The complement
+ * was never enforced: everything the tool touches must sit INSIDE the target
+ * directory. A lock entry containing `..` escaped it, and `sync` deleted files
+ * daoris never wrote — silently, since retirement reports a count rather than a
+ * path resolution.
+ *
+ * The lock is generated, so nobody reads it closely in review; a merge-mangled
+ * entry or a crafted one in a pull request both reach the same rmSync.
+ */
+test('a lock entry cannot reach outside the target directory', () => {
+  const fx = seed();
+  run(fx);
+  const outside = join(fx.repoFx.root, 'IMPORTANT.md');
+  writeFileSync(outside, 'a file daoris does not own\n');
+
+  const plan = {
+    writes: [],
+    deletes: ['../IMPORTANT.md'],
+    drifted: [],
+    collisions: [],
+    renames: [],
+  };
+  const error = captureError(() =>
+    applySync({
+      root: fx.repoFx.root,
+      manifest: readManifest(fx.repoFx.root),
+      plan,
+      canonVersion: '0.1.0',
+      force: false,
+    }),
+  );
+  assert.ok(error instanceof DaorisError, 'escaping the target must be refused');
+  assert.match(error.message, /IMPORTANT\.md/);
+  assert.equal(existsSync(outside), true, 'and the file must still be there');
+
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

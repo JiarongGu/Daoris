@@ -45,6 +45,10 @@ The first version: doctrine that installs, is checked, and flows back.
   as two separate changes.
 - **A one-line provenance header** on every materialized file, because an agent that opens a rule needing
   a tweak will otherwise simply edit it. The lock's hash catches the edit either way.
+- **Every path is confined to the target directory.** `sync` resolves each write and delete against the
+  target and refuses anything that escapes it, before touching a file. A lock entry containing `..` could
+  otherwise reach arbitrary paths — and the lock is generated, so it is the file nobody reads closely in
+  review. See `docs/DECISIONS.md` D18.
 - Atomic, BOM-less, LF writes throughout; exit codes are the contract (`0` clean, `1` policy failure,
   `2` tool error).
 - **A release rehearsal** (`npm run rehearse`) that packs the tarball, installs it into a clean

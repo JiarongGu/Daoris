@@ -1,5 +1,5 @@
 import { existsSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.mjs';
 import { makeHeader, stripHeader, withHeader } from './document.mjs';
 import { significantTokens, containment } from './twins.mjs';
@@ -149,6 +149,31 @@ export function planChanges({ root, manifest, canon, lock }) {
   return { added, changed, retired: [...locked.keys()].filter((t) => !wanted.has(t)) };
 }
 
+/**
+ * Every path daoris writes or deletes must resolve INSIDE the target directory.
+ *
+ * D5 makes anything absent from the lock invisible to the tool; this is its
+ * complement, and it was missing. A lock entry containing `..` escaped the
+ * target and reached arbitrary files — and the lock is *generated*, so it is
+ * exactly the file nobody reads closely in review. A merge-mangled entry and a
+ * crafted one in a pull request both arrive at the same delete.
+ *
+ * Refuses rather than sanitising: a path that tried to leave is not a path to
+ * quietly correct, it is a sign the lock is wrong or hostile.
+ */
+function containedPath(root, target, rel) {
+  const base = resolve(root, target);
+  const full = resolve(base, rel);
+  if (full !== base && !full.startsWith(base + sep)) {
+    throw new DaorisError(
+      `'${rel}' resolves outside ${target}/ — refusing to touch it.\n` +
+        `  daoris only ever writes inside its target directory; a lock entry that\n` +
+        `  escapes it means daoris.lock is corrupt or has been tampered with`,
+    );
+  }
+  return full;
+}
+
 export function applySync({ root, manifest, plan, canonVersion, force }) {
   if (plan.collisions.length && !force) {
     throw new DaorisError(
@@ -167,13 +192,19 @@ export function applySync({ root, manifest, plan, canonVersion, force }) {
     );
   }
 
-  for (const write of plan.writes) {
-    if (write.state !== 'unchanged' || force) {
-      writeTextAtomic(join(root, manifest.target, write.target), write.content);
-    }
+  // Resolve every path BEFORE touching anything, so a bad entry anywhere aborts
+  // the whole apply rather than half-applying it.
+  const writes = plan.writes.map((write) => ({
+    write,
+    abs: containedPath(root, manifest.target, write.target),
+  }));
+  const deletes = plan.deletes.map((target) => containedPath(root, manifest.target, target));
+
+  for (const { write, abs } of writes) {
+    if (write.state !== 'unchanged' || force) writeTextAtomic(abs, write.content);
   }
-  for (const target of plan.deletes) {
-    rmSync(join(root, manifest.target, target), { force: true });
+  for (const abs of deletes) {
+    rmSync(abs, { force: true });
   }
 
   const lock = {
