@@ -9,11 +9,14 @@ import { commandCheck } from '../src/drift.mjs';
 import { commandUpstream } from '../src/upstream.mjs';
 import { commandInit, commandStatus } from '../src/commands.mjs';
 import { commandDoctor } from '../src/twins.mjs';
+import { commandAnalyze } from '../src/analyze.mjs';
 
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
 const USAGE = `daoris <command> [options]
 
+  analyze [packs...]   what adopting would do here: collisions, duplicates, budget.
+                       Writes nothing; --json for an agent to act on
   init                 detect what this repo has, write daoris.json
   sync                 materialize the manifest's packs; write daoris.lock
   check                drift, staleness, index freshness, core budget (offline)
@@ -38,6 +41,7 @@ const commands = {
   init: commandInit,
   status: commandStatus,
   doctor: commandDoctor,
+  analyze: commandAnalyze,
 };
 
 export function runCli(argv, cwd, write = console.log) {

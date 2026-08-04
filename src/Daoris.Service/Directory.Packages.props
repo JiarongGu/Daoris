@@ -17,6 +17,10 @@
          IVectorStore are the seams semantic search needs, and rebuilding either would be the second
          worse copy D1 was written to prevent. Its serving surfaces are deliberately NOT used. -->
     <PackageVersion Include="Lyntai.Core" Version="2.1.0" />
+    <!-- HttpEmbedder: speaks Ollama's native /api/embed and OpenAI-compatible endpoints, batches,
+         and needs no key for a local endpoint. Wired only in the host, so the domain stays on the
+         abstractions. -->
+    <PackageVersion Include="Lyntai.Providers.Default" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>

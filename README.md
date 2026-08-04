@@ -44,6 +44,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 
 | Command | What it does |
 |---|---|
+| `analyze` | **What adopting would do here** — collisions, duplicates, projected budget. Writes nothing |
 | `init` | Detects what the repository already has, writes `daoris.json`, reports available packs |
 | `sync` | Materializes the manifest's packs into `.claude/`, writes `daoris.lock`, regenerates the index |
 | `check` | Drift, staleness, index freshness, core budget. **Offline.** Exit 1 on any failure |
@@ -59,6 +60,20 @@ promote every locally-edited canonical file at once.
 otherwise refuses in all three destructive cases: a file you edited, a file you wrote before adopting,
 and a file being retired upstream that you had improved — that last one being the worst moment to lose an
 edit, since the canonical file it belonged to is gone and `upstream` can no longer save it.
+
+`analyze` answers the question a repository has *before* it adopts: what already exists here, what
+would collide, what already says the same thing under another name, and what the always-loaded budget
+becomes. It writes nothing, and `--json` gives an agent the exact facts to act on.
+
+The division of labour is deliberate. **Daoris supplies what must be exact** — which paths collide,
+which documents duplicate, what it costs — because an agent guessing at a collision is wrong in a way
+that destroys files. **The agent supplies judgement** — which packs fit this repository, whether a
+suspected twin really is one, how to resolve each collision — because a regex guessing at "is this a
+.NET library" is wrong in a way that costs a sentence. Then a person selects.
+
+It is also the only command that compares the working tree against the **canon** rather than the lock,
+which is what lets it find a renamed twin *before* adoption rather than after — and, on this
+repository, what caught a set of stale provenance headers that every lock-based check agreed was fine.
 
 `doctor` exists because of the one thing the lock cannot catch: a repository's own rule that says the same
 thing as a canonical one under a different name is *local*, and local is invisible by design. Word overlap
