@@ -18,10 +18,11 @@ nobody consumes.
 
 ## 0.0.x — doctrine that installs, is checked, and flows back — **built**
 
-Seven commands, a canon of 6 core rules and 3 packs, 72 tests. Core installs everywhere; packs are named
-in the manifest; the repository's own files are invisible to the tool. Drift and adoption collisions are
-distinguished by provenance and both refuse. Retirement removes a rule from every repository at once.
-`check` is offline by construction and gates on the always-loaded byte budget.
+Seven commands, a canon of 7 core rules, 5 core skills and 3 packs, 90 tests. Core installs everywhere;
+packs are named in the manifest; the repository's own files are invisible to the tool. Drift and adoption
+collisions are distinguished by provenance and both refuse. Retirement removes a rule from every
+repository at once, and a rename is reported as one. `check` is offline by construction and gates on the
+always-loaded byte budget.
 
 Proven by adoption into Lyntai rather than by assertion: four collisions and a renamed twin surfaced, its
 1337 tests stayed green, and the budget gate caught a real 45% overage on first contact. The version bump
@@ -40,10 +41,12 @@ problem, not a copy — and it was the last one standing between here and a rele
   is the adopter's own routing content, which no placeholder supplies. `skill-loader` turned out to be
   generated content rather than doctrine, which removed the hardest case entirely.
 - ~~**Then `skills-workflow`**~~ — **shipped** as a seventh core rule, at 6 of 11 repositories.
-- **The rest of the frequent skills** (`TASKS.md` CANON4) — `fix-log` first, whose three copies sit
-  within 100 bytes of each other, so the invariant is nearly the whole file.
+- ~~**Then the skills themselves**~~ — **shipped:** `doc-loader` and `pattern-finder` start a task,
+  `post-feature` and `fix-log` close one, `caveman` governs output. Each canonized from the copies found
+  across the family and reduced to what they share. The `doc-*` maintenance family is deliberately held
+  (`TASKS.md` CANON4): it automates hand-maintaining documents a generated wiki would own (D16).
 - **The two release blockers** — the GitHub owner and the LICENSE holder (`TASKS.md` Part 1). Both need
-  an owner decision, and neither is engineering work.
+  an owner decision, and neither is engineering work. **They are the only thing left before a tag.**
 
 ## 0.2 — the harness layer: gates, not scripts
 
