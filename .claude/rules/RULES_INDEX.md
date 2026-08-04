@@ -17,3 +17,5 @@ Rows marked _(local)_ are this repo's own and are never synced.
 
 | Rule | Applies when | Enforces |
 |---|---|---|
+| [adoption](../knowledge/adoption.md) _(local)_ | onboarding a repository onto daoris for the first time | resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally; never let adoption silently rewrite doctrine |
+| [canon-authoring](../knowledge/canon-authoring.md) _(local)_ | writing or changing a canon file, or adding a pack | project-agnostic content, frontmatter that matches the filename, principle-and-reason not mechanism |

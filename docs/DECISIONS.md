@@ -1,0 +1,129 @@
+# Decisions
+
+Numbered, dated, with the reasoning. A decision recorded here is not re-litigated without a reason to
+reopen it — and a decision that was *considered and rejected* is recorded too, because without the reason
+someone reverses it later and rediscovers the problem.
+
+---
+
+## D1 — Daoris is process tooling, not an LLM library (2026-08-04)
+
+**Decision.** No model calls, no dependency on the LLM cognition library, in v0.1.
+
+**Why.** The original framework note sketched fourteen .NET packages; six of them — prompts, RAG, memory,
+evals, harness, tool contracts — already exist, shipped and frozen under semantic versioning, in the
+sibling library. Building them again would have produced a second, worse copy of something that already
+works, and would have made Daoris depend on a release cadence it does not control.
+
+**Consequence.** The genuinely new pillars are doctrine, repository intelligence, context assembly,
+validation, and reflection. A future knowledge service *will* build on that library (see D11 and the
+roadmap) — but as a separate deployable, not as a dependency of the CLI.
+
+## D2 — Manifest + vendored copy + drift check (2026-08-04)
+
+**Decision.** A repository declares what it wants; the tool materializes real `.md` files and records
+content hashes in a lockfile.
+
+**Why.** The agent harness loads documents from disk, so the doctrine has to *be* files — a runtime import
+was never an option. Given files, the only question is whether divergence is detectable. Hashes make it a
+build failure instead of a slow leak.
+
+**Rejected:** check-only linting (measures divergence without removing it — six copies of the same rule
+stay six copies) and git submodules (clone and CI friction, and no way to take four rules out of twelve).
+
+## D3 — No symlinks or junctions, ever (2026-08-04)
+
+**Decision.** Materialization is always a real file copy.
+
+**Why.** A sibling's build was broken by an absolute junction that survived a directory rename and then
+failed as an unrelated-looking module-resolution error. A doctrine system held together by junctions
+would reproduce that across every repository, and the failure would not look like a doctrine problem.
+
+## D4 — Three layers: core, packs, local (2026-08-04)
+
+**Decision.** Core installs everywhere with no opt-out; packs are named in the manifest; the repository's
+own documents are neither synced nor touched.
+
+**Why.** The repositories genuinely differ — a published library, a desktop devkit, a web application —
+so a single flat set would either be too small to be useful or too large to load. Making core
+non-optional matters because the rules most worth having everywhere are exactly the ones a new repository
+would forget to opt into.
+
+## D5 — Anything not in the lock is invisible to the tool (2026-08-04)
+
+**Decision.** Daoris only reads and writes paths recorded in `daoris.lock`.
+
+**Why.** This is the single invariant that makes a repository's own documents safe to keep in the same
+directory as canonical ones. Without it, "local" would be a convention; with it, it is a property.
+
+## D6 — The lock is authoritative; the header is for the reader (2026-08-04)
+
+**Decision.** Drift is detected by content hash. Every materialized file also opens with a one-line
+provenance header.
+
+**Why.** An agent that opens a rule needing a small fix will simply edit it — that is precisely how the
+copies diverged in the first place. One line at the top, naming the source and pointing at `upstream`, is
+the cheapest possible intervention at the only moment it matters. The hash catches the edit regardless,
+so the header is guidance rather than enforcement.
+
+## D7 — The tier is the directory, not metadata (2026-08-04)
+
+**Decision.** `rules/` is always-loaded, `knowledge/` is on-demand, and there is no `tier` field anywhere.
+
+**Why.** The harness already decides this by path — it auto-loads one directory and not the other. A
+metadata field would be a second source of truth for something the platform has already settled, and the
+only thing it could ever do is disagree.
+
+**Consequence.** The always-loaded footprint is directly measurable, so "keep the core small" became a
+gate (`check` fails over a byte budget) rather than an aspiration. It caught a real 45% overage on the
+first adoption.
+
+## D8 — `check` works offline (2026-08-04)
+
+**Decision.** `check` is pure local hashing: no network, no canon access, no package resolution.
+
+**Why.** It is meant to run inside build gates — including in a .NET repository that has no Node
+dependencies at all and may be building offline. A gate that can fail because a network call failed is
+not a gate.
+
+**Consequence.** Enforced by a test that deletes the canon entirely and requires a clean exit.
+
+## D9 — `upstream` ships in v0.1 (2026-08-04)
+
+**Decision.** Promoting a locally-improved file back into the canon is in the first release, not a
+follow-up.
+
+**Why.** A one-way push is distribution. 衍 is propagation *and* return, and the return direction is what
+keeps the canon from ossifying: without it, the correct response to a rule that is subtly wrong is to
+edit it locally, which is the behaviour the whole tool exists to prevent.
+
+## D10 — Distributed as an npm package, consumed via `npx` (2026-08-04)
+
+**Decision.** No per-repository dependency and no global install; the manifest pins a reference.
+
+**Why.** It must work in repositories that have no `package.json` at all — the .NET library sibling runs
+bare `node` scripts and has none. `npx` needs nothing installed. A global install was rejected because
+nothing in a repository would then record which version produced its files; a vendored shim was rejected
+because the drift checker would itself be drifting content.
+
+## D11 — The canon ships inside the package (2026-08-04)
+
+**Decision.** `canonRoot` defaults to `<package>/canon`. The manifest's `source` is a record of
+provenance and the command to re-run — not something the tool fetches. `DAORIS_CANON` overrides it for
+developing Daoris itself.
+
+**Why.** The design left "how does `sync` obtain the canon" unanswered, and the obvious answers all meant
+cloning and caching. Shipping the canon *in* the package makes the pinned reference itself the version
+pin, which removes that machinery entirely — and makes D8's offline guarantee structural rather than a
+rule someone has to remember.
+
+## D12 — Adoption collisions are distinct from drift (2026-08-04)
+
+**Decision.** A file in the lock whose content changed is **drift**; a file *not* in the lock sitting at a
+canonical path is a **collision**. Both refuse without `--force`, with different messages.
+
+**Why.** Found during implementation, before release. Drift detection only guarded files already in the
+lock, so a repository's *first* sync silently overwrote a rule it had written itself — with no error and
+no warning. Two of the repositories due to adopt already have exactly such a file. The two cases look
+identical to a hash check and are completely different mistakes: one is "you edited my file", the other
+is "I am about to destroy yours".
