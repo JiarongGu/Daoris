@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "canonVersion": "0.1.0",
+  "source": "github:OWNER/daoris#v0.1.0",
+  "entries": [
+    {
+      "pack": "core",
+      "source": "core/file-tool-discipline.md",
+      "target": "rules/file-tool-discipline.md",
+      "canonVersion": "0.1.0",
+      "sha256": "4f7dab1b790f31b5a22dacf4e2ff1e365457e8995d245019220cea22703a0fc5"
+    },
+    {
+      "pack": "core",
+      "source": "core/no-tmp-for-repo-files.md",
+      "target": "rules/no-tmp-for-repo-files.md",
+      "canonVersion": "0.1.0",
+      "sha256": "c28d3f0e2b68bb03cf49d4b82da729f11d66005a8048fea493a07cf29c054970"
+    },
+    {
+      "pack": "core",
+      "source": "core/persist-working-state.md",
+      "target": "rules/persist-working-state.md",
+      "canonVersion": "0.1.0",
+      "sha256": "48ef7f02a18c7a00e1c712dc4cc49806917080ff4efb8da4b531bd888ab07cf7"
+    },
+    {
+      "pack": "core",
+      "source": "core/sensitive-info.md",
+      "target": "rules/sensitive-info.md",
+      "canonVersion": "0.1.0",
+      "sha256": "9f090594b839f6652a07780f417e634177f701a9c933389c0d8c0fa918d607eb"
+    },
+    {
+      "pack": "core",
+      "source": "core/task-lifecycle.md",
+      "target": "rules/task-lifecycle.md",
+      "canonVersion": "0.1.0",
+      "sha256": "d8fb9aab0580fde4ac9743ae510f6c8aacefa78acf3ac3a3d47e1615a5d8666e"
+    }
+  ]
+}

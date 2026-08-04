@@ -103,8 +103,20 @@ its files) and a per-repo vendored shim (the drift checker would itself be drift
 }
 ```
 
-`source` is written by `daoris init` from the canon repo's own remote, so no repo hand-writes it and no
-absolute path can end up in a tracked file. The pinned ref is what stops a silent upgrade.
+`source` is written by `daoris init`, so no repo hand-writes it and no absolute path can end up in a
+tracked file. The pinned ref is what stops a silent upgrade.
+
+**How the canon is obtained — resolved during implementation:** it isn't. The canon **ships inside the
+package**, so the pinned ref in `source` selects the canon by selecting which package version `npx` runs.
+`source` is therefore a record of provenance and the command to re-run, not something the tool fetches.
+That removes clone/cache machinery entirely and makes D8's offline guarantee structural rather than a
+rule to remember. `DAORIS_CANON` overrides the canon root for developing Daoris itself.
+
+**Adoption collisions — added during implementation.** D5 says anything not in the lock is invisible, but
+`sync` still had to *write* to those paths on a first sync, which silently overwrote a rule the repo had
+written itself. The two cases are now separated by provenance: **in the lock** means Daoris owns the file
+and the repo edited it (drift); **not in the lock** means the repo wrote it before adopting Daoris
+(collision). Both refuse without `--force`, with different advice, because they are different mistakes.
 
 `daoris.lock` records, per materialized file: pack, canonical path, target path, canon version, and a sha256
 of the written content. Retiring a canonical file removes it from every repo on the next `sync` — the thing
@@ -203,4 +215,17 @@ carried files is described as a pre-wipe history backup and may be the only copy
   of a hand-written file is where sync tools start fighting their users.
 - **The centralized knowledge service (cross-repo RAG).** A separate sub-project with its own spec; it would
   build on Lyntai's semantic memory, embedder seam, vector store and MCP hosting rather than reinventing them.
-- **Any .NET package.** The original framework note sketched fourteen; v0.1 needs none.
+- **The harness layer — gates and devtools.** Named here as the intended **v0.2**, because the
+  observation behind it is the same one that motivates v0.1: every repo carries a hand-copied
+  `devtools` script, and those copies have diverged further than the documents have. The shape follows
+  this design one level down — gates get **declared, not copied**. The manifest grows a `verify` block;
+  Daoris ships the gates that are genuinely universal (sensitive scan, doctrine drift,
+  version-authorship, docs freshness) and each repo declares its own stack gates as commands. Same
+  core / packs / local layering, applied to gates instead of documents.
+- **Any .NET package — with one reservation.** The original framework note sketched fourteen and v0.1
+  needs none. The CLI stays node: what devtools actually do is orchestrate subprocesses, and a compiled
+  binary that spawns `dotnet build` buys nothing while costing per-platform artifacts and a release
+  pipeline — self-defeating for a tool whose purpose is reducing per-repo overhead. **.NET earns its
+  place only where the compiler is required**: symbol and dependency graphs, real API-surface diffing,
+  AST-aware transforms — the framework note's *Repository Intelligence* pillar, which is .NET-shaped
+  because Roslyn is. When that lands it is a capability the CLI invokes, not a rewrite of the CLI.

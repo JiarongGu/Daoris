@@ -15,7 +15,8 @@
     "canon"
   ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "verify": "node --test && node bin/daoris.mjs check"
   },
   "license": "MIT"
 }
