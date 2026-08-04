@@ -76,10 +76,23 @@ this project's own pathology in a new place. It also makes Daoris the first real
 that runtime, which is worth something on its own — a runtime with no consumer is unvalidated, exactly as
 a pack nobody installs is.
 
-Briefs and open questions live in each `src/Daoris.*/README.md`. The sharpest one: **whether the service
-needs hosting at all.** A local-only service queried over MCP would answer most of the need without a
-deployment, an account, or a privacy boundary — and several siblings are private, so centralising their
-content is exactly what `sensitive-info` keeps out of tracked files. Price that before assuming a host.
+**Local-first; sharing is configuration** (D21, and `docs/2026-08-05-daoris-service-design.md`). One
+service, two modes: local needs no server, no account and no network, and must stay fully useful alone.
+Shared mode is opt-in, indexing is opt-in per repository, and the untracked local directory is a hard
+exclusion rather than a permission — several siblings are private, and centralising their content is
+exactly what `sensitive-info` keeps out of tracked files. The shared store should be a **git repository**
+before a database.
+
+**Built by composition** (D22), which is what makes the scope plausible. Embeddings, the vector store,
+semantic recall, provider routing and MCP hosting already ship in the cognition sibling; the shell,
+WebView2 surface and IPC bridge already ship in the desktop one. What remains is wiring — and Daoris
+becomes the **first external consumer either has had**, so building on them validates them. A library
+with no consumer is unvalidated, exactly as a pack nobody installs is. Released versions only: three
+repositories coupled at HEAD are one repository with extra steps.
+
+**LLM-assisted merge is the capability none of the existing tooling can supply.** `doctor` provably
+cannot see convergence — the same principle in different words scores like an unrelated document (D17) —
+and that is precisely the gap. It proposes; a person disposes, through `upstream`, under review.
 
 _Checked against the agent platform's own features before committing further (D15): its workspaces are
 billing and access segmentation, its skills are a format rather than a distribution mechanism, and its

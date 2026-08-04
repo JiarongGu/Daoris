@@ -30,13 +30,23 @@ by diverging. The service indexes the second kind.
   materializes; the service reads it rather than holding its own.
 - **Two clients, one UI** — see `Daoris.Web` and `Daoris.Desktop`.
 
-## Open questions, to settle before writing code
+## The design is written
 
-1. **Where does per-repository content come from?** Pushed by a devkit gate, pulled from git remotes, or
-   indexed from local checkouts. Each has a different privacy story, and several siblings are private.
-2. **What must never leave a machine?** Private repository names, machine paths and local notes are
-   deliberately untracked today. A service that indexes them centralises exactly what `sensitive-info`
-   keeps out of tracked files, so the boundary needs deciding before the first line.
-3. **Does it need to be hosted at all?** A local-only service that a session queries over MCP would
-   answer most of the need without a deployment, an account, or a privacy boundary. Worth pricing before
-   assuming a hosted one.
+**`docs/2026-08-05-daoris-service-design.md`** — read it before writing code. It settles:
+
+- **Local-first, sharing as configuration** (D21). One service, two modes, one binary; local needs no
+  server, no account and no network, and must stay fully useful alone.
+- **The disclosure boundary** — what may leave a machine at all, which is the question this project has
+  to answer before "who may read it". Indexing is opt-in per repository, silence means keep it local,
+  and the untracked local directory is a hard exclusion rather than a permission.
+- **Authorization mirrors repository access** rather than inventing a second model that would eventually
+  disagree with the first, silently.
+- **A git repository as the shared store**, before a database: free, versioned, reviewable, and its
+  access control already *is* the rule above rather than a copy of it.
+- **LLM-assisted merge proposes; a person disposes.** Doctrine that appeared without anyone choosing it
+  is the failure this whole project exists to prevent.
+- **Built by composition** (D22) — the cognition sibling supplies embeddings, the vector store, routing
+  and MCP hosting; the desktop sibling supplies the shell. Released versions only, never working trees.
+
+The sharpest open question is still the first one: **does shared mode need hosting at all?** If the store
+is a git repository and the client is local, "shared" may be a sync rather than a server.

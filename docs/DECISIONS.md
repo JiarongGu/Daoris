@@ -290,6 +290,59 @@ the offline guarantee, and whether the service needs hosting at all — a local-
 MCP would answer most of the need without a deployment or a privacy boundary. Each is recorded as an
 open question in the relevant `src/Daoris.*/README.md`, written before any code.
 
+## D21 — The knowledge service is local-first, with sharing as configuration (2026-08-05)
+
+**Decision.** One service, two modes selected by configuration rather than by build: **local** (the
+default — no server, no account, no network) and **shared** (opt-in). Local must stay fully useful
+alone. Full design in `docs/2026-08-05-daoris-service-design.md`.
+
+**Why.** Most of the value is cross-repository recall for *one person* working across a dozen checkouts,
+and that needs no server at all. Making sharing the default would have imposed a deployment, an account
+and a privacy boundary on everyone in order to serve the case that needs them. The business-manager
+sibling already runs this shape — its database provider is configuration and its default needs no
+database — so the pattern is proven in the family rather than invented here.
+
+**The disclosure boundary is specific to this project and is decided up front.** Ordinary applications
+ask who may read something; this one must first ask what may leave the machine, because several
+repositories in the family are private and `sensitive-info` exists to keep their names and paths out of
+tracked files. A service that indexes them centralises exactly that. So: indexing is **opt-in per
+repository** with silence meaning "keep it local" — the cost is asymmetric, since over-sharing is a
+disclosure and under-sharing is an inconvenience — and the untracked local directory is a **hard
+exclusion in shared mode**, not a permission.
+
+**Authorization mirrors repository access rather than inventing a second model.** "May this person read
+this repository's knowledge" already has an answer at the source host. A separate model would disagree
+with it eventually, and would disagree silently.
+
+**The shared store should be a git repository before a database.** Free, versioned, reviewable, access
+control that already matches the rule above because it *is* that rule, and it outlives the tool. A
+hosted database earns its place when query volume outgrows it — a good problem, not a starting
+assumption.
+
+**Consequence.** "Shared" may turn out to be a sync rather than a server, in which case there is no host
+to secure and the desktop shell is the product. That is recorded as the first open question, to be
+priced before anything is deployed.
+
+## D22 — The knowledge layer is built by composing the two siblings (2026-08-05)
+
+**Decision.** `Daoris.Service` and `Daoris.Desktop` consume the family's cognition and desktop libraries
+at released versions. `Daoris.Cli` composes nothing and keeps its zero dependencies.
+
+**Why.** The knowledge layer needs embeddings, a vector store, semantic recall, provider routing, MCP
+hosting, a desktop shell, a web surface and an IPC bridge — and every one of those already ships, in two
+siblings built to be consumed. Rebuilding them would produce the second, worse copy that D1 was written
+to prevent; D1 refused that dependency **for the CLI**, because a build gate must not depend on a
+release cadence it does not control, and a separate deployable has no such constraint.
+
+**It runs in both directions, which is the less obvious half.** Daoris is the first external consumer
+either sibling has had. A library with no consumer is unvalidated — the same argument this project
+already makes about a pack nobody installs and doctrine nobody runs. Building on them *tests* them, and
+an awkward seam is a finding for that sibling rather than a workaround here.
+
+**Consequence.** Depend on **released** versions, never on a sibling's working tree: three repositories
+coupled at HEAD are one repository with extra steps, and the family's independence is load-bearing. The
+CLI's isolation is what keeps this safe — a consumer adopting doctrine never acquires any of it.
+
 ## D19 — The sync state space is enumerated, not discovered (2026-08-05)
 
 **Decision.** What `sync` does with a file is a function of three inputs — is it in the **lock**, what is
