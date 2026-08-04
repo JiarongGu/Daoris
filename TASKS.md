@@ -34,18 +34,13 @@ _The first real adoption surfaced three things no synthetic test could. Each is 
 silently fixed, because each is editorial work on someone's doctrine._
 
 - [ ] **ADOPT1 — Lyntai's `dev-conventions.md` now substantially duplicates canonical
-  `dotnet-package-layout`.** That ~10 KB file is always-loaded and is why Lyntai's core sits at 34,851
+  `dotnet-package-layout`.** _`daoris doctor` now detects this automatically and reports it at 58% shared
+  vocabulary; what remains is the editorial work below._ That ~10 KB file is always-loaded and is why Lyntai's core sits at 34,851
   bytes; its budget was set to 40,000 to reflect reality rather than hide the overage. The overlap is
   package layout, naming, and DI variation points — all now canonical. What remains genuinely
   Lyntai-specific (the LLM provider seam, spawn hygiene, its testing setup) is a **knowledge** deep dive,
   not an always-loaded rule. Trimming it, and moving the remainder to `knowledge/`, would drop Lyntai's
   always-loaded core by roughly a quarter.
-- [ ] **ADOPT2 — renamed twins are invisible to the tool.** Lyntai's `minimise-bash-prompts` and
-  canonical `file-tool-discipline` are the same rule under different names, so adoption left the
-  repository carrying both until it was noticed by hand. `check` cannot see this: the twin is local, and
-  local is invisible by design. Consider a `daoris doctor` that reports *suspected* twins by content
-  similarity — advisory only, never a gate, since a false positive that blocks a build is worse than the
-  duplication.
 - [ ] **ADOPT3 — Lyntai's changes are uncommitted, pending owner review.** Four rules replaced, one twin
   deleted, seven files added, plus `daoris.json` / `daoris.lock`. Everything repo-specific that the
   generalized rules dropped is preserved in a new local `.claude/rules/repo-mechanics.md`.
@@ -74,11 +69,6 @@ silently fixed, because each is editorial work on someone's doctrine._
   file that is *renamed* upstream lands in consumers as a delete plus an add — losing nothing, but also
   telling the consumer nothing about why. A `renamedFrom` field in `pack.json` would let the plan say
   "renamed" instead.
-- [ ] **TOOL2 — `check` cannot detect an upstream update.** Offline by design, so it can report drift
-  and staleness but not "a newer canon exists". That belongs in `status` (which may reach the canon), not
-  in `check` (which may not). Currently neither does it.
-- [ ] **TOOL3 — no `daoris upstream --all`.** Promoting several edits after a working session is one
-  command per file today.
 
 ---
 

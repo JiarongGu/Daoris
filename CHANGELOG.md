@@ -9,10 +9,17 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Six commands.** `init` writes a manifest and reports what is available without guessing;
+- **Seven commands.** `init` writes a manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness, index
   freshness and the always-loaded budget; `upstream` promotes a locally-improved file back into the
-  canon; `index` regenerates `RULES_INDEX.md` from what is on disk; `status` summarizes.
+  canon (`--all` for every edit at once); `index` regenerates `RULES_INDEX.md` from what is on disk;
+  `status` summarizes and reports when a newer canon is available; `doctor` reports local documents that
+  restate a canonical one under a different name.
+- **`doctor` covers the one gap the lock cannot.** A repository's own rule duplicating a canonical one is
+  local, and local is invisible by design — it surfaced on the first adoption only because someone read
+  the generated index end to end. Advisory by construction: word overlap is crude, and a false positive
+  that failed a build would be worse than the duplication. Validated against the real case, where it
+  independently finds a 58% overlap that previously took a manual read to notice.
 - **Zero runtime dependencies.** Node ≥ 22, ESM, `node:test`. Nothing to install — every command runs
   through `npx` against a pinned reference.
 - **The canon ships inside the package**, so the pinned reference *is* the version pin. No command

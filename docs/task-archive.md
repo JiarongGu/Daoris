@@ -80,6 +80,23 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   `daoris check` exits 0. Three findings recorded in `TASKS.md` Part 2 rather than silently fixed: the
   `dev-conventions` overlap, renamed twins being invisible to the tool, and the budget overage.
 
+- [x] **T17 — `status` reports an available canon update** _(was TOOL2)_
+  ✅ done 2026-08-04 — `status` may reach the canon and `check` deliberately may not (D8), so "a newer
+  canon exists" is reported where it informs rather than in the gate, where it would fail a build for a
+  reason unrelated to correctness.
+
+- [x] **T18 — `upstream --all` promotes every drifted file** _(was TOOL3)_
+  ✅ done 2026-08-04 — a working session usually improves several rules at once, and one command per file
+  was friction on exactly the direction that has to stay easy: a return path that is tedious stops being
+  used, and then local editing wins.
+
+- [x] **T19 — `daoris doctor` reports suspected renamed twins** _(was ADOPT2)_
+  ✅ done 2026-08-04 — `src/twins.mjs`, containment over significant-word sets rather than Jaccard so a
+  short local rule restating a long canonical one still scores as a twin. Advisory by construction,
+  always exit 0. Validated against the real case rather than only its fixture: run against the first
+  adopter it independently reports the `dev-conventions` / `dotnet-package-layout` overlap at 58%, which
+  is the finding that previously required reading the generated index end to end.
+
 - [x] **T16 — Release prep**
   ✅ done 2026-08-04 (partial) — `CHANGELOG.md` written, sensitive scan clean across every tracked file,
   final verify green. The two items needing an owner decision — the GitHub account and the LICENSE

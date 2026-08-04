@@ -17,7 +17,7 @@ cultivation.
 
 ## Current state
 
-**v0.1 built and proven; not yet released.** Six commands, 58 tests, canon of 6 core rules + 3 packs.
+**v0.1 built and proven; not yet released.** Seven commands, 66 tests, canon of 6 core rules + 3 packs.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.

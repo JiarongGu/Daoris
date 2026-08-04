@@ -49,9 +49,16 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `check` | Drift, staleness, index freshness, core budget. **Offline.** Exit 1 on any failure |
 | `upstream <file>` | Promotes a locally-improved canonical file back into the canon |
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
-| `status` | Human summary: packs, versions, drift, local files |
+| `status` | Human summary: packs, versions, drift, local files, available updates |
+| `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
 
-`sync` also accepts `--dry-run` (print the plan, write nothing) and `--force`.
+`sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
+promote every locally-edited canonical file at once.
+
+`doctor` exists because of the one thing the lock cannot catch: a repository's own rule that says the same
+thing as a canonical one under a different name is *local*, and local is invisible by design. Word overlap
+is a crude signal, so it only ever reports — a false positive that failed a build would be worse than the
+duplication it warns about.
 
 ## The manifest
 
