@@ -1,8 +1,8 @@
 # Daoris.Service — the cross-repository knowledge service
 
-**Status: ingest works.** `Daoris.Service.Core` reads a repository's knowledge into addressable
-entries and classifies each as canonical or local. 13 tests, including two that run against the real
-sibling repositories rather than fixtures.
+**Status: ingest and query work, in memory.** `Daoris.Service.Core` reads a repository's knowledge into
+addressable entries, classifies each as canonical or local, and answers scored queries across the lot.
+24 tests, two of which run against the real sibling repositories rather than fixtures.
 
 ```sh
 cd src/Daoris.Service && dotnet test
@@ -48,8 +48,6 @@ Two choices worth knowing about:
   is in the store and one forgotten filter discloses it; withheld-at-ingest means it was never there
   to leak. It is a *type* rather than a paragraph so that shared mode cannot be built without
   answering it.
-
-## Design
 
 ## What it is for
 
