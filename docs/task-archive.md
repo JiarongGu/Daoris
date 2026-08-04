@@ -158,6 +158,15 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   always long is a list nobody reads. Also fixed `init`/`status` not reporting a repository's own skills
   as local.
 
+- [x] **CANON4 (part) — `post-feature` canonized**
+  ✅ done 2026-08-05 — the four copies looked least alike of any skill surveyed: one is a stack-specific
+  checklist (migrations, DI, translation parity, component layering), another a detection procedure over
+  the diff. The shared shape is the whole value — audit the real diff rather than your memory of it,
+  close the wiring chain, refresh the records the change made stale, capture any reusable pattern it
+  revealed, and report before committing. Written around the observation that every item on it fails
+  *silently*, except pattern-capture, which fails for the opposite reason: nothing breaks, and the next
+  person pays.
+
 - [x] **TOOL4 — coordination across many developers, not just many repositories**
   ✅ done 2026-08-05 — the many-*developers* half needed no feature: doctrine is a tracked file, so a
   clone carries it, review touches it, and a move preserves it. That is precisely why a hosted shared

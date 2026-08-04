@@ -11,5 +11,6 @@ network.
 
 ## 0.0.1
 
-- The first canon: six workflow rules, and the discovery, logging, and output skills that go with them.
-  Nothing to upgrade from yet.
+- The first canon: seven workflow rules, and five skills — `doc-loader` and `pattern-finder` to start a
+  task, `post-feature` and `fix-log` to close one, `caveman` for terse output. Nothing to upgrade from
+  yet.

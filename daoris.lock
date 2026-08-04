@@ -79,6 +79,13 @@
       "target": "skills/pattern-finder/SKILL.md",
       "canonVersion": "0.0.1",
       "sha256": "03156a1f6d740e54601f68f10b6b4ac72eace5d3e5c4e4801cb9475f6c202fb2"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/post-feature/SKILL.md",
+      "target": "skills/post-feature/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "708130ef9a9eb41c85c2fc06640517e5164976a18b41f1431105923e14db0e80"
     }
   ]
 }

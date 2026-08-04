@@ -13,10 +13,14 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## Active backlog
 
-_**The tool is built and proven** — seven commands, 72 tests, 6 core rules + 3 packs, adopted into Lyntai
-with its 1337 tests still green. Nothing is published, so development runs at **`0.0.x`** and the first
-release is **`0.1.0`**; the skills layer below lands in it rather than behind a later version boundary.
-Two items need an owner decision before any tag._
+_**The tool is built and proven** — seven commands, 90 tests, a canon of 7 core rules, 5 core skills and
+3 packs, adopted into Lyntai with its 1337 tests still green. The skills layer is **complete**, and so
+are the tool follow-ups. Nothing is published, so development runs at **`0.0.x`** and the first release is
+**`0.1.0`**._
+
+_**Everything remaining needs a decision or another repository, not more code here.** Two items block the
+tag and are the owner's call; the rest are editorial work inside a consuming repository, or gated on the
+next adoption._
 
 ## Part 1 — release blockers (both need an owner decision)
 
@@ -32,8 +36,8 @@ Two items need an owner decision before any tag._
 
 ## Part 2 — findings from the Lyntai adoption (2026-08-04)
 
-_The first real adoption surfaced three things no synthetic test could. Each is recorded rather than
-silently fixed, because each is editorial work on someone's doctrine._
+_The first real adoption surfaced things no synthetic test could. Both remaining items are editorial work
+inside Lyntai rather than changes here, which is why they are recorded rather than silently fixed._
 
 - [ ] **ADOPT1 — Lyntai's `dev-conventions.md` now substantially duplicates canonical
   `dotnet-package-layout`.** _`daoris doctor` now detects this automatically and reports it at 58% shared
@@ -50,12 +54,13 @@ silently fixed, because each is editorial work on someone's doctrine._
 
 ## Part 3 — canon growth
 
-- [ ] **CANON4 — frequent skills still to canonize.** From the twelve-repository survey (`local/`,
-  untracked), and after `fix-log` landed: `post-feature` appears in 4, and a `doc-update-*` /
-  `doc-optimize` / `doc-monitor` / `doc-cleanup` family in 3. Each needs the same treatment `doc-loader`
-  got — extract the invariant procedure, leave the routing content local. The `doc-*` family is worth
-  weighing against a generated-wiki tool first (D16): if a generator maintains those documents, a skill
-  for hand-maintaining them is doctrine for the wrong workflow.
+- [ ] **CANON4 — the `doc-*` maintenance family, deliberately not canonized yet.** `doc-update-technical`
+  / `-reference` / `-guide`, `doc-optimize`, `doc-monitor`, `doc-cleanup` appear together in 3
+  repositories, which is a real signal. It is **held** rather than deferred by accident: these skills all
+  automate hand-maintaining documents that a generated-wiki tool would own outright (D16), so canonizing
+  them would install doctrine for a workflow that may be about to change. Decide by trying a generator on
+  one repository first. If the generated route wins, what stays canonical is much smaller — the *review*
+  of generated output, not its production. `post-feature` and `fix-log` are done.
 - [ ] **CANON6 — `scripts-live-in-repo` is a merged renamed twin of two core rules.** Present in 3
   repositories; its first half is canonical `no-tmp-for-repo-files` and its second half is canonical
   `file-tool-discipline`. No new core rule — but those repositories will carry both, and the genuinely

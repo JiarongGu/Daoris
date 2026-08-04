@@ -78,12 +78,15 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Seven core rules**, each confirmed by appearing independently in multiple repositories in the family:
   `sensitive-info`, `task-lifecycle`, `no-tmp-for-repo-files`, `file-tool-discipline`,
   `persist-working-state`, `no-global-memory`, `skills-workflow`.
-- **Four core skills.** `doc-loader` and `pattern-finder` (six repositories each), `fix-log` (three, whose
-  copies sit within 100 bytes of one another, so the invariant was nearly the whole file), and `caveman`
-  (five) — canonized for its **carve-outs** rather than its terseness: never compress a destructive or
-  irreversible action, a security finding, or an order-sensitive sequence, and never write a durable
-  artefact in the mode at all. A compressed warning reads as fluent English right until someone approves
-  it without registering the consequence.
+- **Five core skills**, each canonized from copies found across the family and reduced to what they share.
+  `doc-loader` and `pattern-finder` (six repositories each) start a task; `post-feature` (four) and
+  `fix-log` (three) close one; `caveman` (five) governs output. `fix-log`'s copies sat within 100 bytes of
+  each other, so the invariant was nearly the whole file. `post-feature`'s looked least alike of any —
+  one a stack checklist, another a diff-detection procedure — and the shared shape turned out to be the
+  value. `caveman` is canonized for its **carve-outs** rather than its terseness: never compress a
+  destructive or irreversible action, a security finding, or an order-sensitive sequence, and never write
+  a durable artefact in the mode at all. A compressed warning reads as fluent English right until someone
+  approves it without registering the consequence.
 - **`status` names what a pending update would change** — `changed` / `new` / `retired` per file, instead
   of only reporting that a newer canon exists. Computed from the lock, so it stays offline; the
   provenance header is excluded, so a pure version bump reports "version only" rather than listing every
