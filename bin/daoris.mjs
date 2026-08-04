@@ -7,6 +7,7 @@ import { commandIndex } from '../src/indexgen.mjs';
 import { commandSync } from '../src/materialize.mjs';
 import { commandCheck } from '../src/drift.mjs';
 import { commandUpstream } from '../src/upstream.mjs';
+import { commandInit, commandStatus } from '../src/commands.mjs';
 
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -30,6 +31,8 @@ const commands = {
   sync: commandSync,
   check: commandCheck,
   upstream: commandUpstream,
+  init: commandInit,
+  status: commandStatus,
 };
 
 export function runCli(argv, cwd, write = console.log) {
