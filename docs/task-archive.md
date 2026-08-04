@@ -158,6 +158,17 @@ Executed from `docs/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a
   always long is a list nobody reads. Also fixed `init`/`status` not reporting a repository's own skills
   as local.
 
+- [x] **T23 — Rehearse the release against the packaged artefact** _(unplanned; from "test how this will
+  work" before tagging)_
+  ✅ done 2026-08-05 — `tools/release-rehearsal.mjs`, wired as `npm run rehearse`. Everything else tests
+  the source tree; this packs the tarball, installs it into a clean repository, and drives the whole
+  consumer lifecycle through the `bin` entry — adopt, collide, sync, drift, promote, upgrade, rename,
+  check. 46 checks. It found a real bug on its first run: after `upstream`, a canon that then ships as a
+  **new version** rewrote the provenance header, so the promoted copy differed from both the lock and the
+  new content and `sync` refused — advising the contributor to promote an edit they had already promoted.
+  Drift now compares bodies rather than whole files. It also correctly refuses to pass while REL2 is
+  open, which is the point: the release gate should block on the release blocker.
+
 - [x] **CANON4 (part) — `post-feature` canonized**
   ✅ done 2026-08-05 — the four copies looked least alike of any skill surveyed: one is a stack-specific
   checklist (migrations, DI, translation parity, component layering), another a detection procedure over

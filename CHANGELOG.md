@@ -47,6 +47,10 @@ The first version: doctrine that installs, is checked, and flows back.
   a tweak will otherwise simply edit it. The lock's hash catches the edit either way.
 - Atomic, BOM-less, LF writes throughout; exit codes are the contract (`0` clean, `1` policy failure,
   `2` tool error).
+- **A release rehearsal** (`npm run rehearse`) that packs the tarball, installs it into a clean
+  repository, and drives the whole consumer lifecycle through the `bin` entry — adopt, collide, sync,
+  drift, promote, upgrade, rename, check. The test suite exercises the source tree; this exercises the
+  artefact, which is where install stories actually break.
 
 ### Skills
 

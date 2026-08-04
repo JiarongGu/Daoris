@@ -45,12 +45,18 @@ export function planSync({ root, manifest, canon, lock }) {
         // that would break the very direction the tool exists to serve, and
         // would accuse every consumer of an edit nobody made.
         //
-        // A file matching the NEW canon is likewise not drift, whatever the
-        // lock says: that is the state right after `upstream`, where the edit
-        // has already become canonical and only the lock hash is stale. Demand
-        // --force there and the return path ends by telling the contributor to
-        // discard the improvement they just promoted.
-        if (onDisk !== entry.sha256 && onDisk !== digest) drifted.push(file.target);
+        // A file whose BODY matches the canon is likewise not drift, whatever
+        // the lock says: that is the state right after `upstream`, where the
+        // edit has already become canonical. Demand --force there and the
+        // return path ends by telling the contributor to discard the
+        // improvement they just promoted.
+        //
+        // Bodies, not whole files, because the canon usually ships as a new
+        // version soon after — which rewrites the header and would otherwise
+        // make the promoted copy look edited all over again.
+        if (onDisk !== entry.sha256 && stripHeader(readText(abs)) !== body) {
+          drifted.push(file.target);
+        }
       } else if (onDisk !== digest) {
         // Not in the lock: the repo wrote this file itself, before it ever
         // adopted daoris. Silently overwriting it would destroy work the tool

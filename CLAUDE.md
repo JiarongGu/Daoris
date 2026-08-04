@@ -65,6 +65,10 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 
 - **`npm run verify`** — the "am I done?" gate: every test, then `daoris check` against Daoris's own
   doctrine. Run before claiming a change is complete.
+- **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
+  repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
+  drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
+  **artefact**. Run before tagging.
 - `node --test` — tests only.
 - `node bin/daoris.mjs <command>` — run the CLI against this repository.
 - `DAORIS_CANON=<path>` overrides the canon root; this is how tests drive a fixture canon.

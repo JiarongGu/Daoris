@@ -154,6 +154,33 @@ test('upstreamAll on a clean repo promotes nothing', () => {
  * person who just contributed an improvement to "discard your local edit",
  * which is both wrong and the exact advice most likely to lose the work.
  */
+/**
+ * The realistic sequence, and the one the release rehearsal caught: an edit is
+ * promoted, then the canon SHIPS as a new version. The repo's copy now holds the
+ * canonical body under an old header, so comparing whole files makes it differ
+ * from the lock and from the new content at once — and `sync` would refuse, and
+ * advise promoting an edit that is already promoted. Bodies are what is
+ * doctrine; the header is bookkeeping.
+ */
+test('a promoted edit survives a canon version bump on top of it', () => {
+  const fx = synced();
+  fx.repoFx.write('.claude/rules/sensitive-info.md', edited());
+  promote(fx, 'rules/sensitive-info.md');
+  fx.canonFx.write('canon.json', '{"version":"0.9.0"}');
+
+  const canon = readCanon(fx.canonFx.root);
+  const manifest = readManifest(fx.repoFx.root);
+  const plan = planSync({ root: fx.repoFx.root, manifest, canon, lock: readLock(fx.repoFx.root) });
+  assert.deepEqual(plan.drifted, [], 'the repo holds exactly what the canon says');
+
+  applySync({ root: fx.repoFx.root, manifest, plan, canonVersion: canon.version, force: false });
+  const after = fx.repoFx.read('.claude/rules/sensitive-info.md');
+  assert.match(after, /IMPROVED\./);
+  assert.match(after, /@ 0\.9\.0 /);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
 test('after upstreaming, a re-sync closes the loop without --force', () => {
   const fx = synced();
   fx.repoFx.write('.claude/rules/sensitive-info.md', edited());

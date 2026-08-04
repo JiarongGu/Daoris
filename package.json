@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "test": "node --test",
-    "verify": "node --test && node bin/daoris.mjs check"
+    "verify": "node --test && node bin/daoris.mjs check",
+    "rehearse": "node tools/release-rehearsal.mjs"
   },
   "license": "MIT"
 }

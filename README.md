@@ -116,8 +116,14 @@ where the file came from and to use `daoris upstream`; the lock's hash catches t
 
 ```sh
 npm run verify          # tests, then daoris check against its own doctrine
+npm run rehearse        # pack, install into a clean repo, drive the full lifecycle
 node --test             # tests only
 ```
+
+`rehearse` is the release gate. The test suite exercises the source tree; the rehearsal exercises the
+**artefact** — the tarball npm would publish, resolved through the `bin` entry the way a consumer runs
+it. That is where install stories break: a file missing from `files`, a path that only resolves in a
+source checkout, a skill directory that does not survive packing.
 
 `DAORIS_CANON` overrides the canon root, which is how the tests drive a fixture canon.
 

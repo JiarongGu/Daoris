@@ -28,11 +28,13 @@ next adoption._
   `src/commands.mjs:36` (what every future `daoris init` writes into a consumer's manifest),
   `daoris.json:2`, `README.md` (install lines + ecosystem links), and Lyntai's `daoris.json:2`. Test
   fixtures may keep the placeholder. Once decided: replace, add the remote, tag the release, and verify
-  `npx github:<owner>/daoris#<tag> --version` works from a clean directory — the install story is
-  untested until that command runs. `test/version.test.mjs` holds the four live refs in step, so only the
-  owner half is manual.
+  `npx github:<owner>/daoris#<tag> --version` works from a clean directory. `test/version.test.mjs` holds
+  the four live refs in step, so only the owner half is manual. _`npm run rehearse` now covers everything
+  up to the tag — packing, installing into a clean repository, and the whole consumer lifecycle through
+  the `bin` entry — so what remains untested is only whether GitHub serves the tag._
 - [ ] **REL2 — the LICENSE.** `package.json` declares MIT but there is no `LICENSE` file, and MIT
-  requires a named copyright holder. Naming a person in a tracked file is the owner's call.
+  requires a named copyright holder. Naming a person in a tracked file is the owner's call. _`npm run
+  rehearse` fails on exactly this and nothing else, so the release stays blocked until it is answered._
 
 ## Part 2 — findings from the Lyntai adoption (2026-08-04)
 
