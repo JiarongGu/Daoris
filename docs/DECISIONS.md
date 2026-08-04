@@ -362,14 +362,20 @@ CLI's isolation is what keeps this safe — a consumer adopting doctrine never a
 - The cognition sibling is a **library**. Its capabilities compose — embeddings, the vector store,
   routing, semantic recall. Its *serving* surface does not, and asking it to grow one would be asking a
   library to become an API project.
-- Its MCP host looked like a match by name and is the opposite thing by direction: an **ephemeral,
-  localhost-only HTTP server that provisions tools outward** to a CLI it spawns, for its own internal
-  model use. Daoris needs a **long-lived server other processes connect to**. Same protocol, inverted
-  roles, and nothing shared but the package underneath.
+- **There are two MCP surfaces, pointing opposite ways, and both are right.**
+
+  | Direction | Who owns it | What it is for |
+  |---|---|---|
+  | **Outward** — other processes connect in | **Daoris** | The knowledge index, exposed to a session or another service. Long-lived, and a serving surface, which is not a library's job. |
+  | **Inward** — a spawned CLI is handed tools | **the cognition sibling** | Its ephemeral localhost host, for when Daoris *itself* drives an agent — the merge analysis in §7 of the service design. Exactly what that host was built for. |
+
+  Its host looked like a match for the first and is built for the second. Same protocol, inverted roles.
+  Using it for the inward direction is composition working as intended; using it for the outward one
+  would have been a library growing an API.
 - So Daoris owns its own serving surfaces — the MCP server, and later the HTTP API — and consumes the
-  siblings only as libraries. What did transfer was the *reasoning* rather than the code: use the
-  protocol package over plain streams and skip the ASP.NET dependency, a conclusion that sibling had
-  already reached and written down.
+  siblings as libraries, including that host when it drives an agent. What transferred first was the
+  *reasoning* rather than the code: use the protocol package over plain streams and skip the ASP.NET
+  dependency, a conclusion that sibling had already reached and written down.
 
 The general form: **take a sibling's capability; never borrow its role.** A library that grows a serving
 surface to suit one consumer stops being reusable by the next.

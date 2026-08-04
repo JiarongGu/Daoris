@@ -23,6 +23,11 @@ cd src/Daoris.Service && dotnet build
 | `knowledge_repositories` | What is searchable, and how much each repository contributes |
 | `knowledge_refresh` | Re-read every repository from disk |
 
+`ConvergenceDetector` answers a different question: **which repositories learned the same thing
+independently?** It automates the survey that produced this project's own canon — reading twelve
+repositories by hand to notice which documents said the same thing in different words. It proposes
+candidates; a person decides, through `upstream`, under review.
+
 Configuration is two optional variables, and **there is no URL and no key** — that is shared mode, and
 it does not exist yet:
 
