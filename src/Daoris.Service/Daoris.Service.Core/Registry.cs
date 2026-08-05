@@ -45,11 +45,43 @@ public sealed record Registration(
 /// </remarks>
 public sealed class Registry(string repositoryRoot)
 {
-    /// <summary>Every repository under the root, whether or not it has adopted.</summary>
+    /// <summary>
+    /// Registrations a client sent with `daoris connect`, keyed by repository.
+    /// </summary>
+    /// <remarks>
+    /// A service on this machine can read manifests off disk and does. One running anywhere else has no
+    /// such option — it cannot see the repositories at all — so a client has to be able to tell it.
+    /// Pushed registrations win over scanned ones: the client knows its own manifest, and a remote
+    /// deployment has nothing else to go on.
+    /// </remarks>
+    private readonly Dictionary<string, Registration> _pushed = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Record what a repository said about itself.</summary>
+    public void Register(Registration registration) => _pushed[registration.Repository] = registration;
+
+    /// <summary>Every repository this service knows of — scanned from disk, plus anything pushed.</summary>
     public IReadOnlyList<Registration> Read(IReadOnlyDictionary<string, int> entryCounts)
     {
-        if (!Directory.Exists(repositoryRoot)) return [];
+        var registrations = new List<Registration>();
+        var scanned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        if (Directory.Exists(repositoryRoot))
+        {
+            registrations.AddRange(Scan(entryCounts, scanned));
+        }
+
+        // Anything that registered itself but is not on this disk — which is every repository, when the
+        // service runs somewhere else.
+        registrations.AddRange(_pushed.Values.Where(r => !scanned.Contains(r.Repository)));
+
+        return registrations
+            .Select(r => _pushed.TryGetValue(r.Repository, out var sent) && sent.Registered ? sent with { Entries = r.Entries } : r)
+            .OrderBy(r => r.Repository, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private IEnumerable<Registration> Scan(IReadOnlyDictionary<string, int> entryCounts, HashSet<string> scanned)
+    {
         var registrations = new List<Registration>();
         foreach (var directory in Directory.GetDirectories(repositoryRoot).OrderBy(d => d, StringComparer.Ordinal))
         {
@@ -69,6 +101,7 @@ public sealed class Registry(string repositoryRoot)
             registrations.Add(ReadManifest(name, manifest, entries));
         }
 
+        foreach (var registration in registrations) scanned.Add(registration.Repository);
         return registrations;
     }
 

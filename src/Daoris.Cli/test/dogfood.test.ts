@@ -90,20 +90,49 @@ test('daoris holds its own doctrine and checks clean', () => {
 });
 
 /**
- * D8's offline guarantee, asserted rather than asserted-about.
+ * D8's offline guarantee, scoped to what it actually claims.
  *
- * CLAUDE.md has claimed both halves of this for a while and neither was enforced by anything. A
- * documented guarantee with no test is worse than an undocumented one: it reads as verified, so nobody
- * checks it, and it stays true only as long as nobody writes the obvious convenience feature.
+ * The guarantee is about the DOCTRINE operations — `check` above all, because it runs inside build
+ * gates and a gate that can fail on a network call is not a gate. `connect` is a different thing: an
+ * explicit, opt-in registration with a knowledge service, never run by a gate.
+ *
+ * This was briefly written as "nothing anywhere in the CLI may open a socket", which is a stronger
+ * claim than D8 makes and would have made a client impossible. Two assertions replace it, and together
+ * they are the real invariant: exactly one module may reach the network, and nothing on `check`'s path
+ * may import it.
  */
-test('the CLI contains no network primitive at all', () => {
-  const forbidden = /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(|(?:^|[^\w.])require\(['"]https?['"]\)|from\s+['"]node:https?['"]/;
+const NETWORK = /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(|(?:^|[^\w.])require\(['"]https?['"]\)|from\s+['"]node:https?['"]/;
+
+test('only the connect client may touch the network', () => {
   for (const dir of ['src', 'bin']) {
     for (const file of listFiles(join(cliRoot, dir), (n) => n.endsWith('.ts') || n.endsWith('.mjs'))) {
+      if (file === 'connect.ts') continue;
       const text = readText(join(cliRoot, dir, file));
-      assert.equal(forbidden.test(text), false, `${dir}/${file} reaches the network`);
+      assert.equal(NETWORK.test(text), false, `${dir}/${file} reaches the network — only connect.ts may`);
     }
   }
+});
+
+/**
+ * The half that matters most. A gate would not realistically break by someone adding `fetch` to
+ * `drift.ts`; it would break by an innocuous import three modules deep acquiring one for it.
+ */
+test('nothing check reaches can import the connect client', () => {
+  const seen = new Set<string>();
+  const walk = (module: string): void => {
+    if (seen.has(module)) return;
+    seen.add(module);
+    const file = join(cliRoot, 'src', module);
+    if (!existsSync(file)) return;
+    // Both `from './x.ts'` and a bare `import './x.ts'` — the second was missed at first, and a
+    // side-effect import is exactly how a module acquires a dependency nobody meant to add.
+    for (const match of readText(file).matchAll(/(?:from|import)\s+'\.\/([\w.-]+\.ts)'/g)) walk(match[1]!);
+  };
+
+  walk('drift.ts');
+
+  assert.equal(seen.has('connect.ts'), false, `check reaches: ${[...seen].sort().join(', ')}`);
+  assert.ok(seen.size > 1, 'the walk found nothing, so it proved nothing');
 });
 
 /**

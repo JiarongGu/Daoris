@@ -104,6 +104,9 @@ public sealed class KnowledgeService(
         return registry?.Read(counts) ?? [];
     }
 
+    /// <summary>Record what a repository said about itself, when it told us rather than we found it.</summary>
+    public void Register(Registration registration) => registry?.Register(registration);
+
     /// <summary>Re-read every repository and rebuild the index.</summary>
     public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)
     {

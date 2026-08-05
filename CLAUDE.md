@@ -31,7 +31,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Eight commands, 118 tests, a canon of 8 core rules, 3 core
+**Built and proven; nothing published.** Nine commands, 119 tests, a canon of 8 core rules, 3 core
 knowledge documents, 5 core skills and 5 packs. `Daoris.Service` adds 70 and `Daoris.Devkit` 57.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
@@ -45,9 +45,9 @@ workflow (`tools/release-prep.mjs`); the desktop sibling burned a version outrig
 hand-bump leaves every file perfectly consistent and still wrong — consistency was never the property at
 risk, **authorship** was.
 
-- `README.md` — the consuming story: install, the eight commands, the manifest, the three layers.
+- `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D34) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D35) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -119,10 +119,10 @@ Run every command from the **workspace root**, not from a package directory.
 - **Every write is atomic, BOM-less UTF-8, LF** — write beside, then rename. Never build file content by
   echoing through the console.
 - **Exit codes are the contract:** `0` clean · `1` policy failure · `2` tool error.
-- **`check` must never touch the network, and neither must anything else in the CLI.** No
-  `http`/`https`/`fetch` anywhere under `src/Daoris.Cli` — a test greps for them, and another asserts
-  `check` exits 0 with no canon reachable at all. The *service* is a different matter: it may call an
-  embedding endpoint, which is precisely why it is a separate artefact.
+- **`check` works offline, and so does every doctrine command.** `connect` is the single exception and
+  is opt-in (D35). Two tests hold the line: only `connect.ts` may contain a network primitive, and
+  nothing `check` transitively imports may reach it — the second is the one that matters, because a gate
+  breaks by an import three modules deep, not by an obvious `fetch`.
 - **Plan and apply are separate functions**, so a plan can be printed or asserted without touching disk.
 - **TDD** — failing test first. **Commit per task.** **Never commit without the user's approval.**
 

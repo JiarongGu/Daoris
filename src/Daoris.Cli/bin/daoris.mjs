@@ -13,4 +13,4 @@ const built = join(packageRoot, 'dist', 'cli.js');
 const entry = existsSync(built) ? built : join(packageRoot, 'src', 'cli.ts');
 
 const { runCli } = await import(pathToFileURL(entry).href);
-process.exit(runCli(process.argv.slice(2), process.cwd()));
+process.exit(await runCli(process.argv.slice(2), process.cwd()));

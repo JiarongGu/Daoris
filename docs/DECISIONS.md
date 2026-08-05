@@ -909,3 +909,36 @@ and a silent omission reads as the repository not existing.
 **Consequence.** The service is now the thing that connects the family's agents rather than only their
 documents: it knows who exists, what each owns, what each will take on, and what is outstanding between
 them.
+
+## D35 — `connect` is the one online command, and D8 was over-broadened
+
+**Decided 2026-08-05.** `daoris init` scaffolds the `domain` declaration; `daoris connect` sends it to a
+knowledge service. It is the **only** command in the CLI that touches the network.
+
+**A correction first.** D8 says *`check` works offline*, and that is the invariant: it runs inside build
+gates, and a gate that can fail on a network call is not a gate. Earlier the same day this was
+broadened to "nothing anywhere in the CLI may open a socket" and enforced with a grep over every
+module. That is a stronger claim than D8 makes, it was written by me rather than decided, and it would
+have made a client impossible — which is how it was found.
+
+**The real invariant, now tested as two things.** Exactly one module may reach the network, and
+**nothing `check` transitively imports may reach it**. The second matters more: a gate would not
+realistically break by someone adding `fetch` to `drift.ts`, it would break by an innocuous import
+three modules deep acquiring one for it. Both assertions were verified by sabotage — a bare
+side-effect import and a named import, each watched failing, each restored.
+
+**Why a client must push at all.** A service on the same machine can read manifests off disk, and does.
+One running anywhere else cannot see the repositories at all, so it has nothing to read — and the hosted
+deployment was always part of the design. Pushed registrations win over scanned ones, because the client
+knows its own manifest and a remote service has nothing else to go on.
+
+**Registering an empty declaration is refused.** It is worse than not registering: it puts a repository
+on the map as something that answers nothing, and a sibling reading that learns less than from a gap.
+
+**Everything else still works with no service at all.** `connect` is opt-in, and a repository that never
+runs it loses discoverability and nothing else — no gate, no sync, no check depends on it.
+
+**A defect this introduced and its fix.** Making the dispatcher async broke error handling: a `try` does
+not catch a rejected promise, so a `DaorisError` from `connect` escaped as an unhandled rejection and
+printed a stack trace instead of its message. Exit codes are the contract, and a stack trace is neither
+the code nor the message. The dispatcher now routes both paths through one reporter.

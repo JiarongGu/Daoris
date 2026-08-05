@@ -145,6 +145,28 @@ app.MapGet("/api/quests", async (
     (await s.Quests.ListAsync(repository, includeClosed ?? false, ct)).Select(q => new QuestResponse(
         q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated)));
 
+// Where `daoris connect` lands. The one endpoint that accepts anything, and it accepts a repository's
+// description of ITSELF — which is the only thing a repository is authoritative about.
+app.MapPost("/api/registry", (ComposedService s, RegisterRequest body) =>
+{
+    if (string.IsNullOrWhiteSpace(body.Repository)) return Results.BadRequest(new ErrorResponse("repository is required"));
+
+    s.Service.Register(new Registration(
+        body.Repository,
+        Adopted: true,
+        body.Domain?.Summary,
+        body.Domain?.Owns ?? [],
+        body.Domain?.Accepts ?? [],
+        body.Packs ?? [],
+        Entries: 0));
+
+    return Results.Ok(new RegisteredResponse(body.Repository, DateTimeOffset.UtcNow));
+});
+
+app.MapGet("/api/registry", async (ComposedService s, CancellationToken ct) =>
+    (await s.Service.RegistryAsync(ct)).Select(r => new RegistrationResponse(
+        r.Repository, r.Adopted, r.Registered, r.Summary, r.Owns, r.Accepts, r.Packs, r.Entries)));
+
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
     var report = await s.Service.RefreshAsync(ct);
@@ -213,6 +235,13 @@ public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
     string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
+public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
+public sealed record RegisterRequest(
+    string Repository, IReadOnlyList<string>? Packs, string? CanonSource, DomainRequest? Domain);
+public sealed record RegisteredResponse(string Repository, DateTimeOffset At);
+public sealed record RegistrationResponse(
+    string Repository, bool Adopted, bool Registered, string? Summary,
+    IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries);
 public sealed record ErrorResponse(string Error);
 
 [JsonSerializable(typeof(StatusResponse))]
@@ -222,5 +251,8 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(IEnumerable<ConvergenceResponse>))]
 [JsonSerializable(typeof(IEnumerable<QuestResponse>))]
 [JsonSerializable(typeof(RefreshResponse))]
+[JsonSerializable(typeof(RegisterRequest))]
+[JsonSerializable(typeof(RegisteredResponse))]
+[JsonSerializable(typeof(IEnumerable<RegistrationResponse>))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;
