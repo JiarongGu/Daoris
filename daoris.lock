@@ -5,6 +5,13 @@
   "entries": [
     {
       "pack": "core",
+      "source": "core/knowledge/claims-need-checks.md",
+      "target": "knowledge/claims-need-checks.md",
+      "canonVersion": "0.0.1",
+      "sha256": "b21352424ca2443da02501da481144f07b574668ab3b4b86a3c3f077bdc05edf"
+    },
+    {
+      "pack": "core",
       "source": "core/knowledge/model-decoupling.md",
       "target": "knowledge/model-decoupling.md",
       "canonVersion": "0.0.1",

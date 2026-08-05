@@ -402,3 +402,25 @@ printing seven confident lines is backwards. Exit 2, not 1 — the devkit could 
 which is not the same as a gate finding something. Verified by pinning a version this binary is not and
 watching it refuse. Optional by design: an unpinned declaration is allowed and silent, the same
 reasoning that lets the manifest default its harness.
+
+## `claims-need-checks` — new core knowledge (2026-08-05)
+
+Not a backlog item; written because the same defect appeared three times in one day — the offline
+guarantee that no test asserted, the "the launcher enforces it" comment describing a launcher that did
+not exist, and a config field parsed and never read. Each read as verified and none was.
+
+✅ done 2026-08-05 — and **the budget gate decided its tier**, for the second time. Filed as a core rule
+it put a realistic adopter (core plus one pack) at **24,061 bytes against the 24,000 default — 61 over**.
+Shaving 61 bytes to squeak under would have been gaming the gate; raising the default would have hidden
+what it was reporting, which is that core is full.
+
+Two things pointed the same way. Its trigger is *writing a claim about behaviour*, not every task — the
+same distinction that demoted `model-decoupling`. And three instances in **one** repository is short of
+the bar core is held to: canonical rules are the ones several repositories reached independently. So it
+is knowledge, read on demand, costing nothing always-loaded.
+
+`doctor` then flagged it against local `adoption.md` at **31%**, just over the 0.3 threshold. A false
+positive — an adoption playbook and a documentation-discipline note — and a useful one: D17 records that
+word overlap misses real twins written in different vocabulary, and this is the same limitation from the
+other side. Both documents were written the same day, which is the whole explanation for the shared
+words. The tool hedges correctly ("advisory only… if they genuinely differ, ignore this").

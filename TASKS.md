@@ -13,8 +13,8 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## Active backlog
 
-_**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 1 core
-knowledge document, 5 core skills and 3 packs, adopted into Lyntai with its 1563 tests still green.
+_**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 2 core
+knowledge documents, 5 core skills and 3 packs, adopted into Lyntai with its 1563 tests still green.
 `npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
 searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 45
 tests, one binary._
