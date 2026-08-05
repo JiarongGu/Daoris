@@ -96,6 +96,10 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Seven core rules**, each confirmed by appearing independently in multiple repositories in the family:
   `sensitive-info`, `task-lifecycle`, `no-tmp-for-repo-files`, `file-tool-discipline`,
   `persist-working-state`, `no-global-memory`, `skills-workflow`.
+- **One core knowledge document.** `model-decoupling` — the model is a deployment choice, not part of
+  a feature; specify the feature without naming one, select the provider by deployment, and report
+  which tier ran. Knowledge rather than a rule because it applies when building an AI-backed feature,
+  not on every task — a distinction the budget gate enforced when it was first filed as a rule.
 - **Five core skills**, each canonized from copies found across the family and reduced to what they share.
   `doc-loader` and `pattern-finder` (six repositories each) start a task; `post-feature` (four) and
   `fix-log` (three) close one; `caveman` (five) governs output. `fix-log`'s copies sat within 100 bytes of

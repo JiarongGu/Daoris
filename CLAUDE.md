@@ -17,8 +17,8 @@ cultivation.
 
 ## Current state
 
-**Built and proven; nothing published.** Eight commands, 116 tests, a canon of 7 core rules, 5 core
-skills and 3 packs.
+**Built and proven; nothing published.** Eight commands, 116 tests, a canon of 7 core rules, 1 core
+knowledge document, 5 core skills and 3 packs. `Daoris.Service` adds 57.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
@@ -36,7 +36,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the eight commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D23) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D24) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

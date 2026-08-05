@@ -5,10 +5,10 @@
   "entries": [
     {
       "pack": "core",
-      "source": "core/knowledge/model-is-optional.md",
-      "target": "knowledge/model-is-optional.md",
+      "source": "core/knowledge/model-decoupling.md",
+      "target": "knowledge/model-decoupling.md",
       "canonVersion": "0.0.1",
-      "sha256": "85c0372f5dd07f2d7b8740fe81309db4285edab9c87e99ce3e81b204f91934ee"
+      "sha256": "c06fb90c762c0864bc964c9a374b37f0e5676b42cc53bce76d769ccf4c46ab5b"
     },
     {
       "pack": "core",

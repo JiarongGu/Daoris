@@ -1,5 +1,5 @@
 ---
-name: model-is-optional
+name: model-decoupling
 applies_when: building any feature that uses a language model, an embedding model, or any AI service
 enforces: specify the feature without naming a model; select the provider by deployment; report which tier ran
 ---

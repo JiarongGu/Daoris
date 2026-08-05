@@ -1,9 +1,9 @@
 ---
-name: model-is-optional
+name: model-decoupling
 applies_when: building any feature that uses a language model, an embedding model, or any AI service
 enforces: specify the feature without naming a model; select the provider by deployment; report which tier ran
 ---
-<!-- daoris: core/core/knowledge/model-is-optional.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
+<!-- daoris: core/core/knowledge/model-decoupling.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
 
 # The model is a deployment choice, not part of the feature
 
