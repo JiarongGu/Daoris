@@ -1,0 +1,4 @@
+{
+  "name": "durable-jobs",
+  "description": "Long-running work that survives a restart: lanes and capacity, checkpoints and resume, and the failure modes that only appear under load."
+}

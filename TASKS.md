@@ -14,7 +14,7 @@ the family, kept from drifting, and improved from wherever the improvement was f
 ## Active backlog
 
 _**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 3 core
-knowledge documents, 5 core skills and 4 packs, adopted into Lyntai with its 1563 tests still green.
+knowledge documents, 5 core skills and 5 packs, adopted into Lyntai with its 1563 tests still green.
 `npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
 searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 45
 tests, one binary._
@@ -47,14 +47,16 @@ correct, and never loaded._
   them would install doctrine for a workflow that may be about to change. Decide by trying a generator on
   one repository first. If the generated route wins, what stays canonical is much smaller — the *review*
   of generated output, not its production. `post-feature` and `fix-log` are done.
-- [ ] **CANON2 — the remaining pack candidates.** `web-webview` is **done** (see the archive): written
-  from two applications that derived the same invariants from different symptoms, and validated by
-  adoption at 64% coverage of one repository's own hosting document. Still open, each waiting on a
-  repository ready to adopt it — a pack nobody installs is unvalidated doctrine:
-  `desktop-app` (screen-capture hygiene, desktop testing, UI layering — a private sibling pair, and the
-  material exists: an 11 KB desktop-testing document in one, capture tooling in the other),
-  `desktop-winforms` (the shell traps — an 11 KB source exists but only one repository has them, below
-  the two-repository bar), and `durable-jobs` (two repositories).
+- [ ] **CANON2 — the last pack candidates.** `web-webview` and `durable-jobs` are **done** (see the
+  archive). Two remain, and both are held for the reason CANON2 has always given — a pack nobody
+  installs is unvalidated doctrine:
+    - **`desktop-app`** — the material is real but lopsided: one repository has 11 KB on desktop testing
+      plus screen-capture hygiene, DPI scaling and UI layering, while the second contributes only capture
+      tooling. Closer to one repository with a rich document than to two agreeing. Write it when a
+      second desktop repository is actually adopting.
+    - **`desktop-winforms`** — one 11 KB source, one repository. **Below the two-repository bar**, and
+      the bar is the whole reason the canon is trustworthy. Leave it local until a second repository
+      needs the same thing.
 
 - [ ] **CANON3 — apply the adoption to the real tree.** _Fully rehearsed 2026-08-05 against a scratch
   consumer carrying that repository's real doctrine, copied out rather than waiting for its tree — which

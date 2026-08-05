@@ -39,6 +39,18 @@ network.
   Written from two applications that derived the same invariants from different symptoms — one profiling
   a frozen window, one debugging slow thumbnails. Validated by adoption: against a real repository's
   doctrine, `doctor` reports its own 21.6 KB hosting document as **64%** covered by the canonical pair.
+- **`durable-jobs`** (new pack) — long-running work that survives a restart. `durable-work` carries the
+  invariants: dispatch rather than await, checkpoint so resume is cheap, bound capacity **per lane**
+  rather than globally, and add a kind as a handler plus a registration. `job-system-design` holds the
+  shape underneath — one consumer loop over a mailbox rather than a task per item, a container job that
+  is bookkeeping and is never dispatched, and backing off from measured pressure rather than a guessed
+  constant.
+  Three applications in the family built one of these independently; **two use the same filename**, which
+  is the strongest agreement the survey has found. The crash-loop guard is in it because one repository
+  hit it and another had already recorded the same gap as an open risk before it happened to them.
+  **Not yet validated by adoption** — no repository has installed it. Packs are opt-in, so an unused one
+  costs nobody anything, but it is doctrine argued from evidence rather than proven in use, and the
+  distinction is worth keeping.
 - **`windows-machine`** (pack rule, extended) — two more traps that pass silently. PowerShell 5 unwraps a
   nested array of exactly one element, so a find-and-replace built from an array-of-pairs holding a single
   pair replaces one *letter* everywhere; two or more pairs behave, which is what hides it. And a working

@@ -473,3 +473,32 @@ suggests the default is sized for a repository with no packs rather than a reali
 **Also noticed, not acted on:** two siblings independently keep a `TEMPLATE.md` inside the always-loaded
 rules directory. It is scaffolding for authoring a *new* rule, not a rule, and it is paid for on every
 task. Worth raising at their next adoption rather than editing from here.
+
+## CANON2 — `durable-jobs`, the second pack (2026-08-05)
+
+✅ done 2026-08-05 — written from the strongest agreement the family survey has produced: **three
+applications built a durable job system independently, and two named the file identically.** A fourth
+signal sits underneath it — `background-task-tracking.md` exists under that exact name in two of them.
+
+The rule carries what all three converged on: dispatch rather than await, checkpoint so resume is cheap,
+bound capacity **per lane** rather than globally, and add a kind as a handler plus a registration. The
+knowledge document holds the shape underneath — one consumer loop over a mailbox instead of a task per
+item, a container job that is bookkeeping and is never dispatched, and backing off from measured
+pressure rather than a guessed constant.
+
+**The crash-loop guard is the best evidence in the pack.** One repository hit it — a GPU-heavy job that
+killed the process, retried on the next start, and killed it again. Another had already written the same
+gap down as an open risk *before* it happened to them. A prediction and an incident, in two repositories
+that could not see each other, is about as strong as this evidence gets.
+
+**Honest about its status: not validated by adoption.** No repository has installed it. `web-webview`
+was — `doctor` measured it at 64% coverage of a real repository's own document during the rehearsal —
+and this one is doctrine argued from evidence rather than proven in use. Packs are opt-in, so an unused
+one costs nobody anything, but the distinction is worth keeping rather than blurring.
+
+**A measurement worth recording.** Containment against the three sources runs 26–45%, far below
+`web-webview`'s 64%, and that is the intended outcome rather than a weakness. Those documents are dense
+with class names, commit hashes and specific job kinds; the canonical version strips all of it, so the
+shared vocabulary drops even where the principles match exactly. **Word-overlap coverage is a poor proxy
+for whether a pack captured the right ideas** — the third time in two days that this measure has been
+right about restatement and wrong about meaning (D17).
