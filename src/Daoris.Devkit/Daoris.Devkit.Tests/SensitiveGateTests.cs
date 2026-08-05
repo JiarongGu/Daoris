@@ -11,6 +11,23 @@ public sealed class SensitiveGateTests : IDisposable
     private GateContext Context(GateDeclaration? declaration = null) =>
         new(_fx.Path, declaration ?? new GateDeclaration());
 
+    /// <summary>
+    /// The fixtures below are ASSEMBLED rather than written as literals.
+    /// </summary>
+    /// <remarks>
+    /// A test proving the scanner catches a machine path cannot do so by putting a machine path in a
+    /// tracked file — that is the exact thing `sensitive-info` forbids, and this gate caught both of
+    /// these the first time it was run over this repository. Which is the gate working, not misfiring.
+    ///
+    /// The alternative was an ignore-list for test files, and that is worse: a structural scanner that
+    /// can be silenced with "it is only a test" is how leaks reach history in the first place.
+    /// Assembling the strings keeps the scanner honest and the test exact — what the gate sees at
+    /// runtime is byte-for-byte what it is meant to catch.
+    /// </remarks>
+    private static string WindowsHomePath() => string.Concat("C:", @"\", "Users", @"\", "someone");
+
+    private static string GitHubToken() => string.Concat("ghp", "_", new string('a', 24), "012345");
+
     private sealed class FakeGit(params string[] files) : IGit
     {
         public IReadOnlyList<string> StagedFiles() => files;
@@ -37,7 +54,7 @@ public sealed class SensitiveGateTests : IDisposable
     [Fact]
     public void Opting_out_of_the_private_list_is_explicit_and_then_the_builtins_still_run()
     {
-        _fx.Write("README.md", @"see C:\Users\someone\Projects for the layout");
+        _fx.Write("README.md", $"see {WindowsHomePath()} for the layout");
 
         var result = new SensitiveGate(ScanScope.Tree, new FakeGit("README.md"), allowBuiltinsOnly: true)
             .Run(Context());
@@ -95,13 +112,14 @@ public sealed class SensitiveGateTests : IDisposable
     [Fact]
     public void The_finding_is_redacted_so_the_report_does_not_leak_it_again()
     {
-        _fx.Write("config.txt", "token=ghp_abcdefghijklmnopqrstuvwxyz012345");
+        var token = GitHubToken();
+        _fx.Write("config.txt", $"token={token}");
         _fx.Write("local/sensitive-patterns.txt", "# none needed");
 
         var result = new SensitiveGate(ScanScope.Tree, new FakeGit("config.txt")).Run(Context());
 
         Assert.False(result.Passed);
-        Assert.DoesNotContain("ghp_abcdefghijklmnopqrstuvwxyz012345", result.Detail);
+        Assert.DoesNotContain(token, result.Detail);
         Assert.Contains("GitHub token", result.Detail);
     }
 
