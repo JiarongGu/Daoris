@@ -20,7 +20,8 @@ Rows marked _(local)_ are this repo's own and are never synced.
 |---|---|---|
 | [adoption](../knowledge/adoption.md) _(local)_ | onboarding a repository onto daoris for the first time | resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally; never let adoption silently rewrite doctrine |
 | [canon-authoring](../knowledge/canon-authoring.md) _(local)_ | writing or changing a canon file, or adding a pack | project-agnostic content, frontmatter that matches the filename, principle-and-reason not mechanism |
-| [claims-need-checks](../knowledge/claims-need-checks.md) | writing any statement about what the code guarantees — a readme, a comment, a config field, a status line | a documented guarantee ships with the check that enforces it, in the same change; an unenforceable claim is written as intent, never as fact |
+| [claims-need-checks](../knowledge/claims-need-checks.md) | writing any statement about what the code does or guarantees — a readme, a doc comment, a config field, a status line | verify behavioural prose against the implementation, not the design; ship the check in the same change; say which claims the gate did not cover |
+| [leak-repair](../knowledge/leak-repair.md) | a credential, machine path, or private name has already been committed, or a repository is about to be made public | repair history rather than the working tree; scrub blobs, paths and messages together; prove the scrub with a scan you have seen fail |
 | [model-decoupling](../knowledge/model-decoupling.md) | building any feature that uses a language model, an embedding model, or any AI service | specify the feature without naming a model; select the provider by deployment; report which tier ran |
 
 ## Skills (invoke by name)

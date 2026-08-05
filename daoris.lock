@@ -8,7 +8,14 @@
       "source": "core/knowledge/claims-need-checks.md",
       "target": "knowledge/claims-need-checks.md",
       "canonVersion": "0.0.1",
-      "sha256": "b21352424ca2443da02501da481144f07b574668ab3b4b86a3c3f077bdc05edf"
+      "sha256": "752c458d66568bf99d1a00c7f6a838e6274b7a7461c453aae341a9481159f8c7"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/leak-repair.md",
+      "target": "knowledge/leak-repair.md",
+      "canonVersion": "0.0.1",
+      "sha256": "c4173572d9160f00489cde8823f7f0337ebf1e05f2fa4bb394e6e7deda1bcbda"
     },
     {
       "pack": "core",

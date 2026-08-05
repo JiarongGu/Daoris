@@ -11,19 +11,29 @@ network.
 
 ## Unreleased
 
-- **`claims-need-checks`** (new core knowledge) — a documented guarantee ships with the check that
-  enforces it, in the same change; an unenforceable claim is written as intent, not as fact. Written
-  after the same defect turned up three times in one day in this repository: a readme describing a
-  property no test asserted, a comment deferring to a component that did not exist, and a config field
-  parsed and never read. Each read as verified and none was, which is why an unenforced guarantee is
-  worse than none — silence invites a reader to check, a confident sentence tells them not to bother.
-
-  Knowledge rather than a rule, and **the budget gate made that call**: as core doctrine it put a
-  realistic adopter — core plus one pack — 61 bytes over the default budget. Three instances in one
-  repository is also short of the bar core is held to, which is evidence several repositories reached
-  the same conclusion independently. It applies when writing a claim about behaviour, not on every task.
+- **`claims-need-checks`** (new core knowledge) — verify behavioural prose against the implementation
+  rather than the design; ship the check in the same change; say which claims the gate did not cover.
+  **Two repositories in the family derived this independently and from opposite ends** — one auditing
+  shipped API documentation against its own source, one finding a configuration field parsed and never
+  read. Neither could have found the other by searching: at first draft the two shared **25% vocabulary**,
+  well under the 30% duplicate threshold, which is D17's point demonstrated live. The canonical document
+  merges both, and the merged version now matches the other at 49%.
   **Adopting repositories:** worth reading once, then grep your entry document and readme for *always,
-  never, guaranteed, enforced, verified, cannot, ensures* and check each against reality.
+  never, throws, cannot, defaults to, guaranteed, enforced, verified, ensures* and check each against the
+  code. "Throws" is the costliest to get wrong, because it fails silently.
+- **`leak-repair`** (new core knowledge) — how to repair a credential, machine path or private name that
+  has already been committed. `sensitive-info` says a committed leak is a history problem and needs a
+  rewrite; this is the deep dive that says how, and it is knowledge rather than a rule because it applies
+  only when you actually have one. Assembled from **three** repositories' hard-won versions, including
+  one written during a real purge. The traps that cost the most: **the backup bundle you take first is
+  itself a complete copy of the leak**; the rewrite tool usually strips the remote, and tags need pushing
+  separately; a clean scan deserves the same suspicion as a passing test, so plant a pattern you know is
+  present and confirm it is found before trusting a clean result.
+- **`windows-machine`** (pack rule, extended) — two more traps that pass silently. PowerShell 5 unwraps a
+  nested array of exactly one element, so a find-and-replace built from an array-of-pairs holding a single
+  pair replaces one *letter* everywhere; two or more pairs behave, which is what hides it. And a working
+  directory past the path-length limit fails as *corrupt input* — tools report they could not open a file,
+  which sends you looking at the asset instead of the path.
 - **`model-decoupling`** (new core knowledge) — specify a feature without naming a model; the deployment
   chooses one, every model-backed feature still does its useful part with no model at all, and the
   output says which tier answered. Knowledge rather than a rule because it applies when building an

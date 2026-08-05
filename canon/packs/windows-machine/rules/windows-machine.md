@@ -38,6 +38,12 @@ hours spent looking somewhere else.
   fails to parse rather than running.
 - **Path translation can rewrite arguments** meant for a native tool. Disable it for the call when an
   argument must arrive untouched.
+- **PowerShell 5 unwraps a nested array of exactly one element.** An array-of-pairs holding a single
+  pair collapses into a flat pair, so indexing it yields *characters* instead of the two strings — a
+  find-and-replace built that way replaces one letter with another across the whole file. Two or more
+  pairs stay nested and behave, which is what hides it: the case that breaks is the case with the least
+  to replace. Force the nesting explicitly, and diff before moving on. A change far larger than the
+  edit you made is the tell.
 
 ### Processes and files
 
@@ -49,6 +55,10 @@ hours spent looking somewhere else.
   old artifact — a stale PASS, which is the dangerous direction. Undo a change with the same tool that
   made it, and force a full rebuild if unsure.
 - **Reverting to the last commit discards uncommitted work** the file already carried. It is not an undo.
+- **A deep working directory fails as corrupt input.** Past the path-length limit, tools report that they
+  could not open a file — which reads as a damaged asset or a broken commit, and sends you looking in the
+  wrong place. Building from a temporary or scratch location is where this lands, because those paths are
+  the deepest. The tell: check out a tree you *know* is good and watch it fail identically.
 
 ### Node
 
