@@ -44,6 +44,23 @@ export function withHeader(header, body) {
   return end === -1 ? `${header}\n${body}` : `${body.slice(0, end)}${header}\n${body.slice(end)}`;
 }
 
+/**
+ * What a canon file becomes on disk — the single answer to that question.
+ *
+ * Only markdown gets stamped: an HTML comment in a script is a syntax error, and the lock's hash
+ * catches an edit to it either way (D6).
+ *
+ * It lives here because `sync` and `analyze` both have to answer it and must answer it identically.
+ * `analyze` decides whether a file on disk is a collision by comparing against this; `sync` decides
+ * what to write. If the two ever disagreed, `analyze` would promise a clean adoption and `sync` would
+ * then report every file as a collision — the tool's own thesis, failing inside the tool.
+ */
+export function renderCanonFile(file, body, version) {
+  return file.target.endsWith('.md')
+    ? withHeader(makeHeader(file.pack, file.source, version), body)
+    : body;
+}
+
 export function stripHeader(text) {
   if (text.startsWith(HEADER_PREFIX)) {
     const end = text.indexOf('\n');

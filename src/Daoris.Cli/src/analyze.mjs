@@ -1,7 +1,7 @@
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown, readText, sha256 } from './fsx.mjs';
-import { withHeader, makeHeader } from './document.mjs';
+import { renderCanonFile } from './document.mjs';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.mjs';
 import { lockIndex, readLock, readManifest } from './config.mjs';
 import { significantTokens, containment } from './twins.mjs';
@@ -101,9 +101,7 @@ function findCollisions(root, target, canon, packs, canonVersion, locked) {
     if (!existsSync(abs)) continue;
 
     const body = readText(join(canon.root, file.source));
-    const content = file.target.endsWith('.md')
-      ? withHeader(makeHeader(file.pack, file.source, canonVersion), body)
-      : body;
+    const content = renderCanonFile(file, body, canonVersion);
     if (sha256(readText(abs)) === sha256(content)) continue;
 
     // Provenance decides which of the two this is (D12). In the lock, daoris wrote it, so a

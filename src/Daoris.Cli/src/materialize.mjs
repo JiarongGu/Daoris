@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.mjs';
-import { makeHeader, stripHeader, withHeader } from './document.mjs';
+import { renderCanonFile, stripHeader } from './document.mjs';
 import { significantTokens, containment } from './twins.mjs';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.mjs';
 import { lockIndex, readLock, readManifest, writeLock } from './config.mjs';
@@ -24,11 +24,7 @@ export function planSync({ root, manifest, canon, lock }) {
 
   for (const file of selected) {
     const body = readText(join(canon.root, file.source));
-    // Only markdown gets stamped: an HTML comment in a script is a syntax
-    // error, and the lock's hash catches an edit to it either way (D6).
-    const content = file.target.endsWith('.md')
-      ? withHeader(makeHeader(file.pack, file.source, canon.version), body)
-      : body;
+    const content = renderCanonFile(file, body, canon.version);
     const digest = sha256(content);
     const abs = join(root, manifest.target, file.target);
     const entry = locked.get(file.target);
