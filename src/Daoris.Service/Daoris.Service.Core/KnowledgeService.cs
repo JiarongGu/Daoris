@@ -23,6 +23,17 @@ public sealed class KnowledgeService(
     Lyntai.Memory.IVectorStore? vectors = null)
 {
     private readonly KnowledgeIndex _index = new(store, disclosure);
+
+    /// <summary>
+    /// ONE detector, not one per call.
+    /// </summary>
+    /// <remarks>
+    /// It was constructed per request, which threw away the vectors it had just computed — so every
+    /// look cost a full re-embed of the corpus, measured at 31 seconds over 449 entries. The interesting
+    /// use is a person moving a threshold and looking again, which made that the common path rather than
+    /// the rare one.
+    /// </remarks>
+    private readonly ConvergenceDetector _convergence = new(store, embedder, vectors);
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
     private bool _everRefreshed;
 
@@ -68,8 +79,7 @@ public sealed class KnowledgeService(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        return await new ConvergenceDetector(store, embedder, vectors)
-            .FindAsync(options, ct).ConfigureAwait(false);
+        return await _convergence.FindAsync(options, ct).ConfigureAwait(false);
     }
 
     /// <summary>Re-read every repository and rebuild the index.</summary>

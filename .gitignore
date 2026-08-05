@@ -29,3 +29,8 @@ src/Daoris.Service/**/bin/
 src/Daoris.Service/**/obj/
 src/Daoris.Devkit/**/bin/
 src/Daoris.Devkit/**/obj/
+
+# The web UI's build output. `Daoris.Web` builds INTO the HTTP host on purpose, so the API and the page
+# share one origin — which is what makes CORS unnecessary in a real deployment and lets the desktop
+# shell host exactly the same bytes. The source is `src/Daoris.Web`; this is what vite made of it.
+src/Daoris.Service/Daoris.Service.Http/wwwroot/

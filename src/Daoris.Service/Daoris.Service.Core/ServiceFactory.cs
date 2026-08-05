@@ -30,15 +30,13 @@ public sealed record ServiceOptions(
             Environment.GetEnvironmentVariable(UrlVariable) ?? "http://localhost:11434");
 }
 
-/// <param name="Service">The composed service.</param>
-/// <param name="Convergence">Convergence detection — present either way, semantic only when a model is.</param>
+/// <param name="Service">The composed service. Convergence is reached through it, not beside it.</param>
 /// <param name="SemanticEnabled">Whether the semantic tier answered. Report it; never imply it.</param>
 /// <remarks>
 /// Disposable, and it owns the store: the factory opened it, so the caller should not have to know that
 /// a database handle came back inside something called a service.
 /// </remarks>
-public sealed record ComposedService(
-    KnowledgeService Service, ConvergenceDetector Convergence, bool SemanticEnabled) : IAsyncDisposable
+public sealed record ComposedService(KnowledgeService Service, bool SemanticEnabled) : IAsyncDisposable
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
@@ -84,7 +82,6 @@ public static class ServiceFactory
         var source = FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
 
         IKnowledgeSearch search = new SqliteKnowledgeSearch(store);
-        ConvergenceDetector convergence = new(store);
 
         // Both or neither. A vector store with no embedder cannot answer, and an embedder with nowhere
         // to put its vectors is a slow no-op — either half alone would report a semantic tier that does
@@ -93,7 +90,6 @@ public static class ServiceFactory
         {
             vectors ??= new InMemoryVectorStore();
             search = new HybridKnowledgeSearch(search, new SemanticKnowledgeSearch(store, embedder, vectors));
-            convergence = new ConvergenceDetector(store, embedder, vectors);
         }
         else
         {
@@ -103,6 +99,6 @@ public static class ServiceFactory
         var service = new KnowledgeService(
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors);
 
-        return new ComposedService(service, convergence, service.SemanticEnabled) { Store = store };
+        return new ComposedService(service, service.SemanticEnabled) { Store = store };
     }
 }

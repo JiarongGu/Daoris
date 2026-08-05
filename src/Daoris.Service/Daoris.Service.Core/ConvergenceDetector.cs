@@ -204,19 +204,48 @@ public sealed class ConvergenceDetector(
         return found;
     }
 
+    /// <summary>
+    /// Vectors already computed, keyed by what was embedded rather than by which entry it was.
+    /// </summary>
+    /// <remarks>
+    /// The vector store can be searched but not read by key, so a seed vector cannot be fetched back
+    /// out of it — hence a memo here. Keying on the embedded TEXT rather than the entry id is what
+    /// makes it correct without an invalidation protocol: edit a document and the key changes, so the
+    /// stale vector is simply never asked for. Keying on the id would have needed something to notice a
+    /// refresh, and that something is what would eventually be wrong.
+    ///
+    /// It matters because the interesting use is a person moving a threshold and looking again. Without
+    /// it every move re-embedded the whole corpus: measured at 31 seconds per call over 449 entries,
+    /// which is long enough that the honest answer to "is it working?" is "probably".
+    /// </remarks>
+    private readonly Dictionary<string, float[]> _memo = new(StringComparer.Ordinal);
+
     private async Task<Dictionary<string, float[]>> EmbedAllAsync(
         IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct, int batchSize = 32)
     {
         var byId = new Dictionary<string, float[]>(StringComparer.Ordinal);
-        for (var offset = 0; offset < entries.Count; offset += batchSize)
+        var pending = new List<(KnowledgeEntry Entry, string Text)>();
+
+        foreach (var entry in entries)
+        {
+            var text = SemanticKnowledgeSearch.Embeddable(entry);
+            if (_memo.TryGetValue(text, out var known)) byId[entry.Id] = known;
+            else pending.Add((entry, text));
+        }
+
+        for (var offset = 0; offset < pending.Count; offset += batchSize)
         {
             ct.ThrowIfCancellationRequested();
-            var batch = entries.Skip(offset).Take(batchSize).ToList();
+            var batch = pending.Skip(offset).Take(batchSize).ToList();
             var embedded = await embedder!
-                .EmbedAsync(batch.Select(SemanticKnowledgeSearch.Embeddable).ToList(), ct)
+                .EmbedAsync(batch.Select(b => b.Text).ToList(), ct)
                 .ConfigureAwait(false);
 
-            for (var i = 0; i < batch.Count; i++) byId[batch[i].Id] = embedded[i];
+            for (var i = 0; i < batch.Count; i++)
+            {
+                byId[batch[i].Entry.Id] = embedded[i];
+                _memo[batch[i].Text] = embedded[i];
+            }
         }
 
         return byId;

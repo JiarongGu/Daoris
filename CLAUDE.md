@@ -59,15 +59,15 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 
 ## Layout
 
-**Four artefacts, one workspace.** Three exist today; the fourth carries a `README.md` stating the brief
-and the open questions, written before any code.
+**Four artefacts, one workspace.** All four exist; only the desktop shell is unbuilt, and it carries a
+`README.md` stating its brief.
 
 | Path | Holds |
 |---|---|
 | `src/Daoris.Cli/` | **The npm package `daoris`** — Node, zero dependencies. `bin/`, `src/`, `test/` |
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
 | `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
-| `src/Daoris.Web/` | React UI over the service — the only UI (not started) |
+| `src/Daoris.Web/` | React UI over the service — the only UI; convergence first, read-only |
 | `src/Daoris.Desktop/` | Desktop shell hosting `Daoris.Web`, on the desktop sibling (not started) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |
 | `canon/core/{rules,knowledge,skills}/` | The always-installed rules, on-demand knowledge, and discovery skills |

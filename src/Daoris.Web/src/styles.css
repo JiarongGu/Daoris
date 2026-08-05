@@ -1,0 +1,137 @@
+/* One stylesheet, no framework. The UI is a reading surface for prose from eleven repositories, and
+   its whole job is to make dense text scannable — which is typography and spacing, not components. */
+
+:root {
+  --ink: #1a1a18;
+  --ink-soft: #5b5a55;
+  --ink-faint: #8a887f;
+  --page: #faf9f6;
+  --raised: #ffffff;
+  --line: #e3e0d8;
+  --accent: #7a5c2e;
+  --accent-soft: #f0e9dc;
+  --warn: #8a4b2a;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8e6df;
+    --ink-soft: #a9a69c;
+    --ink-faint: #7a7770;
+    --page: #16161a;
+    --raised: #1e1e23;
+    --line: #2e2e34;
+    --accent: #d3ac6b;
+    --accent-soft: #2a2419;
+    --warn: #d99a72;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.55;
+}
+
+.app { max-width: 62rem; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+header { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; justify-content: space-between; }
+.title h1 { font-family: var(--serif); font-size: 2rem; margin: 0; letter-spacing: -0.01em; }
+.title p { margin: 0.2rem 0 0; color: var(--ink-soft); }
+
+.meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.tier { font-family: var(--mono); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 999px; border: 1px solid var(--line); }
+.tier.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.tier.off { color: var(--warn); border-color: var(--warn); }
+.count { font-size: 0.8rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+button {
+  font: inherit; font-size: 0.85rem; cursor: pointer;
+  background: var(--raised); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px; padding: 0.35rem 0.7rem;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.55; cursor: default; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.note, .error, .empty, .loading, .hint {
+  font-size: 0.875rem; color: var(--ink-soft);
+}
+.note { border-left: 3px solid var(--warn); padding: 0.5rem 0.85rem; background: var(--raised); margin: 1rem 0 0; }
+.error { border-left: 3px solid var(--warn); padding: 0.5rem 0.85rem; color: var(--warn); background: var(--raised); }
+
+nav { display: flex; gap: 0.5rem; margin: 1.75rem 0 1.25rem; border-bottom: 1px solid var(--line); }
+nav button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 0.5rem 0.25rem; margin-right: 1rem; color: var(--ink-soft); }
+nav button.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+.controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1.25rem; }
+.controls label { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--ink-soft); }
+.controls input[type="range"] { width: 14rem; accent-color: var(--accent); }
+.controls input[type="search"] {
+  flex: 1 1 22rem; font: inherit; padding: 0.55rem 0.8rem;
+  background: var(--raised); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+.controls .hint { flex: 1 1 100%; margin: 0; }
+.toggle { white-space: nowrap; }
+
+.group {
+  background: var(--raised); border: 1px solid var(--line);
+  border-left: 3px solid var(--line); border-radius: 8px;
+  padding: 1rem 1.15rem; margin-bottom: 1rem;
+}
+/* Convergent is the finding nobody could have made by eye, so it is the one the eye lands on. */
+.group.convergent { border-left-color: var(--accent); }
+.group header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.method { font-weight: 600; font-size: 0.9rem; }
+.score { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.repos { margin: 0.35rem 0 0.75rem; font-size: 0.85rem; color: var(--accent); }
+
+.group ul, .hits { list-style: none; padding: 0; margin: 0; }
+.group li, .hits li { padding: 0.4rem 0; border-top: 1px solid var(--line); }
+.group li:first-child { border-top: 0; }
+
+.link {
+  border: 0; background: none; padding: 0; text-align: left;
+  color: var(--ink); font-size: 0.95rem; font-weight: 500;
+  text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px;
+}
+.link:hover { text-decoration-color: var(--accent); }
+.where { display: block; font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); }
+.excerpt { margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+
+.suggestion {
+  margin: 0.85rem 0 0; padding: 0.6rem 0.8rem;
+  background: var(--accent-soft); border-radius: 6px;
+  font-size: 0.85rem; color: var(--ink);
+}
+.method-hint { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--ink-faint); font-style: italic; }
+
+.reader-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 3rem 1.5rem; overflow-y: auto; z-index: 10;
+}
+.reader {
+  background: var(--page); border: 1px solid var(--line); border-radius: 10px;
+  max-width: 54rem; width: 100%; padding: 1.5rem;
+}
+.reader header { align-items: flex-start; margin-bottom: 1rem; }
+.reader h2 { font-family: var(--serif); margin: 0; font-size: 1.35rem; }
+.reader pre {
+  white-space: pre-wrap; word-wrap: break-word;
+  font-family: var(--mono); font-size: 0.82rem; line-height: 1.65;
+  margin: 0; color: var(--ink);
+}
+
+@media (max-width: 40rem) {
+  .app { padding: 1.25rem 1rem 3rem; }
+  header { flex-direction: column; }
+}

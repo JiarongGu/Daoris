@@ -554,3 +554,40 @@ comparison provably cannot reach.
 
 Run through the MCP server over stdio against a two-repository fixture, with two unrelated documents
 included so that a detector flagging everything would have been caught.
+
+## `Daoris.Web` — the fourth artefact (2026-08-05)
+
+✅ done 2026-08-05 — a React application over the service, served by a new `Daoris.Service.Http`, with
+both of the brief's open questions settled as **D30** and **D31**.
+
+**Convergence is the landing view, not search.** The brief suspected search was the obvious answer and
+the wrong one; a day of use settled it. The finding that mattered most all session was a convergence
+between two documents sharing 25% vocabulary, and no search could have surfaced it — to search for it
+you must already know it exists. Search is the second tab, for when you do.
+
+**It reads and proposes a command.** No editing from the browser: `upstream` routes an improvement
+through the repository that found it, where review happens, and a web editor would beat that path for
+the wrong reason. The convergence detector already says this for itself (D21), and a UI that could apply
+its own suggestions would contradict the component it is built on.
+
+**A browser cannot speak stdio MCP**, so the HTTP host is new. Adding it meant the composition was about
+to be written twice, so `ServiceFactory` now owns it and the MCP host was rewired onto it — two copies of
+"which tier is active" would drift, and one would end up quietly lexical-only while reporting otherwise.
+Writing that inside this project would be worse than finding it anywhere else. The provider stays in the
+hosts: Core holds `IEmbedder` and nothing that implements one, and the build caught me breaking that.
+
+**Verified in a browser, not asserted.** 449 entries from 11 repositories; real groups — `phase-review`
+across two at 0.947, `test-coverage-priorities` at 0.940, `doc-loader` across three at 0.913.
+
+Two defects the live run found, both real and neither visible from the code:
+
+- **Convergence took 31 seconds, every single call.** `KnowledgeService` constructed a new
+  `ConvergenceDetector` per request, throwing away the vectors it had just computed. Since the
+  interesting interaction is moving a threshold and looking again, that made the re-embed the common
+  path rather than the rare one. One detector, held: **31s → 5.3s warm.** A content-keyed memo inside
+  the detector was added first and did nothing at all until the per-request construction was fixed —
+  a fix that could not work, on a cause I had not yet found.
+- **`ComposedService.Convergence` was a detector nobody called.** The factory built one and the service
+  built its own; the field looked like the answer and was not connected to anything. Removed. That is
+  the "parsed and never read" case `claims-need-checks` names, found in code written the same day as
+  the rule.
