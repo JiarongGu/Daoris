@@ -732,3 +732,47 @@ the same pair. It also confirms **D24** from both sides — convergence detectio
 restatements with no model at all, and the model adds the class that text comparison provably cannot
 reach.
 
+
+## D30 — The web UI's primary view is convergence, not search
+
+**Decided 2026-08-05, settling `Daoris.Web`'s first open question.** The landing view is *"these
+repositories said the same thing in different words — read them and decide"*. Search exists, and it is a
+supporting view.
+
+**Why.** The brief already suspected search was the obvious answer and the wrong one, and a day of real
+work settled it. The finding that mattered most this session was a convergence: two repositories derived
+the same principle independently, in vocabulary so different that **word overlap scored them at 25%**.
+No search could have surfaced that, and not because the search was bad — **to search for it you must
+already know it exists.**
+
+Everything else that produced value was comparison too. Adoption is comparison: what collides, what is a
+twin, what a pack already covers. `analyze`, `doctor` and the coverage measurements are all comparison
+tools. Search answers a question you have; comparison tells you which question to ask, and the canon was
+built almost entirely from the second.
+
+**Consequence.** The service's convergence detection is the UI's centre rather than a feature on a menu,
+and the semantic tier matters most exactly where the UI matters most.
+
+**Not chosen: a search box as the landing screen.** It is what every knowledge tool ships and it would
+make this one a worse `grep` across repositories — a job the CLI already does offline and faster.
+
+## D31 — The web UI reads; it proposes a command rather than writing
+
+**Decided 2026-08-05, settling the second open question.** No editing of doctrine from the browser. Where
+a change is warranted, the UI shows the exact command to run in the repository that owns the file.
+
+**Why.** `upstream` deliberately routes an improvement through the repository that found it, where it
+meets that repository's review. A web editor competes with that path and wins for the wrong reason —
+it is more convenient — and the result is doctrine that changed without passing anyone's review.
+
+The convergence detector already states the principle for itself: it proposes, a person disposes, and a
+candidate is a prompt to look rather than a merge (D21). A UI that could apply its own suggestions would
+contradict the one component it is built on top of.
+
+Every canonization this session needed judgement a UI could not have made: whether a twin was a merged
+pair whose local half had to survive, whether a rule belonged in the always-loaded tier, whether a
+document was superseded outright or only overlapping. **Generating the command is more useful than an
+edit box** — it puts the change where review happens and leaves the judgement with the person.
+
+**Consequence.** The service stays read-only, and its HTTP surface can be too, which removes
+authentication-for-writes from the first version entirely.

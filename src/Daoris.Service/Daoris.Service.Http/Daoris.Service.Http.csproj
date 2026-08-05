@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Daoris.Knowledge.Http</RootNamespace>
+    <AssemblyName>daoris-knowledge-http</AssemblyName>
+    <!-- Read-only by construction (D31), so there is no antiforgery surface and no auth for writes. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Daoris.Service.Core/Daoris.Service.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The provider lives in the HOST, never in Core: the domain holds IEmbedder and nothing that
+         implements one, which is what keeps a model out of it (D22, D24). -->
+    <PackageReference Include="Lyntai.Providers.Default" />
+  </ItemGroup>
+</Project>

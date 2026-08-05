@@ -43,10 +43,12 @@ correct, and never loaded._
 - [ ] **CANON2 — the last pack candidates.** `web-webview` and `durable-jobs` are **done** (see the
   archive). Two remain, and both are held for the reason CANON2 has always given — a pack nobody
   installs is unvalidated doctrine:
-    - **`desktop-app`** — the material is real but lopsided: one repository has 11 KB on desktop testing
-      plus screen-capture hygiene, DPI scaling and UI layering, while the second contributes only capture
-      tooling. Closer to one repository with a rich document than to two agreeing. Write it when a
-      second desktop repository is actually adopting.
+    - **`desktop-app`** — **above the bar after all, and the tool is what found that.** A by-hand survey
+      globbing for `*desktop*`, `*capture*`, `*dpi*` concluded "one rich repository plus fragments". The
+      service's semantic pass, run across all 11 repositories, returns a **0.890 group spanning three**:
+      `desktop-testing-cdp.md`, `desktop-test/SKILL.md`, `devtools/SKILL.md` and `dev-loop.md` — names
+      the glob could never have matched, which is exactly the failure the tool exists to fix. Ready to
+      write; still wants an adopter to validate against, like `durable-jobs`.
     - **`desktop-winforms`** — one 11 KB source, one repository. **Below the two-repository bar**, and
       the bar is the whole reason the canon is trustworthy. Leave it local until a second repository
       needs the same thing.

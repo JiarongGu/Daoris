@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Daoris.Service.Core/Daoris.Service.Core.csproj" />
   <Project Path="Daoris.Service.Mcp/Daoris.Service.Mcp.csproj" />
+  <Project Path="Daoris.Service.Http/Daoris.Service.Http.csproj" />
   <Project Path="Daoris.Service.Tests/Daoris.Service.Tests.csproj" />
 </Solution>
