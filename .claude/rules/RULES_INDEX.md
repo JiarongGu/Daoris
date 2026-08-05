@@ -20,6 +20,7 @@ Rows marked _(local)_ are this repo's own and are never synced.
 |---|---|---|
 | [adoption](../knowledge/adoption.md) _(local)_ | onboarding a repository onto daoris for the first time | resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally; never let adoption silently rewrite doctrine |
 | [canon-authoring](../knowledge/canon-authoring.md) _(local)_ | writing or changing a canon file, or adding a pack | project-agnostic content, frontmatter that matches the filename, principle-and-reason not mechanism |
+| [model-is-optional](../knowledge/model-is-optional.md) | building any feature that uses a language model, an embedding model, or any AI service | every such feature has a floor that works without the model, reports which tier it ran at, and takes the model as swappable configuration |
 
 ## Skills (invoke by name)
 

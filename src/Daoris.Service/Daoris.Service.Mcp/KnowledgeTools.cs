@@ -65,6 +65,15 @@ public sealed class KnowledgeTools(KnowledgeService service)
         }
 
         text.AppendLine("Call `knowledge_get` with an id for the full text.");
+        // Which tier answered, on EVERY result and not only on an empty one (D24). A caller who gets
+        // results has no way to know the semantic half was absent, and will read "these are the
+        // matches" as complete rather than as complete-for-word-overlap.
+        if (!service.SemanticEnabled)
+        {
+            text.AppendLine("_Matched on words only. A repository that reached the same conclusion in "
+                          + "different vocabulary will not appear — try its vocabulary._");
+        }
+
         return text.ToString();
     }
 

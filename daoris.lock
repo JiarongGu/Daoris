@@ -5,6 +5,13 @@
   "entries": [
     {
       "pack": "core",
+      "source": "core/knowledge/model-is-optional.md",
+      "target": "knowledge/model-is-optional.md",
+      "canonVersion": "0.0.1",
+      "sha256": "084b1faaee8f8439910336fef66eccba4ac89080732104a7987aa138171d7d39"
+    },
+    {
+      "pack": "core",
       "source": "core/rules/file-tool-discipline.md",
       "target": "rules/file-tool-discipline.md",
       "canonVersion": "0.0.1",

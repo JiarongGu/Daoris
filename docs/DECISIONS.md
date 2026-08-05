@@ -329,6 +329,18 @@ bug, and will be right to.
 does: the *analysis* half needs no model and already ships, while drafting a merged statement does. The
 same split is expected of anything added later.
 
+**Applied across the design, not just where it was found.** Every feature that can use a model was
+audited against it. `knowledge_search` disclosed its tier only when it found *nothing*, so a caller
+with results could not tell the semantic half was absent and would read "these are the matches" as
+complete rather than complete-for-word-overlap; it now says so on every result. The principle is also
+written into the canon as `model-is-optional`, so it reaches every adopting repository rather than
+living only in this project's decision log.
+
+That canon file went into `rules/` first and the **budget gate rejected it** — correctly. `rules/` is
+always-loaded, so it is for what nearly every task needs, and "building a feature that uses a model" is
+not every task. It belongs in `knowledge/`, read when the trigger applies. The gate caught an authoring
+mistake the author had just written the rule about.
+
 ## D23 — One harness is supported; the others are detected, not guessed at (2026-08-05)
 
 **Decision.** Daoris targets the **Claude Code** harness, and says so. Other harnesses are **detected

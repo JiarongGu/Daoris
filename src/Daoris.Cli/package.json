@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "test": "node --test",
-    "prepack": "node ../../tools/stage-package.mjs"
+    "prepack": "node ../../tools/stage-package.mjs",
+    "postpack": "node ../../tools/stage-package.mjs --clean"
   },
   "license": "MIT"
 }

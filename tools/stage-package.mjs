@@ -14,7 +14,12 @@
  * pack time. Nothing edits them, and `upstream` writes to the root canon through
  * the same resolution the CLI uses.
  *
- * Run automatically by the CLI package's `prepack`.
+ * Run automatically by the CLI package's `prepack`, and REMOVED again by `postpack`.
+ *
+ * That cleanup is not tidiness. `resolveCanonRoot` prefers a canon beside the package, because that is
+ * where the published one lives — so a staged copy left behind silently shadows the real tree, and
+ * every later development command reads a stale canon. It is gitignored, so nothing shows it. This
+ * project's own pathology, in its own build: two copies, one quietly winning.
  */
 import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
