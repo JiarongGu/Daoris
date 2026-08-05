@@ -49,6 +49,7 @@ int Verify()
         new SensitiveGate(ScanScope.Tree, new CommandLineGit(root), allowBuiltinsOnly),
         new VersionGate(),
         new DocsGate(new CommandLineGitHistory(root)),
+        new LinksGate(new CommandLineGit(root)),
         new DoctrineGate(),
     ]).Run(Console.WriteLine);
 

@@ -1,6 +1,6 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built.** One self-contained 2.7 MB binary, 45 tests, and it runs this repository's own gates.
+**Status: built.** One self-contained 2.7 MB binary, 57 tests, and it runs this repository's own gates.
 The two questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
 
 ## The problem, measured
@@ -28,7 +28,7 @@ reasoning weighed the *execution* cost and missed the *distribution* one:
 
 The CLI stays Node and zero-dependency; this is a separate artefact with a separate job.
 
-## The four universal gates
+## The five universal gates
 
 Extracted from the eleven copies by reading the extremes and keeping only what they share. Everything
 else in those copies — build, test, pack, sample apps, screen capture, input injection — is
@@ -39,6 +39,7 @@ stack-specific and is *declared* by the repository rather than built in.
 | `sensitive` | Would this commit leak a machine path, a private name, or a credential? | never — it is the one that has to run |
 | `version` | Does one file own the version, does everything agree, and was it stamped rather than typed? | no `version.source` declared |
 | `docs` | Has a document fallen behind the code it claims to describe? | no `docs.tracked` declared |
+| `links` | Does every relative link between documents resolve? | no tracked markdown |
 | `doctrine` | Has this repository's doctrine drifted? — **delegated to `daoris check`** | no `daoris.json` |
 
 `doctrine` is four lines of real work on purpose. `daoris check` already answers that question against a

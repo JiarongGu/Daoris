@@ -53,7 +53,7 @@ spread**. Nine also carry a config file, which is the part that was *meant* to d
 tool, re-derived and diverged. This was the strongest evidence in the family, and the artefact answers
 it the way the CLI answers the document version: gates get **declared, not copied**.
 
-**Built 2026-08-05.** One 2.7 MB self-contained binary, 45 tests, four universal gates, and it runs this
+**Built 2026-08-05.** One 2.7 MB self-contained binary, 57 tests, five universal gates, and it runs this
 repository's own gate set end to end.
 
 - **Shipped as a .NET AOT binary**, reversing the earlier position that the tooling should stay Node

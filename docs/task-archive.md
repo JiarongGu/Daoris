@@ -502,3 +502,31 @@ with class names, commit hashes and specific job kinds; the canonical version st
 shared vocabulary drops even where the principles match exactly. **Word-overlap coverage is a poor proxy
 for whether a pack captured the right ideas** — the third time in two days that this measure has been
 right about restatement and wrong about meaning (D17).
+
+## CANON4 — the `doc-*` family, decided (2026-08-05)
+
+✅ done 2026-08-05 — **not canonized**, recorded as D29, and the half of it that was worth keeping is now
+enforced rather than available.
+
+It had been held on the argument that these skills automate hand-maintaining documents a generated wiki
+would own outright, so canonizing them would install doctrine for a workflow about to change; the
+backlog predicted that if the generated route won, "what stays canonical is much smaller — the *review*
+of generated output, not its production." Reading the six settles it, and that prediction was right.
+
+Production is repo-specific or superseded: one skill writes into two documents belonging to a single
+repository, and the shrink/cleanup pair maintains hand-written prose — the work a generator removes
+rather than automates. Review had already become gates here without anyone connecting it: of
+`doc-monitor`'s four checks, redundancy is `daoris doctor`, index and skill staleness is `daoris check`,
+and version disagreement is the devkit's `version` gate.
+
+**The fourth was a genuine gap** — nothing verified that a link between documents resolves. That is the
+cheapest documentation check there is and the one most worth having, because a link to a renamed file is
+*silently* wrong: nothing compiles it, the page still renders, and the reader concludes the target was
+never important. Now the devkit's `links` gate, 8 tests, running as the fifth universal gate. 21 links
+across 60 documents here, all resolving. Verified by adding a broken link, watching it fail, and removing
+it.
+
+**A note on the evidence.** The backlog recorded this family as appearing in three repositories. It is
+two with the identical six skills, plus a third with two differently-named ones. Worth writing down
+because the two-repository bar is what makes canonical content trustworthy, and a count that drifts
+upward in the retelling is how a bar gets quietly lowered.

@@ -25,7 +25,7 @@ cultivation.
 ## Current state
 
 **Built and proven; nothing published.** Eight commands, 118 tests, a canon of 7 core rules, 3 core
-knowledge documents, 5 core skills and 5 packs. `Daoris.Service` adds 58 and `Daoris.Devkit` 45.
+knowledge documents, 5 core skills and 5 packs. `Daoris.Service` adds 58 and `Daoris.Devkit` 57.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
@@ -40,7 +40,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the eight commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D28) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D29) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -66,7 +66,7 @@ and the open questions, written before any code.
 |---|---|
 | `src/Daoris.Cli/` | **The npm package `daoris`** — Node, zero dependencies. `bin/`, `src/`, `test/` |
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
-| `src/Daoris.Devkit/` | The shared dev toolkit — four universal gates, a **.NET AOT binary** |
+| `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
 | `src/Daoris.Web/` | React UI over the service — the only UI (not started) |
 | `src/Daoris.Desktop/` | Desktop shell hosting `Daoris.Web`, on the desktop sibling (not started) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |

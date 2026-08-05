@@ -678,3 +678,34 @@ so a repository that already declared one keeps it. This only moves the starting
 **Not chosen: scaling the default by pack count.** It would make the number depend on a choice made
 later in the same file, so nobody could read the manifest and know what the limit was — and a budget
 whose value you have to compute is one nobody argues with.
+
+## D29 — The `doc-*` maintenance family is not canonized; its useful half became gates
+
+**Decided 2026-08-05, closing CANON4.** The six-skill `doc-*` family — update-technical, update-guide,
+update-reference, optimize, monitor, cleanup — does not enter the canon.
+
+**Why.** The family was held rather than deferred, on the argument that these skills automate
+hand-maintaining documents that a generated wiki would own outright (D16), and that if the generated
+route wins, what stays canonical is *the review of output, not its production*. Reading them settles it,
+and the split is cleaner than expected:
+
+- **Production is repo-specific or superseded.** `doc-update-technical` writes into two named documents
+  that belong to one repository; it is not project-agnostic and could not be canonized as written.
+  `doc-optimize` (shrink documents over 30 KB) and `doc-cleanup` (delete redundant, consolidate
+  duplicates) maintain hand-written prose — exactly the work a generator removes rather than automates.
+- **Review is already gates here, and gates beat skills.** `doc-monitor` audits four things. Three had
+  become tooling without anyone connecting them to it: redundancy is `daoris doctor`, index and skill
+  staleness is `daoris check`, version disagreement is the devkit's `version` gate. A gate runs; a skill
+  runs when somebody remembers to invoke it.
+- **The fourth check was a real gap**, and is now the devkit's `links` gate. Verified the only way worth
+  trusting — added a broken link, watched it fail, removed it.
+
+**Consequence.** Nothing is installed into every repository for a workflow that may change, and the
+capability the family actually provided is enforced rather than available. The two repositories carrying
+the family keep it as local doctrine, which is the correct home for a workflow specific to their
+documents.
+
+**The evidence was also weaker than recorded.** The backlog said the family appears in three
+repositories; it is two with the identical six, plus a third with two differently-named skills. Worth
+noting because the two-repository bar is what makes canonical content trustworthy, and a count that
+drifts upward in the retelling is how a bar gets quietly lowered.

@@ -16,11 +16,11 @@ the family, kept from drifting, and improved from wherever the improvement was f
 _**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 3 core
 knowledge documents, 5 core skills and 5 packs, adopted into Lyntai with its 1563 tests still green.
 `npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
-searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 45
+searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 57
 tests, one binary._
 
 _**Three of the four artefacts exist** (`docs/DECISIONS.md` D20); `Daoris.Web` does not. `Daoris.Devkit`
-is built — one 2.7 MB AOT binary, 45 tests, four universal gates, running this repository's own gate set._
+is built — one 2.7 MB AOT binary, 57 tests, five universal gates, running this repository's own gate set._
 
 _**Pushed 2026-08-05** to `main`, after auditing all 73 commits and 932 objects against every pattern.
 **Nothing is published to npm**, deliberately: the tag and the release workflow stay unrun while a
@@ -40,13 +40,6 @@ correct, and never loaded._
 
 ## Part 2 — canon growth
 
-- [ ] **CANON4 — the `doc-*` maintenance family, deliberately not canonized yet.** `doc-update-technical`
-  / `-reference` / `-guide`, `doc-optimize`, `doc-monitor`, `doc-cleanup` appear together in 3
-  repositories, which is a real signal. It is **held** rather than deferred by accident: these skills all
-  automate hand-maintaining documents that a generated-wiki tool would own outright (D16), so canonizing
-  them would install doctrine for a workflow that may be about to change. Decide by trying a generator on
-  one repository first. If the generated route wins, what stays canonical is much smaller — the *review*
-  of generated output, not its production. `post-feature` and `fix-log` are done.
 - [ ] **CANON2 — the last pack candidates.** `web-webview` and `durable-jobs` are **done** (see the
   archive). Two remain, and both are held for the reason CANON2 has always given — a pack nobody
   installs is unvalidated doctrine:
