@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Daoris.Devkit</RootNamespace>
+    <!-- The whole tree is AOT-published through the CLI, so the library must stay AOT-clean too:
+         no reflection-based serialization, no dynamic code. Warn at build rather than at publish. -->
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+</Project>

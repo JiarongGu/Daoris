@@ -609,3 +609,44 @@ trusting: reverted the fix, watched it fail, restored it.
 **Not chosen: leaving it to `core.autocrlf`.** It works until someone clones with a different global
 config, and then it fails as a hash mismatch on documents nobody edited — the most confusing possible
 symptom for a tool whose entire job is telling you which documents changed.
+
+## D26 — Gates are declared in a file the devkit owns, not in `daoris.json`
+
+**Decided 2026-08-05, settling DEV1.** `daoris.json` names *which* devkit version a repository uses.
+What to run lives in `daoris.gates.json`, which the CLI never reads.
+
+**Why.** Every field in the manifest today is a noun: a source, a list of packs, a target directory, a
+byte budget. It is inert data, and the CLI's whole safety story rests on that — it never executes
+anything and never opens a socket, and there is now a test for each. Gates are verbs. Putting command
+strings into the manifest makes the file the CLI parses on every invocation into a file that contains
+things that run, and the next reasonable-sounding step is "since we already parsed them, let `daoris
+verify` run them".
+
+Splitting on noun/verb keeps the boundary visible instead of merely observed. The manifest still pins
+the devkit — a version is data — so there is exactly one place to look for *which* toolkit, and exactly
+one place for *what it does*.
+
+**Not chosen: one file for both.** Fewer files is a real benefit and it loses to the above. A reader of
+`daoris.json` can currently be certain nothing in it executes; that certainty is worth more than the
+saved file.
+
+## D27 — The devkit binary is hash-pinned and explicitly acquired, never implicitly downloaded
+
+**Decided 2026-08-05, settling DEV2.** The binary ships as a release asset. The repository records its
+sha256. The devkit verifies itself against that hash **offline**, and a missing binary is an error
+naming the exact command to run — never a download that happens on its own.
+
+**Why.** D8 makes `check` offline by construction, and that has since hardened: nothing anywhere in the
+CLI may touch the network, enforced by a test that greps for the primitives. So the CLI *cannot* be the
+thing that fetches the binary, and that is the right outcome rather than an obstacle — an implicit
+download is a network call on a gate that promised not to make one, and it turns a verification step
+into an install step at the worst possible moment.
+
+Hash-pinning is the same shape as the lock: record the digest locally, verify against the record, need
+nothing else. It also answers the supply-chain question the npm route raises, because the pin is written
+into the consuming repository rather than resolved at install time.
+
+**Not chosen: distributing through npm.** It is what esbuild and its neighbours do and it works well —
+but the devkit exists partly so that a .NET repository does not carry a Node dependency for tooling
+alone. Shipping it through npm would reintroduce exactly the dependency the artefact was created to
+remove.

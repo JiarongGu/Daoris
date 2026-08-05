@@ -16,33 +16,14 @@ the family, kept from drifting, and improved from wherever the improvement was f
 _**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 1 core
 knowledge document, 5 core skills and 3 packs, adopted into Lyntai with its 1337 tests still green. `npm run rehearse` drives the
 whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
-searches the family's knowledge — 58 tests, reachable over MCP._
+searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 30
+tests, one binary._
 
-_**It is one of four artefacts, and the only one that exists** (`docs/DECISIONS.md` D20). **Not
-releasing yet:** publishing the CLI alone would invite adoption of a quarter of the project. The devkit
-is next — eleven repositories carry the same hand-copied dev script at a 20× size spread, which is the
-strongest evidence in the family._
+_**Three of the four artefacts exist** (`docs/DECISIONS.md` D20); `Daoris.Web` does not. **Not releasing
+yet:** publishing piecemeal would invite adoption of part of the project. `Daoris.Devkit` is built — one
+2.7 MB AOT binary, 30 tests, four universal gates, running this repository's own gate set._
 
-## Part 1 — the next artefact: `Daoris.Devkit`
-
-_The brief and its open questions are in `src/Daoris.Devkit/README.md`, written before any code._
-
-- [ ] **DEV1 — decide how a repository declares its gates.** A `verify` block in `daoris.json`, or a
-  file the devkit owns. The manifest is already the declaration point for packs and the target, so it is
-  the obvious home — but gates are commands rather than documents, and the manifest has stayed data-only
-  so far. Settle before writing the runner.
-- [ ] **DEV2 — decide how the binary reaches a repository without losing the offline guarantee.**
-  `check` never touches the network by construction (D8), and that must survive. A binary cannot ship
-  inside the npm package the way the canon does, so this is genuinely new ground.
-- [ ] **DEV3 — extract the universal gates from the eleven copies.** The survey says the shared set is a
-  sensitive-content scan, doctrine drift, version authorship, and documentation freshness. Everything
-  else is stack-specific and belongs in the repository's own declaration. Same method as the skills:
-  read the extremes, keep only what they share.
-- [ ] **DEV4 — the devtools copy in this repository is untracked and inherited.** 31 MB of a sibling's
-  toolkit, including built binaries, sitting in `devtools/`. It is the raw material for DEV3 and should
-  be read, mined, and then removed — not tracked.
-
-## Part 2 — when a release is wanted
+## Part 1 — when a release is wanted
 
 _Both prerequisites are done; neither is urgent while three artefacts are unbuilt._
 
@@ -53,7 +34,7 @@ _Both prerequisites are done; neither is urgent while three artefacts are unbuil
   part of that repository's uncommitted, pending-review changes (ADOPT3), so it is listed here rather
   than edited from this side.
 
-## Part 3 — findings from the Lyntai adoption (2026-08-04)
+## Part 2 — findings from the Lyntai adoption (2026-08-04)
 
 _The first real adoption surfaced things no synthetic test could. Both remaining items are editorial work
 inside Lyntai rather than changes here, which is why they are recorded rather than silently fixed._
@@ -71,7 +52,7 @@ inside Lyntai rather than changes here, which is why they are recorded rather th
   generalized rules dropped is preserved in a new local `.claude/rules/repo-mechanics.md`.
   `git checkout .claude/` reverts all of it.
 
-## Part 4 — other agent harnesses (deliberately not built)
+## Part 3 — other agent harnesses (deliberately not built)
 
 _Daoris targets Claude Code (D23). The others are detected and reported; a second implementation gets
 written the day a repository actually adopts one. Detection exists so the gap is loud rather than
@@ -83,7 +64,7 @@ correct, and never loaded._
   repository wants it: the layout, the always-loaded semantics and the trigger mechanism all differ,
   and guessing at them produces doctrine nobody chose in a format nobody verified.
 
-## Part 5 — canon growth
+## Part 4 — canon growth
 
 - [ ] **CANON4 — the `doc-*` maintenance family, deliberately not canonized yet.** `doc-update-technical`
   / `-reference` / `-guide`, `doc-optimize`, `doc-monitor`, `doc-cleanup` appear together in 3
@@ -115,7 +96,7 @@ correct, and never loaded._
   `windows-dev-gotchas` versus canonical `windows-machine` — the machine-level content is canonical, the
   WebView2/WinForms/devtools items are Shenora's own.
 
-## Part 6 — tool follow-ups
+## Part 5 — tool follow-ups
 
 _Nothing open here._
 

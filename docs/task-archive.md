@@ -238,3 +238,46 @@ Executed from `docs/archive/2026-08-04-daoris-v0.1-plan.md`, one task per commit
   ✅ done 2026-08-04 (partial) — `CHANGELOG.md` written, sensitive scan clean across every tracked file,
   final verify green. The two items needing an owner decision — the GitHub account and the LICENSE
   holder — remain open as `TASKS.md` REL1 and REL2.
+
+## `Daoris.Devkit` — the shared dev toolkit (2026-08-05)
+
+- **DEV1 — decide how a repository declares its gates.**
+  ✅ done 2026-08-05 — a separate `daoris.gates.json` the CLI never reads, recorded as **D26**. The
+  manifest stayed data-only because every field in it is a noun; gates are verbs, and putting command
+  strings into the file the CLI parses on every invocation makes the next reasonable-sounding step
+  "since we already parsed them, let `daoris verify` run them". The manifest still pins the devkit
+  version, so there is one place for *which* toolkit and one for *what it does*.
+- **DEV2 — decide how the binary reaches a repository without losing the offline guarantee.**
+  ✅ done 2026-08-05 — release assets, hash-pinned, explicitly acquired, recorded as **D27**. It stopped
+  being a design question once the offline guarantee got its test: nothing under `src/Daoris.Cli` may
+  touch the network, so the CLI *cannot* fetch a binary. Verification is a local digest compared against
+  a local record — the same shape as `daoris.lock`. Distributing through npm was rejected because the
+  artefact exists partly so a .NET repository need not carry a Node dependency for tooling alone.
+- **DEV3 — extract the universal gates from the eleven copies.**
+  ✅ done 2026-08-05 — four gates: `sensitive`, `version`, `docs`, `doctrine`. The sensitive scan was
+  canonized from the one copy that had survived a real incident, keeping all four properties it had
+  earned the hard way (paths scanned as well as content; fails closed without the private pattern list;
+  renames counted; commit messages scanned) and adding redaction, because a gate that prints what it
+  caught writes the secret to a build log. `doctrine` **delegates to `daoris check`** rather than
+  reimplementing drift — a second answer to a question that already has one would be this project's own
+  pathology committed by the tool built to remove it. `knowledge.mjs` needed no extraction at all: it is
+  superseded outright by `daoris check` and `daoris index`.
+- **DEV4 — mine the inherited devtools copy, then remove it.**
+  ✅ done 2026-08-05 — 31 MB removed. Everything universal became a gate; the rest was the desktop
+  sibling's capture and input tooling plus built binaries. Verified first that every copy still exists
+  in the siblings, so the deletion lost nothing unique.
+  Removing it also exposed a live bug: `.gitignore` listed .NET build output per tree by name, so the
+  devkit's **397 build artefacts staged on its first build**. Now every tree is listed — deliberately
+  not a blanket `bin/`, because `src/Daoris.Cli/bin` is the CLI's published entry point.
+
+**Dogfooded end to end.** `daoris-devkit verify` runs 7 gates against this repository — the four
+universal ones plus its declared `npm run verify`, `dotnet test src/Daoris.Service` and
+`dotnet test src/Daoris.Devkit` — and exits 0.
+
+Two things the first real run found, both fixed with tests:
+- the `docs` gate compared **instants**, so a README and the code it describes committed hours apart on
+  the same day failed the build. Technically correct and useless: that is what every working session
+  looks like, and a gate that fires on normal work is a gate people route around. It compares days now.
+- the `doctrine` gate assumed `daoris` was on `PATH`. A repository can now declare how to invoke it,
+  which is what let this one point the gate at its own CLI in the source tree.
+

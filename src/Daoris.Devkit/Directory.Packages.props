@@ -1,0 +1,19 @@
+<Project>
+
+  <!--
+    Central package versions for the devkit tree.
+
+    Deliberately almost empty. The devkit runs gates and reports; it needs no framework to do that,
+    and every package it takes is one the AOT binary has to carry. Test packages only.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>

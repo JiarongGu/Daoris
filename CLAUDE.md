@@ -25,12 +25,12 @@ cultivation.
 ## Current state
 
 **Built and proven; nothing published.** Eight commands, 118 tests, a canon of 7 core rules, 1 core
-knowledge document, 5 core skills and 3 packs. `Daoris.Service` adds 58.
+knowledge document, 5 core skills and 3 packs. `Daoris.Service` adds 58 and `Daoris.Devkit` 30.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
 
-**Not released, and not close.** The CLI is complete and proven, but two of the four artefacts do not
+**Not released, and not close.** The CLI is complete and proven, but one of the four artefacts does not
 exist yet. Development runs at `0.0.x`.
 
 **Never edit the version by hand, and never stamp a changelog heading.** Both belong to the release
@@ -59,14 +59,14 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 
 ## Layout
 
-**Four artefacts, one workspace.** Two exist today; the other two carry a `README.md` stating the brief
+**Four artefacts, one workspace.** Three exist today; the fourth carries a `README.md` stating the brief
 and the open questions, written before any code.
 
 | Path | Holds |
 |---|---|
 | `src/Daoris.Cli/` | **The npm package `daoris`** — Node, zero dependencies. `bin/`, `src/`, `test/` |
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
-| `src/Daoris.Devkit/` | The shared dev toolkit, shipped as a **.NET AOT binary** (not started) |
+| `src/Daoris.Devkit/` | The shared dev toolkit — four universal gates, a **.NET AOT binary** |
 | `src/Daoris.Web/` | React UI over the service — the only UI (not started) |
 | `src/Daoris.Desktop/` | Desktop shell hosting `Daoris.Web`, on the desktop sibling (not started) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |

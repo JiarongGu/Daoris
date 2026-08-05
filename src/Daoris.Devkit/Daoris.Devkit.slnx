@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Daoris.Devkit.Core/Daoris.Devkit.Core.csproj" />
+  <Project Path="Daoris.Devkit.Cli/Daoris.Devkit.Cli.csproj" />
+  <Project Path="Daoris.Devkit.Tests/Daoris.Devkit.Tests.csproj" />
+</Solution>

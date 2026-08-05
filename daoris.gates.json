@@ -1,0 +1,31 @@
+{
+  "devkit": "0.0.1",
+
+  "gates": [
+    { "name": "cli", "run": "npm run verify" },
+    { "name": "service", "run": "dotnet test src/Daoris.Service" },
+    { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" }
+  ],
+
+  "sensitive": {
+    "patternsFile": "local/sensitive-patterns.txt"
+  },
+
+  "version": {
+    "source": "src/Daoris.Cli/package.json"
+  },
+
+  "doctrine": {
+    "command": "node",
+    "args": ["src/Daoris.Cli/bin/daoris.mjs"]
+  },
+
+  "docs": {
+    "changelog": "CHANGELOG.md",
+    "tracked": [
+      { "document": "README.md", "describes": ["src/Daoris.Cli/src", "src/Daoris.Cli/bin"] },
+      { "document": "src/Daoris.Service/README.md", "describes": ["src/Daoris.Service/Daoris.Service.Core"] },
+      { "document": "src/Daoris.Devkit/README.md", "describes": ["src/Daoris.Devkit/Daoris.Devkit.Core"] }
+    ]
+  }
+}

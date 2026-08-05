@@ -6,23 +6,26 @@ node_modules/
 
 # Scratch: fixtures, probes, dumps. Never OS temp (see the doctrine's no-tmp rule).
 _fixtures/
-devtools/_*
-
-# Inherited devtools build output. Scoped to devtools/ on purpose: at the repo
-# root, bin/ is this package's CLI entry point, not build output.
-devtools/**/bin/
-devtools/**/obj/
 
 *.log
 .DS_Store
 
-# The canon is staged into the CLI package at pack time (tools/stage-canon.mjs);
+# The canon is staged into the CLI package at pack time (tools/stage-package.mjs);
 # the tracked copy is canon/ at the root.
 src/Daoris.Cli/canon/
 src/Daoris.Cli/LICENSE
 src/Daoris.Cli/README.md
 
-# .NET build output. Scoped to the service tree deliberately: src/Daoris.Cli/bin is the CLI's
-# entry point, not build output, and a blanket bin/ rule would untrack it.
+# .NET build output.
+#
+# NOT a blanket `bin/`: `src/Daoris.Cli/bin` is the CLI's published entry point — the file npm's
+# `bin` field points at — and a global rule would untrack the one thing the package cannot ship
+# without. Every .NET tree is listed instead, and adding a new one means adding a line here.
+#
+# The previous version listed the trees that existed when it was written, so the devkit's 397 build
+# artefacts were staged the first time it was built. Scoping by `src/*/` rather than by name would
+# be tidier and would also catch `src/Daoris.Cli/bin`, which is exactly the file it must not catch.
 src/Daoris.Service/**/bin/
 src/Daoris.Service/**/obj/
+src/Daoris.Devkit/**/bin/
+src/Daoris.Devkit/**/obj/

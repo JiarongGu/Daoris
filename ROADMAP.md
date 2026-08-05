@@ -16,7 +16,7 @@ Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). Only the fir
 | | What | State |
 |---|---|---|
 | `Daoris.Cli` | The doctrine tool — npm, Node, zero dependencies | **built and proven** |
-| `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | brief written |
+| `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | **built** |
 | `Daoris.Service` | Cross-repository knowledge service | brief written |
 | `Daoris.Web` + `Daoris.Desktop` | One React UI, two shells | brief written |
 
@@ -46,12 +46,15 @@ start a task, `post-feature` and `fix-log` close one, `caveman` governs output, 
 a seventh core rule. Each was canonized from the copies found across twelve repositories and reduced to
 what they share (D14). The `doc-*` maintenance family is deliberately held (`TASKS.md` CANON4).
 
-## Next — `Daoris.Devkit`: the same pathology, one layer down
+## Built — `Daoris.Devkit`: the same pathology, one layer down
 
 Eleven repositories carry a hand-copied `devtools/dev.mjs`, measured at **2.6 KB to 52.6 KB — a 20×
 spread**. Nine also carry a config file, which is the part that was *meant* to differ. The rest is one
-tool, re-derived and diverged. This is the strongest evidence in the family and it is the natural next
-artefact: gates get **declared, not copied**.
+tool, re-derived and diverged. This was the strongest evidence in the family, and the artefact answers
+it the way the CLI answers the document version: gates get **declared, not copied**.
+
+**Built 2026-08-05.** One 2.7 MB self-contained binary, 30 tests, four universal gates, and it runs this
+repository's own gate set end to end.
 
 - **Shipped as a .NET AOT binary**, reversing the earlier position that the tooling should stay Node
   (D20). That position weighed the execution cost and missed the distribution one — and distribution is
@@ -62,8 +65,13 @@ artefact: gates get **declared, not copied**.
   in repositories that have no Node dependencies of their own.
 - Daoris ships the gates that are genuinely universal — sensitive scan, doctrine drift, version
   authorship, documentation freshness — and each repository declares its own stack gates.
-- Open questions are recorded in `src/Daoris.Devkit/README.md`, written before any code: how a repository
-  declares its gates, and how a binary is distributed without losing the offline guarantee (D8).
+- Both open questions are settled. Gates are declared in `daoris.gates.json`, a file the CLI never
+  reads, because the manifest is inert data and gates are commands that execute (**D26**). The binary is
+  hash-pinned and explicitly acquired, never implicitly downloaded — which falls out of D8 rather than
+  working around it, since nothing in the CLI may open a socket (**D27**).
+- **`doctrine` delegates to `daoris check`** instead of reimplementing drift. A second answer to a
+  question that already has one would be this project's own pathology, committed by the tool built to
+  remove it.
 
 ## Then — the knowledge layer: `Daoris.Service`, `Daoris.Web`, `Daoris.Desktop`
 

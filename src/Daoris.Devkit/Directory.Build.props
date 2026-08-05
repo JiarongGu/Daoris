@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Shared build settings for the devkit tree. Mirrors the service's, so anyone moving between the
+    two meets the same setup.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- BOM-less UTF-8 sources mojibake on a CJK-locale machine without this: csc reads them as ANSI.
+         Inherited from the family rather than rediscovered. -->
+    <CodePage>65001</CodePage>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

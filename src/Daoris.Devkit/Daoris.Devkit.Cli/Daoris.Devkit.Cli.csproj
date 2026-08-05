@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Daoris.Devkit.Cli</RootNamespace>
+    <AssemblyName>daoris-devkit</AssemblyName>
+    <!-- The reason this artefact is a binary at all: one self-contained file, no runtime to install,
+         and no Node dependency in a .NET repository that never wanted one. -->
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The gates report findings, not exceptions; a stack trace here would be noise in a hook. -->
+    <StackTraceSupport>false</StackTraceSupport>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Daoris.Devkit.Core/Daoris.Devkit.Core.csproj" />
+  </ItemGroup>
+</Project>
