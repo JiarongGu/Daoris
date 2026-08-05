@@ -16,7 +16,7 @@ the family, kept from drifting, and improved from wherever the improvement was f
 _**`Daoris.Cli` is built and proven** — eight commands, 116 tests, a canon of 7 core rules, 1 core
 knowledge document, 5 core skills and 3 packs, adopted into Lyntai with its 1337 tests still green. `npm run rehearse` drives the
 whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
-searches the family's knowledge — 57 tests, reachable over MCP._
+searches the family's knowledge — 58 tests, reachable over MCP._
 
 _**It is one of four artefacts, and the only one that exists** (`docs/DECISIONS.md` D20). **Not
 releasing yet:** publishing the CLI alone would invite adoption of a quarter of the project. The devkit

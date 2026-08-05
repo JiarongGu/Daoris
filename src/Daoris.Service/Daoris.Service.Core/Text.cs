@@ -66,4 +66,17 @@ public static class Text
 
     /// <summary>One line: an excerpt is shown inline, and embedded newlines break every caller's layout.</summary>
     private static string Flatten(string text) => text.Replace('\n', ' ').Replace('\r', ' ').Trim();
+
+    /// <summary>
+    /// A document's text, BOM-less and LF, exactly as the CLI's <c>readText</c> reads it.
+    /// </summary>
+    /// <remarks>
+    /// The same rule file is CRLF in a Windows checkout and LF elsewhere, so an unnormalized read makes
+    /// a repository's doctrine depend on which machine indexed it. Convergence survived that only by
+    /// accident — it splits on whitespace, so CRLF happened to fall out — and an accident in one method
+    /// is not a property of the system. Normalizing at the read boundary makes it one, and makes the
+    /// two halves of this project agree on what a document's bytes are.
+    /// </remarks>
+    public static string ReadDocument(string path) =>
+        File.ReadAllText(path).TrimStart('﻿').ReplaceLineEndings("\n").Trim();
 }

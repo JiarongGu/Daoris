@@ -1,0 +1,14 @@
+# The repository's line endings are part of its contract, not a local preference.
+#
+# `daoris.lock` records a sha256 per installed document and `check` compares against it, so what a
+# document's bytes ARE has to be the same everywhere. Without this file that depends on each
+# developer's global `core.autocrlf`: a Windows clone gets CRLF working files, a Linux clone LF, and
+# the same repository disagrees with itself about its own doctrine.
+#
+# Both halves of the tool normalize on read, so this is the belt to that suspenders — but a hash
+# authority should not rest on every reader remembering to normalize.
+* text=auto eol=lf
+
+# Written by `daoris sync`, which writes LF atomically. Never a merge conflict worth resolving by
+# hand: regenerate it instead.
+daoris.lock -merge

@@ -28,6 +28,28 @@ public sealed class RepositoryScannerTests : IDisposable
     }
 
     /// <summary>
+    /// The same document indexed from a Windows checkout and a Linux one must be the same document.
+    /// Line endings and a BOM are checkout artefacts, not content, and a body that carries them makes
+    /// a repository's doctrine depend on which machine happened to read it.
+    /// </summary>
+    [Fact]
+    public void A_CRLF_checkout_with_a_BOM_yields_the_same_body_as_an_LF_one()
+    {
+        WriteLock("rules/hygiene.md", "rules/plain.md");
+        Write(".claude/rules/hygiene.md", "﻿line one\r\nline two\r\n");
+        Write(".claude/rules/plain.md", "line one\nline two\n");
+
+        var entries = new RepositoryScanner().Scan(_root);
+
+        var crlf = entries.Single(e => e.Title == "hygiene");
+        var lf = entries.Single(e => e.Title == "plain");
+        Assert.Equal("line one\nline two", crlf.Body);
+        Assert.Equal(lf.Body, crlf.Body);
+        Assert.DoesNotContain('\r', crlf.Body);
+        Assert.DoesNotContain('﻿', crlf.Body);
+    }
+
+    /// <summary>
     /// The distinction the whole index rests on. Canonical content is identical in every adopting
     /// repository, so indexing it per repository would produce a dozen copies of one rule and call
     /// that a corpus. What varies — and therefore what is worth searching across repositories — is

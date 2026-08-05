@@ -583,3 +583,29 @@ That run also vindicated the threshold change: the twin this repository's backlo
 adoption, `windows-dev-gotchas` against canonical `windows-machine`, scores **47%** — found at 0.3 and
 missed entirely at the original 0.5. A test had been passing via the cross-tier bug, matching a local
 *skill* against a canonical *rule*; it now exercises a genuine same-tier case.
+
+## D25 — Line endings are pinned in the repository, and normalized on read by both halves
+
+**Decided 2026-08-05, during the tidy-up.** `.gitattributes` sets `* text=auto eol=lf`, and the service
+reads documents through one normalizing helper (`Text.ReadDocument`) exactly as the CLI already read
+them through `readText`.
+
+**Why.** `daoris.lock` records a sha256 per installed document and `check` compares against it, so what a
+document's bytes *are* has to be the same on every machine. It was not: the repository pinned nothing, so
+the answer came from each developer's global `core.autocrlf`. A Windows clone gets CRLF working files, a
+Linux clone LF, and the same repository disagrees with itself about its own doctrine.
+
+The CLI was already safe, deliberately — `sha256` hashes normalized text, and the comment says why. The
+service was safe too, but by **three separate accidents**: `MarkdownSections` happened to strip CRLF
+while splitting, `Tokenize` happened to list `\r` as a separator, and convergence's identical-detection
+happened to compare whitespace-insensitively. Every one of those is a local implementation detail that a
+later change could drop without any test noticing. A property that holds by coincidence in three places
+is not a property of the system, so it now holds in one place by construction.
+
+**Consequence.** The bodies stored in the index are identical whichever machine built it, which matters
+because the index is the thing the family shares. The regression test was checked the only way worth
+trusting: reverted the fix, watched it fail, restored it.
+
+**Not chosen: leaving it to `core.autocrlf`.** It works until someone clones with a different global
+config, and then it fails as a hash mismatch on documents nobody edited — the most confusing possible
+symptom for a tool whose entire job is telling you which documents changed.

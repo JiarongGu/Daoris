@@ -3,7 +3,7 @@
 **Status: usable from a session.** An MCP server over stdio exposes the index to any agent client. The
 core reads a repository's knowledge into addressable entries, classifies each as canonical or local,
 stores them in SQLite, answers ranked queries over FTS5, and finds where repositories learned the same
-lesson independently. **57 tests**, two of which run against the real sibling repositories rather than
+lesson independently. **58 tests**, two of which run against the real sibling repositories rather than
 fixtures.
 
 Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database; queries answer in

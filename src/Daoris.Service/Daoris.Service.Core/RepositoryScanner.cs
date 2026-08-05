@@ -94,7 +94,7 @@ public sealed class RepositoryScanner
                 kind,
                 daorisLock.ProvenanceOf(relative),
                 Path.GetFileNameWithoutExtension(fileName),
-                File.ReadAllText(file).Trim(),
+                Text.ReadDocument(file),
                 relative);
         }
     }
@@ -119,7 +119,7 @@ public sealed class RepositoryScanner
                 EntryKind.Skill,
                 daorisLock.ProvenanceOf(relative),
                 skillName,
-                File.ReadAllText(file).Trim(),
+                Text.ReadDocument(file),
                 relative);
         }
     }
@@ -130,7 +130,7 @@ public sealed class RepositoryScanner
         var absolute = Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
         if (!File.Exists(absolute)) yield break;
 
-        foreach (var section in MarkdownSections.Split(File.ReadAllText(absolute)))
+        foreach (var section in MarkdownSections.Split(Text.ReadDocument(absolute)))
         {
             if (section.Body.Length == 0) continue;
             // A log is always the repository's own: canonical files are rules, knowledge and skills.
