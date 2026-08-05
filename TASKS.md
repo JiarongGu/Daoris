@@ -68,7 +68,8 @@ correct, and never loaded._
       local `doc-claims` (49% against canonical `claims-need-checks`, which now merges it)._
     - _**Local mechanics to preserve** in a new `repo-mechanics.md`: the hook-install requirement, the
       WebView2 browser-arguments trap, the WinForms STA/OLE handle trap, and the desktop verification
-      tooling. A draft is in the rehearsal fixture._
+      tooling. **The draft is `docs/adoption/shenora-repo-mechanics.md`**, tracked — it was written in
+      the rehearsal fixture, which is gitignored scratch and no place for something a later task needs._
     - _**Budget 40,000.** Core plus three packs plus the repository's own rules lands at 38,782 bytes;
       the 24,000 default cannot cover core + two packs + a repository's own material, which is worth
       knowing before the next adoption._
