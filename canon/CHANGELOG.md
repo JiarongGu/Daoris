@@ -11,6 +11,26 @@ network.
 
 ## Unreleased
 
+- **`repository-owns-its-work`** (new core rule) — a repository owns its own work; a change you need
+  elsewhere is a request in *that* repository's backlog, never an edit made from outside. The narrow
+  exceptions are initializing a repository with no owner yet, and a change so coupled that splitting it
+  would leave neither side working.
+  The reason is not etiquette. An outside edit is made by whoever knows that codebase least — that is
+  what being outside means — and it skips the review that repository would have applied. **The knowledge
+  is not portable but the request is:** why a rule is worded as it is, what was tried and rejected, which
+  constraint a file encodes, all of that stays with the repository, and a request carries the one thing
+  that does travel — what is needed, and why.
+  The mechanism is a **quest**: `daoris quest post` writes one into the receiving repository's backlog,
+  and `take` / `done` / `decline` move it through four states. Called a quest rather than a task or a
+  request because every backlog here is already full of tasks, and a colliding word would be ambiguous
+  in exactly the file where the distinction matters. It is also *taken* rather than assigned, which is
+  the property that keeps declining a real answer — and declining requires a reason, because a bare
+  refusal gives the asker nothing to act on.
+  Practice came before the rule: repositories here already kept "waiting on the sibling repository"
+  sections, arrived at independently. What was missing was a name, a place, and a readable status.
+  **Adopting repositories:** expect a `## Quests from other repositories` heading to appear in your
+  backlog when a sibling posts one. It is an ordinary checklist item — the checkbox is the coarse state,
+  so a repository that knows nothing about this still handles it correctly.
 - **`claims-need-checks`** (new core knowledge) — verify behavioural prose against the implementation
   rather than the design; ship the check in the same change; say which claims the gate did not cover.
   **Two repositories in the family derived this independently and from opposite ends** — one auditing

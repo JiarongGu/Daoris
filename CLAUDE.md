@@ -4,9 +4,14 @@
 
 ## What this is
 
-**Daoris** (道衍, "the unfolding of the way") is the **cross-repo engineering doctrine** for this family
-of projects: one canonical set of agent-facing rules and knowledge, materialized into each repository,
-kept from drifting, and improved from wherever the improvement was found.
+**Daoris** (道衍, "the unfolding of the way") is the **substrate for domain-owning agents to share
+knowledge and work** across this family of projects. Each repository has its own agent, which owns that
+domain; Daoris is how they hold one canon of doctrine between them, find where they have learned the
+same thing twice, and **ask each other for changes instead of reaching in**.
+
+That last part is the constraint everything else serves: **repositories are not developed across.** A
+change you need elsewhere is a request filed in that repository's own backlog, worked by whoever knows
+that code — because the *why* behind a codebase does not travel, and a request does (`daoris request`).
 
 The **CLI is a zero-dependency Node program plus a canon of markdown** — not a library, not a framework,
 and it makes no model calls at all. The **service** is the half that may use one: it indexes the family's
@@ -18,13 +23,15 @@ without naming a model; the deployment chooses one.** Running locally that may b
 machine; running as a shared service it may be something else entirely — and every model-backed feature
 must still do its useful part with no model at all, then say which tier answered.
 
-道衍 is *propagation and unfolding*: doctrine flows outward into the repositories, refinements flow back
-and evolve the canon. Both directions ship, because a one-way push would be distribution, not
-cultivation.
+道衍 is *propagation and unfolding*, and it runs in three directions. Doctrine flows **outward** into the
+repositories (`sync`); refinements flow **back** and evolve the canon (`upstream`); work flows
+**sideways** as quests into the backlog of whoever owns it (`quest`). All three ship: a one-way push
+would be distribution rather than cultivation, and without the third an agent that noticed something
+about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Eight commands, 118 tests, a canon of 7 core rules, 3 core
+**Built and proven; nothing published.** Nine commands, 125 tests, a canon of 8 core rules, 3 core
 knowledge documents, 5 core skills and 5 packs. `Daoris.Service` adds 58 and `Daoris.Devkit` 57.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
@@ -38,9 +45,9 @@ workflow (`tools/release-prep.mjs`); the desktop sibling burned a version outrig
 hand-bump leaves every file perfectly consistent and still wrong — consistency was never the property at
 risk, **authorship** was.
 
-- `README.md` — the consuming story: install, the eight commands, the manifest, the three layers.
+- `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D31) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D32) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

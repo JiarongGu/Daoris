@@ -10,6 +10,7 @@ import { commandUpstream } from '../src/upstream.mjs';
 import { commandInit, commandStatus } from '../src/commands.mjs';
 import { commandDoctor } from '../src/twins.mjs';
 import { commandAnalyze } from '../src/analyze.mjs';
+import { commandQuest } from '../src/quest.mjs';
 
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -25,11 +26,15 @@ const USAGE = `daoris <command> [options]
   status               human summary of packs, drift, and local files
   doctor               report local documents that look like canonical ones
                        under a different name (advisory; never fails)
+  quest <verb>         post work to ANOTHER repository's backlog, and track it:
+                       post <repo> · take <id> · done <id> · decline <id> · list.
+                       Repositories here do not develop across each other
 
 Options:
   --dry-run            print the plan; write nothing
   --force              overwrite locally-drifted files (sync only)
   --all                promote every drifted file (upstream only)
+  --title, --body      the quest (quest post); --reason (take/done/decline)
   --help, --version`;
 
 /** Commands are registered here as they land. @returns {number} process exit code */
@@ -42,6 +47,7 @@ const commands = {
   status: commandStatus,
   doctor: commandDoctor,
   analyze: commandAnalyze,
+  quest: commandQuest,
 };
 
 export function runCli(argv, cwd, write = console.log) {

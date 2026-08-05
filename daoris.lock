@@ -54,6 +54,13 @@
     },
     {
       "pack": "core",
+      "source": "core/rules/repository-owns-its-work.md",
+      "target": "rules/repository-owns-its-work.md",
+      "canonVersion": "0.0.1",
+      "sha256": "1842bde5f3f3ce965896cf98794b2176b668e773d02a9c5da190cdd8d1b73608"
+    },
+    {
+      "pack": "core",
       "source": "core/rules/sensitive-info.md",
       "target": "rules/sensitive-info.md",
       "canonVersion": "0.0.1",

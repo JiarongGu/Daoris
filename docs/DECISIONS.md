@@ -776,3 +776,45 @@ edit box** — it puts the change where review happens and leaves the judgement 
 
 **Consequence.** The service stays read-only, and its HTTP surface can be too, which removes
 authentication-for-writes from the first version entirely.
+
+## D32 — Cross-repository work is a quest, not an edit
+
+**Decided 2026-08-05.** Repositories in this family are not developed across. A change one repository
+needs from another is a **quest** posted to that repository's backlog, taken and answered there.
+`daoris quest post` writes it; `take`, `done` and `decline` move it through four states.
+
+**Why.** This is the design the family was already following informally, and the reason Daoris exists at
+all. One repository keeps a "waiting on the sibling repository" section in its backlog; another
+separates work needing a decision elsewhere from work it can do itself. Nobody agreed on that — it was
+arrived at independently, because it works.
+
+The argument is not etiquette. An outside edit is made by whoever knows that codebase *least*, which is
+what being outside means, and it skips the review that repository would have applied. More importantly:
+**the knowledge is not portable but the quest is.** Why a rule is worded as it is, what was tried and
+rejected, which constraint a file encodes — that stays with the repository, and an outsider will not
+reconstruct it before changing something. A quest carries the part that does travel: what is needed, and
+why. The judgement stays where the context is.
+
+**Why "quest".** Every backlog here is already full of tasks, so "task" or "request" would be ambiguous
+in exactly the file where the distinction matters. A quest is also *taken* rather than assigned, which
+is precisely the property that keeps declining a real answer — and declining requires a reason, because
+a bare refusal gives the asker nothing to act on.
+
+**Shape.** An ordinary checklist item, because that is what every backlog here already holds: the
+checkbox is the coarse state, and the italic line carries asker, date, status and reason. A repository
+that knows nothing about Daoris still handles one correctly. It appends under one fixed heading and
+never restructures — the backlogs are shaped too differently for a tool to file in the "right" section
+without being wrong in someone's repository the day they reorganise.
+
+**The service indexes them**, as their own entry kind. A quest reaches only the repository it was posted
+to, so "what has been asked of whom, and is anything sitting" is a question no single backlog can
+answer — which is exactly the kind of question a cross-repository index exists for.
+
+**Not chosen: sub-agents reaching into other repositories.** That is the shape this replaces. It scales
+badly, produces edits nobody reviewed, and throws away the domain knowledge that makes the change
+correct. Daoris is the substrate for domain-owning agents to share knowledge and work — not a way for
+one agent to work everywhere.
+
+**Exceptions, narrow:** initializing a repository that has no owner yet, and a change so coupled that
+splitting it would leave neither side working. A change that merely *touches* two repositories is not
+that — it is two changes and one quest.

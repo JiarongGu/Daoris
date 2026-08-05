@@ -82,6 +82,25 @@ public sealed class KnowledgeService(
         return await _convergence.FindAsync(options, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Every open quest in the family, newest-looking last, grouped by who owes it.
+    /// </summary>
+    /// <remarks>
+    /// A listing rather than a search, because the useful question has no query: *what has been asked
+    /// of whom, and is anything sitting.* A request only reaches the repository that received it, so
+    /// nobody can answer that by reading one backlog — which is the whole reason this is indexed
+    /// centrally rather than left where it was filed.
+    /// </remarks>
+    public async Task<IReadOnlyList<KnowledgeEntry>> OpenQuestsAsync(CancellationToken ct = default)
+    {
+        await EnsureIndexedAsync(ct).ConfigureAwait(false);
+        return (await store.AllAsync(ct).ConfigureAwait(false))
+            .Where(e => e.Kind == EntryKind.Quest)
+            .OrderBy(e => e.Repository, StringComparer.Ordinal)
+            .ThenBy(e => e.Title, StringComparer.Ordinal)
+            .ToList();
+    }
+
     /// <summary>Re-read every repository and rebuild the index.</summary>
     public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)
     {

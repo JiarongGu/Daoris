@@ -52,6 +52,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
 | `status` | Human summary: packs, versions, drift, local files, and what a pending update would change |
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
+| `quest` | Posts work to **another** repository's backlog and tracks it: `post` · `take` · `done` · `decline` · `list`. Writes one file there and commits nothing |
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
 promote every locally-edited canonical file at once.

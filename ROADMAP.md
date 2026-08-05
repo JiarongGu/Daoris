@@ -29,7 +29,7 @@ that workflow and is never edited by hand.
 
 ## 0.0.x — doctrine that installs, is checked, and flows back — **built**
 
-Eight commands, a canon of 7 core rules, 3 core knowledge documents, 5 core skills and 5 packs,
+Nine commands, a canon of 8 core rules, 3 core knowledge documents, 5 core skills and 5 packs,
 118 tests. Core installs everywhere;
 packs are named in the manifest; the repository's own files are invisible to the tool. Drift and adoption
 collisions are distinguished by provenance and both refuse. Retirement removes a rule from every

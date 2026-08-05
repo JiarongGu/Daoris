@@ -175,6 +175,32 @@ public sealed class KnowledgeTools(KnowledgeService service)
         }
     }
 
+    [McpServerTool(Name = "knowledge_quests")]
+    [Description(
+        "List the open quests other repositories have filed across the family — work one repository "
+        + "is waiting on another to do. Use it to see what this repository owes, or what is sitting "
+        + "unanswered elsewhere. Repositories in this family do not edit each other; they file requests.")]
+    public async Task<string> QuestsAsync(CancellationToken ct = default)
+    {
+        var quests = await service.OpenQuestsAsync(ct).ConfigureAwait(false);
+        if (quests.Count == 0) return "No open quests anywhere in the family.";
+
+        var text = new StringBuilder($"{quests.Count} open quest(s):\n");
+        foreach (var group in quests.GroupBy(r => r.Repository).OrderBy(g => g.Key, StringComparer.Ordinal))
+        {
+            text.AppendLine($"## {group.Key} owes {group.Count()}");
+            foreach (var quest in group)
+            {
+                text.AppendLine($"- **{quest.Title}** — `{quest.RelativePath}`");
+                text.AppendLine($"  {Text.Excerpt(quest.Body, null, 200)}");
+            }
+
+            text.AppendLine();
+        }
+
+        return text.ToString();
+    }
+
     [McpServerTool(Name = "knowledge_refresh")]
     [Description("Re-read every repository from disk and rebuild the index. Use after doctrine or decisions have changed; it takes about a second.")]
     public async Task<string> RefreshAsync(CancellationToken ct = default)

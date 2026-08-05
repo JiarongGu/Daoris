@@ -137,6 +137,12 @@ app.MapGet("/api/convergence", async (
         Suggestion: SuggestionFor(c)));
 });
 
+// What each repository OWES, as opposed to what it knows. A request reaches only the repository it was
+// filed in, so "is anything sitting" is a question no single backlog can answer.
+app.MapGet("/api/quests", async (ComposedService s, CancellationToken ct) =>
+    (await s.Service.OpenQuestsAsync(ct)).Select(r => new QuestResponse(
+        r.Id, r.Repository, r.Title, r.RelativePath, r.Body)));
+
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
     var report = await s.Service.RefreshAsync(ct);
@@ -201,6 +207,7 @@ public sealed record ConvergenceEntryResponse(
 public sealed record ConvergenceResponse(
     string Method, double Similarity, IReadOnlyList<string> Repositories,
     IReadOnlyList<ConvergenceEntryResponse> Entries, string Suggestion);
+public sealed record QuestResponse(string Id, string Repository, string Title, string Path, string Body);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
 public sealed record ErrorResponse(string Error);
 
@@ -209,6 +216,7 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(IEnumerable<HitResponse>))]
 [JsonSerializable(typeof(EntryResponse))]
 [JsonSerializable(typeof(IEnumerable<ConvergenceResponse>))]
+[JsonSerializable(typeof(IEnumerable<QuestResponse>))]
 [JsonSerializable(typeof(RefreshResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;
