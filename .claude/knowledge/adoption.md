@@ -48,6 +48,30 @@ The tool **cannot** find these. A repository's `minimise-bash-prompts` and canon
 by design. After syncing, read the generated index end to end and look for two rows saying the same
 thing. Delete the twin, and check whether the repository's entry document referenced it by name.
 
+**`doctor` narrows this job; it does not replace it.** It compares vocabulary, so it finds a twin that
+was *reworded* and misses one that was *rethought*. The clearest case in the survey — a rule present in
+three repositories whose first half is canonical `no-tmp-for-repo-files` and whose second half is
+canonical `file-tool-discipline` — scores **24% and 23%**, inside the unrelated band, because it reaches
+both principles through an entirely different vocabulary (allow-lists, tooling directories, a `cd`
+prefix). No threshold separates that from an unrelated pair, so lowering one buys noise (D17).
+
+**A merged twin is not deleted.** Two harder shapes turn up, and the instinct to delete is wrong for
+both:
+
+- **One local rule that is two canonical rules combined.** Both halves are now canonical, so the file
+  goes — but read it for the third thing it is carrying. That example also documents which allow-list
+  entries exist and how a `cd` prefix defeats them, which is this repository's own mechanics and is
+  nowhere in the canon. Move that to a local document *before* deleting, or adoption quietly costs the
+  repository something it knew.
+- **One local rule that is mostly canonical plus a genuine deep dive.** Retire the always-loaded rule and
+  let the deep dive live in the on-demand tier, where it belongs — it was never something every task
+  needed. This is the shape that pays: it removes always-loaded bytes without losing a sentence.
+
+The test for anything you are about to delete is not "is this canonical now" but **"is every line of it
+somewhere else."** Check each section against the canon *and* the repository's own knowledge tier, and
+move what only exists here. A twin removed correctly costs nothing; one removed carelessly loses exactly
+the hard-won specifics that were never going to be canonical.
+
 ### 5. `sync --force`, then `index`, then `check`
 
 `--force` here means "yes, take the canonical version" — a deliberate answer to a question that was

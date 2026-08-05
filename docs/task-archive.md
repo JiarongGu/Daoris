@@ -311,3 +311,23 @@ Two things the first real run found, both fixed with tests:
 without explicit user approval", and a rule does not stop applying because a different repository's task
 list wanted the work done.
 
+## CANON6 — the merged renamed twin (2026-08-05)
+
+- **CANON6 — `scripts-live-in-repo` is a merged renamed twin of two core rules.**
+  ✅ done 2026-08-05 — closed as **no new core rule**, with the finding written into the adoption
+  playbook, which is where it is actually needed.
+
+  The investigation had already concluded: both halves are canonical (`no-tmp-for-repo-files` and
+  `file-tool-discipline`), and `doctor` cannot find it — 24% and 23%, inside the unrelated band, because
+  it reaches both principles through a different vocabulary entirely. No threshold separates that from
+  an unrelated pair (D17).
+
+  What was still open was the *instruction*. The adoption document said "delete the twin", which is
+  right for a reworded rule and **actively wrong here**: that file is also the only place documenting
+  which allow-list entries exist and how a `cd` prefix defeats them, and deleting it would cost the
+  adopting repository something it knew. §4 now covers both merged shapes, and states the real test —
+  not "is this canonical now" but "is every line of it somewhere else."
+
+  Immediately load-bearing: the Lyntai close-out on the same day retired an 8.3 KB rule by exactly that
+  test, and the two things it found nowhere else were preserved instead of lost.
+

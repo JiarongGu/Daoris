@@ -52,14 +52,6 @@ correct, and never loaded._
   them would install doctrine for a workflow that may be about to change. Decide by trying a generator on
   one repository first. If the generated route wins, what stays canonical is much smaller — the *review*
   of generated output, not its production. `post-feature` and `fix-log` are done.
-- [ ] **CANON6 — `scripts-live-in-repo` is a merged renamed twin of two core rules.** Present in 3
-  repositories; its first half is canonical `no-tmp-for-repo-files` and its second half is canonical
-  `file-tool-discipline`. No new core rule — but those repositories will carry both, and the genuinely
-  local mechanics it also holds (allow-list rules, a `cd` prefix defeating them) must be preserved
-  locally rather than dropped. _Verified 2026-08-05: `doctor` does **not** flag it, at 24% and 23%, and
-  retuning cannot fix that — it reaches the same principle in an entirely different vocabulary (D17).
-  **This one is a manual step at adoption**, and it is the reason the adoption document's "hunt renamed
-  twins by hand" instruction stays._
 - [ ] **CANON2 — pack candidates with two repositories agreeing.** From the survey: `desktop-app`
   (screenshot hygiene, desktop testing, UI layering — a private sibling pair), `web-webview` (WebView2
   hosting + IPC contracts, from Shenora), `desktop-winforms` (the WinForms shell, from Shenora),
