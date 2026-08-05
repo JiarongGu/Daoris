@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { readCanon } from '../src/canon.mjs';
 import { parseFrontmatter, SKILL_FIELDS } from '../src/document.mjs';
-import { readText } from '../src/fsx.mjs';
+import { listFiles, readText } from '../src/fsx.mjs';
 import { readManifest, readLock } from '../src/config.mjs';
-import { inspect } from '../src/drift.mjs';
+import { inspect, commandCheck } from '../src/drift.mjs';
 
 // This package is src/Daoris.Cli; the canon and daoris's own doctrine live at
 // the workspace root, because they are the project's data rather than the CLI's.
@@ -87,4 +87,45 @@ test('daoris holds its own doctrine and checks clean', () => {
   assert.ok(lock, 'run: node bin/daoris.mjs sync');
   const report = inspect({ root: repoRoot, manifest: readManifest(repoRoot), lock });
   assert.equal(report.ok, true, JSON.stringify(report, null, 2));
+});
+
+/**
+ * D8's offline guarantee, asserted rather than asserted-about.
+ *
+ * CLAUDE.md has claimed both halves of this for a while and neither was enforced by anything. A
+ * documented guarantee with no test is worse than an undocumented one: it reads as verified, so nobody
+ * checks it, and it stays true only as long as nobody writes the obvious convenience feature.
+ */
+test('the CLI contains no network primitive at all', () => {
+  const forbidden = /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(|(?:^|[^\w.])require\(['"]https?['"]\)|from\s+['"]node:https?['"]/;
+  for (const dir of ['src', 'bin']) {
+    for (const file of listFiles(join(cliRoot, dir), (n) => n.endsWith('.mjs'))) {
+      const text = readText(join(cliRoot, dir, file));
+      assert.equal(forbidden.test(text), false, `${dir}/${file} reaches the network`);
+    }
+  }
+});
+
+/**
+ * `check` verifies against the LOCK, which already carries a hash per file — so it needs neither the
+ * canon nor a network to answer. That is what makes it usable in a hook or an air-gapped build, and it
+ * is the property most easily lost by an innocent-looking "just re-read the canon to compare" change.
+ */
+test('check passes with no canon present at all', () => {
+  const previous = process.env.DAORIS_CANON;
+  // Points the resolver at a path that does not exist rather than deleting the real canon: the
+  // guarantee is about `check` never NEEDING the canon, and a test that had to destroy the tree to
+  // prove it could not run beside the others.
+  process.env.DAORIS_CANON = join(cliRoot, '_fixtures', 'no-such-canon');
+  try {
+    const out = [];
+    // No `packageRoot` on purpose — commandCheck does not accept one, which is the guarantee stated
+    // as a signature. The env var covers the other route to a canon, so a future version that grew
+    // either one would fail here rather than quietly acquiring a dependency.
+    const code = commandCheck({ root: repoRoot, write: (s) => out.push(s) });
+    assert.equal(code, 0, out.join('\n'));
+  } finally {
+    if (previous === undefined) delete process.env.DAORIS_CANON;
+    else process.env.DAORIS_CANON = previous;
+  }
 });
