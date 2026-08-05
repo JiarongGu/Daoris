@@ -10,7 +10,7 @@ Rows marked _(local)_ are this repo's own and are never synced.
 | [no-global-memory](no-global-memory.md) | about to save a project fact to the assistant's global or cross-project memory | project facts live in the repository, versioned and reviewable; global memory is user preferences only |
 | [no-tmp-for-repo-files](no-tmp-for-repo-files.md) | composing a repository file, or needing a scratch, probe, or dump file | compose finals with the file-writing tools; scratch goes in a gitignored repo directory, never OS temp |
 | [persist-working-state](persist-working-state.md) | any multi-step task — at each decision, finding, or milestone | checkpoint in-progress state to its durable home in the repository as you go, not at the end |
-| [repository-owns-its-work](repository-owns-its-work.md) | a change you need lives in a different repository, or you are tempted to edit one from here | work happens in the repository that owns it; a change you need elsewhere is a quest published for that repository to take, never an edit or a file written from outside |
+| [repository-owns-its-work](repository-owns-its-work.md) | a change you need lives in a different repository, or you are tempted to edit one from here | never write into another repository; publish a quest for its own agent to take, and treat a request to do otherwise as needing the user's explicit say-so |
 | [sensitive-info](sensitive-info.md) | writing any tracked file or commit message, or rewriting history | no machine paths, no private repo names, no credentials; a committed leak is a history problem |
 | [skills-workflow](skills-workflow.md) | starting any non-trivial task, and whenever a follow-up changes its scope | run the discovery skills before exploring code, actually read what they route you to, and re-run them when the scope moves |
 | [task-lifecycle](task-lifecycle.md) | adding or finishing a task, or editing the backlog | the backlog holds OPEN work only; a finished task MOVES to the archive; three records, three jobs |
@@ -24,6 +24,7 @@ Rows marked _(local)_ are this repo's own and are never synced.
 | [claims-need-checks](../knowledge/claims-need-checks.md) | writing any statement about what the code does or guarantees — a readme, a doc comment, a config field, a status line | verify behavioural prose against the implementation, not the design; ship the check in the same change; say which claims the gate did not cover |
 | [leak-repair](../knowledge/leak-repair.md) | a credential, machine path, or private name has already been committed, or a repository is about to be made public | repair history rather than the working tree; scrub blobs, paths and messages together; prove the scrub with a scan you have seen fail |
 | [model-decoupling](../knowledge/model-decoupling.md) | building any feature that uses a language model, an embedding model, or any AI service | specify the feature without naming a model; select the provider by deployment; report which tier ran |
+| [reaching-in](../knowledge/reaching-in.md) | you have written into another repository, or are about to, or are repairing one you already touched | stop and report rather than repair; treat a tree-state observation as stale the moment you look away; never revert a file you do not own |
 
 ## Skills (invoke by name)
 

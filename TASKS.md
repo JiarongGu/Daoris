@@ -13,7 +13,7 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## Active backlog
 
-_**`Daoris.Cli` is built and proven** — nine commands, 119 tests, a canon of 8 core rules, 3 core
+_**`Daoris.Cli` is built and proven** — nine commands, 120 tests, a canon of 8 core rules, 4 core
 knowledge documents, 5 core skills and 5 packs, adopted into Lyntai with its 1563 tests still green.
 `npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
 searches the family's knowledge and holds its quests and registry — 70 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 57
@@ -72,10 +72,21 @@ correct, and never loaded._
   registry with no `domain`, so a sibling cannot tell what is worth asking of it. Filling that in is
   Lyntai's own work and belongs to Lyntai — this entry exists so the gap is visible from here, not so it
   gets fixed from here.
-- [ ] **REH1 — the release rehearsal reported 45/52 once.** Two runs immediately after it, with nothing
-  changed in between, reported 52/52, and it has passed every time since. Recorded rather than
-  explained. A gate that fails once and passes afterwards is worth watching before it is trusted, and
-  the cause is more likely to be found by catching it again than by reasoning about it now.
+- [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen **twice**, and narrowed:
+
+    - **Always exactly 7 failures**, never a different count. Phase 6 — the canon-upgrade path — has
+      exactly 7 checks (`status` reports an update · names the changed file · prints why · quotes the
+      changelog · `sync` applies it · the new wording is on disk · `check` is clean). So the whole
+      phase fails, which is a broken precondition rather than a flaky assertion.
+    - **Both times it ran immediately after canon files were edited and synced** in the same shell
+      command.
+    - **Not reproducible on demand.** Tried `verify` then `rehearse` chained, three back-to-back runs,
+      and a standalone run: 52/52 every time. The obvious hypothesis — that editing the real
+      `canon/CHANGELOG.md` interferes — does not hold, because phase 6 writes its own changelog into a
+      `canon-v2` fixture and never reads the real one.
+
+  Next time it fails, capture the log *before* re-running anything: the phase-6 output names which of
+  the seven went first, and that is the piece still missing. Do not tag a release while this is open.
 - [ ] **SVC1 — the service has no persistent deployment.** Everything is verified by starting it,
   driving it, and stopping it. Quests and registrations live in SQLite and survive, but nothing runs
   between sessions — so no quest can actually be delivered yet. This is what CANON3 waits on.

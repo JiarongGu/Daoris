@@ -8,7 +8,7 @@
       "source": "core/knowledge/claims-need-checks.md",
       "target": "knowledge/claims-need-checks.md",
       "canonVersion": "0.0.1",
-      "sha256": "752c458d66568bf99d1a00c7f6a838e6274b7a7461c453aae341a9481159f8c7"
+      "sha256": "1672192d710d6b5f47303486f631145318d8cc6fbf1939f6ea96dbd1a6551682"
     },
     {
       "pack": "core",
@@ -23,6 +23,13 @@
       "target": "knowledge/model-decoupling.md",
       "canonVersion": "0.0.1",
       "sha256": "c06fb90c762c0864bc964c9a374b37f0e5676b42cc53bce76d769ccf4c46ab5b"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/reaching-in.md",
+      "target": "knowledge/reaching-in.md",
+      "canonVersion": "0.0.1",
+      "sha256": "16870f3f131933365ad5f8a581a66740e76433db7b3e04d1aad9bf0fb390f62d"
     },
     {
       "pack": "core",
@@ -57,7 +64,7 @@
       "source": "core/rules/repository-owns-its-work.md",
       "target": "rules/repository-owns-its-work.md",
       "canonVersion": "0.0.1",
-      "sha256": "556e2a81b0e459c4fd54e5bbcd5ed5f5a2a302002f37b2e949d0b451ef6cc339"
+      "sha256": "06a0d10cd32ee81c9a865ef81ad7c062052d5072a953bb029fc90e6a168a4269"
     },
     {
       "pack": "core",

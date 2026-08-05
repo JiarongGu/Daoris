@@ -49,12 +49,36 @@ were clean and everything wrong was recent.
 - **Same change, or state the gap.** "Never touches the network" earns a check that fails when something
   does. A stated gap is honest and gets fixed; an implied guarantee is neither.
 - **A check you have not watched fail proves nothing.** Break the behaviour, see it go red, restore it.
-  Until then it is indistinguishable from a check that tests nothing.
+  Until then it is indistinguishable from a check that tests nothing. See below — the sabotage itself
+  fails silently more often than people expect.
 - **A surprising behaviour gets a test, not a corrected comment.** A comment that contradicts intuition
   gets "fixed" back by the next reader who finds it surprising. Only a test survives that.
 - **Say which claims the gate did not cover.** A green build on a documentation-only change proves
   nothing about the words. Report that, rather than letting the green imply the prose was checked.
 - **A parsed-and-unused input is a claim.** A field that exists says it does something.
+
+### How a check passes without checking
+
+Watching a check fail is the discipline. The trap is that **the sabotage can fail silently too**, and
+then a green run is read as proof. These four shapes account for most of it, and each has been hit for
+real:
+
+- **The sabotage did not apply.** A scripted edit whose pattern no longer matched changed nothing, the
+  check passed, and that was recorded as evidence. If you break something, *confirm the file changed*
+  before believing the result — count the substitutions, or read the line back.
+- **The sabotage used a form the check does not look for.** A guard that scanned one import syntax was
+  "proven" by breaking it with another. The check was real and the proof was not. Sabotage in the shape
+  a *realistic* regression would take, and preferably in more than one.
+- **The thing under test was not the thing that ran.** A build emitted to an unexpected directory and
+  the entry point silently fell back to sources: every command worked, the exit code was zero, and
+  nothing built was being exercised. Assert on the artefact, not on the exit code of something that may
+  have substituted for it.
+- **The runner quietly saw fewer inputs.** A file-matching pattern behaved differently on one platform
+  and dropped a test file; the suite stayed green and the count fell by one. Watch the *count*, not just
+  the colour — a suite that shrinks is a suite that stopped asking something.
+
+The common thread: **every one of them was green first.** Treat a green that arrives faster or more
+easily than expected as a question rather than an answer.
 
 ### The expensive words
 

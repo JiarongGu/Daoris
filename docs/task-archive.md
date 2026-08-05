@@ -724,3 +724,44 @@ Watching a check fail before trusting it. It caught a memo that changed nothing 
 elsewhere), an import-walk that missed bare side-effect imports, a build that emitted to the wrong
 directory and silently ran sources instead, and a test-glob that quietly dropped a file on Windows.
 Every one of those looked green first.
+
+## Hardening the day's own failures into doctrine (2026-08-05)
+
+The point of Daoris is codifying how the work is done, so the session's own mistakes are the material
+rather than a postmortem. Three went into the canon and one into a gate.
+
+**`repository-owns-its-work` became absolute.** It said "narrow exceptions: initialization, and a change
+so coupled that splitting it would leave neither side working". With a formal quest system neither
+survives — a coupled change is two changes and a quest. It now reads **never write into another
+repository**, with a request to do otherwise being the user's call to make explicitly rather than a
+judgement to reach alone.
+
+**`reaching-in` is new core knowledge**, kept because the failure was not the first edit but everything
+after it. Feedback from the affected repository's own session said it plainly: its backlog was rewritten
+three times, once silently discarding a commit-ready edit.
+
+The lessons are about reasoning, not tooling. A tree-state observation **expires the moment you look
+away** if anyone else is working there — the agent checked "clean" at session start and relied on it an
+hour later. The repair is **another outside edit** with less information against a tree that has moved.
+And **never revert a file you do not own**: reverting is not an undo, it discards uncommitted work you
+cannot see, and that rule was already canonical elsewhere and known.
+
+**`claims-need-checks` gained "how a check passes without checking"** — the four shapes hit for real
+this session: the sabotage that did not apply, the sabotage in a form the check does not look for, the
+artefact that was not the thing that ran, and the runner that quietly saw fewer inputs. Every one was
+green first.
+
+**And a gate, because doctrine that only describes a violation is weaker than one that prevents it.**
+`containment.test.ts` runs every command against one repository with a sibling beside it and requires
+the sibling byte-for-byte unchanged. Verified by sabotage twice: the first attempt also broke the
+command under test, so its 10 failures proved nothing about containment; a surgical version failed
+exactly one test, which is the proof.
+
+**The general form, worth carrying:** a tool that enforces a rule is the most likely thing to break it,
+because whoever builds it is thinking about the mechanism rather than the principle. This edit was made
+by the feature that shipped the rule against it, in the same change.
+
+**A note on the budget gate.** The hardened rule reached 5,191 bytes — nearly double the next-largest
+core rule — and `check` refused it. The fix was to split principle from incident, not to raise the
+limit: the rule is 2,610 bytes and the narrative is on-demand knowledge. The gate did exactly what D28
+said it was for.

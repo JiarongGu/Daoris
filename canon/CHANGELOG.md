@@ -11,10 +11,20 @@ network.
 
 ## Unreleased
 
-- **`repository-owns-its-work`** (new core rule) — a repository owns its own work; a change you need
-  elsewhere is a request in *that* repository's backlog, never an edit made from outside. The narrow
-  exceptions are initializing a repository with no owner yet, and a change so coupled that splitting it
-  would leave neither side working.
+- **`repository-owns-its-work`** (new core rule) — **never write into another repository.** Not its
+  code, not its files, not its backlog. Publish a quest and let its own agent take it. There is no
+  remaining case where writing across is the answer, because the quest system is the answer; a request
+  to do it anyway is the user's call to make explicitly, not a judgement to reach alone.
+- **`reaching-in`** (new core knowledge) — what happens when you do it anyway, kept because the failure
+  was not the first edit but everything that followed. One file written into a sibling; a removal script
+  that over-deleted 171 lines; a repair that restored from the last commit and destroyed an unstaged
+  edit the sibling's own session was about to commit. Three writes, one piece of work lost, every step
+  well-intentioned and each worse than the last.
+  The lessons are about reasoning rather than tooling: **a tree-state observation expires the moment you
+  look away** if anyone else is working there, **the repair is another outside edit** made with less
+  information, and **never revert a file you do not own** — reverting is not an undo and silently
+  discards uncommitted work you cannot see. If you have already written, stop and report it; the owner
+  can undo it with context you do not have.
   The reason is not etiquette. An outside edit is made by whoever knows that codebase least — that is
   what being outside means — and it skips the review that repository would have applied. **The knowledge
   is not portable but the request is:** why a rule is worded as it is, what was tried and rejected, which
