@@ -331,3 +331,24 @@ list wanted the work done.
   Immediately load-bearing: the Lyntai close-out on the same day retired an 8.3 KB rule by exactly that
   test, and the two things it found nowhere else were preserved instead of lost.
 
+## REL3 — first push (2026-08-05)
+
+- **REL3 — push, then decide the branch name first.**
+  ✅ done 2026-08-05 — renamed `master` → `main` and pushed to `origin`. The remote was empty, so the
+  rename rewrote nothing and broke no clone; after a first push it would have broken every one.
+  `main` because GitHub creates new repositories with it and this repository's own notes already
+  treated it as the default, leaving `master` the odd one out.
+
+  **History was audited before the push, not just the working tree.** That is the one-way door: an edit
+  hides a leak from the current checkout and does nothing about the copy in history, and after a push
+  there are copies you do not control. All 15 patterns — 6 structural and 9 private — run against every
+  commit message, every path that ever existed, and all 932 reachable objects across 73 commits. Clean
+  on every axis.
+
+  This is the audit the sensitive-scan's own documentation describes as "run at moments, not routinely:
+  before making a repo public". `daoris-devkit` does not implement `--history` yet; it was done by hand
+  here, which is itself the argument for adding the mode.
+
+  Nothing is published to npm — the tag and the release workflow remain deliberately unrun while
+  `Daoris.Web` does not exist.
+
