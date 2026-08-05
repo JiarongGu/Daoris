@@ -28,22 +28,20 @@ _**Pushed 2026-08-05** to `main`, after auditing every commit and object against
 **Nothing is published to npm**, deliberately: the surface moved a great deal in one day, and a version
 published now would pin decisions that are three hours old._
 
-## Part 1 — quests to publish
+## Part 1 — asking other repositories (not yet)
 
-_Publishing is Daoris's job; the work itself belongs to whoever receives it. Both are prepared and wait
-on a running service (SVC1). **Neither gets hand-delivered** — that was tried once, and
-`.claude/knowledge/reaching-in.md` is what came of it._
+_**Nothing is asked of another repository until Daoris is properly finished.** It is `0.0.x`, nothing is
+published, and the surface moved a great deal in a single day — `domain`, `connect`, quests and the
+registry are all hours old. Asking a sibling to adopt or to declare anything now spends their time on a
+shape that is still moving, and it is Daoris's job to be stable first._
 
-- [ ] **QUEST1 — ask `Shenora` to adopt the canon.** Rehearsed, so publishing is mechanical: 6
-  collisions (`persist-working-state`, `sensitive-info`, `skills-workflow`, and the `doc-loader`,
-  `fix-log`, `pattern-finder` skills), 2 twins to retire (`windows-dev-gotchas` at 47% against canonical
-  `windows-machine`; `doc-claims` at 49% against `claims-need-checks`, which now merges it), local
-  mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `check` clean at 38,782
-  bytes. `web-webview` and `durable-jobs` came out of reading its doctrine and are ready for it.
-  _It must adopt before it can be addressed (D34), so this may go as an invitation first._
-- [ ] **QUEST2 — ask `Lyntai` to declare a domain.** It carries the canon and shows in the registry as
-  adopted with nothing said about what it owns or accepts, so a sibling cannot tell what is worth asking
-  of it. One `domain` block in its manifest, then `daoris connect`.
+_The Shenora adoption is rehearsed and the notes keep: 6 collisions, 2 twins to retire, local mechanics
+drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `check` clean at 38,782 bytes, and
+`web-webview` + `durable-jobs` ready for it. None of that expires. It waits._
+
+- [ ] **ASK1 — revisit once Daoris is released and stable.** Then, and only then, publish the Shenora
+  invitation and ask Lyntai to declare a domain. Gate: a tagged release, a surface that has held still
+  for more than a session, and a running service (SVC1).
 
 ## Part 2 — other agent harnesses (deliberately not built)
 
