@@ -58,10 +58,16 @@ export function commandInit(
     packs: [],
     target: DEFAULT_TARGET,
     coreBudgetBytes: 30000,
+    // Scaffolded empty and deliberately so. Filling it in is how a repository registers what it is and
+    // what it can be asked for; a guess written by the tool would be worse than a blank someone
+    // notices, because nobody edits a field that already looks answered.
+    domain: { summary: '', owns: [], accepts: [] },
   });
 
   write(`daoris: wrote ${MANIFEST_FILE} (core only — add packs deliberately)`);
   write('');
+  write('  fill in `domain` — what this repo is, what it owns, what it accepts. It is how');
+  write('  siblings know what is worth asking of you.');
   write('  available packs:');
   for (const pack of [...canon.packs.values()].filter((entry) => entry.name !== 'core')) {
     write(`    ${pack.name.padEnd(20)} — ${pack.description}`);

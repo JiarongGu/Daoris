@@ -100,7 +100,8 @@ public static class ServiceFactory
         }
 
         var service = new KnowledgeService(
-            store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors);
+            store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
+            new Registry(options.RepositoryRoot));
 
         return new ComposedService(service, quests, service.SemanticEnabled) { Store = store };
     }

@@ -75,6 +75,25 @@ export interface DriftReport {
   ok: boolean;
 }
 
+/**
+ * What a repository is, and what it can usefully be asked for.
+ *
+ * This is the registration a repository makes with the family: the service reads it while indexing, so
+ * an agent elsewhere can discover who exists, what each one owns, and what kind of quest is worth
+ * addressing to it. Without it, publishing a quest is guessing what the other side does — which is the
+ * same "the knowledge does not travel" problem the whole arrangement exists to solve.
+ *
+ * Nouns only, like everything else in the manifest (D26): what this repository IS, never a command.
+ */
+export interface Domain {
+  /** One line: what this repository is, for someone who has never opened it. */
+  summary: string;
+  /** The areas it owns. A change in one of these belongs here rather than anywhere else. */
+  owns: string[];
+  /** Kinds of quest it welcomes. Guidance for the asker, not a contract. */
+  accepts: string[];
+}
+
 /** `daoris.json` — inert data, deliberately (D26). */
 export interface Manifest {
   source: string;
@@ -82,6 +101,8 @@ export interface Manifest {
   harness: string;
   target: string;
   coreBudgetBytes: number;
+  /** Absent until a repository registers itself; a quest can still be addressed, less usefully. */
+  domain?: Domain;
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
 }

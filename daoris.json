@@ -2,5 +2,21 @@
   "source": "github:JiarongGu/Daoris#v0.0.1",
   "packs": [],
   "target": ".claude",
-  "coreBudgetBytes": 24000
+  "coreBudgetBytes": 24000,
+  "domain": {
+    "summary": "The cross-repo engineering doctrine and knowledge substrate for this family: one canon of agent-facing rules, a service that indexes what every repository has learned, and the quest system they use to ask each other for work.",
+    "owns": [
+      "the canon \u2014 core rules, knowledge and skills, and the packs",
+      "the doctrine CLI: sync, check, upstream, analyze, doctor",
+      "the knowledge service: indexing, search, convergence detection, the registry",
+      "quests \u2014 how one repository asks another for work",
+      "the shared dev toolkit and its universal gates"
+    ],
+    "accepts": [
+      "a rule or knowledge document that two or more repositories derived independently",
+      "a pack proposal, with the repositories that agree on it",
+      "a correction to canonical doctrine, with the evidence that it is wrong",
+      "a gap in the CLI, service or devkit, with the case that exposes it"
+    ]
+  }
 }

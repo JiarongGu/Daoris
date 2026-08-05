@@ -19,6 +19,8 @@ namespace Daoris.Knowledge.Mcp;
 [McpServerToolType]
 public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests)
 {
+    private const string NEWLINE = "\n";
+
     [McpServerTool(Name = "knowledge_search")]
     [Description(
         "Search engineering knowledge across every repository in this family: decisions and their "
@@ -175,6 +177,39 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests)
         }
     }
 
+    [McpServerTool(Name = "registry")]
+    [Description(
+        "Who is in this family, what each repository owns, and what kind of quest is worth addressing "
+        + "to it. Use it BEFORE publishing a quest, and whenever a problem might belong to someone "
+        + "else — search answers 'has anyone solved this', this answers 'whose problem is this'.")]
+    public async Task<string> RegistryAsync(CancellationToken ct = default)
+    {
+        var registered = await service.RegistryAsync(ct).ConfigureAwait(false);
+        if (registered.Count == 0) return "Nothing under the knowledge root. Call `knowledge_refresh` first.";
+
+        var text = new StringBuilder();
+        foreach (var entry in registered.Where(r => r.Adopted))
+        {
+            text.AppendLine($"## `{entry.Repository}`{(entry.Registered ? "" : "  ⚠ has not declared a domain")}");
+            if (entry.Summary is { Length: > 0 }) text.AppendLine(entry.Summary);
+            if (entry.Owns.Count > 0) text.AppendLine($"- **owns:** {string.Join("; ", entry.Owns)}");
+            if (entry.Accepts.Count > 0) text.AppendLine($"- **accepts:** {string.Join("; ", entry.Accepts)}");
+            if (entry.Packs.Count > 0) text.AppendLine($"- packs: {string.Join(", ", entry.Packs)}");
+            text.AppendLine($"- {entry.Entries} indexed entries");
+            text.AppendLine();
+        }
+
+        var others = registered.Where(r => !r.Adopted).Select(r => r.Repository).ToList();
+        if (others.Count > 0)
+        {
+            // Listed rather than hidden: "who cannot be asked yet" is the same question, and silence
+            // reads as the repository not existing.
+            text.AppendLine($"_Not adopted, so not addressable: {string.Join(", ", others)}._");
+        }
+
+        return text.ToString();
+    }
+
     [McpServerTool(Name = "quest_publish")]
     [Description(
         "Ask ANOTHER repository in this family to do something. Repositories here are not developed "
@@ -195,19 +230,28 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests)
             return "That is the repository you are in — a quest is work for someone else. Use its own backlog.";
         }
 
-        var adopted = await service.AdoptedRepositoriesAsync(ct).ConfigureAwait(false);
-        if (!adopted.Contains(to))
+        var registered = await service.RegistryAsync(ct).ConfigureAwait(false);
+        var target = registered.FirstOrDefault(r =>
+            string.Equals(r.Repository, to, StringComparison.OrdinalIgnoreCase));
+
+        if (target is null || !target.Adopted)
         {
             // A quest for a repository with no client has nobody to read it, so it would sit in a queue
             // that is never opened. Saying so now beats letting it look delivered.
-            return $"`{to}` has not adopted Daoris, so it has no way to see a quest. Known adopters: "
-                 + $"{string.Join(", ", adopted.OrderBy(r => r, StringComparer.Ordinal))}.";
+            var adopters = registered.Where(r => r.Adopted).Select(r => r.Repository);
+            return $"`{to}` has not adopted Daoris, so it has no way to see a quest. Addressable: "
+                 + $"{string.Join(", ", adopters)}.";
         }
 
         var quest = await quests.PublishAsync(from, to, title, body, DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
 
-        return $"Published quest `#{quest.Id}` to `{quest.To}` — {quest.Status}.\n\n"
+        var caution = target.Registered
+            ? ""
+            : $"{NEWLINE}{NEWLINE}⚠ `{target.Repository}` has not declared what it owns or accepts, so this may not be "
+              + "its problem. Worth checking before you rely on it.";
+
+        return $"Published quest `#{quest.Id}` to `{quest.To}` — {quest.Status}.{caution}\n\n"
              + "It is held by the service, not written into that repository. Its agent will see it and "
              + "decide. Do not make the change yourself.";
     }

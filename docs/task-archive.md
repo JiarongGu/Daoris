@@ -644,3 +644,38 @@ and two files would be two things to back up and two that can disagree about whi
 **The two quests I had already written into siblings were removed**, and I am not touching those
 repositories again — which is the rule, applied to myself. Removing one of them, my own script
 over-deleted and I restored the file from HEAD rather than trying to repair it by hand.
+
+## The registry — what makes a quest addressable (2026-08-05)
+
+Quests alone were not enough. Without knowing what a repository owns, an agent publishing one is
+guessing what the other side does — the same *"the knowledge does not travel"* problem the arrangement
+exists to solve, moved one step earlier.
+
+Each repository now declares a `domain` in its manifest: a summary, the areas it **owns**, the kinds of
+quest it **accepts**. The service reads those while indexing and serves them as a registry, recorded as
+**D34**.
+
+**Search answers "has anyone solved this"; the registry answers "whose problem is this."** Only the
+second tells you where a change belongs, which is what the quest system needed.
+
+Declared in the manifest because it is data — nouns, what the repository *is* — so it belongs where
+D26 already put the inert half. Next to the thing it describes, reviewed by the people it describes; a
+central list would drift the moment a repository changed.
+
+Three properties, each with a reason:
+
+- **Adoption gates addressing, declaration does not.** Publishing to a non-adopter is refused and names
+  who *is* addressable. Publishing to an adopter that declared nothing succeeds with a warning — refusing
+  until a form is filled in would make adoption a chore, and this all rests on adoption being easy.
+- **Non-adopters are listed and marked.** "Who cannot be asked yet" is the same question as "who can".
+- **An unparseable manifest still appears.** That is the repository's own problem and its own tooling
+  will say so; it is not a reason to drop it off the map.
+
+**Driven end to end against the real family**: 458 entries from 11 repositories, Daoris registered with
+its own domain, Lyntai shown as adopted-but-undeclared, ten non-adopters listed as unaddressable, a
+publish to one refused by name, and a publish to Lyntai accepted with the caution. **Nothing was written
+into any repository** — which was the whole point of the correction.
+
+One thing to watch: the release rehearsal reported 45/52 on a single run and 52/52 on the two after it,
+with nothing changed in between. Recorded rather than explained; a gate that fails once and passes twice
+is a gate worth watching before it is trusted.

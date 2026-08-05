@@ -20,7 +20,10 @@ public sealed class KnowledgeService(
     IKnowledgeSource source,
     IDisclosurePolicy? disclosure = null,
     Lyntai.Embeddings.IEmbedder? embedder = null,
-    Lyntai.Memory.IVectorStore? vectors = null)
+    Lyntai.Memory.IVectorStore? vectors = null,
+    // Last and optional: a service composed without one still searches and still finds convergence —
+    // it simply cannot say who is out there, and reports an empty family rather than refusing to start.
+    Registry? registry = null)
 {
     private readonly KnowledgeIndex _index = new(store, disclosure);
 
@@ -83,20 +86,22 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
-    /// Repositories that have adopted Daoris, and so have a client that can see a quest.
+    /// Who is out there, what each owns, and what is worth asking of them.
     /// </summary>
     /// <remarks>
-    /// Adoption is the gate on being addressed. A repository with no manifest has no way to read what
-    /// was asked of it, so a quest sent there would sit in a queue nobody opens — which looks exactly
-    /// like a quest that was delivered and ignored.
+    /// Read from each repository's own manifest rather than configured here, so the declaration sits
+    /// next to the thing it describes and is reviewed by the people it describes. It is also the gate
+    /// on addressing a quest: a repository with no manifest has no client to see one, and a quest
+    /// nobody can read looks exactly like a quest that was read and ignored.
     /// </remarks>
-    public async Task<IReadOnlySet<string>> AdoptedRepositoriesAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Registration>> RegistryAsync(CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        var adopted = (await store.AllAsync(ct).ConfigureAwait(false))
-            .Where(entry => entry.Provenance == Provenance.Canonical)
-            .Select(entry => entry.Repository);
-        return new HashSet<string>(adopted, StringComparer.OrdinalIgnoreCase);
+        var counts = (await store.AllAsync(ct).ConfigureAwait(false))
+            .GroupBy(entry => entry.Repository, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+
+        return registry?.Read(counts) ?? [];
     }
 
     /// <summary>Re-read every repository and rebuild the index.</summary>

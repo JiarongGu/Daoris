@@ -876,3 +876,36 @@ that was read and ignored.
 Stored beside the index in the same database: quests are service state as the index is service state,
 and two files would be two things to back up and two that can disagree about which repositories exist.
 
+
+## D34 — A repository registers what it owns, and that is what makes a quest addressable
+
+**Decided 2026-08-05.** Each repository declares a `domain` in its manifest — a one-line summary, the
+areas it **owns**, and the kinds of quest it **accepts**. The service reads those while indexing and
+serves them as a registry.
+
+**Why.** Quests alone are not enough. Without a declaration, an agent publishing one is guessing what
+the other side does — which is the same *"the knowledge does not travel"* problem the whole arrangement
+exists to solve, moved one step earlier. A quest addressed to the wrong repository wastes both sides,
+and the asker is the party least able to tell.
+
+The registry answers a question search cannot. **Search answers "has anyone solved this"; the registry
+answers "whose problem is this."** Those have different answers, and only the second tells you where a
+change belongs.
+
+**Declared in the manifest, not configured centrally.** It is data — nouns, what the repository *is* —
+so it belongs where the manifest already lives (D26). Keeping it next to the thing it describes means it
+is reviewed by the people it describes, and a central list would drift the moment a repository changed
+and nobody remembered to update the server.
+
+**Adoption gates addressing; declaration does not.** A repository without a manifest has no client and
+cannot see a quest, so it is not addressable — and the publish call says so, naming who is. A repository
+that has adopted but declared nothing *is* addressable; the asker is simply warned that it may not be
+that repository's problem. Refusing until a form is filled in would make adoption a chore, and this all
+rests on adoption being easy.
+
+**Non-adopters are listed, not hidden.** "Who cannot be asked yet" is the same question as "who can",
+and a silent omission reads as the repository not existing.
+
+**Consequence.** The service is now the thing that connects the family's agents rather than only their
+documents: it knows who exists, what each owns, what each will take on, and what is outstanding between
+them.

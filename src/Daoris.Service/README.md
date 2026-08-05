@@ -3,8 +3,30 @@
 **Status: usable from a session.** An MCP server over stdio exposes the index to any agent client. The
 core reads a repository's knowledge into addressable entries, classifies each as canonical or local,
 stores them in SQLite, answers ranked queries over FTS5, and finds where repositories learned the same
-lesson independently. **65 tests**, two of which run against the real sibling repositories rather than
+lesson independently. **70 tests**, two of which run against the real sibling repositories rather than
 fixtures.
+
+## The registry — who is out there, and what they own
+
+Each repository declares a `domain` in its manifest: a one-line summary, the areas it **owns**, and the
+kinds of quest it **accepts**. The service reads those while indexing and serves them together.
+
+**Search answers "has anyone solved this"; the registry answers "whose problem is this."** Those are
+different questions, and only the second tells you where a change belongs — which is what makes a quest
+addressable rather than a guess.
+
+Declared in the manifest rather than configured here, so it sits next to the thing it describes and is
+reviewed by the people it describes. A central list would drift the moment a repository changed and
+nobody remembered to update the server.
+
+Adoption gates addressing; declaring does not. A repository that has adopted but said nothing is still
+reachable — the asker is simply warned it may not be that repository's problem. Repositories that have
+not adopted are **listed and marked**, because "who cannot be asked yet" is the same question as "who
+can", and a silent omission reads as the repository not existing.
+
+| Tool | What it answers |
+|---|---|
+| `registry` | Who is in the family, what each owns, what each accepts, who is not addressable |
 
 ## Quests — work one repository asks of another
 
