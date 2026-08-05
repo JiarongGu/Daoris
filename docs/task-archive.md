@@ -591,3 +591,29 @@ Two defects the live run found, both real and neither visible from the code:
   built its own; the field looked like the answer and was not connected to anything. Removed. That is
   the "parsed and never read" case `claims-need-checks` names, found in code written the same day as
   the rule.
+
+## The quest system, and a rule I had already broken (2026-08-05)
+
+Formalized from the way the family was already working: repositories are not developed across, and a
+change one needs from another is posted to that repository's backlog. `daoris quest post`, then `take`,
+`done`, `decline`, `list`. Recorded as **D32**, with `repository-owns-its-work` as the canon rule.
+
+**The rule found a violation in this same session's work.** Earlier today Daoris edited Lyntai directly —
+corrected its manifest, synced 17 files, retired an 8.3 KB rule — and reported it as done-but-uncommitted.
+Every one of those changes was correct and every one was made by the party that knew that codebase least.
+The right shape was a quest with the evidence in it, letting whoever works there decide. Quest `#7a82cc`
+now says exactly that, including that `git checkout -- .` is a perfectly good answer.
+
+**CANON3 was never blocked either.** The backlog said it was waiting on Shenora's tree to be clean. It was
+waiting on Daoris not having a way to ask. Quest `#ee8994` carries the entire rehearsal — 6 collisions, 2
+twins, the local mechanics to preserve, the budget, `check` clean — so taking it is mechanical.
+
+Two things worth keeping from building it:
+
+- **The name does work.** Every backlog here is already full of tasks, so "task" or "request" would be
+  ambiguous in the one file where the distinction matters. "Quest" cannot be confused with local work, and
+  it is *taken* rather than assigned — which is the property that keeps declining a real answer.
+- **The shape has to be boring.** A quest is an ordinary checklist item: the checkbox is the coarse state
+  every backlog already reads, and the italic line carries asker, date, status and reason. A repository
+  that knows nothing about Daoris handles one correctly, which is the only way this spreads.
+

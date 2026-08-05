@@ -53,24 +53,11 @@ correct, and never loaded._
       the bar is the whole reason the canon is trustworthy. Leave it local until a second repository
       needs the same thing.
 
-- [ ] **CANON3 — apply the adoption to the real tree.** _Fully rehearsed 2026-08-05 against a scratch
-  consumer carrying that repository's real doctrine, copied out rather than waiting for its tree — which
-  still holds 12+ files of in-flight work. Every decision is now determined, so the real run is
-  mechanical:_
-    - _**6 collisions**, canonical supersedes each: `persist-working-state`, `sensitive-info`,
-      `skills-workflow`, and the `doc-loader`, `fix-log`, `pattern-finder` skills._
-    - _**2 twins to retire**: local `windows-dev-gotchas` (47% against canonical `windows-machine`) and
-      local `doc-claims` (49% against canonical `claims-need-checks`, which now merges it)._
-    - _**Local mechanics to preserve** in a new `repo-mechanics.md`: the hook-install requirement, the
-      WebView2 browser-arguments trap, the WinForms STA/OLE handle trap, and the desktop verification
-      tooling. **The draft is `docs/adoption/shenora-repo-mechanics.md`**, tracked — it was written in
-      the rehearsal fixture, which is gitignored scratch and no place for something a later task needs._
-    - _**Budget 40,000.** Core plus three packs plus the repository's own rules lands at 38,782 bytes;
-      the 24,000 default cannot cover core + two packs + a repository's own material, which is worth
-      knowing before the next adoption._
-    - _Result: `check` clean, exit 0._
-
-  What remains is applying it there, which needs that repository's work committed first.
+- [x] **CANON3 — adopt Shenora.** ✅ **Posted as quest `#ee8994`** on 2026-08-05, which is what the
+  backlog should always have said: it was never blocked on that repository's tree, it was blocked on
+  Daoris not having a way to ask. The quest carries the whole rehearsal — 6 collisions, 2 twins, the
+  local mechanics to preserve, budget 40000, `check` clean — so taking it is mechanical. Whether it is
+  taken, and when, belongs to whoever works there.
 
 ## Part 3 — tool follow-ups
 
