@@ -66,14 +66,20 @@ int Scan()
     var context = new GateContext(root, declaration);
     var messageIndex = arguments.IndexOf("--message");
     var scope = messageIndex >= 0 ? ScanScope.Message
+        : flags.Contains("--history") ? ScanScope.History
         : flags.Contains("--tree") ? ScanScope.Tree
         : ScanScope.Staged;
+
+    // Said before it starts, not after. A history audit on a large repository takes long enough that
+    // silence reads as a hang, and the first instinct is to kill it.
+    if (scope == ScanScope.History) Console.WriteLine("scanning all history — every object and every path…");
 
     var gate = new SensitiveGate(
         scope,
         new CommandLineGit(root),
         flags.Contains("--allow-builtins-only"),
-        messageIndex >= 0 && messageIndex + 1 < arguments.Count ? arguments[messageIndex + 1] : null);
+        messageIndex >= 0 && messageIndex + 1 < arguments.Count ? arguments[messageIndex + 1] : null,
+        new CommandLineGitObjects(root));
 
     var result = gate.Run(context);
     Console.WriteLine(result.Passed ? $"sensitive: {result.Detail}" : result.Detail);

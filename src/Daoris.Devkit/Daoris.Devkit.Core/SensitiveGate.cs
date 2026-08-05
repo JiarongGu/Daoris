@@ -14,6 +14,21 @@ public enum ScanScope
 
     /// <summary>A commit message. History too, and the easiest place to forget.</summary>
     Message,
+
+    /// <summary>
+    /// Everything the repository has ever contained — an audit, not a routine gate.
+    /// </summary>
+    /// <remarks>
+    /// Run it at moments rather than on every commit: before making a repository public, and after a
+    /// history rewrite to prove the rewrite worked. Its cost grows with the history, because it reads
+    /// every reachable object — so wiring it into `verify` would tax every run forever to re-check
+    /// commits that were already checked when they were made.
+    ///
+    /// It exists because the other scopes cannot answer the question that matters at those moments.
+    /// Deleting a leak edits the current checkout and leaves the copy in history untouched, and after a
+    /// push there are copies you no longer control.
+    /// </remarks>
+    History,
 }
 
 /// <summary>
@@ -40,7 +55,12 @@ public enum ScanScope
 /// <para><b>Commit messages are scanned.</b> They are history, they are rarely reviewed, and nothing
 /// looked at them at all.</para>
 /// </remarks>
-public sealed class SensitiveGate(ScanScope scope, IGit git, bool allowBuiltinsOnly = false, string? messageFile = null)
+public sealed class SensitiveGate(
+    ScanScope scope,
+    IGit git,
+    bool allowBuiltinsOnly = false,
+    string? messageFile = null,
+    IGitObjects? objects = null)
     : IGate
 {
     public string Name => "sensitive";
@@ -76,8 +96,10 @@ public sealed class SensitiveGate(ScanScope scope, IGit git, bool allowBuiltinsO
         }
 
         var findings = new List<string>();
+        var scanned = 0;
         foreach (var (label, text) in Subjects(context))
         {
+            scanned++;
             foreach (var (pattern, why) in patterns)
             {
                 var match = pattern.Match(text);
@@ -85,10 +107,21 @@ public sealed class SensitiveGate(ScanScope scope, IGit git, bool allowBuiltinsO
             }
         }
 
-        return findings.Count == 0
-            ? GateResult.Pass(Name, $"{patterns.Count} patterns, nothing found")
-            : GateResult.Fail(Name, string.Join('\n', findings));
+        var subjects = scope == ScanScope.History ? $", {scanned} objects and paths" : "";
+        if (findings.Count == 0) return GateResult.Pass(Name, $"{patterns.Count} patterns{subjects}, nothing found");
+
+        // Capped, and the cap is STATED. A history audit on a leak that survived a hundred commits
+        // produces a hundred findings that are all the same leak; printing every one buries the second
+        // distinct problem. Silently truncating would be worse — a report that stops without saying so
+        // reads as "that was all of it".
+        var shown = findings.Take(FindingsShown).ToList();
+        var extra = findings.Count - shown.Count;
+        if (extra > 0) shown.Add($"…and {extra} more finding(s), not shown. Fix these and re-run.");
+
+        return GateResult.Fail(Name, string.Join('\n', shown));
     }
+
+    private const int FindingsShown = 40;
 
     /// <summary>Every (label, text) pair the scope covers — the path itself included.</summary>
     private IEnumerable<(string Label, string Text)> Subjects(GateContext context)
@@ -97,6 +130,28 @@ public sealed class SensitiveGate(ScanScope scope, IGit git, bool allowBuiltinsO
         {
             var file = messageFile ?? throw new DevkitException("--message needs a file path");
             yield return ("commit message", File.ReadAllText(file));
+            yield break;
+        }
+
+        if (scope == ScanScope.History)
+        {
+            var source = objects ?? throw new DevkitException("--history needs a git object source");
+
+            // Acknowledgements are consulted HERE and nowhere else. A working-tree ignore-list silences
+            // a file, and the next secret written to that file is silent too; this names one immutable
+            // object by content hash, so it cannot cover anything that does not already exist. A new
+            // leak is a new object with a new sha, and it is reported.
+            var reviewed = context.Declaration.Sensitive.ReviewedObjects ?? [];
+            foreach (var item in source.Everything())
+            {
+                if (item.Sha is { } sha && reviewed.Any(r => sha.StartsWith(r, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                yield return (item.Label, item.Text);
+            }
+
             yield break;
         }
 

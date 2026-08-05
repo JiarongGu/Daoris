@@ -14,7 +14,19 @@ public sealed record DeclaredGate(string Name, string Run, string? WorkingDirect
 /// details that must never be committed. It is itself gitignored: the whole point is that the tokens
 /// being looked for are not in the repository that is being scanned.
 /// </param>
-public sealed record SensitiveOptions(string PatternsFile = "local/sensitive-patterns.txt");
+/// <param name="ReviewedObjects">
+/// Git object shas whose history findings have been read and judged benign — a test fixture that
+/// deliberately contains the shape the scanner looks for, most often.
+///
+/// **Only ever consulted for a history audit**, never for staged changes or the working tree. That
+/// asymmetry is the whole safety argument. A working-tree ignore-list is how leaks get in: it silences
+/// a file, and the next secret written to that file is silent too. An acknowledgement here names one
+/// immutable object by content hash, so it cannot cover anything that does not already exist — a new
+/// leak is a new object with a new sha, and it is reported.
+/// </param>
+public sealed record SensitiveOptions(
+    string PatternsFile = "local/sensitive-patterns.txt",
+    IReadOnlyList<string>? ReviewedObjects = null);
 
 /// <summary>Where the version lives and which files must agree with it.</summary>
 /// <param name="Source">The one file that owns the version.</param>
@@ -148,7 +160,9 @@ public sealed class GateDeclaration
 
     private static SensitiveOptions ReadSensitive(JsonElement root) =>
         root.TryGetProperty("sensitive", out var element) && element.ValueKind == JsonValueKind.Object
-            ? new SensitiveOptions(String(element, "patternsFile") ?? new SensitiveOptions().PatternsFile)
+            ? new SensitiveOptions(
+                String(element, "patternsFile") ?? new SensitiveOptions().PatternsFile,
+                Strings(element, "reviewedObjects"))
             : new SensitiveOptions();
 
     private static VersionOptions ReadVersion(JsonElement root) =>

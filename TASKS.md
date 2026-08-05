@@ -16,11 +16,11 @@ the family, kept from drifting, and improved from wherever the improvement was f
 _**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 1 core
 knowledge document, 5 core skills and 3 packs, adopted into Lyntai with its 1563 tests still green.
 `npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
-searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 30
+searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 39
 tests, one binary._
 
 _**Three of the four artefacts exist** (`docs/DECISIONS.md` D20); `Daoris.Web` does not. `Daoris.Devkit`
-is built — one 2.7 MB AOT binary, 30 tests, four universal gates, running this repository's own gate set._
+is built — one 2.7 MB AOT binary, 39 tests, four universal gates, running this repository's own gate set._
 
 _**Pushed 2026-08-05** to `main`, after auditing all 73 commits and 932 objects against every pattern.
 **Nothing is published to npm**, deliberately: the tag and the release workflow stay unrun while a
@@ -75,14 +75,7 @@ correct, and never loaded._
 
 ## Part 3 — tool follow-ups
 
-- [ ] **DEVKIT1 — `daoris-devkit scan --history`.** The scan covers staged changes, the working tree and
-  a commit message; it does **not** cover history. That is the mode the original tool documented as "an
-  audit you run at moments, not routinely: before making a repo public, and after any filter-repo scrub
-  to prove it worked" — deliberately kept out of `verify`, because its cost grows with the history and
-  wiring it into every commit would re-check commits that were already checked when they were made.
-  _Found by needing it: the first push on 2026-08-05 required exactly this audit and it was run by hand
-  — every commit message, every path that ever existed, and all 932 reachable objects. A one-way door
-  with a manual gate in front of it is the argument for building the gate._
+_Nothing open here._
 
 ---
 

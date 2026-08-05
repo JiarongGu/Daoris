@@ -84,6 +84,7 @@ internal static class Repository
           verify                  every universal gate, then this repository's declared ones (default)
           scan [--tree]           the sensitive-content scan alone; staged changes unless --tree
           scan --message <file>   scan a commit message — for the commit-msg hook
+          scan --history          AUDIT all history: every object, every path it ever had
           init                    write a starter daoris.gates.json
           install-hooks           write .githooks/ and point git at it
           version                 print the devkit version

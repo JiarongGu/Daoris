@@ -352,3 +352,35 @@ list wanted the work done.
   Nothing is published to npm — the tag and the release workflow remain deliberately unrun while
   `Daoris.Web` does not exist.
 
+
+## DEVKIT1 — `scan --history` (2026-08-05)
+
+- **DEVKIT1 — `daoris-devkit scan --history`.**
+  ✅ done 2026-08-05 — the audit mode, plus the acknowledgement mechanism its first run turned out to
+  need. 39 devkit tests.
+
+  Covers the three things the other scopes cannot: every reachable blob, every commit message, and every
+  path any file ever had — a name can be the leak on its own, and deleting a file does not delete the
+  name it had. One `git cat-file --batch-all-objects` process streams the object database rather than one
+  process per object; this repository audits 788 objects and paths in about two seconds. Objects are read
+  as **bytes**, not through a StreamReader: the stream interleaves binary blobs with the record framing,
+  and decoding them as text desynchronizes the pipe, after which every byte is scanned as if it were
+  something else. A malformed record throws rather than continuing, because a desynchronized scan reports
+  nonsense findings.
+
+  **Its first run found a real thing, here.** Blob `04801cb` — `SensitiveGateTests.cs` as it stood in
+  `1d331cd`, before `469cc2d` assembled those fixtures at runtime — still carries a literal Windows
+  user-home path and a `ghp_` token. Both are placeholders written to prove the scanner catches that
+  shape, so there is no secret and no incident. But the working-tree scan is clean and the history is
+  not, which is exactly the gap the mode exists to close, and it had already been pushed.
+
+  That also showed the mode is useless without a way to say "read this, it is fine" — a permanently red
+  audit is an ignored audit. So `sensitive.reviewedObjects` acknowledges an object **by sha**, and is
+  **consulted for `--history` only**. That asymmetry is the entire safety argument, and the reason this
+  is not the ignore-list rejected earlier the same day: a path-based ignore silences a *file*, so the
+  next secret written into it is silent too, whereas a content hash cannot cover anything that does not
+  already exist — a new leak is a new object with a new sha. Three tests pin it, including one asserting
+  an acknowledgement does **not** silence the working tree.
+
+  Acknowledged rather than rewritten: a history rewrite is the right answer to a real secret and a
+  disproportionate one to a test fixture, and it would have broken a remote pushed an hour earlier.

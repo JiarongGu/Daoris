@@ -1,6 +1,6 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built.** One self-contained 2.7 MB binary, 30 tests, and it runs this repository's own gates.
+**Status: built.** One self-contained 2.7 MB binary, 39 tests, and it runs this repository's own gates.
 The two questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
 
 ## The problem, measured
@@ -98,9 +98,45 @@ outside those look identical unless the run says so.
 daoris-devkit verify          # universal gates, then the declared ones; stops at the first failure
 daoris-devkit scan            # the sensitive scan on staged changes — what the pre-commit hook runs
 daoris-devkit scan --tree     # …on every tracked file
+daoris-devkit scan --history  # …on everything the repository has EVER contained
 daoris-devkit init            # write a starter daoris.gates.json
 daoris-devkit install-hooks   # write .githooks/ and point core.hooksPath at it
 ```
+
+### `--history` is an audit, not a gate
+
+Run it at moments, not on every commit: **before making a repository public**, and after a history
+rewrite to prove the rewrite worked. It reads every reachable object, so its cost grows with the
+history — wiring it into `verify` would tax every run forever to re-check commits that were already
+checked when they were made. It is deliberately not one of the four gates.
+
+It exists because the other scopes cannot answer the question that matters at those moments. Deleting a
+leak edits the current checkout and leaves the copy in history untouched, and after a push there are
+copies you no longer control. It covers three things the working tree cannot: **every reachable blob**,
+**every commit message**, and **every path any file ever had** — a name can be the leak on its own, and
+deleting a file does not delete the name it had.
+
+One `git cat-file --batch-all-objects` process streams the whole object database rather than one process
+per object; this repository audits in about two seconds.
+
+### Acknowledging a reviewed object
+
+A history audit finds things that are genuinely fine — most often a test fixture that deliberately
+contains the shape the scanner hunts for. Those are recorded by sha:
+
+```json
+"sensitive": { "reviewedObjects": ["04801cb"] }
+```
+
+**Consulted for `--history` only, never for staged changes or the working tree.** That asymmetry is the
+whole safety argument, and it is why this is not an ignore-list. A path-based ignore silences a *file*,
+so the next secret written into that file is silent too. An acknowledgement names one **immutable object
+by content hash**, so it cannot cover anything that does not already exist — a new leak is a new object
+with a new sha, and it is reported.
+
+Acknowledge only after reading the object and understanding why it is benign. A real secret is a
+**history** problem, and the answer to that is a rewrite plus a credential rotation, never a line in a
+config file.
 
 Exit codes match the CLI's: `0` clean · `1` a gate failed · `2` the devkit could not run. The
 distinction matters to a script — "the gates found something" is not "the gates could not run".

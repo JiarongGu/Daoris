@@ -8,7 +8,17 @@
   ],
 
   "sensitive": {
-    "patternsFile": "local/sensitive-patterns.txt"
+    "patternsFile": "local/sensitive-patterns.txt",
+
+    "_reviewedObjects": [
+      "04801cb — src/Daoris.Devkit/Daoris.Devkit.Tests/SensitiveGateTests.cs as it stood in 1d331cd,",
+      "before 469cc2d assembled those fixtures at runtime. It carries the literals `C:\\Users\\someone`",
+      "and a ghp_ token of 24 repeated letters: placeholders written to prove the scanner catches that",
+      "shape, not a real path and not a real credential. Read and judged benign 2026-08-05.",
+      "Acknowledged rather than rewritten — a history rewrite is the right answer to a real secret and a",
+      "disproportionate one to a test fixture, and it would break a remote that had just been pushed."
+    ],
+    "reviewedObjects": ["04801cb"]
   },
 
   "version": {
