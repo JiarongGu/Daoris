@@ -1,6 +1,6 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built.** One self-contained 2.7 MB binary, 39 tests, and it runs this repository's own gates.
+**Status: built.** One self-contained 2.7 MB binary, 45 tests, and it runs this repository's own gates.
 The two questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
 
 ## The problem, measured
@@ -86,6 +86,10 @@ is inert data the CLI parses on every invocation, and this file names commands t
   "disabled": []
 }
 ```
+
+The `devkit` field pins which toolkit the declaration was written against, and is **checked before
+any gate runs** — a different toolkit may read the same declaration differently, which is the failure
+pinning exists to prevent. It is optional: an unpinned declaration is allowed and silent.
 
 `.props`, `.csproj` and `package.json` version shapes are known, so the common case declares no
 `pattern`. A gate named in `disabled` does not run **and is printed on every run** — off because

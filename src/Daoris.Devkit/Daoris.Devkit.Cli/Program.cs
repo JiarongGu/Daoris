@@ -38,6 +38,8 @@ catch (DevkitException error)
 int Verify()
 {
     var declaration = GateDeclaration.Read(root);
+    VersionPin.Require(declaration.Devkit, Repository.DevkitVersion);
+
     var context = new GateContext(root, declaration);
     var allowBuiltinsOnly = flags.Contains("--allow-builtins-only");
 

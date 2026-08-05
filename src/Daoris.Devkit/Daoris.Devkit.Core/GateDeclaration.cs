@@ -76,7 +76,14 @@ public sealed class GateDeclaration
 {
     public const string FileName = "daoris.gates.json";
 
-    /// <summary>The devkit release this repository is pinned to. Informational here; the launcher enforces it.</summary>
+    /// <summary>
+    /// The devkit release this repository's declaration was written against.
+    /// </summary>
+    /// <remarks>
+    /// Enforced by <see cref="VersionPin"/> before any gate runs — see the reasoning there. Optional: an
+    /// unpinned declaration is allowed and silent, because pinning is a choice a repository makes when
+    /// it starts caring rather than a demand made of its first run.
+    /// </remarks>
     public string? Devkit { get; init; }
 
     public IReadOnlyList<DeclaredGate> Gates { get; init; } = [];

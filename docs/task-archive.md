@@ -384,3 +384,21 @@ list wanted the work done.
 
   Acknowledged rather than rewritten: a history rewrite is the right answer to a real secret and a
   disproportionate one to a test fixture, and it would have broken a remote pushed an hour earlier.
+
+## DEVKIT2 — the version pin, made real (2026-08-05)
+
+Not a backlog item; found immediately after closing DEVKIT1 by checking whether the devkit's own claims
+were enforced. The `devkit` field in `daoris.gates.json` was parsed and never read, under a doc comment
+of mine claiming "the launcher enforces it" — describing a launcher that does not exist.
+
+That is the same defect class as the two corrected in the morning's tidy-up: a documented guarantee with
+nothing behind it, which is worse than no guarantee because it reads as verified and so nobody checks.
+Three in one day is a pattern worth naming — **the claim and the enforcement are written at different
+times, and only the claim is easy.**
+
+✅ done 2026-08-05 — `VersionPin.Require`, checked **before** any gate runs rather than alongside them:
+if the toolkit is the wrong one the gate results are not trustworthy, and reporting a mismatch after
+printing seven confident lines is backwards. Exit 2, not 1 — the devkit could not run as configured,
+which is not the same as a gate finding something. Verified by pinning a version this binary is not and
+watching it refuse. Optional by design: an unpinned declaration is allowed and silent, the same
+reasoning that lets the manifest default its harness.
