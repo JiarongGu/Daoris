@@ -765,3 +765,28 @@ by the feature that shipped the rule against it, in the same change.
 core rule — and `check` refused it. The fix was to split principle from incident, not to raise the
 limit: the rule is 2,610 bytes and the narrative is on-demand knowledge. The gate did exactly what D28
 said it was for.
+
+## CANON2 — `desktop-app`, the third pack (2026-08-05)
+
+✅ done 2026-08-05 — written from the convergence the tool found rather than the one a filename search
+missed. Three applications had arrived at the same practice independently, under names no glob would
+have matched.
+
+The rule carries what they agreed on, and the sharpest of them is **synthetic input does not prove an
+interaction**: dispatching a click bypasses hit testing, focus, z-order and pointer capture, which is
+exactly where interaction bugs live. A synthetic event proves a handler runs, which is rarely the thing
+in doubt. Alongside it: capture before and after, verify against the real backend at least once, and
+**know which instance you are attached to** — a stale bundle, an orphaned process from the last run, or
+a second window with no debugging target each give a real answer about the wrong thing, and nothing in
+the output says so.
+
+The knowledge document holds the loop: one long-lived instance rather than a relaunch per change, a
+**randomized** debugging port because a fixed one does not fail on collision but attaches to the wrong
+process, and selectors that survive a rebuild since bundler-generated class names are hashed.
+
+**Not validated by adoption**, the same honest status as `durable-jobs`. Containment against the three
+sources runs 19–41%, well below `web-webview`'s 64%, and for the same reason: those documents are dense
+with ports, paths, class names and commands that the canonical version strips. Word-overlap coverage
+keeps being a poor proxy for whether a pack captured the right ideas.
+
+Only `desktop-winforms` remains, and it stays below the two-repository bar.

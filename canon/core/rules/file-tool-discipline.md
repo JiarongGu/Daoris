@@ -1,14 +1,14 @@
 ---
 name: file-tool-discipline
-applies_when: inspecting files, or running a destructive or irreversible command
-enforces: use the dedicated read/search/find tools, not shell equivalents; never route a command through a side channel to skip approval
+applies_when: inspecting or editing files, or running a destructive or irreversible command
+enforces: use the dedicated read/search/find/edit tools, not shell or scripted equivalents; never route a command through a side channel to skip approval
 ---
 
 # Use the dedicated file tools — and never evade the approval gate
 
-**Inspect files with the dedicated read, search, and find tools rather than their shell equivalents.
-Reserve the shell for genuine shell work. Never route a command through a side channel to avoid an
-approval prompt.**
+**Inspect and edit files with the dedicated tools rather than shell or scripted equivalents. Reserve the
+shell for genuine shell work. Never route a command through a side channel to avoid an approval
+prompt.**
 
 ## Why
 
@@ -24,6 +24,17 @@ specifically to skip a prompt is not "reducing friction"; it is circumventing a 
 ## How to apply
 
 - **Reading a file → the read tool. Searching content → the search tool. Finding files → the find tool.**
+- **Editing a file → the edit tool.** Not a script that rewrites it. A scripted edit passes the content
+  through another language's escaping on the way in, and what lands is not what you wrote: literal
+  newlines inside string literals, control bytes, a backreference that eats the text before it, a
+  platform's line endings undoing a normalization. Worse, a pattern that no longer matches **changes
+  nothing and reports nothing** — so the edit is silently skipped and the run still looks fine.
+- **A bulk edit is where this bites, and where it feels most justified.** Many small identical changes
+  are exactly when scripting is tempting and exactly when a single bad escape corrupts every one of
+  them. If you script it anyway, assert the substitution count and read one result back.
+- **Never delete a region by computed offsets.** "From this heading to the next" is a guess about
+  structure, and when the guess is wrong it takes the rest of the file with it. Match the exact text you
+  mean to remove.
 - **Genuine shell work → the shell**: builds, tests, version control, package managers, running programs.
 - **Destructive commands deserve a pause** precisely when they no longer prompt — recursive deletes,
   hard resets, force pushes, skipping hooks, killing processes, writing to a live datastore. Look before

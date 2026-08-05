@@ -36,7 +36,7 @@
       "source": "core/rules/file-tool-discipline.md",
       "target": "rules/file-tool-discipline.md",
       "canonVersion": "0.0.1",
-      "sha256": "95b400b368bed720e2d34df74deaa940e4ee9afe1eb03b79b21b399d0e52d363"
+      "sha256": "b0164ea201a1fc5cee6d18bf1f9e603f26f7fa253e6248c6c2d99f57fbf74cae"
     },
     {
       "pack": "core",

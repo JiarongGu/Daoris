@@ -6,7 +6,7 @@ Rows marked _(local)_ are this repo's own and are never synced.
 
 | Rule | Applies when | Enforces |
 |---|---|---|
-| [file-tool-discipline](file-tool-discipline.md) | inspecting files, or running a destructive or irreversible command | use the dedicated read/search/find tools, not shell equivalents; never route a command through a side channel to skip approval |
+| [file-tool-discipline](file-tool-discipline.md) | inspecting or editing files, or running a destructive or irreversible command | use the dedicated read/search/find/edit tools, not shell or scripted equivalents; never route a command through a side channel to skip approval |
 | [no-global-memory](no-global-memory.md) | about to save a project fact to the assistant's global or cross-project memory | project facts live in the repository, versioned and reviewable; global memory is user preferences only |
 | [no-tmp-for-repo-files](no-tmp-for-repo-files.md) | composing a repository file, or needing a scratch, probe, or dump file | compose finals with the file-writing tools; scratch goes in a gitignored repo directory, never OS temp |
 | [persist-working-state](persist-working-state.md) | any multi-step task — at each decision, finding, or milestone | checkpoint in-progress state to its durable home in the repository as you go, not at the end |

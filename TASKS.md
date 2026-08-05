@@ -14,7 +14,7 @@ the family, kept from drifting, and improved from wherever the improvement was f
 ## Active backlog
 
 _**`Daoris.Cli` is built and proven** — nine commands, 120 tests, a canon of 8 core rules, 4 core
-knowledge documents, 5 core skills and 5 packs, adopted into Lyntai with its 1563 tests still green.
+knowledge documents, 5 core skills and 6 packs, adopted into Lyntai with its 1563 tests still green.
 `npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
 searches the family's knowledge and holds its quests and registry — 70 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 57
 tests, one binary._
@@ -42,18 +42,10 @@ correct, and never loaded._
 
 ## Part 2 — canon growth
 
-- [ ] **CANON2 — the last pack candidates.** `web-webview` and `durable-jobs` are **done** (see the
-  archive). Two remain, and both are held for the reason CANON2 has always given — a pack nobody
-  installs is unvalidated doctrine:
-    - **`desktop-app`** — **above the bar after all, and the tool is what found that.** A by-hand survey
-      globbing for `*desktop*`, `*capture*`, `*dpi*` concluded "one rich repository plus fragments". The
-      service's semantic pass, run across all 11 repositories, returns a **0.890 group spanning three**:
-      `desktop-testing-cdp.md`, `desktop-test/SKILL.md`, `devtools/SKILL.md` and `dev-loop.md` — names
-      the glob could never have matched, which is exactly the failure the tool exists to fix. Ready to
-      write; still wants an adopter to validate against, like `durable-jobs`.
-    - **`desktop-winforms`** — one 11 KB source, one repository. **Below the two-repository bar**, and
-      the bar is the whole reason the canon is trustworthy. Leave it local until a second repository
-      needs the same thing.
+- [ ] **CANON2 — one pack candidate left.** `web-webview`, `durable-jobs` and `desktop-app` are done
+  (see the archive). Remaining: **`desktop-winforms`** — one 11 KB source, one repository. **Below the
+  two-repository bar**, and the bar is the whole reason the canon is trustworthy. Leave it local until a
+  second repository needs the same thing.
 
 - [ ] **CANON3 — the Shenora adoption, as a quest.** _Open again, and honestly so._ It was briefly
   marked done because a quest had been written into that repository's backlog — which turned out to be

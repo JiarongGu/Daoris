@@ -72,6 +72,15 @@ network.
   Written from two applications that derived the same invariants from different symptoms — one profiling
   a frozen window, one debugging slow thumbnails. Validated by adoption: against a real repository's
   doctrine, `doctor` reports its own 21.6 KB hosting document as **64%** covered by the canonical pair.
+- **`desktop-app`** (new pack) — verifying a real desktop application. `desktop-verification` carries
+  the invariants: drive the running app rather than a mock, **synthetic input does not prove an
+  interaction** (it bypasses hit testing, focus, z-order and pointer capture, which is where interaction
+  bugs live), capture before and after, and confirm *which instance* you attached to — a stale bundle, an
+  orphaned process or a second window with no debugging target each give a real answer about the wrong
+  thing. `desktop-dev-loop` holds the loop: one long-lived instance, a randomized debugging port because
+  a fixed one attaches to the wrong process rather than failing, and selectors that survive a rebuild.
+  Three applications converged on this independently. **Not validated by adoption** — no repository has
+  installed it yet, the same status as `durable-jobs`.
 - **`durable-jobs`** (new pack) — long-running work that survives a restart. `durable-work` carries the
   invariants: dispatch rather than await, checkpoint so resume is cheap, bound capacity **per lane**
   rather than globally, and add a kind as a handler plus a registration. `job-system-design` holds the
