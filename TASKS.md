@@ -14,8 +14,8 @@ the family, kept from drifting, and improved from wherever the improvement was f
 ## Active backlog
 
 _**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 1 core
-knowledge document, 5 core skills and 3 packs, adopted into Lyntai with its 1337 tests still green. `npm run rehearse` drives the
-whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
+knowledge document, 5 core skills and 3 packs, adopted into Lyntai with its 1563 tests still green.
+`npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
 searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 30
 tests, one binary._
 
@@ -25,34 +25,13 @@ yet:** publishing piecemeal would invite adoption of part of the project. `Daori
 
 ## Part 1 — when a release is wanted
 
-_Both prerequisites are done; neither is urgent while three artefacts are unbuilt._
+_Nothing blocks a tag but the decision below._
 
 - [ ] **REL3 — push, then decide the branch name first.** `origin` is configured and the remote is
   **empty**, while local history is on `master` and GitHub creates new repositories with `main`.
   Renaming after the first push breaks every clone, so choose before pushing.
-- [ ] **REL4 — Lyntai's manifest still names the `OWNER` placeholder** from the trial adoption. It is
-  part of that repository's uncommitted, pending-review changes (ADOPT3), so it is listed here rather
-  than edited from this side.
 
-## Part 2 — findings from the Lyntai adoption (2026-08-04)
-
-_The first real adoption surfaced things no synthetic test could. Both remaining items are editorial work
-inside Lyntai rather than changes here, which is why they are recorded rather than silently fixed._
-
-- [ ] **ADOPT1 — Lyntai's `dev-conventions.md` now substantially duplicates canonical
-  `dotnet-package-layout`.** _`daoris doctor` now detects this automatically and reports it at 58% shared
-  vocabulary; what remains is the editorial work below._ That ~10 KB file is always-loaded and is why Lyntai's core sits at 34,851
-  bytes; its budget was set to 40,000 to reflect reality rather than hide the overage. The overlap is
-  package layout, naming, and DI variation points — all now canonical. What remains genuinely
-  Lyntai-specific (the LLM provider seam, spawn hygiene, its testing setup) is a **knowledge** deep dive,
-  not an always-loaded rule. Trimming it, and moving the remainder to `knowledge/`, would drop Lyntai's
-  always-loaded core by roughly a quarter.
-- [ ] **ADOPT3 — Lyntai's changes are uncommitted, pending owner review.** Four rules replaced, one twin
-  deleted, seven files added, plus `daoris.json` / `daoris.lock`. Everything repo-specific that the
-  generalized rules dropped is preserved in a new local `.claude/rules/repo-mechanics.md`.
-  `git checkout .claude/` reverts all of it.
-
-## Part 3 — other agent harnesses (deliberately not built)
+## Part 2 — other agent harnesses (deliberately not built)
 
 _Daoris targets Claude Code (D23). The others are detected and reported; a second implementation gets
 written the day a repository actually adopts one. Detection exists so the gap is loud rather than
@@ -64,7 +43,7 @@ correct, and never loaded._
   repository wants it: the layout, the always-loaded semantics and the trigger mechanism all differ,
   and guessing at them produces doctrine nobody chose in a format nobody verified.
 
-## Part 4 — canon growth
+## Part 3 — canon growth
 
 - [ ] **CANON4 — the `doc-*` maintenance family, deliberately not canonized yet.** `doc-update-technical`
   / `-reference` / `-guide`, `doc-optimize`, `doc-monitor`, `doc-cleanup` appear together in 3
@@ -96,7 +75,7 @@ correct, and never loaded._
   `windows-dev-gotchas` versus canonical `windows-machine` — the machine-level content is canonical, the
   WebView2/WinForms/devtools items are Shenora's own.
 
-## Part 5 — tool follow-ups
+## Part 4 — tool follow-ups
 
 _Nothing open here._
 

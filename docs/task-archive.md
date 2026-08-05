@@ -281,3 +281,33 @@ Two things the first real run found, both fixed with tests:
 - the `doctrine` gate assumed `daoris` was on `PATH`. A repository can now declare how to invoke it,
   which is what let this one point the gate at its own CLI in the source tree.
 
+## The Lyntai adoption, closed out (2026-08-05)
+
+- **ADOPT3 — Lyntai's changes were uncommitted, pending owner review.**
+  ✅ done — found already committed as `a5009e9`, "adopt the canonical rule set via daoris; keep
+  repo-specific mechanics local". The backlog entry had gone stale; the work had landed.
+- **REL4 — Lyntai's manifest still names the `OWNER` placeholder.**
+  ✅ done 2026-08-05 — `github:OWNER/daoris#v0.1.0` → `github:JiarongGu/Daoris#v0.0.1`. It was worse than
+  a placeholder by then: the version reframe to `0.0.x` meant the lock pinned a canon version that no
+  longer exists, and Lyntai had drifted seven files behind — the `skills-workflow` rule, the
+  `model-decoupling` knowledge document and five skills had never reached it. Synced 17 files, no
+  collisions, no drift, nothing retired.
+- **ADOPT1 — `dev-conventions.md` substantially duplicated canonical `dotnet-package-layout`.**
+  ✅ done 2026-08-05 — retired. **The budget gate forced it and was right to:** bringing Lyntai current
+  pushed its always-loaded core to 40,517 against a 40,000 limit, and the 8.3 KB file that `doctor`
+  had been reporting at 58% shared vocabulary was the largest thing in the tier.
+
+  Retired rather than trimmed, after checking every section survived elsewhere: package structure,
+  naming and variation points had become canonical outright; the LLM seam, storage, scorer and testing
+  sections were already in `extending-lyntai.md`, `llm-and-router.md`, `storage.md` and `pitfalls.md`.
+  Only two things existed nowhere else, and both moved into local `repo-mechanics.md` — the dev loop
+  with its e2e discovery convention, and the **zero-`Dto`-identifiers** invariant, which is still true.
+
+  Result: **40,517 → 33,596 bytes, a 17% cut**, `check` clean, 1563 tests green, and `doctor`'s 58%
+  duplicate gone. The budget was tightened 40,000 → 36,000 to match the new reality rather than leave
+  6.4 KB of silent growth allowed — the same reasoning that set it to 40,000 in the first place.
+
+**Left uncommitted in Lyntai, deliberately.** That repository's own `CLAUDE.md` says "Never commit
+without explicit user approval", and a rule does not stop applying because a different repository's task
+list wanted the work done.
+
