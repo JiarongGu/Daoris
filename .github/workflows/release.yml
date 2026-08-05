@@ -41,7 +41,61 @@ permissions:
   id-token: write   # OIDC for npm provenance / trusted publishing
 
 jobs:
+  # The devkit ships as a self-contained binary per platform, so it cannot be cross-compiled from one
+  # runner: native AOT needs the TARGET platform's linker. One job per platform, each publishing its own
+  # binary and its sha256 — that digest is the whole of D27's distribution story, because a consuming
+  # repository records it and verifies OFFLINE against a local file rather than trusting the download.
+  #
+  # Runs even on a dry run. Building the artefact is exactly what a rehearsal should prove, and this is
+  # the half of a release that has never been exercised anywhere else — there is no push CI.
+  devkit:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  rid: linux-x64 }
+          - { os: windows-latest, rid: win-x64 }
+          - { os: macos-latest,   rid: osx-arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test
+        run: dotnet test src/Daoris.Devkit --nologo
+
+      - name: Publish ${{ matrix.rid }}
+        shell: bash
+        run: |
+          dotnet publish src/Daoris.Devkit/Daoris.Devkit.Cli -c Release -r ${{ matrix.rid }}             -o "publish/${{ matrix.rid }}"
+
+      # The name carries the platform because all three land in one release, and a bare `daoris-devkit`
+      # downloaded from the wrong row is a confusing failure rather than an obvious one.
+      - name: Name and hash the artefact
+        shell: bash
+        run: |
+          cd "publish/${{ matrix.rid }}"
+          src=daoris-devkit; [ -f "$src.exe" ] && src=daoris-devkit.exe
+          out="daoris-devkit-${{ matrix.rid }}"; case "$src" in *.exe) out="$out.exe";; esac
+          mv "$src" "$out"
+          # Written beside the binary rather than printed: the digest is the thing consumers record, so
+          # it has to survive as a file rather than as a line in a build log.
+          if command -v sha256sum >/dev/null; then sha256sum "$out" > "$out.sha256"
+          else shasum -a 256 "$out" > "$out.sha256"; fi
+          cat "$out.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: devkit-${{ matrix.rid }}
+          path: |
+            publish/${{ matrix.rid }}/daoris-devkit-*
+          if-no-files-found: error
+
   release:
+    needs: devkit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -138,6 +192,14 @@ jobs:
             git push origin "$tag"
           fi
 
+      - name: Collect the devkit binaries
+        if: ${{ inputs.create_tag && !inputs.dry_run }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: devkit-*
+          path: publish/devkit
+          merge-multiple: true
+
       - name: Create GitHub release
         if: ${{ inputs.create_tag && !inputs.dry_run }}
         uses: softprops/action-gh-release@v2
@@ -146,3 +208,7 @@ jobs:
           name: Daoris ${{ steps.version.outputs.version }}
           body: 'See CHANGELOG.md.'
           draft: ${{ inputs.draft }}
+          # The binaries AND their .sha256 files. A digest published only in the release notes is one
+          # nobody can script against; published as a file beside the artefact, it can be recorded into
+          # a consuming repository and checked there without a network (D27).
+          files: publish/devkit/*

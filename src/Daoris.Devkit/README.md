@@ -155,13 +155,27 @@ check reads as coverage and is not.
 
 ## Distribution
 
-Release assets, with the sha256 recorded by the consuming repository and verified **offline** (D27).
-The devkit is never downloaded implicitly: a missing binary is an error naming the command to run.
+**What exists.** The release workflow builds the binary on each target platform — native AOT cannot be
+cross-compiled, since it needs the target's linker — names each `daoris-devkit-<rid>`, writes a
+`.sha256` beside it, and attaches both to the GitHub release. A digest published only in release notes
+is one nobody can script against; published as a file beside the artefact, it can be recorded into a
+consuming repository and checked there.
 
-That is not an inconvenience worked around — it falls out of D8. Nothing in the CLI may touch the
-network, and there is now a test that greps for the primitives, so the CLI could not be the thing that
-fetches a binary even if that seemed convenient. Hash-pinning is the same shape as `daoris.lock`:
-record the digest locally, verify against the record, need nothing else.
+**What the consumer does.** Download the binary for the platform, verify it against the published digest
+with the standard tool (`sha256sum -c daoris-devkit-<rid>.sha256`), and put it on `PATH`. Record the
+digest in the repository if you want the check repeatable.
+
+**What is deliberately NOT implemented: the devkit does not verify its own hash.** A binary that checks
+itself proves nothing an attacker who replaced it would respect — it would report whatever it was built
+to report. Verification belongs to whoever installs it, before it runs for the first time, which is why
+this is two standard commands rather than a feature.
+
+The realistic failure — the *wrong* devkit rather than a tampered one — is caught: `daoris.gates.json`
+pins a version, and a mismatch stops the run before any gate, with both versions named.
+
+**Nothing is downloaded implicitly**, and that falls out of D8 rather than being worked around. Nothing
+in the CLI may touch the network — a test greps for the primitives — so the CLI could not fetch a binary
+even if it seemed convenient. A missing binary is an error naming the command to run.
 
 ## Building
 
