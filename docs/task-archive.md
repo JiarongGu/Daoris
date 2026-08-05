@@ -530,3 +530,27 @@ it.
 two with the identical six skills, plus a third with two differently-named ones. Worth writing down
 because the two-repository bar is what makes canonical content trustworthy, and a count that drifts
 upward in the retelling is how a bar gets quietly lowered.
+
+## The service, validated end to end (2026-08-05)
+
+Not a backlog item — the opportunity appeared during the Shenora rehearsal and was too good to leave.
+
+Canonizing `claims-need-checks` turned up a sibling that had derived the same principle independently,
+from the opposite end. Word overlap scores the two at **25%**, under the 30% duplicate threshold, so
+`doctor` cannot see them and no retuning would help: at 25% a real twin is indistinguishable from an
+unrelated pair. That is D17's claim, and until now it had only ever been argued from a survey.
+
+Indexed into `Daoris.Service` against a local embedding endpoint, the semantic pass reports **exactly
+that pair at 0.785**, labelled *Convergent — same lesson, different words*. It discriminates too:
+nothing at a 0.82 threshold, only the true pair at 0.70, and an unrelated storage document joining at
+0.60 — the precision/recall curve behaving as it should, and support for the threshold having no clever
+default.
+
+**This is the first end-to-end evidence that the service does the thing it was built for**, and it is
+not a constructed test. The convergence was found by hand during an adoption; the tool then found the
+same pair without being told what to look for. It confirms D24 from both sides as well — convergence
+returns copies and restatements with no model at all, and the model adds only the class that text
+comparison provably cannot reach.
+
+Run through the MCP server over stdio against a two-repository fixture, with two unrelated documents
+included so that a detector flagging everything would have been caught.

@@ -6,6 +6,13 @@ stores them in SQLite, answers ranked queries over FTS5, and finds where reposit
 lesson independently. **58 tests**, two of which run against the real sibling repositories rather than
 fixtures.
 
+**The semantic pass has been proven on a real pair.** Two repositories derived the same principle
+independently and wrote it in different vocabulary; word overlap scores them at **25%**, below the
+duplicate threshold, so the CLI's `doctor` structurally cannot see them. Indexed here with a local
+embedding endpoint, convergence detection reports exactly that pair at **0.785** — and discriminates,
+returning nothing at a 0.82 threshold and pulling in an unrelated document at 0.60. That is the whole
+argument for this artefact existing, measured rather than asserted (`docs/DECISIONS.md` D17, D24).
+
 Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database; queries answer in
 **3–10 ms**.
 

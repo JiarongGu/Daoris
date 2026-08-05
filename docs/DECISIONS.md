@@ -709,3 +709,26 @@ documents.
 repositories; it is two with the identical six, plus a third with two differently-named skills. Worth
 noting because the two-repository bar is what makes canonical content trustworthy, and a count that
 drifts upward in the retelling is how a bar gets quietly lowered.
+
+**Amended 2026-08-05 — D17 confirmed end to end, on a pair nobody constructed.** The limit is no longer
+argued from a survey; it has been measured on real text, and the semantic pass has been shown to clear it.
+
+While canonizing `claims-need-checks`, a sibling turned out to have derived the same principle
+independently — from the opposite end, auditing shipped API documentation against its own source rather
+than finding an unenforced configuration field. Word overlap scores the two at **25%**, below the 30%
+threshold, so `doctor` cannot see them and no retuning would help: at 25% they are indistinguishable
+from an unrelated pair.
+
+Indexed into the service with a local embedding endpoint, the semantic pass reports exactly that pair at
+**0.785**, labelled *Convergent — same lesson, different words*. It also discriminates rather than
+matching everything: at a 0.82 threshold nothing is returned, at 0.70 only the true pair, and at 0.60 an
+unrelated storage document joins them. That is the precision/recall curve behaving as it should, and it
+supports the parameter having no clever default — the useful value depends on the embedder and the
+corpus, which is why the tool asks for a sweep rather than trusting one.
+
+**This is the first end-to-end evidence that the service does the thing it exists for**, and it was not a
+constructed test: the convergence was found by hand during an adoption, and the tool independently found
+the same pair. It also confirms **D24** from both sides — convergence detection returns copies and
+restatements with no model at all, and the model adds the class that text comparison provably cannot
+reach.
+
