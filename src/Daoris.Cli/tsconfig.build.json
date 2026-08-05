@@ -1,0 +1,12 @@
+{
+  // What actually ships. `src` only and `rootDir` pinned there, so the emit is `dist/cli.js` rather
+  // than `dist/src/cli.js` — the tests share a root with the sources, and without pinning it the
+  // output nests one level deeper and the bin entry silently falls back to running the sources.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

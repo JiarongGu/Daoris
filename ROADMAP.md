@@ -15,7 +15,7 @@ Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). Only the fir
 
 | | What | State |
 |---|---|---|
-| `Daoris.Cli` | The doctrine tool — npm, Node, zero dependencies | **built and proven** |
+| `Daoris.Cli` | The doctrine tool — npm, TypeScript, zero runtime deps | **built and proven** |
 | `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | **built** |
 | `Daoris.Service` | Cross-repository knowledge service | brief written |
 | `Daoris.Web` + `Daoris.Desktop` | One React UI, two shells | brief written |

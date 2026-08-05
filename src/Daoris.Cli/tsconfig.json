@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Imports name the `.ts` file they actually resolve to, so `node --test` runs the sources
+    // directly with no build — and the emit rewrites them to `.js` for the published package.
+    // That is what keeps the dev loop buildless without shipping TypeScript to consumers, whose
+    // Node may be 22 and will not strip types on its own.
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+
+    // Typechecking only. The emit that ships is `tsconfig.build.json`, which compiles `src`
+    // alone — tests share this root and must never reach the package.
+    "noEmit": true,
+    "declaration": false,
+    "sourceMap": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "bin", "test"],
+  "exclude": ["dist", "_fixtures", "canon"]
+}

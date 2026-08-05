@@ -10,6 +10,10 @@ _fixtures/
 *.log
 .DS_Store
 
+# The CLI's compiled output. The source is `src/*.ts`; consumers get this, because their Node
+# may be 22 and will not strip types on its own.
+src/Daoris.Cli/dist/
+
 # The canon is staged into the CLI package at pack time (tools/stage-package.mjs);
 # the tracked copy is canon/ at the root.
 src/Daoris.Cli/canon/

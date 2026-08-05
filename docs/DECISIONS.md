@@ -818,3 +818,37 @@ one agent to work everywhere.
 **Exceptions, narrow:** initializing a repository that has no owner yet, and a change so coupled that
 splitting it would leave neither side working. A change that merely *touches* two repositories is not
 that — it is two changes and one quest.
+
+## D33 — The CLI is TypeScript; the dev loop stays buildless and the package stays dependency-free
+
+**Decided 2026-08-05.** `src/Daoris.Cli` is TypeScript under `strict`, with `noUncheckedIndexedAccess`
+and `exactOptionalPropertyTypes`. Sources are `.ts` importing `./x.ts`; the emit rewrites those to `.js`.
+
+**Why now.** It was the only untyped artefact left — the web app is TypeScript, the service and devkit
+are C# — and it holds the most intricate logic in the project. D19's state space is lock × disk × canon,
+corrected four times before anyone wrote it down; those three shapes were described accurately in
+comments and checked by nothing. Naming them is most of what this buys.
+
+**Two properties had to survive, and did.** The published package still declares **zero runtime
+dependencies** — TypeScript is a build dependency, and the guarantee was always about what a consumer
+installs. And **the dev loop needs no build**: Node 24 strips types, so `node --test` runs the sources
+directly. Only publishing compiles, because a consumer's Node may be 22, which does not strip types on
+its own and would fail on a package of `.ts` files.
+
+`bin/daoris.mjs` stays `.mjs` and stays thin — it is what npm's `bin` names and what every consumer
+executes. It resolves `dist/` when present and the sources otherwise, so the same entry works built and
+unbuilt. The dispatcher moved into `src/cli.ts` where it can be typed.
+
+**Two configs, deliberately.** `tsconfig.json` typechecks sources, bin and tests with no emit;
+`tsconfig.build.json` compiles `src` alone with `rootDir` pinned. Without that pin the tests share a
+root, the output nests to `dist/src/cli.js`, and the bin entry silently falls back to running sources —
+a build that appears to work and ships nothing.
+
+**Consequence.** `npm test` uses auto-discovery rather than a glob. The glob was mishandled on Windows
+and quietly dropped a file: the count fell 130 → 129 at the rename, which is exactly the failure mode a
+glob invites.
+
+**The migration was verified by the tests, not by the compiler.** 130 tests and the release rehearsal
+ran green at every step, including while hundreds of type errors remained — which is the right order:
+the types describe what the code does, so the code proving itself first is what makes the descriptions
+trustworthy.

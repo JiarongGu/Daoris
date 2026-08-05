@@ -31,7 +31,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Nine commands, 125 tests, a canon of 8 core rules, 3 core
+**Built and proven; nothing published.** Nine commands, 130 tests, a canon of 8 core rules, 3 core
 knowledge documents, 5 core skills and 5 packs. `Daoris.Service` adds 58 and `Daoris.Devkit` 57.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
@@ -47,7 +47,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D32) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D33) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -71,7 +71,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 
 | Path | Holds |
 |---|---|
-| `src/Daoris.Cli/` | **The npm package `daoris`** — Node, zero dependencies. `bin/`, `src/`, `test/` |
+| `src/Daoris.Cli/` | **The npm package `daoris`** — TypeScript, zero runtime deps. `bin/`, `src/`, `test/` |
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
 | `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
 | `src/Daoris.Web/` | React UI over the service — the only UI; convergence first, read-only |
@@ -109,8 +109,13 @@ Run every command from the **workspace root**, not from a package directory.
 
 ## Conventions
 
-- **Zero runtime dependencies**, ESM only, Node ≥ 22. `__dirname` does not exist — derive from
-  `import.meta.url`.
+- **TypeScript, ESM only, Node ≥ 22.** `src/*.ts` importing `./x.ts`; the emit rewrites those to `.js`.
+  `__dirname` does not exist — derive from `import.meta.url`.
+- **Zero *runtime* dependencies.** TypeScript is a build dependency and the published package has none —
+  that is the guarantee, not "no `devDependencies`".
+- **The dev loop needs no build:** Node 24 strips types, so `node --test` runs the sources. Only
+  publishing compiles, because a consumer's Node may be 22 and will not strip types on its own.
+  `bin/daoris.mjs` stays `.mjs` — it is what npm's `bin` names and what every consumer executes.
 - **Every write is atomic, BOM-less UTF-8, LF** — write beside, then rename. Never build file content by
   echoing through the console.
 - **Exit codes are the contract:** `0` clean · `1` policy failure · `2` tool error.

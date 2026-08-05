@@ -11,13 +11,19 @@
   },
   "files": [
     "bin",
-    "src",
+    "dist",
     "canon"
   ],
   "scripts": {
     "test": "node --test",
-    "prepack": "node ../../tools/stage-package.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build && node ../../tools/stage-package.mjs",
     "postpack": "node ../../tools/stage-package.mjs --clean"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
 }
