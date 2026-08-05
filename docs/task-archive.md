@@ -750,6 +750,23 @@ keeps being a poor proxy for whether a pack captured the right ideas.
 
 Only `desktop-winforms` remains, and it stays below the two-repository bar.
 
+## CANON3 — reclassified, not completed (2026-08-06)
+
+Moved out of the backlog into the quest ledger at the top of `TASKS.md`, because it was never a Daoris
+task. It is work for whoever maintains that repository, and Daoris's part — the rehearsal that makes
+taking it mechanical — has been done for a day.
+
+Keeping it as a numbered backlog item made it look like something Daoris would eventually do, which is
+exactly the confusion `repository-owns-its-work` exists to prevent. `REG1` folded in the same way: it
+was Lyntai's work described from the outside, and it is now stated as the quest it actually is.
+
+**The ledger exists because the quest system is built and not deployed.** Nothing runs between sessions,
+so nothing can be published or pulled. Rather than calling the work blocked, this repository holds it in
+its own backlog — the one file it is always allowed to write — until there is somewhere to send it.
+
+The ledger says so explicitly, because the tempting shortcut is the one already taken once: an outbound
+quest waits to be published, it does not get hand-delivered into a sibling.
+
 ---
 
 # Handover — end of 2026-08-05
@@ -794,11 +811,13 @@ The day reshaped the model three times. Read these before touching the correspon
 
 ## The open items, and what each waits on
 
+**`TASKS.md` opens with a quest ledger**, because the quest system is built and not deployed. Two
+outbound quests are prepared there — the Shenora adoption and Lyntai's domain declaration — waiting on
+somewhere to publish them. They are *not* Daoris tasks, and they are not to be hand-delivered.
+
 | Item | Waiting on |
 |---|---|
-| `SVC1` | Nothing runs between sessions. This is what `CANON3` actually needs. |
-| `CANON3` | A running service to publish the Shenora quest through. Everything else is prepared. |
-| `REG1` | Lyntai declaring its own `domain`. Its work, not ours. |
+| `SVC1` | Nothing runs between sessions, so nothing can be published or pulled. The ledger holds what would have been sent. |
 | `REH1` | Catching the rehearsal failing again — **capture the log before re-running.** |
 | `CANON2` | A second repository needing `desktop-winforms`. Below the bar until then. |
 | `HARNESS1` | A repository that actually wants a second harness. |

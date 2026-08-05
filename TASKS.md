@@ -28,6 +28,37 @@ _**Pushed 2026-08-05** to `main`, after auditing every commit and object against
 **Nothing is published to npm**, deliberately: the surface moved a great deal in one day, and a version
 published now would pin decisions that are three hours old._
 
+## Quests — the interim ledger
+
+_The quest system is built (D32) and **not deployed**: nothing runs between sessions, so nothing can
+actually be published or pulled yet. Until a service is up, this section is where quests live — in this
+repository's own backlog, which is the one file this repository is always allowed to write._
+
+_**It never becomes a reason to write into a sibling.** An outbound quest waits here until it can be
+published; it does not get delivered by hand. That was tried, and `.claude/knowledge/reaching-in.md` is
+what came of it._
+
+### Outbound — prepared, waiting on a service
+
+- [ ] **To `Shenora` — adopt the canon.** Fully rehearsed, so publishing it is mechanical: 6 collisions
+  (`persist-working-state`, `sensitive-info`, `skills-workflow`, and the `doc-loader`, `fix-log`,
+  `pattern-finder` skills), 2 twins to retire (`windows-dev-gotchas` at 47% against canonical
+  `windows-machine`; `doc-claims` at 49% against `claims-need-checks`, which now merges it), the local
+  mechanics to preserve drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, and `check`
+  clean at 38,782 bytes. Two packs came out of reading that repository's doctrine and are ready for it:
+  `web-webview` and `durable-jobs`.
+  _Shenora must adopt before it can be addressed (D34), so this may arrive as an invitation rather than
+  a quest._
+
+- [ ] **To `Lyntai` — declare a domain.** It carries the canon and appears in the registry as adopted
+  with nothing said about what it owns or accepts, so a sibling cannot tell what is worth asking of it.
+  One `domain` block in its manifest, then `daoris connect`. _(This is REG1, stated as the quest it
+  actually is.)_
+
+### Inbound — asked of Daoris
+
+_None recorded. When a sibling asks for something and there is no service to carry it, write it here._
+
 ## Part 1 — other agent harnesses (deliberately not built)
 
 _Daoris targets Claude Code (D23). The others are detected and reported; a second implementation gets
@@ -47,23 +78,9 @@ correct, and never loaded._
   two-repository bar**, and the bar is the whole reason the canon is trustworthy. Leave it local until a
   second repository needs the same thing.
 
-- [ ] **CANON3 — the Shenora adoption, as a quest.** _Open again, and honestly so._ It was briefly
-  marked done because a quest had been written into that repository's backlog — which turned out to be
-  the violation the whole quest system exists to prevent, so it was removed (D32 amendment). Quests now
-  live in the service and are pulled, and **no service is running persistently yet**, so nothing has
-  been published.
-
-  Everything needed is prepared: the rehearsal determined 6 collisions, 2 twins to retire, the local
-  mechanics to preserve (`docs/adoption/shenora-repo-mechanics.md`), a 40,000 budget, and `check` clean.
-  When a service is up, publish it with `quest_publish` — and note that Shenora must adopt first, since
-  only an adopted repository can be addressed (D34).
 
 ## Part 3 — tool follow-ups
 
-- [ ] **REG1 — Lyntai shows as adopted but undeclared.** It carries the canon and appears in the
-  registry with no `domain`, so a sibling cannot tell what is worth asking of it. Filling that in is
-  Lyntai's own work and belongs to Lyntai — this entry exists so the gap is visible from here, not so it
-  gets fixed from here.
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen **twice**, and narrowed:
 
     - **Always exactly 7 failures**, never a different count. Phase 6 — the canon-upgrade path — has
@@ -81,7 +98,8 @@ correct, and never loaded._
   the seven went first, and that is the piece still missing. Do not tag a release while this is open.
 - [ ] **SVC1 — the service has no persistent deployment.** Everything is verified by starting it,
   driving it, and stopping it. Quests and registrations live in SQLite and survive, but nothing runs
-  between sessions — so no quest can actually be delivered yet. This is what CANON3 waits on.
+  between sessions, so nothing can be published or pulled. Until then the quest ledger above holds what
+  would have been sent — the work is not blocked, only undelivered.
 
 ---
 
