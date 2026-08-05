@@ -684,47 +684,6 @@ One thing to watch: the release rehearsal reported 45/52 on a single run and 52/
 with nothing changed in between. Recorded rather than explained; a gate that fails once and passes twice
 is a gate worth watching before it is trusted.
 
-## Where this stands, for the next session (2026-08-05)
-
-**All four artefacts exist.** `Daoris.Cli` (TypeScript, nine commands, zero runtime deps),
-`Daoris.Service` (index, convergence, quests, registry), `Daoris.Devkit` (one AOT binary, five gates),
-`Daoris.Web` (convergence-first, read-only). Only `Daoris.Desktop` is unbuilt, and it carries a brief.
-
-**The three directions all work.** Doctrine flows outward with `sync`; improvements flow back with
-`upstream`; work flows sideways as quests published to the service and pulled by whoever owns that
-domain. `connect` is how a repository registers what it is — the only command that touches the network,
-and opt-in.
-
-**Everything is verified by running it, not by asserting it.** 119 CLI tests, 70 service, 57 devkit,
-52/52 release rehearsal against the packaged artefact, 8/8 devkit gates, 0 type errors in either
-TypeScript project, and a history scan over 1,122 objects.
-
-### The three corrections worth carrying forward
-
-Each was a case of the tooling breaking its own rule, and each was found by using the thing rather than
-reading it:
-
-- **The quest system wrote into other repositories.** That is the violation `repository-owns-its-work`
-  exists to prevent, committed by the tool that shipped the rule. Quests moved to the service.
-- **D8 was over-broadened.** "`check` works offline" became "nothing in the CLI may open a socket",
-  written by me rather than decided, and it would have made a client impossible.
-- **`ComposedService.Convergence` was a field nobody called**, and `KnowledgeService` built a new
-  detector per request — 31 seconds every time. Found by driving the UI, not by reading the code.
-
-### What is open, and why
-
-Six items, all waiting on something real: `HARNESS1` and `CANON2`'s last two packs are held by their own
-recorded reasoning; `CANON3` needs a running service to publish through; `REG1` is Lyntai's own work;
-`REH1` is a single unexplained rehearsal failure worth catching again; `SVC1` is that nothing runs
-between sessions, which is what `CANON3` actually waits on.
-
-### The habit that paid best
-
-Watching a check fail before trusting it. It caught a memo that changed nothing (the real cause was
-elsewhere), an import-walk that missed bare side-effect imports, a build that emitted to the wrong
-directory and silently ran sources instead, and a test-glob that quietly dropped a file on Windows.
-Every one of those looked green first.
-
 ## Hardening the day's own failures into doctrine (2026-08-05)
 
 The point of Daoris is codifying how the work is done, so the session's own mistakes are the material
@@ -790,3 +749,67 @@ with ports, paths, class names and commands that the canonical version strips. W
 keeps being a poor proxy for whether a pack captured the right ideas.
 
 Only `desktop-winforms` remains, and it stays below the two-repository bar.
+
+---
+
+# Handover — end of 2026-08-05
+
+**Start with `CLAUDE.md`, then `TASKS.md`.** This section is orientation: what changed, what is load-
+bearing, and what the open items are actually waiting on.
+
+## What exists
+
+All four artefacts. `Daoris.Cli` (TypeScript, nine commands, zero runtime dependencies),
+`Daoris.Service` (index, convergence, quests, registry — MCP and HTTP), `Daoris.Devkit` (one AOT binary,
+five universal gates), `Daoris.Web` (convergence-first, read-only). Only `Daoris.Desktop` is a brief.
+
+**Gates:** `npm run verify` · `npm run rehearse` · `dotnet test src/Daoris.Service` ·
+`dotnet test src/Daoris.Devkit` · the devkit's own `verify`. All green at 120 / 70 / 57 / 52-of-52 /
+8-of-8, with zero type errors in both TypeScript projects.
+
+## What changed most, and where the reasoning is
+
+The day reshaped the model three times. Read these before touching the corresponding area:
+
+- **D32 (+ its amendment) — cross-repository work is a quest, and quests belong to the service.** The
+  first implementation wrote into the sibling's backlog, which is the violation the rule exists to
+  prevent. Quests are now published to the service and *pulled*.
+- **D34 — a repository registers what it owns.** Declared in its manifest's `domain`; the service reads
+  it. Search answers "has anyone solved this", the registry answers "whose problem is this".
+- **D35 — `connect` is the one online command, and D8 was over-broadened.** D8 is about `check` working
+  offline; it had been widened to "nothing in the CLI may open a socket", which would have made a client
+  impossible.
+- **D33 — the CLI is TypeScript.** Dev loop needs no build (Node strips types); only publishing
+  compiles, because a consumer's Node may be 22.
+
+## Three constraints that are easy to trip
+
+- **Never write into another repository.** Absolute (D32). `containment.test.ts` enforces it: every
+  command runs with a sibling beside it and the sibling must be byte-for-byte unchanged.
+- **The core budget has 432 bytes left** (23,568 / 24,000). Split principle from detail; do not raise
+  the limit (D28).
+- **Edit files with the edit tool, not scripts.** Seven corruption events in one session came from
+  scripted rewrites — mangled escapes, a stray control byte, an eaten declaration, and twice a pattern
+  that silently matched nothing.
+
+## The open items, and what each waits on
+
+| Item | Waiting on |
+|---|---|
+| `SVC1` | Nothing runs between sessions. This is what `CANON3` actually needs. |
+| `CANON3` | A running service to publish the Shenora quest through. Everything else is prepared. |
+| `REG1` | Lyntai declaring its own `domain`. Its work, not ours. |
+| `REH1` | Catching the rehearsal failing again — **capture the log before re-running.** |
+| `CANON2` | A second repository needing `desktop-winforms`. Below the bar until then. |
+| `HARNESS1` | A repository that actually wants a second harness. |
+
+## The habit that paid best
+
+**Watch a check fail before trusting it.** It caught a memo that changed nothing, an import-walk that
+missed bare imports, a build emitting to the wrong directory while silently running sources, and a test
+glob that dropped a file on Windows. Every one of them was green first.
+
+And the pattern behind most of the day's mistakes: **a tool that enforces a rule is the most likely
+thing to break it**, because whoever builds it is thinking about the mechanism rather than the
+principle. It happened three times — the quest writer, the over-broadened guarantee, and a detector
+nobody called. Each was found by *using* the thing, never by reading it.

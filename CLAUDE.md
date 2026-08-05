@@ -37,8 +37,14 @@ Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted 
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.
 
-**Not released, and not close.** The CLI is complete and proven, but one of the four artefacts does not
-exist yet. Development runs at `0.0.x`.
+**All four artefacts exist**; only `Daoris.Desktop` — the shell that hosts the same web build — is a
+brief. **Nothing is published**, and development runs at `0.0.x`.
+
+**Two things to know before changing anything.** The always-loaded core sits at **23,568 of 24,000
+bytes**, so the next canon addition fails the budget gate — that is the gate working, and the answer is
+to split principle from detail rather than raise the limit (D28). And **never write into another
+repository**: that constraint is absolute (D32), it was broken here and cost a sibling an uncommitted
+edit, and `.claude/knowledge/reaching-in.md` is the account.
 
 **Never edit the version by hand, and never stamp a changelog heading.** Both belong to the release
 workflow (`tools/release-prep.mjs`); the desktop sibling burned a version outright on exactly this. A
