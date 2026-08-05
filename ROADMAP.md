@@ -17,8 +17,9 @@ Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). Only the fir
 |---|---|---|
 | `Daoris.Cli` | The doctrine tool — npm, TypeScript, zero runtime deps | **built and proven** |
 | `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | **built** |
-| `Daoris.Service` | Cross-repository knowledge service | brief written |
-| `Daoris.Web` + `Daoris.Desktop` | One React UI, two shells | brief written |
+| `Daoris.Service` | Knowledge index, convergence, quests and the registry | **built** |
+| `Daoris.Web` | The knowledge UI — convergence first, read-only | **built** |
+| `Daoris.Desktop` | The desktop shell hosting the same web build | brief written |
 
 ## Versions
 
@@ -73,7 +74,7 @@ repository's own gate set end to end.
   question that already has one would be this project's own pathology, committed by the tool built to
   remove it.
 
-## Then — the knowledge layer: `Daoris.Service`, `Daoris.Web`, `Daoris.Desktop`
+## Built — the knowledge layer: `Daoris.Service` and `Daoris.Web`
 
 Doctrine is now consistent across repositories, but what each repository *learned* — its decisions, its
 fix log, its task outcomes — is still visible only from inside it. That is how the same problem gets

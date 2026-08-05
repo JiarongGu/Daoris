@@ -605,8 +605,12 @@ The right shape was a quest with the evidence in it, letting whoever works there
 now says exactly that, including that `git checkout -- .` is a perfectly good answer.
 
 **CANON3 was never blocked either.** The backlog said it was waiting on Shenora's tree to be clean. It was
-waiting on Daoris not having a way to ask. Quest `#ee8994` carries the entire rehearsal — 6 collisions, 2
-twins, the local mechanics to preserve, the budget, `check` clean — so taking it is mechanical.
+waiting on Daoris not having a way to ask. Quest `#ee8994` carried the entire rehearsal — 6 collisions, 2
+twins, the local mechanics to preserve, the budget, `check` clean — so taking it was mechanical.
+
+**⚠ Both quests were withdrawn hours later**, and CANON3 reopened. Writing them into those repositories'
+backlogs was itself the violation the quest system exists to prevent; the corrected design holds quests
+in the service and has repositories pull them. See the entry below, and D32's amendment.
 
 Two things worth keeping from building it:
 
@@ -679,3 +683,44 @@ into any repository** — which was the whole point of the correction.
 One thing to watch: the release rehearsal reported 45/52 on a single run and 52/52 on the two after it,
 with nothing changed in between. Recorded rather than explained; a gate that fails once and passes twice
 is a gate worth watching before it is trusted.
+
+## Where this stands, for the next session (2026-08-05)
+
+**All four artefacts exist.** `Daoris.Cli` (TypeScript, nine commands, zero runtime deps),
+`Daoris.Service` (index, convergence, quests, registry), `Daoris.Devkit` (one AOT binary, five gates),
+`Daoris.Web` (convergence-first, read-only). Only `Daoris.Desktop` is unbuilt, and it carries a brief.
+
+**The three directions all work.** Doctrine flows outward with `sync`; improvements flow back with
+`upstream`; work flows sideways as quests published to the service and pulled by whoever owns that
+domain. `connect` is how a repository registers what it is — the only command that touches the network,
+and opt-in.
+
+**Everything is verified by running it, not by asserting it.** 119 CLI tests, 70 service, 57 devkit,
+52/52 release rehearsal against the packaged artefact, 8/8 devkit gates, 0 type errors in either
+TypeScript project, and a history scan over 1,122 objects.
+
+### The three corrections worth carrying forward
+
+Each was a case of the tooling breaking its own rule, and each was found by using the thing rather than
+reading it:
+
+- **The quest system wrote into other repositories.** That is the violation `repository-owns-its-work`
+  exists to prevent, committed by the tool that shipped the rule. Quests moved to the service.
+- **D8 was over-broadened.** "`check` works offline" became "nothing in the CLI may open a socket",
+  written by me rather than decided, and it would have made a client impossible.
+- **`ComposedService.Convergence` was a field nobody called**, and `KnowledgeService` built a new
+  detector per request — 31 seconds every time. Found by driving the UI, not by reading the code.
+
+### What is open, and why
+
+Six items, all waiting on something real: `HARNESS1` and `CANON2`'s last two packs are held by their own
+recorded reasoning; `CANON3` needs a running service to publish through; `REG1` is Lyntai's own work;
+`REH1` is a single unexplained rehearsal failure worth catching again; `SVC1` is that nothing runs
+between sessions, which is what `CANON3` actually waits on.
+
+### The habit that paid best
+
+Watching a check fail before trusting it. It caught a memo that changed nothing (the real cause was
+elsewhere), an import-walk that missed bare side-effect imports, a build that emitted to the wrong
+directory and silently ran sources instead, and a test-glob that quietly dropped a file on Windows.
+Every one of those looked green first.

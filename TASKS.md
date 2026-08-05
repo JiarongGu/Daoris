@@ -19,12 +19,14 @@ knowledge documents, 5 core skills and 5 packs, adopted into Lyntai with its 156
 searches the family's knowledge and holds its quests and registry — 70 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 57
 tests, one binary._
 
-_**Three of the four artefacts exist** (`docs/DECISIONS.md` D20); `Daoris.Web` does not. `Daoris.Devkit`
-is built — one 2.7 MB AOT binary, 57 tests, five universal gates, running this repository's own gate set._
+_**All four artefacts exist** (`docs/DECISIONS.md` D20). `Daoris.Devkit` is one 2.7 MB AOT binary with
+five universal gates; `Daoris.Web` is the knowledge UI, convergence-first and read-only, served by the
+service's HTTP host. Only `Daoris.Desktop` — the shell that hosts the same web build — is unbuilt, and
+it carries a brief rather than code._
 
-_**Pushed 2026-08-05** to `main`, after auditing all 73 commits and 932 objects against every pattern.
-**Nothing is published to npm**, deliberately: the tag and the release workflow stay unrun while a
-quarter of the project does not exist._
+_**Pushed 2026-08-05** to `main`, after auditing every commit and object against every pattern.
+**Nothing is published to npm**, deliberately: the surface moved a great deal in one day, and a version
+published now would pin decisions that are three hours old._
 
 ## Part 1 — other agent harnesses (deliberately not built)
 
@@ -33,7 +35,7 @@ written the day a repository actually adopts one. Detection exists so the gap is
 silent — installing this tree for a harness that reads a different file leaves every document present,
 correct, and never loaded._
 
-- [ ] **HARNESS1 — a second layout, when one is needed.** `src/harness.mjs` holds the signals and the
+- [ ] **HARNESS1 — a second layout, when one is needed.** `src/harness.ts` holds the signals and the
   contract checks; a second implementation slots in beside the Claude one. Do not start until a real
   repository wants it: the layout, the always-loaded semantics and the trigger mechanism all differ,
   and guessing at them produces doctrine nobody chose in a format nobody verified.
@@ -53,15 +55,30 @@ correct, and never loaded._
       the bar is the whole reason the canon is trustworthy. Leave it local until a second repository
       needs the same thing.
 
-- [x] **CANON3 — adopt Shenora.** ✅ **Posted as quest `#ee8994`** on 2026-08-05, which is what the
-  backlog should always have said: it was never blocked on that repository's tree, it was blocked on
-  Daoris not having a way to ask. The quest carries the whole rehearsal — 6 collisions, 2 twins, the
-  local mechanics to preserve, budget 40000, `check` clean — so taking it is mechanical. Whether it is
-  taken, and when, belongs to whoever works there.
+- [ ] **CANON3 — the Shenora adoption, as a quest.** _Open again, and honestly so._ It was briefly
+  marked done because a quest had been written into that repository's backlog — which turned out to be
+  the violation the whole quest system exists to prevent, so it was removed (D32 amendment). Quests now
+  live in the service and are pulled, and **no service is running persistently yet**, so nothing has
+  been published.
+
+  Everything needed is prepared: the rehearsal determined 6 collisions, 2 twins to retire, the local
+  mechanics to preserve (`docs/adoption/shenora-repo-mechanics.md`), a 40,000 budget, and `check` clean.
+  When a service is up, publish it with `quest_publish` — and note that Shenora must adopt first, since
+  only an adopted repository can be addressed (D34).
 
 ## Part 3 — tool follow-ups
 
-_Nothing open here._
+- [ ] **REG1 — Lyntai shows as adopted but undeclared.** It carries the canon and appears in the
+  registry with no `domain`, so a sibling cannot tell what is worth asking of it. Filling that in is
+  Lyntai's own work and belongs to Lyntai — this entry exists so the gap is visible from here, not so it
+  gets fixed from here.
+- [ ] **REH1 — the release rehearsal reported 45/52 once.** Two runs immediately after it, with nothing
+  changed in between, reported 52/52, and it has passed every time since. Recorded rather than
+  explained. A gate that fails once and passes afterwards is worth watching before it is trusted, and
+  the cause is more likely to be found by catching it again than by reasoning about it now.
+- [ ] **SVC1 — the service has no persistent deployment.** Everything is verified by starting it,
+  driving it, and stopping it. Quests and registrations live in SQLite and survive, but nothing runs
+  between sessions — so no quest can actually be delivered yet. This is what CANON3 waits on.
 
 ---
 

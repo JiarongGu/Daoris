@@ -45,11 +45,6 @@ public sealed class RepositoryScanner
     /// <summary>
     /// The backlog, by the family's convention — where inbound requests land.
     /// </summary>
-    private static readonly string[] BacklogFiles = ["TASKS.md", "docs/TASKS.md", "BACKLOG.md"];
-
-    /// <summary>The heading `daoris quest post` writes under, and the only place this looks.</summary>
-    private const string QuestsHeading = "## Quests from other repositories";
-
     /// <summary>Read every entry from a repository. A missing directory or file is simply absent.</summary>
     public IReadOnlyList<KnowledgeEntry> Scan(string repositoryRoot)
     {
