@@ -200,6 +200,11 @@ assumed: canonizing five skills from twelve repositories meant reading copies th
 and almost no vocabulary, and `doctor`'s word-overlap detector provably cannot see convergence — same
 principle, different words (D17). That is exactly the gap a model closes.
 
+**A model is a tier of fidelity, never a prerequisite** (D24). The analysis below splits along exactly
+that line: finding candidates needs no model and already ships, drafting a merged statement does. The
+models turn over faster than this project will, so a feature welded to one ages at the speed of the
+fastest-moving part of the stack rather than its own.
+
 So the service proposes, and a person disposes:
 
 - **Analyze** — surface that several repositories are circling the same lesson, including when the

@@ -290,6 +290,45 @@ the offline guarantee, and whether the service needs hosting at all — a local-
 MCP would answer most of the need without a deployment or a privacy boundary. Each is recorded as an
 open question in the relevant `src/Daoris.*/README.md`, written before any code.
 
+## D24 — A model is a tier of fidelity, never a prerequisite (2026-08-05)
+
+**Decision.** No feature may require a model to function. Every feature that can use one must have a
+**floor that works without it**, must say which tier it ran at, and must take the model as
+configuration that can be swapped or removed.
+
+**Why.** The models move faster than this project will. What is best today is not what will be best in
+a year, and a feature welded to one of them ages at the speed of the fastest-moving part of the stack
+rather than its own. Decoupling is not future-proofing in the aspirational sense — it is refusing to
+let a dependency that turns over yearly set the shape of doctrine tooling that should turn over far
+more slowly.
+
+There is a nearer reason too. **Most machines have no model available**, and a feature that returns
+nothing without one has made an optional dependency mandatory in all but name — while discarding the
+work it could have done regardless.
+
+**Earned here rather than reasoned about.** Convergence detection was built to require an embedder: it
+returned null without one, and that gap was then reported as *blocked* rather than as the design defect
+it was. It now runs three passes and names which found each result:
+
+| Tier | Needs a model | Finds |
+|---|---|---|
+| Identical | no | Byte-identical copies. No threshold, no doubt |
+| Restatement | no | Substantially the same words — a copy that has drifted |
+| Convergent | **yes** | The same meaning in *different* words, which text comparison provably cannot see (D17) |
+
+Without a model it found eight groups across eleven real repositories, including a document filed as
+knowledge in one and a rule in another. The model adds the top tier; it is not the floor.
+
+**How to apply it to the next feature.** Ask what the feature can do with no model at all, and build
+that first. If the honest answer is *nothing*, the feature is a model wrapper and belongs behind an
+explicit opt-in with the degraded path being a clear message rather than silence. The output must
+always say which tier it ran at — a reader who cannot tell why a category is empty will assume it is a
+bug, and will be right to.
+
+**Consequence.** This is why the LLM-assisted merge in the knowledge-service design splits the way it
+does: the *analysis* half needs no model and already ships, while drafting a merged statement does. The
+same split is expected of anything added later.
+
 ## D23 — One harness is supported; the others are detected, not guessed at (2026-08-05)
 
 **Decision.** Daoris targets the **Claude Code** harness, and says so. Other harnesses are **detected
