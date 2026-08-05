@@ -204,7 +204,7 @@ export function commandAnalyze({ root, argv, write, packageRoot }) {
   }
 
   const target = manifest?.target ?? DEFAULT_TARGET;
-  const budgetLimit = manifest?.coreBudgetBytes ?? 24000;
+  const budgetLimit = manifest?.coreBudgetBytes ?? 30000;
   const requested = argv.filter((arg) => !arg.startsWith('--'));
   const packs = requested.length ? requested : (manifest?.packs ?? []);
 

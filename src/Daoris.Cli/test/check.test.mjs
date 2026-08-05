@@ -10,7 +10,7 @@ import { inspect, commandCheck } from '../src/drift.mjs';
 
 const doc = (name) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\nBody of ${name}.\n`;
 
-function synced(packs = [], coreBudgetBytes = 24000) {
+function synced(packs = [], coreBudgetBytes = 30000) {
   const canonFx = makeFixture('check-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
   canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info'));

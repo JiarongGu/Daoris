@@ -26,7 +26,7 @@ const run = (repoFx, canonFx, packs = [], lock = null) =>
     canon: readCanon(canonFx.root),
     packs,
     target: '.claude',
-    budgetLimit: 24000,
+    budgetLimit: 30000,
     lock,
   });
 

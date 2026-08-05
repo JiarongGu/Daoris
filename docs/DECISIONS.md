@@ -650,3 +650,31 @@ into the consuming repository rather than resolved at install time.
 but the devkit exists partly so that a .NET repository does not carry a Node dependency for tooling
 alone. Shipping it through npm would reintroduce exactly the dependency the artefact was created to
 remove.
+
+## D28 — The default always-loaded budget is 30000, not 24000
+
+**Decided 2026-08-05.** `coreBudgetBytes` defaults to 30000. The v0.1 design's 24000 was a guess made
+before there was a canon to measure.
+
+**Why.** At 24000, core plus **one** pack measured 24,061 bytes in the release rehearsal — so a clean
+adopter's very first `check` failed before they had written a single rule of their own. A default that
+fails on the most common configuration is not a gate, it is noise, and noise trains people to raise the
+number without reading it, which is exactly what the gate exists to prevent.
+
+The sharper version of the problem showed up the same day. Adding one core rule pushed the rehearsal
+consumer over, so the budget fired on the **canon** rather than on a repository's own material. That is
+backwards: the budget exists to constrain what a repository chooses to carry, not to cap what the
+doctrine may contain. Measured, core plus an index is ~19–20 KB and each pack is ~4 KB, so 24000 left
+almost nothing for the thing being governed.
+
+30000 leaves core, the generated index and two packs comfortably inside, and fires on a repository's own
+always-loaded material getting fat — which is the case it has actually earned its keep on. It caught a
+45% overage on first contact with one adopter, and forced the retirement of an 8.3 KB duplicated rule in
+another; both were about local material, and both would have fired at 30000 too.
+
+**Consequence.** No existing adopter changes: `coreBudgetBytes` is written into the manifest at `init`,
+so a repository that already declared one keeps it. This only moves the starting point for the next one.
+
+**Not chosen: scaling the default by pack count.** It would make the number depend on a choice made
+later in the same file, so nobody could read the manifest and know what the limit was — and a budget
+whose value you have to compute is one nobody argues with.

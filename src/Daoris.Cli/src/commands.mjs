@@ -53,7 +53,7 @@ export function commandInit({ root, write, packageRoot }) {
     source: `github:JiarongGu/Daoris#v${canon.version}`,
     packs: [],
     target: DEFAULT_TARGET,
-    coreBudgetBytes: 24000,
+    coreBudgetBytes: 30000,
   });
 
   write(`daoris: wrote ${MANIFEST_FILE} (core only — add packs deliberately)`);

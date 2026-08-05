@@ -93,7 +93,7 @@ still wants a read-through by hand; `doctor` shortens that job rather than repla
   "source": "github:JiarongGu/Daoris#v0.0.1",
   "packs": ["dotnet-library"],
   "target": ".claude",
-  "coreBudgetBytes": 24000
+  "coreBudgetBytes": 30000
 }
 ```
 

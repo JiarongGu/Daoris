@@ -106,7 +106,7 @@ its files) and a per-repo vendored shim (the drift checker would itself be drift
   "source": "github:OWNER/daoris#v0.1.0",
   "packs": ["dotnet-library", "windows-machine"],
   "target": ".claude",
-  "coreBudgetBytes": 24000
+  "coreBudgetBytes": 30000
 }
 ```
 

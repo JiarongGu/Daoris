@@ -19,7 +19,7 @@ test('the manifest fills in defaults for everything but source', () => {
   const manifest = readManifest(fx.root);
   assert.deepEqual(manifest.packs, []);
   assert.equal(manifest.target, '.claude');
-  assert.equal(manifest.coreBudgetBytes, 24000);
+  assert.equal(manifest.coreBudgetBytes, 30000);
   fx.cleanup();
 });
 
