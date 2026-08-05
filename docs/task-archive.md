@@ -424,3 +424,52 @@ positive — an adoption playbook and a documentation-discipline note — and a 
 word overlap misses real twins written in different vocabulary, and this is the same limitation from the
 other side. Both documents were written the same day, which is the whole explanation for the shared
 words. The tool hedges correctly ("advisory only… if they genuinely differ, ignore this").
+
+## The Shenora rehearsal, and what it sent back into the canon (2026-08-05)
+
+Unblocked by copying two siblings' `.claude/` trees into a gitignored scratch consumer rather than
+waiting for their working trees to be clean. That turned the adoption into what it was always supposed
+to be — **a source of canon improvements, not only a consumer of them.**
+
+- **CANON2 — `web-webview`, the first of the pack candidates.**
+  ✅ done 2026-08-05. Written from two applications that derived the same invariants from different
+  symptoms: one profiling a window that froze under load, one debugging thumbnails that were merely
+  slow. The rule carries the four that fail *silently* — answer requests off the UI thread with a
+  response object rather than materialized bytes, the browser object is thread-affine, publish anything
+  served from disk atomically, fail closed on init and health checks. The knowledge document holds the
+  rest.
+
+  **Validated by adoption**, which is what CANON2 asked for: installed into the rehearsal consumer,
+  `doctor` reports that repository's own 21.6 KB hosting document as **64%** covered by the canonical
+  pair. A pack nobody installs is unvalidated doctrine; this one is not.
+
+- **The convergence that proved D17 on a live pair.** `claims-need-checks`, written that morning from
+  three instances in *this* repository, had already been derived by a sibling from the opposite end —
+  auditing shipped API documentation against its own source. The two drafts shared **25% vocabulary**
+  against a 30% threshold, so neither could ever have found the other. That is D17's claim — word
+  overlap detects restatement, not convergence — demonstrated rather than argued, and it is exactly the
+  case the service's semantic pass exists for. After merging both, the canonical document matches the
+  sibling at 49%: **canonizing a convergence is what makes it findable afterwards.**
+
+  A cost came with it. The merged document draws on two vocabularies and now matches two *unrelated*
+  documents at 46% and 31% — false positives that did not exist before. Breadth buys recall and pays in
+  precision, which is the same trade D17 records from the other side.
+
+- **`leak-repair`** — new core knowledge, assembled from three siblings' versions including one written
+  during a real purge. The traps that cost the most: **the backup bundle taken first is itself a
+  complete copy of the leak**, the rewrite tool usually strips the remote and tags need pushing
+  separately, and a clean scan deserves the same suspicion as a passing test.
+
+- **`windows-machine` gained two traps** that pass silently: PowerShell 5 unwrapping a nested array of
+  exactly one element (so a single-pair find-and-replace rewrites one *letter* everywhere, while two or
+  more pairs behave — which is what hides it), and a working directory past the path-length limit
+  failing as *corrupt input*.
+
+**A finding about the default budget.** The 24,000 default cannot cover core plus two packs plus a
+repository's own rules — the rehearsal needed 40,000 for core, three packs and its own material, of
+which the generated index alone is 5,956 bytes. Two repositories now run well above the default, which
+suggests the default is sized for a repository with no packs rather than a realistic adopter.
+
+**Also noticed, not acted on:** two siblings independently keep a `TEMPLATE.md` inside the always-loaded
+rules directory. It is scaffolding for authoring a *new* rule, not a rule, and it is paid for on every
+task. Worth raising at their next adoption rather than editing from here.

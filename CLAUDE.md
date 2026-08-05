@@ -25,7 +25,7 @@ cultivation.
 ## Current state
 
 **Built and proven; nothing published.** Eight commands, 118 tests, a canon of 7 core rules, 3 core
-knowledge documents, 5 core skills and 3 packs. `Daoris.Service` adds 58 and `Daoris.Devkit` 45.
+knowledge documents, 5 core skills and 4 packs. `Daoris.Service` adds 58 and `Daoris.Devkit` 45.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact.

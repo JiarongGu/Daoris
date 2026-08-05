@@ -1,0 +1,4 @@
+{
+  "name": "web-webview",
+  "description": "Hosting a web UI inside a native shell: resource serving, thread affinity, caching, and the ways each fails silently."
+}

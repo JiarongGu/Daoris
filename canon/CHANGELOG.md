@@ -29,6 +29,16 @@ network.
   itself a complete copy of the leak**; the rewrite tool usually strips the remote, and tags need pushing
   separately; a clean scan deserves the same suspicion as a passing test, so plant a pattern you know is
   present and confirm it is found before trusting a clean result.
+- **`web-webview`** (new pack) — hosting a web UI inside a native shell. `embedded-web-ui` carries the
+  four invariants that fail *silently*: answer resource requests off the UI thread with a response object
+  rather than materialized bytes, treat the browser object as thread-affine, publish anything served from
+  disk atomically, and fail closed on initialization and health checks. `web-host-lifecycle` holds the
+  surrounding detail — scheme registration that fails identically however you get it wrong, readiness
+  gating on content rather than navigation, environment scoping, and the development inspector whose
+  arguments are silently dropped once the host sets any of its own.
+  Written from two applications that derived the same invariants from different symptoms — one profiling
+  a frozen window, one debugging slow thumbnails. Validated by adoption: against a real repository's
+  doctrine, `doctor` reports its own 21.6 KB hosting document as **64%** covered by the canonical pair.
 - **`windows-machine`** (pack rule, extended) — two more traps that pass silently. PowerShell 5 unwraps a
   nested array of exactly one element, so a find-and-replace built from an array-of-pairs holding a single
   pair replaces one *letter* everywhere; two or more pairs behave, which is what hides it. And a working

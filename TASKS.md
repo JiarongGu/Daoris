@@ -14,7 +14,7 @@ the family, kept from drifting, and improved from wherever the improvement was f
 ## Active backlog
 
 _**`Daoris.Cli` is built and proven** — eight commands, 118 tests, a canon of 7 core rules, 3 core
-knowledge documents, 5 core skills and 3 packs, adopted into Lyntai with its 1563 tests still green.
+knowledge documents, 5 core skills and 4 packs, adopted into Lyntai with its 1563 tests still green.
 `npm run rehearse` drives the whole consumer lifecycle through the packaged artefact, 52/52. `Daoris.Service` ingests, stores and
 searches the family's knowledge — 58 tests, reachable over MCP. `Daoris.Devkit` runs the gates — 45
 tests, one binary._
@@ -47,31 +47,32 @@ correct, and never loaded._
   them would install doctrine for a workflow that may be about to change. Decide by trying a generator on
   one repository first. If the generated route wins, what stays canonical is much smaller — the *review*
   of generated output, not its production. `post-feature` and `fix-log` are done.
-- [ ] **CANON2 — pack candidates with two repositories agreeing.** From the survey: `desktop-app`
-  (screenshot hygiene, desktop testing, UI layering — a private sibling pair), `web-webview` (WebView2
-  hosting + IPC contracts, from Shenora), `desktop-winforms` (the WinForms shell, from Shenora),
-  `durable-jobs` (two repositories). Write each only when a repository is ready to adopt it — a pack that
-  no one installs is unvalidated doctrine.
-- [ ] **CANON3 — adopt Shenora.** _Blocked only on that repository's tree: it carries 12+ files of
-  in-flight work, including edits to the two `.claude/` files adoption touches. Its own work is not ours
-  to commit._
+- [ ] **CANON2 — the remaining pack candidates.** `web-webview` is **done** (see the archive): written
+  from two applications that derived the same invariants from different symptoms, and validated by
+  adoption at 64% coverage of one repository's own hosting document. Still open, each waiting on a
+  repository ready to adopt it — a pack nobody installs is unvalidated doctrine:
+  `desktop-app` (screen-capture hygiene, desktop testing, UI layering — a private sibling pair, and the
+  material exists: an 11 KB desktop-testing document in one, capture tooling in the other),
+  `desktop-winforms` (the shell traps — an 11 KB source exists but only one repository has them, below
+  the two-repository bar), and `durable-jobs` (two repositories).
 
-  _**Re-analysed 2026-08-05** against the current canon with `daoris analyze`, which writes nothing and
-  so is safe against a dirty tree. The picture is much better than the earlier rehearsal recorded:_
-    - _**6 collisions** — `persist-working-state`, `sensitive-info`, `skills-workflow`, and the
-      `doc-loader`, `fix-log`, `pattern-finder` skills._
-    - _**Budget 14,478 → ~28,208 against a 24,000 limit — over by 4,208 (17.5%)**, not the 48% the
-      earlier note recorded. Retiring the renamed twin below covers most of it._
-    - _The predicted twin, local `windows-dev-gotchas` against canonical `windows-machine`, **is now
-      found automatically at 47%** — it was invisible before D17 lowered the threshold to 0.3._
-    - _`doctor` also flags three knowledge documents against canonical `library-api-design` at 44–57%
-      (`ipc-contracts`, `generic-library`, `webview2-hosting`). Read them before adopting: on the Lyntai
-      evidence, at least one is a rule that is mostly canonical plus a deep dive belonging in the
-      on-demand tier._
+- [ ] **CANON3 — apply the adoption to the real tree.** _Fully rehearsed 2026-08-05 against a scratch
+  consumer carrying that repository's real doctrine, copied out rather than waiting for its tree — which
+  still holds 12+ files of in-flight work. Every decision is now determined, so the real run is
+  mechanical:_
+    - _**6 collisions**, canonical supersedes each: `persist-working-state`, `sensitive-info`,
+      `skills-workflow`, and the `doc-loader`, `fix-log`, `pattern-finder` skills._
+    - _**2 twins to retire**: local `windows-dev-gotchas` (47% against canonical `windows-machine`) and
+      local `doc-claims` (49% against canonical `claims-need-checks`, which now merges it)._
+    - _**Local mechanics to preserve** in a new `repo-mechanics.md`: the hook-install requirement, the
+      WebView2 browser-arguments trap, the WinForms STA/OLE handle trap, and the desktop verification
+      tooling. A draft is in the rehearsal fixture._
+    - _**Budget 40,000.** Core plus three packs plus the repository's own rules lands at 38,782 bytes;
+      the 24,000 default cannot cover core + two packs + a repository's own material, which is worth
+      knowing before the next adoption._
+    - _Result: `check` clean, exit 0._
 
-  The second adopter, and the one that validates the desktop and webview packs (CANON2). Expect the
-  WebView2/WinForms/devtools specifics to stay Shenora's own — apply the adoption document's merged-twin
-  test: not "is this canonical now" but "is every line of it somewhere else."
+  What remains is applying it there, which needs that repository's work committed first.
 
 ## Part 3 — tool follow-ups
 
