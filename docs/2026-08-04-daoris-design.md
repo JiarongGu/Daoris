@@ -1,7 +1,14 @@
 # Daoris v0.1 — design
 
 > **道衍** — doctrine that unfolds outward into the repos, and evolves from what they learn.
-> Status: **approved 2026-08-04**, not yet implemented. This is the contract for v0.1.
+> Status: **approved 2026-08-04**, and built. This is the contract for the **CLI**, and it still holds.
+>
+> **Scope note.** Everything below describes `Daoris.Cli`, which is still Node, still zero-dependency, and
+> still makes no model calls. It does **not** describe the whole project: `Daoris.Service` arrived later,
+> depends on the cognition sibling, and may call an embedding endpoint — see
+> [`2026-08-05-knowledge-service-design.md`](2026-08-05-knowledge-service-design.md) and D24. The split is
+> deliberate, and §1's "no model calls at all" is a statement about this artefact rather than a promise
+> the project as a whole ever made.
 
 ## 1. What Daoris is
 
