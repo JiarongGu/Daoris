@@ -290,25 +290,31 @@ the offline guarantee, and whether the service needs hosting at all — a local-
 MCP would answer most of the need without a deployment or a privacy boundary. Each is recorded as an
 open question in the relevant `src/Daoris.*/README.md`, written before any code.
 
-## D24 — A model is a tier of fidelity, never a prerequisite (2026-08-05)
+## D24 — The model is a deployment choice; features are defined independently of it (2026-08-05)
 
-**Decision.** No feature may require a model to function. Every feature that can use one must have a
-**floor that works without it**, must say which tier it ran at, and must take the model as
-configuration that can be swapped or removed.
+**Decision.** Daoris **does** use language and embedding models — a real part of it depends on them, and
+that is not something to design around. What must never be coupled is *which* model. A feature is
+specified by what it does; the provider serving it is chosen by **where the deployment runs**.
 
-**Why.** The models move faster than this project will. What is best today is not what will be best in
-a year, and a feature welded to one of them ages at the speed of the fastest-moving part of the stack
-rather than its own. Decoupling is not future-proofing in the aspirational sense — it is refusing to
-let a dependency that turns over yearly set the shape of doctrine tooling that should turn over far
-more slowly.
+| Deployment | What Daoris is there | Which model |
+|---|---|---|
+| **A local repository** | A devtool set beside the working session | Whatever is local — the coding agent already present, or a local runtime |
+| **A server** | A centralised knowledge provider for a team | Whatever suits a service — a hosted model, chosen for cost and throughput |
 
-There is a nearer reason too. **Most machines have no model available**, and a feature that returns
-nothing without one has made an optional dependency mandatory in all but name — while discarding the
-work it could have done regardless.
+Same features, same logic, different provider. The two deployments have genuinely different constraints
+— one has an agent already in the room and no budget for a network round trip, the other has
+throughput and cost to answer for — so a single hard-wired choice would be wrong in at least one of
+them.
 
-**Earned here rather than reasoned about.** Convergence detection was built to require an embedder: it
-returned null without one, and that gap was then reported as *blocked* rather than as the design defect
-it was. It now runs three passes and names which found each result:
+**Why it is worth stating.** The models turn over faster than this project will, and the right one
+differs by deployment *today*, never mind next year. A feature welded to a specific model ages at the
+speed of the fastest-moving part of the stack rather than its own — and the parts of a codebase that
+encode hard-won judgement should turn over far more slowly than the inference layer beneath them.
+
+**The corollary, earned the hard way.** Decoupled also means a feature must not be *unavailable*
+because a particular provider is absent. Convergence detection was built to require an embedder — it
+returned null without one — and that gap was then reported as *blocked* rather than as the design
+defect it was. It now runs whatever passes it can and names which found each result:
 
 | Tier | Needs a model | Finds |
 |---|---|---|
@@ -316,30 +322,19 @@ it was. It now runs three passes and names which found each result:
 | Restatement | no | Substantially the same words — a copy that has drifted |
 | Convergent | **yes** | The same meaning in *different* words, which text comparison provably cannot see (D17) |
 
-Without a model it found eight groups across eleven real repositories, including a document filed as
-knowledge in one and a rule in another. The model adds the top tier; it is not the floor.
+That is not a claim that models are optional to Daoris. It is that a feature should deliver whatever it
+can with what is present, and say plainly what it could not do — because a caller who cannot tell why a
+category is empty will assume a bug, and will be right to.
 
-**How to apply it to the next feature.** Ask what the feature can do with no model at all, and build
-that first. If the honest answer is *nothing*, the feature is a model wrapper and belongs behind an
-explicit opt-in with the degraded path being a clear message rather than silence. The output must
-always say which tier it ran at — a reader who cannot tell why a category is empty will assume it is a
-bug, and will be right to.
+**How to apply.** Specify the feature without naming a model. Take the provider through a seam and
+select it by deployment, never in the feature. Report which tier ran. Where a capability genuinely needs
+a model — drafting a merged statement does — make its absence an explicit, informative message rather
+than silence or an error.
 
-**Consequence.** This is why the LLM-assisted merge in the knowledge-service design splits the way it
-does: the *analysis* half needs no model and already ships, while drafting a merged statement does. The
-same split is expected of anything added later.
-
-**Applied across the design, not just where it was found.** Every feature that can use a model was
-audited against it. `knowledge_search` disclosed its tier only when it found *nothing*, so a caller
-with results could not tell the semantic half was absent and would read "these are the matches" as
-complete rather than complete-for-word-overlap; it now says so on every result. The principle is also
-written into the canon as `model-is-optional`, so it reaches every adopting repository rather than
-living only in this project's decision log.
-
-That canon file went into `rules/` first and the **budget gate rejected it** — correctly. `rules/` is
-always-loaded, so it is for what nearly every task needs, and "building a feature that uses a model" is
-not every task. It belongs in `knowledge/`, read when the trigger applies. The gate caught an authoring
-mistake the author had just written the rule about.
+**Consequence.** Provider selection belongs to the composition root, which is why the cognition
+sibling's routing is the right thing to compose (D22) rather than something to reimplement. It is also
+why the LLM-assisted merge splits as it does: finding candidates needs no model and ships today,
+drafting a merged statement needs one and will take whichever the deployment provides.
 
 ## D23 — One harness is supported; the others are detected, not guessed at (2026-08-05)
 

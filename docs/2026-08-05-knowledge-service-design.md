@@ -54,7 +54,9 @@ the database provider is configuration and the default needs no database at all.
 
 | | **Local** (default) | **Shared** (opt-in) |
 |---|---|---|
+| What Daoris is | A devtool set beside the session | A centralised knowledge provider |
 | Runs | On the developer's machine | Somewhere the team can reach |
+| Model | Whatever is local — the agent already present, or a local runtime | Whatever suits a service, chosen for cost and throughput |
 | Store | Embedded, single file | See §6 |
 | Auth | None — the OS account is the boundary | API key for machines, OIDC for people. See §5 |
 | Configured by | Nothing — it is the default | `DAORIS_SERVICE_URL` + `DAORIS_SERVICE_KEY` |
@@ -200,10 +202,13 @@ assumed: canonizing five skills from twelve repositories meant reading copies th
 and almost no vocabulary, and `doctor`'s word-overlap detector provably cannot see convergence — same
 principle, different words (D17). That is exactly the gap a model closes.
 
-**A model is a tier of fidelity, never a prerequisite** (D24). The analysis below splits along exactly
-that line: finding candidates needs no model and already ships, drafting a merged statement does. The
-models turn over faster than this project will, so a feature welded to one ages at the speed of the
-fastest-moving part of the stack rather than its own.
+**The model is a deployment choice, not part of the feature** (D24). The two modes have genuinely
+different constraints — local already has a model in the room and cannot afford a network round trip;
+a server answers for throughput and cost — so the provider is selected at the composition root and the
+feature never names one. Same logic, same output shape, different backing.
+
+The analysis below splits along the line that follows: finding candidates needs no model and already
+ships, drafting a merged statement needs one and takes whichever the deployment provides.
 
 So the service proposes, and a person disposes:
 
