@@ -57,15 +57,26 @@ correct, and never loaded._
   hosting + IPC contracts, from Shenora), `desktop-winforms` (the WinForms shell, from Shenora),
   `durable-jobs` (two repositories). Write each only when a repository is ready to adopt it — a pack that
   no one installs is unvalidated doctrine.
-- [ ] **CANON3 — adopt Shenora.** _Rehearsed 2026-08-05 against a scratch consumer carrying its real
-  doctrine, because its working tree had eight files of in-flight work. Result: **6 collisions**
-  (`sensitive-info`, `persist-working-state`, `skills-workflow`, and the `doc-loader`, `fix-log`,
-  `pattern-finder` skills), a clean sync once resolved, and a **48% budget overage** — 35,529 bytes
-  against a 24,000 limit. The real adoption is the same steps against the real tree, once its work is
-  committed._ The second adopter, and the one that validates the desktop and webview
-  packs. Expect collisions on `sensitive-info` and `persist-working-state`, and a renamed twin in
-  `windows-dev-gotchas` versus canonical `windows-machine` — the machine-level content is canonical, the
-  WebView2/WinForms/devtools items are Shenora's own.
+- [ ] **CANON3 — adopt Shenora.** _Blocked only on that repository's tree: it carries 12+ files of
+  in-flight work, including edits to the two `.claude/` files adoption touches. Its own work is not ours
+  to commit._
+
+  _**Re-analysed 2026-08-05** against the current canon with `daoris analyze`, which writes nothing and
+  so is safe against a dirty tree. The picture is much better than the earlier rehearsal recorded:_
+    - _**6 collisions** — `persist-working-state`, `sensitive-info`, `skills-workflow`, and the
+      `doc-loader`, `fix-log`, `pattern-finder` skills._
+    - _**Budget 14,478 → ~28,208 against a 24,000 limit — over by 4,208 (17.5%)**, not the 48% the
+      earlier note recorded. Retiring the renamed twin below covers most of it._
+    - _The predicted twin, local `windows-dev-gotchas` against canonical `windows-machine`, **is now
+      found automatically at 47%** — it was invisible before D17 lowered the threshold to 0.3._
+    - _`doctor` also flags three knowledge documents against canonical `library-api-design` at 44–57%
+      (`ipc-contracts`, `generic-library`, `webview2-hosting`). Read them before adopting: on the Lyntai
+      evidence, at least one is a rule that is mostly canonical plus a deep dive belonging in the
+      on-demand tier._
+
+  The second adopter, and the one that validates the desktop and webview packs (CANON2). Expect the
+  WebView2/WinForms/devtools specifics to stay Shenora's own — apply the adoption document's merged-twin
+  test: not "is this canonical now" but "is every line of it somewhere else."
 
 ## Part 4 — tool follow-ups
 
