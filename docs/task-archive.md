@@ -617,3 +617,30 @@ Two things worth keeping from building it:
   every backlog already reads, and the italic line carries asker, date, status and reason. A repository
   that knows nothing about Daoris handles one correctly, which is the only way this spreads.
 
+
+## Quests corrected — a service responsibility, not an agent one (2026-08-05)
+
+The first implementation had `daoris quest post <path>` write the quest straight into the receiving
+repository's `TASKS.md`. **That is the very thing the rule it shipped with forbids.** An outside edit is
+still an outside edit when it is one file and uncommitted, and it still arrives from the party that
+knows that codebase least. The tooling for the rule broke the rule — the most embarrassing way to find a
+design error and the most convincing.
+
+It was also incompatible with **D8**. Reaching a central store means the network, and nothing under
+`src/Daoris.Cli` may open a socket, enforced by a test added the same morning. The CLI could not have
+been the client for this even if writing into a sibling had been acceptable.
+
+**Corrected.** Quests live in the service and are *pulled*: an agent publishes through `quest_publish`,
+the receiving repository's own agent reads what is addressed to it via `quest_list` and answers with
+`quest_respond`. Whether it becomes a line in that repository's backlog is that repository's decision,
+made by that repository. The CLI has no quest command and stays the offline doctrine tool it was.
+
+**Adoption is the gate.** Only a repository the index knows has adopted can be addressed — one without
+the client cannot see the quest, and an unread quest is indistinguishable from an ignored one.
+
+Stored beside the index in the same database. Quests are service state as the index is service state,
+and two files would be two things to back up and two that can disagree about which repositories exist.
+
+**The two quests I had already written into siblings were removed**, and I am not touching those
+repositories again — which is the rule, applied to myself. Removing one of them, my own script
+over-deleted and I restored the file from HEAD rather than trying to repair it by hand.

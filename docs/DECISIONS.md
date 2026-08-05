@@ -852,3 +852,27 @@ glob invites.
 ran green at every step, including while hundreds of type errors remained — which is the right order:
 the types describe what the code does, so the code proving itself first is what makes the descriptions
 trustworthy.
+
+**Amended 2026-08-05, the same day — quests are a SERVICE responsibility, and the first version got it
+wrong.** `daoris quest post <path>` wrote the quest straight into the receiving repository's `TASKS.md`.
+That is the very thing this decision forbids: an outside edit is still an outside edit when it is one
+file and uncommitted, and it still arrives from the party that knows that codebase least. The tooling
+for the rule broke the rule, which is the most embarrassing way to find a design error and the most
+convincing.
+
+It was also incompatible with **D8**. Reaching a central store means the network, and nothing under
+`src/Daoris.Cli` may open a socket — enforced by a test added the same morning. The CLI could not be the
+client for this even if writing files had been acceptable.
+
+**So the service holds quests and repositories pull.** An agent publishes through the service; the
+receiving repository's own agent reads what is addressed to it and decides — including whether to
+materialize it into its backlog, which is then that repository editing itself. The CLI has no quest
+command at all, and stays the offline doctrine tool it was.
+
+**Adoption is the gate.** Only a repository the index knows has adopted can be addressed, because one
+without the client has no way to see the quest — and a quest nobody can read looks exactly like a quest
+that was read and ignored.
+
+Stored beside the index in the same database: quests are service state as the index is service state,
+and two files would be two things to back up and two that can disagree about which repositories exist.
+

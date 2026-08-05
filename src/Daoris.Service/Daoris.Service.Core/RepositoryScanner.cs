@@ -63,7 +63,6 @@ public sealed class RepositoryScanner
         entries.AddRange(ScanDocuments(repositoryRoot, name, daorisLock, $"{target}/rules", EntryKind.Rule));
         entries.AddRange(ScanDocuments(repositoryRoot, name, daorisLock, $"{target}/knowledge", EntryKind.Knowledge));
         entries.AddRange(ScanSkills(repositoryRoot, name, daorisLock, $"{target}/skills"));
-        entries.AddRange(ScanQuests(repositoryRoot, name));
 
         foreach (var (candidates, kind) in new[]
                  {
@@ -152,70 +151,5 @@ public sealed class RepositoryScanner
                 relativePath,
                 section.Heading);
         }
-    }
-
-    /// <summary>
-    /// Open requests other repositories filed here.
-    /// </summary>
-    /// <remarks>
-    /// Only the unchecked items, and only from the one known heading. A completed request is history
-    /// the receiving repository keeps however it likes; what is worth surfacing across the family is
-    /// what is still outstanding.
-    ///
-    /// Requests are always LOCAL provenance regardless of the lock — they are this repository's own
-    /// obligations, never canonical content, so they can never be mistaken for doctrine.
-    /// </remarks>
-    private static IEnumerable<KnowledgeEntry> ScanQuests(string repositoryRoot, string repository)
-    {
-        var relative = BacklogFiles.FirstOrDefault(candidate =>
-            File.Exists(Path.Combine(repositoryRoot, candidate.Replace('/', Path.DirectorySeparatorChar))));
-        if (relative is null) yield break;
-
-        var text = Text.ReadDocument(
-            Path.Combine(repositoryRoot, relative.Replace('/', Path.DirectorySeparatorChar)));
-
-        var at = text.IndexOf(QuestsHeading, StringComparison.Ordinal);
-        if (at < 0) yield break;
-
-        var after = at + QuestsHeading.Length;
-        var next = text.IndexOf("\n## ", after, StringComparison.Ordinal);
-        var section = next < 0 ? text[after..] : text[after..next];
-
-        foreach (var item in SplitItems(section))
-        {
-            yield return new KnowledgeEntry(
-                repository, EntryKind.Quest, Provenance.Local, TitleOf(item), item, relative);
-        }
-    }
-
-    /// <summary>Each `- [ ]` item and the indented lines under it. Checked items are done, so skipped.</summary>
-    private static IEnumerable<string> SplitItems(string section)
-    {
-        var current = new List<string>();
-        foreach (var line in section.Split('\n'))
-        {
-            if (line.StartsWith("- [", StringComparison.Ordinal))
-            {
-                if (current.Count > 0) yield return string.Join('\n', current).Trim();
-                current = line.StartsWith("- [ ]", StringComparison.Ordinal) ? [line] : [];
-            }
-            else if (current.Count > 0)
-            {
-                current.Add(line);
-            }
-        }
-
-        if (current.Count > 0) yield return string.Join('\n', current).Trim();
-    }
-
-    /// <summary>The bolded title if there is one, else the first line — enough to recognise it by.</summary>
-    private static string TitleOf(string item)
-    {
-        var first = item.Split('\n')[0];
-        var open = first.IndexOf("**", StringComparison.Ordinal);
-        var close = open < 0 ? -1 : first.IndexOf("**", open + 2, StringComparison.Ordinal);
-        return close > open
-            ? first[(open + 2)..close]
-            : first.TrimStart('-', ' ', '[', ']', 'x').Trim();
     }
 }

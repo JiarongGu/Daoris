@@ -3,8 +3,33 @@
 **Status: usable from a session.** An MCP server over stdio exposes the index to any agent client. The
 core reads a repository's knowledge into addressable entries, classifies each as canonical or local,
 stores them in SQLite, answers ranked queries over FTS5, and finds where repositories learned the same
-lesson independently. **58 tests**, two of which run against the real sibling repositories rather than
+lesson independently. **65 tests**, two of which run against the real sibling repositories rather than
 fixtures.
+
+## Quests — work one repository asks of another
+
+Repositories in this family are not developed across (`docs/DECISIONS.md` D32). A change one needs from
+another is a **quest**: published here, and *pulled* by the repository it is addressed to.
+
+**It is held by the service, not written into anyone's files.** The first version of this wrote the
+quest straight into the receiving repository's backlog, which is the same trespass in a smaller form —
+an outside edit is still an outside edit when it is one file and uncommitted, and it still arrives from
+whoever knows that codebase least. It was also incompatible with D8: reaching a central store means the
+network, and nothing in the CLI may open a socket. So the CLI has no quest command, and this does.
+
+| Tool | What it does |
+|---|---|
+| `quest_publish` | Ask another repository for something. Refuses a repository that has not adopted |
+| `quest_list` | What has been asked of whom, and what is still outstanding |
+| `quest_respond` | `take`, `done` or `decline` — declining needs a reason |
+
+Four states, because anything finer is status for its own sake. A quest is **taken**, not assigned,
+which is the property that keeps declining a real answer. **Only an adopted repository can be
+addressed**, because one without the client cannot see the quest — and an unread quest looks exactly
+like an ignored one.
+
+Stored beside the index in the same database: quests are service state as the index is, and two files
+would be two things to back up and two that can disagree about which repositories exist.
 
 **The semantic pass has been proven on a real pair.** Two repositories derived the same principle
 independently and wrote it in different vocabulary; word overlap scores them at **25%**, below the

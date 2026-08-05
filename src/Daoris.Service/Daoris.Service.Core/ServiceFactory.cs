@@ -31,12 +31,14 @@ public sealed record ServiceOptions(
 }
 
 /// <param name="Service">The composed service. Convergence is reached through it, not beside it.</param>
+/// <param name="Quests">Work one repository has asked of another — service state, not anyone's files.</param>
 /// <param name="SemanticEnabled">Whether the semantic tier answered. Report it; never imply it.</param>
 /// <remarks>
 /// Disposable, and it owns the store: the factory opened it, so the caller should not have to know that
 /// a database handle came back inside something called a service.
 /// </remarks>
-public sealed record ComposedService(KnowledgeService Service, bool SemanticEnabled) : IAsyncDisposable
+public sealed record ComposedService(
+    KnowledgeService Service, QuestStore Quests, bool SemanticEnabled) : IAsyncDisposable
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
@@ -79,6 +81,7 @@ public static class ServiceFactory
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
 
         var store = await SqliteKnowledgeStore.OpenAsync(options.DatabasePath).ConfigureAwait(false);
+        var quests = await QuestStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var source = FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
 
         IKnowledgeSearch search = new SqliteKnowledgeSearch(store);
@@ -99,6 +102,6 @@ public static class ServiceFactory
         var service = new KnowledgeService(
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors);
 
-        return new ComposedService(service, service.SemanticEnabled) { Store = store };
+        return new ComposedService(service, quests, service.SemanticEnabled) { Store = store };
     }
 }

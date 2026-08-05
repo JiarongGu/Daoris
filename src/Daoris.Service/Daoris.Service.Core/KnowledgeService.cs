@@ -83,22 +83,20 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
-    /// Every open quest in the family, newest-looking last, grouped by who owes it.
+    /// Repositories that have adopted Daoris, and so have a client that can see a quest.
     /// </summary>
     /// <remarks>
-    /// A listing rather than a search, because the useful question has no query: *what has been asked
-    /// of whom, and is anything sitting.* A request only reaches the repository that received it, so
-    /// nobody can answer that by reading one backlog — which is the whole reason this is indexed
-    /// centrally rather than left where it was filed.
+    /// Adoption is the gate on being addressed. A repository with no manifest has no way to read what
+    /// was asked of it, so a quest sent there would sit in a queue nobody opens — which looks exactly
+    /// like a quest that was delivered and ignored.
     /// </remarks>
-    public async Task<IReadOnlyList<KnowledgeEntry>> OpenQuestsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlySet<string>> AdoptedRepositoriesAsync(CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        return (await store.AllAsync(ct).ConfigureAwait(false))
-            .Where(e => e.Kind == EntryKind.Quest)
-            .OrderBy(e => e.Repository, StringComparer.Ordinal)
-            .ThenBy(e => e.Title, StringComparer.Ordinal)
-            .ToList();
+        var adopted = (await store.AllAsync(ct).ConfigureAwait(false))
+            .Where(entry => entry.Provenance == Provenance.Canonical)
+            .Select(entry => entry.Repository);
+        return new HashSet<string>(adopted, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>Re-read every repository and rebuild the index.</summary>

@@ -137,11 +137,13 @@ app.MapGet("/api/convergence", async (
         Suggestion: SuggestionFor(c)));
 });
 
-// What each repository OWES, as opposed to what it knows. A request reaches only the repository it was
-// filed in, so "is anything sitting" is a question no single backlog can answer.
-app.MapGet("/api/quests", async (ComposedService s, CancellationToken ct) =>
-    (await s.Service.OpenQuestsAsync(ct)).Select(r => new QuestResponse(
-        r.Id, r.Repository, r.Title, r.RelativePath, r.Body)));
+// What each repository OWES, as opposed to what it knows. Held by the service rather than written
+// into anyone's files: repositories here are not developed across, so a quest is published and pulled,
+// never pushed into a sibling's tree.
+app.MapGet("/api/quests", async (
+    ComposedService s, string? repository, bool? includeClosed, CancellationToken ct) =>
+    (await s.Quests.ListAsync(repository, includeClosed ?? false, ct)).Select(q => new QuestResponse(
+        q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated)));
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
@@ -207,7 +209,9 @@ public sealed record ConvergenceEntryResponse(
 public sealed record ConvergenceResponse(
     string Method, double Similarity, IReadOnlyList<string> Repositories,
     IReadOnlyList<ConvergenceEntryResponse> Entries, string Suggestion);
-public sealed record QuestResponse(string Id, string Repository, string Title, string Path, string Body);
+public sealed record QuestResponse(
+    string Id, string From, string To, string Title, string Body,
+    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
 public sealed record ErrorResponse(string Error);
 

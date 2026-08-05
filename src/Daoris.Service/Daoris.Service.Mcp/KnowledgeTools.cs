@@ -17,7 +17,7 @@ namespace Daoris.Knowledge.Mcp;
 /// can read beats a structure it has to re-serialise into prose.
 /// </remarks>
 [McpServerToolType]
-public sealed class KnowledgeTools(KnowledgeService service)
+public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests)
 {
     [McpServerTool(Name = "knowledge_search")]
     [Description(
@@ -175,30 +175,104 @@ public sealed class KnowledgeTools(KnowledgeService service)
         }
     }
 
-    [McpServerTool(Name = "knowledge_quests")]
+    [McpServerTool(Name = "quest_publish")]
     [Description(
-        "List the open quests other repositories have filed across the family — work one repository "
-        + "is waiting on another to do. Use it to see what this repository owes, or what is sitting "
-        + "unanswered elsewhere. Repositories in this family do not edit each other; they file requests.")]
-    public async Task<string> QuestsAsync(CancellationToken ct = default)
+        "Ask ANOTHER repository in this family to do something. Repositories here are not developed "
+        + "across: you never edit a sibling, you publish a quest and its own agent takes it. Say what "
+        + "is needed and why, with the evidence — not the change you would make. Use before touching "
+        + "any repository that is not the one you are working in.")]
+    public async Task<string> PublishQuestAsync(
+        [Description("The repository asking — the one you are working in.")] string from,
+        [Description("The repository being asked. It must have adopted Daoris, or nobody there can see it.")]
+        string to,
+        [Description("One line: what is wanted.")] string title,
+        [Description("Why, and the evidence. Whoever works there may see a better answer than you did.")]
+        string body,
+        CancellationToken ct = default)
     {
-        var quests = await service.OpenQuestsAsync(ct).ConfigureAwait(false);
-        if (quests.Count == 0) return "No open quests anywhere in the family.";
-
-        var text = new StringBuilder($"{quests.Count} open quest(s):\n");
-        foreach (var group in quests.GroupBy(r => r.Repository).OrderBy(g => g.Key, StringComparer.Ordinal))
+        if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
         {
-            text.AppendLine($"## {group.Key} owes {group.Count()}");
+            return "That is the repository you are in — a quest is work for someone else. Use its own backlog.";
+        }
+
+        var adopted = await service.AdoptedRepositoriesAsync(ct).ConfigureAwait(false);
+        if (!adopted.Contains(to))
+        {
+            // A quest for a repository with no client has nobody to read it, so it would sit in a queue
+            // that is never opened. Saying so now beats letting it look delivered.
+            return $"`{to}` has not adopted Daoris, so it has no way to see a quest. Known adopters: "
+                 + $"{string.Join(", ", adopted.OrderBy(r => r, StringComparer.Ordinal))}.";
+        }
+
+        var quest = await quests.PublishAsync(from, to, title, body, DateTimeOffset.UtcNow, ct)
+            .ConfigureAwait(false);
+
+        return $"Published quest `#{quest.Id}` to `{quest.To}` — {quest.Status}.\n\n"
+             + "It is held by the service, not written into that repository. Its agent will see it and "
+             + "decide. Do not make the change yourself.";
+    }
+
+    [McpServerTool(Name = "quest_list")]
+    [Description(
+        "Quests across the family: what has been asked of whom, and what is still outstanding. Give a "
+        + "repository name to see only what it owes.")]
+    public async Task<string> ListQuestsAsync(
+        [Description("Only quests addressed to this repository. Omit for the whole family.")]
+        string? repository = null,
+        [Description("Include finished and declined ones. Default false — outstanding work is the question.")]
+        bool includeClosed = false,
+        CancellationToken ct = default)
+    {
+        var found = await quests.ListAsync(repository, includeClosed, ct).ConfigureAwait(false);
+        if (found.Count == 0) return repository is null ? "No open quests anywhere." : $"Nothing asked of `{repository}`.";
+
+        var text = new StringBuilder($"{found.Count} quest(s):\n\n");
+        foreach (var group in found.GroupBy(q => q.To).OrderBy(g => g.Key, StringComparer.Ordinal))
+        {
+            text.AppendLine($"## `{group.Key}` — {group.Count()}");
             foreach (var quest in group)
             {
-                text.AppendLine($"- **{quest.Title}** — `{quest.RelativePath}`");
+                text.AppendLine($"- `#{quest.Id}` **{quest.Title}** — {quest.Status}, from `{quest.From}`");
                 text.AppendLine($"  {Text.Excerpt(quest.Body, null, 200)}");
+                if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
             }
 
             text.AppendLine();
         }
 
         return text.ToString();
+    }
+
+    [McpServerTool(Name = "quest_respond")]
+    [Description(
+        "Answer a quest addressed to the repository you are working in: take it, finish it, or decline "
+        + "it. Declining is a real answer and often the right one — it needs a reason, because a bare "
+        + "refusal gives the asker nothing to act on.")]
+    public async Task<string> RespondToQuestAsync(
+        [Description("The quest id, from quest_list.")] string id,
+        [Description("take, done, or decline.")] string action,
+        [Description("Required to decline; worth giving when finishing.")] string? reason = null,
+        CancellationToken ct = default)
+    {
+        var status = action.ToLowerInvariant() switch
+        {
+            "take" => QuestStatus.Taken,
+            "done" => QuestStatus.Done,
+            "decline" => QuestStatus.Declined,
+            _ => (QuestStatus?)null,
+        };
+        if (status is null) return $"Unknown action '{action}' — one of: take, done, decline.";
+        if (status == QuestStatus.Declined && string.IsNullOrWhiteSpace(reason))
+        {
+            return "Declining needs a reason: it is the part the asker can act on.";
+        }
+
+        var quest = await quests.SetStatusAsync(
+            id.TrimStart('#'), status.Value, reason, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+
+        return quest is null
+            ? $"No quest `#{id}`. Ids come from `quest_list`."
+            : $"Quest `#{quest.Id}` is now {quest.Status}.";
     }
 
     [McpServerTool(Name = "knowledge_refresh")]

@@ -29,6 +29,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
     private SqliteKnowledgeStore(SqliteConnection connection) => _connection = connection;
 
+
     /// <summary>Open (or create) a store at a path. Use <c>":memory:"</c> for a throwaway one.</summary>
     public static async Task<SqliteKnowledgeStore> OpenAsync(string path, CancellationToken ct = default)
     {
@@ -141,6 +142,10 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     internal const string QualifiedColumns =
         "e.id, e.repository, e.kind, e.provenance, e.title, e.body, e.relative_path, e.anchor";
 
+    /// <summary>
+    /// The open connection — quests share this database rather than opening a second one, because two
+    /// files would be two things to back up and two that can disagree about which repositories exist.
+    /// </summary>
     internal SqliteConnection Connection => _connection;
 
     internal static KnowledgeEntry Read(SqliteDataReader reader) => new(

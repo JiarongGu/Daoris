@@ -69,6 +69,7 @@ if (!string.IsNullOrWhiteSpace(serviceOptions.EmbedModel))
 
 var composed = await ServiceFactory.CreateAsync(serviceOptions, embedder);
 builder.Services.AddSingleton(composed.Service);
+builder.Services.AddSingleton(composed.Quests);
 
 builder.Services
     .AddMcpServer(options => options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" })

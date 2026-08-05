@@ -20,17 +20,20 @@ network.
   is not portable but the request is:** why a rule is worded as it is, what was tried and rejected, which
   constraint a file encodes, all of that stays with the repository, and a request carries the one thing
   that does travel — what is needed, and why.
-  The mechanism is a **quest**: `daoris quest post` writes one into the receiving repository's backlog,
-  and `take` / `done` / `decline` move it through four states. Called a quest rather than a task or a
-  request because every backlog here is already full of tasks, and a colliding word would be ambiguous
-  in exactly the file where the distinction matters. It is also *taken* rather than assigned, which is
-  the property that keeps declining a real answer — and declining requires a reason, because a bare
-  refusal gives the asker nothing to act on.
+  The mechanism is a **quest**, held by the knowledge service and *pulled* by the repository it is
+  addressed to — never written into that repository's files, which would be the same trespass in a
+  smaller form. Four states: open, taken, done, declined. Called a quest rather than a task or a request
+  because every backlog here is already full of tasks, and a colliding word would be ambiguous in
+  exactly the file where the distinction matters. It is *taken* rather than assigned, which is the
+  property that keeps declining a real answer — and declining requires a reason, because a bare refusal
+  gives the asker nothing to act on.
+  **Only a repository that has adopted can be addressed**, because one without the client cannot see
+  what was asked, and an unread quest looks exactly like an ignored one.
   Practice came before the rule: repositories here already kept "waiting on the sibling repository"
   sections, arrived at independently. What was missing was a name, a place, and a readable status.
-  **Adopting repositories:** expect a `## Quests from other repositories` heading to appear in your
-  backlog when a sibling posts one. It is an ordinary checklist item — the checkbox is the coarse state,
-  so a repository that knows nothing about this still handles it correctly.
+  **Adopting repositories:** once adopted, siblings can address quests to you. Nothing is written into
+  your tree — your own agent reads what is outstanding through the service and decides, including
+  whether to copy it into your backlog. Declining is a real answer.
 - **`claims-need-checks`** (new core knowledge) — verify behavioural prose against the implementation
   rather than the design; ship the check in the same change; say which claims the gate did not cover.
   **Two repositories in the family derived this independently and from opposite ends** — one auditing

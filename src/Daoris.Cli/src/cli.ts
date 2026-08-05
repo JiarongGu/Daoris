@@ -9,7 +9,6 @@ import { commandUpstream } from './upstream.ts';
 import { commandInit, commandStatus } from './commands.ts';
 import { commandDoctor } from './twins.ts';
 import { commandAnalyze } from './analyze.ts';
-import { commandQuest } from './quest.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
@@ -27,15 +26,11 @@ const USAGE = `daoris <command> [options]
   status               human summary of packs, drift, and local files
   doctor               report local documents that look like canonical ones
                        under a different name (advisory; never fails)
-  quest <verb>         post work to ANOTHER repository's backlog, and track it:
-                       post <repo> · take <id> · done <id> · decline <id> · list.
-                       Repositories here do not develop across each other
 
 Options:
   --dry-run            print the plan; write nothing
   --force              overwrite locally-drifted files (sync only)
   --all                promote every drifted file (upstream only)
-  --title, --body      the quest (quest post); --reason (take/done/decline)
   --help, --version`;
 
 /** Commands are registered here as they land. @returns {number} process exit code */
@@ -48,7 +43,6 @@ const commands: Record<string, (args: CommandArgs) => ExitCode> = {
   status: commandStatus,
   doctor: commandDoctor,
   analyze: commandAnalyze,
-  quest: commandQuest,
 };
 
 export function runCli(

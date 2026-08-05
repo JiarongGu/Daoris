@@ -21,16 +21,6 @@ public enum EntryKind
     /// <summary>One recorded fix: symptom, root cause, verification.</summary>
     Fix,
 
-    /// <summary>
-    /// One quest another repository posted here, still outstanding.
-    /// </summary>
-    /// <remarks>
-    /// Indexed as its own kind because it is the only entry that describes work someone else is waiting
-    /// on. Everything else here is what a repository knows; this is what a repository owes. Buried in a
-    /// backlog it is visible to one repository, and the question worth asking is family-wide: what has
-    /// been asked for, of whom, and how long ago.
-    /// </remarks>
-    Quest,
 
     /// <summary>One completed task and its outcome.</summary>
     TaskOutcome,
