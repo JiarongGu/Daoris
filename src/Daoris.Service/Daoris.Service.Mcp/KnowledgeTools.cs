@@ -106,8 +106,8 @@ public sealed class KnowledgeTools(KnowledgeService service)
     [Description(
         "Find where different repositories learned the SAME lesson independently, including when they "
         + "wrote it in completely different words. Use when deciding what should become shared "
-        + "doctrine, or before writing a rule that another repository may already have. Requires "
-        + "semantic search to be enabled.")]
+        + "doctrine, or before writing a rule that another repository may already have. Works "
+        + "without a model; an embedding endpoint additionally finds different-wording matches.")]
     public async Task<string> ConvergenceAsync(
         [Description("How similar a pair must be, 0 to 1. Higher is stricter. Default 0.82.")]
         double minimumSimilarity = 0.82,
@@ -120,43 +120,40 @@ public sealed class KnowledgeTools(KnowledgeService service)
             new ConvergenceOptions(minimumSimilarity, ParseKinds(kinds), Math.Clamp(limit, 1, 50)), ct)
             .ConfigureAwait(false);
 
-        if (candidates is null)
-        {
-            return "Convergence needs semantic search, which is not enabled. "
-                 + "Set DAORIS_EMBED_MODEL and call `knowledge_refresh`.";
-        }
-
         if (candidates.Count == 0)
         {
-            return $"No repositories converge above {minimumSimilarity:0.00}. "
-                 + "Lower the threshold to see weaker overlaps — the right value depends on the "
-                 + "embedding model, so it is worth sweeping rather than trusting a default.";
+            return $"Nothing converges above {minimumSimilarity:0.00}. Lower the threshold to see "
+                 + "weaker overlaps — the right value depends on the comparison in use, so it is worth "
+                 + "sweeping rather than trusting a default.";
         }
 
-        // Convergences first. Copies are the easy finding and there are usually more of them, so
-        // ordering by score alone buries the one a person could not have found by looking.
-        var convergent = candidates.Where(c => !c.IsIdenticalCopy).ToList();
-        var copies = candidates.Where(c => c.IsIdenticalCopy).ToList();
-
+        // Hardest finding first: a convergence is the one nobody could have made by reading file
+        // names, and ordering by score alone would bury it under the copies.
         var text = new StringBuilder("A prompt to look, not a merge.\n\n");
-
-        if (convergent.Count > 0)
+        foreach (var group in candidates.GroupBy(c => c.Method).OrderByDescending(g => g.Key))
         {
-            text.AppendLine($"## Convergent — same lesson, different words ({convergent.Count})");
-            text.AppendLine("The hard case: nobody finds these by reading file names.\n");
-            foreach (var candidate in convergent) Append(text, candidate);
+            text.AppendLine($"## {Heading(group.Key)} ({group.Count()})");
+            foreach (var candidate in group) Append(text, candidate);
         }
 
-        if (copies.Count > 0)
+        if (!service.SemanticEnabled)
         {
-            text.AppendLine($"## Identical copies ({copies.Count})");
-            text.AppendLine("The same document, pasted. Easy to canonize; easy to forget exists.\n");
-            foreach (var candidate in copies) Append(text, candidate);
+            text.AppendLine("_Found by comparing text, which sees copies and restatements. Two "
+                          + "repositories that reached the same conclusion in DIFFERENT words will not "
+                          + "appear here — read for those, or configure an embedding endpoint to "
+                          + "compute them._\n");
         }
 
         text.AppendLine("Read each group before acting. What they share may be canonical; what differs "
                       + "is usually the repository's own and must stay local.");
         return text.ToString();
+
+        static string Heading(ConvergenceMethod method) => method switch
+        {
+            ConvergenceMethod.Convergent => "Convergent — same lesson, different words",
+            ConvergenceMethod.Restatement => "Restatement — substantially the same words",
+            _ => "Identical copies — the same document, pasted",
+        };
 
         static void Append(StringBuilder text, ConvergenceCandidate candidate)
         {

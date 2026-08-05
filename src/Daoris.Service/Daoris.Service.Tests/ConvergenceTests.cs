@@ -5,6 +5,79 @@ namespace Daoris.Service.Tests;
 
 public class ConvergenceTests
 {
+    /// <summary>
+    /// The property that matters most: **no model required**. A feature that returned nothing without
+    /// an optional dependency would have made that dependency mandatory in all but name, and thrown
+    /// away the copies and restatements it could have found regardless.
+    /// </summary>
+    [Fact]
+    public async Task Works_with_no_embedder_at_all()
+    {
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "shot", "Keep captures small.")]);
+        await store.ReplaceRepositoryAsync("beta", [Entry("beta", "capture", "Keep captures small.")]);
+
+        var detector = new ConvergenceDetector(store);   // no embedder, no vector store
+
+        Assert.False(detector.SemanticAvailable);
+        var found = Assert.Single(await detector.FindAsync());
+        Assert.Equal(ConvergenceMethod.Identical, found.Method);
+        Assert.Equal(["alpha", "beta"], found.Repositories);
+    }
+
+    [Fact]
+    public async Task Identical_bodies_are_found_without_a_threshold_or_a_model()
+    {
+        var store = new InMemoryKnowledgeStore();
+        // Re-wrapped, not retyped: whitespace must not hide a copy.
+        await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "a", "one two\nthree")]);
+        await store.ReplaceRepositoryAsync("beta", [Entry("beta", "b", "one two three")]);
+
+        var found = Assert.Single(await new ConvergenceDetector(store).FindAsync());
+
+        Assert.Equal(ConvergenceMethod.Identical, found.Method);
+        Assert.Equal(1.0, found.Similarity);
+    }
+
+    [Fact]
+    public async Task A_drifted_copy_is_a_restatement_rather_than_missed()
+    {
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "hygiene",
+            "Keep captures small because a large image is rejected by the reader.")]);
+        await store.ReplaceRepositoryAsync("beta", [Entry("beta", "limits",
+            "Keep captures small because a large image is rejected by the reader outright.")]);
+
+        var found = Assert.Single(await new ConvergenceDetector(store).FindAsync(
+            new ConvergenceOptions(MinimumSimilarity: 0.7)));
+
+        Assert.Equal(ConvergenceMethod.Restatement, found.Method);
+    }
+
+    [Fact]
+    public async Task An_embedder_adds_convergence_without_replacing_the_rest()
+    {
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [
+            Entry("alpha", "copied", "identical text here"),
+            Entry("alpha", "shell", "Reading files through the terminal prompts every time."),
+        ]);
+        await store.ReplaceRepositoryAsync("beta", [
+            Entry("beta", "copied-too", "identical text here"),
+            Entry("beta", "tools", "Dedicated readers integrate with approvals, so lookups never interrupt."),
+        ]);
+
+        var embedder = new DimensionEmbedder(["terminal", "prompts", "dedicated", "readers", "approvals"]);
+        var vectors = new InMemoryVectorStore();
+        await SemanticKnowledgeSearch.IndexAsync(await store.AllAsync(), embedder, vectors);
+
+        var found = await new ConvergenceDetector(store, embedder, vectors)
+            .FindAsync(new ConvergenceOptions(MinimumSimilarity: 0.5));
+
+        Assert.Contains(found, c => c.Method == ConvergenceMethod.Identical);
+        Assert.Contains(found, c => c.Method == ConvergenceMethod.Convergent);
+    }
+
     private static KnowledgeEntry Entry(
         string repository, string title, string body, Provenance provenance = Provenance.Local) =>
         new(repository, EntryKind.Knowledge, provenance, title, body, $".claude/knowledge/{title}.md");

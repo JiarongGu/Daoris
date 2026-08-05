@@ -3,32 +3,35 @@ using Lyntai.Memory;
 
 namespace Daoris.Knowledge;
 
+/// <summary>How a candidate was found, which is also how much confidence it carries.</summary>
+public enum ConvergenceMethod
+{
+    /// <summary>Byte-identical after normalisation. A copy, not a coincidence.</summary>
+    Identical,
+
+    /// <summary>Substantially the same words. A restatement — usually a copy that has since drifted.</summary>
+    Restatement,
+
+    /// <summary>The same meaning in different words. Only an embedding model finds these.</summary>
+    Convergent,
+}
+
 /// <summary>A set of entries from different repositories that appear to state the same lesson.</summary>
 /// <param name="Entries">The entries, the strongest-connected first.</param>
-/// <param name="Similarity">The best pairwise similarity in the group, in [-1, 1].</param>
-public sealed record ConvergenceCandidate(IReadOnlyList<KnowledgeEntry> Entries, double Similarity)
+/// <param name="Similarity">The best pairwise similarity in the group, 0 to 1.</param>
+/// <param name="Method">How it was found — see <see cref="ConvergenceMethod"/>.</param>
+public sealed record ConvergenceCandidate(
+    IReadOnlyList<KnowledgeEntry> Entries, double Similarity, ConvergenceMethod Method)
 {
     /// <summary>The repositories involved, which is what makes this worth a person's attention.</summary>
     public IReadOnlyList<string> Repositories =>
         Entries.Select(e => e.Repository).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
-
-    /// <summary>
-    /// A copy rather than a convergence — the same document, pasted.
-    /// </summary>
-    /// <remarks>
-    /// Worth separating, because the two are different findings with different work attached. A copy
-    /// is easy to spot by name and easy to canonize; a convergence is two people reaching the same
-    /// conclusion in different words, which nobody can find by looking. Run against a real family the
-    /// copies dominate at any useful threshold and crowd the convergences out of the top of the list —
-    /// so the caller is told which is which rather than left to infer it from a score.
-    /// </remarks>
-    public bool IsIdenticalCopy => Similarity >= 0.999;
 }
 
 /// <summary>How hard to look.</summary>
 /// <param name="MinimumSimilarity">
-/// Cosine similarity a pair must reach. Deliberately a parameter with no clever default: the right
-/// value depends on the embedding model, and a threshold copied from a different model is a guess
+/// How similar a pair must be, 0 to 1. Deliberately a parameter with no clever default: the right
+/// value depends on the comparison in use, and a threshold copied from a different one is a guess
 /// wearing a number.
 /// </param>
 /// <param name="Kinds">Restrict to these kinds. Null means every kind.</param>
@@ -42,95 +45,165 @@ public sealed record ConvergenceOptions(
 /// Finds the same lesson learned twice in different repositories.
 /// </summary>
 /// <remarks>
-/// This automates the survey that produced this project's own canon. Canonizing five skills and
-/// seven rules meant reading twelve repositories by hand and noticing which documents were saying the
-/// same thing — work that took a day and is exactly what a nearest-neighbour search over embeddings
-/// does in a second.
+/// <para><b>It never requires a model.</b> Without one it compares text and finds identical copies and
+/// restatements, which on a real corpus is most of what is there. With one it additionally finds
+/// <em>convergence</em> — the same conclusion in different words — which text comparison provably
+/// cannot see (<c>docs/DECISIONS.md</c> D17). The model raises the ceiling; it is not the floor.</para>
+///
+/// <para>That distinction is the point. A feature that returns nothing without an optional dependency
+/// has made the dependency mandatory in everything but name, and the useful two-thirds it could have
+/// delivered are lost to an all-or-nothing check.</para>
 ///
 /// <para>It proposes; a person disposes. A candidate is a prompt to look, not a merge — doctrine that
-/// appeared without anyone choosing it is the failure this whole project exists to prevent
-/// (<c>docs/DECISIONS.md</c> D21).</para>
+/// appeared without anyone choosing it is the failure this project exists to prevent (D21).</para>
 ///
-/// <para>Two exclusions do most of the work:</para>
-/// <list type="bullet">
-///   <item><b>Same-repository pairs are not convergence.</b> Two related documents in one repository
-///   are a repository being coherent, which is not news.</item>
-///   <item><b>Canonical entries are excluded.</b> They are identical everywhere by construction, so
-///   they would match themselves across every adopter, dominate every result, and mean nothing. What
-///   is worth finding is two repositories arriving somewhere independently.</item>
-/// </list>
+/// <para>Two exclusions do most of the work. <b>Same-repository pairs are not convergence</b> — two
+/// related documents in one repository are a repository being coherent, which is not news. And
+/// <b>canonical entries are excluded</b>: they are identical everywhere by construction, so they would
+/// match themselves across every adopter and mean nothing.</para>
 /// </remarks>
-public sealed class ConvergenceDetector(IKnowledgeStore store, IEmbedder embedder, IVectorStore vectors)
+public sealed class ConvergenceDetector(
+    IKnowledgeStore store, IEmbedder? embedder = null, IVectorStore? vectors = null)
 {
+    /// <summary>Whether the semantic pass is available. False still finds copies and restatements.</summary>
+    public bool SemanticAvailable => embedder is not null && vectors is not null;
+
     public async Task<IReadOnlyList<ConvergenceCandidate>> FindAsync(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
         options ??= new ConvergenceOptions();
 
-        var all = await store.AllAsync(ct).ConfigureAwait(false);
-        var considered = all
+        var considered = (await store.AllAsync(ct).ConfigureAwait(false))
             .Where(e => e.Provenance == Provenance.Local)
             .Where(e => options.Kinds is null || options.Kinds.Contains(e.Kind))
             .ToList();
 
         if (considered.Count < 2) return [];
 
-        var byId = considered.ToDictionary(e => e.Id, StringComparer.Ordinal);
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var claimed = new HashSet<string>(StringComparer.Ordinal);
         var candidates = new List<ConvergenceCandidate>();
 
-        // Embed every seed FIRST, in batches. One call per entry is what the naive version did, and
-        // on a real corpus it was four hundred sequential HTTP round trips — slow enough to time out
-        // rather than merely be inefficient. The library's primitive is a batch precisely because
-        // that is what real endpoints reward.
-        var vectorsBySeed = await EmbedAllAsync(considered, ct).ConfigureAwait(false);
+        // Cheapest and most certain first, so a copy is never reported as a weaker finding — and so
+        // the expensive pass has less left to do.
+        candidates.AddRange(FindIdentical(considered, claimed));
+        candidates.AddRange(FindRestatements(considered, claimed, options.MinimumSimilarity));
 
-        foreach (var seed in considered)
+        if (SemanticAvailable)
+        {
+            candidates.AddRange(
+                await FindConvergentAsync(considered, claimed, options, ct).ConfigureAwait(false));
+        }
+
+        return candidates
+            .OrderByDescending(c => c.Method)      // Convergent first: the finding nobody could make by eye
+            .ThenByDescending(c => c.Similarity)
+            .Take(options.MaxCandidates)
+            .ToList();
+    }
+
+    /// <summary>Byte-identical bodies. No model, no threshold, no doubt.</summary>
+    private static IEnumerable<ConvergenceCandidate> FindIdentical(
+        IReadOnlyList<KnowledgeEntry> entries, HashSet<string> claimed)
+    {
+        var groups = entries
+            .GroupBy(e => Normalize(e.Body), StringComparer.Ordinal)
+            .Where(g => g.Select(e => e.Repository).Distinct(StringComparer.Ordinal).Count() > 1);
+
+        foreach (var group in groups)
+        {
+            var members = group.ToList();
+            foreach (var entry in members) claimed.Add(entry.Id);
+            yield return new ConvergenceCandidate(members, 1.0, ConvergenceMethod.Identical);
+        }
+    }
+
+    /// <summary>
+    /// Substantially the same words — a copy that has since drifted.
+    /// </summary>
+    /// <remarks>
+    /// Containment over token sets rather than Jaccard, so a short document restating a long one still
+    /// scores: the same choice the drift detector made, for the same reason.
+    /// </remarks>
+    private static IEnumerable<ConvergenceCandidate> FindRestatements(
+        IReadOnlyList<KnowledgeEntry> entries, HashSet<string> claimed, double threshold)
+    {
+        var tokens = entries.ToDictionary(
+            e => e.Id,
+            e => new HashSet<string>(Text.Tokenize($"{e.Title} {e.Body}"), StringComparer.Ordinal),
+            StringComparer.Ordinal);
+
+        var found = new List<ConvergenceCandidate>();
+        foreach (var seed in entries)
+        {
+            if (claimed.Contains(seed.Id)) continue;
+
+            var group = new List<KnowledgeEntry> { seed };
+            var best = 0.0;
+            foreach (var other in entries)
+            {
+                if (other.Id == seed.Id || claimed.Contains(other.Id)) continue;
+                if (string.Equals(other.Repository, seed.Repository, StringComparison.Ordinal)) continue;
+
+                var score = Containment(tokens[seed.Id], tokens[other.Id]);
+                if (score < threshold) continue;
+
+                group.Add(other);
+                best = Math.Max(best, score);
+            }
+
+            if (group.Count < 2) continue;
+            foreach (var entry in group) claimed.Add(entry.Id);
+            found.Add(new ConvergenceCandidate(group, best, ConvergenceMethod.Restatement));
+        }
+
+        return found;
+    }
+
+    /// <summary>The same meaning in different words — the pass only a model can make.</summary>
+    private async Task<IReadOnlyList<ConvergenceCandidate>> FindConvergentAsync(
+        IReadOnlyList<KnowledgeEntry> entries, HashSet<string> claimed,
+        ConvergenceOptions options, CancellationToken ct)
+    {
+        var remaining = entries.Where(e => !claimed.Contains(e.Id)).ToList();
+        if (remaining.Count < 2) return [];
+
+        var byId = remaining.ToDictionary(e => e.Id, StringComparer.Ordinal);
+
+        // Embedded in batches, not one call per entry. The naive version made four hundred sequential
+        // round trips on a real corpus — slow enough to time out rather than merely be inefficient.
+        var seedVectors = await EmbedAllAsync(remaining, ct).ConfigureAwait(false);
+
+        var found = new List<ConvergenceCandidate>();
+        foreach (var seed in remaining)
         {
             ct.ThrowIfCancellationRequested();
-            if (seen.Contains(seed.Id)) continue;
+            if (claimed.Contains(seed.Id)) continue;
 
-            var matches = await vectors
-                .SearchAsync(SemanticKnowledgeSearch.Collection, vectorsBySeed[seed.Id], 12, ct)
+            var matches = await vectors!
+                .SearchAsync(SemanticKnowledgeSearch.Collection, seedVectors[seed.Id], 12, ct)
                 .ConfigureAwait(false);
 
             var group = new List<KnowledgeEntry> { seed };
             var best = 0.0;
-
             foreach (var match in matches)
             {
                 if (match.Score < options.MinimumSimilarity) continue;
                 if (!byId.TryGetValue(match.Payload, out var other)) continue;
-                if (other.Id == seed.Id) continue;
-                // The whole point: a different repository reaching the same place.
+                if (other.Id == seed.Id || claimed.Contains(other.Id)) continue;
                 if (string.Equals(other.Repository, seed.Repository, StringComparison.Ordinal)) continue;
-                if (seen.Contains(other.Id)) continue;
 
                 group.Add(other);
                 best = Math.Max(best, match.Score);
             }
 
             if (group.Count < 2) continue;
-
-            foreach (var entry in group) seen.Add(entry.Id);
-            candidates.Add(new ConvergenceCandidate(group, best));
+            foreach (var entry in group) claimed.Add(entry.Id);
+            found.Add(new ConvergenceCandidate(group, best, ConvergenceMethod.Convergent));
         }
 
-        return candidates
-            .OrderByDescending(c => c.Similarity)
-            .ThenByDescending(c => c.Entries.Count)
-            .Take(options.MaxCandidates)
-            .ToList();
+        return found;
     }
 
-    /// <summary>
-    /// Every entry's vector, batched.
-    /// </summary>
-    /// <remarks>
-    /// These vectors already exist — the refresh put them in the store — but the vector-store seam
-    /// offers upsert, search and delete, not fetch-by-id, so they are recomputed. Batching makes that
-    /// cheap enough not to matter; adding a fetch to someone else's interface to save it would not be.
-    /// </remarks>
     private async Task<Dictionary<string, float[]>> EmbedAllAsync(
         IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct, int batchSize = 32)
     {
@@ -139,7 +212,7 @@ public sealed class ConvergenceDetector(IKnowledgeStore store, IEmbedder embedde
         {
             ct.ThrowIfCancellationRequested();
             var batch = entries.Skip(offset).Take(batchSize).ToList();
-            var embedded = await embedder
+            var embedded = await embedder!
                 .EmbedAsync(batch.Select(SemanticKnowledgeSearch.Embeddable).ToList(), ct)
                 .ConfigureAwait(false);
 
@@ -148,4 +221,15 @@ public sealed class ConvergenceDetector(IKnowledgeStore store, IEmbedder embedde
 
         return byId;
     }
+
+    /// <summary>Shared tokens over the smaller set, so a short document restating a long one scores.</summary>
+    private static double Containment(HashSet<string> a, HashSet<string> b)
+    {
+        if (a.Count == 0 || b.Count == 0) return 0;
+        return (double)a.Count(b.Contains) / Math.Min(a.Count, b.Count);
+    }
+
+    /// <summary>Whitespace-insensitive, so re-wrapping the same text is still the same text.</summary>
+    private static string Normalize(string body) =>
+        string.Join(' ', body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }

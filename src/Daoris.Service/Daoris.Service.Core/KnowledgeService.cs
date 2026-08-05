@@ -59,12 +59,14 @@ public sealed class KnowledgeService(
     /// <summary>
     /// Where different repositories learned the same lesson independently.
     /// </summary>
-    /// <returns>Null when semantic search is not configured — the caller can then say so, which is
-    /// more useful than an empty list that looks like "nothing converges".</returns>
-    public async Task<IReadOnlyList<ConvergenceCandidate>?> FindConvergenceAsync(
+    /// <remarks>
+    /// Works with or without an embedder. Without one it still finds identical copies and
+    /// restatements; with one it also finds convergence. A feature that returned nothing without an
+    /// optional dependency would have made that dependency mandatory in all but name.
+    /// </remarks>
+    public async Task<IReadOnlyList<ConvergenceCandidate>> FindConvergenceAsync(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
-        if (embedder is null || vectors is null) return null;
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         return await new ConvergenceDetector(store, embedder, vectors)
             .FindAsync(options, ct).ConfigureAwait(false);
