@@ -5,8 +5,8 @@ import { DaorisError } from './errors.mjs';
 import { DEFAULT_HARNESS, resolveHarness } from './harness.mjs';
 
 export const MANIFEST_FILE = 'daoris.json';
-export const LOCK_FILE = 'daoris.lock';
-export const LOCK_VERSION = 1;
+const LOCK_FILE = 'daoris.lock';
+const LOCK_VERSION = 1;
 
 // `harness` names which agent layout to generate. It defaults rather than being required, because a
 // manifest written before harnesses existed must keep working — and because there is one supported

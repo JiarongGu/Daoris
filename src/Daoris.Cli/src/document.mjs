@@ -1,7 +1,7 @@
 const HEADER_PREFIX = '<!-- daoris:';
 
 /** A rule or knowledge document: the three fields its index row is built from. */
-export const RULE_FIELDS = ['name', 'applies_when', 'enforces'];
+const RULE_FIELDS = ['name', 'applies_when', 'enforces'];
 
 /**
  * A skill: the two fields the agent harness itself requires. `description` is

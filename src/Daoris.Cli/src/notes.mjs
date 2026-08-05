@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText } from './fsx.mjs';
 
-export const CANON_CHANGELOG = 'CHANGELOG.md';
+const CANON_CHANGELOG = 'CHANGELOG.md';
 
 /** Numeric, so 0.10.0 sorts after 0.9.0 — string comparison gets that backwards. */
 export function compareVersions(a, b) {
