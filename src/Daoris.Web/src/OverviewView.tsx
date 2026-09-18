@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api, type Quest, type Registration, type Repository } from './api';
 import { ago, compact, sittingDays } from './format';
+import { EmptyState, Icon, PageHeader, SkeletonRows } from './ui';
 
 /**
  * The management landing (D40). A person overseeing several projects' agents opens this window to
  * answer one question first — is anything sitting, and for how long — so that is what leads: family
  * health as stat tiles, the outstanding quests oldest-first, and the repositories by what the index
- * holds.
+ * holds. Every row is a door.
  *
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity,
  * and a value-ramp or per-bar colors would decorate what the length already says. Values sit beside
@@ -43,6 +44,11 @@ export function OverviewView({ repositories, onNavigate, onError }: {
 
   return (
     <section className="overview">
+      <PageHeader
+        title="Overview"
+        description="Is anything sitting, and is the family healthy — the state of the thing being managed."
+      />
+
       <div className="tiles">
         <div className="tile">
           <span className="tile-label">Adopted projects</span>
@@ -69,63 +75,74 @@ export function OverviewView({ repositories, onNavigate, onError }: {
         </div>
       </div>
 
-      <article className="group">
-        <header>
-          <span className="method">Outstanding — oldest first</span>
-          <button onClick={() => onNavigate('quests')}>
-            {outstanding.length > 0 ? 'answer them' : 'ask for something'}
-          </button>
-        </header>
-        {quests === null && <p className="loading">reading…</p>}
-        {quests?.length === 0 && (
-          <p className="empty">Nothing is outstanding anywhere — the family owes itself nothing right now.</p>
-        )}
-        <ul className="sitting-list">
-          {outstanding.slice(0, 6).map((quest) => (
-            <li key={quest.id}>
-              <span className={`pill ${quest.status.toLowerCase()}`}>{quest.status}</span>
-              <button className="link" onClick={() => onNavigate('quests')}>{quest.title}</button>
-              <span className="where">
-                {quest.from} → {quest.to} · {quest.status === 'Open' ? `filed ${ago(quest.filed)}` : `taken ${ago(quest.updated)}`}
-              </span>
-            </li>
-          ))}
-        </ul>
-        {outstanding.length > 6 && (
-          <p className="method-hint">…and {outstanding.length - 6} more in Quests.</p>
-        )}
-      </article>
-
-      <article className="group">
-        <header>
-          <span className="method">Repositories, by what the index holds</span>
-          <button onClick={() => onNavigate('projects')}>projects</button>
-        </header>
-        <ul className="bars">
-          {ranked.map((repository) => {
-            const declared = registry.find((r) => r.repository === repository.name);
-            return (
-              <li key={repository.name}>
-                <span className="bar-name">
-                  {declared?.adopted && <span className="adopted-dot" title="adopted — addressable for quests" />}
-                  {repository.name}
-                </span>
-                <span className="bar-track">
-                  <span className="bar" style={{ width: `${(repository.total / most) * 100}%` }} />
-                </span>
-                <span className="bar-value">
-                  {repository.total.toLocaleString()}
-                  <span className="bar-split"> · {repository.local.toLocaleString()} local</span>
-                </span>
+      <div className="overview-grid">
+        <article className="group">
+          <header>
+            <span className="method">Outstanding — oldest first</span>
+            <button onClick={() => onNavigate('quests')}>
+              {outstanding.length > 0 ? 'answer them' : 'ask for something'}
+            </button>
+          </header>
+          {quests === null && <SkeletonRows />}
+          {quests?.length === 0 && (
+            <EmptyState
+              icon="check"
+              headline="Nothing is sitting"
+              body="The family owes itself nothing right now. When a project needs something from a sibling, it is asked for here."
+            />
+          )}
+          <ul className="sitting-list">
+            {outstanding.slice(0, 6).map((quest) => (
+              <li key={quest.id}>
+                <button className="row" onClick={() => onNavigate('quests')}>
+                  <span className={`pill ${quest.status.toLowerCase()}`}>{quest.status}</span>
+                  <span className="title">{quest.title}</span>
+                  <span className="where">
+                    {quest.from} → {quest.to} · {quest.status === 'Open' ? `filed ${ago(quest.filed)}` : `taken ${ago(quest.updated)}`}
+                  </span>
+                </button>
               </li>
-            );
-          })}
-        </ul>
-        <p className="method-hint">
-          ● adopted, so addressable for quests. “Local” is the repository's own material — the part no
-          sibling can reach without this index.
-        </p>
-      </article>
+            ))}
+          </ul>
+          {outstanding.length > 6 && (
+            <p className="method-hint">…and {outstanding.length - 6} more in Quests.</p>
+          )}
+        </article>
+
+        <article className="group">
+          <header>
+            <span className="method">Repositories, by what the index holds</span>
+            <button onClick={() => onNavigate('projects')}>
+              <Icon name="projects" />projects
+            </button>
+          </header>
+          {repositories.length === 0 && <SkeletonRows />}
+          <ul className="bars">
+            {ranked.map((repository) => {
+              const declared = registry.find((r) => r.repository === repository.name);
+              return (
+                <li key={repository.name}>
+                  <span className="bar-name">
+                    {declared?.adopted && <span className="adopted-dot" title="adopted — addressable for quests" />}
+                    {repository.name}
+                  </span>
+                  <span className="bar-track">
+                    <span className="bar" style={{ width: `${(repository.total / most) * 100}%` }} />
+                  </span>
+                  <span className="bar-value">
+                    {repository.total.toLocaleString()}
+                    <span className="bar-split"> · {repository.local.toLocaleString()} local</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="method-hint">
+            ● adopted, so addressable for quests. “Local” is the repository's own material — the part no
+            sibling can reach without this index.
+          </p>
+        </article>
+      </div>
     </section>
   );
 }

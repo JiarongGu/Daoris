@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, type Registration, type Repository } from './api';
+import { PageHeader, SkeletonRows } from './ui';
 
 /**
  * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
@@ -24,14 +25,20 @@ export function ProjectsView({ repositories, onError }: {
     return () => abort.abort();
   }, [onError]);
 
-  if (registry === null) return <p className="loading">reading…</p>;
-
-  const adopted = registry.filter((r) => r.adopted);
-  const outside = registry.filter((r) => !r.adopted);
+  const adopted = (registry ?? []).filter((r) => r.adopted);
+  const outside = (registry ?? []).filter((r) => !r.adopted);
   const indexed = (name: string) => repositories.find((r) => r.name === name);
 
   return (
     <section className="projects">
+      <PageHeader
+        title="Projects"
+        description="Who is in the family, what each owns and accepts — and who cannot be asked yet."
+      />
+
+      {registry === null && <SkeletonRows rows={4} />}
+
+      <div className="cards-2">
       {adopted.map((project) => {
         const counts = indexed(project.repository);
         return (
@@ -75,6 +82,7 @@ export function ProjectsView({ repositories, onError }: {
           </article>
         );
       })}
+      </div>
 
       {outside.length > 0 && (
         <article className="group outside">

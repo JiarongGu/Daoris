@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, type Hit } from './api';
+import { PageHeader } from './ui';
 
 /**
  * The supporting view. Useful once you know what you are looking for — which is exactly the case
@@ -36,6 +37,10 @@ export function SearchView(
 
   return (
     <section className="search">
+      <PageHeader
+        title="Search"
+        description="What has the family already learned about it — decisions, fixes, rules, outcomes, across every repository."
+      />
       <div className="controls">
         <input
           type="search" value={query} autoFocus

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, type Convergence } from './api';
+import { PageHeader } from './ui';
 
 /** How each group was found, which is also how much confidence it carries. */
 const METHOD: Record<Convergence['method'], { label: string; hint: string }> = {
@@ -48,6 +49,10 @@ export function ConvergenceView(
 
   return (
     <section className="convergence">
+      <PageHeader
+        title="Convergence"
+        description="Where two repositories reached the same conclusion independently — read them and decide. The knowledge half's lead view (D30)."
+      />
       <div className="controls">
         <label>
           Similarity ≥ <strong>{threshold.toFixed(2)}</strong>
