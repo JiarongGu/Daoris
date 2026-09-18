@@ -1,2 +1,9 @@
 node_modules/
 dist/
+
+# Playwright's run artifacts; the suite itself is tracked under e2e/.
+test-results/
+playwright-report/
+
+# Storybook's static build; the stories are tracked next to the components.
+storybook-static/

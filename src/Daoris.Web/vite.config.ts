@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 // The build lands in the HTTP host's wwwroot, so the API and the UI are ONE origin in a real
 // deployment — which is what makes CORS unnecessary there, and what lets the desktop shell host
 // exactly the same bytes rather than a second copy built differently.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   build: {
     outDir: '../Daoris.Service/Daoris.Service.Http/wwwroot',
     emptyOutDir: true,

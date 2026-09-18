@@ -1,0 +1,108 @@
+/* The design language's tokens (docs/2026-09-19-platform-ux.md, D41), as the Tailwind theme (D42).
+   Warm paper, thin ink, one bronze accent; the quest-state palette is computed, not tasted — both
+   themes pass all six checks of the visualization validator, and a status never appears color-alone.
+   The runtime variables flip with the OS theme; `@theme inline` hands them to the utilities. */
+
+@import "tailwindcss";
+
+:root {
+  --ink: #1a1a18;
+  --ink-soft: #5b5a55;
+  --ink-faint: #8a887f;
+  --page: #faf9f6;
+  --raised: #ffffff;
+  --overlay: #ffffff;
+  --line: #e3e0d8;
+  --line-strong: #cfcabe;
+  --accent: #7a5c2e;
+  --accent-ink: #faf9f6;
+  --accent-soft: #f0e9dc;
+  --warn: #8a4b2a;
+
+  --st-open: #b07818;
+  --st-taken: #2f6db3;
+  --st-done: #2c9a62;
+  --st-declined: #9e2f24;
+
+  --speed: 140ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8e6df;
+    --ink-soft: #a9a69c;
+    --ink-faint: #7a7770;
+    --page: #16161a;
+    --raised: #1e1e23;
+    --overlay: #24242a;
+    --line: #2e2e34;
+    --line-strong: #3d3d45;
+    --accent: #d3ac6b;
+    --accent-ink: #16161a;
+    --accent-soft: #2a2419;
+    --warn: #d99a72;
+
+    /* The dark set is its own validated palette, not a filter. */
+    --st-open: #bd8226;
+    --st-taken: #5c97dd;
+    --st-done: #3da476;
+    --st-declined: #c74534;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --speed: 0ms; }
+}
+
+@theme inline {
+  --color-*: initial;
+  --color-page: var(--page);
+  --color-raised: var(--raised);
+  --color-overlay: var(--overlay);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-st-open: var(--st-open);
+  --color-st-taken: var(--st-taken);
+  --color-st-done: var(--st-done);
+  --color-st-declined: var(--st-declined);
+  --color-scrim: rgb(15 12 8 / 0.4);
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-overlay: 10px;
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(1.5rem); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+
+@layer base {
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: 0.55; }
+}

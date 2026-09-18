@@ -1,98 +1,97 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api, type Convergence } from './api';
-import { PageHeader } from './ui';
-
-/** How each group was found, which is also how much confidence it carries. */
-const METHOD: Record<Convergence['method'], { label: string; hint: string }> = {
-  Convergent: {
-    label: 'Same lesson, different words',
-    hint: 'The finding no text comparison can make — and the reason the semantic tier exists.',
-  },
-  Restatement: {
-    label: 'Substantially the same words',
-    hint: 'Usually a copy that has since drifted.',
-  },
-  Identical: {
-    label: 'The same document, pasted',
-    hint: 'A copy, not a coincidence.',
-  },
-};
+import { Card, PageHeader, useErrorNotify } from './ui';
+import { cn } from './lib/cn';
 
 /**
- * The landing view (D30).
+ * The knowledge half's lead view (D30). The threshold is a control rather than a constant,
+ * deliberately: the useful value depends on the embedder and the corpus — measured on this family,
+ * 0.82 returns nothing, 0.70 the true pairs, 0.60 begins pulling in unrelated documents.
  *
- * The threshold is a control rather than a constant, and deliberately so: the useful value depends on
- * the embedder and the corpus. Measured on this family, 0.82 returns nothing, 0.70 returns exactly the
- * true pairs, and 0.60 begins pulling in unrelated documents — so a default nobody can move would be
- * wrong for someone.
+ * The suggestion under each group is the SERVICE's sentence, verbatim — a command to run where the
+ * file lives, never a button that applies it (D21, D31).
  */
-export function ConvergenceView(
-  { semantic, onOpen, onError }:
-  { semantic: boolean; onOpen: (id: string) => void; onError: (message: string) => void },
-) {
+export function ConvergenceView({ semantic, onOpen, onError }: {
+  semantic: boolean;
+  onOpen: (id: string) => void;
+  onError: (message: string) => void;
+}) {
+  const { t } = useTranslation();
   const [threshold, setThreshold] = useState(0.75);
-  const [groups, setGroups] = useState<Convergence[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [debounced, setDebounced] = useState(threshold);
 
   useEffect(() => {
-    const abort = new AbortController();
-    setLoading(true);
-    api.convergence(threshold, abort.signal)
-      .then((found) => { setGroups(found); setLoading(false); })
-      .catch((e: Error) => {
-        if (e.name === 'AbortError') return;
-        onError(e.message);
-        setLoading(false);
-      });
-    return () => abort.abort();
-  }, [threshold, onError]);
+    const timer = setTimeout(() => setDebounced(threshold), 200);
+    return () => clearTimeout(timer);
+  }, [threshold]);
+
+  const groups = useQuery({
+    queryKey: ['convergence', debounced],
+    queryFn: ({ signal }) => api.convergence(debounced, signal),
+  });
+  useErrorNotify(groups.error, onError);
 
   return (
-    <section className="convergence">
-      <PageHeader
-        title="Convergence"
-        description="Where two repositories reached the same conclusion independently — read them and decide. The knowledge half's lead view (D30)."
-      />
-      <div className="controls">
-        <label>
-          Similarity ≥ <strong>{threshold.toFixed(2)}</strong>
+    <section>
+      <PageHeader title={t('convergence.title')} description={t('convergence.description')} />
+
+      <div className="mb-4 flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2.5 text-[0.85rem] text-ink-soft">
+          {t('convergence.threshold')} <strong className="tabular-nums">{threshold.toFixed(2)}</strong>
           <input
             type="range" min={0.5} max={0.95} step={0.01} value={threshold}
             onChange={(e) => setThreshold(Number(e.target.value))}
+            className="w-56 accent-accent"
           />
         </label>
-        <p className="hint">
-          {semantic
-            ? 'Lower it to see weaker overlaps. Worth sweeping rather than trusting one number — the right value depends on the corpus.'
-            : 'Without an embedding endpoint this finds copies and restatements only. Two repositories that reached the same conclusion in different words will not appear.'}
+        <p className="m-0 basis-full text-[0.875rem] text-ink-soft">
+          {semantic ? t('convergence.hintSemantic') : t('convergence.hintLexical')}
         </p>
       </div>
 
-      {loading && <p className="loading">comparing…</p>}
-      {!loading && groups?.length === 0 && <p className="empty">Nothing converges above {threshold.toFixed(2)}.</p>}
+      {groups.isPending && <p className="text-[0.875rem] text-ink-soft">{t('convergence.comparing')}</p>}
+      {groups.data?.length === 0 && (
+        <p className="text-[0.875rem] text-ink-soft">
+          {t('convergence.empty', { value: threshold.toFixed(2) })}
+        </p>
+      )}
 
-      {groups?.map((group, index) => (
-        <article key={index} className={`group ${group.method.toLowerCase()}`}>
-          <header>
-            <span className="method">{METHOD[group.method].label}</span>
-            <span className="score">{group.similarity.toFixed(3)}</span>
-          </header>
-          <p className="repos">{group.repositories.join(' ↔ ')}</p>
-          <ul>
-            {group.entries.map((entry) => (
-              <li key={entry.id}>
-                <button className="link" onClick={() => onOpen(entry.id)}>{entry.title}</button>
-                <span className="where">{entry.repository} · {entry.kind} · {entry.path}</span>
-              </li>
-            ))}
-          </ul>
-          {/* The suggestion is a command to run where the file lives — never a button that applies it.
-              A candidate is a prompt to look, not a merge, and doctrine that appeared without anyone
-              choosing it is the failure this project exists to prevent (D21, D31). */}
-          <p className="suggestion">{group.suggestion}</p>
-          <p className="method-hint">{METHOD[group.method].hint}</p>
-        </article>
-      ))}
+      <div className={cn(groups.isFetching && groups.data && 'opacity-60 transition-opacity duration-(--speed)')}>
+        {groups.data?.map((group: Convergence, index: number) => (
+          <Card key={index} className="mb-3.5" accent={group.method === 'Convergent'}>
+            <header className="flex items-baseline justify-between gap-4">
+              <span className="text-[0.9rem] font-semibold">
+                {t(`convergence.methods.${group.method}.label`)}
+              </span>
+              <span className="font-mono text-[0.8rem] tabular-nums text-ink-faint">
+                {group.similarity.toFixed(3)}
+              </span>
+            </header>
+            <p className="mb-2 mt-1 text-[0.85rem] text-accent">{group.repositories.join(' ↔ ')}</p>
+            <ul className="m-0 list-none p-0">
+              {group.entries.map((entry) => (
+                <li key={entry.id} className="border-t border-line py-1.5 first:border-t-0">
+                  <button
+                    className="border-0 bg-transparent p-0 text-left text-[0.95rem] font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-accent"
+                    onClick={() => onOpen(entry.id)}
+                  >
+                    {entry.title}
+                  </button>
+                  <span className="block font-mono text-[0.72rem] text-ink-faint">
+                    {entry.repository} · {t(`kind.${entry.kind}`)} · {entry.path}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 text-[0.85rem]">{group.suggestion}</p>
+            <p className="mt-1.5 text-[0.78rem] italic text-ink-faint">
+              {t(`convergence.methods.${group.method}.hint`)}
+            </p>
+          </Card>
+        ))}
+      </div>
     </section>
   );
 }

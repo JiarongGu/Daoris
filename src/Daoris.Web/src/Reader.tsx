@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import type { Entry } from './api';
-import { Drawer } from './ui';
+import { Drawer, Pill } from './ui';
 
 /**
  * One knowledge entry, in the drawer every detail uses (D41). The body stays monospaced and
@@ -7,19 +8,22 @@ import { Drawer } from './ui';
  * about what the file says.
  */
 export function Reader({ entry, onClose }: { entry: Entry; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <Drawer
       title={entry.title}
       onClose={onClose}
       meta={
         <>
-          <span className="pill">{entry.kind}</span>
-          <span className="pill">{entry.provenance}</span>
-          <span className="where-inline">{entry.repository} · {entry.path}</span>
+          <Pill>{t(`kind.${entry.kind}`)}</Pill>
+          <Pill>{t(`provenance.${entry.provenance}`)}</Pill>
+          <span className="font-mono text-[0.72rem] text-ink-faint">{entry.repository} · {entry.path}</span>
         </>
       }
     >
-      <pre>{entry.body}</pre>
+      <pre className="m-0 whitespace-pre-wrap break-words font-mono text-[0.82rem] leading-[1.65]">
+        {entry.body}
+      </pre>
     </Drawer>
   );
 }

@@ -1,201 +1,376 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { type ButtonHTMLAttributes, type ReactNode, useEffect } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import * as Toast from '@radix-ui/react-toast';
+import * as RadixSelect from '@radix-ui/react-select';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import {
+  ArrowLeftRight, Check, ChevronDown, Clock, GitMerge, Inbox, Languages, LayoutGrid, Layers,
+  Plus, RotateCw, Search, X,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { cn } from './lib/cn';
 
-// The platform's small component language (docs/2026-09-19-platform-ux.md, D41). Everything here is
-// hand-rolled on purpose: a dozen stroke icons and three primitives do not earn a dependency, and the
-// paper character survives better in 200 lines of our own than under a framework's defaults.
+// The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
+// behaviour — focus traps, dismissal, ARIA, typeahead — and every pixel stays ours, which is how the
+// paper character survives a component library.
 
-/** Inline stroke icons, 24-unit grid, drawn by hand. Decorative — always beside a real label. */
-const PATHS: Record<string, ReactNode> = {
-  overview: (
-    <>
-      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-      <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-    </>
-  ),
-  quests: (
-    <>
-      <path d="M6.5 8h11" />
-      <path d="m14.5 5 3 3-3 3" />
-      <path d="M17.5 16h-11" />
-      <path d="m9.5 13-3 3 3 3" />
-    </>
-  ),
-  projects: (
-    <>
-      <path d="M12 3.5 4 7.5l8 4 8-4-8-4Z" />
-      <path d="m4 12.5 8 4 8-4" />
-      <path d="m4 17 8 4 8-4" />
-    </>
-  ),
-  convergence: (
-    <>
-      <circle cx="6" cy="5.5" r="2" />
-      <circle cx="6" cy="18.5" r="2" />
-      <circle cx="18" cy="12" r="2" />
-      <path d="M6 7.5v9" />
-      <path d="M6.5 9c1 3.5 5 4.5 9 4.7" />
-    </>
-  ),
-  search: (
-    <>
-      <circle cx="11" cy="11" r="6" />
-      <path d="m15.5 15.5 4.5 4.5" />
-    </>
-  ),
-  refresh: (
-    <>
-      <path d="M20.5 4.5v5h-5" />
-      <path d="M3.5 12a8.5 8.5 0 0 1 16.5-2.8" />
-      <path d="M3.5 19.5v-5h5" />
-      <path d="M20.5 12A8.5 8.5 0 0 1 4 14.8" />
-    </>
-  ),
-  plus: (
-    <>
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </>
-  ),
-  x: (
-    <>
-      <path d="m6 6 12 12" />
-      <path d="M18 6 6 18" />
-    </>
-  ),
-  check: <path d="m5 12.5 4.5 4.5L19 7" />,
-  clock: (
-    <>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 7.5V12l3 2.5" />
-    </>
-  ),
-  inbox: (
-    <>
-      <path d="M4 13.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18v-4.5" />
-      <path d="M4 13.5h4.5l1.5 2.5h4l1.5-2.5H20" />
-      <path d="M6 13.5 8 5h8l2 8.5" />
-    </>
-  ),
+/** The icon roster. Lucide, tree-shaken; always decorative beside a real label. */
+const ICONS = {
+  overview: LayoutGrid,
+  quests: ArrowLeftRight,
+  projects: Layers,
+  convergence: GitMerge,
+  search: Search,
+  refresh: RotateCw,
+  plus: Plus,
+  x: X,
+  check: Check,
+  clock: Clock,
+  inbox: Inbox,
+  languages: Languages,
+} as const;
+
+export type IconName = keyof typeof ICONS;
+
+export function Icon({ name, size = 16, className }: { name: IconName; size?: number; className?: string }) {
+  const Glyph = ICONS[name];
+  return <Glyph size={size} strokeWidth={1.7} aria-hidden className={cn('shrink-0', className)} />;
+}
+
+/* ---------------------------------------------------------------- buttons */
+
+const BUTTON: Record<string, string> = {
+  default:
+    'border border-line bg-raised text-ink hover:enabled:border-accent',
+  primary:
+    'border border-accent bg-accent text-accent-ink hover:enabled:brightness-108',
+  ghost:
+    'border border-transparent bg-transparent text-ink-soft px-2 py-1 hover:enabled:text-ink hover:enabled:border-line',
+  danger:
+    'border border-st-declined bg-transparent text-st-declined hover:enabled:bg-st-declined/10',
 };
 
-export function Icon({ name, size = 16 }: { name: keyof typeof PATHS | string; size?: number }) {
+export function Button({
+  variant = 'default', className, ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof BUTTON }) {
   return (
-    <svg
-      className="icon" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"
-      fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
-    >
-      {PATHS[name]}
-    </svg>
+    <button
+      {...props}
+      className={cn(
+        'inline-flex min-h-[1.9rem] items-center gap-1.5 rounded-control px-3 py-1.5 text-[0.85rem]',
+        'transition-colors duration-(--speed)',
+        BUTTON[variant],
+        className,
+      )}
+    />
   );
 }
 
-/** Every view opens with one of these: the title, one line of what it is for, one primary action. */
-export function PageHeader({ title, description, action }: {
-  title: string;
-  description: string;
-  action?: ReactNode;
+/* ---------------------------------------------------------------- pills & chips */
+
+const PILL_TONE: Record<string, string> = {
+  neutral: 'border-line text-ink-soft bg-raised',
+  open: 'border-st-open text-st-open bg-st-open/10',
+  taken: 'border-st-taken text-st-taken bg-st-taken/10',
+  done: 'border-st-done text-st-done bg-st-done/10',
+  declined: 'border-st-declined text-st-declined bg-st-declined/10',
+};
+
+/** Quest state on its soft field. The label is always present — status never rides on hue alone. */
+export function Pill({ tone = 'neutral', title, children }: {
+  tone?: keyof typeof PILL_TONE; title?: string; children: ReactNode;
 }) {
   return (
-    <header className="page-head">
-      <div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
-      {action && <div className="page-action">{action}</div>}
+    <span
+      title={title}
+      className={cn(
+        'whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[0.72rem]',
+        PILL_TONE[tone],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function Chip({ accent, children }: { accent?: boolean; children: ReactNode }) {
+  return (
+    <span className={cn(
+      'inline-block rounded-full border px-2.5 py-px text-[0.75rem] leading-[1.45]',
+      accent ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-raised text-ink-soft',
+    )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/* ---------------------------------------------------------------- cards, tiles, headers */
+
+export function Card({ warn, accent, className, children }: {
+  warn?: boolean; accent?: boolean; className?: string; children: ReactNode;
+}) {
+  return (
+    <article className={cn(
+      'rounded-card border border-line border-l-[3px] bg-raised px-[1.15rem] py-4',
+      accent && 'border-l-accent',
+      warn && 'border-l-st-open',
+      className,
+    )}
+    >
+      {children}
+    </article>
+  );
+}
+
+export function CardHeader({ title, aside }: { title: ReactNode; aside?: ReactNode }) {
+  return (
+    <header className="flex items-baseline justify-between gap-4">
+      <span className="text-[0.95rem] font-semibold">{title}</span>
+      {aside}
     </header>
   );
 }
 
+/** The stat-tile contract: label · value · context. Values wear proportional figures, deliberately. */
+export function Tile({ label, value, note, warn }: {
+  label: string; value: ReactNode; note: string; warn?: boolean;
+}) {
+  return (
+    <div className={cn(
+      'grid content-start gap-0.5 rounded-card border border-line bg-raised px-4 pb-3.5 pt-3',
+      warn && 'border-l-[3px] border-l-st-open',
+    )}
+    >
+      <span className="text-[0.78rem] text-ink-soft">{label}</span>
+      <span className="text-[2rem] font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
+      <span className={cn('text-[0.75rem]', warn ? 'text-st-open' : 'text-ink-faint')}>{note}</span>
+    </div>
+  );
+}
+
+/** Every view opens with one of these: the title, one line of purpose, one primary action. */
+export function PageHeader({ title, description, action }: {
+  title: string; description: string; action?: ReactNode;
+}) {
+  return (
+    <header className="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h1 className="text-[1.25rem] font-[650] tracking-[-0.01em]">{title}</h1>
+        <p className="mt-1 text-[0.9rem] text-ink-soft">{description}</p>
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </header>
+  );
+}
+
+export function SectionTitle({ children }: { children: ReactNode }) {
+  return <h2 className="mb-2.5 mt-6 text-[0.8rem] font-semibold text-ink-faint">{children}</h2>;
+}
+
+/* ---------------------------------------------------------------- drawer */
+
 /**
- * The single detail-and-form surface (D41): a knowledge entry, a quest's detail, the compose form —
- * one pattern instead of three, and the list behind it survives. ESC, the scrim, and × all close it.
+ * The single detail-and-form surface (D41), on Radix Dialog: focus is trapped, ESC and the scrim
+ * dismiss, and the list behind it survives. Every pixel is ours; the behaviour is not hand-rolled.
  */
 export function Drawer({ title, meta, onClose, footer, children }: {
-  title: string;
-  meta?: ReactNode;
-  onClose: () => void;
-  footer?: ReactNode;
-  children: ReactNode;
+  title: string; meta?: ReactNode; onClose: () => void; footer?: ReactNode; children: ReactNode;
 }) {
-  const body = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    body.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
+  const { t } = useTranslation();
   return (
-    <div className="scrim" onClick={onClose}>
-      <aside
-        className="drawer" role="dialog" aria-modal="true" aria-label={title}
-        onClick={(event) => event.stopPropagation()}
+    <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-10 bg-scrim" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed inset-y-0 right-0 z-10 flex w-[min(32rem,100%)] flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]"
+        >
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">
+            <div>
+              <Dialog.Title className="text-[1.05rem] font-[650] leading-[1.35]">{title}</Dialog.Title>
+              {meta && (
+                <div className="mt-1.5 flex flex-wrap items-baseline gap-2 text-[0.8rem] text-ink-soft">
+                  {meta}
+                </div>
+              )}
+            </div>
+            <Dialog.Close asChild>
+              <Button variant="ghost" aria-label={t('common.close')}><Icon name="x" /></Button>
+            </Dialog.Close>
+          </header>
+          <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+          {footer && <footer className="border-t border-line px-5 py-3.5">{footer}</footer>}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+/* ---------------------------------------------------------------- form controls */
+
+export function SelectField({ value, onChange, options, placeholder, ariaLabel, required }: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  ariaLabel?: string;
+  required?: boolean;
+}) {
+  return (
+    <RadixSelect.Root value={value || undefined} onValueChange={onChange} required={required}>
+      <RadixSelect.Trigger
+        aria-label={ariaLabel}
+        className="inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.9rem] text-ink data-[placeholder]:text-ink-faint"
       >
-        <header className="drawer-head">
-          <div className="drawer-title">
-            <h2>{title}</h2>
-            {meta && <div className="drawer-meta">{meta}</div>}
-          </div>
-          <button className="ghost" onClick={onClose} aria-label="close">
-            <Icon name="x" />
-          </button>
-        </header>
-        <div className="drawer-body" tabIndex={-1} ref={body}>{children}</div>
-        {footer && <footer className="drawer-foot">{footer}</footer>}
-      </aside>
-    </div>
+        <RadixSelect.Value placeholder={placeholder} />
+        <ChevronDown size={14} aria-hidden className="text-ink-faint" />
+      </RadixSelect.Trigger>
+      <RadixSelect.Portal>
+        <RadixSelect.Content
+          position="popper" sideOffset={4}
+          className="z-30 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
+        >
+          <RadixSelect.Viewport className="p-1">
+            {options.map((option) => (
+              <RadixSelect.Item
+                key={option.value}
+                value={option.value}
+                className="flex cursor-pointer items-center justify-between gap-3 rounded-[4px] px-2 py-1.5 text-[0.9rem] outline-none data-[highlighted]:bg-accent-soft data-[highlighted]:text-ink"
+              >
+                <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
+                <RadixSelect.ItemIndicator><Check size={14} aria-hidden /></RadixSelect.ItemIndicator>
+              </RadixSelect.Item>
+            ))}
+          </RadixSelect.Viewport>
+        </RadixSelect.Content>
+      </RadixSelect.Portal>
+    </RadixSelect.Root>
   );
 }
 
-/** A designed nothing: the glyph, the fact, and the action that would change the fact. */
-export function EmptyState({ icon, headline, body, action }: {
-  icon: string;
-  headline: string;
-  body: string;
-  action?: ReactNode;
+export function CheckField({ checked, onChange, label }: {
+  checked: boolean; onChange: (checked: boolean) => void; label: string;
 }) {
   return (
-    <div className="empty-state">
-      <Icon name={icon} size={26} />
-      <p className="empty-headline">{headline}</p>
-      <p className="empty-body">{body}</p>
-      {action}
-    </div>
+    <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-[0.85rem] text-ink-soft">
+      <Checkbox.Root
+        checked={checked}
+        onCheckedChange={(state) => onChange(state === true)}
+        className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink"
+      >
+        <Checkbox.Indicator><Check size={12} strokeWidth={2.2} aria-hidden /></Checkbox.Indicator>
+      </Checkbox.Root>
+      {label}
+    </label>
   );
 }
+
+/** A tooltip that carries a sentence — the tier pill's note, the adopted dot's meaning. */
+export function Tip({ content, children }: { content: string; children: ReactNode }) {
+  if (!content) return <>{children}</>;
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          sideOffset={6}
+          className="z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-[0.8rem] text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
+        >
+          {content}
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
+/* ---------------------------------------------------------------- toasts */
 
 export type ToastItem = { id: number; text: string; kind: 'ok' | 'error' };
 
 /**
- * Action outcomes and errors, spoken from one place — the service's sentence verbatim, because the
- * refusal text is the contract. Fixed to a corner so nothing shifts the layout to speak.
+ * Outcomes and errors, spoken from one corner — the service's sentence verbatim, because the refusal
+ * text is the contract. Radix provides the timers, swipe-dismissal and the a11y announcements.
  */
 export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: number) => void }) {
-  if (items.length === 0) return null;
+  const { t } = useTranslation();
   return (
-    <div className="toasts">
+    <Toast.Provider swipeDirection="right" duration={7000}>
       {items.map((toast) => (
-        <div key={toast.id} className={`toast ${toast.kind}`} role="status">
-          <span>{toast.text}</span>
-          <button className="ghost" onClick={() => onClose(toast.id)} aria-label="dismiss">
-            <Icon name="x" size={14} />
-          </button>
-        </div>
+        <Toast.Root
+          key={toast.id}
+          onOpenChange={(open) => { if (!open) onClose(toast.id); }}
+          className={cn(
+            'flex items-start gap-2.5 rounded-card border border-line bg-overlay py-2.5 pl-3.5 pr-2.5 text-[0.85rem]',
+            'border-l-[3px] shadow-[0_6px_24px_rgb(15_12_8/0.12)] motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
+            toast.kind === 'error' ? 'border-l-st-declined' : 'border-l-accent',
+          )}
+        >
+          <Toast.Description className="flex-1">{toast.text}</Toast.Description>
+          <Toast.Close asChild>
+            <Button variant="ghost" aria-label={t('common.dismiss')}><Icon name="x" size={14} /></Button>
+          </Toast.Close>
+        </Toast.Root>
+      ))}
+      <Toast.Viewport className="fixed bottom-5 right-5 z-20 flex w-[26rem] max-w-[90vw] flex-col gap-2 outline-none" />
+    </Toast.Provider>
+  );
+}
+
+/* ---------------------------------------------------------------- states */
+
+/** A designed nothing: the glyph, the fact, and the action that would change the fact. */
+export function EmptyState({ icon, headline, body, action }: {
+  icon: IconName; headline: string; body: string; action?: ReactNode;
+}) {
+  return (
+    <div className="grid justify-items-center gap-1.5 px-4 py-7 text-center text-ink-faint">
+      <Icon name={icon} size={26} />
+      <p className="mt-1 text-[0.95rem] font-semibold text-ink">{headline}</p>
+      <p className="max-w-[28rem] text-[0.85rem] text-ink-soft">{body}</p>
+      {action && <div className="mt-2.5">{action}</div>}
+    </div>
+  );
+}
+
+/** Static two-tone placeholders — no shimmer: calmer on paper, and safe under reduced motion. */
+export function SkeletonRows({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="grid gap-2 py-1.5" aria-hidden>
+      {Array.from({ length: rows }, (_, index) => (
+        <i
+          key={index}
+          className="block h-3.5 rounded-[4px] bg-accent-soft opacity-55"
+          style={{ width: index === 1 ? '82%' : index === 2 ? '64%' : '100%' }}
+        />
       ))}
     </div>
   );
 }
 
-/** Static two-tone placeholders — no shimmer, calmer on paper, and safe under reduced motion. */
-export function SkeletonRows({ rows = 3 }: { rows?: number }) {
+/** Surface a query error as a toast exactly once per change. */
+export function useErrorNotify(error: unknown, notify: (text: string, kind?: 'ok' | 'error') => void) {
+  useEffect(() => {
+    if (error) notify((error as Error).message, 'error');
+  }, [error, notify]);
+}
+
+/* ---------------------------------------------------------------- language */
+
+export function LanguageSwitcher() {
+  const { i18n, t } = useTranslation();
+  const current = i18n.language.startsWith('zh') ? 'zh' : 'en';
+  const next = current === 'zh' ? 'en' : 'zh';
   return (
-    <div className="skeleton-rows" aria-hidden="true">
-      {Array.from({ length: rows }, (_, index) => <i key={index} />)}
-    </div>
+    // The visible label IS the accessible name — the language it switches to, in that language.
+    <Button
+      variant="ghost"
+      className="w-full justify-center"
+      onClick={() => void i18n.changeLanguage(next)}
+    >
+      <Icon name="languages" size={14} />
+      {t(`language.${next}`)}
+    </Button>
   );
 }

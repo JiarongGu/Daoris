@@ -1,122 +1,112 @@
-import { useEffect, useState } from 'react';
-import { api, type Registration, type Repository } from './api';
-import { PageHeader, SkeletonRows } from './ui';
+import { useTranslation } from 'react-i18next';
+import { useRegistry, useRepositories } from './queries';
+import { Card, Chip, PageHeader, SkeletonRows, Tip, useErrorNotify } from './ui';
 
 /**
  * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
- * as chips a person can scan rather than prose they must parse — and, just as deliberately, who
- * cannot be asked yet. Search answers "has anyone solved this"; this answers "whose problem is this"
- * (D34), and a silent omission would read as the repository not existing.
- *
- * For a repository that has not adopted, the view proposes the join steps as text, never as a button
- * (D31's shape): the change belongs in that repository, made by whoever works there.
+ * as chips a person can scan — and, just as deliberately, who cannot be asked yet. Membership is a
+ * repository's own act (D32): Daoris never writes into a sibling, so nothing joins by being seen; the
+ * join steps are proposed as text, never a button (D31's shape).
  */
-export function ProjectsView({ repositories, onError }: {
-  repositories: Repository[];
-  onError: (message: string) => void;
-}) {
-  const [registry, setRegistry] = useState<Registration[] | null>(null);
+export function ProjectsView({ notify }: { notify: (text: string, kind?: 'ok' | 'error') => void }) {
+  const { t } = useTranslation();
+  const registry = useRegistry();
+  const repositories = useRepositories();
+  useErrorNotify(registry.error ?? repositories.error, notify);
 
-  useEffect(() => {
-    const abort = new AbortController();
-    api.registry(abort.signal)
-      .then(setRegistry)
-      .catch((e: Error) => { if (e.name !== 'AbortError') onError(e.message); });
-    return () => abort.abort();
-  }, [onError]);
-
-  const adopted = (registry ?? []).filter((r) => r.adopted);
-  const outside = (registry ?? []).filter((r) => !r.adopted);
-  const indexed = (name: string) => repositories.find((r) => r.name === name);
+  const adopted = (registry.data ?? []).filter((r) => r.adopted);
+  const outside = (registry.data ?? []).filter((r) => !r.adopted);
+  const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
 
   return (
-    <section className="projects">
-      <PageHeader
-        title="Projects"
-        description="Who is in the family, what each owns and accepts — and who cannot be asked yet."
-      />
+    <section>
+      <PageHeader title={t('projects.title')} description={t('projects.description')} />
 
-      {registry === null && <SkeletonRows rows={4} />}
+      {registry.isPending && <SkeletonRows rows={4} />}
 
-      <div className="cards-2">
-      {adopted.map((project) => {
-        const counts = indexed(project.repository);
-        return (
-          <article key={project.repository} className="group project">
-            <header>
-              <span className="method"><span className="adopted-dot" title="adopted" />{project.repository}</span>
-              <span className="score">
-                {counts
-                  ? `${counts.total.toLocaleString()} entries · ${counts.local.toLocaleString()} local · ${counts.canonical.toLocaleString()} canonical`
-                  : 'nothing indexed yet'}
-              </span>
-            </header>
-            {project.summary
-              ? <p className="excerpt">{project.summary}</p>
-              : (
-                /* Addressable regardless — adoption gates addressing, declaration does not (D34) — but
-                   an asker deserves to know they would be guessing. */
-                <p className="note">
-                  Adopted, but has not declared a domain — a quest here may not be its problem. In that
-                  repository: fill in `domain` in daoris.json, then `daoris connect`.
+      <div className="grid items-start gap-3.5 lg:grid-cols-2">
+        {adopted.map((project) => {
+          const counts = indexed(project.repository);
+          return (
+            <Card key={project.repository}>
+              <header className="flex items-baseline justify-between gap-4">
+                <span className="inline-flex items-center gap-2 text-[0.95rem] font-semibold">
+                  <Tip content={t('projects.adoptedDot')}>
+                    <span className="inline-block size-2 shrink-0 rounded-full bg-accent" />
+                  </Tip>
+                  {project.repository}
+                </span>
+                <span className="whitespace-nowrap font-mono text-[0.78rem] tabular-nums text-ink-faint">
+                  {counts
+                    ? t('projects.entries', {
+                        total: counts.total.toLocaleString(),
+                        local: counts.local.toLocaleString(),
+                        canonical: counts.canonical.toLocaleString(),
+                      })
+                    : t('projects.nothingIndexed')}
+                </span>
+              </header>
+              {project.summary
+                ? <p className="mt-1.5 text-[0.85rem] text-ink-soft">{project.summary}</p>
+                : (
+                  /* Addressable regardless — adoption gates addressing, declaration does not (D34) —
+                     but an asker deserves to know they would be guessing. */
+                  <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-[0.875rem] text-ink-soft">
+                    {t('projects.undeclared')}
+                  </p>
+                )}
+              {project.owns.length > 0 && (
+                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
+                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.owns')}</span>
+                  {project.owns.map((item) => <Chip key={item}>{item}</Chip>)}
                 </p>
               )}
-            {project.owns.length > 0 && (
-              <p className="chip-row">
-                <span className="chip-kind">owns</span>
-                {project.owns.map((item) => <span key={item} className="chip">{item}</span>)}
-              </p>
-            )}
-            {project.accepts.length > 0 && (
-              <p className="chip-row">
-                <span className="chip-kind">accepts</span>
-                {project.accepts.map((item) => <span key={item} className="chip accent">{item}</span>)}
-              </p>
-            )}
-            {project.packs.length > 0 && (
-              <p className="chip-row">
-                <span className="chip-kind">packs</span>
-                {project.packs.map((item) => <span key={item} className="chip">{item}</span>)}
-              </p>
-            )}
-          </article>
-        );
-      })}
+              {project.accepts.length > 0 && (
+                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
+                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.accepts')}</span>
+                  {project.accepts.map((item) => <Chip key={item} accent>{item}</Chip>)}
+                </p>
+              )}
+              {project.packs.length > 0 && (
+                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
+                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.packs')}</span>
+                  {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
+                </p>
+              )}
+            </Card>
+          );
+        })}
       </div>
 
       {outside.length > 0 && (
-        <article className="group outside">
-          <header>
-            <span className="method">Not adopted, so not addressable yet</span>
-            <span className="score">{outside.length}</span>
+        <Card className="mt-3.5">
+          <header className="flex items-baseline justify-between gap-4">
+            <span className="text-[0.95rem] font-semibold">{t('projects.outside.title')}</span>
+            <span className="font-mono text-[0.78rem] tabular-nums text-ink-faint">{outside.length}</span>
           </header>
-          <p className="excerpt">
-            Membership is a repository's own act — Daoris never writes into a sibling, so nothing joins
-            by being seen. These appear because the index can still <em>read</em> their tracked
-            knowledge from this machine, which is why they carry entry counts: readable is not joined.
-            Until one joins, nothing can be asked of it — a quest addressed there would sit in a queue
-            nobody reads. Listed rather than hidden, because "who cannot be asked yet" is the same
-            question as "who can".
-          </p>
-          <ul className="outside-list">
+          <p className="mt-1.5 text-[0.85rem] text-ink-soft">{t('projects.outside.body')}</p>
+          <ul className="m-0 mt-2 list-none p-0">
             {outside.map((project) => {
               const counts = indexed(project.repository);
               return (
-                <li key={project.repository}>
+                <li
+                  key={project.repository}
+                  className="flex items-baseline justify-between gap-4 border-t border-line py-1.5 text-[0.9rem] first:border-t-0"
+                >
                   <span>{project.repository}</span>
-                  <span className="where">
-                    {counts && counts.total > 0 ? `${counts.total.toLocaleString()} entries indexed read-only` : '—'}
+                  <span className="font-mono text-[0.72rem] text-ink-faint">
+                    {counts && counts.total > 0
+                      ? t('projects.outside.readable', { count: counts.total.toLocaleString() })
+                      : '—'}
                   </span>
                 </li>
               );
             })}
           </ul>
-          <p className="join">
-            to join — run in that repository, by its own agent: daoris init → fill in `domain` (what
-            it is, what it owns, what it accepts) → daoris sync → daoris check → daoris connect.
-            the worked example is examples/ in the Daoris repository.
+          <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-[0.8rem]">
+            {t('projects.outside.join')}
           </p>
-        </article>
+        </Card>
       )}
     </section>
   );

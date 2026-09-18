@@ -1,74 +1,70 @@
 import { useEffect, useState } from 'react';
-import { api, type Hit } from './api';
-import { PageHeader } from './ui';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { api } from './api';
+import { CheckField, PageHeader, useErrorNotify } from './ui';
 
 /**
  * The supporting view. Useful once you know what you are looking for — which is exactly the case
  * convergence cannot help with, and vice versa.
  */
-export function SearchView(
-  { onOpen, onError }: { onOpen: (id: string) => void; onError: (message: string) => void },
-) {
+export function SearchView({ onOpen, onError }: {
+  onOpen: (id: string) => void;
+  onError: (message: string) => void;
+}) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [localOnly, setLocalOnly] = useState(true);
-  const [hits, setHits] = useState<Hit[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [debounced, setDebounced] = useState('');
 
   useEffect(() => {
-    const trimmed = query.trim();
-    if (trimmed.length < 2) { setHits(null); return; }
-
-    const abort = new AbortController();
     // Debounced: every keystroke is an index query, and the early ones are answers to a question the
     // person had not finished asking.
-    const timer = setTimeout(() => {
-      setLoading(true);
-      api.search(trimmed, localOnly, abort.signal)
-        .then((found) => { setHits(found); setLoading(false); })
-        .catch((e: Error) => {
-          if (e.name === 'AbortError') return;
-          onError(e.message);
-          setLoading(false);
-        });
-    }, 250);
+    const timer = setTimeout(() => setDebounced(query.trim()), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
 
-    return () => { clearTimeout(timer); abort.abort(); };
-  }, [query, localOnly, onError]);
+  const hits = useQuery({
+    queryKey: ['search', debounced, localOnly],
+    queryFn: ({ signal }) => api.search(debounced, localOnly, signal),
+    enabled: debounced.length >= 2,
+  });
+  useErrorNotify(hits.error, onError);
 
   return (
-    <section className="search">
-      <PageHeader
-        title="Search"
-        description="What has the family already learned about it — decisions, fixes, rules, outcomes, across every repository."
-      />
-      <div className="controls">
+    <section>
+      <PageHeader title={t('search.title')} description={t('search.description')} />
+
+      <div className="mb-4 flex flex-wrap items-center gap-4">
         <input
           type="search" value={query} autoFocus
-          placeholder="a decision, a trap, a rule — in your own words"
+          placeholder={t('search.placeholder')}
           onChange={(e) => setQuery(e.target.value)}
+          className="min-h-[2.2rem] flex-1 basis-88 rounded-control border border-line bg-raised px-3 py-2 text-[0.95rem] text-ink"
         />
-        <label className="toggle">
-          <input type="checkbox" checked={localOnly} onChange={(e) => setLocalOnly(e.target.checked)} />
-          {/* On by default: canonical content is byte-identical in every adopter, so including it
-              returns a dozen copies of one rule and calls that a corpus. */}
-          each repository's own only
-        </label>
+        {/* Local-only by default: canonical content is byte-identical in every adopter, so including
+            it returns a dozen copies of one rule and calls that a corpus. */}
+        <CheckField checked={localOnly} onChange={setLocalOnly} label={t('search.localOnly')} />
       </div>
 
-      {loading && <p className="loading">searching…</p>}
-      {!loading && hits?.length === 0 && (
-        <p className="empty">
-          No matches. Lexical search matches words — a repository that reached the same conclusion in
-          different vocabulary will not appear here. That is what the convergence view is for.
-        </p>
+      {hits.isFetching && <p className="text-[0.875rem] text-ink-soft">{t('search.searching')}</p>}
+      {!hits.isFetching && hits.data?.length === 0 && (
+        <p className="max-w-xl text-[0.875rem] text-ink-soft">{t('search.empty')}</p>
       )}
 
-      <ul className="hits">
-        {hits?.map((hit) => (
-          <li key={hit.id}>
-            <button className="link" onClick={() => onOpen(hit.id)}>{hit.title}</button>
-            <span className="where">{hit.repository} · {hit.kind} · {hit.path}</span>
-            {hit.excerpt && <p className="excerpt">{hit.excerpt}</p>}
+      <ul className="m-0 list-none p-0">
+        {hits.data?.map((hit) => (
+          <li key={hit.id} className="border-t border-line py-2 first:border-t-0">
+            <button
+              className="border-0 bg-transparent p-0 text-left text-[0.95rem] font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-accent"
+              onClick={() => onOpen(hit.id)}
+            >
+              {hit.title}
+            </button>
+            <span className="block font-mono text-[0.72rem] text-ink-faint">
+              {hit.repository} · {t(`kind.${hit.kind}`)} · {hit.path}
+            </span>
+            {hit.excerpt && <p className="mt-1 text-[0.85rem] text-ink-soft">{hit.excerpt}</p>}
           </li>
         ))}
       </ul>

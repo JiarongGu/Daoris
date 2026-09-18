@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
-import { api, type Quest, type Registration, type Repository } from './api';
+import { useTranslation } from 'react-i18next';
+import { useQuests, useRegistry, useRepositories } from './queries';
 import { ago, compact, sittingDays } from './format';
-import { EmptyState, Icon, PageHeader, SkeletonRows } from './ui';
+import {
+  Card, CardHeader, Button, EmptyState, Icon, PageHeader, Pill, SkeletonRows, Tile, Tip,
+  useErrorNotify,
+} from './ui';
 
 /**
  * The management landing (D40). A person overseeing several projects' agents opens this window to
@@ -9,140 +12,152 @@ import { EmptyState, Icon, PageHeader, SkeletonRows } from './ui';
  * health as stat tiles, the outstanding quests oldest-first, and the repositories by what the index
  * holds. Every row is a door.
  *
- * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity,
- * and a value-ramp or per-bar colors would decorate what the length already says. Values sit beside
- * the marks in ink, never in the mark's color.
+ * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
+ * Values sit beside the marks in ink, never in the mark's color.
  */
-export function OverviewView({ repositories, onNavigate, onError }: {
-  repositories: Repository[];
+export function OverviewView({ onNavigate, notify }: {
   onNavigate: (tab: 'quests' | 'projects') => void;
-  onError: (message: string) => void;
+  notify: (text: string, kind?: 'ok' | 'error') => void;
 }) {
-  const [registry, setRegistry] = useState<Registration[]>([]);
-  const [quests, setQuests] = useState<Quest[] | null>(null);
+  const { t } = useTranslation();
+  const repositories = useRepositories();
+  const registry = useRegistry();
+  const quests = useQuests(null, false);
+  useErrorNotify(repositories.error ?? registry.error ?? quests.error, notify);
 
-  useEffect(() => {
-    const abort = new AbortController();
-    api.registry(abort.signal)
-      .then(setRegistry)
-      .catch((e: Error) => { if (e.name !== 'AbortError') onError(e.message); });
-    api.quests(null, false, abort.signal)
-      .then(setQuests)
-      .catch((e: Error) => { if (e.name !== 'AbortError') onError(e.message); });
-    return () => abort.abort();
-  }, [onError]);
-
-  const adopted = registry.filter((r) => r.adopted);
-  const open = (quests ?? []).filter((q) => q.status === 'Open');
-  const taken = (quests ?? []).filter((q) => q.status === 'Taken');
-  const entries = repositories.reduce((sum, r) => sum + r.total, 0);
+  const repos = repositories.data ?? [];
+  const adopted = (registry.data ?? []).filter((r) => r.adopted);
+  const open = (quests.data ?? []).filter((q) => q.status === 'Open');
+  const taken = (quests.data ?? []).filter((q) => q.status === 'Taken');
+  const entries = repos.reduce((sum, r) => sum + r.total, 0);
   const oldest = open.length ? Math.max(...open.map((q) => sittingDays(q.filed))) : 0;
   // The service already orders open before taken, oldest first — exactly the reading order here.
-  const outstanding = quests ?? [];
-  const most = Math.max(1, ...repositories.map((r) => r.total));
-  const ranked = [...repositories].sort((a, b) => b.total - a.total);
+  const outstanding = quests.data ?? [];
+  const most = Math.max(1, ...repos.map((r) => r.total));
+  const ranked = [...repos].sort((a, b) => b.total - a.total);
 
   return (
-    <section className="overview">
-      <PageHeader
-        title="Overview"
-        description="Is anything sitting, and is the family healthy — the state of the thing being managed."
-      />
+    <section>
+      <PageHeader title={t('overview.title')} description={t('overview.description')} />
 
-      <div className="tiles">
-        <div className="tile">
-          <span className="tile-label">Adopted projects</span>
-          <span className="tile-value">{adopted.length}</span>
-          <span className="tile-note">of {registry.length} in the family</span>
-        </div>
+      <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
+        <Tile
+          label={t('overview.tiles.adopted.label')}
+          value={adopted.length}
+          note={t('overview.tiles.adopted.note', { total: (registry.data ?? []).length })}
+        />
         {/* A quest sitting for a week is the signal this whole view exists to surface. */}
-        <div className={`tile${oldest >= 7 ? ' warn' : ''}`}>
-          <span className="tile-label">Open quests</span>
-          <span className="tile-value">{open.length}</span>
-          <span className="tile-note">
-            {open.length === 0 ? 'nothing is waiting' : `oldest has sat ${oldest === 0 ? 'under a day' : `${oldest}d`}`}
-          </span>
-        </div>
-        <div className="tile">
-          <span className="tile-label">In progress</span>
-          <span className="tile-value">{taken.length}</span>
-          <span className="tile-note">taken, not yet answered</span>
-        </div>
-        <div className="tile">
-          <span className="tile-label">Knowledge entries</span>
-          <span className="tile-value">{compact(entries)}</span>
-          <span className="tile-note">across {repositories.length} repositories</span>
-        </div>
+        <Tile
+          warn={oldest >= 7}
+          label={t('overview.tiles.open.label')}
+          value={open.length}
+          note={
+            open.length === 0
+              ? t('overview.tiles.open.noteNone')
+              : oldest === 0
+                ? t('overview.tiles.open.noteUnderDay')
+                : t('overview.tiles.open.noteOldest', { days: oldest })
+          }
+        />
+        <Tile
+          label={t('overview.tiles.progress.label')}
+          value={taken.length}
+          note={t('overview.tiles.progress.note')}
+        />
+        <Tile
+          label={t('overview.tiles.knowledge.label')}
+          value={compact(entries)}
+          note={t('overview.tiles.knowledge.note', { count: repos.length })}
+        />
       </div>
 
-      <div className="overview-grid">
-        <article className="group">
-          <header>
-            <span className="method">Outstanding — oldest first</span>
-            <button onClick={() => onNavigate('quests')}>
-              {outstanding.length > 0 ? 'answer them' : 'ask for something'}
-            </button>
-          </header>
-          {quests === null && <SkeletonRows />}
-          {quests?.length === 0 && (
+      <div className="grid items-start gap-3.5 lg:grid-cols-2">
+        <Card>
+          <CardHeader
+            title={t('overview.outstanding.title')}
+            aside={
+              <Button onClick={() => onNavigate('quests')}>
+                {outstanding.length > 0 ? t('overview.outstanding.answer') : t('overview.outstanding.ask')}
+              </Button>
+            }
+          />
+          {quests.isPending && <SkeletonRows />}
+          {quests.data?.length === 0 && (
             <EmptyState
               icon="check"
-              headline="Nothing is sitting"
-              body="The family owes itself nothing right now. When a project needs something from a sibling, it is asked for here."
+              headline={t('overview.outstanding.emptyHeadline')}
+              body={t('overview.outstanding.emptyBody')}
             />
           )}
-          <ul className="sitting-list">
+          <ul className="m-0 list-none p-0">
             {outstanding.slice(0, 6).map((quest) => (
-              <li key={quest.id}>
-                <button className="row" onClick={() => onNavigate('quests')}>
-                  <span className={`pill ${quest.status.toLowerCase()}`}>{quest.status}</span>
-                  <span className="title">{quest.title}</span>
-                  <span className="where">
-                    {quest.from} → {quest.to} · {quest.status === 'Open' ? `filed ${ago(quest.filed)}` : `taken ${ago(quest.updated)}`}
+              <li key={quest.id} className="border-t border-line first:border-t-0">
+                <button
+                  onClick={() => onNavigate('quests')}
+                  className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-[0.9rem] hover:bg-accent-soft"
+                >
+                  <Pill tone={quest.status.toLowerCase() as 'open' | 'taken'}>
+                    {t(`status.${quest.status}`)}
+                  </Pill>
+                  <span className="font-medium">{quest.title}</span>
+                  <span className="ml-auto font-mono text-[0.72rem] text-ink-faint">
+                    {quest.from} → {quest.to} · {quest.status === 'Open'
+                      ? t('overview.outstanding.filed', { ago: ago(quest.filed) })
+                      : t('overview.outstanding.taken', { ago: ago(quest.updated) })}
                   </span>
                 </button>
               </li>
             ))}
           </ul>
           {outstanding.length > 6 && (
-            <p className="method-hint">…and {outstanding.length - 6} more in Quests.</p>
+            <p className="mt-2 text-[0.78rem] italic text-ink-faint">
+              {t('overview.outstanding.more', { count: outstanding.length - 6 })}
+            </p>
           )}
-        </article>
+        </Card>
 
-        <article className="group">
-          <header>
-            <span className="method">Repositories, by what the index holds</span>
-            <button onClick={() => onNavigate('projects')}>
-              <Icon name="projects" />projects
-            </button>
-          </header>
-          {repositories.length === 0 && <SkeletonRows />}
-          <ul className="bars">
+        <Card>
+          <CardHeader
+            title={t('overview.repositories.title')}
+            aside={
+              <Button onClick={() => onNavigate('projects')}>
+                <Icon name="projects" size={14} />{t('overview.repositories.button')}
+              </Button>
+            }
+          />
+          {repositories.isPending && <SkeletonRows />}
+          <ul className="m-0 list-none p-0">
             {ranked.map((repository) => {
-              const declared = registry.find((r) => r.repository === repository.name);
+              const declared = (registry.data ?? []).find((r) => r.repository === repository.name);
               return (
-                <li key={repository.name}>
-                  <span className="bar-name">
-                    {declared?.adopted && <span className="adopted-dot" title="adopted — addressable for quests" />}
-                    {repository.name}
+                <li
+                  key={repository.name}
+                  className="grid grid-cols-[minmax(8.5rem,12rem)_1fr_minmax(7.5rem,auto)] items-center gap-3 py-1.5 max-md:grid-cols-[1fr_auto] max-md:[&>span:nth-child(2)]:col-span-2 max-md:[&>span:nth-child(2)]:row-start-2"
+                >
+                  <span className="flex min-w-0 items-center gap-2 text-[0.85rem]">
+                    {declared?.adopted && (
+                      <Tip content={t('overview.repositories.adoptedDot')}>
+                        <span className="inline-block size-2 shrink-0 rounded-full bg-accent" />
+                      </Tip>
+                    )}
+                    <span className="truncate">{repository.name}</span>
                   </span>
-                  <span className="bar-track">
-                    <span className="bar" style={{ width: `${(repository.total / most) * 100}%` }} />
+                  <span className="h-3">
+                    <span
+                      className="block h-full min-w-[2px] rounded-r-[4px] bg-accent"
+                      style={{ width: `${(repository.total / most) * 100}%` }}
+                    />
                   </span>
-                  <span className="bar-value">
+                  <span className="whitespace-nowrap text-right text-[0.8rem] tabular-nums">
                     {repository.total.toLocaleString()}
-                    <span className="bar-split"> · {repository.local.toLocaleString()} local</span>
+                    <span className="text-ink-faint"> · {t('overview.repositories.local', { count: repository.local })}</span>
                   </span>
                 </li>
               );
             })}
           </ul>
-          <p className="method-hint">
-            ● adopted — a member, addressable for quests. The others are readable but not joined: the
-            index scans the family's folder, and being seen is not being a member. “Local” is the
-            repository's own material — the part no sibling can reach without this index.
-          </p>
-        </article>
+          <p className="mt-2 text-[0.78rem] italic text-ink-faint">{t('overview.repositories.hint')}</p>
+        </Card>
       </div>
     </section>
   );
