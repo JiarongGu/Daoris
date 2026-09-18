@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -17,5 +17,14 @@ export default defineConfig({
     // relaxing CORS. Same-origin in dev as well as in production means no code path differs between
     // them — the class of bug where a feature works only in one.
     proxy: { '/api': 'http://localhost:5177' },
+  },
+  // The fast inner loop (D42): unit tests in jsdom, inline in the vite config — the bilingual
+  // sibling's proven arrangement, shims included. Playwright stays the outer loop over examples/.
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    css: false,
   },
 });
