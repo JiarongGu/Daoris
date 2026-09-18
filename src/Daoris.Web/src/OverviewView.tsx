@@ -138,8 +138,9 @@ export function OverviewView({ repositories, onNavigate, onError }: {
             })}
           </ul>
           <p className="method-hint">
-            ● adopted, so addressable for quests. “Local” is the repository's own material — the part no
-            sibling can reach without this index.
+            ● adopted — a member, addressable for quests. The others are readable but not joined: the
+            index scans the family's folder, and being seen is not being a member. “Local” is the
+            repository's own material — the part no sibling can reach without this index.
           </p>
         </article>
       </div>

@@ -91,8 +91,11 @@ export function ProjectsView({ repositories, onError }: {
             <span className="score">{outside.length}</span>
           </header>
           <p className="excerpt">
-            In the family's folder, but without the client a quest addressed to them would sit in a
-            queue nobody reads. Listed rather than hidden — "who cannot be asked yet" is the same
+            Membership is a repository's own act — Daoris never writes into a sibling, so nothing joins
+            by being seen. These appear because the index can still <em>read</em> their tracked
+            knowledge from this machine, which is why they carry entry counts: readable is not joined.
+            Until one joins, nothing can be asked of it — a quest addressed there would sit in a queue
+            nobody reads. Listed rather than hidden, because "who cannot be asked yet" is the same
             question as "who can".
           </p>
           <ul className="outside-list">
@@ -109,8 +112,9 @@ export function ProjectsView({ repositories, onError }: {
             })}
           </ul>
           <p className="join">
-            to join, in that repository: daoris init → fill in `domain` (what it is, what it owns,
-            what it accepts) → daoris sync → daoris check → daoris connect
+            to join — run in that repository, by its own agent: daoris init → fill in `domain` (what
+            it is, what it owns, what it accepts) → daoris sync → daoris check → daoris connect.
+            the worked example is examples/ in the Daoris repository.
           </p>
         </article>
       )}
