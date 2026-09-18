@@ -11,6 +11,18 @@ network.
 
 ## Unreleased
 
+- **`autonomous-development`** (new core knowledge) — development is automation-first: a person
+  states the target and verifies the outcome; the steps between are executed by agents and verified
+  by gates, not by per-step approval. Per-step interaction does not scale past a small system, and
+  approval fatigue trains the reviewer to click through exactly when a real decision arrives. The
+  carve-outs do not move: destructive or irreversible actions, anything that leaves the repository,
+  and committing the result stay explicitly human. Knowledge rather than a rule for the same reason
+  as `model-decoupling` — it applies when shaping how a task runs, not on every task — and set by the
+  owner's direction for the whole family rather than derived from convergence, which is itself the
+  model in action: the human set the target.
+  **Adopting repositories:** read it once when wiring up an agent workflow; the operational half is
+  that "done" means your own gates green plus a reviewable diff, and that mid-run questions batch to
+  a checkpoint instead of interrupting.
 - **`repository-owns-its-work`** (new core rule) — **never write into another repository.** Not its
   code, not its files, not its backlog. Publish a quest and let its own agent take it. There is no
   remaining case where writing across is the answer, because the quest system is the answer; a request

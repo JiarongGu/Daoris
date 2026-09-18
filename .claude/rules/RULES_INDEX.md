@@ -19,7 +19,8 @@ Rows marked _(local)_ are this repo's own and are never synced.
 
 | Rule | Applies when | Enforces |
 |---|---|---|
-| [adoption](../knowledge/adoption.md) _(local)_ | onboarding a repository onto daoris for the first time | resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally; never let adoption silently rewrite doctrine |
+| [adoption](../knowledge/adoption.md) _(local)_ | onboarding a repository onto daoris for the first time | the adopting repository's agent executes the whole flow and the owner reviews the final diff; resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally |
+| [autonomous-development](../knowledge/autonomous-development.md) | planning how a task will be run and verified, or about to pause a reversible step for mid-task approval | the person sets the target and verifies the outcome; agents execute the steps between, verified by gates; destructive, irreversible, cross-repository and publishing actions stay explicitly human |
 | [canon-authoring](../knowledge/canon-authoring.md) _(local)_ | writing or changing a canon file, or adding a pack | project-agnostic content, frontmatter that matches the filename, principle-and-reason not mechanism |
 | [claims-need-checks](../knowledge/claims-need-checks.md) | writing any statement about what the code does or guarantees — a readme, a doc comment, a config field, a status line | verify behavioural prose against the implementation, not the design; ship the check in the same change; say which claims the gate did not cover |
 | [leak-repair](../knowledge/leak-repair.md) | a credential, machine path, or private name has already been committed, or a repository is about to be made public | repair history rather than the working tree; scrub blobs, paths and messages together; prove the scrub with a scan you have seen fail |

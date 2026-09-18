@@ -1,13 +1,19 @@
 ---
 name: adoption
 applies_when: onboarding a repository onto daoris for the first time
-enforces: resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally; never let adoption silently rewrite doctrine
+enforces: the adopting repository's agent executes the whole flow and the owner reviews the final diff; resolve collisions deliberately; hunt renamed twins by hand; preserve repo mechanics locally
 ---
 
 # Adopting a repository — the playbook, learned from the first one
 
 Adopting is not `sync`. `sync` is the mechanical part; the work is deciding what happens to the doctrine
 the repository already had.
+
+**The flow is agent-executed, end to end** (`autonomous-development`): the owner's part is the two
+checkpoints — saying "adopt Daoris here" at the start, and reviewing the uncommitted diff at the end.
+Every step between, including the judgement calls below, is the adopting repository's own agent working
+from `analyze --json` and this playbook. What makes that safe is that nothing destructive can happen
+without `--force`, and `--force` is only ever the answer to a question the tool asked.
 
 ## Why
 
@@ -94,6 +100,11 @@ tool — that is editorial work and deserves its own review.
 Run the adopting repository's own build and tests. Adoption changes what every future session in that
 repository reads, so "the tool exits 0" is not the same as "the repository is fine".
 
-### 8. Leave it uncommitted for review
+### 8. Leave it uncommitted for review — this is the human checkpoint
 
-Adoption rewrites always-loaded context. The owner should see the diff before it becomes history.
+Adoption rewrites always-loaded context. The owner should see the diff before it becomes history — and
+under the automation-first model this is where their attention is spent, so hand them the whole outcome
+at once: the diff, the gate results (`check`, the repository's own tests), which collisions were resolved
+and how, which twins were retired and where each preserved line went, and what the budget reads now.
+A judgement call worth surfacing — a twin that might not be one, a budget that had to rise — is stated
+here as a decision with its reasoning, not asked mid-flow.
