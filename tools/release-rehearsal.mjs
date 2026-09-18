@@ -29,6 +29,26 @@ const scratch = join(repoRoot, '_fixtures', 'release-rehearsal');
 const consumer = join(scratch, 'consumer');
 const canonV2 = join(scratch, 'canon-v2');
 
+// REH1: every run leaves a transcript, outside the scratch tree a passing run deletes. The failure
+// this chases is intermittent — twice seen, always exactly the canon-upgrade phase, both times on a
+// run straight after canon files were edited and synced — and the one thing both sightings lacked was
+// the output. Capturing it by construction beats remembering to capture it before a re-run.
+const logDir = join(repoRoot, '_fixtures', 'rehearsal-logs');
+mkdirSync(logDir, { recursive: true });
+const logPath = join(logDir, `${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
+const transcript = [`release rehearsal — ${new Date().toISOString()} — node ${process.version}`];
+const emit = console.log.bind(console);
+console.log = (...args) => {
+  const line = args.join(' ');
+  transcript.push(line);
+  emit(line);
+};
+process.on('exit', (code) => {
+  transcript.push(`\nexit ${code}`);
+  writeFileSync(logPath, `${transcript.join('\n')}\n`);
+  emit(`  transcript: ${logPath}`);
+});
+
 let checks = 0;
 let failures = 0;
 
