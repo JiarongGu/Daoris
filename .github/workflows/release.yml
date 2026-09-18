@@ -41,12 +41,13 @@ permissions:
   id-token: write   # OIDC for npm provenance / trusted publishing
 
 jobs:
-  # The devkit ships as a self-contained binary per platform, so it cannot be cross-compiled from one
-  # runner: native AOT needs the TARGET platform's linker. One job per platform, each publishing its own
-  # binary and its sha256 — that digest is the whole of D27's distribution story, because a consuming
-  # repository records it and verifies OFFLINE against a local file rather than trusting the download.
+  # The per-platform binaries: the devkit (native AOT, so it needs the TARGET platform's linker) and
+  # the service's two hosts (self-contained single-file, deliberately NOT trimmed or AOT — the MCP SDK
+  # discovers tools by reflection; D43). Each artefact ships with its sha256 — that digest is the whole
+  # of D27's distribution story, because a consuming repository records it and verifies OFFLINE against
+  # a local file rather than trusting the download.
   #
-  # Runs even on a dry run. Building the artefact is exactly what a rehearsal should prove, and this is
+  # Runs even on a dry run. Building the artefacts is exactly what a rehearsal should prove, and this is
   # the half of a release that has never been exercised anywhere else — there is no push CI.
   devkit:
     strategy:
@@ -92,6 +93,41 @@ jobs:
           name: devkit-${{ matrix.rid }}
           path: |
             publish/${{ matrix.rid }}/daoris-devkit-*
+          if-no-files-found: error
+
+      # The service hosts (D43). The HTTP host's web bundle travels as a wwwroot directory beside its
+      # executable, so that one ships as an archive; the MCP host is a single file.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Web bundle (rides inside the HTTP host archive)
+        run: |
+          npm --prefix src/Daoris.Web ci
+          npm --prefix src/Daoris.Web run build
+
+      - name: Publish the service hosts (${{ matrix.rid }})
+        run: node tools/service-publish.mjs --rid ${{ matrix.rid }}
+
+      - name: Name and hash the service artefacts
+        shell: bash
+        run: |
+          cd "publish/service/${{ matrix.rid }}"
+          mcp=daoris-knowledge/daoris-knowledge; [ -f "$mcp.exe" ] && mcp="$mcp.exe"
+          out="daoris-knowledge-${{ matrix.rid }}"; case "$mcp" in *.exe) out="$out.exe";; esac
+          cp "$mcp" "$out"
+          tar -czf "daoris-knowledge-http-${{ matrix.rid }}.tar.gz" -C daoris-knowledge-http .
+          hash() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi; }
+          hash "$out" > "$out.sha256"
+          hash "daoris-knowledge-http-${{ matrix.rid }}.tar.gz" > "daoris-knowledge-http-${{ matrix.rid }}.tar.gz.sha256"
+          ls -la
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: service-${{ matrix.rid }}
+          path: |
+            publish/service/${{ matrix.rid }}/daoris-knowledge-${{ matrix.rid }}*
+            publish/service/${{ matrix.rid }}/daoris-knowledge-http-${{ matrix.rid }}*
           if-no-files-found: error
 
   release:
@@ -213,11 +249,11 @@ jobs:
             git push origin "$tag"
           fi
 
-      - name: Collect the devkit binaries
+      - name: Collect the binaries
         if: ${{ inputs.create_tag && !inputs.dry_run }}
         uses: actions/download-artifact@v4
         with:
-          pattern: devkit-*
+          pattern: '{devkit,service}-*'
           path: publish/devkit
           merge-multiple: true
 
