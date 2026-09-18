@@ -31,18 +31,26 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Nine commands, 120 tests, a canon of 8 core rules, 4 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 70 and `Daoris.Devkit` 57.
+**Built and proven; nothing published.** Nine commands, 120 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 81 and `Daoris.Devkit` 57.
 Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
-green, and the budget gate caught a genuine 45% overage on first contact.
+green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
+off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
+proof stands and the live consumer count is zero — adoption has to be near-free for the family to come
+back, which is what the automation-first direction is for.
 
 **All four artefacts exist**; only `Daoris.Desktop` — the shell that hosts the same web build — is a
-brief. **Nothing is published**, and development runs at `0.0.x`.
+brief. **Nothing is published**, and development runs at `0.0.x`. The service is **deployable** (D36):
+local sessions all spawn the MCP host over one persistent store, and the HTTP host carries
+registrations and quests for a remote deployment, key-gated, with no model required. **Development is
+automation-first** (D37): the person sets the target and verifies the final diff; agents execute and
+gates verify the middle — see canon knowledge `autonomous-development`.
 
-**Two things to know before changing anything.** The always-loaded core sits at **23,568 of 24,000
-bytes**, so the next canon addition fails the budget gate — that is the gate working, and the answer is
-to split principle from detail rather than raise the limit (D28). And **never write into another
+**Two things to know before changing anything.** The always-loaded core sits at **23,988 of 24,000
+bytes** — 12 bytes of headroom, so the next canon addition fails the budget gate even as an index row.
+That is the gate working, and the answer is to split principle from detail rather than raise the limit
+(D28). And **never write into another
 repository**: that constraint is absolute (D32), it was broken here and cost a sibling an uncommitted
 edit, and `.claude/knowledge/reaching-in.md` is the account.
 
@@ -53,7 +61,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D35) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D37) and why each was made.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

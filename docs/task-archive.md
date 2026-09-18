@@ -832,3 +832,61 @@ And the pattern behind most of the day's mistakes: **a tool that enforces a rule
 thing to break it**, because whoever builds it is thinking about the mechanism rather than the
 principle. It happened three times — the quest writer, the over-broadened guarantee, and a detector
 nobody called. Each was found by *using* the thing, never by reading it.
+
+---
+
+## SVC1 — the service is deployable (2026-09-18)
+
+✅ done 2026-09-18 — closed without a daemon, recorded as **D36**, because "nothing runs between
+sessions" turned out to be two different gaps and a daemon would have fixed neither.
+
+**State that did not survive:** registrations pushed by `daoris connect` lived in a dictionary, so a
+service restart silently dropped every repository that had ever connected — and for a remote service,
+pushed registrations are the only registrations there are. `RegistrationStore` now persists them in
+the same SQLite file as the index and the quests, and the factory loads them before the first read.
+
+**A door that did not exist:** quests could only be moved over MCP stdio, so a deployment anywhere
+else was a read-only mirror. The HTTP host now carries `POST /api/quests` and
+`POST /api/quests/{id}/respond`, and `DAORIS_SERVICE_KEY` gates every `POST /api/*` when set (absence
+means local trust, D21). The publish/respond judgement — who is addressable, what a refusal says,
+what declining requires, including the message text — moved into one `QuestExchange` used by both
+hosts, so the same ask cannot be deliverable through one door and refused at the other.
+
+**Local mode needed no daemon at all**, only a launch story: the MCP host is spawned per session and
+the database persists, so every repository's session on this machine shares one store. `.mcp.json`
+now registers it here; a sibling adds the same entry to its own file.
+
+Verified on the artefact, not only in the 11 new tests (81 service total): host driven live with a
+key — unauthorized write answered 401, `daoris connect` registered through the real endpoint, the
+host was killed and restarted and both the pushed registration and a taken quest were still served,
+and a publish to a non-adopter was refused naming who *is* addressable. The live run also confirmed
+Lyntai listing as `adopted=false` — the de-adoption, observed at runtime.
+
+**Consequence:** the quest-ledger pattern (outbound quests held in `TASKS.md` "until a service runs")
+ends, because the service runs. Addressing still gates on adoption, so nothing is publishable *to
+Lyntai* until it re-adopts — held as `LYN1` rather than delivered anywhere.
+
+## D37 — automation-first, and the setup reworked for an agent operator (2026-09-18)
+
+✅ done 2026-09-18 — set by the owner: the family moves to fully automated development via code
+generation, the human at the initial target and the final verification. Recorded as **D37**; shipped
+as canon core knowledge **`autonomous-development`** (knowledge, not a rule — the same demotion
+reasoning as `model-decoupling`, and the budget said so: the core sits at 23,988 of 24,000 after its
+index row). The adoption playbook was rewritten around the two human checkpoints — "adopt Daoris
+here" at the start, the uncommitted diff at the end — with everything between executed by the
+adopting repository's own agent from `analyze --json`. The carve-outs moved nowhere: destructive,
+irreversible, cross-repository, publishing and committing stay explicitly human, and "never commit
+without approval" *is* the final checkpoint.
+
+Canonized on the owner's direction rather than two-repository convergence, and the changelog entry
+says so — the evidence bar matters (D29), and an owner setting the target for the family is the model
+in action.
+
+## REH1, instrumented — capture by construction (2026-09-18; the item stays open)
+
+Partial, deliberately: the flake is not explained, so `REH1` remains in the backlog. What closed is
+its precondition — "capture the log before re-running" no longer depends on anyone remembering.
+`tools/release-rehearsal.mjs` now writes every run's full transcript (plus exit code) to
+`_fixtures/rehearsal-logs/<timestamp>.log`, outside the scratch tree a passing run deletes. Three
+runs on 2026-09-18 — two of them straight after a canon edit and sync, the twice-observed trigger —
+all passed 52/52, each leaving a transcript.

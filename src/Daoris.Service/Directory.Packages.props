@@ -3,10 +3,11 @@
   <!--
     Central package versions for the service tree.
 
-    The cognition sibling is deliberately ABSENT for now. The first slice ingests and classifies
-    knowledge, which needs no embeddings, no vector store and no model — and adding the dependency
-    before there is a query that needs it would be paying its cost for nothing. It arrives when
-    semantic search does (see DECISIONS.md D22).
+    The cognition sibling is consumed as a LIBRARY and at RELEASED versions only (D22). The pin is
+    deliberately 2.1.0 rather than the newest release: upstream has a renaming major sitting
+    unreleased (its Llm* call types become Text*, and Providers.Default is already retired from its
+    3.x package roster), so the coordinated move is ONE migration when that major ships, not two.
+    Semantic search works against 2.1.0; nothing here needs more. See TASKS.md LYN1.
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>

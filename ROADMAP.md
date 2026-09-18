@@ -11,13 +11,13 @@ a real consumer, not on a calendar.
 
 ## Four artefacts
 
-Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). Only the first exists:
+Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All but the desktop shell exist:
 
 | | What | State |
 |---|---|---|
 | `Daoris.Cli` | The doctrine tool — npm, TypeScript, zero runtime deps | **built and proven** |
 | `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | **built** |
-| `Daoris.Service` | Knowledge index, convergence, quests and the registry | **built** |
+| `Daoris.Service` | Knowledge index, convergence, quests and the registry | **built and deployable** |
 | `Daoris.Web` | The knowledge UI — convergence first, read-only | **built** |
 | `Daoris.Desktop` | The desktop shell hosting the same web build | brief written |
 
@@ -111,6 +111,13 @@ per-project memory is machine-local and untracked. Nothing here is superseded._
 **It comes after the canon deliberately**, because indexing content that is still divergent indexes the
 divergence.
 
+**Deployable since 2026-09-18 (D36).** Local mode needs no daemon: the MCP host is spawned per session
+and the persistent store is what survives, shared by every repository's sessions on the machine — a
+quest published from one session is waiting when another starts. The HTTP host is the remote half:
+registrations persist, quests publish and answer over the same `QuestExchange` the MCP host uses, and
+`DAORIS_SERVICE_KEY` gates the writes. It needs **no model**: a remote deployment is purely a transfer
+of request and task until a repository opts its knowledge in (D21, D24).
+
 _Also checked against generated-wiki tools (D16). They are the complement: a wiki is **derived** from the
 code and fails by going stale, doctrine is **authored** because something went wrong and fails by
 diverging. They meet inside `doc-loader`, which routes first to the repository's own documentation router
@@ -132,6 +139,9 @@ mis-scoped; most of them are Lyntai's job, and saying so early is what kept v0.1
 
 ## Standing policies
 
+- **Automation-first (D37).** A person sets the target and verifies the outcome; agents execute the
+  steps between, and gates verify them. Destructive, irreversible, cross-repository and publishing
+  actions — and the commit itself — stay explicitly human.
 - **Adoption gates growth.** A pack is written when a repository is ready to install it, and validated by
   that installation. Doctrine nobody runs is a draft.
 - **The core stays small.** It is loaded into every session in every repository, so every byte is paid

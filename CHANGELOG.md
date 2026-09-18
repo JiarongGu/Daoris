@@ -93,13 +93,20 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The canon
 
-- **Seven core rules**, each confirmed by appearing independently in multiple repositories in the family:
+- **Eight core rules**, each confirmed by appearing independently in multiple repositories in the family:
   `sensitive-info`, `task-lifecycle`, `no-tmp-for-repo-files`, `file-tool-discipline`,
-  `persist-working-state`, `no-global-memory`, `skills-workflow`.
-- **One core knowledge document.** `model-decoupling` — the model is a deployment choice, not part of
-  a feature; specify the feature without naming one, select the provider by deployment, and report
-  which tier ran. Knowledge rather than a rule because it applies when building an AI-backed feature,
-  not on every task — a distinction the budget gate enforced when it was first filed as a rule.
+  `persist-working-state`, `no-global-memory`, `skills-workflow` — and `repository-owns-its-work`:
+  never write into another repository; publish a quest and let its own agent take it.
+- **Five core knowledge documents**, each knowledge rather than a rule because it applies to a
+  situation, not to every task — a distinction the budget gate enforced more than once.
+  `model-decoupling` (the model is a deployment choice: specify the feature without naming one, select
+  the provider by deployment, report which tier ran), `claims-need-checks` (behavioural prose is
+  verified against the implementation, with the check shipped in the same change), `leak-repair` (a
+  committed leak is a history problem — how to actually scrub one), `reaching-in` (what happens after
+  writing into another repository, and why the repair is worse), and `autonomous-development`
+  (development is automation-first: a person sets the target and verifies the outcome, agents execute
+  the steps between under gates, and destructive, irreversible, cross-repository and publishing actions
+  stay explicitly human). The canon's own `CHANGELOG.md` carries the full reasoning per document.
 - **Five core skills**, each canonized from copies found across the family and reduced to what they share.
   `doc-loader` and `pattern-finder` (six repositories each) start a task; `post-feature` (four) and
   `fix-log` (three) close one; `caveman` (five) governs output. `fix-log`'s copies sat within 100 bytes of
@@ -131,9 +138,37 @@ The first version: doctrine that installs, is checked, and flows back.
 - Every canon file carries frontmatter that generates its index row; tests assert that, plus that no canon
   file contains a machine path.
 
+### The service
+
+- **`Daoris.Service`** — the knowledge layer beside the CLI (a separate deployable; the CLI keeps its
+  zero dependencies and never learns about it). It indexes every repository's doctrine, decisions,
+  fixes and task outcomes into SQLite with FTS5, answers ranked queries, and finds **convergence** —
+  where two repositories reached the same conclusion in different words, which no text comparison can
+  see. Semantic recall is opt-in by naming an embedding model; without one the service is lexical-only
+  and says so on every answer.
+- **The registry and quests.** Each repository declares in its manifest what it owns and what it
+  accepts; the service serves that as the registry — search answers "has anyone solved this", the
+  registry answers "whose problem is this". Cross-repository work moves as a **quest**: published to
+  the service, pulled by the repository it addresses, taken / done / declined — declining needs a
+  reason. Nothing is ever written into anyone's tree.
+- **Deployable, two modes, one binary each.** Local needs no daemon: the MCP host (`daoris-knowledge`)
+  is spawned per agent session and the persistent per-user store is what survives, shared by every
+  repository's sessions on the machine. Remote is the HTTP host: registrations pushed by
+  `daoris connect` persist across restarts, quests publish and answer over the same shared judgement
+  (`QuestExchange`) as the MCP host, and setting `DAORIS_SERVICE_KEY` gates every write. It runs with
+  **no model at all** and still carries the whole transfer of request and task.
+- **`Daoris.Web`** — the read-only UI over the HTTP host, convergence first. It proposes the command to
+  run in the repository that owns a file; it never edits doctrine from the browser.
+
 ### Proven
 
 - Daoris carries its own manifest and syncs core into its own `.claude/`; a test asserts it stays clean.
 - Adopted into **Lyntai** (a released .NET library): 4 collisions surfaced and resolved deliberately, a
   renamed twin found, 3 packs installed, its own 1337 tests still green — and the budget gate immediately
-  caught a real 45% overage on first contact.
+  caught a real 45% overage on first contact. Lyntai has since stepped back off the tool at its owner's
+  request, keeping the synced files as local forks — the adoption remains the proof of the collision,
+  twin and budget paths, and re-adoption is a decision that stays with that repository.
+- The deployable service was driven live, not only tested: an unauthorized write answered 401,
+  `daoris connect` registered through the real endpoint, the host was killed and restarted with the
+  pushed registration and a taken quest both still served, and publishing to a non-adopter was refused
+  naming who is addressable.

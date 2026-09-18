@@ -10,28 +10,49 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## State
 
-All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 120 CLI tests, 70 service,
-57 devkit, 52/52 release rehearsal, 8/8 devkit gates. Canon: 8 core rules, 4 knowledge, 5 skills,
-6 packs. Always-loaded core is **23,568 of 24,000 bytes** — the next canon addition fails the gate.
+All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 120 CLI tests, 81 service,
+57 devkit, 52/52 release rehearsal (three runs 2026-09-18), 8/8 devkit gates. Canon: 8 core rules,
+5 knowledge documents, 5 skills, 6 packs. Always-loaded core is **23,988 of 24,000 bytes** — 12 bytes
+of headroom, so the next canon addition fails the gate even as an index row, and the answer is
+splitting, not raising (D28).
+
+The service is **deployable** (D36): local sessions all spawn the MCP host over one persistent store
+(`.mcp.json` here registers it as `daoris-knowledge`); the HTTP host carries registrations and quests
+for a remote deployment, key-gated, **no model required**. Development is **automation-first** (D37):
+the person sets the target and verifies the final diff; agents execute and gates verify the middle.
 
 Nothing is published; development runs at `0.0.x`. **Adoption by other repositories is the owner's call
-and happens when Daoris is ready** — it is not tracked here. The Shenora rehearsal keeps and does not
-expire: 6 collisions, 2 twins to retire, local mechanics drafted at
-`docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `check` clean at 38,782 bytes, with
-`web-webview` and `durable-jobs` ready for it.
+and happens when Daoris is ready** — it is not tracked here, and no repository is asked to adopt until
+Daoris is finished. Lyntai stepped off the tool 2026-08-17 (owner-requested; the synced files remain
+there as local forks), so the live consumer count is zero and Lyntai is not quest-addressable until it
+re-adopts. The Shenora rehearsal keeps and does not expire: 6 collisions, 2 twins to retire, local
+mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `check` clean at
+38,782 bytes, with `web-webview` and `durable-jobs` ready for it.
 
 ## Backlog
-
-- [ ] **SVC1 — no persistent service.** Everything is verified by starting it, driving it, stopping it.
-  Quests and registrations live in SQLite and survive, but nothing runs between sessions, so nothing can
-  be published or pulled.
 
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken
   precondition rather than a flaky assertion. Both times it ran straight after canon files were edited
-  and synced. Not reproducible: chained, three back-to-back, and standalone runs all pass.
-  **Next failure, capture the log before re-running** — the phase-6 output names which check went first,
-  and that is the missing piece. Do not tag a release while this is open.
+  and synced. **Every run now writes a transcript to `_fixtures/rehearsal-logs/` by construction**
+  (2026-09-18), so the next failure is captured without anyone remembering to. Three runs that day —
+  two of them straight after a canon edit and sync, the suspected trigger — all passed 52/52. Stays
+  open until a captured failure explains it. Do not tag a release while this is open.
+
+- [ ] **LYN1 — the Lyntai pin, and the one-sweep migration.** `Daoris.Service` deliberately pins the
+  cognition sibling at released 2.1.0 (D22): upstream has a renaming major sitting unreleased (its
+  `Llm*` call types become `Text*`, and `Providers.Default` is already retired from its 3.x package
+  roster), so the coordinated move is **one** migration when that major ships, not two. Lyntai is not
+  quest-addressable (de-adopted), and no repository is asked to adopt until Daoris is finished — so
+  this is held here, not delivered anywhere.
+
+- [ ] **SVC2 — remote hardening, deferred until a deployment leaves a trusted network.** Per-person
+  expiring keys and OIDC per the service design §5, and an MCP relay from the local stdio host to a
+  remote service when a second machine actually exists. D36 records why neither is built now.
+
+- [ ] **TOOL5 — `status --json` for the agent operator.** Under D37 an agent drives setup end to end;
+  `analyze --json` already covers adoption and `check` speaks in exit codes, so `status` is the one
+  surface an agent still parses as prose. Low urgency; do it with the next CLI change.
 
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until

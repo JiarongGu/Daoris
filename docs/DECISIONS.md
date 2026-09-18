@@ -777,6 +777,11 @@ edit box** — it puts the change where review happens and leaves the judgement 
 **Consequence.** The service stays read-only, and its HTTP surface can be too, which removes
 authentication-for-writes from the first version entirely.
 
+**Amended 2026-09-18 (D36).** The HTTP surface now carries the *service-state* writes — registry
+registrations and quests — gated by `DAORIS_SERVICE_KEY` when set. **Doctrine** remains unwritable from
+the browser and from every endpoint, which is the part this decision was actually about: no rule,
+knowledge document or skill can be edited anywhere but the repository that owns it, through review.
+
 ## D32 — Cross-repository work is a quest, not an edit
 
 **Decided 2026-08-05.** Repositories in this family are not developed across. A change one repository
@@ -942,3 +947,74 @@ runs it loses discoverability and nothing else — no gate, no sync, no check de
 not catch a rejected promise, so a `DaorisError` from `connect` escaped as an unhandled rejection and
 printed a stack trace instead of its message. Exit codes are the contract, and a stack trace is neither
 the code nor the message. The dispatcher now routes both paths through one reporter.
+
+## D36 — The service is deployable: nothing needs to run between sessions; state persists and the HTTP host carries transfer (2026-09-18)
+
+**Decision.** SVC1 closes without a daemon. **Local mode:** the MCP host stays spawn-per-session — the
+client starts it, the session uses it, it exits — and the *database* is what persists. Every session in
+every repository on this machine spawns over the same file, so a quest published from one repository's
+session is waiting when another's starts. `.mcp.json` in this repository registers it; a sibling adds
+the same entry to its own file. **Remote mode:** the HTTP host carries the transfer — registry and
+quests (`POST /api/registry`, `POST /api/quests`, `POST /api/quests/{id}/respond`) — through the same
+`QuestExchange` the MCP host uses, with `DAORIS_SERVICE_KEY` gating every `POST /api/*` when set and
+absence meaning local trust (D21). It runs with **no model at all** and still carries all of it (D24):
+a remote Daoris is purely a transfer of request and task unless a repository opts its knowledge in.
+
+**Why.** "Nothing runs between sessions, so nothing can be published or pulled" conflated two different
+gaps, and a daemon would have fixed neither. The first was **state that did not survive**: pushed
+registrations lived in a dictionary, so a service restart silently dropped every repository that had
+ever run `connect` — and for a remote service, pushed registrations are the only registrations there
+are. They now persist in the same SQLite file as the index and the quests (one file to back up, one
+answer to "which repositories exist"). The second was **a door that did not exist**: quests could only
+be moved over MCP stdio, so a deployment anywhere else was a read-only mirror.
+
+**The judgement moved to one place.** Publish/respond rules — who may be addressed, what a refusal
+says, what declining requires, including the message text — live in `QuestExchange`, used by both
+hosts. Written per host they would drift, and the same ask would be deliverable through one door and
+refused at the other, which for a quest system is the worst available bug: it looks like the sibling
+ignoring you.
+
+**Verified on the artefact, not only in tests.** The host was driven live with a key: the unauthorized
+write answered 401; `daoris connect` registered through the real endpoint; the host was killed and
+restarted and the pushed registration and a taken quest were both still served; a publish to a
+non-adopter was refused naming who *is* addressable.
+
+**Not chosen:** a daemon or Windows service (once state persists, nothing needs to run between
+sessions — a deployment cost buying no property); per-person expiring keys and OIDC now (deferred until
+a deployment leaves a trusted network; the full model is designed in the service design §5); an MCP
+relay from the local stdio host to a remote service (build it when a second machine actually exists —
+the HARNESS1 reasoning).
+
+**Consequence.** The quest-ledger pattern — holding outbound quests in this repository's backlog
+"until a service runs" — ends, because the service runs. Addressing still gates on adoption (D33), so
+a sibling that has stepped off the tool is not addressable until it re-adopts; nothing changes there.
+
+## D37 — Development is automation-first: the person sets the target and verifies the outcome; gates verify the middle (2026-09-18)
+
+**Decision.** Set by the owner, 2026-09-18: this family is moving to fully automated development via
+code generation, with the human at two points — the initial target and the final verification. Daoris
+shapes itself for that operator. Adoption is executed end to end by the adopting repository's own
+agent, from `analyze --json` and the playbook, with the owner reviewing the uncommitted diff as the
+closing checkpoint (`.claude/knowledge/adoption.md` is rewritten around those two checkpoints). The
+canon carries the operating model as core knowledge, `autonomous-development`: take the target and
+run; done means gates green plus a reviewable record; mid-run questions batch to checkpoints.
+
+**Why.** A game-scale application is built as many subsystems and many verification runs. A person
+approving every reversible step becomes the bottleneck on exactly the work that needed no judgement —
+and approval fatigue trains the reviewer to click through, so the one step that deserved a real
+decision arrives to a reader who has stopped reading. A gate runs every time, identically, and exits
+non-zero; sporadic human verification does not. Human judgement is the scarce input, so the process
+delivers it an *outcome* to judge: the diff, the gate results, and the records of what was decided.
+
+**What does not move.** The carve-outs hold at full strength precisely because everything else is
+automated: destructive or irreversible actions, anything that leaves the repository (a quest instead —
+D32 stays absolute), publishing and releasing, and **committing** remain explicit human decisions.
+"Never commit without the user's approval" is not weakened by this decision; it *is* the final
+verification checkpoint, stated as a commit gate.
+
+**Tier and evidence, stated honestly.** Knowledge rather than a rule — the same demotion reasoning as
+`model-decoupling` (it applies when shaping how a task runs, not on every task), and the always-loaded
+core sits at 23,988 of 24,000 bytes after its index row, which is the budget gate saying "knowledge" as
+loudly as it can. And it is canonized **on the owner's direction rather than on two-repository
+convergence** — recorded plainly because the evidence bar matters (D29's count-drift lesson), and
+because an owner setting the target for the family is itself the model in action.
