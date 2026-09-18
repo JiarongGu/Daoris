@@ -7,24 +7,24 @@ place.
 
 ## What it is
 
-Four views, three halves of one job:
+Five views, three halves of one job — landing on management (D40):
 
 | View | What it answers |
 |---|---|
-| **Convergence** | where two repositories reached the same conclusion independently — the landing view |
+| **Overview** | the landing: is anything sitting and for how long, the family's health as tiles, the repositories by what the index holds |
+| **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline |
+| **Projects** | who is in the family, what each owns and accepts as scannable chips — and who cannot be asked yet, with the join steps proposed as text |
+| **Convergence** | where two repositories reached the same conclusion independently — the knowledge half's lead view |
 | **Search** | what the family has already learned about X |
-| **Quests** | what has been asked of whom, and is anything sitting; publish, take, done, decline |
-| **Projects** | who is in the family, what each owns and accepts — and who cannot be asked yet, with the join steps proposed as text |
 
-## Convergence is the landing view, not search (D30)
+## The landing is management; convergence leads the knowledge half (D30, D40)
 
-The brief suspected search was the obvious answer and the wrong one. A day of real use settled it: the
-finding that mattered most was a convergence between two repositories whose vocabulary overlapped by
-**25%**, and no search could have surfaced it — **to search for it you must already know it exists.**
-
-Everything else that produced value was comparison too. Adoption is comparison: what collides, what is a
-twin, what a pack already covers. Search is here as the second tab, because once you know what you are
-looking for it is the faster route.
+The platform lands on **Overview**, because its first job is the person's first question — *is
+anything sitting, and for how long* (D40). D30's measured finding stands inside the knowledge half:
+**search must not lead it**, because the finding that mattered most was a convergence between two
+repositories whose vocabulary overlapped by **25%**, and no search could have surfaced it — to search
+for it you must already know it exists. So Convergence leads the knowledge views, and Search follows
+for when you know what you are looking for.
 
 The similarity threshold is a slider rather than a constant. Measured on this family, 0.82 returns
 nothing, 0.75 returns the true pairs, and 0.60 begins pulling in unrelated documents — a default nobody

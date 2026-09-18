@@ -1078,3 +1078,25 @@ already applies to itself, extended to two more trees.
 **Not chosen:** generating the examples into a gitignored scratch (invisible as examples — the whole
 point was that a person can read them), and a third real repository (a consumer that exists only to be
 a consumer is a fixture wearing a costume; the examples say so on their face instead).
+
+## D40 — The platform lands on an Overview; the person's first question is "is anything sitting" (2026-09-19)
+
+**Decision.** Set by the owner the day the platform shipped: it is *mostly for the person to use*, so
+it gets a real management UI. The landing view becomes **Overview** — family health as stat tiles
+(adopted projects, open and in-progress quests with the oldest sitting time, the index's size), the
+outstanding quests oldest-first, and the repositories by what the index holds, one hue because one
+series. Tab order goes management-first: Overview, Quests, Projects, then the knowledge pair.
+Quests gains grouping by state, sitting time made visible, and a publish form behind a deliberate
+action; Projects gains the owns/accepts declarations as scannable chips and the local/canonical split.
+
+**Why this does not overturn D30.** D30's measured finding was that *search* must not lead, because a
+convergence cannot be searched for — and search still does not lead. Convergence remains the first
+view of the knowledge half. What changed is the platform's job: a knowledge browser opens on what the
+family knows; a management console opens on the state of the thing being managed. Under D37 the
+person's work is targets and outcomes, and the outcome view is "what is outstanding, and for how
+long" — a question no amount of convergence detection answers.
+
+**Consequence.** The platform design document carries the amendment; D30 stands for the knowledge
+half. The stat tiles and the repository bars follow the visualization discipline (single-hue bars for
+one measure, values in ink rather than the mark's color, status pills never color-alone) so the
+management surface stays readable rather than decorated.

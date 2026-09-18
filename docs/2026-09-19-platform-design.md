@@ -94,3 +94,20 @@ family.
    page proves insufficient in real multi-project use, that evidence decides the mechanism.
 3. **The landing view** — convergence today (D30, measured). If real platform use shows the person
    opening Quests first every time, that is evidence to reopen D30 with, not a reason to preempt it.
+
+---
+
+## Amended 2026-09-19 — the Overview landing (D40)
+
+Open question 3 closed the same day it was written, by the owner: the platform is *mostly for the
+person to use*, which makes it a management console before it is a knowledge browser. A management
+console lands on the state of the thing being managed — so the landing view is now **Overview**:
+family health as stat tiles (adopted projects, open and in-progress quests with how long the oldest
+has been sitting, the index's size), the outstanding-quest list oldest-first, and the repositories by
+what the index holds.
+
+D30's finding is not overturned — it said *search* must not be the lead, and it is not; **Convergence
+remains the lead of the knowledge half**, first among the knowledge views and one click away. What
+changed is that the platform's first question is no longer "what does the family know" but "is
+anything sitting" — the question a person overseeing several projects' agents actually opens the
+window to answer (D37: their job is targets and outcomes).

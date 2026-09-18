@@ -114,6 +114,78 @@ nav button.active { color: var(--ink); border-bottom-color: var(--accent); }
 }
 .method-hint { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--ink-faint); font-style: italic; }
 
+/* The nav badge: the one number that follows the person across tabs — how much is outstanding. */
+.badge {
+  font-family: var(--mono); font-size: 0.68rem; font-variant-numeric: tabular-nums;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 999px;
+  padding: 0 0.4rem; margin-left: 0.45rem; vertical-align: 1px;
+}
+
+button.primary { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+button.primary:hover:not(:disabled) { background: var(--raised); }
+
+/* Overview: stat tiles — label, value, context. Values wear proportional figures; tabular digits
+   make a big 121 look loose. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+.tile {
+  background: var(--raised); border: 1px solid var(--line); border-radius: 8px;
+  padding: 0.8rem 1rem 0.9rem; display: grid; gap: 0.1rem; align-content: start;
+}
+.tile-label { font-size: 0.78rem; color: var(--ink-soft); }
+.tile-value { font-size: 2rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.01em; }
+.tile-note { font-size: 0.75rem; color: var(--ink-faint); }
+.tile.warn { border-left: 3px solid var(--warn); }
+.tile.warn .tile-note { color: var(--warn); }
+
+.sitting-list { list-style: none; margin: 0; padding: 0; }
+.sitting-list li {
+  display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+  padding: 0.45rem 0; border-top: 1px solid var(--line);
+}
+.sitting-list li:first-child { border-top: 0; }
+
+/* One series, one hue: entries per repository is magnitude, not identity, so every bar wears the
+   accent and the name beside it carries identity. Thin (12px), rounded only at the data end, square
+   at the baseline; values sit outside the mark, in ink. */
+.bars { list-style: none; margin: 0; padding: 0; }
+.bars li {
+  display: grid; grid-template-columns: minmax(9rem, 13rem) 1fr minmax(7.5rem, auto);
+  align-items: center; gap: 0.75rem; padding: 0.32rem 0; border-top: 0;
+}
+.bar-name { font-size: 0.85rem; display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.bar-name > span + * { min-width: 0; }
+.adopted-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; display: inline-block; }
+.bar-track { height: 12px; }
+.bar { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; }
+.bar-value { font-size: 0.8rem; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.bar-split { color: var(--ink-faint); }
+
+/* Quests: sections by where a quest is in its life; sitting time made visible. */
+.section-title { font-size: 0.8rem; font-weight: 600; color: var(--ink-faint); margin: 1.5rem 0 0.6rem; }
+.quest-meta { display: flex; gap: 0.4rem; align-items: baseline; flex: none; }
+.where-inline { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); }
+.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.link.subtle { font-size: 0.78rem; color: var(--ink-soft); font-weight: 400; }
+
+/* Projects: declarations as chips a person scans, not prose they parse. */
+.project .method { display: inline-flex; align-items: center; gap: 0.45rem; }
+.chip-row { margin: 0.5rem 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem; }
+.chip-kind { font-size: 0.72rem; color: var(--ink-faint); margin-right: 0.2rem; min-width: 3.2rem; }
+.chip {
+  display: inline-block; font-size: 0.75rem; line-height: 1.4;
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.08rem 0.55rem;
+  color: var(--ink-soft); background: var(--raised);
+}
+.chip.accent { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.outside-list { list-style: none; padding: 0; margin: 0; }
+.outside-list li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  padding: 0.35rem 0; border-top: 1px solid var(--line); font-size: 0.9rem;
+}
+.outside-list li:first-child { border-top: 0; }
+.outside-list .where { display: inline; }
+
 /* Quests: the coarse state is a pill, the sentence behind it a title attribute. */
 .pill { font-family: var(--mono); font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); }
 .pill.open { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
@@ -164,4 +236,7 @@ nav button.active { color: var(--ink); border-bottom-color: var(--accent); }
 @media (max-width: 40rem) {
   .app { padding: 1.25rem 1rem 3rem; }
   header { flex-direction: column; }
+  /* Narrow: the bar drops under its name instead of squeezing all three into one row. */
+  .bars li { grid-template-columns: 1fr auto; }
+  .bar-track { grid-column: 1 / -1; }
 }

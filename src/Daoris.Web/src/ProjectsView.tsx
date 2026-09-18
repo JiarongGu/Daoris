@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import { api, type Registration } from './api';
+import { api, type Registration, type Repository } from './api';
 
 /**
- * The setup half of the platform (D38): who is in the family, what each repository owns and accepts,
- * and — just as deliberately — who cannot be asked yet. Search answers "has anyone solved this"; this
- * answers "whose problem is this" (D34), and a silent omission would read as the repository not
- * existing.
+ * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
+ * as chips a person can scan rather than prose they must parse — and, just as deliberately, who
+ * cannot be asked yet. Search answers "has anyone solved this"; this answers "whose problem is this"
+ * (D34), and a silent omission would read as the repository not existing.
  *
  * For a repository that has not adopted, the view proposes the join steps as text, never as a button
  * (D31's shape): the change belongs in that repository, made by whoever works there.
  */
-export function ProjectsView({ onError }: { onError: (message: string) => void }) {
+export function ProjectsView({ repositories, onError }: {
+  repositories: Repository[];
+  onError: (message: string) => void;
+}) {
   const [registry, setRegistry] = useState<Registration[] | null>(null);
 
   useEffect(() => {
@@ -25,32 +28,53 @@ export function ProjectsView({ onError }: { onError: (message: string) => void }
 
   const adopted = registry.filter((r) => r.adopted);
   const outside = registry.filter((r) => !r.adopted);
+  const indexed = (name: string) => repositories.find((r) => r.name === name);
 
   return (
     <section className="projects">
-      {adopted.map((project) => (
-        <article key={project.repository} className="group project">
-          <header>
-            <span className="method">{project.repository}</span>
-            <span className="score">{project.entries} indexed entries</span>
-          </header>
-          {project.summary
-            ? <p className="excerpt">{project.summary}</p>
-            : (
-              /* Addressable regardless — adoption gates addressing, declaration does not (D34) — but
-                 an asker deserves to know they would be guessing. */
-              <p className="note">
-                Adopted, but has not declared a domain — a quest here may not be its problem. In that
-                repository: fill in `domain` in daoris.json, then `daoris connect`.
+      {adopted.map((project) => {
+        const counts = indexed(project.repository);
+        return (
+          <article key={project.repository} className="group project">
+            <header>
+              <span className="method"><span className="adopted-dot" title="adopted" />{project.repository}</span>
+              <span className="score">
+                {counts
+                  ? `${counts.total.toLocaleString()} entries · ${counts.local.toLocaleString()} local · ${counts.canonical.toLocaleString()} canonical`
+                  : 'nothing indexed yet'}
+              </span>
+            </header>
+            {project.summary
+              ? <p className="excerpt">{project.summary}</p>
+              : (
+                /* Addressable regardless — adoption gates addressing, declaration does not (D34) — but
+                   an asker deserves to know they would be guessing. */
+                <p className="note">
+                  Adopted, but has not declared a domain — a quest here may not be its problem. In that
+                  repository: fill in `domain` in daoris.json, then `daoris connect`.
+                </p>
+              )}
+            {project.owns.length > 0 && (
+              <p className="chip-row">
+                <span className="chip-kind">owns</span>
+                {project.owns.map((item) => <span key={item} className="chip">{item}</span>)}
               </p>
             )}
-          <div className="lists">
-            {project.owns.length > 0 && <span><strong>owns</strong> — {project.owns.join('; ')}</span>}
-            {project.accepts.length > 0 && <span><strong>accepts</strong> — {project.accepts.join('; ')}</span>}
-            {project.packs.length > 0 && <span><strong>packs</strong> — {project.packs.join(', ')}</span>}
-          </div>
-        </article>
-      ))}
+            {project.accepts.length > 0 && (
+              <p className="chip-row">
+                <span className="chip-kind">accepts</span>
+                {project.accepts.map((item) => <span key={item} className="chip accent">{item}</span>)}
+              </p>
+            )}
+            {project.packs.length > 0 && (
+              <p className="chip-row">
+                <span className="chip-kind">packs</span>
+                {project.packs.map((item) => <span key={item} className="chip">{item}</span>)}
+              </p>
+            )}
+          </article>
+        );
+      })}
 
       {outside.length > 0 && (
         <article className="group outside">
@@ -59,17 +83,22 @@ export function ProjectsView({ onError }: { onError: (message: string) => void }
             <span className="score">{outside.length}</span>
           </header>
           <p className="excerpt">
-            These are in the family's folder and cannot be asked for anything: without the client a
-            quest addressed to them would sit in a queue nobody reads. Listed rather than hidden —
-            "who cannot be asked yet" is the same question as "who can".
+            In the family's folder, but without the client a quest addressed to them would sit in a
+            queue nobody reads. Listed rather than hidden — "who cannot be asked yet" is the same
+            question as "who can".
           </p>
-          <ul>
-            {outside.map((project) => (
-              <li key={project.repository}>
-                <span className="method">{project.repository}</span>
-                {project.entries > 0 && <span className="where">{project.entries} entries indexed read-only</span>}
-              </li>
-            ))}
+          <ul className="outside-list">
+            {outside.map((project) => {
+              const counts = indexed(project.repository);
+              return (
+                <li key={project.repository}>
+                  <span>{project.repository}</span>
+                  <span className="where">
+                    {counts && counts.total > 0 ? `${counts.total.toLocaleString()} entries indexed read-only` : '—'}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
           <p className="join">
             to join, in that repository: daoris init → fill in `domain` (what it is, what it owns,
