@@ -1027,3 +1027,54 @@ explicitly human is the boundary that cannot be taken back or that leaves the re
 publish, release, history rewrites, cross-repository writes, and destructive actions. The original
 text made the commit itself the checkpoint; that sentence is superseded, and `autonomous-development`,
 `CLAUDE.md`, `TASKS.md` and `ROADMAP.md` now state the boundary form.
+
+## D38 — The platform is the web app grown into the person's window; service-state actions arrive in the UI, doctrine actions never do (2026-09-19)
+
+**Decision.** The task / knowledge / setup platform the owner asked for is `Daoris.Web` with two more
+views — **Quests** (what has been asked of whom; publish; take / done / decline) and **Projects** (the
+registry, including who cannot be asked yet and how a project joins) — beside the unchanged
+Convergence and Search. Full design in `docs/2026-09-19-platform-design.md`. Web first; the desktop
+shape stays the existing brief — the same build hosted in the desktop sibling's shell, at a released
+version (D22).
+
+**Why not a new artefact.** A second hand-written UI is this family's own divergence pathology in a
+new place; the rule that created `Daoris.Web` ("one UI, two shells") already decided this.
+
+**The write boundary, kept precise.** D31's reason was doctrine — a web editor would beat `upstream`'s
+review path for the wrong reason — and doctrine stays unwritable from the platform, permanently. Quests
+are service state (D32, D33), already writable over the HTTP surface (D36), and under D37 **filing a
+quest is how a person sets a target** — so quest publish and respond belong in the person's window,
+through the same key-gated endpoints and the same `QuestExchange` judgement as every other door, with
+refusals surfaced verbatim. A keyed remote deployment renders the platform read-only (the browser has
+no key; person-auth is OIDC, deferred as SVC2) — stated in the UI rather than worked around.
+
+**Consequence.** D30 stands: convergence remains the landing view until real platform use argues
+otherwise. `WEB1` closes into this.
+
+## D39 — A tracked example family under `examples/`, and a family rehearsal that proves the router (2026-09-19)
+
+**Decision.** Daoris carries two example projects — `examples/engine` and `examples/game` — each a
+complete miniature adopter: manifest with a declared `domain`, synced doctrine, a local document, a
+README. `tools/family-rehearsal.mjs` (`npm run rehearse:family`) drives the whole multi-project story
+through the **real artefacts**: doctrine current and `check` clean in both, the HTTP host spawned over
+a scratch database rooted at `examples/`, both projects registered through the real `daoris connect`,
+a quest published from `game` to `engine` and refused toward a non-adopter, taken and done over HTTP,
+still there after a restart, and the examples' own knowledge answerable through search.
+
+**Why.** Three needs, one mechanism. The owner is about to start a real multi-project build with
+Daoris as its centralized router, and "the router works" must be a gate, not a belief — the release
+rehearsal proves the *doctrine* lifecycle for one consumer, and nothing proved the *routing* lifecycle
+across two. Second, "how does a project get set up" needs a worked example more than an explanation —
+the examples are the setup story made concrete, and `examples/README.md` is the guide. Third, every
+piece the rehearsal drives is exactly what the platform's views sit on, so the example family doubles
+as the platform's known-shape population.
+
+**Tracked in full, deliberately.** Manifests, locks and synced doctrine are committed, exactly like
+Daoris's own `.claude/` — so the examples are readable as examples, not only as fixtures. The cost is
+honest: a canon change must sync the examples in the same change, and the family rehearsal fails if
+they lag (it runs `sync` and requires the tree unchanged). That is the same discipline the repository
+already applies to itself, extended to two more trees.
+
+**Not chosen:** generating the examples into a gitignored scratch (invisible as examples — the whole
+point was that a person can read them), and a third real repository (a consumer that exists only to be
+a consumer is a fixture wearing a costume; the examples say so on their face instead).
