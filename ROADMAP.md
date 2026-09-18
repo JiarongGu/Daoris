@@ -18,7 +18,7 @@ Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All but the 
 | `Daoris.Cli` | The doctrine tool — npm, TypeScript, zero runtime deps | **built and proven** |
 | `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | **built** |
 | `Daoris.Service` | Knowledge index, convergence, quests and the registry | **built and deployable** |
-| `Daoris.Web` | The knowledge UI — convergence first, read-only | **built** |
+| `Daoris.Web` | The platform — knowledge, quests, projects; doctrine read-only (D38) | **built** |
 | `Daoris.Desktop` | The desktop shell hosting the same web build | brief written |
 
 ## Versions
@@ -117,6 +117,13 @@ quest published from one session is waiting when another starts. The HTTP host i
 registrations persist, quests publish and answer over the same `QuestExchange` the MCP host uses, and
 `DAORIS_SERVICE_KEY` gates the writes. It needs **no model**: a remote deployment is purely a transfer
 of request and task until a repository opts its knowledge in (D21, D24).
+
+**The platform since 2026-09-19 (D38), proven by the family rehearsal (D39).** `Daoris.Web` grew into
+the person's window — Quests and Projects beside Convergence and Search; doctrine stays unwritable from
+every view. And the router is a gate rather than a belief: `npm run rehearse:family` drives two tracked
+example projects through adoption, registration, a quest's whole life and a restart, through the real
+artefacts. This is the readiness story for the next real family — a game and its subsystems, with
+Daoris as their centralized router.
 
 _Also checked against generated-wiki tools (D16). They are the complement: a wiki is **derived** from the
 code and fails by going stale, doctrine is **authored** because something went wrong and fails by

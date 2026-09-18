@@ -88,8 +88,9 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 | `src/Daoris.Cli/` | **The npm package `daoris`** — TypeScript, zero runtime deps. `bin/`, `src/`, `test/` |
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
 | `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
-| `src/Daoris.Web/` | React UI over the service — the only UI; convergence first, read-only |
+| `src/Daoris.Web/` | **The platform** (D38) — knowledge, quests, projects; the only UI; doctrine read-only |
 | `src/Daoris.Desktop/` | Desktop shell hosting `Daoris.Web`, on the desktop sibling (not started) |
+| `examples/` | The example family — two miniature adopters the family rehearsal drives (D39) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |
 | `canon/core/{rules,knowledge,skills}/` | The always-installed rules, on-demand knowledge, and discovery skills |
 | `canon/packs/<name>/` | `pack.json` + `rules/` + `knowledge/` + `skills/` |
@@ -110,6 +111,10 @@ Run every command from the **workspace root**, not from a package directory.
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
   **artefact**. Run before tagging.
+- **`npm run rehearse:family`** — the "does the router work?" gate (D39). Both examples current and
+  clean, the HTTP host up over them, `connect`, a quest through its whole life, a search crossing
+  projects, restart persistence. Run when touching the service, `connect`, or the canon's shape —
+  **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only, with
   `dry_run` defaulting to true; it runs both gates on Linux before publishing. Nothing runs on push, and
   nothing runs on Windows or macOS — **a gate you did not run locally has not been run.** Development

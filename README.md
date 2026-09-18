@@ -131,11 +131,25 @@ skill used to be, except that it is generated and therefore never stale.
 needing a tweak will otherwise simply edit it, which is exactly how the copies diverged. The header says
 where the file came from and to use `daoris upstream`; the lock's hash catches the edit either way.
 
+## Beyond the CLI: the service and the platform
+
+The CLI is the doctrine half. **`Daoris.Service`** indexes what every adopting repository has learned,
+finds where two repositories reached the same conclusion in different words, holds the **registry** —
+what each repository owns and accepts — and carries **quests**: how one repository asks another for
+work instead of reaching in. **`Daoris.Web`** is the platform over it — knowledge, quests and projects
+in one window, with doctrine read-only everywhere. See `src/Daoris.Service/README.md` and
+`src/Daoris.Web/README.md`.
+
+**Worked example:** [`examples/`](examples/README.md) is a two-project family — an engine and a game —
+and `npm run rehearse:family` drives the whole arrangement through the real artefacts: adoption,
+registration, a quest's full life, knowledge crossing projects, a restart losing nothing.
+
 ## Developing Daoris
 
 ```sh
 npm run verify          # tests, then daoris check against its own doctrine
 npm run rehearse        # pack, install into a clean repo, drive the full lifecycle
+npm run rehearse:family # the router: two example projects, quests, the service, a restart
 node --test             # tests only
 ```
 

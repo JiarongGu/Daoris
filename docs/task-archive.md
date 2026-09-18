@@ -897,6 +897,32 @@ as JSON or as the unchanged text, because two paths that compute separately are 
 disagree about whether an update exists (the same reasoning that gave the service one `QuestExchange`
 for its two hosts). 121 CLI tests; the human output is byte-identical to before.
 
+## WEB1 → D38 — the platform: Quests and Projects join the UI (2026-09-19)
+
+✅ done 2026-09-19 — WEB1 asked for a quests view; the owner's direction widened it into **the
+platform**: a task / knowledge / setup window over the service, designed before it was built
+(`docs/2026-09-19-platform-design.md`, D38). `Daoris.Web` gained **Quests** (outstanding first,
+publish, take / done / decline — through the same key-gated endpoints and the same `QuestExchange`
+judgement as every other door, refusals shown verbatim; the form cannot offer the mistakes the service
+refuses) and **Projects** (the registry with the non-adopters marked rather than hidden, join steps
+proposed as text, never a button). Doctrine stays unwritable from every view — D31's reason was never
+about quests, and D38 says so precisely. Convergence keeps the landing (D30 stands). Desktop remains
+the same build in the desktop sibling's shell, later, unchanged.
+
+## The example family, and the family rehearsal (2026-09-19)
+
+✅ done 2026-09-19 — `examples/engine` and `examples/game`, two complete miniature adopters tracked in
+full (manifests with declared domains, synced doctrine, a local document each, READMEs), and
+`tools/family-rehearsal.mjs` driving the **routing** lifecycle the release rehearsal never covered,
+through the real artefacts: doctrine current and clean in both — a canon change that forgets to
+re-sync the examples fails the gate — the HTTP host over a scratch store rooted at `examples/`, both
+registered through the real `daoris connect`, a quest published `game → engine`, refused toward a
+stranger naming who *is* addressable, declining refused without a reason, taken, finished, still there
+after a restart, and `game`'s own knowledge answering a search made from outside it. **22/22 on the
+first full run**, transcript captured like every rehearsal. `release-prep` now rewrites and checks the
+example manifests' pins, so a version bump cannot leave an example teaching a stale ref.
+`examples/README.md` is the setup story for the next real family — recorded as **D39**.
+
 ## REH1, instrumented — capture by construction (2026-09-18; the item stays open)
 
 Partial, deliberately: the flake is not explained, so `REH1` remains in the backlog. What closed is

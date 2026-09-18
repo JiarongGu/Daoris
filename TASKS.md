@@ -11,15 +11,19 @@ the family, kept from drifting, and improved from wherever the improvement was f
 ## State
 
 All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 121 CLI tests, 81 service,
-57 devkit, 52/52 release rehearsal (eight runs 2026-09-18), 8/8 devkit gates. Canon: 8 core rules,
-5 knowledge documents, 5 skills, 6 packs. Always-loaded core is **23,988 of 24,000 bytes** — 12 bytes
-of headroom, so the next canon addition fails the gate even as an index row, and the answer is
-splitting, not raising (D28).
+57 devkit, 52/52 release rehearsal (eight runs 2026-09-18), **22/22 family rehearsal** (2026-09-19),
+8/8 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
+**23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
+an index row, and the answer is splitting, not raising (D28).
 
 The service is **deployable** (D36): local sessions all spawn the MCP host over one persistent store
 (`.mcp.json` here registers it as `daoris-knowledge`); the HTTP host carries registrations and quests
-for a remote deployment, key-gated, **no model required**. Development is **automation-first** (D37):
-the person sets the target and verifies the final diff; agents execute and gates verify the middle.
+for a remote deployment, key-gated, **no model required**. `Daoris.Web` is **the platform** (D38):
+Quests and Projects beside Convergence and Search, doctrine unwritable from every view. The **example
+family** under `examples/` is the router's proof and the setup story (D39) — a canon change must
+re-sync it in the same commit, and `npm run rehearse:family` enforces that. Development is
+**automation-first** (D37): the person sets the target and verifies the final diff; agents execute and
+gates verify the middle.
 
 Nothing is published; development runs at `0.0.x`. **Adoption by other repositories is the owner's call
 and happens when Daoris is ready** — it is not tracked here, and no repository is asked to adopt until
@@ -49,12 +53,6 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 - [ ] **SVC2 — remote hardening, deferred until a deployment leaves a trusted network.** Per-person
   expiring keys and OIDC per the service design §5, and an MCP relay from the local stdio host to a
   remote service when a second machine actually exists. D36 records why neither is built now.
-
-- [ ] **WEB1 — a quests view in the web UI.** "What has been asked of whom, and is anything sitting"
-  is the question the quest system exists to answer (D32), and under D37 it is part of what the person
-  reviews — yet today it is answerable only through `quest_list` or `GET /api/quests`, never in the
-  page a person actually opens. Read-only like the rest of the UI (D31); weigh its place against
-  D30's convergence-first layout when picking it up.
 
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until

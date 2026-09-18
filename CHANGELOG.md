@@ -158,8 +158,17 @@ The first version: doctrine that installs, is checked, and flows back.
   `daoris connect` persist across restarts, quests publish and answer over the same shared judgement
   (`QuestExchange`) as the MCP host, and setting `DAORIS_SERVICE_KEY` gates every write. It runs with
   **no model at all** and still carries the whole transfer of request and task.
-- **`Daoris.Web`** — the read-only UI over the HTTP host, convergence first. It proposes the command to
-  run in the repository that owns a file; it never edits doctrine from the browser.
+- **`Daoris.Web` — the platform: the person's window over the family.** Four views: **Convergence**
+  (the landing — where two repositories reached the same conclusion independently), **Search**,
+  **Quests** (what has been asked of whom and is anything sitting; publish, take, done, decline — with
+  the service's refusals shown verbatim and the form unable to offer the mistakes the service refuses),
+  and **Projects** (who is in the family, what each owns and accepts, who cannot be asked yet, and the
+  join steps proposed as text). Doctrine is never editable from the browser: where a rule should
+  change, the UI proposes the command to run in the repository that owns the file.
+- **An example family under `examples/`**, tracked in full: two miniature adopters and
+  `npm run rehearse:family`, which proves the router through the real artefacts — adoption,
+  registration through `daoris connect`, a quest's whole life including its refusals, knowledge
+  crossing projects, and a restart losing nothing.
 
 ### Proven
 
