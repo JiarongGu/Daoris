@@ -10,15 +10,20 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## State
 
-All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 121 CLI tests, 81 service,
-57 devkit, 52/52 release rehearsal (eight runs 2026-09-18), **22/22 family rehearsal** (2026-09-19),
-8/8 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
+All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 121 CLI tests, 83 service,
+57 devkit, 52/52 release rehearsal (eight runs 2026-09-18), **29/29 family rehearsal** (2026-09-19),
+9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
 **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
 an index row, and the answer is splitting, not raising (D28).
 
-The service is **deployable** (D36): local sessions all spawn the MCP host over one persistent store
-(`.mcp.json` here registers it as `daoris-knowledge`); the HTTP host carries registrations and quests
-for a remote deployment, key-gated, **no model required**. `Daoris.Web` is **the platform** (D38,
+The service is **deployable** (D36) and **ships as executables** (D43): `npm run publish:service --
+--install` lands both hosts self-contained in `~/.daoris/bin` and prints the ready `.mcp.json`
+snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
+spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
+remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): the
+family rehearsal (29 checks) and the Playwright suite (6 tests) each run over a scratch copy of the
+examples and take a project born mid-run through init → declare → sync → check → connect → its first
+quest. `Daoris.Web` is **the platform** (D38,
 D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
 grouped by state with sitting time, projects as scannable declarations — in a designed console shell
 (sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on

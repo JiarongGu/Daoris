@@ -158,6 +158,17 @@ The first version: doctrine that installs, is checked, and flows back.
   `daoris connect` persist across restarts, quests publish and answer over the same shared judgement
   (`QuestExchange`) as the MCP host, and setting `DAORIS_SERVICE_KEY` gates every write. It runs with
   **no model at all** and still carries the whole transfer of request and task.
+- **The server ships as executables.** `npm run publish:service -- --install` publishes both hosts
+  self-contained single-file into `~/.daoris/bin` and prints the ready `.mcp.json` snippet with the
+  family root filled in; releases carry the same binaries per platform with sha256s beside the
+  devkit's. The hosts are safe to run from anywhere: the HTTP host finds its web bundle beside its own
+  executable, and the MCP host says plainly when no family root is named instead of silently indexing
+  the wrong tree.
+- **The loops create their consumer.** Both the family rehearsal and the platform's Playwright suite
+  run over a scratch copy of the example family and include a project **born mid-run**: created from
+  nothing, joined through the real CLI — `init`, the domain declared, `sync`, `check` clean on first
+  contact, `connect` — a member in the registry and the Projects view at once, quest-addressable on
+  day one, and still there after a host restart.
 - **`Daoris.Web` — the platform: the person's window over the family.** Five views, landing on
   management: **Overview** (is anything sitting and for how long, the family's health as stat tiles,
   the repositories by what the index holds), **Quests** (grouped by where each is in its life, sitting

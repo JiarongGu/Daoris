@@ -941,6 +941,25 @@ retired what it did not. Fixed red-first (`RefreshTests`), guarded against the m
 proven on the real store: 16 → 14 repositories, only what is on disk. Both fixes opened
 `docs/FIX-LOG.md`, which the service now indexes like every sibling's.
 
+## D43 + D44 — the server ships as executables, and the loops create their consumer (2026-09-19)
+
+✅ done 2026-09-19 — both raised by the owner in one message: no published server executable, and no
+e2e that *creates* its example project. **D43:** `tools/service-publish.mjs` publishes both hosts
+self-contained single-file (`IncludeNativeLibrariesForSelfExtract`, because "single file" otherwise
+leaves `e_sqlite3` beside the exe — the installed copy died on first store open, recorded in the fix
+log); `--install` lands them in `~/.daoris/bin` and prints the `.mcp.json` snippet with the family
+root filled in; the release workflow ships them per platform with sha256s beside the devkit. The hosts
+became safe to run from anywhere — the HTTP host resolves its content root beside its executable, the
+MCP host warns on stderr when no root is named instead of silently indexing the wrong tree. Verified
+by running the installed binaries from a neutral directory, asserting on behaviour rather than on the
+process staying alive (a stdio host under a null stdin exits immediately and *cleanly*).
+**D44:** both loops moved onto a scratch copy of the examples — tracked examples stay a currency gate,
+never dirtied — and both now include the birth: the family rehearsal grew to **29 checks** (init →
+declare → sync → check clean on first contact → connect → the registry knows three → a first quest
+reaches the newcomer and is answered → the newcomer survives the restart), and the Playwright suite to
+**6 tests** (the project created mid-test appears as a member in Projects and is quest-addressable
+from the compose drawer, 1.2 s for the whole birth).
+
 ## The pyramid's inner loop — Vitest under the Playwright suite (2026-09-19)
 
 ✅ done 2026-09-19 — the outer loop (Playwright over `examples/`) proves the flows but needs builds;

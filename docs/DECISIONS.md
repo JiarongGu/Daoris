@@ -1161,3 +1161,41 @@ break D38's contract that the service's sentence is the message. Keys are struct
 **What this does not touch.** `Daoris.Cli` keeps its zero runtime dependencies — that guarantee was
 about what a consuming repository installs, never about the web artefact. Doctrine stays unwritable
 from the UI (D31); the landing stays management (D40); the computed status palette stays (D41).
+
+## D43 — The service ships as executables, not as a checkout with a build step (2026-09-19)
+
+**Decision.** Raised by the owner: there was no published server executable. `tools/service-publish.mjs`
+(`npm run publish:service`) publishes both hosts **self-contained single-file** — deliberately not
+trimmed and not AOT, because the MCP SDK discovers tools by reflection; the devkit remains the AOT
+artefact and this one values working over three megabytes. `--install` lands them in `~/.daoris/bin`
+and prints the `.mcp.json` snippet **with the family root already filled in**. The release workflow's
+per-platform binaries job ships them beside the devkit: the MCP host as a bare executable, the HTTP
+host as an archive carrying its web bundle, each with a sha256 beside it (D27's distribution shape).
+
+**The hosts became safe to run from anywhere**, because a published binary loses every assumption a
+checkout provided: the HTTP host resolves its content root beside the executable when the working
+directory has no bundle (otherwise it answers every API call and 404s the page), and the MCP host says
+on stderr when it has no workspace above it and no root named, instead of silently indexing whatever
+directory spawned it — the ghost shape, one layer up.
+
+**Two traps, found by running the artefact rather than reading about it.** "Single file" leaves
+`e_sqlite3` beside the executable, so an install that takes only the exe dies on first store open —
+`IncludeNativeLibrariesForSelfExtract` closes it. And a stdio host under a null stdin exits
+immediately and *cleanly*, which looks like a crash to a naive probe; the honest verification ran the
+installed binaries from a neutral directory and asserted on behaviour, not on staying alive.
+
+## D44 — The loops create their consumer: a project is born inside the tests (2026-09-19)
+
+**Decision.** Raised by the owner: the e2e never *created* a project — the examples are pre-baked, so
+the one lifecycle the next real family most needs proven (a brand-new project joins and appears) was
+documented but untested. Both loops now run over a **scratch copy** of the example family — the
+tracked `examples/` stay a currency gate and are never dirtied — and both include the birth: the
+family rehearsal (29 checks) creates a repository from nothing mid-run and takes it through the real
+CLI — `init`, the domain declared, `sync`, `check` clean on first contact, `connect` — until the
+registry knows three members, a quest reaches the newcomer at once and is answered, and the newcomer
+survives the host restart. The Playwright suite (6 tests) does the same through the UI: the project
+created mid-test appears as a member in Projects and is quest-addressable from the compose drawer.
+
+**Why the copy.** A newcomer must be creatable without touching the tracked examples, whose job is
+different: they are the readable, committed setup story, kept current with the canon by the rehearsal's
+first phase. Fixtures mutate; examples are read. One tree cannot be both.

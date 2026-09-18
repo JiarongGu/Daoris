@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## "Single file" leaves the SQLite native library behind (2026-09-19)
+
+**Symptom.** The installed `daoris-knowledge.exe` died on first store open with `DllNotFoundException`
+for `e_sqlite3` — after the same binary had appeared to work when probed from inside the workspace.
+
+**Root cause.** `PublishSingleFile` bundles managed assemblies but places **native** libraries beside
+the executable by default; the install step copied only the exe. The in-workspace probe masked it
+twice over: a stdio host under a null stdin exits immediately and *cleanly* before touching the store,
+which a naive probe reads as a crash — or as success.
+
+**Fix.** `IncludeNativeLibrariesForSelfExtract=true` in `tools/service-publish.mjs`, making the file
+genuinely single.
+
+**Verification.** The installed binaries, run from a neutral working directory: the MCP host starts,
+warns exactly when no root is named and only then, and exits cleanly on stdin close; the HTTP host
+serves both the API and the page. Asserted on behaviour, not on the process staying alive.
+
 ## A repository that left the disk never left the index (2026-09-19)
 
 **Symptom.** The platform's Overview served a repository renamed weeks earlier — dozens of entries,

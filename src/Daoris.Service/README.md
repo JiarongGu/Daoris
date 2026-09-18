@@ -85,20 +85,19 @@ to write — with an absolute `--project` path:
     "args": ["run", "--project", "<path-to-daoris>/src/Daoris.Service/Daoris.Service.Mcp"] } } }
 ```
 
-`dotnet run` re-checks the build on each session start; `dotnet publish -c Release` the Mcp project
-and point `command` at the published executable to skip that — **and then set the root explicitly**:
+`dotnet run` re-checks the build on each session start. The production shape is the **published
+executable** (D43):
 
-```json
-{ "mcpServers": { "daoris-knowledge": {
-    "command": "<publish-dir>/daoris-knowledge",
-    "env": { "DAORIS_KNOWLEDGE_ROOT": "<the folder holding the repositories>" } } } }
+```sh
+npm run publish:service -- --install    # both hosts → ~/.daoris/bin, self-contained single-file
 ```
 
-The host finds the family by walking up from its own binary to this workspace's manifest. Run from a
-source checkout that lands on the right folder wherever the client spawned it; a binary published
-*outside* the workspace has nothing above it to find and would fall back to the client's working
-directory — a directory whose subfolders are not repositories — so the published shape names its root
-rather than guessing.
+`--install` prints the ready `.mcp.json` snippet with the family root already filled in — a published
+binary has no workspace above it to walk to, so the root must be **named**; run without it, the host
+says so on stderr rather than silently indexing whatever directory spawned it. From a source checkout
+the walk-up still lands on the right folder wherever the client spawned it. The release workflow ships
+the same binaries per platform, each with a sha256 beside it (D27's shape): `daoris-knowledge-<rid>`
+bare, and `daoris-knowledge-http-<rid>.tar.gz` carrying its web bundle beside the executable.
 
 | Tool | Answers |
 |---|---|
