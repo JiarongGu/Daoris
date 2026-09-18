@@ -177,10 +177,11 @@ The first version: doctrine that installs, is checked, and flows back.
   design language — Tailwind v4 with the validated tokens as its theme, Radix primitives, lucide
   icons, TanStack Query for server state — and speaks **English and 简体中文** with an en/zh parity
   gate in the build. UI chrome translates; data and the service's own sentences render verbatim.
-  Storybook serves as the living design tool over the shipped components, and a Playwright suite
-  boots the real host over the example family and drives the shipped bundle — members visible, a
-  quest through its whole life in the drawers, the verbatim refusal, the language switch — wired into
-  the gates, so a release whose UI cannot do its job over the example family does not ship.
+  Storybook serves as the living design tool over the shipped components, and the test pyramid runs
+  as one gate: a Vitest inner loop over the view logic, the primitives and both catalogs, then a
+  Playwright suite that boots the real host over the example family and drives the shipped bundle —
+  members visible, a quest through its whole life in the drawers, the verbatim refusal, the language
+  switch — so a release whose UI cannot do its job over the example family does not ship.
 - **A refresh retires what the disk no longer has.** A repository renamed or removed used to stay in
   the index forever, served as though it were alive; a refresh now retires any repository the scan did
   not see — guarded on the scan having seen anything at all, so a mis-set root cannot wipe a good

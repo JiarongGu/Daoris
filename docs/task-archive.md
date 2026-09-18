@@ -941,6 +941,18 @@ retired what it did not. Fixed red-first (`RefreshTests`), guarded against the m
 proven on the real store: 16 → 14 repositories, only what is on disk. Both fixes opened
 `docs/FIX-LOG.md`, which the service now indexes like every sibling's.
 
+## The pyramid's inner loop — Vitest under the Playwright suite (2026-09-19)
+
+✅ done 2026-09-19 — the outer loop (Playwright over `examples/`) proves the flows but needs builds;
+the inner loop answers in milliseconds. Vitest + Testing Library in jsdom, inline in the vite config
+with the bilingual sibling's three proven shims (the Node ≥ 22 localStorage shadow, ResizeObserver for
+Radix positioning, matchMedia). Sixteen tests over what the e2e cannot cheaply pin: the format helpers
+under fake timers in both languages, runtime en/zh key parity (guarding anyone who runs tests without
+the build gate), the primitives' contracts (a pill never color-alone; a warned tile wears the warning
+on its note, never its value; publish disabled until the ask is complete), and the drawer pattern's
+point — the list surviving behind the open detail. `npm run test:web` now runs the whole pyramid as
+one gate: unit layer → bundle + host build → Playwright over the example family.
+
 ## D42 — the properly-tooled front end: headless libraries, i18n, the design tool, and the UI's test loop (2026-09-19)
 
 ✅ done 2026-09-19 — the owner's direction: a long-term project needs real UI tooling and library, a

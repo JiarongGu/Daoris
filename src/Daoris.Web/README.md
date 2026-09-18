@@ -33,7 +33,7 @@ status pill never appears without its text label.
 | Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation |
 | i18n | **react-i18next**, `en` + `zh`, flat dotted keys; `scripts/i18n-check.mjs` fails the build when the catalogs diverge |
 | Design tool | **Storybook** (`npm run storybook`) — every component state and the token gallery, on the shipped code |
-| Test loop | **Playwright** (`npm run test:web` at the workspace root) — the real host over `examples/`, driving the shipped bundle |
+| Test loop | **Vitest + Testing Library** as the millisecond inner loop (view logic, primitives, catalogs — with the sibling's proven jsdom shims), **Playwright** as the outer loop — the real host over `examples/`, driving the shipped bundle. `npm run test:web` at the workspace root runs the whole pyramid |
 
 **The i18n boundary:** UI chrome translates; **data does not**. Quest content, registry declarations,
 knowledge bodies and the service's own sentences render verbatim — machine-translating a refusal would
@@ -92,9 +92,10 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 # or, developing the UI against a running service
 npm --prefix src/Daoris.Web run dev                             # http://localhost:5178, proxies /api
 
-# the loop (from the workspace root): build bundle + host, boot over examples/, drive the real thing
+# the loop (from the workspace root): unit layer, then build bundle + host, then drive the real thing
 npm run test:web
-npm --prefix src/Daoris.Web run e2e:ui                          # the same suite, watch-and-poke mode
+npm --prefix src/Daoris.Web run test:watch                      # the inner loop, on save
+npm --prefix src/Daoris.Web run e2e:ui                          # the outer loop, watch-and-poke mode
 
 # the design tool
 npm --prefix src/Daoris.Web run storybook
