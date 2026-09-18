@@ -173,6 +173,14 @@ The first version: doctrine that installs, is checked, and flows back.
   toasts carrying every outcome verbatim, designed empty states, and static skeletons. The quest-state
   palette is computed rather than tasted: both themes pass all six checks of a color-vision validator,
   and a status never appears without its text label.
+- **Properly tooled, and bilingual.** The platform is built on headless libraries under the same
+  design language — Tailwind v4 with the validated tokens as its theme, Radix primitives, lucide
+  icons, TanStack Query for server state — and speaks **English and 简体中文** with an en/zh parity
+  gate in the build. UI chrome translates; data and the service's own sentences render verbatim.
+  Storybook serves as the living design tool over the shipped components, and a Playwright suite
+  boots the real host over the example family and drives the shipped bundle — members visible, a
+  quest through its whole life in the drawers, the verbatim refusal, the language switch — wired into
+  the gates, so a release whose UI cannot do its job over the example family does not ship.
 - **A refresh retires what the disk no longer has.** A repository renamed or removed used to stay in
   the index forever, served as though it were alive; a refresh now retires any repository the scan did
   not see — guarded on the scan having seen anything at all, so a mis-set root cannot wipe a good

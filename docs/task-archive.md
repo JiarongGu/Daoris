@@ -941,6 +941,26 @@ retired what it did not. Fixed red-first (`RefreshTests`), guarded against the m
 proven on the real store: 16 → 14 repositories, only what is on disk. Both fixes opened
 `docs/FIX-LOG.md`, which the service now indexes like every sibling's.
 
+## D42 — the properly-tooled front end: headless libraries, i18n, the design tool, and the UI's test loop (2026-09-19)
+
+✅ done 2026-09-19 — the owner's direction: a long-term project needs real UI tooling and library, a
+design tool, i18n, and the example project wired into testing with sub-agents and test-in-loop.
+Designed first (`docs/2026-09-19-frontend-architecture.md`, D42, checked read-only against the
+bilingual sibling — its i18n library and two hard-won practices, flat dotted keys and an en/zh parity
+build gate, adopted; its styled-framework-plus-duplicated-theme stack deliberately not). Then
+re-platformed with the design language unchanged: **Tailwind v4** with the validated tokens as its
+theme, **Radix** primitives under the same pixels, **lucide** icons, **TanStack Query** with
+invalidation after every mutation (the badge and the Quests view now share one deduplicated fetch),
+**react-i18next** with `en` and **简体中文** — the zh catalog drafted by a sub-agent against a fixed
+glossary (委托, not 任务 — the family's quest/task distinction preserved in Chinese) and reviewed line
+by line. **Storybook** stands as the design tool over the shipped components and tokens; **Playwright**
+boots the real host over `examples/` and drives the shipped bundle — members visible, a quest through
+its whole life in the drawers, the verbatim refusal, the language switch — **5/5**, declared in
+`daoris.gates.json` and the release workflow, so a release whose UI cannot do its job over the example
+family does not ship. The loop earned its keep immediately: it caught the e2e host serving no page
+(content root ≠ bundle location), an aria-label overriding a control's visible name, and Radix's
+toast announcer double-render. UI chrome translates; data and the service's sentences stay verbatim.
+
 ## D41 — the platform's design language, built and reviewed (2026-09-19)
 
 ✅ done 2026-09-19 — the owner's direction sharpened: "design the UI/UX properly, because this is used

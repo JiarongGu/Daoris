@@ -23,6 +23,23 @@ detail-and-form surface, toasts carrying the service's sentences verbatim, and a
 was **computed, not tasted** — both themes pass all six checks of the visualization validator, and a
 status pill never appears without its text label.
 
+## Built on (D42, `docs/2026-09-19-frontend-architecture.md`)
+
+| Layer | Choice |
+|---|---|
+| Styling | **Tailwind v4** — the validated tokens are the theme (`src/tokens.css`), utilities live beside the markup |
+| Primitives | **Radix UI** — dialog (the drawer), toast, select, tooltip, checkbox: behaviour without a look |
+| Icons | **lucide-react**, tree-shaken |
+| Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation |
+| i18n | **react-i18next**, `en` + `zh`, flat dotted keys; `scripts/i18n-check.mjs` fails the build when the catalogs diverge |
+| Design tool | **Storybook** (`npm run storybook`) — every component state and the token gallery, on the shipped code |
+| Test loop | **Playwright** (`npm run test:web` at the workspace root) — the real host over `examples/`, driving the shipped bundle |
+
+**The i18n boundary:** UI chrome translates; **data does not**. Quest content, registry declarations,
+knowledge bodies and the service's own sentences render verbatim — machine-translating a refusal would
+break the contract that the service's sentence is the message. `zh` is 简体, in a console register
+(委托 for quest — deliberately not 任务, keeping the family's own distinction).
+
 ## The landing is management; convergence leads the knowledge half (D30, D40)
 
 The platform lands on **Overview**, because its first job is the person's first question — *is
@@ -74,7 +91,18 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 
 # or, developing the UI against a running service
 npm --prefix src/Daoris.Web run dev                             # http://localhost:5178, proxies /api
+
+# the loop (from the workspace root): build bundle + host, boot over examples/, drive the real thing
+npm run test:web
+npm --prefix src/Daoris.Web run e2e:ui                          # the same suite, watch-and-poke mode
+
+# the design tool
+npm --prefix src/Daoris.Web run storybook
 ```
+
+`test:web` is a declared gate in `daoris.gates.json`, so the devkit's `verify` — and the release
+workflow — refuse a release whose UI cannot do its job over the example family. Note it rebuilds the
+host, so stop a locally running instance first, or the build fails on the locked DLL.
 
 Set `DAORIS_EMBED_MODEL` to turn the semantic tier on; without it the UI says so and convergence finds
 copies and restatements only.

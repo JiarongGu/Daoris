@@ -115,6 +115,10 @@ Run every command from the **workspace root**, not from a package directory.
   clean, the HTTP host up over them, `connect`, a quest through its whole life, a search crossing
   projects, restart persistence. Run when touching the service, `connect`, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
+- **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
+  bundle over the example family: a quest through its whole life in the drawers, the verbatim
+  refusal, 中文. Declared in `daoris.gates.json`; it rebuilds the host, so stop a running instance
+  first.
 - **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only, with
   `dry_run` defaulting to true; it runs both gates on Linux before publishing. Nothing runs on push, and
   nothing runs on Windows or macOS — **a gate you did not run locally has not been run.** Development

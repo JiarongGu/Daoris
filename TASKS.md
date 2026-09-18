@@ -19,10 +19,12 @@ an index row, and the answer is splitting, not raising (D28).
 The service is **deployable** (D36): local sessions all spawn the MCP host over one persistent store
 (`.mcp.json` here registers it as `daoris-knowledge`); the HTTP host carries registrations and quests
 for a remote deployment, key-gated, **no model required**. `Daoris.Web` is **the platform** (D38,
-D40, D41): five views landing on **Overview** — is anything sitting, the family's health, quests
+D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
 grouped by state with sitting time, projects as scannable declarations — in a designed console shell
-(sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), with
-doctrine unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
+(sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
+headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
+speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a **5/5 Playwright
+loop over `examples/`** declared in `daoris.gates.json`. Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
 canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
 Development is **automation-first** (D37): the person sets the target and verifies the final diff;
 agents execute and gates verify the middle. `docs/FIX-LOG.md` carries fix root causes, indexed by the
