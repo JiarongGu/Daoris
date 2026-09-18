@@ -158,13 +158,19 @@ The first version: doctrine that installs, is checked, and flows back.
   `daoris connect` persist across restarts, quests publish and answer over the same shared judgement
   (`QuestExchange`) as the MCP host, and setting `DAORIS_SERVICE_KEY` gates every write. It runs with
   **no model at all** and still carries the whole transfer of request and task.
-- **`Daoris.Web` — the platform: the person's window over the family.** Four views: **Convergence**
-  (the landing — where two repositories reached the same conclusion independently), **Search**,
-  **Quests** (what has been asked of whom and is anything sitting; publish, take, done, decline — with
-  the service's refusals shown verbatim and the form unable to offer the mistakes the service refuses),
-  and **Projects** (who is in the family, what each owns and accepts, who cannot be asked yet, and the
-  join steps proposed as text). Doctrine is never editable from the browser: where a rule should
-  change, the UI proposes the command to run in the repository that owns the file.
+- **`Daoris.Web` — the platform: the person's window over the family.** Five views, landing on
+  management: **Overview** (is anything sitting and for how long, the family's health as stat tiles,
+  the repositories by what the index holds), **Quests** (grouped by where each is in its life, sitting
+  time made visible, publish behind a deliberate action — with the service's refusals shown verbatim
+  and the form unable to offer the mistakes the service refuses), **Projects** (who is in the family,
+  declarations as scannable chips, the local/canonical split, who cannot be asked yet with the join
+  steps proposed as text), then **Convergence** — the knowledge half's lead view — and **Search**.
+  Doctrine is never editable from the browser: where a rule should change, the UI proposes the command
+  to run in the repository that owns the file.
+- **A refresh retires what the disk no longer has.** A repository renamed or removed used to stay in
+  the index forever, served as though it were alive; a refresh now retires any repository the scan did
+  not see — guarded on the scan having seen anything at all, so a mis-set root cannot wipe a good
+  index. Found on the platform's own Overview, serving a repository renamed weeks earlier.
 - **An example family under `examples/`**, tracked in full: two miniature adopters and
   `npm run rehearse:family`, which proves the router through the real artefacts — adoption,
   registration through `daoris connect`, a quest's whole life including its refusals, knowledge

@@ -923,6 +923,24 @@ first full run**, transcript captured like every rehearsal. `release-prep` now r
 example manifests' pins, so a version bump cannot leave an example teaching a stale ref.
 `examples/README.md` is the setup story for the next real family — recorded as **D39**.
 
+## D40 — the management UX: Overview lands, and the review caught two real defects (2026-09-19)
+
+✅ done 2026-09-19 — the owner's direction: the platform is mostly for the person, so it gets a real
+management UI. Landing moved to **Overview** (recorded as **D40**, with D30 standing for the knowledge
+half): family health as stat tiles, the outstanding quests oldest-first with sitting time, the
+repositories as single-hue bars — built to the visualization discipline (one series one hue, values in
+ink, proportional figures on tile values, status never color-alone). Quests regrouped by life stage
+with the publish form behind a deliberate action; Projects turned declarations into scannable chips
+with the local/canonical split; the nav carries an outstanding-count badge.
+
+**Reviewed in the browser over the real family, and the review paid twice.** Launching the host the
+documented way exposed that both its defaults were untrue — port and family root — fixed so the
+one-command story holds with no environment at all. And the Overview itself served a **ghost**: a
+repository renamed weeks earlier still in the index, because refresh replaced what it saw and never
+retired what it did not. Fixed red-first (`RefreshTests`), guarded against the mis-set-root case, and
+proven on the real store: 16 → 14 repositories, only what is on disk. Both fixes opened
+`docs/FIX-LOG.md`, which the service now indexes like every sibling's.
+
 ## REH1, instrumented — capture by construction (2026-09-18; the item stays open)
 
 Partial, deliberately: the flake is not explained, so `REH1` remains in the backlog. What closed is

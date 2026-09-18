@@ -18,12 +18,14 @@ an index row, and the answer is splitting, not raising (D28).
 
 The service is **deployable** (D36): local sessions all spawn the MCP host over one persistent store
 (`.mcp.json` here registers it as `daoris-knowledge`); the HTTP host carries registrations and quests
-for a remote deployment, key-gated, **no model required**. `Daoris.Web` is **the platform** (D38):
-Quests and Projects beside Convergence and Search, doctrine unwritable from every view. The **example
-family** under `examples/` is the router's proof and the setup story (D39) — a canon change must
-re-sync it in the same commit, and `npm run rehearse:family` enforces that. Development is
-**automation-first** (D37): the person sets the target and verifies the final diff; agents execute and
-gates verify the middle.
+for a remote deployment, key-gated, **no model required**. `Daoris.Web` is **the platform** (D38,
+D40): five views landing on **Overview** — is anything sitting, the family's health, quests grouped by
+state with sitting time, projects as scannable declarations — with doctrine unwritable from every
+view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
+canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
+Development is **automation-first** (D37): the person sets the target and verifies the final diff;
+agents execute and gates verify the middle. `docs/FIX-LOG.md` carries fix root causes, indexed by the
+service like every sibling's.
 
 Nothing is published; development runs at `0.0.x`. **Adoption by other repositories is the owner's call
 and happens when Daoris is ready** — it is not tracked here, and no repository is asked to adopt until
