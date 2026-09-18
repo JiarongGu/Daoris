@@ -34,6 +34,13 @@ if (OperatingSystem.IsWindows())
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The documented address, made true by construction: with nothing configured, Kestrel binds its own
+// default and the README's port is a lie. An explicit ASPNETCORE_URLS still wins.
+if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    builder.WebHost.UseUrls("http://localhost:5177");
+}
+
 var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), DefaultDatabasePath());
 
 // The provider is built HERE, not in Core: the domain holds `IEmbedder` and nothing that implements
@@ -293,8 +300,22 @@ static IReadOnlySet<string>? ParseSet(string? value)
     return items.Length > 0 ? new HashSet<string>(items, StringComparer.OrdinalIgnoreCase) : null;
 }
 
-static string DefaultRepositoryRoot() =>
-    Directory.GetParent(Directory.GetCurrentDirectory())?.FullName ?? Directory.GetCurrentDirectory();
+// Walk up from the BINARY to this workspace's manifest, exactly as the MCP host does — never from the
+// working directory: `dotnet run` sets the CWD to the project directory, so "parent of the current
+// directory" resolves to the service tree and its subprojects get scanned as though they were the
+// family. Found by launching the host the documented way and reading what it indexed.
+static string DefaultRepositoryRoot()
+{
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+    while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
+    {
+        directory = directory.Parent;
+    }
+
+    return directory?.Parent?.FullName
+        ?? Directory.GetParent(Directory.GetCurrentDirectory())?.FullName
+        ?? Directory.GetCurrentDirectory();
+}
 
 static string DefaultDatabasePath() => Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "knowledge.db");
