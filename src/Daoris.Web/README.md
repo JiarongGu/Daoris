@@ -1,12 +1,20 @@
-# Daoris.Web — the knowledge UI
+# Daoris.Web — the platform: the person's window over the family
 
 **Status: built.** A React application over `Daoris.Service`, served by `Daoris.Service.Http`. Both open
-questions in the original brief are settled — as `docs/DECISIONS.md` D30 and D31.
+questions in the original brief are settled — as `docs/DECISIONS.md` D30 and D31 — and it has since
+grown into the platform (D38, `docs/2026-09-19-platform-design.md`): knowledge, tasks and setup in one
+place.
 
 ## What it is
 
-Search and read doctrine, decisions and task outcomes across every repository in the family — and, first,
-see where two repositories reached the same conclusion independently.
+Four views, three halves of one job:
+
+| View | What it answers |
+|---|---|
+| **Convergence** | where two repositories reached the same conclusion independently — the landing view |
+| **Search** | what the family has already learned about X |
+| **Quests** | what has been asked of whom, and is anything sitting; publish, take, done, decline |
+| **Projects** | who is in the family, what each owns and accepts — and who cannot be asked yet, with the join steps proposed as text |
 
 ## Convergence is the landing view, not search (D30)
 
@@ -22,15 +30,20 @@ The similarity threshold is a slider rather than a constant. Measured on this fa
 nothing, 0.75 returns the true pairs, and 0.60 begins pulling in unrelated documents — a default nobody
 can move would be wrong for someone.
 
-## It reads; it proposes a command (D31)
+## Doctrine reads; service state writes (D31, D38)
 
-No editing of doctrine from the browser. Where a change is warranted the UI shows what to run in the
-repository that owns the file, because `upstream` deliberately routes an improvement through the
-repository that found it, where it meets that repository's review.
+No editing of doctrine from the browser, ever. Where a rule should change the UI shows what to run in
+the repository that owns the file, because `upstream` deliberately routes an improvement through the
+repository that found it, where it meets that repository's review. The convergence detector already
+states this for itself: it proposes, a person disposes, and a candidate is a prompt to look rather than
+a merge (D21).
 
-The convergence detector already states this for itself: it proposes, a person disposes, and a candidate
-is a prompt to look rather than a merge (D21). A UI that could apply its own suggestions would contradict
-the component it is built on.
+Quests are a different kind of thing — service state (D32), already writable over the HTTP surface
+(D36) — and under the automation-first model, **filing a quest is how a person sets a target** (D37).
+So publish and respond are in the UI, through the same key-gated endpoints and the same `QuestExchange`
+judgement as every other door, with refusals shown verbatim. On a deployment that sets
+`DAORIS_SERVICE_KEY` the browser has no key to present, so the platform is honestly read-only there
+until person-auth exists (SVC2); locally — the default — the full surface works.
 
 **The active tier is stated on every screen**, never implied — a reader looking at results has no way to
 know the semantic half was absent, and would read them as complete rather than as

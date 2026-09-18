@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "The knowledge UI. Read-only; convergence first. Built into the HTTP host's wwwroot.",
+  "description": "The platform: knowledge, quests and projects over the service. Doctrine read-only; convergence first. Built into the HTTP host's wwwroot.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

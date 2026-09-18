@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type Convergence, type Entry, type Hit, type Repository, type Status } from './api';
 import { ConvergenceView } from './ConvergenceView';
 import { SearchView } from './SearchView';
+import { QuestsView } from './QuestsView';
+import { ProjectsView } from './ProjectsView';
 import { Reader } from './Reader';
 
-type Tab = 'convergence' | 'search';
+type Tab = 'convergence' | 'search' | 'quests' | 'projects';
 
 /**
  * Convergence is the landing view, not search (D30).
@@ -13,6 +15,10 @@ type Tab = 'convergence' | 'search';
  * two repositories saying the same thing in different words — and to search for one of those you would
  * have to already know it exists. Search is here, as the second tab, because once you know what you are
  * looking for it is the faster route.
+ *
+ * Quests and Projects make this the person's window over the family (D38): the knowledge half answers
+ * what the family has learned, the task half what it owes itself, and the setup half who is in it at
+ * all. Doctrine stays unwritable from every one of them (D31).
  */
 export function App() {
   const [tab, setTab] = useState<Tab>('convergence');
@@ -82,12 +88,21 @@ export function App() {
         <button className={tab === 'search' ? 'active' : ''} onClick={() => setTab('search')}>
           Search
         </button>
+        <button className={tab === 'quests' ? 'active' : ''} onClick={() => setTab('quests')}>
+          Quests
+        </button>
+        <button className={tab === 'projects' ? 'active' : ''} onClick={() => setTab('projects')}>
+          Projects
+        </button>
       </nav>
 
       <main>
-        {tab === 'convergence'
-          ? <ConvergenceView semantic={status?.semantic ?? false} onOpen={open} onError={setError} />
-          : <SearchView onOpen={open} onError={setError} />}
+        {tab === 'convergence' && (
+          <ConvergenceView semantic={status?.semantic ?? false} onOpen={open} onError={setError} />
+        )}
+        {tab === 'search' && <SearchView onOpen={open} onError={setError} />}
+        {tab === 'quests' && <QuestsView onError={setError} />}
+        {tab === 'projects' && <ProjectsView onError={setError} />}
       </main>
 
       {reading && <Reader entry={reading} onClose={() => setReading(null)} />}

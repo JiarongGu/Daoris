@@ -114,6 +114,36 @@ nav button.active { color: var(--ink); border-bottom-color: var(--accent); }
 }
 .method-hint { margin: 0.4rem 0 0; font-size: 0.78rem; color: var(--ink-faint); font-style: italic; }
 
+/* Quests: the coarse state is a pill, the sentence behind it a title attribute. */
+.pill { font-family: var(--mono); font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); }
+.pill.open { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.pill.declined { color: var(--warn); border-color: var(--warn); }
+.group.quest.done, .group.quest.declined { opacity: 0.75; }
+
+.quest-form {
+  display: grid; gap: 0.6rem;
+  background: var(--raised); border: 1px solid var(--line); border-radius: 8px;
+  padding: 1rem 1.15rem; margin-bottom: 1.5rem;
+}
+.quest-form .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.quest-form .hint { margin: 0; }
+.quest-form input, .quest-form textarea, .quest-form select,
+.controls select, .quest-actions input {
+  font: inherit; font-size: 0.9rem; padding: 0.45rem 0.6rem;
+  background: var(--raised); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+.quest-form textarea { min-height: 6rem; resize: vertical; }
+.quest-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap; align-items: center; }
+
+/* Projects: what each declares, and the join steps proposed as text, never a button (D31). */
+.project .lists { display: grid; gap: 0.25rem; margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+.join {
+  font-family: var(--mono); font-size: 0.8rem;
+  background: var(--accent-soft); border-radius: 6px;
+  padding: 0.6rem 0.8rem; margin: 0.75rem 0 0; color: var(--ink);
+}
+
 .reader-backdrop {
   position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45);
   display: flex; align-items: flex-start; justify-content: center;
