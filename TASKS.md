@@ -66,7 +66,8 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 ## How to work a task
 
 - **TDD:** failing test → run it fail → minimal implementation → run it pass → commit.
-- **Commit per task.** **Never commit without the user's approval.**
+- **Commit per task, automatically, once gates are green** (D37 as amended). Push, publish, release
+  and history rewrites stay the owner's call.
 - **`npm run verify` before claiming done.**
 - **A canon file is project-agnostic** — the principle and the reason, never the mechanism. See
   `.claude/knowledge/canon-authoring.md`.

@@ -1018,3 +1018,12 @@ core sits at 23,988 of 24,000 bytes after its index row, which is the budget gat
 loudly as it can. And it is canonized **on the owner's direction rather than on two-repository
 convergence** — recorded plainly because the evidence bar matters (D29's count-drift lesson), and
 because an owner setting the target for the family is itself the model in action.
+
+**Amended 2026-09-18, the same day — the commit gate moves to the outward boundary.** The owner's
+follow-up to the first landing: committing should be "mostly auto". So a commit belongs to the
+automated middle — it is local, reversible, and lands per task once gates are green — and the person's
+final verification is the review of the landed history, not the act of landing it. What remains
+explicitly human is the boundary that cannot be taken back or that leaves the repository: push,
+publish, release, history rewrites, cross-repository writes, and destructive actions. The original
+text made the commit itself the checkpoint; that sentence is superseded, and `autonomous-development`,
+`CLAUDE.md`, `TASKS.md` and `ROADMAP.md` now state the boundary form.

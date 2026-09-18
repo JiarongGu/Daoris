@@ -35,10 +35,11 @@ why.
 - **Done means gates green plus a reviewable record.** The tests, the drift and budget checks, the
   repository's own verification — and the diff, with the task and decision records updated. That
   bundle is what the person verifies, in one sitting, at the end.
-- **The carve-outs do not move.** Destructive or irreversible actions, anything that leaves the
-  repository — a write into a sibling, a publish, a release, a history rewrite — and committing the
-  result remain explicit human decisions, however automated everything else is. Autonomy earns
-  trust by never spending it there.
+- **The carve-outs sit at the outward boundary.** A commit is part of the run: it is local,
+  reversible, and lands per task once gates are green, so the landed history *is* the reviewable
+  record. What remains explicitly human is everything that cannot be taken back or that leaves the
+  repository — a push to a shared remote, a publish or release, a history rewrite, a write into a
+  sibling, and any destructive action. Autonomy earns trust by never spending it there.
 - **Record as you go, because nobody is watching the middle.** The decision log, the backlog and
   the fix log are what make an unattended run reviewable afterwards — a step that exists only in a
   session transcript did not happen, as far as the final verification can tell.

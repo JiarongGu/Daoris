@@ -138,7 +138,9 @@ Run every command from the **workspace root**, not from a package directory.
   nothing `check` transitively imports may reach it — the second is the one that matters, because a gate
   breaks by an import three modules deep, not by an obvious `fetch`.
 - **Plan and apply are separate functions**, so a plan can be printed or asserted without touching disk.
-- **TDD** — failing test first. **Commit per task.** **Never commit without the user's approval.**
+- **TDD** — failing test first. **Commit per task, automatically, once gates are green** (D37 as
+  amended) — the landed history is the reviewable record. **Push, publish, release and history
+  rewrites stay the owner's call.**
 
 ## Writing canon files
 

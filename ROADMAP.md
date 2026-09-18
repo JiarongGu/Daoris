@@ -139,9 +139,11 @@ mis-scoped; most of them are Lyntai's job, and saying so early is what kept v0.1
 
 ## Standing policies
 
-- **Automation-first (D37).** A person sets the target and verifies the outcome; agents execute the
-  steps between, and gates verify them. Destructive, irreversible, cross-repository and publishing
-  actions — and the commit itself — stay explicitly human.
+- **Automation-first (D37, as amended).** A person sets the target and verifies the outcome; agents
+  execute the steps between, and gates verify them. Commits land automatically per task once gates
+  are green — the landed history is the reviewable record. Destructive, irreversible,
+  cross-repository and publishing actions — push, publish, release, history rewrites — stay
+  explicitly human.
 - **Adoption gates growth.** A pack is written when a repository is ready to install it, and validated by
   that installation. Doctrine nobody runs is a draft.
 - **The core stays small.** It is loaded into every session in every repository, so every byte is paid

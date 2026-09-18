@@ -15,8 +15,10 @@ network.
   states the target and verifies the outcome; the steps between are executed by agents and verified
   by gates, not by per-step approval. Per-step interaction does not scale past a small system, and
   approval fatigue trains the reviewer to click through exactly when a real decision arrives. The
-  carve-outs do not move: destructive or irreversible actions, anything that leaves the repository,
-  and committing the result stay explicitly human. Knowledge rather than a rule for the same reason
+  carve-outs sit at the outward boundary: destructive or irreversible actions and anything that
+  leaves the repository — push, publish, release, a write into a sibling — stay explicitly human,
+  while a commit is part of the run, landing per task once gates are green so the history is the
+  reviewable record. Knowledge rather than a rule for the same reason
   as `model-decoupling` — it applies when shaping how a task runs, not on every task — and set by the
   owner's direction for the whole family rather than derived from convergence, which is itself the
   model in action: the human set the target.

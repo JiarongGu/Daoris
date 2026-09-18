@@ -882,6 +882,11 @@ Canonized on the owner's direction rather than two-repository convergence, and t
 says so — the evidence bar matters (D29), and an owner setting the target for the family is the model
 in action.
 
+**Amended the same day:** the owner moved the commit gate too — commits land automatically per task
+once gates are green, and the human checkpoint is the review of the landed history plus the outward
+boundary (push, publish, release, history rewrites, cross-repository writes, destructive actions).
+See D37's amendment; the sentence above that made the commit itself the checkpoint is superseded.
+
 ## REH1, instrumented — capture by construction (2026-09-18; the item stays open)
 
 Partial, deliberately: the flake is not explained, so `REH1` remains in the backlog. What closed is
