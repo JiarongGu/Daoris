@@ -1,0 +1,17 @@
+{
+  "source": "github:JiarongGu/Daoris#v0.0.1",
+  "packs": [],
+  "target": ".claude",
+  "coreBudgetBytes": 30000,
+  "domain": {
+    "summary": "The example engine: the runtime half of the example family — simulation, rendering, and the asset pipeline the game builds on.",
+    "owns": [
+      "the engine runtime — simulation, rendering, assets",
+      "the engine's public API surface"
+    ],
+    "accepts": [
+      "a feature the game needs from the engine, with the failing case",
+      "an API gap, with the call site that hit it"
+    ]
+  }
+}

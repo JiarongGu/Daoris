@@ -14,6 +14,7 @@
     "test": "npm test -w daoris",
     "verify": "npm test -w daoris && node src/Daoris.Cli/bin/daoris.mjs check",
     "rehearse": "node tools/release-rehearsal.mjs",
+    "rehearse:family": "node tools/family-rehearsal.mjs",
     "release-prep": "node tools/release-prep.mjs"
   },
   "license": "MIT"

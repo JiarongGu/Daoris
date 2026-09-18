@@ -1,0 +1,16 @@
+{
+  "source": "github:JiarongGu/Daoris#v0.0.1",
+  "packs": [],
+  "target": ".claude",
+  "coreBudgetBytes": 30000,
+  "domain": {
+    "summary": "The example game: the content half of the example family — world design, gameplay, and everything a player touches; built on the example engine.",
+    "owns": [
+      "the game — world design, gameplay, content"
+    ],
+    "accepts": [
+      "a playtest finding, with the reproduction",
+      "a content request, with its design intent"
+    ]
+  }
+}

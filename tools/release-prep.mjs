@@ -17,7 +17,7 @@
  *   node tools/release-prep.mjs --version 0.1.0     # rewrite and stamp
  *   node tools/release-prep.mjs --check             # assert agreement, write nothing
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,6 +26,19 @@ const read = (rel) => readFileSync(join(repoRoot, rel), 'utf8');
 const write = (rel, text) => writeFileSync(join(repoRoot, rel), text, 'utf8');
 
 const REPO_REF = 'github:JiarongGu/Daoris#v';
+
+/**
+ * The example family's manifests carry the same pin as the real one — a stale example teaches the
+ * wrong thing with a straight face. Discovered rather than listed, so adding an example does not
+ * require remembering this file.
+ */
+const exampleManifests = () =>
+  existsSync(join(repoRoot, 'examples'))
+    ? readdirSync(join(repoRoot, 'examples'), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => `examples/${entry.name}/daoris.json`)
+        .filter((rel) => existsSync(join(repoRoot, rel)))
+    : [];
 const CLI_PKG = 'src/Daoris.Cli/package.json'; // the only published package
 const fail = (message) => {
   console.error(`release-prep: ${message}`);
@@ -67,6 +80,9 @@ function setVersion(version, today) {
   write('canon/canon.json', `{\n  "version": "${version}"\n}\n`);
   write('daoris.json', read('daoris.json').replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`));
   write('README.md', read('README.md').replace(/github:JiarongGu\/Daoris#v[\d.]+/g, `${REPO_REF}${version}`));
+  for (const rel of exampleManifests()) {
+    write(rel, read(rel).replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`));
+  }
 
   // The release-facing log carries the date; the canon's own log is read by
   // consumers upgrading between versions, where the version alone is the key.
@@ -90,6 +106,11 @@ function checkAgreement() {
   }
   for (const ref of [...read('README.md').matchAll(/Daoris#v([\d.]+)/g)].map((m) => m[1])) {
     if (ref !== version) problems.push(`README pins ${ref}, not ${version}`);
+  }
+  for (const rel of exampleManifests()) {
+    if (!JSON.parse(read(rel)).source.endsWith(`#v${version}`)) {
+      problems.push(`${rel} does not pin ${version}`);
+    }
   }
   if (problems.length) fail(`version drift:\n  ${problems.join('\n  ')}`);
   console.log(`release-prep: ${version} agrees across every shipped reference`);
