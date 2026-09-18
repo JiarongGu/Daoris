@@ -18,7 +18,9 @@ Three public projects, deliberately independent:
 | [Shenora](https://github.com/JiarongGu/Shenora) | Desktop runtime — the shell an application is built in |
 | **Daoris** | Engineering doctrine — how the work itself is done |
 
-Daoris takes no dependency on either. It is the only one of the three that installs *into* the others.
+The CLI takes no dependency on either — it must run in repositories that have nothing installed. The
+knowledge service consumes Lyntai as a library, at released versions only (D22). Daoris is the only one
+of the three that installs *into* the others.
 
 ## The problem
 

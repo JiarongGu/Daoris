@@ -107,6 +107,11 @@ jobs:
           node-version: '24'
           registry-url: https://registry.npmjs.org
 
+      # For the family rehearsal below — it spawns the real HTTP host over the example projects.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
       - name: Determine version
         id: version
         run: |
@@ -139,6 +144,11 @@ jobs:
 
       - name: Release rehearsal
         run: npm run rehearse
+
+      # The router's proof (D39): two example projects, registration, a quest's whole life, a restart.
+      # A release that ships the doctrine lifecycle but not the routing one is a quarter of the product.
+      - name: Family rehearsal
+        run: npm run rehearse:family
 
       # Packed from the package directory, where `prepack` stages the canon, the
       # licence and the readme in from the workspace root.
