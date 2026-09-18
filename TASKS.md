@@ -59,6 +59,13 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   expiring keys and OIDC per the service design §5, and an MCP relay from the local stdio host to a
   remote service when a second machine actually exists. D36 records why neither is built now.
 
+- [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met.** The bilingual sibling
+  carries the rule and the gate; Daoris now carries the same gate (`scripts/i18n-check.mjs`, adopted
+  from it deliberately — D42). Two repositories, one lesson: a missing translation "works" in English
+  and is discovered by the first reader it fails. Held rather than written because the always-loaded
+  core is 12 bytes from its budget — even an index row fails the gate — so canonizing waits on the
+  D28-shaped split of principle from detail, or lands as pack knowledge for web repositories.
+
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until
   a second repository needs the same thing.
