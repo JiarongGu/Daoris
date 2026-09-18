@@ -17,9 +17,8 @@ namespace Daoris.Knowledge.Mcp;
 /// can read beats a structure it has to re-serialise into prose.
 /// </remarks>
 [McpServerToolType]
-public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests)
+public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, QuestExchange exchange)
 {
-    private const string NEWLINE = "\n";
 
     [McpServerTool(Name = "knowledge_search")]
     [Description(
@@ -225,35 +224,12 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests)
         string body,
         CancellationToken ct = default)
     {
-        if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
-        {
-            return "That is the repository you are in — a quest is work for someone else. Use its own backlog.";
-        }
-
-        var registered = await service.RegistryAsync(ct).ConfigureAwait(false);
-        var target = registered.FirstOrDefault(r =>
-            string.Equals(r.Repository, to, StringComparison.OrdinalIgnoreCase));
-
-        if (target is null || !target.Adopted)
-        {
-            // A quest for a repository with no client has nobody to read it, so it would sit in a queue
-            // that is never opened. Saying so now beats letting it look delivered.
-            var adopters = registered.Where(r => r.Adopted).Select(r => r.Repository);
-            return $"`{to}` has not adopted Daoris, so it has no way to see a quest. Addressable: "
-                 + $"{string.Join(", ", adopters)}.";
-        }
-
-        var quest = await quests.PublishAsync(from, to, title, body, DateTimeOffset.UtcNow, ct)
+        // The judgement — who may be addressed, what a refusal says — lives in the exchange, shared
+        // with the HTTP host so the same ask cannot be deliverable through one door and refused at
+        // the other.
+        var outcome = await exchange.PublishAsync(from, to, title, body, DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
-
-        var caution = target.Registered
-            ? ""
-            : $"{NEWLINE}{NEWLINE}⚠ `{target.Repository}` has not declared what it owns or accepts, so this may not be "
-              + "its problem. Worth checking before you rely on it.";
-
-        return $"Published quest `#{quest.Id}` to `{quest.To}` — {quest.Status}.{caution}\n\n"
-             + "It is held by the service, not written into that repository. Its agent will see it and "
-             + "decide. Do not make the change yourself.";
+        return outcome.Message;
     }
 
     [McpServerTool(Name = "quest_list")]
@@ -298,25 +274,9 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests)
         [Description("Required to decline; worth giving when finishing.")] string? reason = null,
         CancellationToken ct = default)
     {
-        var status = action.ToLowerInvariant() switch
-        {
-            "take" => QuestStatus.Taken,
-            "done" => QuestStatus.Done,
-            "decline" => QuestStatus.Declined,
-            _ => (QuestStatus?)null,
-        };
-        if (status is null) return $"Unknown action '{action}' — one of: take, done, decline.";
-        if (status == QuestStatus.Declined && string.IsNullOrWhiteSpace(reason))
-        {
-            return "Declining needs a reason: it is the part the asker can act on.";
-        }
-
-        var quest = await quests.SetStatusAsync(
-            id.TrimStart('#'), status.Value, reason, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
-
-        return quest is null
-            ? $"No quest `#{id}`. Ids come from `quest_list`."
-            : $"Quest `#{quest.Id}` is now {quest.Status}.";
+        var outcome = await exchange.RespondAsync(id, action, reason, DateTimeOffset.UtcNow, ct)
+            .ConfigureAwait(false);
+        return outcome.Message;
     }
 
     [McpServerTool(Name = "knowledge_refresh")]

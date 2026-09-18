@@ -1,10 +1,12 @@
 # Daoris.Service — the cross-repository knowledge service
 
-**Status: usable from a session.** An MCP server over stdio exposes the index to any agent client. The
-core reads a repository's knowledge into addressable entries, classifies each as canonical or local,
-stores them in SQLite, answers ranked queries over FTS5, and finds where repositories learned the same
-lesson independently. **70 tests**, two of which run against the real sibling repositories rather than
-fixtures.
+**Status: deployable.** An MCP server over stdio exposes the index to any agent session, and an HTTP
+host carries the same service for a browser or a remote deployment. The core reads a repository's
+knowledge into addressable entries, classifies each as canonical or local, stores them in SQLite,
+answers ranked queries over FTS5, and finds where repositories learned the same lesson independently.
+Quests and pushed registrations persist in the same database, so what one session publishes another
+session — or another machine's `connect` — finds waiting. **81 tests**, two of which run against the
+real sibling repositories rather than fixtures.
 
 ## The registry — who is out there, and what they own
 
@@ -45,6 +47,11 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 | `quest_list` | What has been asked of whom, and what is still outstanding |
 | `quest_respond` | `take`, `done` or `decline` — declining needs a reason |
 
+The judgement behind those — who may be addressed, what a refusal says, what declining requires —
+lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would
+drift, and the same ask would be deliverable through one door and refused at the other, which for a
+quest system is the worst available bug: it looks like the sibling ignoring you.
+
 Four states, because anything finer is status for its own sake. A quest is **taken**, not assigned,
 which is the property that keeps declining a real answer. **Only an adopted repository can be
 addressed**, because one without the client cannot see the quest — and an unread quest looks exactly
@@ -65,11 +72,21 @@ Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database
 
 ## Running it
 
-```sh
-cd src/Daoris.Service && dotnet build
-# then point an MCP client at:
-#   src/Daoris.Service/Daoris.Service.Mcp/bin/Debug/net10.0/daoris-knowledge.exe
+**Local — the default, and no daemon.** The MCP host is spawned by each agent session and exits with
+it; the **database** is what persists. Every session in every repository on this machine spawns over
+the same file (`~/.daoris/knowledge.db`), which is how a quest published from one repository's session
+is waiting when another repository's session starts. This repository's own `.mcp.json` registers it as
+`daoris-knowledge`; a sibling adds the same entry to its own `.mcp.json` — that file is the sibling's
+to write — with an absolute `--project` path:
+
+```json
+{ "mcpServers": { "daoris-knowledge": {
+    "command": "dotnet",
+    "args": ["run", "--project", "<path-to-daoris>/src/Daoris.Service/Daoris.Service.Mcp"] } } }
 ```
+
+`dotnet run` re-checks the build on each session start; `dotnet publish -c Release` the Mcp project
+and point `command` at the published executable to skip that.
 
 | Tool | Answers |
 |---|---|
@@ -79,13 +96,36 @@ cd src/Daoris.Service && dotnet build
 | `knowledge_convergence` | Which repositories learned the same lesson independently? |
 | `knowledge_refresh` | Re-read every repository from disk |
 
+**Remote — transfer of request and task, opt-in.** The HTTP host is the deployable half. It runs with
+**no model at all** (D24) and still carries what a remote deployment exists to carry: registrations
+pushed by `daoris connect` — persisted, because for a remote service the pushed registrations *are*
+the family — and quests, published and answered over the same `QuestExchange` the MCP host uses. A
+repository's knowledge travels only if that repository opts in (D21); moving work never required
+moving knowledge.
+
+```sh
+dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localhost:5177
+```
+
+| Endpoint | |
+|---|---|
+| `GET /api/status` · `/api/search` · `/api/entry` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
+| `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands |
+| `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline |
+| `POST /api/refresh` | re-scan whatever repositories the host can see |
+
+Set `DAORIS_SERVICE_KEY` on the host and every `POST` under `/api` requires it as a bearer token —
+verified by driving it: the unauthorized write answers 401, and a registration pushed before a restart
+is still served after one. Absent means local trust: the OS account is the boundary (D21). A
+deployment reachable beyond a trusted network needs the fuller credential model in the design
+document's §5 — per-person expiring keys, OIDC for people — before it exists.
+
 `ConvergenceDetector` answers a different question: **which repositories learned the same thing
 independently?** It automates the survey that produced this project's own canon — reading twelve
 repositories by hand to notice which documents said the same thing in different words. It proposes
 candidates; a person decides, through `upstream`, under review.
 
-Configuration is two optional variables, and **there is no URL and no key** — that is shared mode, and
-it does not exist yet:
+Configuration is by environment, and every variable is optional — the defaults are the local mode:
 
 | | |
 |---|---|
@@ -93,6 +133,7 @@ it does not exist yet:
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `~/.daoris/knowledge.db` |
 | `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
 | `DAORIS_EMBED_URL` | Embedding endpoint. Default: `http://localhost:11434` (Ollama) |
+| `DAORIS_SERVICE_KEY` | HTTP host only: set ⇒ every `POST /api/*` needs it as a bearer token |
 
 Verified end to end against the real family with `nomic-embed-text`: **409 entries embedded in 34 s**,
 and a query whose words appear in none of the matching documents — *"stop the console from stealing

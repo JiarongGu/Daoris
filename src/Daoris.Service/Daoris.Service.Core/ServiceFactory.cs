@@ -32,13 +32,14 @@ public sealed record ServiceOptions(
 
 /// <param name="Service">The composed service. Convergence is reached through it, not beside it.</param>
 /// <param name="Quests">Work one repository has asked of another — service state, not anyone's files.</param>
+/// <param name="Exchange">The publish/respond judgement, shared so no two hosts can disagree on it.</param>
 /// <param name="SemanticEnabled">Whether the semantic tier answered. Report it; never imply it.</param>
 /// <remarks>
 /// Disposable, and it owns the store: the factory opened it, so the caller should not have to know that
 /// a database handle came back inside something called a service.
 /// </remarks>
 public sealed record ComposedService(
-    KnowledgeService Service, QuestStore Quests, bool SemanticEnabled) : IAsyncDisposable
+    KnowledgeService Service, QuestStore Quests, QuestExchange Exchange, bool SemanticEnabled) : IAsyncDisposable
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
@@ -82,7 +83,17 @@ public static class ServiceFactory
 
         var store = await SqliteKnowledgeStore.OpenAsync(options.DatabasePath).ConfigureAwait(false);
         var quests = await QuestStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var source = FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
+
+        // What was pushed in earlier sessions is part of who is out there NOW — a remote service knows
+        // the family only through these, and even a local one may be told about a repository it cannot
+        // scan. Loaded before the first read so a restart is invisible to a client.
+        var registry = new Registry(options.RepositoryRoot);
+        foreach (var registration in await registrations.AllAsync(ct).ConfigureAwait(false))
+        {
+            registry.Register(registration);
+        }
 
         IKnowledgeSearch search = new SqliteKnowledgeSearch(store);
 
@@ -101,8 +112,11 @@ public static class ServiceFactory
 
         var service = new KnowledgeService(
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
-            new Registry(options.RepositoryRoot));
+            registry, registrations);
 
-        return new ComposedService(service, quests, service.SemanticEnabled) { Store = store };
+        return new ComposedService(service, quests, new QuestExchange(service, quests), service.SemanticEnabled)
+        {
+            Store = store,
+        };
     }
 }

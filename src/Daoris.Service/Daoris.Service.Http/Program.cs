@@ -15,11 +15,18 @@ using Lyntai.Providers.OpenAiCompatible;
 //   DAORIS_EMBED_MODEL     naming one turns semantic on    (absent: lexical only, and it says so)
 //   DAORIS_EMBED_URL       the endpoint                    (default: http://localhost:11434)
 //   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
+//   DAORIS_SERVICE_KEY     set ⇒ every POST under /api needs it as a bearer token
+//                          (absent: local trust — the OS account is the boundary, D21)
 //
-// READ-ONLY BY CONSTRUCTION (D31). There is no endpoint that writes doctrine, which is a design
-// decision rather than an unfinished feature: `upstream` routes an improvement through the repository
-// that found it, where it meets that repository's review, and a web editor would win against that path
-// for the wrong reason. It also means there is nothing here to authenticate for the first version.
+// DOCTRINE IS READ-ONLY HERE (D31). No endpoint writes a rule, a knowledge document or a skill:
+// `upstream` routes an improvement through the repository that found it, where it meets that
+// repository's review, and a web editor would win against that path for the wrong reason.
+//
+// SERVICE STATE IS WRITABLE, NARROWLY (D32, D34). A repository may register what it owns, and a quest
+// may be published and answered — the transfer of request and task is the whole point of a remote
+// deployment, which may run with no model at all (D24) and still carry it. Those writes are exactly
+// what DAORIS_SERVICE_KEY gates; a deployment reachable beyond a trusted network needs the fuller
+// credential model in docs/2026-08-05-knowledge-service-design.md §5 before it exists.
 if (OperatingSystem.IsWindows())
 {
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
@@ -73,6 +80,31 @@ if (!string.IsNullOrWhiteSpace(origin)) app.UseCors();
 // a real deployment, and what lets the desktop shell host exactly the same bytes.
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// Writes need the key when one is configured. Absence means local (D21) — on a developer's machine
+// the OS account is the boundary and demanding a token would be ceremony. Set, it gates every POST
+// under /api; reads stay open because the UI is read-only by design (D31) and this deployment shape
+// is a trusted network's.
+var serviceKey = Environment.GetEnvironmentVariable("DAORIS_SERVICE_KEY");
+if (!string.IsNullOrWhiteSpace(serviceKey))
+{
+    app.Use(async (context, next) =>
+    {
+        var isWrite = HttpMethods.IsPost(context.Request.Method)
+                      && context.Request.Path.StartsWithSegments("/api");
+        if (isWrite && !PresentsKey(context.Request.Headers.Authorization.ToString(), serviceKey))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            // Through the configured options, not the raw context — the raw metadata skips the
+            // camelCase policy and answers `Error` where every endpoint answers `error`.
+            await context.Response.WriteAsJsonAsync(
+                new ErrorResponse("this write needs the service key — send DAORIS_SERVICE_KEY as a bearer token"));
+            return;
+        }
+
+        await next();
+    });
+}
 
 app.MapGet("/api/status", (ComposedService s) => new StatusResponse(
     Semantic: s.SemanticEnabled,
@@ -142,23 +174,57 @@ app.MapGet("/api/convergence", async (
 // never pushed into a sibling's tree.
 app.MapGet("/api/quests", async (
     ComposedService s, string? repository, bool? includeClosed, CancellationToken ct) =>
-    (await s.Quests.ListAsync(repository, includeClosed ?? false, ct)).Select(q => new QuestResponse(
-        q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated)));
+    (await s.Quests.ListAsync(repository, includeClosed ?? false, ct)).Select(ToQuest));
 
-// Where `daoris connect` lands. The one endpoint that accepts anything, and it accepts a repository's
-// description of ITSELF — which is the only thing a repository is authoritative about.
-app.MapPost("/api/registry", (ComposedService s, RegisterRequest body) =>
+// Publish and respond go through the same exchange the MCP host uses, so the two doors cannot drift
+// on who may be addressed or what declining requires. This pair is what makes a REMOTE deployment a
+// transfer of work rather than a read-only mirror — and it needs no model at all (D24).
+app.MapPost("/api/quests", async (ComposedService s, PublishQuestRequest body, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(body.From) || string.IsNullOrWhiteSpace(body.To)
+        || string.IsNullOrWhiteSpace(body.Title) || string.IsNullOrWhiteSpace(body.Body))
+    {
+        return Results.BadRequest(new ErrorResponse("from, to, title and body are all required"));
+    }
+
+    var outcome = await s.Exchange.PublishAsync(
+        body.From, body.To, body.Title, body.Body, DateTimeOffset.UtcNow, ct);
+
+    return outcome.Refusal == QuestPublishRefusal.None
+        ? Results.Ok(new QuestActionResponse(ToQuest(outcome.Quest!), outcome.Message))
+        : Results.BadRequest(new ErrorResponse(outcome.Message));
+});
+
+app.MapPost("/api/quests/{id}/respond", async (
+    ComposedService s, string id, RespondQuestRequest body, CancellationToken ct) =>
+{
+    var outcome = await s.Exchange.RespondAsync(
+        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct);
+
+    return outcome.Refusal switch
+    {
+        QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(ToQuest(outcome.Quest!), outcome.Message)),
+        QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+    };
+});
+
+// Where `daoris connect` lands. It accepts a repository's description of ITSELF — the only thing a
+// repository is authoritative about — and persists it, because for a remote service the pushed
+// registrations ARE the family: one that forgot them on restart would drop every connected
+// repository off the map without anyone being told.
+app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(body.Repository)) return Results.BadRequest(new ErrorResponse("repository is required"));
 
-    s.Service.Register(new Registration(
+    await s.Service.RegisterAsync(new Registration(
         body.Repository,
         Adopted: true,
         body.Domain?.Summary,
         body.Domain?.Owns ?? [],
         body.Domain?.Accepts ?? [],
         body.Packs ?? [],
-        Entries: 0));
+        Entries: 0), DateTimeOffset.UtcNow, ct);
 
     return Results.Ok(new RegisteredResponse(body.Repository, DateTimeOffset.UtcNow));
 });
@@ -191,6 +257,19 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
         "The same lesson in different words — the case no text comparison finds. Read both: what they "
         + "share may be canonical, and what differs is usually each repository's own and must stay local.",
 };
+
+static QuestResponse ToQuest(Quest q) => new(
+    q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated);
+
+// Fixed-time, so the comparison itself cannot leak how much of a guessed key matched.
+static bool PresentsKey(string header, string key)
+{
+    const string scheme = "Bearer ";
+    if (!header.StartsWith(scheme, StringComparison.Ordinal)) return false;
+    var presented = Encoding.UTF8.GetBytes(header[scheme.Length..].Trim());
+    var expected = Encoding.UTF8.GetBytes(key);
+    return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(presented, expected);
+}
 
 static IReadOnlySet<EntryKind>? ParseKinds(string? value)
 {
@@ -234,6 +313,9 @@ public sealed record ConvergenceResponse(
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
     string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated);
+public sealed record PublishQuestRequest(string From, string To, string Title, string Body);
+public sealed record RespondQuestRequest(string? Action, string? Reason);
+public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
 public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
 public sealed record RegisterRequest(
@@ -250,6 +332,9 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(EntryResponse))]
 [JsonSerializable(typeof(IEnumerable<ConvergenceResponse>))]
 [JsonSerializable(typeof(IEnumerable<QuestResponse>))]
+[JsonSerializable(typeof(PublishQuestRequest))]
+[JsonSerializable(typeof(RespondQuestRequest))]
+[JsonSerializable(typeof(QuestActionResponse))]
 [JsonSerializable(typeof(RefreshResponse))]
 [JsonSerializable(typeof(RegisterRequest))]
 [JsonSerializable(typeof(RegisteredResponse))]

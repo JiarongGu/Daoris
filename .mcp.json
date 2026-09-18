@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "daoris-knowledge": {
+      "command": "dotnet",
+      "args": ["run", "--project", "src/Daoris.Service/Daoris.Service.Mcp"]
+    }
+  }
+}

@@ -14,7 +14,11 @@ using ModelContextProtocol.Server;
 //
 // Local-first, and local means local: it reads repositories on this machine, writes one SQLite file
 // under the user's profile, and opens no socket. Nothing here needs a URL, a key or an account —
-// that is the shared mode, and it does not exist yet.
+// that is the shared mode, and it is the HTTP host's job, not this one's.
+//
+// This process is spawned by its client and lives for the session; the DATABASE is what persists.
+// Every session in every repository on this machine spawns over the same file, which is how a quest
+// published in one repository's session is waiting when another repository's session starts.
 //
 //   DAORIS_KNOWLEDGE_ROOT  where the repositories are      (default: the parent of this workspace)
 //   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: ~/.daoris/knowledge.db)
@@ -70,6 +74,7 @@ if (!string.IsNullOrWhiteSpace(serviceOptions.EmbedModel))
 var composed = await ServiceFactory.CreateAsync(serviceOptions, embedder);
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
+builder.Services.AddSingleton(composed.Exchange);
 
 builder.Services
     .AddMcpServer(options => options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" })

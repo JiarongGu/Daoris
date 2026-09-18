@@ -23,7 +23,10 @@ public sealed class KnowledgeService(
     Lyntai.Memory.IVectorStore? vectors = null,
     // Last and optional: a service composed without one still searches and still finds convergence —
     // it simply cannot say who is out there, and reports an empty family rather than refusing to start.
-    Registry? registry = null)
+    Registry? registry = null,
+    // Where pushed registrations persist. Optional for the same reason as the registry; without it a
+    // registration lives only as long as the process, which is fine for a test and wrong for a service.
+    RegistrationStore? registrations = null)
 {
     private readonly KnowledgeIndex _index = new(store, disclosure);
 
@@ -104,8 +107,22 @@ public sealed class KnowledgeService(
         return registry?.Read(counts) ?? [];
     }
 
-    /// <summary>Record what a repository said about itself, when it told us rather than we found it.</summary>
-    public void Register(Registration registration) => registry?.Register(registration);
+    /// <summary>
+    /// Record what a repository said about itself, when it told us rather than we found it.
+    /// </summary>
+    /// <remarks>
+    /// Persisted before it is served: a pushed registration is the only registration a remote service
+    /// has, and one that evaporates on restart looks exactly like a repository that never connected.
+    /// </remarks>
+    public async Task RegisterAsync(Registration registration, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (registrations is not null)
+        {
+            await registrations.UpsertAsync(registration, now, ct).ConfigureAwait(false);
+        }
+
+        registry?.Register(registration);
+    }
 
     /// <summary>Re-read every repository and rebuild the index.</summary>
     public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)
