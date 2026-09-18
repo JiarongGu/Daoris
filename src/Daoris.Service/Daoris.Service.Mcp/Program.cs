@@ -99,7 +99,20 @@ static string DefaultRepositoryRoot()
         directory = directory.Parent;
     }
 
-    return directory?.Parent?.FullName ?? Directory.GetCurrentDirectory();
+    if (directory?.Parent?.FullName is { } aboveWorkspace) return aboveWorkspace;
+
+    // A PUBLISHED binary has no workspace above it, and the working directory here is whatever
+    // repository the client spawned this from — whose subdirectories are not repositories. Falling
+    // back silently would index the wrong tree without a word (the ghost shape, again), so the
+    // fallback says its name. stderr, because stdout is the protocol.
+    var fallback = Directory.GetCurrentDirectory();
+    // This default is computed eagerly even when the environment decides; only warn when it will be used.
+    if (Environment.GetEnvironmentVariable(ServiceOptions.RootVariable) is not null) return fallback;
+    Console.Error.WriteLine(
+        $"daoris-knowledge: no workspace manifest above the binary and {ServiceOptions.RootVariable} is not set — "
+        + $"falling back to '{fallback}', which is probably not the family. Set {ServiceOptions.RootVariable} "
+        + "in the MCP server entry (the install script prints a ready snippet).");
+    return fallback;
 }
 
 static string DefaultDatabasePath() => Path.Combine(

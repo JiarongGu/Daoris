@@ -7,6 +7,9 @@ node_modules/
 # Scratch: fixtures, probes, dumps. Never OS temp (see the doctrine's no-tmp rule).
 _fixtures/
 
+# Published binaries (tools/service-publish.mjs, and the release workflow's staging dir).
+publish/
+
 *.log
 .DS_Store
 

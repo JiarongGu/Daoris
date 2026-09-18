@@ -32,7 +32,18 @@ if (OperatingSystem.IsWindows())
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
 
-var builder = WebApplication.CreateBuilder(args);
+// The bundle travels beside the executable. In development the SDK serves wwwroot from the project
+// directory — the default content root — but a PUBLISHED host is launched from anywhere, so when the
+// working directory has no bundle and the binary's directory does, the binary's wins. Without this
+// the published exe answers every API call and serves a 404 for the page, which reads as "the app is
+// broken" rather than "the cwd was wrong".
+var contentRoot = Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"))
+    ? Directory.GetCurrentDirectory()
+    : Directory.Exists(Path.Combine(AppContext.BaseDirectory, "wwwroot"))
+        ? AppContext.BaseDirectory
+        : Directory.GetCurrentDirectory();
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = contentRoot });
 
 // The documented address, made true by construction: with nothing configured, Kestrel binds its own
 // default and the README's port is a lie. An explicit ASPNETCORE_URLS still wins.
