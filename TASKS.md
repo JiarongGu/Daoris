@@ -10,8 +10,8 @@ the family, kept from drifting, and improved from wherever the improvement was f
 
 ## State
 
-All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 120 CLI tests, 81 service,
-57 devkit, 52/52 release rehearsal (three runs 2026-09-18), 8/8 devkit gates. Canon: 8 core rules,
+All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 121 CLI tests, 81 service,
+57 devkit, 52/52 release rehearsal (eight runs 2026-09-18), 8/8 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is **23,988 of 24,000 bytes** — 12 bytes
 of headroom, so the next canon addition fails the gate even as an index row, and the answer is
 splitting, not raising (D28).
@@ -35,8 +35,8 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken
   precondition rather than a flaky assertion. Both times it ran straight after canon files were edited
   and synced. **Every run now writes a transcript to `_fixtures/rehearsal-logs/` by construction**
-  (2026-09-18), so the next failure is captured without anyone remembering to. Three runs that day —
-  two of them straight after a canon edit and sync, the suspected trigger — all passed 52/52. Stays
+  (2026-09-18), so the next failure is captured without anyone remembering to. Eight runs that day —
+  several straight after canon edits and syncs, the suspected trigger — all passed 52/52. Stays
   open until a captured failure explains it. Do not tag a release while this is open.
 
 - [ ] **LYN1 — the Lyntai pin, and the one-sweep migration.** `Daoris.Service` deliberately pins the
@@ -49,10 +49,6 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 - [ ] **SVC2 — remote hardening, deferred until a deployment leaves a trusted network.** Per-person
   expiring keys and OIDC per the service design §5, and an MCP relay from the local stdio host to a
   remote service when a second machine actually exists. D36 records why neither is built now.
-
-- [ ] **TOOL5 — `status --json` for the agent operator.** Under D37 an agent drives setup end to end;
-  `analyze --json` already covers adoption and `check` speaks in exit codes, so `status` is the one
-  surface an agent still parses as prose. Low urgency; do it with the next CLI change.
 
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until

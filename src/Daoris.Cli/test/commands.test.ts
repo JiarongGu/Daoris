@@ -171,6 +171,41 @@ test('status prints why the canon changed, for the versions being skipped', () =
   repoFx.cleanup();
 });
 
+/**
+ * The agent operator's surface (D37): status as facts rather than prose. The JSON carries the same
+ * numbers the text prints, computed once and rendered twice — two paths that compute separately are
+ * two paths that can disagree about whether an update exists.
+ */
+test('status --json emits the same facts as the text, machine-readable', () => {
+  const canonFx = canonFixture();
+  const repoFx = makeFixture('cmd-status-json');
+  repoFx.write('daoris.json', '{"source":"s","packs":[]}');
+  repoFx.write('.claude/rules/house-style.md', '# local\n');
+  repoFx.write(
+    'daoris.lock',
+    JSON.stringify({ version: 1, canonVersion: '0.0.9', source: 's', entries: [] }),
+  );
+  process.env.DAORIS_CANON = canonFx.root;
+
+  const out: string[] = [];
+  assert.equal(
+    commandStatus({ root: repoFx.root, argv: ['--json'], write: (s: string) => out.push(s), packageRoot: '' }),
+    0,
+  );
+  const report = JSON.parse(out.join('\n'));
+  assert.equal(report.synced, true);
+  assert.equal(report.canonVersion, '0.0.9');
+  assert.deepEqual(report.packs, ['core']);
+  assert.deepEqual(report.local, ['rules/house-style.md']);
+  assert.equal(report.update.available, '0.1.0');
+  assert.equal(report.update.versionOnly, false);
+  assert.ok(Array.isArray(report.drifted));
+
+  delete process.env.DAORIS_CANON;
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
 test('status reports packs, drift, and local files without failing', () => {
   const canonFx = canonFixture();
   const repoFx = makeFixture('cmd-status');

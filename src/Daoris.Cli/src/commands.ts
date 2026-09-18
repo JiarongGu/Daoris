@@ -85,55 +85,105 @@ export function commandInit(
 }
 
 export function commandStatus(
-  { root, write, packageRoot }: Pick<CommandArgs, 'root' | 'write' | 'packageRoot'>,
+  { root, argv = [], write, packageRoot }:
+    Pick<CommandArgs, 'root' | 'write' | 'packageRoot'> & { argv?: CommandArgs['argv'] },
 ): ExitCode {
   const manifest = readManifest(root);
   const lock = readLock(root);
   const canonRoot = resolveCanonRoot(packageRoot);
+
+  // The facts are computed ONCE, then rendered as JSON or as text. Two paths that compute
+  // separately are two paths that can disagree about whether an update exists — the same reasoning
+  // that gave the service one QuestExchange for its two hosts.
+  const inspection = lock ? inspect({ root, manifest, lock }) : null;
+  const local = localDocs(root, manifest.target, manifest.harnessDescriptor);
+  const canonAvailable = existsSync(canonRoot);
+
+  let update: {
+    available: string;
+    locked: string;
+    changed: string[];
+    added: string[];
+    retired: string[];
+    versionOnly: boolean;
+  } | null = null;
+  let notes: ReturnType<typeof notesBetween> = [];
+
+  // status may reach the canon; `check` deliberately may not (D8), which is why
+  // "a newer canon exists" is reported here and never gates a build.
+  if (canonAvailable && lock) {
+    const canon = readCanon(canonRoot);
+    if (canon.version !== lock.canonVersion) {
+      // Naming what moved is the difference between a prompt to act and a
+      // prompt to investigate. All of it comes from the lock, so it stays offline.
+      const changes = planChanges({ root, manifest, canon, lock });
+      update = {
+        available: canon.version,
+        locked: lock.canonVersion,
+        changed: changes.changed,
+        added: changes.added,
+        retired: changes.retired,
+        versionOnly: !changes.changed.length && !changes.added.length && !changes.retired.length,
+      };
+      // Which files moved comes from the lock; whether it MATTERS is a sentence
+      // only the author of the change can write, so the canon carries it.
+      notes = notesBetween(canonRoot, lock.canonVersion, canon.version);
+    }
+  }
+
+  // For the agent operator (D37): the same facts, in a shape it can act on rather than parse.
+  if (argv.includes('--json')) {
+    write(JSON.stringify({
+      harness: manifest.harnessDescriptor.name,
+      source: manifest.source,
+      packs: ['core', ...manifest.packs],
+      target: manifest.target,
+      synced: lock !== null,
+      canonVersion: lock?.canonVersion ?? null,
+      files: lock?.entries.length ?? 0,
+      coreBytes: inspection?.coreBytes ?? null,
+      coreBudgetBytes: manifest.coreBudgetBytes,
+      drifted: inspection?.drifted ?? [],
+      missing: inspection?.missing ?? [],
+      stalePacks: inspection?.stalePacks ?? [],
+      local,
+      canonSourceAvailable: canonAvailable,
+      update: update ? { ...update, notes } : null,
+    }, null, 2));
+    return 0;
+  }
 
   write(`  harness       ${manifest.harnessDescriptor.name}`);
   write(`  source        ${manifest.source}`);
   write(`  packs         ${['core', ...manifest.packs].join(', ')}`);
   write(`  canon         ${lock ? `${lock.canonVersion} (${lock.entries.length} files)` : 'never synced'}`);
 
-  if (lock) {
-    const report = inspect({ root, manifest, lock });
-    write(`  core budget   ${report.coreBytes} / ${manifest.coreBudgetBytes} bytes`);
-    if (report.drifted.length) write(`  drifted       ${report.drifted.join(', ')}`);
-    if (report.missing.length) write(`  missing       ${report.missing.join(', ')}`);
-    if (report.stalePacks.length) write(`  stale packs   ${report.stalePacks.join(', ')}`);
+  if (inspection) {
+    write(`  core budget   ${inspection.coreBytes} / ${manifest.coreBudgetBytes} bytes`);
+    if (inspection.drifted.length) write(`  drifted       ${inspection.drifted.join(', ')}`);
+    if (inspection.missing.length) write(`  missing       ${inspection.missing.join(', ')}`);
+    if (inspection.stalePacks.length) write(`  stale packs   ${inspection.stalePacks.join(', ')}`);
   }
 
-  const local = localDocs(root, manifest.target, manifest.harnessDescriptor);
   if (local.length) write(`  local         ${local.join(', ')}`);
 
-  // status may reach the canon; `check` deliberately may not (D8), which is why
-  // "a newer canon exists" is reported here and never gates a build.
-  if (!existsSync(canonRoot)) {
+  if (!canonAvailable) {
     write(`  canon source  unavailable at '${canonRoot}' (check still works)`);
-  } else if (lock) {
-    const canon = readCanon(canonRoot);
-    if (canon.version !== lock.canonVersion) {
-      write(
-        `  update        canon ${canon.version} available (lock has ${lock.canonVersion}) — run 'daoris sync'`,
-      );
-      // Naming what moved is the difference between a prompt to act and a
-      // prompt to investigate. All of it comes from the lock, so it stays offline.
-      const changes = planChanges({ root, manifest, canon, lock });
-      for (const target of changes.changed) write(`                  changed  ${target}`);
-      for (const target of changes.added) write(`                  new      ${target}`);
-      for (const target of changes.retired) write(`                  retired  ${target}`);
-      if (!changes.changed.length && !changes.added.length && !changes.retired.length) {
-        write('                  (version only — no document changed)');
-      }
+  } else if (update) {
+    write(
+      `  update        canon ${update.available} available (lock has ${update.locked}) — run 'daoris sync'`,
+    );
+    for (const target of update.changed) write(`                  changed  ${target}`);
+    for (const target of update.added) write(`                  new      ${target}`);
+    for (const target of update.retired) write(`                  retired  ${target}`);
+    if (update.versionOnly) {
+      write('                  (version only — no document changed)');
+    }
 
-      // Which files moved comes from the lock; whether it MATTERS is a sentence
-      // only the author of the change can write, so the canon carries it.
-      for (const note of notesBetween(canonRoot, lock.canonVersion, canon.version)) {
-        write('');
-        write(`  why ${note.version}`);
-        for (const line of note.body.split('\n')) write(line ? `    ${line}` : '');
-      }
+    for (const note of notes) {
+      write('');
+      write(`  why ${note.version}`);
+      for (const line of note.body.split('\n')) write(line ? `    ${line}` : '');
     }
   }
   return 0;

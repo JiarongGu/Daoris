@@ -887,6 +887,16 @@ once gates are green, and the human checkpoint is the review of the landed histo
 boundary (push, publish, release, history rewrites, cross-repository writes, destructive actions).
 See D37's amendment; the sentence above that made the commit itself the checkpoint is superseded.
 
+## TOOL5 — `status --json`, the agent operator's last prose surface (2026-09-18)
+
+✅ done 2026-09-18 — under D37 an agent drives setup end to end; `analyze --json` already covered
+adoption and `check` speaks in exit codes, which left `status` as the one surface an agent still
+parsed as prose. The facts — packs, sync state, budget, drift, locals, and any pending canon update
+with its changed/new/retired lists and changelog notes — are now **computed once and rendered twice**,
+as JSON or as the unchanged text, because two paths that compute separately are two paths that can
+disagree about whether an update exists (the same reasoning that gave the service one `QuestExchange`
+for its two hosts). 121 CLI tests; the human output is byte-identical to before.
+
 ## REH1, instrumented — capture by construction (2026-09-18; the item stays open)
 
 Partial, deliberately: the flake is not explained, so `REH1` remains in the backlog. What closed is

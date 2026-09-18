@@ -119,7 +119,8 @@ The first version: doctrine that installs, is checked, and flows back.
 - **`status` names what a pending update would change** — `changed` / `new` / `retired` per file, instead
   of only reporting that a newer canon exists. Computed from the lock, so it stays offline; the
   provenance header is excluded, so a pure version bump reports "version only" rather than listing every
-  file and training people to skip the list.
+  file and training people to skip the list. `--json` renders the same facts machine-readable for the
+  agent operator, computed once with the text so the two views cannot disagree.
 - **…and why it changed.** The canon carries its own `CHANGELOG.md`, and `status` prints the entries for
   exactly the versions a repository is skipping. Which files moved is computable; whether it *matters* is
   a sentence only the author of the change can write, so the canon ships it alongside the documents.

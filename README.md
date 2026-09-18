@@ -50,7 +50,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `check` | Drift, staleness, index freshness, core budget. **Offline.** Exit 1 on any failure |
 | `upstream <file>` | Promotes a locally-improved canonical file back into the canon |
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
-| `status` | Human summary: packs, versions, drift, local files, and what a pending update would change |
+| `status` | Packs, versions, drift, local files, and what a pending update would change; `--json` for an agent |
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
 | `connect` | Registers this repo with a knowledge service — what it owns, what it accepts. **The only command that uses the network**, and it is opt-in |
 

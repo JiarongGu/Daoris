@@ -24,7 +24,8 @@ const USAGE = `daoris <command> [options]
   check                drift, staleness, index freshness, core budget (offline)
   upstream <file>      promote a locally-edited canonical file back to the canon
   index                regenerate RULES_INDEX.md from what is on disk
-  status               human summary of packs, drift, and local files
+  status               summary of packs, drift, local files, and any pending
+                       canon update; --json for an agent to act on
   doctor               report local documents that look like canonical ones
                        under a different name (advisory; never fails)
   connect              register this repo with a knowledge service: what it owns
