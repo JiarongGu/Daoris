@@ -17,6 +17,12 @@ Five views, three halves of one job — landing on management (D40):
 | **Convergence** | where two repositories reached the same conclusion independently — the knowledge half's lead view |
 | **Search** | what the family has already learned about X |
 
+**The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
+(sidebar, page headers, one primary action per view), the token system, the drawer as the single
+detail-and-form surface, toasts carrying the service's sentences verbatim, and a status palette that
+was **computed, not tasted** — both themes pass all six checks of the visualization validator, and a
+status pill never appears without its text label.
+
 ## The landing is management; convergence leads the knowledge half (D30, D40)
 
 The platform lands on **Overview**, because its first job is the person's first question — *is

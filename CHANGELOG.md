@@ -167,6 +167,12 @@ The first version: doctrine that installs, is checked, and flows back.
   steps proposed as text), then **Convergence** — the knowledge half's lead view — and **Search**.
   Doctrine is never editable from the browser: where a rule should change, the UI proposes the command
   to run in the repository that owns the file.
+- **A designed console, not a styled document.** A sidebar shell with the global state stated once at
+  its foot, a page header per view with its one primary action, a right drawer as the single
+  detail-and-form surface (a knowledge entry, a quest's detail and its actions, the compose form),
+  toasts carrying every outcome verbatim, designed empty states, and static skeletons. The quest-state
+  palette is computed rather than tasted: both themes pass all six checks of a color-vision validator,
+  and a status never appears without its text label.
 - **A refresh retires what the disk no longer has.** A repository renamed or removed used to stay in
   the index forever, served as though it were alive; a refresh now retires any repository the scan did
   not see — guarded on the scan having seen anything at all, so a mis-set root cannot wipe a good

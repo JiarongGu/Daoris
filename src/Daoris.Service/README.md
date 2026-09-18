@@ -106,7 +106,7 @@ rather than guessing.
 | `knowledge_get` | The full text of one entry |
 | `knowledge_repositories` | What is searchable, and how much each repository contributes |
 | `knowledge_convergence` | Which repositories learned the same lesson independently? |
-| `knowledge_refresh` | Re-read every repository from disk |
+| `knowledge_refresh` | Re-read every repository from disk — and retire what is no longer there: a repository renamed or removed leaves the index instead of being served forever (guarded: a scan that saw nothing retires nothing, because that is a mis-set root, not an emptied family) |
 
 **Remote — transfer of request and task, opt-in.** The HTTP host is the deployable half. It runs with
 **no model at all** (D24) and still carries what a remote deployment exists to carry: registrations

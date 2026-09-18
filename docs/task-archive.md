@@ -941,7 +941,24 @@ retired what it did not. Fixed red-first (`RefreshTests`), guarded against the m
 proven on the real store: 16 → 14 repositories, only what is on disk. Both fixes opened
 `docs/FIX-LOG.md`, which the service now indexes like every sibling's.
 
-## REH1, instrumented — capture by construction (2026-09-18; the item stays open)
+## D41 — the platform's design language, built and reviewed (2026-09-19)
+
+✅ done 2026-09-19 — the owner's direction sharpened: "design the UI/UX properly, because this is used
+by a human." Designed before built (`docs/2026-09-19-platform-ux.md`), then shipped: a **console
+shell** — sidebar with wordmark (Daoris · 道衍), icon navigation with the outstanding badge, global
+state (tier, index size, refresh) stated once at its foot — a **page header** per view with its one
+primary action, a right **drawer** as the single detail-and-form surface (knowledge entry, quest
+detail with its actions, the compose form), **toasts** carrying every outcome and refusal verbatim,
+designed **empty states**, static skeletons, and hold-at-reduced-opacity refetches. A quest card is
+now something you read; the acting moved to the drawer, where there is room to act deliberately.
+
+**The status palette was computed, not tasted.** The first candidate failed the visualization
+validator exactly where taste would not have noticed — red↔green at deutan ΔE 3.9, and the bronze
+accent below the chroma floor inside a status set. Four iterations later both themes pass all six
+checks (light: worst deutan 13.3, normal 21.0; dark: 9.2 / 17.5), the red/green pair separated by
+lightness as well as hue, the accent kept as interactive identity and never a status, and every pill
+carrying its text label. Reviewed in Chrome over the real family, every view, zero console messages.
+No new dependencies: a dozen hand-drawn stroke icons and one stylesheet.
 
 Partial, deliberately: the flake is not explained, so `REH1` remains in the backlog. What closed is
 its precondition — "capture the log before re-running" no longer depends on anyone remembering.
