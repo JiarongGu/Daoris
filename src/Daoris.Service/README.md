@@ -86,7 +86,19 @@ to write — with an absolute `--project` path:
 ```
 
 `dotnet run` re-checks the build on each session start; `dotnet publish -c Release` the Mcp project
-and point `command` at the published executable to skip that.
+and point `command` at the published executable to skip that — **and then set the root explicitly**:
+
+```json
+{ "mcpServers": { "daoris-knowledge": {
+    "command": "<publish-dir>/daoris-knowledge",
+    "env": { "DAORIS_KNOWLEDGE_ROOT": "<the folder holding the repositories>" } } } }
+```
+
+The host finds the family by walking up from its own binary to this workspace's manifest. Run from a
+source checkout that lands on the right folder wherever the client spawned it; a binary published
+*outside* the workspace has nothing above it to find and would fall back to the client's working
+directory — a directory whose subfolders are not repositories — so the published shape names its root
+rather than guessing.
 
 | Tool | Answers |
 |---|---|

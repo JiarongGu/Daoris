@@ -50,6 +50,12 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   expiring keys and OIDC per the service design §5, and an MCP relay from the local stdio host to a
   remote service when a second machine actually exists. D36 records why neither is built now.
 
+- [ ] **WEB1 — a quests view in the web UI.** "What has been asked of whom, and is anything sitting"
+  is the question the quest system exists to answer (D32), and under D37 it is part of what the person
+  reviews — yet today it is answerable only through `quest_list` or `GET /api/quests`, never in the
+  page a person actually opens. Read-only like the rest of the UI (D31); weigh its place against
+  D30's convergence-first layout when picking it up.
+
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until
   a second repository needs the same thing.
