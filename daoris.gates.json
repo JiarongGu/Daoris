@@ -4,7 +4,8 @@
   "gates": [
     { "name": "cli", "run": "npm run verify" },
     { "name": "service", "run": "dotnet test src/Daoris.Service" },
-    { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" }
+    { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },
+    { "name": "web", "run": "npm run test:web" }
   ],
 
   "sensitive": {

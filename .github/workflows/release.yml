@@ -150,6 +150,17 @@ jobs:
       - name: Family rehearsal
         run: npm run rehearse:family
 
+      # The platform's proof (D42): Playwright drives the shipped bundle over the example family —
+      # members visible, a quest through its whole life in the drawers, the verbatim refusal, 中文.
+      - name: Web dependencies
+        run: npm --prefix src/Daoris.Web ci
+
+      - name: Playwright browser
+        run: npm --prefix src/Daoris.Web exec -- playwright install --with-deps chromium
+
+      - name: Web end-to-end
+        run: npm run test:web
+
       # Packed from the package directory, where `prepack` stages the canon, the
       # licence and the readme in from the workspace root.
       - name: Pack
