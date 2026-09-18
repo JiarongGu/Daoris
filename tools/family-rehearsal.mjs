@@ -15,7 +15,7 @@
  * Exit 0 = the router works. Exit 1 = it does not; the transcript names the first thing that broke.
  */
 import { execSync, spawn } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -26,6 +26,18 @@ const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
 const httpProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http');
 const httpDll = join(httpProject, 'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
+const family = join(scratch, 'family');
+
+/** Recursive copy. Deliberately not fs.cpSync — it has crashed on this platform. */
+function copyTree(from, to) {
+  mkdirSync(to, { recursive: true });
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    const source = join(from, entry.name);
+    const target = join(to, entry.name);
+    if (entry.isDirectory()) copyTree(source, target);
+    else copyFileSync(source, target);
+  }
+}
 
 const BASE = 'http://localhost:5199';
 const KEY = 'family-rehearsal-key';
@@ -115,7 +127,7 @@ async function startHost() {
     stdio: 'ignore',
     env: {
       ...process.env,
-      DAORIS_KNOWLEDGE_ROOT: examplesRoot,
+      DAORIS_KNOWLEDGE_ROOT: family,
       DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
       DAORIS_SERVICE_KEY: KEY,
       ASPNETCORE_URLS: BASE,
@@ -166,6 +178,10 @@ for (const name of EXAMPLES) {
 section('2. The service, over the example family');
 rmSync(scratch, { recursive: true, force: true });
 mkdirSync(scratch, { recursive: true });
+
+// The service runs over a COPY of the tracked examples: a newcomer is born mid-rehearsal (D44), and
+// nothing may dirty the tracked tree.
+for (const name of EXAMPLES) copyTree(join(examplesRoot, name), join(family, name));
 
 const build = run(`dotnet build "${httpProject}"`, repoRoot);
 check('the HTTP host builds', build.code === 0, build.out.split('\n').slice(-4).join('\n'));
@@ -261,9 +277,70 @@ check(
   found.text.slice(0, 300),
 );
 
-// -------------------------------------------------- 6. nothing is lost
+// -------------------------------------------------- 6. a newcomer joins
 
-section('6. Nothing is lost between sessions');
+section('6. A newcomer is born and joins (D44)');
+const newcomer = join(family, 'newcomer');
+mkdirSync(newcomer, { recursive: true });
+writeFileSync(join(newcomer, 'README.md'), '# newcomer\n\nBorn during the rehearsal.\n');
+
+const init = run(`node "${cliBin}" init`, newcomer);
+check('newcomer: init writes a manifest', init.code === 0 && existsSync(join(newcomer, 'daoris.json')), init.out);
+
+// The declaration is the joining repository's own act; the rehearsal plays its agent.
+const manifestPath = join(newcomer, 'daoris.json');
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+manifest.domain = {
+  summary: 'Born during the rehearsal.',
+  owns: ['its own birth'],
+  accepts: ['a first quest'],
+};
+writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+const newcomerSync = run(`node "${cliBin}" sync`, newcomer);
+check('newcomer: sync materializes the canon', newcomerSync.code === 0, newcomerSync.out);
+const newcomerCheck = run(`node "${cliBin}" check`, newcomer);
+check('newcomer: check is clean on first contact', newcomerCheck.code === 0, newcomerCheck.out);
+const newcomerConnect = run(`node "${cliBin}" connect`, newcomer, {
+  DAORIS_SERVICE_URL: BASE,
+  DAORIS_SERVICE_KEY: KEY,
+});
+check('newcomer: connect exits 0', newcomerConnect.code === 0, newcomerConnect.out);
+
+const registryGrown = await api('GET', '/api/registry');
+check(
+  'the registry now knows three members',
+  (registryGrown.json ?? []).filter((r) => r.registered).length === 3,
+  registryGrown.text,
+);
+
+const firstQuest = await api('POST', '/api/quests', {
+  key: KEY,
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'A first quest for the newcomer',
+    body: 'Joining means being askable — prove it.',
+  },
+});
+check(
+  'a quest reaches the newcomer at once',
+  firstQuest.status === 200 && firstQuest.json?.quest?.status === 'Open',
+  firstQuest.text,
+);
+const firstAnswer = await api('POST', `/api/quests/${firstQuest.json?.quest?.id ?? ''}/respond`, {
+  key: KEY,
+  body: { action: 'done', reason: 'Answered on day one.' },
+});
+check(
+  '…and the newcomer answers it',
+  firstAnswer.status === 200 && firstAnswer.json?.quest?.status === 'Done',
+  firstAnswer.text,
+);
+
+// -------------------------------------------------- 7. nothing is lost
+
+section('7. Nothing is lost between sessions');
 stopHost();
 check('the host restarts over the same store', await startHost());
 
@@ -275,14 +352,14 @@ check(
 );
 const registryAfter = await api('GET', '/api/registry');
 check(
-  'the registry still knows both',
-  (registryAfter.json ?? []).filter((r) => r.registered).length === 2,
+  'the registry still knows all three — the newcomer survives the restart too',
+  (registryAfter.json ?? []).filter((r) => r.registered).length === 3,
   registryAfter.text,
 );
 
-// -------------------------------------------------- 7. report
+// -------------------------------------------------- 8. report
 
-section('7. Result');
+section('8. Result');
 stopHost();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -292,8 +369,9 @@ if (failures) {
   console.log(`  Scratch left at _fixtures/family-rehearsal for inspection.`);
   process.exitCode = 1;
 } else {
-  console.log('  Two projects, one router: adopted, declared, connected; a quest published,');
-  console.log('  refused where it should be, taken, finished, and still there after a restart;');
-  console.log("  one project's knowledge answering the other's search.");
+  console.log('  Two projects, one router — and a third born mid-run: adopted, declared, connected;');
+  console.log('  a quest published, refused where it should be, taken, finished, and still there');
+  console.log("  after a restart; one project's knowledge answering the other's search; a newcomer");
+  console.log('  joining through the real CLI and answering its first quest on day one.');
   rmSync(scratch, { recursive: true, force: true });
 }

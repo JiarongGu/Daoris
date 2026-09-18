@@ -1,4 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
+import { execSync } from 'node:child_process';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
 
 // The platform, driven over the example family (D39, D42) — the shipped bundle, the real host, the
 // real QuestExchange. One store per run; the tests tell one story in order.
@@ -72,6 +78,43 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
   await page.getByRole('button', { name: 'publish quest' }).click();
 
   await expect(page.getByText('a quest is work for someone else', { exact: false }).first()).toBeVisible();
+});
+
+test('a project created mid-run joins, and the platform shows it (D44)', async ({ page }) => {
+  // The lifecycle the next real family needs proven: a project that did not exist when the host
+  // started is born, joins through the REAL CLI — init, declare, sync, check — and becomes a member
+  // in the UI, quest-addressable at once. The host roots at a scratch family, so nothing tracked is
+  // touched.
+  const newcomer = join(repoRoot, '_fixtures', 'web-e2e', 'family', 'newcomer');
+  const cli = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
+  mkdirSync(newcomer, { recursive: true });
+  writeFileSync(join(newcomer, 'README.md'), '# newcomer\n\nBorn during the test run.\n');
+  execSync(`node "${cli}" init`, { cwd: newcomer });
+  const manifestPath = join(newcomer, 'daoris.json');
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { domain: unknown };
+  manifest.domain = {
+    summary: 'Born during the test run.',
+    owns: ['its own birth'],
+    accepts: ['a first quest'],
+  };
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  execSync(`node "${cli}" sync`, { cwd: newcomer });
+  execSync(`node "${cli}" check`, { cwd: newcomer });
+
+  await page.goto('/');
+  await nav(page, 'Projects').click();
+  await expect(page.getByText('Born during the test run.')).toBeVisible();
+
+  await nav(page, 'Quests').click();
+  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByLabel('from', { exact: true }).click();
+  await page.getByRole('option', { name: 'game' }).click();
+  await page.getByLabel('to', { exact: true }).click();
+  await page.getByRole('option', { name: 'newcomer' }).click();
+  await page.getByLabel('what is wanted, in one line').fill('A first quest for the newcomer');
+  await page.getByLabel('why, and the evidence').fill('Joining means being askable — prove it.');
+  await page.getByRole('button', { name: 'publish quest' }).click();
+  await expect(page.getByText(/Published quest `#[0-9a-f]{6}` to `newcomer`/).first()).toBeVisible();
 });
 
 test('the console speaks 中文', async ({ page }) => {
