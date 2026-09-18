@@ -23,6 +23,24 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
             await store.ReplaceRepositoryAsync(group.Key, group.ToList(), ct).ConfigureAwait(false);
         }
 
+        // Retire what the source no longer has. Replace-what-you-saw covers every present repository
+        // and says nothing about the absent ones — which is exactly where the ghosts live: a
+        // repository renamed on disk was still being served weeks later, indistinguishable from a
+        // live project. Guarded on the scan having seen ANYTHING, because a scan that found nothing
+        // is a mis-set root far more often than a family that emptied, and "refresh wiped the index"
+        // is the wrong answer to a wrong path.
+        if (byRepository.Count > 0)
+        {
+            var seen = new HashSet<string>(byRepository.Select(g => g.Key), StringComparer.Ordinal);
+            var held = (await store.AllAsync(ct).ConfigureAwait(false))
+                .Select(e => e.Repository)
+                .Distinct(StringComparer.Ordinal);
+            foreach (var ghost in held.Where(repository => !seen.Contains(repository)))
+            {
+                await store.ReplaceRepositoryAsync(ghost, [], ct).ConfigureAwait(false);
+            }
+        }
+
         return new IndexReport(source.Name, byRepository.Count, permitted.Count, read.Count - permitted.Count);
     }
 }
