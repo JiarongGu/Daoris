@@ -106,6 +106,8 @@
   "quests.session.title": "session",
   "quests.session.moved": "moved {{ago}}",
   "quests.session.hint": "started by the driver, and observed rather than self-reported — the process runs on the driving machine; this is its record.",
+  "quests.session.stop": "stop session",
+  "quests.session.stopped": "session {{id}} is being stopped — the record will say the person ended it.",
 
   "sessionState.queued": "queued",
   "sessionState.starting": "starting",
@@ -130,6 +132,9 @@
   "projects.outside.body": "Membership is a repository's own act — Daoris never writes into a sibling, so nothing joins by being seen. These appear because the index can still read their tracked knowledge from this machine, which is why they carry entry counts: readable is not joined. Until one joins, nothing can be asked of it — a quest addressed there would sit in a queue nobody reads. Listed rather than hidden, because \"who cannot be asked yet\" is the same question as \"who can\".",
   "projects.outside.readable": "{{count}} entries indexed read-only",
   "projects.outside.join": "to join — run in that repository, by its own agent: daoris init → fill in `domain` (what it is, what it owns, what it accepts) → daoris sync → daoris check → daoris connect. the worked example is examples/ in the Daoris repository.",
+  "projects.driver.label": "driver",
+  "projects.driver.drive": "drive on this machine",
+  "projects.driver.hold": "hold",
 
   "convergence.title": "Convergence",
   "convergence.description": "Where two repositories reached the same conclusion independently — read them and decide. The knowledge half's lead view.",

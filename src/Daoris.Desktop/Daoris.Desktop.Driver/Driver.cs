@@ -29,8 +29,14 @@ public sealed record TickReport(
 /// the quest's state (<see cref="Observation"/>); the evidence is what git says landed. Nothing is
 /// taken from the session's word, because outside sessions have no word to give.</para>
 /// </remarks>
-public sealed class Driver(ServiceClient service, DriverConfig config, AdapterSet adapters, string home)
+public sealed class Driver(
+    ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
+    SessionProcesses? processes = null)
 {
+    // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
+    // what is actually running; per-instance when nobody passes one, which no test has to care about.
+    private readonly SessionProcesses _processes = processes ?? new SessionProcesses();
+
     /// <summary>One decision-and-execution round. Returns what happened, for whoever is watching.</summary>
     public async Task<TickReport> TickAsync(CancellationToken ct = default)
     {
@@ -107,6 +113,7 @@ public sealed class Driver(ServiceClient service, DriverConfig config, AdapterSe
 
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+            using var tracked = _processes.Track(sessionId, process);
             var capture = CaptureAsync(process, transcript, ct);
 
             await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
@@ -114,10 +121,14 @@ public sealed class Driver(ServiceClient service, DriverConfig config, AdapterSe
             var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
             await capture.ConfigureAwait(false);
 
+            // The person's stop outranks the observation: a killed session leaves the same signals as
+            // a crashed one, and only this flag knows whose decision the end was.
             var status = await service.QuestStatusAsync(quest.Id, ct).ConfigureAwait(false) ?? "Open";
-            var conclusion = exitCode is int code
-                ? Observation.Conclude(code, status)
-                : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
+            var conclusion = _processes.WasStopRequested(sessionId)
+                ? new SessionConclusion("stopped", "the person stopped it.")
+                : exitCode is int code
+                    ? Observation.Conclude(code, status)
+                    : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
             var evidence = await WorkingTree.CommitsSinceAsync(root, before, ct).ConfigureAwait(false);
             await service.AdvanceAsync(

@@ -18,10 +18,26 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
 {
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
+    private CancellationTokenSource _pause = new();
     private Task? _loop;
 
     /// <summary>Completes when the HTTP host answers (or provably will not) — what navigation waits on.</summary>
     public Task<bool> HostReady => _hostReady.Task;
+
+    /// <summary>The live processes, shared across ticks — how "stop that session" reaches its target.</summary>
+    public SessionProcesses Processes { get; } = new();
+
+    /// <summary>Where this loop reads the person's choices — what the control surface edits.</summary>
+    public string ConfigPath { get; } = DriverConfig.ResolvePath();
+
+    /// <summary>Look now rather than at the next poll — a control that just changed something should
+    /// not leave the person watching a countdown.</summary>
+    public void Nudge()
+    {
+        var paused = _pause;
+        _pause = new CancellationTokenSource();
+        paused.Cancel();
+    }
 
     public void Start()
     {
@@ -41,17 +57,15 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
             return;
         }
 
-        var configPath = Environment.GetEnvironmentVariable(DriverConfig.PathVariable)
-            ?? DriverConfig.DefaultPath;
-        var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+        var home = Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
         using var service = new ServiceClient(serviceUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
 
         while (!ct.IsCancellationRequested)
         {
-            var config = DriverConfig.Load(configPath);
+            var config = DriverConfig.Load(ConfigPath);
             try
             {
-                var report = await new Daoris.Driver.Driver(service, config, AdapterSet.Built(), home)
+                var report = await new Daoris.Driver.Driver(service, config, AdapterSet.Built(), home, Processes)
                     .TickAsync(ct).ConfigureAwait(false);
 
                 if (report.PlannedAnything || report.Events.Count > 0)
@@ -81,11 +95,13 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
 
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds), ct).ConfigureAwait(false);
+                // Interruptible two ways: stopping ends the loop; a nudge only ends the wait.
+                using var wait = CancellationTokenSource.CreateLinkedTokenSource(ct, _pause.Token);
+                await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds), wait.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
-                return;
+                if (ct.IsCancellationRequested) return;
             }
         }
     }

@@ -24,9 +24,10 @@ var untilIdle = args.Contains("--until-idle");
 
 try
 {
-    var configPath = Environment.GetEnvironmentVariable(DriverConfig.PathVariable) ?? DriverConfig.DefaultPath;
+    var configPath = DriverConfig.ResolvePath();
     var config = DriverConfig.Load(configPath);
     var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+    var processes = new SessionProcesses();
 
     using var service = ServiceClient.FromEnvironment();
 
@@ -37,11 +38,11 @@ try
 
     if (once)
     {
-        Print(await new Driver(service, config, AdapterSet.Built(), home).TickAsync());
+        Print(await new Driver(service, config, AdapterSet.Built(), home, processes).TickAsync());
     }
     else if (untilIdle)
     {
-        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home).RunUntilIdleAsync())
+        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes).RunUntilIdleAsync())
         {
             Print(report);
         }
@@ -55,7 +56,7 @@ try
             // adapter command takes effect without a restart — the shell's controls are edits to this
             // file, and a control that needs a bounce is a control nobody trusts.
             config = DriverConfig.Load(configPath);
-            Print(await new Driver(service, config, AdapterSet.Built(), home).TickAsync(), quietWhenIdle: true);
+            Print(await new Driver(service, config, AdapterSet.Built(), home, processes).TickAsync(), quietWhenIdle: true);
             await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds));
         }
     }

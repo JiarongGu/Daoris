@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useRepositories } from './queries';
-import { Card, Chip, PageHeader, SkeletonRows, Tip, useErrorNotify } from './ui';
+import { useDriver, useSetDrivable, useSetHold } from './shell';
+import { Card, CheckField, Chip, PageHeader, SkeletonRows, Tip, useErrorNotify } from './ui';
 
 /**
  * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
@@ -12,11 +13,17 @@ export function ProjectsView({ notify }: { notify: (text: string, kind?: 'ok' | 
   const { t } = useTranslation();
   const registry = useRegistry();
   const repositories = useRepositories();
+  const driver = useDriver();
+  const setDrivable = useSetDrivable();
+  const setHold = useSetHold();
   useErrorNotify(registry.error ?? repositories.error, notify);
 
   const adopted = (registry.data ?? []).filter((r) => r.adopted);
   const outside = (registry.data ?? []).filter((r) => !r.adopted);
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
+  const named = (names: string[], repository: string) =>
+    names.some((name) => name.toLowerCase() === repository.toLowerCase());
+  const onDriverError = (e: unknown) => notify((e as Error).message, 'error');
 
   return (
     <section>
@@ -71,6 +78,27 @@ export function ProjectsView({ notify }: { notify: (text: string, kind?: 'ok' | 
                 <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
                   <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.packs')}</span>
                   {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
+                </p>
+              )}
+              {driver.data && (
+                /* The person's standing choices for THIS machine's driver (D46 §6) — rendered only
+                   where a shell answers; a browser has no driver to control, and shows nothing. */
+                <p className="mt-2.5 flex flex-wrap items-center gap-4 border-t border-line pt-2.5">
+                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.driver.label')}</span>
+                  <CheckField
+                    checked={named(driver.data.drivable, project.repository)}
+                    onChange={(next) => setDrivable.mutate(
+                      { repository: project.repository, drivable: next }, { onError: onDriverError })}
+                    label={t('projects.driver.drive')}
+                  />
+                  {named(driver.data.drivable, project.repository) && (
+                    <CheckField
+                      checked={named(driver.data.holds, project.repository)}
+                      onChange={(next) => setHold.mutate(
+                        { repository: project.repository, held: next }, { onError: onDriverError })}
+                      label={t('projects.driver.hold')}
+                    />
+                  )}
                 </p>
               )}
             </Card>

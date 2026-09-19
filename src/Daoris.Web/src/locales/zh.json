@@ -106,6 +106,8 @@
   "quests.session.title": "会话",
   "quests.session.moved": "更新于{{ago}}",
   "quests.session.hint": "由驱动程序启动，状态靠观察而非自报——进程在驱动机上运行，这里是它的记录。",
+  "quests.session.stop": "停止会话",
+  "quests.session.stopped": "会话 {{id}} 正在停止——记录会注明这是本人终止的。",
 
   "sessionState.queued": "已排队",
   "sessionState.starting": "启动中",
@@ -130,6 +132,9 @@
   "projects.outside.body": "成员身份是仓库自己的动作——Daoris 绝不写入同族仓库，没有谁会因被看见而加入。这些仓库出现在此，是因为索引仍能从本机读到它们受追踪的知识，条目数即由此而来：可读不等于已加入。在它加入之前，无法向它委托任何事——发往那里的委托只会搁在无人查看的队列里。列出而不隐藏，因为“还不能委托谁”与“能委托谁”本是同一个问题。",
   "projects.outside.readable": "只读索引 {{count}} 个条目",
   "projects.outside.join": "加入——在该仓库中、由它自己的智能体运行：daoris init → 填写 `domain`（它是什么、拥有什么、接受什么） → daoris sync → daoris check → daoris connect。现成的范例是 Daoris 仓库里的 examples/。",
+  "projects.driver.label": "驱动",
+  "projects.driver.drive": "在本机驱动",
+  "projects.driver.hold": "暂停",
 
   "convergence.title": "同归",
   "convergence.description": "两个仓库各自独立得出同一结论的地方——读过再定。知识这一半的主视图。",

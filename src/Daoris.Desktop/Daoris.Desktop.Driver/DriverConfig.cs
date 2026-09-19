@@ -34,9 +34,74 @@ public sealed record DriverConfig(
     public static string DefaultPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "driver.json");
 
+    /// <summary>The file every door reads and writes — the override, or the conventional home.</summary>
+    public static string ResolvePath() =>
+        Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
+
     /// <summary>A missing file is a machine that has opted nothing in — the empty config, not an error.</summary>
     public static DriverConfig Load(string path) =>
         File.Exists(path) ? Parse(File.ReadAllText(path)) : Empty;
+
+    /// <summary>
+    /// Write the choices back — atomically, beside-then-rename, like every write in this family: the
+    /// watch loop re-reads this file every tick, and a torn read must never be what it finds.
+    /// </summary>
+    public void Save(string path)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        var beside = path + ".writing";
+        File.WriteAllText(beside, ToJson());
+        File.Move(beside, path, overwrite: true);
+    }
+
+    /// <summary>The file's shape, written by hand for the same AOT reason it is read by hand.</summary>
+    public string ToJson()
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new System.Text.Json.Utf8JsonWriter(stream, new System.Text.Json.JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("drivable");
+            foreach (var name in Drivable) writer.WriteStringValue(name);
+            writer.WriteEndArray();
+            writer.WriteStartArray("holds");
+            foreach (var name in Holds) writer.WriteStringValue(name);
+            writer.WriteEndArray();
+            writer.WriteNumber("cap", Cap);
+            writer.WriteString("adapter", Adapter);
+            writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
+            writer.WriteNumber("pollSeconds", PollSeconds);
+            writer.WriteStartObject("commands");
+            foreach (var (name, command) in Commands.OrderBy(c => c.Key, StringComparer.Ordinal))
+            {
+                writer.WriteStartArray(name);
+                foreach (var part in command) writer.WriteStringValue(part);
+                writer.WriteEndArray();
+            }
+
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
+    }
+
+    /// <summary>This machine's answer to "may I drive that repository, now" — one flag flipped at a time.</summary>
+    public DriverConfig WithDrivable(string repository, bool drivable) => this with
+    {
+        Drivable = Toggle(Drivable, repository, drivable),
+    };
+
+    public DriverConfig WithHold(string repository, bool held) => this with
+    {
+        Holds = Toggle(Holds, repository, held),
+    };
+
+    private static IReadOnlyList<string> Toggle(IReadOnlyList<string> names, string repository, bool present)
+    {
+        var kept = names.Where(n => !string.Equals(n, repository, StringComparison.OrdinalIgnoreCase));
+        return present ? [.. kept, repository] : [.. kept];
+    }
 
     // Read by hand for the same reason the registration store writes by hand: nothing here may
     // quietly stop working under AOT, and the shape is small enough to be explicit about.

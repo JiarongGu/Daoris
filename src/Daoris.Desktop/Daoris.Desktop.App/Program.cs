@@ -1,6 +1,7 @@
 using Daoris.Desktop;
 using Microsoft.Extensions.DependencyInjection;
 using Shenora;
+using Shenora.Core.Ipc;
 using Shenora.Windows;
 
 // The local driver's shell (D45 part 2, D46 §7): one window that brings up the local service host —
@@ -49,6 +50,8 @@ internal static class Program
             sp.GetRequiredService<HostSupervisor>(),
             serviceUrl));
         builder.Services.AddSingleton<MainForm>();
+        // The session-control surface's host half: the page's driver controls land here (D46 §6).
+        builder.Services.AddIpcModule<DriverModule>();
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.

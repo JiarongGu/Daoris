@@ -13,6 +13,7 @@ import { SearchView } from './SearchView';
 import { QuestsView } from './QuestsView';
 import { ProjectsView } from './ProjectsView';
 import { Reader } from './Reader';
+import { ShellSignals } from './ShellSignals';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search';
 
@@ -140,6 +141,7 @@ export function App() {
 
       {reading && <Reader entry={reading} onClose={() => setReading(null)} />}
       <Toasts items={toasts} onClose={dismiss} />
+      <ShellSignals notify={notify} />
     </div>
   );
 }

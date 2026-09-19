@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session, SessionState } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
+import { useDriver, useStopSession } from './shell';
 import { ago, sittingDays } from './format';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, PageHeader, Pill, SectionTitle,
@@ -53,6 +54,8 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
   const quests = useQuests(repository === EVERYONE ? null : repository, includeClosed);
   const registry = useRegistry();
   const sessions = useSessions(null, true);
+  const driver = useDriver();
+  const stop = useStopSession();
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   useErrorNotify(quests.error ?? registry.error, notify);
@@ -284,11 +287,25 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
                  evidence are the driver's observations and render verbatim, like every system sentence. */
               <div className="mt-5">
                 <SectionTitle>{t('quests.session.title')}</SectionTitle>
-                <div className="flex flex-wrap items-baseline gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
                   <span className="font-mono text-[0.72rem] text-ink-faint">
                     {session.id} · {session.adapter} · {t('quests.session.moved', { ago: ago(session.updated) })}
                   </span>
+                  {/* Stop reaches a PROCESS, so it renders only where one is actually running — the
+                      shell's driver — never in a browser that could only wish (D46 §6). */}
+                  {driver.data?.running.includes(session.id) && (
+                    <Button
+                      variant="danger"
+                      disabled={stop.isPending}
+                      onClick={() => stop.mutate(session.id, {
+                        onSuccess: () => notify(t('quests.session.stopped', { id: session.id })),
+                        onError: (e) => notify((e as Error).message, 'error'),
+                      })}
+                    >
+                      {t('quests.session.stop')}
+                    </Button>
+                  )}
                 </div>
                 {session.note && (
                   <p className="mt-2 mb-0 text-[0.85rem] text-ink-soft">{session.note}</p>
