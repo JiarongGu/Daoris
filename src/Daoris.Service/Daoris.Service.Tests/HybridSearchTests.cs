@@ -1,5 +1,5 @@
 using Daoris.Knowledge;
-using Lyntai.Embeddings;
+using Lyntai.Inference;
 using Lyntai.Memory;
 
 namespace Daoris.Service.Tests;
@@ -13,11 +13,20 @@ namespace Daoris.Service.Tests;
 /// call or an API key — the mapping is chosen per test, so a test can place two entries close together
 /// that share no words at all, which is precisely the convergence case lexical search cannot see.
 /// </remarks>
-internal sealed class DimensionEmbedder(params string[][] synonymGroups) : IEmbedder
+internal sealed class DimensionEmbedder(params string[][] synonymGroups) : IVectorProvider
 {
-    public Task<IReadOnlyList<float[]>> EmbedAsync(IReadOnlyList<string> texts, CancellationToken ct = default)
+    public string Id => "test-dimensions";
+
+    public ProviderCapabilities Capabilities { get; } = new()
     {
-        var vectors = texts.Select(text =>
+        Accepts = [ProviderKinds.Text],
+        Produces = [ProviderKinds.Vector],
+        Operations = [ProviderOperation.Complete],
+    };
+
+    public Task<VectorResponse> CallAsync(VectorRequest request, CancellationToken ct = default)
+    {
+        var vectors = request.Texts.Select(text =>
         {
             var vector = new float[synonymGroups.Length];
             for (var i = 0; i < synonymGroups.Length; i++)
@@ -31,7 +40,7 @@ internal sealed class DimensionEmbedder(params string[][] synonymGroups) : IEmbe
             return vector;
         }).ToList();
 
-        return Task.FromResult<IReadOnlyList<float[]>>(vectors);
+        return Task.FromResult(VectorResponse.Success(vectors));
     }
 }
 

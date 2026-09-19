@@ -1105,3 +1105,27 @@ answers every API call and serves no page (the locator carries a working directo
 MessageBox owned by the window disables it — trouble is a page, never a modal. The first REAL driven
 run is deliberately left to the person as DRV4: the adapter is a deployment choice on a proven loop,
 and witnessing it is the person's checkpoint, not a gate's.
+
+## LYN1 — the Lyntai pin, and the one-sweep migration (2026-09-19)
+
+> `Daoris.Service` deliberately pins the cognition sibling at released 2.1.0 (D22): upstream has a
+> renaming major sitting unreleased (its `Llm*` call types become `Text*`, and `Providers.Default` is
+> already retired from its 3.x package roster), so the coordinated move is **one** migration when that
+> major ships, not two.
+
+✅ done 2026-09-19 — 3.2.0 shipped that morning and the owner said go; the held single sweep paid off
+exactly as designed. The move was larger than the rename LYN1 anticipated and still landed green on
+the first build: the embedder SEAM is gone upstream (its D129/D153) — `IEmbedder.EmbedAsync` became
+`IVectorProvider.CallAsync(VectorRequest) → VectorResponse`, where failure is a **verdict beside empty
+vectors, never a throw**. One new place reads that verdict (`Core/Embedding.cs`): this service routes
+over a single configured backend, so non-Ok is terminal and joins the existing "semantic tier did not
+answer" path — the degradation test now holds that contract shape directly. Queries now embed under
+the QUERY role, which the old seam could not even express. `HttpEmbedder` →
+`HttpModelProvider`/`OllamaProvider` with `Produces = Vector` declared (leave it and you get a chat
+backend posting /chat/completions); the hosts replicate the sibling's own Ollama-root judgement (its
+D160, internal there) because these composition roots build by hand — and our default embed URL IS an
+Ollama root, so skipping that check would have silently broken the default deployment. Package:
+`Providers.Default` 2.1.0 → `Lyntai.Core` + `Lyntai.Providers.Basic` 3.2.0. The `Llm*`→`Text*` rename
+touched nothing here — this service never made a text call. 114/114 service, 43/43 family rehearsal
+over the real 3.2 packages, verify clean. The Lyntai adoption half of the old note is unchanged:
+de-adopted, not quest-addressable, and nobody is asked to adopt until Daoris is finished.

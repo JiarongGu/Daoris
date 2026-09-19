@@ -1,4 +1,4 @@
-using Lyntai.Embeddings;
+using Lyntai.Inference;
 using Lyntai.Memory;
 
 namespace Daoris.Knowledge;
@@ -63,7 +63,7 @@ public sealed record ConvergenceOptions(
 /// match themselves across every adopter and mean nothing.</para>
 /// </remarks>
 public sealed class ConvergenceDetector(
-    IKnowledgeStore store, IEmbedder? embedder = null, IVectorStore? vectors = null)
+    IKnowledgeStore store, IVectorProvider? embedder = null, IVectorStore? vectors = null)
 {
     /// <summary>Whether the semantic pass is available. False still finds copies and restatements.</summary>
     public bool SemanticAvailable => embedder is not null && vectors is not null;
@@ -237,8 +237,8 @@ public sealed class ConvergenceDetector(
         {
             ct.ThrowIfCancellationRequested();
             var batch = pending.Skip(offset).Take(batchSize).ToList();
-            var embedded = await embedder!
-                .EmbedAsync(batch.Select(b => b.Text).ToList(), ct)
+            var embedded = await Embedding
+                .EmbedAsync(embedder!, batch.Select(b => b.Text).ToList(), EmbeddingRole.Document, ct)
                 .ConfigureAwait(false);
 
             for (var i = 0; i < batch.Count; i++)

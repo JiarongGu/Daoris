@@ -19,7 +19,7 @@ public sealed class KnowledgeService(
     IKnowledgeSearch search,
     IKnowledgeSource source,
     IDisclosurePolicy? disclosure = null,
-    Lyntai.Embeddings.IEmbedder? embedder = null,
+    Lyntai.Inference.IVectorProvider? embedder = null,
     Lyntai.Memory.IVectorStore? vectors = null,
     // Last and optional: a service composed without one still searches and still finds convergence —
     // it simply cannot say who is out there, and reports an empty family rather than refusing to start.

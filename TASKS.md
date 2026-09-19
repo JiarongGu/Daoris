@@ -78,13 +78,6 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   several straight after canon edits and syncs, the suspected trigger — all passed 52/52. Stays
   open until a captured failure explains it. Do not tag a release while this is open.
 
-- [ ] **LYN1 — the Lyntai pin, and the one-sweep migration.** `Daoris.Service` deliberately pins the
-  cognition sibling at released 2.1.0 (D22): upstream has a renaming major sitting unreleased (its
-  `Llm*` call types become `Text*`, and `Providers.Default` is already retired from its 3.x package
-  roster), so the coordinated move is **one** migration when that major ships, not two. Lyntai is not
-  quest-addressable (de-adopted), and no repository is asked to adopt until Daoris is finished — so
-  this is held here, not delivered anywhere.
-
 - [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met.** The bilingual sibling
   carries the rule and the gate; Daoris now carries the same gate (`scripts/i18n-check.mjs`, adopted
   from it deliberately — D42). Two repositories, one lesson: a missing translation "works" in English

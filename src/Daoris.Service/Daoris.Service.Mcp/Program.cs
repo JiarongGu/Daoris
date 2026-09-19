@@ -2,9 +2,9 @@ using System.Text;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
 using Lyntai;
-using Lyntai.Embeddings;
-using Lyntai.Memory;
-using Lyntai.Providers.OpenAiCompatible;
+using Lyntai.Inference;
+using Lyntai.Providers.Http;
+using Lyntai.Providers.Ollama;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -51,24 +51,28 @@ builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
 var serviceOptions = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), DefaultDatabasePath());
 
-// The provider is built HERE, not in Core: the domain holds `IEmbedder` and nothing that implements
-// one, which is what keeps a model out of it (D22, D24). Everything downstream of that choice — which
-// tier is active, what hybrid fuses, what gets reported — is ServiceFactory's, shared with the HTTP
-// host so the two cannot disagree about whether semantic recall is on.
-IEmbedder? embedder = null;
+// The provider is built HERE, not in Core: the domain holds `IVectorProvider` and nothing that
+// implements one, which is what keeps a model out of it (D22, D24). Everything downstream of that
+// choice — which tier is active, what hybrid fuses, what gets reported — is ServiceFactory's, shared
+// with the HTTP host so the two cannot disagree about whether semantic recall is on.
+// An Ollama ROOT speaks Ollama's own wire — the same judgement the sibling's DI door applies (its
+// D160), replicated because this composition root builds by hand; `Produces` must say Vector, or the
+// default is a chat backend posting /chat/completions (its D130).
+IVectorProvider? embedder = null;
 if (!string.IsNullOrWhiteSpace(serviceOptions.EmbedModel))
 {
-    // The cognition sibling's embedder, consumed as a library (D22): it already speaks Ollama's native
-    // /api/embed and the OpenAI-compatible shape, batches, and needs no key for a local endpoint.
-    embedder = new HttpEmbedder(
-        id: "daoris-embed",
-        config: new OpenAiCompatibleEmbedderOptions
-        {
-            BaseUrl = serviceOptions.EmbedUrl ?? "http://localhost:11434",
-            Model = serviceOptions.EmbedModel,
-        },
-        httpFactory: () => new HttpClient(),
-        options: new LyntaiOptions());
+    var embedUrl = serviceOptions.EmbedUrl ?? "http://localhost:11434";
+    embedder = IsOllamaRoot(embedUrl)
+        ? new OllamaProvider(
+            "daoris-embed",
+            new OllamaOptions { BaseUrl = embedUrl, Model = serviceOptions.EmbedModel, Produces = ProviderKinds.Vector },
+            () => new HttpClient(),
+            new LyntaiOptions())
+        : new HttpModelProvider(
+            "daoris-embed",
+            new HttpModelOptions { BaseUrl = embedUrl, Model = serviceOptions.EmbedModel, Produces = ProviderKinds.Vector },
+            () => new HttpClient(),
+            new LyntaiOptions());
 }
 
 var composed = await ServiceFactory.CreateAsync(serviceOptions, embedder);
@@ -114,6 +118,13 @@ static string DefaultRepositoryRoot()
         + "in the MCP server entry (the install script prints a ready snippet).");
     return fallback;
 }
+
+// The sibling's own root test (internal there): Ollama's well-known port with no /v1 suffix — a /v1
+// base targets its OpenAI-shaped surface, where the native wire would 404 on every call.
+static bool IsOllamaRoot(string baseUrl) =>
+    Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
+    && uri.Port == 11434
+    && !uri.AbsolutePath.TrimEnd('/').EndsWith("/v1", StringComparison.OrdinalIgnoreCase);
 
 static string DefaultDatabasePath() => Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "knowledge.db");

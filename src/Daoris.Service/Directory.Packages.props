@@ -3,25 +3,24 @@
   <!--
     Central package versions for the service tree.
 
-    The cognition sibling is consumed as a LIBRARY and at RELEASED versions only (D22). The pin is
-    deliberately 2.1.0 rather than the newest release: upstream has a renaming major sitting
-    unreleased (its Llm* call types become Text*, and Providers.Default is already retired from its
-    3.x package roster), so the coordinated move is ONE migration when that major ships, not two.
-    Semantic search works against 2.1.0; nothing here needs more. See TASKS.md LYN1.
+    The cognition sibling is consumed as a LIBRARY and at RELEASED versions only (D22). The 3.2
+    migration (2026-09-19, the day 3.2.0 shipped) was the ONE coordinated move LYN1 held for: the
+    embedder seam became a provider capability (IEmbedder → IVectorProvider, its D129/D153),
+    HttpEmbedder became HttpModelProvider declaring vector-out (its D132/D135), and the package
+    renamed Providers.Default → Providers.Basic (its D144).
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The cognition sibling, consumed as a LIBRARY and at a RELEASED version (D22): IEmbedder and
-         IVectorStore are the seams semantic search needs, and rebuilding either would be the second
-         worse copy D1 was written to prevent. Its serving surfaces are deliberately NOT used. -->
-    <PackageVersion Include="Lyntai.Core" Version="2.1.0" />
-    <!-- HttpEmbedder: speaks Ollama's native /api/embed and OpenAI-compatible endpoints, batches,
-         and needs no key for a local endpoint. Wired only in the host, so the domain stays on the
-         abstractions. -->
-    <PackageVersion Include="Lyntai.Providers.Default" Version="2.1.0" />
+    <!-- The cognition sibling, consumed as a LIBRARY and at a RELEASED version (D22): IVectorProvider
+         and IVectorStore are the seams semantic search needs, and rebuilding either would be the
+         second worse copy D1 was written to prevent. Its serving surfaces are deliberately NOT used. -->
+    <PackageVersion Include="Lyntai.Core" Version="3.2.0" />
+    <!-- HttpModelProvider / OllamaProvider: the HTTP vector backends, wired only in the hosts so the
+         domain stays on the abstractions. -->
+    <PackageVersion Include="Lyntai.Providers.Basic" Version="3.2.0" />
   </ItemGroup>
 
   <ItemGroup>

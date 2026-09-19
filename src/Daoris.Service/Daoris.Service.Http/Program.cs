@@ -2,10 +2,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Daoris.Knowledge;
-using Lyntai.Embeddings;
-using Lyntai.Memory;
 using Lyntai;
-using Lyntai.Providers.OpenAiCompatible;
+using Lyntai.Inference;
+using Lyntai.Providers.Http;
+using Lyntai.Providers.Ollama;
 
 // The browser's half of the service. The MCP host serves an agent over stdio; a browser cannot speak
 // that, so this exists — the same composed service behind a read-only JSON surface.
@@ -59,20 +59,26 @@ if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URL
 
 var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), DefaultDatabasePath());
 
-// The provider is built HERE, not in Core: the domain holds `IEmbedder` and nothing that implements
-// one, so a model never reaches it (D22, D24). What tier that produces is Core's business.
-IEmbedder? embedder = null;
+// The provider is built HERE, not in Core: the domain holds `IVectorProvider` and nothing that
+// implements one, so a model never reaches it (D22, D24). What tier that produces is Core's business.
+// An Ollama ROOT speaks Ollama's own wire — the same judgement the sibling's DI door applies (its
+// D160), replicated because this composition root builds by hand; `Produces` must say Vector, or the
+// default is a chat backend posting /chat/completions (its D130).
+IVectorProvider? embedder = null;
 if (!string.IsNullOrWhiteSpace(options.EmbedModel))
 {
-    embedder = new HttpEmbedder(
-        id: "daoris-embed",
-        config: new OpenAiCompatibleEmbedderOptions
-        {
-            BaseUrl = options.EmbedUrl ?? "http://localhost:11434",
-            Model = options.EmbedModel,
-        },
-        httpFactory: () => new HttpClient(),
-        options: new LyntaiOptions());
+    var embedUrl = options.EmbedUrl ?? "http://localhost:11434";
+    embedder = IsOllamaRoot(embedUrl)
+        ? new OllamaProvider(
+            "daoris-embed",
+            new OllamaOptions { BaseUrl = embedUrl, Model = options.EmbedModel, Produces = ProviderKinds.Vector },
+            () => new HttpClient(),
+            new LyntaiOptions())
+        : new HttpModelProvider(
+            "daoris-embed",
+            new HttpModelOptions { BaseUrl = embedUrl, Model = options.EmbedModel, Produces = ProviderKinds.Vector },
+            () => new HttpClient(),
+            new LyntaiOptions());
 }
 
 var composed = await ServiceFactory.CreateAsync(options, embedder);
@@ -334,6 +340,13 @@ static SessionResponse ToSession(Session s) => new(
 // null remote address is the in-process test server, which is this process and therefore local.
 static bool IsLoopback(HttpContext http) =>
     http.Connection.RemoteIpAddress is null || System.Net.IPAddress.IsLoopback(http.Connection.RemoteIpAddress);
+
+// The sibling's own root test (internal there): Ollama's well-known port with no /v1 suffix — a /v1
+// base targets its OpenAI-shaped surface, where the native wire would 404 on every call.
+static bool IsOllamaRoot(string baseUrl) =>
+    Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
+    && uri.Port == 11434
+    && !uri.AbsolutePath.TrimEnd('/').EndsWith("/v1", StringComparison.OrdinalIgnoreCase);
 
 // Fixed-time, so the comparison itself cannot leak how much of a guessed key matched.
 static bool PresentsKey(string header, string key)

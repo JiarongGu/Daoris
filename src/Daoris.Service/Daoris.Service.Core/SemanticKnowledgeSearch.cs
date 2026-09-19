@@ -1,4 +1,4 @@
-using Lyntai.Embeddings;
+using Lyntai.Inference;
 using Lyntai.Memory;
 
 namespace Daoris.Knowledge;
@@ -14,12 +14,12 @@ namespace Daoris.Knowledge;
 /// the whole point of a cross-repository index is noticing that two repositories learned the same
 /// thing, that gap is not a nicety.
 ///
-/// The embedder and the vector store are the cognition sibling's seams, consumed as a library (D22).
-/// The embedder is app-provided by that library's design, which is what keeps this optional: with
-/// none configured the service is lexical-only, and local mode still works with nothing installed.
+/// The vector provider and the vector store are the cognition sibling's seams, consumed as a library
+/// (D22). The provider is app-composed by that library's design, which is what keeps this optional:
+/// with none configured the service is lexical-only, and local mode still works with nothing installed.
 /// </remarks>
 public sealed class SemanticKnowledgeSearch(
-    IKnowledgeStore store, IEmbedder embedder, IVectorStore vectors) : IKnowledgeSearch
+    IKnowledgeStore store, IVectorProvider embedder, IVectorStore vectors) : IKnowledgeSearch
 {
     /// <summary>One collection: the corpus is a single searchable space, not one per repository.</summary>
     internal const string Collection = "daoris-knowledge";
@@ -29,7 +29,7 @@ public sealed class SemanticKnowledgeSearch(
     /// what real embedding endpoints reward, and because the library's primitive is a batch.
     /// </summary>
     public static async Task IndexAsync(
-        IReadOnlyList<KnowledgeEntry> entries, IEmbedder embedder, IVectorStore vectors,
+        IReadOnlyList<KnowledgeEntry> entries, IVectorProvider embedder, IVectorStore vectors,
         int batchSize = 32, CancellationToken ct = default)
     {
         for (var offset = 0; offset < entries.Count; offset += batchSize)
@@ -37,7 +37,8 @@ public sealed class SemanticKnowledgeSearch(
             ct.ThrowIfCancellationRequested();
             var batch = entries.Skip(offset).Take(batchSize).ToList();
             var texts = batch.Select(Embeddable).ToList();
-            var embedded = await embedder.EmbedAsync(texts, ct).ConfigureAwait(false);
+            var embedded = await Embedding.EmbedAsync(embedder, texts, EmbeddingRole.Document, ct)
+                .ConfigureAwait(false);
 
             for (var i = 0; i < batch.Count; i++)
             {
@@ -64,7 +65,10 @@ public sealed class SemanticKnowledgeSearch(
     {
         if (string.IsNullOrWhiteSpace(query.Text)) return [];
 
-        var vector = await embedder.EmbedAsync(query.Text, ct).ConfigureAwait(false);
+        // The QUERY role, now that the seam can say it: asymmetric embedding models are trained with
+        // a distinct instruction per side, and a symmetric one ignores the role entirely.
+        var vector = (await Embedding.EmbedAsync(embedder, [query.Text], EmbeddingRole.Query, ct)
+            .ConfigureAwait(false))[0];
 
         // Over-fetch, because filtering happens after the search: asking for exactly `Limit` and then
         // discarding the ones that fail a filter silently returns fewer results than requested.

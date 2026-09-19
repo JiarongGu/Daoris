@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lyntai.Providers.Default" />
+    <PackageReference Include="Lyntai.Providers.Basic" />
     <PackageReference Include="ModelContextProtocol" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>

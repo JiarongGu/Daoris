@@ -1,4 +1,4 @@
-using Lyntai.Embeddings;
+using Lyntai.Inference;
 using Lyntai.Memory;
 
 namespace Daoris.Knowledge;
@@ -8,7 +8,7 @@ namespace Daoris.Knowledge;
 /// <param name="DatabasePath">The SQLite index. Created if absent.</param>
 /// <param name="EmbedModel">
 /// Which model, when the deployment has one — read here only so every host reads it the same way. The
-/// embedder itself is BUILT BY THE HOST and passed in; Core stays on <c>IEmbedder</c> (D22, D24).
+/// provider itself is BUILT BY THE HOST and passed in; Core stays on <c>IVectorProvider</c> (D22, D24).
 /// </param>
 /// <param name="EmbedUrl">The endpoint, for a deployment that has one.</param>
 public sealed record ServiceOptions(
@@ -63,8 +63,8 @@ public sealed record ComposedService(
 /// however it likes; this hands back finished objects, and each host registers them in its own idiom.</para>
 ///
 /// <para><b>The embedder arrives ready-made.</b> Core is deliberately not linked against any provider
-/// package — it holds <c>IEmbedder</c> and nothing that implements one, which is what keeps a model out
-/// of the domain. So the host reads the configuration, constructs the provider, and passes it here. What
+/// package — it holds <c>IVectorProvider</c> and nothing that implements one, which is what keeps a model
+/// out of the domain. So the host reads the configuration, constructs the provider, and passes it here. What
 /// must not diverge between hosts is the part that lives here: whether the semantic tier is on, what
 /// hybrid fuses, and which tier gets reported.</para>
 ///
@@ -77,7 +77,7 @@ public static class ServiceFactory
 {
     public static async Task<ComposedService> CreateAsync(
         ServiceOptions options,
-        IEmbedder? embedder = null,
+        IVectorProvider? embedder = null,
         IVectorStore? vectors = null,
         IDisclosurePolicy? disclosure = null,
         CancellationToken ct = default)

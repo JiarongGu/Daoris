@@ -191,7 +191,7 @@ without touching the ones that are not.
 | `IKnowledgeStore` | SQLite file, or in memory for tests | A hosted store only if volume ever demands one |
 | `IKnowledgeSearch` | FTS5 + BM25, semantic, and hybrid fusing both | Provider routing, so a deployment picks its own model |
 | `IDisclosurePolicy` | `LocalOnly` — nothing leaves | `Sharing(repositories)` — opt-in per repository |
-| `IEmbedder` (the sibling's) | Any OpenAI-compatible or Ollama endpoint | Chosen by deployment, never by the feature (D24) |
+| `IVectorProvider` (the sibling's) | Any OpenAI-compatible or Ollama endpoint | Chosen by deployment, never by the feature (D24) |
 
 Two choices worth knowing about:
 

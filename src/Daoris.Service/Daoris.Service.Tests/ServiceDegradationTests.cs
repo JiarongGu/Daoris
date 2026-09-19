@@ -1,5 +1,5 @@
 using Daoris.Knowledge;
-using Lyntai.Embeddings;
+using Lyntai.Inference;
 using Lyntai.Memory;
 
 namespace Daoris.Service.Tests;
@@ -11,10 +11,22 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public class ServiceDegradationTests
 {
-    private sealed class BrokenEmbedder : IEmbedder
+    private sealed class BrokenEmbedder : IVectorProvider
     {
-        public Task<IReadOnlyList<float[]>> EmbedAsync(IReadOnlyList<string> texts, CancellationToken ct = default) =>
-            throw new HttpRequestException("This server does not support embeddings.");
+        public string Id => "test-broken";
+
+        public ProviderCapabilities Capabilities { get; } = new()
+        {
+            Accepts = [ProviderKinds.Text],
+            Produces = [ProviderKinds.Vector],
+            Operations = [ProviderOperation.Complete],
+        };
+
+        // The sibling's 3.x contract: failure is a VERDICT beside empty vectors, never a throw —
+        // and this test holds that the service still degrades to lexical on exactly that shape.
+        public Task<VectorResponse> CallAsync(VectorRequest request, CancellationToken ct = default) =>
+            Task.FromResult(VectorResponse.Failure(
+                Lyntai.Inference.ProviderVerdict.Failed, "This server does not support embeddings."));
     }
 
     private sealed class OneEntrySource : IKnowledgeSource
@@ -27,7 +39,7 @@ public class ServiceDegradationTests
             ]);
     }
 
-    private static KnowledgeService Build(IEmbedder? embedder, out IKnowledgeStore store)
+    private static KnowledgeService Build(IVectorProvider? embedder, out IKnowledgeStore store)
     {
         var memory = new InMemoryKnowledgeStore();
         store = memory;
