@@ -56,11 +56,13 @@ them see a gap but not file the ask, would be a window onto a room whose door is
   on. The form does not submit without one.
 - **`refresh` stays**, as today: re-reading the repositories is service state, not doctrine.
 
-**Remote honesty.** When a deployment sets `DAORIS_SERVICE_KEY`, the browser has no key to present —
-person-auth is OIDC and deliberately deferred (design §5, SVC2). The platform stays fully useful
-read-only there, and a refused write shows the service's own 401 message rather than pretending the
-button never existed. Local mode — the default, and the mode the family actually runs — has no key
-and the full surface.
+**Remote honesty.** A shared deployment (D47) serves an API and no page at all — the remote is
+API-only until person-auth (OIDC) exists, so the person's window over a remote is the desktop shell
+over its own local host, not a browser hitting the remote. Local mode — the default, and the mode the
+family actually runs — has the full surface, and a refused write there shows the service's own message
+rather than pretending the button never existed. (This supersedes the earlier plan, when the interim
+single-key gate left reads open and the browser was honestly read-only against a keyed remote; that
+gate was retired with nothing deployed — D47 §7.)
 
 ## 4. What each new view owes the person
 

@@ -155,9 +155,11 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Deployable, two modes, one binary each.** Local needs no daemon: the MCP host (`daoris-knowledge`)
   is spawned per agent session and the persistent per-user store is what survives, shared by every
   repository's sessions on the machine. Remote is the HTTP host: registrations pushed by
-  `daoris connect` persist across restarts, quests publish and answer over the same shared judgement
-  (`QuestExchange`) as the MCP host, and setting `DAORIS_SERVICE_KEY` gates every write. It runs with
-  **no model at all** and still carries the whole transfer of request and task.
+  `daoris connect` persist across restarts, and quests publish and answer over the same shared judgement
+  (`QuestExchange`) as the MCP host. There are two trust shapes and no third: **local** trusts the
+  loopback — the OS account is the boundary, and the host refuses to bind anywhere else — and **shared**
+  (the team deployment) gates every route with minted keys (below). It runs with **no model at all** and
+  still carries the whole transfer of request and task.
 - **The server ships as executables.** `npm run publish:service -- --install` publishes both hosts
   self-contained single-file into `~/.daoris/bin` and prints the ready `.mcp.json` snippet with the
   family root filled in; releases carry the same binaries per platform with sha256s beside the
@@ -201,6 +203,52 @@ The first version: doctrine that installs, is checked, and flows back.
   `npm run rehearse:family`, which proves the router through the real artefacts — adoption,
   registration through `daoris connect`, a quest's whole life including its refusals, knowledge
   crossing projects, and a restart losing nothing.
+
+### The driver
+
+- **Daoris drives.** The service turns a quest queue into an execution queue: the local driver
+  (`Daoris.Desktop`) watches the service, and where the person has opted a repository in, **spawns a
+  fresh non-interactive agent session per open quest** — one active session per repository, onto a clean
+  working tree only, oldest first. The spawned session **claims its own quest** over its own connector
+  and closes it `done` or `declined`, exactly as an interactive session would; the quest state machine
+  is the only lock, so a driven session and a hand-run one are indistinguishable. Driving is additive,
+  never exclusive — a repository developed by hand loses nothing.
+- **Observed, never self-reported.** A session's life is concluded from the two signals outside work
+  also produces — the process's exit and the quest's own transitions — not an in-band protocol.
+  Session **records** live in the service beside the quests (so the platform renders them and they
+  survive a restart); the **process** never leaves the machine that spawned it. The record carries the
+  reviewable evidence — the commits that landed — and a machine-local transcript path that is answered
+  only to a caller on that machine.
+- **One supported harness, others explicit.** The adapter seam is `claude-code` (supported) and `codex`
+  (explicit second); an unknown adapter is an error naming what exists, never a silent fallback. An
+  adapter names a harness, never a model. Gate-proven with a **stub adapter** — real spawn, real claim,
+  real commit, no model — and then by a **real `claude-code` run**: a quest became a session became a
+  commit became `done` in 71 seconds.
+- **The desktop shell.** `daoris-desktop` brings up the local host (adopting one already running rather
+  than double-starting), carries the platform in its window — the same bytes a browser gets — and runs
+  the driver loop in-process, re-reading the person's standing choices every tick: drivable and hold
+  per repository, stop a running session, all through the platform's own session-control surface.
+
+### The remote
+
+- **Team mode: the same host, fed by the desktop.** The remote is a deployment of the existing HTTP
+  host in **shared mode** (`DAORIS_MODE=shared`), not a second implementation — every route gated by
+  **per-person per-machine minted keys** (`keys mint|list|revoke` on the binary; stored as a hash with
+  a short non-secret audit prefix, shown once, expiring by default). It serves no page and answers no
+  machine path, and a host asked to bind beyond loopback without shared mode refuses to start.
+- **The quest lock is code.** A quest's transition table is enforced in the store itself — `Taken` only
+  from `Open` as one atomic guarded write, closed quests immovable — so two machines' drivers racing one
+  quest resolve to a single taker, and the loser stands down. The same hardening runs in local mode.
+- **One home per quest, decided at publish.** A quest to a joined repository lives at the remote; verbs
+  on it write through synchronously or fail plainly — a lock that queued would not be a lock. The
+  desktop's sync loop rides the driver tick: it feeds registrations, session records (keyed by origin),
+  and opted-in knowledge content **up**, and mirrors the family's quests and teammates' registrations
+  **down**. What may leave a machine is two manifest declarations — **join** and **share knowledge** —
+  and silence means local; roots and transcripts have no field in anything fed.
+- **Proven by a two-machine rehearsal.** The family rehearsal grows a remote phase with a shared host
+  and two simulated machines: a quest published on one is driven to done on the other, the closure
+  crosses back, a raced take stands down, knowledge crosses only where declared, keys are refused
+  without being echoed, and the remote store is scanned to hold no machine path — no model in the gate.
 
 ### Proven
 
