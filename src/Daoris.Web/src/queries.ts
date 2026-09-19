@@ -12,6 +12,8 @@ export const keys = {
   registry: ['registry'] as const,
   quests: (repository: string | null, includeClosed: boolean) =>
     ['quests', repository ?? 'all', includeClosed] as const,
+  sessions: (repository: string | null, includeClosed: boolean) =>
+    ['sessions', repository ?? 'all', includeClosed] as const,
 };
 
 export const useStatus = () =>
@@ -27,6 +29,13 @@ export const useQuests = (repository: string | null, includeClosed: boolean) =>
   useQuery({
     queryKey: keys.quests(repository, includeClosed),
     queryFn: ({ signal }) => api.quests(repository, includeClosed, signal),
+  });
+
+/** Session records are read-only here: the controls act where a driver is attached (D46 §6). */
+export const useSessions = (repository: string | null, includeClosed: boolean) =>
+  useQuery({
+    queryKey: keys.sessions(repository, includeClosed),
+    queryFn: ({ signal }) => api.sessions(repository, includeClosed, signal),
   });
 
 /** Everything a quest mutation can change: every quests query, and the registry's counts. */

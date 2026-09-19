@@ -19,7 +19,15 @@ const REGISTRY = [
   { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1 },
 ];
 
+// A driven session's record, attached to the quest above (D46): active, so the card wears its state.
+const SESSIONS = [{
+  id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'stub', state: 'working',
+  note: 'the process is alive', evidence: 'commits landed:\nfff000 stub: answer quest abc123',
+  created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
+}];
+
 function respond(url: string): Response {
+  if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
   throw new Error(`unstubbed request: ${url}`);
@@ -62,5 +70,19 @@ describe('QuestsView', () => {
     view();
     await userEvent.click(await screen.findByRole('button', { name: 'new quest' }));
     expect(await screen.findByRole('button', { name: 'publish quest' })).toBeDisabled();
+  });
+
+  it('a quest a driver is working wears its session state on the card', async () => {
+    view();
+    expect(await screen.findByText('working')).toBeInTheDocument();
+  });
+
+  it("the drawer carries the session's record — state, adapter, and the evidence, verbatim", async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('working')).toBeInTheDocument();
+    expect(within(dialog).getByText(/s1a2b3c4 · stub/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/stub: answer quest abc123/)).toBeInTheDocument();
   });
 });

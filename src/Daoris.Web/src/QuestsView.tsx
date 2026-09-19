@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest } from './api';
-import { usePublishQuest, useQuests, useRegistry, useRespondQuest } from './queries';
+import type { Quest, Session, SessionState } from './api';
+import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
 import { ago, sittingDays } from './format';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, PageHeader, Pill, SectionTitle,
@@ -11,6 +11,22 @@ import { cn } from './lib/cn';
 
 /** Radix Select cannot carry an empty value, so "everyone" travels as a sentinel. */
 const EVERYONE = '*';
+
+/** The states that still hold their repository — the ones worth a mark on the card (D46 §4). */
+const SESSION_ACTIVE: ReadonlySet<SessionState> = new Set(['queued', 'starting', 'working', 'awaiting-person']);
+
+/** awaiting-person wears the attention tone deliberately: it is the state only the person can clear. */
+const SESSION_TONE: Record<SessionState, 'neutral' | 'open' | 'taken' | 'done' | 'declined'> = {
+  'queued': 'open',
+  'starting': 'taken',
+  'working': 'taken',
+  'awaiting-person': 'declined',
+  'completed': 'done',
+  'declined': 'declined',
+  'stood-down': 'neutral',
+  'failed': 'declined',
+  'stopped': 'neutral',
+};
 
 type Draft = { from: string; to: string; title: string; body: string };
 const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '' };
@@ -36,9 +52,18 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
 
   const quests = useQuests(repository === EVERYONE ? null : repository, includeClosed);
   const registry = useRegistry();
+  const sessions = useSessions(null, true);
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   useErrorNotify(quests.error ?? registry.error, notify);
+
+  // The freshest attempt per quest: a retry is its own record, and the drawer shows where things
+  // stand now, not the history (the service keeps that).
+  const sessionFor = new Map<string, Session>();
+  for (const session of sessions.data ?? []) {
+    const held = sessionFor.get(session.quest);
+    if (!held || session.updated >= held.updated) sessionFor.set(session.quest, session);
+  }
 
   // Only an adopter can be addressed — offering anything else would invite an ask the service
   // refuses. The service still holds the judgement; this only keeps the form from lying.
@@ -85,6 +110,7 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
   const card = (quest: Quest) => {
     const sat = sittingDays(quest.filed);
     const tone = quest.status.toLowerCase() as 'open' | 'taken' | 'done' | 'declined';
+    const session = sessionFor.get(quest.id);
     return (
       <Card
         key={quest.id}
@@ -106,6 +132,12 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
               {/* A week of silence is the signal this view exists to surface. */}
               {quest.status === 'Open' && sat >= 7 && (
                 <Pill tone="declined">{t('quests.card.sat', { days: sat })}</Pill>
+              )}
+              {/* A live driven session marks its quest; finished ones live in the drawer's record. */}
+              {session && SESSION_ACTIVE.has(session.state) && (
+                <Pill tone={SESSION_TONE[session.state]} title={t('quests.session.hint')}>
+                  {t(`sessionState.${session.state}`)}
+                </Pill>
               )}
               <Pill tone={tone} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
             </span>
@@ -243,6 +275,33 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
           {detail.note && (
             <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-[0.85rem] italic">{detail.note}</p>
           )}
+          {(() => {
+            const session = sessionFor.get(detail.id);
+            if (!session) return null;
+            return (
+              /* The driven session's RECORD (D46 §4) — read-only here: the process, and the person's
+                 controls over it, live where a driver is attached, which is the desktop. The note and
+                 evidence are the driver's observations and render verbatim, like every system sentence. */
+              <div className="mt-5">
+                <SectionTitle>{t('quests.session.title')}</SectionTitle>
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
+                  <span className="font-mono text-[0.72rem] text-ink-faint">
+                    {session.id} · {session.adapter} · {t('quests.session.moved', { ago: ago(session.updated) })}
+                  </span>
+                </div>
+                {session.note && (
+                  <p className="mt-2 mb-0 text-[0.85rem] text-ink-soft">{session.note}</p>
+                )}
+                {session.evidence && (
+                  <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line bg-raised px-3 py-2.5 font-mono text-[0.78rem]">
+                    {session.evidence}
+                  </pre>
+                )}
+                <p className="mt-2 mb-0 text-[0.75rem] text-ink-faint">{t('quests.session.hint')}</p>
+              </div>
+            );
+          })()}
         </Drawer>
       )}
 

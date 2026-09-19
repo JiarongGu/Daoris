@@ -117,6 +117,40 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   await expect(page.getByText(/Published quest `#[0-9a-f]{6}` to `newcomer`/).first()).toBeVisible();
 });
 
+test("a driven session's record reaches the drawer (D46)", async ({ page, request }) => {
+  // The driver is not running here — the RECORD is service state, so seeding it through the same
+  // doors the driver uses is exactly what the platform will see in real use: the session surface is
+  // read-only in a browser, and the controls live where a driver is attached.
+  const published = await request.post('/api/quests', {
+    data: {
+      from: 'game', to: 'engine',
+      title: 'Drive the streaming budget work',
+      body: 'Seeded to prove the session surface renders the record.',
+    },
+  });
+  const quest = (await published.json() as { quest: { id: string } }).quest;
+  const opened = await request.post('/api/sessions', { data: { quest: quest.id, adapter: 'stub' } });
+  const session = (await opened.json() as { session: { id: string } }).session;
+  await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'starting' } });
+  await request.post(`/api/sessions/${session.id}/state`, {
+    data: { state: 'working', note: 'the process is alive' },
+  });
+
+  await page.goto('/');
+  await nav(page, 'Quests').click();
+
+  // The card wears the live session's state beside the quest's own status…
+  const card = page.getByText('Drive the streaming budget work').first();
+  await expect(card).toBeVisible();
+  await card.click();
+
+  // …and the drawer carries the record: state, id · adapter, and the driver's note, verbatim.
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('working')).toBeVisible();
+  await expect(dialog.getByText(new RegExp(`${session.id} · stub`))).toBeVisible();
+  await expect(dialog.getByText('the process is alive')).toBeVisible();
+});
+
 test('the console speaks 中文', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '中文' }).click();

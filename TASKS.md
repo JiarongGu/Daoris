@@ -59,10 +59,14 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   untouched, records surviving restart. The **`claude-code` adapter** is in (design §5): headless
   mode, target as the prompt, edits auto-accepted and everything else under the repository's own
   checked-in permissions, no model ever named; it is the config default, and a real driven run is how
-  it gets verified (a deployment choice on a proven loop, §8). **Remaining:** the platform's
-  session-control surface (design §6) and the Shenora shell — the desktop sibling is consumable at a
-  released version (v0.16.0, `Shenora.Windows` + `@shenora/react`, checked 2026-09-19), so there is
-  no coordination blocker.
+  it gets verified (a deployment choice on a proven loop, §8). The **platform shows the session
+  surface, read-only** (design §6): a live session's state on its quest's card, the full record —
+  state, adapter, note, evidence verbatim — in the drawer, en+zh, covered in both loops (18 Vitest,
+  7/7 Playwright including a driven-record scenario). **Remaining:** the Shenora shell — hosts the
+  HTTP host and the platform, embeds the driver, and carries the person's session CONTROLS (drivable,
+  hold, stop, start-now: they act where a driver is attached) plus OS notification on
+  `awaiting-person`. The sibling is consumable at a released version (v0.16.0, `Shenora.Windows` +
+  `@shenora/react`, checked 2026-09-19), so there is no coordination blocker.
 
 - [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
   machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's

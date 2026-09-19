@@ -32,6 +32,16 @@ export type QuestAction = { quest: Quest; message: string };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
   owns: string[]; accepts: string[]; packs: string[]; entries: number;
+  /** Machine-local (D46): present only when the service answers a caller on its own machine. */
+  root?: string;
+};
+export type SessionState =
+  | 'queued' | 'starting' | 'working' | 'awaiting-person'
+  | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped';
+/** A driver-started session's RECORD (D46) — the process lives on the driving machine, never here. */
+export type Session = {
+  id: string; quest: string; repository: string; adapter: string; state: SessionState;
+  note?: string; evidence?: string; transcript?: string; created: string; updated: string;
 };
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
@@ -76,6 +86,12 @@ export const api = {
       signal,
     ),
   registry: (signal?: AbortSignal) => get<Registration[]>('/api/registry', signal),
+  sessions: (repository: string | null, includeClosed: boolean, signal?: AbortSignal) =>
+    get<Session[]>(
+      `/api/sessions?includeClosed=${includeClosed}`
+      + (repository ? `&repository=${encodeURIComponent(repository)}` : ''),
+      signal,
+    ),
   publishQuest: (quest: { from: string; to: string; title: string; body: string }) =>
     post<QuestAction>('/api/quests', quest),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
