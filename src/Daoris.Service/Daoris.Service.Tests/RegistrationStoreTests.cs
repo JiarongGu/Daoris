@@ -56,6 +56,53 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
 
         Assert.Equal("Revised.", read.Summary);
     }
+
+    /// <summary>
+    /// The root is the one field spawning needs (D46): `connect` runs in the repository and knows it.
+    /// Stored machine-locally — this store never leaves the machine it serves.
+    /// </summary>
+    [Fact]
+    public async Task A_root_round_trips_and_its_absence_is_null_not_empty()
+    {
+        await _store.UpsertAsync(Declared() with { Root = "D:/repos/Yumeora" }, Now);
+        await _store.UpsertAsync(Declared("Rootless"), Now);
+
+        var all = await _store.AllAsync();
+
+        Assert.Equal("D:/repos/Yumeora", all.Single(r => r.Repository == "Yumeora").Root);
+        Assert.Null(all.Single(r => r.Repository == "Rootless").Root);
+    }
+
+    /// <summary>
+    /// A store created before sessions existed has no root column, and its registrations must survive
+    /// the upgrade — a schema that only works on a fresh database drops every connected repository.
+    /// </summary>
+    [Fact]
+    public async Task An_existing_store_without_the_root_column_is_migrated_in_place()
+    {
+        await using var old = new SqliteConnection("Data Source=:memory:");
+        await old.OpenAsync();
+        await using (var create = old.CreateCommand())
+        {
+            create.CommandText = """
+                CREATE TABLE registrations (
+                  repository TEXT PRIMARY KEY, summary TEXT NULL, owns TEXT NOT NULL,
+                  accepts TEXT NOT NULL, packs TEXT NOT NULL, updated TEXT NOT NULL
+                );
+                INSERT INTO registrations VALUES ('Elder', 'Was here first.', '[]', '[]', '[]', '2026-01-01');
+                """;
+            await create.ExecuteNonQueryAsync();
+        }
+
+        var store = await RegistrationStore.OpenAsync(old);
+        var elder = Assert.Single(await store.AllAsync());
+
+        Assert.Equal("Was here first.", elder.Summary);
+        Assert.Null(elder.Root);
+
+        await store.UpsertAsync(elder with { Root = "/home/dev/Elder" }, Now);
+        Assert.Equal("/home/dev/Elder", (await store.AllAsync()).Single().Root);
+    }
 }
 
 /// <summary>

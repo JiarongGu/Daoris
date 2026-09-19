@@ -36,18 +36,36 @@ public sealed class RegistrationStore
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
-        command.CommandText = """
-            CREATE TABLE IF NOT EXISTS registrations (
-              repository TEXT PRIMARY KEY,
-              summary    TEXT NULL,
-              owns       TEXT NOT NULL,
-              accepts    TEXT NOT NULL,
-              packs      TEXT NOT NULL,
-              updated    TEXT NOT NULL
-            );
-            """;
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await using (var command = _connection.CreateCommand())
+        {
+            command.CommandText = """
+                CREATE TABLE IF NOT EXISTS registrations (
+                  repository TEXT PRIMARY KEY,
+                  summary    TEXT NULL,
+                  owns       TEXT NOT NULL,
+                  accepts    TEXT NOT NULL,
+                  packs      TEXT NOT NULL,
+                  updated    TEXT NOT NULL,
+                  root       TEXT NULL
+                );
+                """;
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // A store created before the driver existed has no root column, and its registrations must
+        // survive the upgrade — a schema that only works on a fresh database silently drops every
+        // repository that ever connected, which is exactly the failure this store was built to remove.
+        await using (var probe = _connection.CreateCommand())
+        {
+            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('registrations') WHERE name = 'root'";
+            var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
+            if (present == 0)
+            {
+                await using var alter = _connection.CreateCommand();
+                alter.CommandText = "ALTER TABLE registrations ADD COLUMN root TEXT NULL";
+                await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+        }
     }
 
     /// <summary>Record what a repository declared. Re-registering replaces: the repository is the identity.</summary>
@@ -55,10 +73,11 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated)
-            VALUES ($repository, $summary, $owns, $accepts, $packs, $updated)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root)
+            VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root)
             ON CONFLICT (repository) DO UPDATE SET
-              summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated
+              summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated,
+              root = $root
             """;
         command.Parameters.AddWithValue("$repository", registration.Repository);
         command.Parameters.AddWithValue("$summary", (object?)registration.Summary ?? DBNull.Value);
@@ -66,6 +85,7 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$accepts", ToJson(registration.Accepts));
         command.Parameters.AddWithValue("$packs", ToJson(registration.Packs));
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$root", (object?)registration.Root ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
@@ -73,7 +93,7 @@ public sealed class RegistrationStore
     public async Task<IReadOnlyList<Registration>> AllAsync(CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
-        command.CommandText = "SELECT repository, summary, owns, accepts, packs FROM registrations";
+        command.CommandText = "SELECT repository, summary, owns, accepts, packs, root FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -86,7 +106,8 @@ public sealed class RegistrationStore
                 FromJson(reader.GetString(2)),
                 FromJson(reader.GetString(3)),
                 FromJson(reader.GetString(4)),
-                Entries: 0));
+                Entries: 0,
+                Root: reader.IsDBNull(5) ? null : reader.GetString(5)));
         }
 
         return registrations;

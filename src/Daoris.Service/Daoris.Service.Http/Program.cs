@@ -22,11 +22,16 @@ using Lyntai.Providers.OpenAiCompatible;
 // `upstream` routes an improvement through the repository that found it, where it meets that
 // repository's review, and a web editor would win against that path for the wrong reason.
 //
-// SERVICE STATE IS WRITABLE, NARROWLY (D32, D34). A repository may register what it owns, and a quest
-// may be published and answered — the transfer of request and task is the whole point of a remote
-// deployment, which may run with no model at all (D24) and still carry it. Those writes are exactly
-// what DAORIS_SERVICE_KEY gates; a deployment reachable beyond a trusted network needs the fuller
-// credential model in docs/2026-08-05-knowledge-service-design.md §5 before it exists.
+// SERVICE STATE IS WRITABLE, NARROWLY (D32, D34, D46). A repository may register what it owns, a quest
+// may be published and answered, and a driver may record its sessions — the transfer of request and
+// task is the whole point of a remote deployment, which may run with no model at all (D24) and still
+// carry it. Those writes are exactly what DAORIS_SERVICE_KEY gates; a deployment reachable beyond a
+// trusted network needs the fuller credential model in
+// docs/2026-08-05-knowledge-service-design.md §5 before it exists.
+//
+// A REGISTRATION'S ROOT NEVER LEAVES THE MACHINE (D46). The filesystem path a repository registers is
+// answered only to loopback callers — the local driver — so a remote deployment never serves anyone's
+// disk layout to the network.
 if (OperatingSystem.IsWindows())
 {
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
@@ -227,6 +232,44 @@ app.MapPost("/api/quests/{id}/respond", async (
     };
 });
 
+// The driver's session records (D46). State only: the service never spawns a process — the record is
+// what the platform renders and what survives a driver restart; the process handle stays with the
+// driver that owns it. Judgement is the shared ledger's, so this door and any other cannot drift.
+app.MapGet("/api/sessions", async (
+    ComposedService s, string? repository, bool? includeClosed, CancellationToken ct) =>
+    (await s.Sessions.ListAsync(repository, includeClosed ?? false, ct)).Select(ToSession));
+
+app.MapPost("/api/sessions", async (ComposedService s, OpenSessionRequest body, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(body.Quest) || string.IsNullOrWhiteSpace(body.Adapter))
+    {
+        return Results.BadRequest(new ErrorResponse("quest and adapter are required"));
+    }
+
+    var outcome = await s.Ledger.OpenAsync(body.Quest, body.Adapter, DateTimeOffset.UtcNow, ct);
+
+    return outcome.Refusal switch
+    {
+        SessionOpenRefusal.None => Results.Ok(new SessionActionResponse(ToSession(outcome.Session!), outcome.Message)),
+        SessionOpenRefusal.QuestNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+    };
+});
+
+app.MapPost("/api/sessions/{id}/state", async (
+    ComposedService s, string id, AdvanceSessionRequest body, CancellationToken ct) =>
+{
+    var outcome = await s.Ledger.AdvanceAsync(
+        id, body.State ?? "", body.Note, body.Evidence, body.Transcript, DateTimeOffset.UtcNow, ct);
+
+    return outcome.Refusal switch
+    {
+        SessionAdvanceRefusal.None => Results.Ok(new SessionActionResponse(ToSession(outcome.Session!), outcome.Message)),
+        SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+    };
+});
+
 // Where `daoris connect` lands. It accepts a repository's description of ITSELF — the only thing a
 // repository is authoritative about — and persists it, because for a remote service the pushed
 // registrations ARE the family: one that forgot them on restart would drop every connected
@@ -242,14 +285,18 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         body.Domain?.Owns ?? [],
         body.Domain?.Accepts ?? [],
         body.Packs ?? [],
-        Entries: 0), DateTimeOffset.UtcNow, ct);
+        Entries: 0,
+        Root: string.IsNullOrWhiteSpace(body.Root) ? null : body.Root), DateTimeOffset.UtcNow, ct);
 
     return Results.Ok(new RegisteredResponse(body.Repository, DateTimeOffset.UtcNow));
 });
 
-app.MapGet("/api/registry", async (ComposedService s, CancellationToken ct) =>
+app.MapGet("/api/registry", async (ComposedService s, HttpContext http, CancellationToken ct) =>
     (await s.Service.RegistryAsync(ct)).Select(r => new RegistrationResponse(
-        r.Repository, r.Adopted, r.Registered, r.Summary, r.Owns, r.Accepts, r.Packs, r.Entries)));
+        r.Repository, r.Adopted, r.Registered, r.Summary, r.Owns, r.Accepts, r.Packs, r.Entries,
+        // Machine-local by design (D46): a filesystem path is answered only to a caller on this
+        // machine, so a remote deployment never serves anyone's disk layout to the network.
+        Root: IsLoopback(http) ? r.Root : null)));
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
@@ -278,6 +325,15 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
 
 static QuestResponse ToQuest(Quest q) => new(
     q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated);
+
+static SessionResponse ToSession(Session s) => new(
+    s.Id, s.Quest, s.Repository, s.Adapter, s.StateName, s.Note, s.Evidence, s.Transcript,
+    s.Created, s.Updated);
+
+// A caller on this machine — which is what "the root never leaves the machine" means in practice. A
+// null remote address is the in-process test server, which is this process and therefore local.
+static bool IsLoopback(HttpContext http) =>
+    http.Connection.RemoteIpAddress is null || System.Net.IPAddress.IsLoopback(http.Connection.RemoteIpAddress);
 
 // Fixed-time, so the comparison itself cannot leak how much of a guessed key matched.
 static bool PresentsKey(string header, string key)
@@ -351,11 +407,18 @@ public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
 public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
 public sealed record RegisterRequest(
-    string Repository, IReadOnlyList<string>? Packs, string? CanonSource, DomainRequest? Domain);
+    string Repository, IReadOnlyList<string>? Packs, string? CanonSource, DomainRequest? Domain, string? Root);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At);
 public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
-    IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries);
+    IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
+    string? Root);
+public sealed record SessionResponse(
+    string Id, string Quest, string Repository, string Adapter, string State,
+    string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated);
+public sealed record OpenSessionRequest(string Quest, string Adapter);
+public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
+public sealed record SessionActionResponse(SessionResponse Session, string Message);
 public sealed record ErrorResponse(string Error);
 
 [JsonSerializable(typeof(StatusResponse))]
@@ -371,5 +434,9 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(RegisterRequest))]
 [JsonSerializable(typeof(RegisteredResponse))]
 [JsonSerializable(typeof(IEnumerable<RegistrationResponse>))]
+[JsonSerializable(typeof(IEnumerable<SessionResponse>))]
+[JsonSerializable(typeof(OpenSessionRequest))]
+[JsonSerializable(typeof(AdvanceSessionRequest))]
+[JsonSerializable(typeof(SessionActionResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;

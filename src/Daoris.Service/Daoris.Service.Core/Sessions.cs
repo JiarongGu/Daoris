@@ -61,6 +61,17 @@ public sealed record Session(
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson;
+
+    /// <summary>This state's public spelling — what every door prints and accepts back.</summary>
+    public string StateName => Spell(State);
+
+    /// <summary>The design's spelling (D46 §4): kebab-case on the wire, enum names in the store.</summary>
+    public static string Spell(SessionState state) => state switch
+    {
+        SessionState.AwaitingPerson => "awaiting-person",
+        SessionState.StoodDown => "stood-down",
+        _ => state.ToString().ToLowerInvariant(),
+    };
 }
 
 /// <summary>

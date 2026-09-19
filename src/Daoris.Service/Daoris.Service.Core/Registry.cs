@@ -12,6 +12,10 @@ namespace Daoris.Knowledge;
 /// <param name="Accepts">Kinds of quest it welcomes. Guidance for the asker, not a contract.</param>
 /// <param name="Packs">Canonical packs it carries — a decent proxy for its stack.</param>
 /// <param name="Entries">How much knowledge it contributes to the bank.</param>
+/// <param name="Root">
+/// Where the working tree is ON THIS MACHINE — the one field spawning a session needs (D46). Machine-local
+/// by nature: it is answered only to loopback callers and is stripped from anything that syncs off-machine.
+/// </param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -19,7 +23,8 @@ public sealed record Registration(
     IReadOnlyList<string> Owns,
     IReadOnlyList<string> Accepts,
     IReadOnlyList<string> Packs,
-    int Entries)
+    int Entries,
+    string? Root = null)
 {
     /// <summary>Whether this repository has said anything useful about what it can be asked for.</summary>
     public bool Registered => Adopted && (!string.IsNullOrWhiteSpace(Summary) || Owns.Count > 0 || Accepts.Count > 0);
@@ -75,7 +80,11 @@ public sealed class Registry(string repositoryRoot)
         registrations.AddRange(_pushed.Values.Where(r => !scanned.Contains(r.Repository)));
 
         return registrations
-            .Select(r => _pushed.TryGetValue(r.Repository, out var sent) && sent.Registered ? sent with { Entries = r.Entries } : r)
+            .Select(r => _pushed.TryGetValue(r.Repository, out var sent) && sent.Registered
+                // The push wins on what the repository SAID; the scanned root survives a push that
+                // carried none, because a declaration should not cost the driver a path it already knew.
+                ? sent with { Entries = r.Entries, Root = sent.Root ?? r.Root }
+                : r)
             .OrderBy(r => r.Repository, StringComparer.Ordinal)
             .ToList();
     }
@@ -94,18 +103,18 @@ public sealed class Registry(string repositoryRoot)
                 // Present in the family, not adopted. Worth listing rather than hiding: "who could I
                 // ask, and who cannot be asked yet" is the same question, and a silent omission reads
                 // as the repository not existing.
-                registrations.Add(new Registration(name, false, null, [], [], [], entries));
+                registrations.Add(new Registration(name, false, null, [], [], [], entries, directory));
                 continue;
             }
 
-            registrations.Add(ReadManifest(name, manifest, entries));
+            registrations.Add(ReadManifest(name, manifest, entries, directory));
         }
 
         foreach (var registration in registrations) scanned.Add(registration.Repository);
         return registrations;
     }
 
-    private static Registration ReadManifest(string name, string manifest, int entries)
+    private static Registration ReadManifest(string name, string manifest, int entries, string directory)
     {
         try
         {
@@ -122,14 +131,15 @@ public sealed class Registry(string repositoryRoot)
                 Owns: domain is null ? [] : Strings(domain.Value, "owns"),
                 Accepts: domain is null ? [] : Strings(domain.Value, "accepts"),
                 Packs: Strings(root, "packs"),
-                Entries: entries);
+                Entries: entries,
+                Root: directory);
         }
         catch (JsonException)
         {
             // A manifest that will not parse is the repository's own problem and its own tooling will
             // say so. Here it means only that we cannot read the declaration — which is not a reason to
             // drop the repository off the map.
-            return new Registration(name, true, null, [], [], [], entries);
+            return new Registration(name, true, null, [], [], [], entries, directory);
         }
     }
 

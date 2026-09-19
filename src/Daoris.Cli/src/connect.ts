@@ -34,24 +34,44 @@ export function endpoint(env: NodeJS.ProcessEnv = process.env): { url: string; k
 }
 
 /**
+ * Whether a service URL points at this machine. The hostname, not a substring — a remote host named
+ * `localhost.example.com` is exactly the trap a substring check walks into. An unparseable URL answers
+ * false: when in doubt, the machine path stays home.
+ */
+export function isLocalService(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * What this repository tells a service about itself.
  *
  * @remarks
  * Sent rather than scanned because a **remote** service cannot see the repository at all. A service
  * running on this machine can read manifests off disk, and does; one running anywhere else has no such
  * option, and pretending otherwise would make the hosted deployment a second-class citizen.
+ *
+ * The root travels only to a **local** service (D46): it is what the driver spawns a session in, and it
+ * is a machine path — `sensitive-info` keeps those out of tracked files, and the same judgement keeps
+ * them off the network. A remote deployment gets the declaration and nothing about anyone's disk.
  */
-export function registration(root: string, manifest: Manifest, name: string): {
+export function registration(root: string, manifest: Manifest, name: string, serviceUrl: string): {
   repository: string;
   packs: string[];
   canonSource: string;
   domain: Domain | null;
+  root?: string;
 } {
   return {
     repository: name,
     packs: manifest.packs,
     canonSource: manifest.source,
     domain: manifest.domain ?? null,
+    ...(isLocalService(serviceUrl) ? { root } : {}),
   };
 }
 
@@ -77,14 +97,13 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
       1);
   }
 
-  const body = registration(root, manifest, name);
+  const { url, key } = endpoint();
+  const body = registration(root, manifest, name, url);
   if (argv.includes('--dry-run')) {
     write(JSON.stringify(body, null, 2));
-    write(`daoris: would register with ${endpoint().url}${REGISTRY_PATH}`);
+    write(`daoris: would register with ${url}${REGISTRY_PATH}`);
     return 0;
   }
-
-  const { url, key } = endpoint();
   const response = await fetch(`${url}${REGISTRY_PATH}`, {
     method: 'POST',
     headers: {

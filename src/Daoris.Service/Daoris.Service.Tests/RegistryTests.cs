@@ -94,4 +94,47 @@ public sealed class RegistryTests : IDisposable
 
         Assert.Equal(42, Assert.Single(Read(new() { ["Counted"] = 42 })).Entries);
     }
+
+    /// <summary>
+    /// A scanned repository's root is its directory — which is how, in local mode, the driver knows
+    /// where to spawn even for a repository that never ran `connect` (D46).
+    /// </summary>
+    [Fact]
+    public void A_scanned_repository_carries_its_root()
+    {
+        Repo("Cognition", """{ "source": "s" }""");
+
+        Assert.Equal(Path.Combine(_root, "Cognition"), Assert.Single(Read()).Root);
+    }
+
+    /// <summary>
+    /// A pushed declaration wins on what the repository SAID; the scanned root survives when the push
+    /// carried none — a declaration should not cost the driver the path it already knew.
+    /// </summary>
+    [Fact]
+    public void A_pushed_registration_without_a_root_keeps_the_scanned_one()
+    {
+        Repo("Cognition", """{ "source": "s" }""");
+        var registry = new Registry(_root);
+        registry.Register(new Registration(
+            "Cognition", Adopted: true, "The LLM cognition layer.",
+            Owns: ["routing"], Accepts: [], Packs: [], Entries: 0));
+
+        var entry = Assert.Single(registry.Read(new Dictionary<string, int>()));
+
+        Assert.Equal("The LLM cognition layer.", entry.Summary);
+        Assert.Equal(Path.Combine(_root, "Cognition"), entry.Root);
+    }
+
+    /// <summary>`connect` knows the real root — including one the scan could never find.</summary>
+    [Fact]
+    public void A_pushed_root_is_kept_for_a_repository_the_scan_cannot_see()
+    {
+        var registry = new Registry(_root);
+        registry.Register(new Registration(
+            "Elsewhere", Adopted: true, "Lives outside the knowledge root.",
+            Owns: ["itself"], Accepts: [], Packs: [], Entries: 0, Root: "D:/other/Elsewhere"));
+
+        Assert.Equal("D:/other/Elsewhere", Assert.Single(registry.Read(new Dictionary<string, int>())).Root);
+    }
 }

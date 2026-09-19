@@ -177,13 +177,8 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions)
     private const string AdvanceTargets =
         "starting, working, awaiting-person, completed, declined, stood-down, failed, stopped";
 
-    /// <summary>The design's spelling, used in every message and accepted back by <see cref="Parse"/>.</summary>
-    private static string Spell(SessionState state) => state switch
-    {
-        SessionState.AwaitingPerson => "awaiting-person",
-        SessionState.StoodDown => "stood-down",
-        _ => state.ToString().ToLowerInvariant(),
-    };
+    /// <summary>The public spelling, shared with every door through <see cref="Session.Spell"/>.</summary>
+    private static string Spell(SessionState state) => Session.Spell(state);
 
     private static SessionState? Parse(string state) =>
         Enum.TryParse<SessionState>(state.Replace("-", ""), ignoreCase: true, out var parsed) ? parsed : null;
