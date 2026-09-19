@@ -1188,3 +1188,40 @@ build closes), controls act only where the driver is attached, and even the cros
 is held as an open question. Verification is a remote phase in the family rehearsal: two simulated
 machines, one raced quest, the strip proven by scanning the remote store, keys refused and never
 leaked, no model in the gate.
+
+## DRV5 — build the remote server: shared mode, the sync loop, the hardened lock (2026-09-20)
+
+> The remote server, for teams — D45's part 3. The contract is `docs/2026-09-20-remote-design.md`
+> (D47): shared mode with per-person keys, the desktop sync loop, and the quest lock hardened into
+> code, all gate-proven by a two-machine phase in the family rehearsal with no model.
+
+✅ done 2026-09-20, in six landings. **1 — the quest lock becomes code**: `MoveAsync` inlines the
+transition table into the UPDATE's WHERE (Taken only from Open — the atomic take; closed quests
+immovable), in the shared `QuestExchange` so local mode is hardened too; the second take loses in the
+store, proven by a two-connections-over-one-file test, and the exchange names the state that refused
+(already-taken → stand down; closed → a new ask is a new title), 409 at the HTTP door. **2 — the
+transcript guard**: `GET /api/sessions` gained the root's loopback guard; evidence still travels,
+the machine path does not. **3 — shared mode**: `DAORIS_MODE=shared` gates every route with minted
+per-person per-machine keys (SHA-256 hash + non-secret audit prefix, shown once, expiring, redacted
+on every path), administered on the binary (`keys mint|list|revoke`); no page served, no machine path
+answered; a non-loopback bind in local mode refuses to start (the fail-safe inversion). **4 — the
+manifest's two declarations** (join; share knowledge), silence meaning local, carried by `connect` as
+explicit booleans and read by both service readers, narrowed identically (knowledge needs join).
+**5 — the sync loop**: `RemoteSync` on the desktop feeds stripped registrations, session records
+keyed by origin + id, and sharing repositories' knowledge content (never vectors) up; mirrors
+remote-homed quests and foreign registrations down; quest verbs on remote-homed quests write through
+via a Core relay seam (`IRemoteQuestClient`/`HttpRemoteQuests`) both local doors compose, an
+unreachable remote refusing plainly rather than queueing. **6 — the rehearsal's remote phase**: two
+simulated machines and a shared host — a quest published on A drove to done on B, the closure crossed
+back, a raced take left the losing driver observing the lock, knowledge crossed only where declared,
+and the remote store was scanned byte-level for no root, no transcript, and nothing kept home; 74/74.
+
+Recorded as **D47** with two amendments made during the build on the owner's redesign grant (nothing
+deployed): D36's interim single-key write gate was **retired** rather than carried — two trust shapes
+only, local-loopback and shared-keys; and the sync mirrors the remote's registry down as **foreign
+rows only**, because the machine holding a checkout is the authority on its own registration and root.
+Two traps landed in `docs/FIX-LOG.md`: a stale gitignored `dist/` silently shadowed the CLI sources
+in every `bin`-driven gate (green `npm test`, red rehearsal), and an omitted driver mode falls through
+to watch-forever (the rehearsal's drive helpers default `--once` with a kill-timeout backstop now).
+Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
+are built.

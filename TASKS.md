@@ -10,16 +10,30 @@ the family, kept from drifting, and improved from wherever the improvement was f
 **Daoris as the driver**: the centralized workflow manager that triggers and coordinates the agent
 sessions doing the family's work. Parts 1 and 2 of D45 are **built and proven by a real driven run**
 (D46, `docs/2026-09-19-driver-design.md`; DRV4 in the archive). The owner continued the sequence
-2026-09-20: part 3's design is settled (DRV3 → `docs/2026-09-20-remote-design.md`, recorded as
-**D47**) — **the build is next as DRV5**, the same design-then-build shape DRV1 → DRV2 proved out.
+2026-09-20: part 3 is now **designed (DRV3 → D47, `docs/2026-09-20-remote-design.md`) and built
+(DRV5, six landings, in the archive)** — the remote server exists, gate-proven by the family
+rehearsal's two-machine phase. **All three parts of D45 are built.**
 
 ## State
 
-**All five artefacts exist and are built.** Nine commands, 125 CLI tests, 114 service, 57 devkit,
-38 driver, 52/52 release rehearsal (eight runs 2026-09-18), **43/43 family rehearsal** including the
-driver phase (2026-09-19), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills,
-6 packs. Always-loaded core is **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon
-addition fails the gate even as an index row, and the answer is splitting, not raising (D28).
+**All five artefacts exist and are built, and all three parts of D45 with them.** Nine commands,
+128 CLI tests, 158 service, 57 devkit, 49 driver, 52/52 release rehearsal (eight runs 2026-09-18),
+**74/74 family rehearsal** including the driver and two-machine remote phases (2026-09-20), 9 devkit
+gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
+**23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
+an index row, and the answer is splitting, not raising (D28).
+
+**The remote exists** (D47/DRV5, built 2026-09-20): the same HTTP host in shared mode gates every
+route with per-person per-machine minted keys (`keys mint|list|revoke`, hashed with an audit prefix,
+expiring), refuses to bind beyond loopback in local mode, and never serves a machine path or a page;
+the quest lock is code (an atomic guarded `Taken` transition, closed quests immovable) in the shared
+judgement class, so local mode is hardened too; a quest homes at the remote when its receiver is
+joined and verbs write through synchronously or fail plainly; the desktop's sync loop rides the driver
+tick — feeding stripped registrations, session records keyed by origin + id, and opted-in knowledge
+content (never vectors) up, mirroring the family's quests and foreign registrations down. What may
+leave a machine is two manifest declarations (join; share knowledge), silence meaning local. Proven
+by the rehearsal's remote phase: a quest crossed two machines and drove to done, a raced take left the
+losing driver observing the lock, and the remote store was scanned to hold nothing machine-local.
 
 **The driver drives** (D45/D46, built 2026-09-19): `Daoris.Desktop.Driver` (pure planner, observed
 lifecycle, adapter seam — stub + `claude-code`), the headless `daoris-driver`, and the shell
@@ -61,23 +75,6 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 38,782 bytes, with `web-webview` and `durable-jobs` ready for it.
 
 ## Backlog
-
-- [ ] **DRV5 — build the remote server: shared mode, the sync loop, the hardened lock (start here,
-  fresh session).** The contract is `docs/2026-09-20-remote-design.md` (D47); read it whole before any
-  code. The landings it names: **the quest transition table with the atomic take** in the shared
-  judgement class — Open→Taken as a guarded UPDATE, closed quests immovable (design §5; today
-  `SetStatusAsync` is existence-check-only, `Quests.cs:134-149`, and local mode gets the same
-  hardening); **shared mode** — per-person per-machine expiring keys (hash + audit prefix, shown
-  once, redacted on every path), the OIDC seam with the dev scheme inert outside Development, every
-  route gated, and the startup refusal when binding beyond loopback without it (§3/§7); **the desktop
-  sync loop** — feed up stripped registrations, session records keyed by origin + id, and opted-in
-  knowledge content (never vectors), mirror remote-homed quests down, write quest verbs through
-  synchronously via the judgement seam (§2/§4/§9); **the manifest's two declarations** (join; share
-  knowledge) carried by `connect`, silence meaning local (§4); **the transcript guard** closing
-  today's gap — `GET /api/sessions` emits the machine path unguarded (`Http/Program.cs:335-337`,
-  §4); and **the family rehearsal's remote phase** — two simulated machines, one raced quest ending
-  one-completed-one-stood-down, the strip proven by scanning the remote store, keys refused and never
-  leaked, no model in the gate (§10).
 
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken

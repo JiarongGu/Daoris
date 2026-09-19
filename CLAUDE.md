@@ -6,11 +6,11 @@
 
 **Daoris** (道衍, "the unfolding of the way") is the **substrate for domain-owning agents to share
 knowledge and work** across this family of projects — and, as of **D45, the driver**: the centralized
-workflow manager that will trigger and coordinate the agent sessions doing that work, one session per
-domain-owning repository. Three parts: the per-repo **connector** (built), the **local driver** desktop
-app (**built and proven by a real driven run** — D46, `docs/2026-09-19-driver-design.md`), the
-**remote server** for teams (**designed** — D47, `docs/2026-09-20-remote-design.md`; the build is
-DRV5). Each repository has its own agent, which owns that
+workflow manager that triggers and coordinates the agent sessions doing that work, one session per
+domain-owning repository. **All three parts are built:** the per-repo **connector**, the **local
+driver** desktop app (**proven by a real driven run** — D46, `docs/2026-09-19-driver-design.md`), and
+the **remote server** for teams (**built and proven by a two-machine rehearsal** — D47,
+`docs/2026-09-20-remote-design.md`). Each repository has its own agent, which owns that
 domain; Daoris is how they hold one canon of doctrine between them, find where they have learned the
 same thing twice, and **ask each other for changes instead of reaching in**.
 
@@ -36,23 +36,26 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Nine commands, 125 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 114, `Daoris.Devkit` 57, and the
-driver 38. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
+**Built and proven; nothing published.** Nine commands, 128 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 158, `Daoris.Devkit` 57, and the
+driver 49. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
 off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
 proof stands and the live consumer count is zero — adoption has to be near-free for the family to come
 back, which is what the automation-first direction is for.
 
-**All five artefacts exist and are built**, including `Daoris.Desktop` — the local driver (D45/D46):
-the shell brings up the local host, carries the platform, runs the driver loop, and lands the person's
-session controls; the family rehearsal gates the whole loop with no model in it (43/43).
-**Nothing is published**, and development runs at `0.0.x`. The service is **deployable** (D36):
-local sessions all spawn the MCP host over one persistent store, and the HTTP host carries
-registrations and quests for a remote deployment, key-gated, with no model required. **Development is
-automation-first** (D37): the person sets the target and verifies the final diff; agents execute and
-gates verify the middle — see canon knowledge `autonomous-development`.
+**All five artefacts exist and are built, and all three parts of D45 with them** — including
+`Daoris.Desktop`, the local driver (D45/D46): the shell brings up the local host, carries the
+platform, runs the driver loop, and lands the person's session controls. The **remote server**
+(D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
+minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode — with
+the quest lock hardened into code (an atomic guarded `Taken`, closed quests immovable) and the
+desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
+gates the whole thing with no model: driver loop **and** a two-machine remote crossing (74/74).
+**Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
+the person sets the target and verifies the final diff; agents execute and gates verify the middle —
+see canon knowledge `autonomous-development`.
 
 **Two things to know before changing anything.** The always-loaded core sits at **23,988 of 24,000
 bytes** — 12 bytes of headroom, so the next canon addition fails the budget gate even as an index row.
