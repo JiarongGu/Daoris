@@ -106,8 +106,10 @@ fresh session's realistic starting points, none of them automatic:
   precondition rather than a flaky assertion. Both times it ran straight after canon files were edited
   and synced. **Every run now writes a transcript to `_fixtures/rehearsal-logs/` by construction**
   (2026-09-18), so the next failure is captured without anyone remembering to. Eight runs that day —
-  several straight after canon edits and syncs, the suspected trigger — all passed 52/52. Stays
-  open until a captured failure explains it. Do not tag a release while this is open.
+  several straight after canon edits and syncs, the suspected trigger — all passed 52/52, and a ninth
+  ran clean 2026-09-20 after the whole DRV5 arc (no canon edits that session, which is the case that
+  has always passed). Stays open until a captured failure explains it. Do not tag a release while this
+  is open.
 
 - [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met.** The bilingual sibling
   carries the rule and the gate; Daoris now carries the same gate (`scripts/i18n-check.mjs`, adopted
