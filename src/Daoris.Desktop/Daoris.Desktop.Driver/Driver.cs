@@ -125,6 +125,25 @@ public sealed class Driver(ServiceClient service, DriverConfig config, AdapterSe
 
             return ($"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}): {conclusion.Note}", true);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // The person is closing the driver. WaitAsync already ended the process tree, so nothing
+            // is orphaned — and the record must say so rather than sit at "working" forever. The write
+            // rides an unbound token: the cancelled one would refuse the very report it caused.
+            try
+            {
+                await service.AdvanceAsync(
+                    sessionId, "stopped",
+                    note: "the driver was stopped while this ran; the session's process was ended with it.",
+                    ct: CancellationToken.None).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Best-effort by construction: the host may already be gone on the same shutdown.
+            }
+
+            return ($"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.", true);
+        }
         catch (Exception error) when (error is not OperationCanceledException)
         {
             // The record must say what the driver saw, even when what it saw was its own failure —
@@ -142,7 +161,11 @@ public sealed class Driver(ServiceClient service, DriverConfig config, AdapterSe
         }
     }
 
-    /// <summary>Exit code, or null when the timeout killed it. The tree dies with it — no orphans.</summary>
+    /// <summary>
+    /// Exit code, or null when the timeout killed it. Either way the tree dies with it — a timeout
+    /// AND a driver shutdown both end the process, because an orphaned agent session working a quest
+    /// nobody is observing is the one thing worse than a failed one.
+    /// </summary>
     private async Task<int?> WaitAsync(Process process, CancellationToken ct)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -152,11 +175,12 @@ public sealed class Driver(ServiceClient service, DriverConfig config, AdapterSe
             await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
             return process.ExitCode;
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             process.Kill(entireProcessTree: true);
-            await process.WaitForExitAsync(ct).ConfigureAwait(false);
-            return null;
+            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            if (ct.IsCancellationRequested) throw; // shutdown: the caller records "stopped"
+            return null; // timeout: the caller records "failed"
         }
     }
 

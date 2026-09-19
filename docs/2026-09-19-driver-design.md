@@ -157,9 +157,10 @@ control, and every part of it works with no model on the machine.
   bundle, and the landed history, reviewed in one sitting.
 - **The outward boundary is structural, not policed.** The driver has no push, publish, or release
   capability at all — a session that reaches that boundary parks, and the person acts or declines.
-- **Notification**: the desktop shell may raise OS notifications through the runtime's own notification
-  path when a session parks or the queue sits — answering the platform design's open question 2 for the
-  desktop shell; the browser keeps polling.
+- **Notification**: the shell forwards tick reports over the runtime's notification path — which is,
+  measured (2026-09-19), a host→page IPC channel rather than OS toasts — so session events surface as
+  the platform's own toasts while the window is open; the browser keeps polling. An OS-level toast for
+  a parked session while the window is closed is the app's own code, held as open question 5.
 
 ## 7. What lives in the service versus the desktop host
 
@@ -209,3 +210,7 @@ tier, and says which tier ran.
    working near this?" before publishing a near-duplicate quest? Held until an agent actually wants it.
 4. **Recurring targets** — the content-derived id makes one title one quest forever (§3); if real use
    wants standing or scheduled targets, that is a new entity feeding quests, not a change to quest ids.
+5. **OS-level notification** — the desktop runtime ships no toast API (its "notification path" is
+   host→page IPC), so a session parking while the window is closed reaches nobody. If real driven use
+   shows that mattering, the shell grows its own toast — the runtime deliberately never learns what an
+   operation is, so this is the app's code by design.

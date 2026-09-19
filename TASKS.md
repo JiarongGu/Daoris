@@ -62,11 +62,15 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   it gets verified (a deployment choice on a proven loop, §8). The **platform shows the session
   surface, read-only** (design §6): a live session's state on its quest's card, the full record —
   state, adapter, note, evidence verbatim — in the drawer, en+zh, covered in both loops (18 Vitest,
-  7/7 Playwright including a driven-record scenario). **Remaining:** the Shenora shell — hosts the
-  HTTP host and the platform, embeds the driver, and carries the person's session CONTROLS (drivable,
-  hold, stop, start-now: they act where a driver is attached) plus OS notification on
-  `awaiting-person`. The sibling is consumable at a released version (v0.16.0, `Shenora.Windows` +
-  `@shenora/react`, checked 2026-09-19), so there is no coordination blocker.
+  7/7 Playwright including a driven-record scenario). **The shell exists** (`Daoris.Desktop.App`,
+  `daoris-desktop`, on released Shenora.Windows 0.16.0): brings up the local HTTP host (adopt or own;
+  a dev build runs from its project so the bundle serves), carries the platform in its WebView, runs
+  the driver loop in-process (`driver.json` re-read every tick — a control that needs a bounce is a
+  control nobody trusts), and shuts down whole: loop stopped, in-flight sessions ended and recorded
+  `stopped`, owned host killed — smoke-verified end to end 2026-09-19. **Remaining:** the person's
+  session controls in the platform over the IPC bridge (drivable, hold, stop, start-now — a
+  `DAORIS.DRIVER` module + `@shenora/react` detection, controls rendered only where a shell answers),
+  and the page-side rendering of `DRIVER_TICK` notifications as toasts.
 
 - [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
   machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's

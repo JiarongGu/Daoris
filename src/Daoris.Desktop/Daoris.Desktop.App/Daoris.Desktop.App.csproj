@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The local driver's shell (D45 part 2, D46): one window that brings up the local service host,
+       carries the platform, and runs the driver loop — built on the desktop runtime sibling at a
+       RELEASED version (D22). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Windows TFM here only: the driver library underneath stays plain net10.0, so everything that
+         can be tested headless is. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>Daoris.Desktop</RootNamespace>
+    <AssemblyName>daoris-desktop</AssemblyName>
+    <!-- A known, expected WebView2/WindowsBase reference conflict — demoted exactly as the runtime's
+         own consumers demote it. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Shenora.Windows" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -29,7 +29,6 @@ try
     var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
 
     using var service = ServiceClient.FromEnvironment();
-    var driver = new Driver(service, config, AdapterSet.Built(), home);
 
     if (config.Drivable.Count == 0)
     {
@@ -38,18 +37,25 @@ try
 
     if (once)
     {
-        Print(await driver.TickAsync());
+        Print(await new Driver(service, config, AdapterSet.Built(), home).TickAsync());
     }
     else if (untilIdle)
     {
-        foreach (var report in await driver.RunUntilIdleAsync()) Print(report);
+        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home).RunUntilIdleAsync())
+        {
+            Print(report);
+        }
     }
     else
     {
         Console.WriteLine($"driver: watching {service.BaseUrl} every {config.PollSeconds}s — Ctrl+C stops it");
         while (true)
         {
-            Print(await driver.TickAsync(), quietWhenIdle: true);
+            // The person's standing choices are re-read every tick, so a hold, an opt-in, or a new
+            // adapter command takes effect without a restart — the shell's controls are edits to this
+            // file, and a control that needs a bounce is a control nobody trusts.
+            config = DriverConfig.Load(configPath);
+            Print(await new Driver(service, config, AdapterSet.Built(), home).TickAsync(), quietWhenIdle: true);
             await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds));
         }
     }
