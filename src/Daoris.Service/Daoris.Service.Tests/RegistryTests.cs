@@ -46,6 +46,32 @@ public sealed class RegistryTests : IDisposable
     }
 
     /// <summary>
+    /// The scanned path honours the manifest's remote declaration too (D47 §4) — a repository that
+    /// never ran `connect` still speaks through its manifest. Knowledge without join is narrowed to
+    /// local here as well: the CLI refuses that manifest, but this scanner reads manifests the CLI
+    /// never validated.
+    /// </summary>
+    [Fact]
+    public void The_remote_declaration_is_scanned_from_the_manifest()
+    {
+        Repo("Joined", """{ "source": "s", "packs": [], "remote": { "join": true, "knowledge": true } }""");
+        Repo("Orphaned", """{ "source": "s", "packs": [], "remote": { "knowledge": true } }""");
+        Repo("Silent", """{ "source": "s", "packs": [] }""");
+
+        var all = Read();
+        var joined = all.Single(r => r.Repository == "Joined");
+        var orphaned = all.Single(r => r.Repository == "Orphaned");
+        var silent = all.Single(r => r.Repository == "Silent");
+
+        Assert.True(joined.Joined);
+        Assert.True(joined.SharesKnowledge);
+        Assert.False(orphaned.Joined);
+        Assert.False(orphaned.SharesKnowledge);
+        Assert.False(silent.Joined);
+        Assert.False(silent.SharesKnowledge);
+    }
+
+    /// <summary>
     /// Adoption is the gate on being addressed; declaring a domain is not. A repository that has adopted
     /// but said nothing is still reachable — it simply tells an asker less, and the asker is told that.
     /// </summary>

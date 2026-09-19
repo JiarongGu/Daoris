@@ -16,6 +16,14 @@ namespace Daoris.Knowledge;
 /// Where the working tree is ON THIS MACHINE — the one field spawning a session needs (D46). Machine-local
 /// by nature: it is answered only to loopback callers and is stripped from anything that syncs off-machine.
 /// </param>
+/// <param name="Joined">
+/// Declared for a remote deployment (D47 §4): its registration, quests and session records may leave
+/// the machine. From the manifest's own tracked `remote` block; silence means false.
+/// </param>
+/// <param name="SharesKnowledge">
+/// Its indexed knowledge content may feed a remote too. Never true without <paramref name="Joined"/> —
+/// the CLI refuses that manifest, and every reader here narrows it the same way.
+/// </param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -24,7 +32,9 @@ public sealed record Registration(
     IReadOnlyList<string> Accepts,
     IReadOnlyList<string> Packs,
     int Entries,
-    string? Root = null)
+    string? Root = null,
+    bool Joined = false,
+    bool SharesKnowledge = false)
 {
     /// <summary>Whether this repository has said anything useful about what it can be asked for.</summary>
     public bool Registered => Adopted && (!string.IsNullOrWhiteSpace(Summary) || Owns.Count > 0 || Accepts.Count > 0);
@@ -123,6 +133,10 @@ public sealed class Registry(string repositoryRoot)
             var domain = root.TryGetProperty("domain", out var d) && d.ValueKind == JsonValueKind.Object
                 ? d
                 : (JsonElement?)null;
+            var remote = root.TryGetProperty("remote", out var m) && m.ValueKind == JsonValueKind.Object
+                ? m
+                : (JsonElement?)null;
+            var joined = remote is not null && Bool(remote.Value, "join");
 
             return new Registration(
                 name,
@@ -132,7 +146,11 @@ public sealed class Registry(string repositoryRoot)
                 Accepts: domain is null ? [] : Strings(domain.Value, "accepts"),
                 Packs: Strings(root, "packs"),
                 Entries: entries,
-                Root: directory);
+                Root: directory,
+                Joined: joined,
+                // Knowledge feeds only from a joined repository (D47 §4). The CLI refuses this
+                // manifest; the scanner reads manifests the CLI never validated, so it narrows too.
+                SharesKnowledge: joined && remote is not null && Bool(remote.Value, "knowledge"));
         }
         catch (JsonException)
         {
@@ -142,6 +160,9 @@ public sealed class Registry(string repositoryRoot)
             return new Registration(name, true, null, [], [], [], entries, directory);
         }
     }
+
+    private static bool Bool(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 
     private static string? String(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

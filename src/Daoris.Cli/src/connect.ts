@@ -58,12 +58,18 @@ export function isLocalService(url: string): boolean {
  * The root travels only to a **local** service (D46): it is what the driver spawns a session in, and it
  * is a machine path — `sensitive-info` keeps those out of tracked files, and the same judgement keeps
  * them off the network. A remote deployment gets the declaration and nothing about anyone's disk.
+ *
+ * The manifest's remote declaration travels too (D47 §4): a sync loop feeds only what the repository
+ * itself, under review, said may leave. Sent as explicit booleans — silence in the manifest becomes
+ * `false` on the wire, so a service never guesses what an absent field meant.
  */
 export function registration(root: string, manifest: Manifest, name: string, serviceUrl: string): {
   repository: string;
   packs: string[];
   canonSource: string;
   domain: Domain | null;
+  join: boolean;
+  shareKnowledge: boolean;
   root?: string;
 } {
   return {
@@ -71,6 +77,8 @@ export function registration(root: string, manifest: Manifest, name: string, ser
     packs: manifest.packs,
     canonSource: manifest.source,
     domain: manifest.domain ?? null,
+    join: manifest.remote?.join ?? false,
+    shareKnowledge: manifest.remote?.knowledge ?? false,
     ...(isLocalService(serviceUrl) ? { root } : {}),
   };
 }

@@ -95,6 +95,19 @@ export interface Domain {
 }
 
 /** `daoris.json` — inert data, deliberately (D26). */
+/**
+ * What may leave this machine for a remote deployment (D47 §4). It lives in the MANIFEST — tracked
+ * and reviewed — because disclosure is the repository's call, not one person's local toggle. Absence
+ * is the default and means local: the cost of the wrong default is asymmetric, since over-sharing is
+ * a disclosure and under-sharing is an inconvenience (D21).
+ */
+export interface RemoteDeclaration {
+  /** Join a remote: the registration, quests and session records become visible to it. */
+  join: boolean;
+  /** Feed indexed knowledge content too. Meaningless without `join`, and refused without it. */
+  knowledge: boolean;
+}
+
 export interface Manifest {
   source: string;
   packs: string[];
@@ -103,6 +116,8 @@ export interface Manifest {
   coreBudgetBytes: number;
   /** Absent until a repository registers itself; a quest can still be addressed, less usefully. */
   domain?: Domain;
+  /** Absent until a repository opts into a remote deployment; silence means local (D47 §4). */
+  remote?: RemoteDeclaration;
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
 }

@@ -59,6 +59,32 @@ test('an absent lock reads as null, and lockIndex keys by target', () => {
   fx.cleanup();
 });
 
+/**
+ * What may leave this machine for a remote deployment is declared in the MANIFEST — tracked and
+ * reviewed, because disclosure is the repository's call, not one person's local toggle (D47 §4).
+ * Silence means local: the cost of the wrong default is asymmetric.
+ */
+test('the remote declaration is silent by default and normalizes to booleans', () => {
+  const fx = makeFixture('config-remote');
+  fx.write('daoris.json', '{"source":"s"}');
+  assert.equal(readManifest(fx.root).remote, undefined);
+
+  fx.write('daoris.json', '{"source":"s","remote":{"join":true}}');
+  const manifest = readManifest(fx.root);
+  assert.equal(manifest.remote!.join, true);
+  assert.equal(manifest.remote!.knowledge, false);
+  fx.cleanup();
+});
+
+test('declaring knowledge without join is refused, naming the fix', () => {
+  const fx = makeFixture('config-remote-orphan');
+  fx.write('daoris.json', '{"source":"s","remote":{"knowledge":true}}');
+  const error = captureError(() => readManifest(fx.root));
+  assert.ok(error instanceof DaorisError);
+  assert.match(error.message, /join/);
+  fx.cleanup();
+});
+
 test('writeManifest produces re-readable JSON', () => {
   const fx = makeFixture('config-write');
   writeManifest(fx.root, { source: 's', packs: ['p'], target: '.claude', coreBudgetBytes: 100 });

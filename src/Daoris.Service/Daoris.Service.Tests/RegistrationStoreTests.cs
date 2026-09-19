@@ -74,6 +74,26 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// The remote declaration is the disclosure boundary's input (D47 §4): the sync loop feeds only
+    /// repositories whose own reviewed manifest said so, and that answer must survive a restart.
+    /// </summary>
+    [Fact]
+    public async Task The_remote_declaration_round_trips_and_silence_means_local()
+    {
+        await _store.UpsertAsync(Declared() with { Joined = true, SharesKnowledge = true }, Now);
+        await _store.UpsertAsync(Declared("Silent"), Now);
+
+        var all = await _store.AllAsync();
+        var joined = all.Single(r => r.Repository == "Yumeora");
+        var silent = all.Single(r => r.Repository == "Silent");
+
+        Assert.True(joined.Joined);
+        Assert.True(joined.SharesKnowledge);
+        Assert.False(silent.Joined);
+        Assert.False(silent.SharesKnowledge);
+    }
+
+    /// <summary>
     /// A store created before sessions existed has no root column, and its registrations must survive
     /// the upgrade — a schema that only works on a fresh database drops every connected repository.
     /// </summary>
@@ -99,9 +119,13 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
 
         Assert.Equal("Was here first.", elder.Summary);
         Assert.Null(elder.Root);
+        Assert.False(elder.Joined);
+        Assert.False(elder.SharesKnowledge);
 
-        await store.UpsertAsync(elder with { Root = "/home/dev/Elder" }, Now);
-        Assert.Equal("/home/dev/Elder", (await store.AllAsync()).Single().Root);
+        await store.UpsertAsync(elder with { Root = "/home/dev/Elder", Joined = true }, Now);
+        var upgraded = (await store.AllAsync()).Single();
+        Assert.Equal("/home/dev/Elder", upgraded.Root);
+        Assert.True(upgraded.Joined);
     }
 }
 

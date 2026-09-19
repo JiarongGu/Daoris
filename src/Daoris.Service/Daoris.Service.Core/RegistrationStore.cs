@@ -52,17 +52,25 @@ public sealed class RegistrationStore
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // A store created before the driver existed has no root column, and its registrations must
-        // survive the upgrade — a schema that only works on a fresh database silently drops every
-        // repository that ever connected, which is exactly the failure this store was built to remove.
-        await using (var probe = _connection.CreateCommand())
+        // A store created before the driver existed has no root column — and one created before the
+        // remote existed has no declaration columns. Registrations must survive the upgrade: a schema
+        // that only works on a fresh database silently drops every repository that ever connected,
+        // which is exactly the failure this store was built to remove.
+        foreach (var (column, definition) in new[]
         {
-            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('registrations') WHERE name = 'root'";
+            ("root", "root TEXT NULL"),
+            ("joined", "joined INTEGER NOT NULL DEFAULT 0"),
+            ("shares_knowledge", "shares_knowledge INTEGER NOT NULL DEFAULT 0"),
+        })
+        {
+            await using var probe = _connection.CreateCommand();
+            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('registrations') WHERE name = $name";
+            probe.Parameters.AddWithValue("$name", column);
             var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
             if (present == 0)
             {
                 await using var alter = _connection.CreateCommand();
-                alter.CommandText = "ALTER TABLE registrations ADD COLUMN root TEXT NULL";
+                alter.CommandText = $"ALTER TABLE registrations ADD COLUMN {definition}";
                 await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
         }
@@ -73,11 +81,11 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root)
-            VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge)
+            VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares)
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated,
-              root = $root
+              root = $root, joined = $joined, shares_knowledge = $shares
             """;
         command.Parameters.AddWithValue("$repository", registration.Repository);
         command.Parameters.AddWithValue("$summary", (object?)registration.Summary ?? DBNull.Value);
@@ -86,6 +94,8 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$packs", ToJson(registration.Packs));
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         command.Parameters.AddWithValue("$root", (object?)registration.Root ?? DBNull.Value);
+        command.Parameters.AddWithValue("$joined", registration.Joined ? 1 : 0);
+        command.Parameters.AddWithValue("$shares", registration.SharesKnowledge ? 1 : 0);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
@@ -93,7 +103,8 @@ public sealed class RegistrationStore
     public async Task<IReadOnlyList<Registration>> AllAsync(CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
-        command.CommandText = "SELECT repository, summary, owns, accepts, packs, root FROM registrations";
+        command.CommandText =
+            "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -107,7 +118,9 @@ public sealed class RegistrationStore
                 FromJson(reader.GetString(3)),
                 FromJson(reader.GetString(4)),
                 Entries: 0,
-                Root: reader.IsDBNull(5) ? null : reader.GetString(5)));
+                Root: reader.IsDBNull(5) ? null : reader.GetString(5),
+                Joined: reader.GetInt32(6) != 0,
+                SharesKnowledge: reader.GetInt32(7) != 0));
         }
 
         return registrations;

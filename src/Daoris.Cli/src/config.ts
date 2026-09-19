@@ -36,6 +36,20 @@ export function readManifest(root: string): Manifest {
   const manifest = { ...DEFAULTS, ...JSON.parse(readText(file)) } as Manifest;
   if (!manifest.source) throw new DaorisError(`${MANIFEST_FILE} has no 'source'`);
 
+  // Knowledge feeds only from a joined repository (D47 §4): a manifest saying "share my knowledge but
+  // do not join" has no meaning a service could honour, so it fails here — at the edge, with the fix —
+  // rather than being silently narrowed somewhere a reviewer never sees.
+  if (manifest.remote !== undefined) {
+    const join = Boolean(manifest.remote.join);
+    const knowledge = Boolean(manifest.remote.knowledge);
+    if (knowledge && !join) {
+      throw new DaorisError(
+        `${MANIFEST_FILE} declares remote.knowledge without remote.join — knowledge feeds only from a `
+        + 'joined repository.\n  Either "remote": { "join": true, "knowledge": true }, or neither.');
+    }
+    manifest.remote = { join, knowledge };
+  }
+
   // Resolve here so an unknown name fails at the edge, naming what exists, rather than deeper down
   // where the message would be about a missing directory.
   manifest.harnessDescriptor = resolveHarness(manifest.harness);

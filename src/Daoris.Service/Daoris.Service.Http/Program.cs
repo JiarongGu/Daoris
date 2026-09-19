@@ -374,7 +374,11 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         body.Domain?.Accepts ?? [],
         body.Packs ?? [],
         Entries: 0,
-        Root: string.IsNullOrWhiteSpace(body.Root) ? null : body.Root), DateTimeOffset.UtcNow, ct);
+        Root: string.IsNullOrWhiteSpace(body.Root) ? null : body.Root,
+        Joined: body.Join ?? false,
+        // Knowledge feeds only from a joined repository (D47 §4) — narrowed here as well as in the
+        // CLI, because this door also answers clients the CLI never saw.
+        SharesKnowledge: (body.Join ?? false) && (body.ShareKnowledge ?? false)), DateTimeOffset.UtcNow, ct);
 
     return Results.Ok(new RegisteredResponse(body.Repository, DateTimeOffset.UtcNow));
 });
@@ -384,7 +388,8 @@ app.MapGet("/api/registry", async (ComposedService s, HttpContext http, Cancella
         r.Repository, r.Adopted, r.Registered, r.Summary, r.Owns, r.Accepts, r.Packs, r.Entries,
         // Machine-local by design (D46): a filesystem path is answered only to a caller on this
         // machine, so a remote deployment never serves anyone's disk layout to the network.
-        Root: MachineLocal(http) ? r.Root : null)));
+        Root: MachineLocal(http) ? r.Root : null,
+        r.Joined, r.SharesKnowledge)));
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
@@ -581,12 +586,13 @@ public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
 public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
 public sealed record RegisterRequest(
-    string Repository, IReadOnlyList<string>? Packs, string? CanonSource, DomainRequest? Domain, string? Root);
+    string Repository, IReadOnlyList<string>? Packs, string? CanonSource, DomainRequest? Domain, string? Root,
+    bool? Join, bool? ShareKnowledge);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At);
 public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
-    string? Root);
+    string? Root, bool Joined, bool SharesKnowledge);
 public sealed record SessionResponse(
     string Id, string Quest, string Repository, string Adapter, string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated);

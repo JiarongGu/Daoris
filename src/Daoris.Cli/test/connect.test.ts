@@ -40,3 +40,19 @@ test('loopback is the boundary, in every spelling', () => {
 test('an unparseable url withholds the root rather than guessing', () => {
   assert.equal(isLocalService('not a url'), false);
 });
+
+/**
+ * The manifest's remote declaration travels with the registration (D47 §4): the sync loop feeds only
+ * what the repository itself, under review, said may leave. Silence means local — explicitly false on
+ * the wire, so a service never has to guess what an absent field meant.
+ */
+test('the registration carries the remote declaration, and silence means local', () => {
+  const declared = { ...manifest, remote: { join: true, knowledge: true } } as Manifest;
+  const body = registration('/home/dev/Repo', declared, 'Repo', 'https://daoris.example.com');
+  assert.equal(body.join, true);
+  assert.equal(body.shareKnowledge, true);
+
+  const silent = registration('/home/dev/Repo', manifest, 'Repo', 'https://daoris.example.com');
+  assert.equal(silent.join, false);
+  assert.equal(silent.shareKnowledge, false);
+});
