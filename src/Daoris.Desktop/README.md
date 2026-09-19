@@ -1,9 +1,12 @@
 # Daoris.Desktop — the local driver
 
-**Status: designed, not started.** This document is the brief, rewritten 2026-09-19 for D45 — the
-owner's direction that Daoris becomes the main driver for all projects. The earlier brief (a shell
-hosting the web build) is a strict subset of this one. **The design is settled:
-`docs/2026-09-19-driver-design.md` (D46) is the contract for the build (DRV2).**
+**Status: the driver is built and gate-verified; the shell is not started.** The brief was rewritten
+2026-09-19 for D45 — the owner's direction that Daoris becomes the main driver for all projects; the
+earlier brief (a shell hosting the web build) is a strict subset of this one. **The design is settled:
+`docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
+adapter seam, the stub) and `Daoris.Desktop.Driver.Host` (the headless door, `daoris-driver`) exist and
+are driven end to end by the family rehearsal's driver phase; the `claude-code` adapter and the
+Shenora shell are what remain.
 
 ## What it is
 

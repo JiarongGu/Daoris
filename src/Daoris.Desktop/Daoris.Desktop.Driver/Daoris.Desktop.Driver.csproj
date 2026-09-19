@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The driver: watch → plan → spawn → observe (D46). A client of the service over HTTP, a process
+       supervisor over the adapters, and nothing else — the service holds the state, this holds the
+       action. -->
+  <PropertyGroup>
+    <RootNamespace>Daoris.Driver</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Daoris.Desktop.Driver.Tests" />
+  </ItemGroup>
+
+</Project>

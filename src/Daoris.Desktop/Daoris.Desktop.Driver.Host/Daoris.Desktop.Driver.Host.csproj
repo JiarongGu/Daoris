@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The headless door to the driver: what the family rehearsal drives, and what the shell (DRV2d)
+       embeds. One driver, two hosts — the same reasoning as the service's two doors. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Daoris.Driver.Host</RootNamespace>
+    <!-- The name the rehearsal spawns and a person types — matching daoris-knowledge-http's shape. -->
+    <AssemblyName>daoris-driver</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+  </ItemGroup>
+
+</Project>

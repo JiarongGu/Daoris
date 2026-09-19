@@ -1,0 +1,23 @@
+<Project>
+
+  <!--
+    Central package versions for the desktop tree.
+
+    The driver itself has ZERO package dependencies: it is an HTTP client and a process supervisor,
+    and both live in the BCL. It talks to the service through the same doors as every other client
+    (D46 §7) — referencing Daoris.Service.Core here would be a temptation to reach the store directly,
+    which is exactly the drift the doors exist to prevent.
+
+    The shell (DRV2d) adds the desktop runtime sibling here, at a RELEASED version (D22).
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>

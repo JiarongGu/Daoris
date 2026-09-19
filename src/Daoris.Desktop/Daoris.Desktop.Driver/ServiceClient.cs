@@ -1,0 +1,204 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// The driver's half of the conversation with the service — a client through the same doors as every
+/// other component (D46 §7). Deliberately NOT a reference to the service's assemblies: the doors are
+/// the contract, and a driver that could reach the store directly would drift from every client that
+/// cannot.
+/// </summary>
+public sealed class ServiceClient : IDisposable
+{
+    private readonly HttpClient _http;
+    private readonly string _base;
+
+    public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
+    {
+        _base = baseUrl.TrimEnd('/');
+        _http = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
+        }
+    }
+
+    public const string UrlVariable = "DAORIS_SERVICE_URL";
+    public const string KeyVariable = "DAORIS_SERVICE_KEY";
+
+    /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
+    public string BaseUrl => _base;
+
+    /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b).</summary>
+    public static ServiceClient FromEnvironment()
+    {
+        var url = Environment.GetEnvironmentVariable(UrlVariable);
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            throw new DriverException(
+                $"no {UrlVariable} — the driver watches a service, and needs to know where one is. "
+                + "A local host is usually http://localhost:5177.");
+        }
+
+        return new ServiceClient(url, Environment.GetEnvironmentVariable(KeyVariable));
+    }
+
+    public void Dispose() => _http.Dispose();
+
+    /// <summary>Everything one tick decides from, fetched together so the plan is coherent.</summary>
+    public async Task<Snapshot> SnapshotAsync(CancellationToken ct = default)
+    {
+        var quests = ReadQuests(await GetAsync("/api/quests", ct).ConfigureAwait(false));
+        var repositories = ReadRegistry(await GetAsync("/api/registry", ct).ConfigureAwait(false));
+        var active = ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+        return new Snapshot(quests, repositories, active);
+    }
+
+    /// <summary>One quest's current status, closed ones included — how a session's end is observed.</summary>
+    public async Task<string?> QuestStatusAsync(string id, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(
+            await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false));
+        foreach (var quest in document.RootElement.EnumerateArray())
+        {
+            if (string.Equals(Text(quest, "id"), id, StringComparison.OrdinalIgnoreCase))
+            {
+                return Text(quest, "status");
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
+    public async Task<(string? SessionId, string Message)> OpenSessionAsync(
+        string questId, string adapter, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("quest", questId);
+            writer.WriteString("adapter", adapter);
+            writer.WriteEndObject();
+        });
+
+        using var response = await _http.PostAsync(
+            $"{_base}/api/sessions", new StringContent(body, Encoding.UTF8, "application/json"), ct)
+            .ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        using var document = JsonDocument.Parse(payload);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return (null, Text(document.RootElement, "error") ?? payload);
+        }
+
+        var session = document.RootElement.GetProperty("session");
+        return (Text(session, "id"), Text(document.RootElement, "message") ?? "");
+    }
+
+    /// <summary>Move a session's record. The ledger judges; the driver reports what it observed.</summary>
+    public async Task<string> AdvanceAsync(
+        string id, string state, string? note = null, string? evidence = null, string? transcript = null,
+        CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("state", state);
+            if (note is not null) writer.WriteString("note", note);
+            if (evidence is not null) writer.WriteString("evidence", evidence);
+            if (transcript is not null) writer.WriteString("transcript", transcript);
+            writer.WriteEndObject();
+        });
+
+        using var response = await _http.PostAsync(
+            $"{_base}/api/sessions/{Uri.EscapeDataString(id)}/state",
+            new StringContent(body, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        using var document = JsonDocument.Parse(payload);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // The refusal sentence is the contract; losing it would make the driver's log say less
+            // than the service said.
+            throw new DriverException(
+                $"the service refused moving session `{id}` to {state}: "
+                + (Text(document.RootElement, "error") ?? payload));
+        }
+
+        return Text(document.RootElement, "message") ?? "";
+    }
+
+    private async Task<string> GetAsync(string path, CancellationToken ct)
+    {
+        using var response = await _http.GetAsync($"{_base}{path}", ct).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+    }
+
+    private static IReadOnlyList<QuestView> ReadQuests(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var quests = new List<QuestView>();
+        foreach (var quest in document.RootElement.EnumerateArray())
+        {
+            quests.Add(new QuestView(
+                Text(quest, "id") ?? "",
+                Text(quest, "from") ?? "",
+                Text(quest, "to") ?? "",
+                Text(quest, "title") ?? "",
+                Text(quest, "body") ?? "",
+                Text(quest, "status") ?? ""));
+        }
+
+        return quests;
+    }
+
+    private static IReadOnlyList<RepoView> ReadRegistry(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var repositories = new List<RepoView>();
+        foreach (var repo in document.RootElement.EnumerateArray())
+        {
+            repositories.Add(new RepoView(
+                Text(repo, "repository") ?? "",
+                repo.TryGetProperty("adopted", out var adopted) && adopted.ValueKind == JsonValueKind.True,
+                Text(repo, "root")));
+        }
+
+        return repositories;
+    }
+
+    private static IReadOnlyList<SessionView> ReadSessions(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var sessions = new List<SessionView>();
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            sessions.Add(new SessionView(
+                Text(session, "id") ?? "",
+                Text(session, "repository") ?? ""));
+        }
+
+        return sessions;
+    }
+
+    private static string? Text(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private static string WriteJson(Action<Utf8JsonWriter> write)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            write(writer);
+        }
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+}

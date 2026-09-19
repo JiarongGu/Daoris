@@ -1,0 +1,37 @@
+namespace Daoris.Driver;
+
+/// <param name="State">The terminal state, in the wire spelling the ledger accepts.</param>
+/// <param name="Note">What was observed — the sentence the record keeps.</param>
+public sealed record SessionConclusion(string State, string Note);
+
+/// <summary>
+/// A session's end, concluded from the two signals the driver can actually see: the exit code, and
+/// the quest's own state (D46 §4). Observed rather than self-reported, because these are the two
+/// signals outside work also produces — an in-band status protocol would only describe driven work,
+/// and driven work is not supposed to be special.
+/// </summary>
+public static class Observation
+{
+    public static SessionConclusion Conclude(int exitCode, string questStatus) => questStatus switch
+    {
+        // The quest reaching its close outranks a messy exit: the work is what matters, and the exit
+        // is noted for the reader rather than allowed to overrule the record.
+        "Done" => new("completed",
+            exitCode == 0 ? "the quest reached done." : $"the quest reached done (exit {exitCode})."),
+        "Declined" => new("declined",
+            exitCode == 0 ? "the session declined, with its reason on the quest."
+                          : $"the session declined (exit {exitCode}); the reason is on the quest."),
+
+        // A clean exit with the quest taken is the stand-down shape: the session found someone else's
+        // claim and finished without touching anything. A session that took the quest itself, finished
+        // its work, and forgot to close it lands here too — the evidence carries the commits, so the
+        // person can see which it was.
+        "Taken" when exitCode == 0 => new("stood-down",
+            "exited cleanly with the quest taken — someone else has it."),
+        "Taken" => new("failed", $"exit {exitCode} with the quest still taken."),
+
+        _ => new("failed",
+            exitCode == 0 ? "exited without touching its quest."
+                          : $"exit {exitCode} before taking its quest."),
+    };
+}

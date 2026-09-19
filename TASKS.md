@@ -49,15 +49,17 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Backlog
 
-- [ ] **DRV2 — build the local driver: `Daoris.Desktop`, re-scoped (start here).** Hosts the local
-  server, carries the platform UI, controls repositories and agent sessions per the settled design —
-  `docs/2026-09-19-driver-design.md` (D46) is the contract; read it and D45/D37 first. The desktop
-  sibling is consumable at a released version (Shenora v0.16.0, `Shenora.Windows` on NuGet +
-  `@shenora/react`, checked 2026-09-19), so D22's constraint is satisfiable and there is no
-  coordination blocker. Build order the design implies: the service's session surface (records, shared
-  judgement class, `GET /api/sessions`, the machine-local root on the registration via `connect`),
-  then the driver loop with the **stub adapter** and the family-rehearsal driver phase (the gate),
-  then the `claude-code` adapter, then the shell.
+- [ ] **DRV2 — build the local driver: `Daoris.Desktop`, re-scoped (in progress).** The contract is
+  `docs/2026-09-19-driver-design.md` (D46); read it and D45/D37 first. **Landed 2026-09-19:** the
+  service's session surface (records + `SessionLedger`, `GET /api/sessions`, the machine-local root
+  on the registration via `connect`, loopback-guarded) and the driver itself —
+  `src/Daoris.Desktop/Daoris.Desktop.Driver` (pure planner, observation mapping, adapter seam, stub
+  adapter) with its headless host `daoris-driver`, gate-verified by the family rehearsal's driver
+  phase (43/43): quest → session → commit → done, dirty-tree hold, decline with reason, outside work
+  untouched, records surviving restart. **Remaining:** the `claude-code` adapter (design §5), the
+  platform's session-control surface (design §6), and the Shenora shell — the desktop sibling is
+  consumable at a released version (v0.16.0, `Shenora.Windows` + `@shenora/react`, checked
+  2026-09-19), so there is no coordination blocker.
 
 - [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
   machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's

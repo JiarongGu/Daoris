@@ -25,6 +25,8 @@ const examplesRoot = join(repoRoot, 'examples');
 const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
 const httpProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http');
 const httpDll = join(httpProject, 'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
+const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
+const driverDll = join(driverProject, 'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
 
@@ -338,9 +340,176 @@ check(
   firstAnswer.text,
 );
 
-// -------------------------------------------------- 7. nothing is lost
+// -------------------------------------------------- 7. the driver drives
 
-section('7. Nothing is lost between sessions');
+section('7. The driver starts what should start (D46)');
+
+// The newcomer is the drivable one: it was born in scratch and connected FROM scratch, so its
+// registered root is a tree the rehearsal owns — never the tracked examples, which connect from the
+// real repository and must never be spawned into by a test.
+const driverBuild = run(`dotnet build "${driverProject}"`, repoRoot);
+check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
+
+// A session spawns only onto a clean git tree, so the newcomer becomes one. Identity is passed
+// per-command: the rehearsal must work on a machine with no git config at all.
+const GIT_ID = '-c user.name="Family Rehearsal" -c user.email="rehearsal@example.invalid"';
+run('git init -q', newcomer);
+run(`git ${GIT_ID} add -A`, newcomer);
+run(`git ${GIT_ID} commit -q -m "the newcomer is born"`, newcomer);
+
+// The stub agent: a session with real mechanics and no model (D46 §8). It claims its own quest
+// through the same HTTP door a real session's connector would use, works (a commit), and closes —
+// or declines when the ask says to, because judging the ask is the session's job, not the driver's.
+const stubAgent = join(scratch, 'stub-agent.mjs');
+writeFileSync(stubAgent, `
+import { execSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+
+const url = process.env.DAORIS_SERVICE_URL;
+const key = process.env.DAORIS_SERVICE_KEY;
+const id = process.env.DAORIS_QUEST_ID;
+const title = process.env.DAORIS_QUEST_TITLE ?? '';
+
+const respond = async (action, reason) => {
+  const response = await fetch(url + '/api/quests/' + id + '/respond', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+    body: JSON.stringify({ action, reason }),
+  });
+  if (!response.ok) throw new Error(action + ' failed: ' + (await response.text()));
+};
+
+await respond('take', null);
+if (/decline/i.test(title)) {
+  await respond('decline', 'The stub declines what asks to be declined.');
+  process.exit(0);
+}
+
+writeFileSync('answered-' + id + '.md', '# ' + title + '\\n\\nAnswered by the stub session.\\n');
+const git = 'git -c user.name="Stub Session" -c user.email="stub@example.invalid"';
+execSync(git + ' add -A', { stdio: 'ignore' });
+execSync(git + ' commit -q -m "stub: answer quest ' + id + '"', { stdio: 'ignore' });
+await respond('done', 'Landed by the stub session.');
+`);
+
+// The person's standing choices, scratch-local: only the newcomer is drivable, and the stub spawns.
+const driverConfig = join(scratch, 'driver.json');
+writeFileSync(driverConfig, `${JSON.stringify({
+  drivable: ['newcomer'],
+  adapter: 'stub',
+  cap: 2,
+  timeoutMinutes: 2,
+  commands: { stub: ['node', stubAgent] },
+}, null, 2)}\n`);
+
+const DRIVER_ENV = {
+  DAORIS_SERVICE_URL: BASE,
+  DAORIS_SERVICE_KEY: KEY,
+  DAORIS_DRIVER_CONFIG: driverConfig,
+};
+const drive = (mode = '--until-idle') => run(`dotnet "${driverDll}" ${mode}`, scratch, DRIVER_ENV);
+
+const driven = await api('POST', '/api/quests', {
+  key: KEY,
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'Drive the newcomer',
+    body: 'Prove the loop: a quest becomes a session becomes a commit becomes done.',
+  },
+});
+const drivenId = driven.json?.quest?.id ?? '';
+
+// A dirty tree holds the queue rather than entangling a session with somebody's work in flight —
+// and holding is NOT progress, so --until-idle returns instead of spinning.
+writeFileSync(join(newcomer, 'work-in-flight.txt'), 'uncommitted\n');
+const heldRun = drive();
+check('a dirty tree holds the start and says so', heldRun.code === 0 && /held/.test(heldRun.out), heldRun.out);
+const stillOpen = await api('GET', '/api/quests?repository=newcomer');
+check(
+  'the held quest is untouched — still open, still nobody’s',
+  (stillOpen.json ?? []).some((q) => q.id === drivenId && q.status === 'Open'),
+  stillOpen.text,
+);
+const noSessions = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true');
+check('no session record was created for a hold', (noSessions.json ?? []).length === 0, noSessions.text);
+
+// Clean the tree; now the loop runs whole: spawn → claim → commit → done → observed.
+rmSync(join(newcomer, 'work-in-flight.txt'));
+const drivenRun = drive();
+check('the driver runs the quest to done', drivenRun.code === 0 && /completed/.test(drivenRun.out), drivenRun.out);
+
+const drivenQuest = await api('GET', '/api/quests?repository=newcomer&includeClosed=true');
+check(
+  'the quest reached done — closed by the SESSION, through its own door',
+  (drivenQuest.json ?? []).some((q) => q.id === drivenId && q.status === 'Done'),
+  drivenQuest.text,
+);
+
+const sessions = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true');
+const completed = (sessions.json ?? []).find((s) => s.quest === drivenId);
+check('the session record ends completed', completed?.state === 'completed', sessions.text);
+check(
+  'the record carries the evidence — the commit that landed',
+  /commits landed/.test(completed?.evidence ?? '') && /stub: answer quest/.test(completed?.evidence ?? ''),
+  JSON.stringify(completed),
+);
+check('the transcript path was recorded', Boolean(completed?.transcript), JSON.stringify(completed));
+const landed = run('git log --oneline', newcomer);
+check(
+  'the commit is really in the newcomer’s history',
+  new RegExp(`stub: answer quest ${drivenId}`).test(landed.out),
+  landed.out,
+);
+
+// Declining is a real answer, and it is the session's answer — the driver only observes it.
+const declineAsk = await api('POST', '/api/quests', {
+  key: KEY,
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'Please decline this ask',
+    body: 'The stub judges the ask; this one asks to be turned down.',
+  },
+});
+const declineRun = drive();
+check('a declined quest concludes a declined session', declineRun.code === 0 && /declined/.test(declineRun.out), declineRun.out);
+const declinedQuest = await api('GET', '/api/quests?repository=newcomer&includeClosed=true');
+check(
+  'the decline carries its reason on the quest',
+  (declinedQuest.json ?? []).some(
+    (q) => q.id === (declineAsk.json?.quest?.id ?? '') && q.status === 'Declined' && /declines/.test(q.note ?? ''),
+  ),
+  declinedQuest.text,
+);
+
+// Driving is additive, never exclusive (D46 §2): a quest an outside session already took is not the
+// driver's to start — it is not even considered, and no record appears.
+const outside = await api('POST', '/api/quests', {
+  key: KEY,
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'Outside work in flight',
+    body: 'An interactive session took this before the driver ever looked.',
+  },
+});
+await api('POST', `/api/quests/${outside.json?.quest?.id ?? ''}/respond`, {
+  key: KEY,
+  body: { action: 'take', reason: null },
+});
+const sessionsBefore = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
+const outsideRun = drive('--once');
+const sessionsAfter = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
+check(
+  'a quest an outside session took is left entirely alone',
+  outsideRun.code === 0 && sessionsAfter === sessionsBefore,
+  outsideRun.out,
+);
+
+// -------------------------------------------------- 8. nothing is lost
+
+section('8. Nothing is lost between sessions');
 stopHost();
 check('the host restarts over the same store', await startHost());
 
@@ -356,10 +525,16 @@ check(
   (registryAfter.json ?? []).filter((r) => r.registered).length === 3,
   registryAfter.text,
 );
+const sessionsAfterRestart = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true');
+check(
+  'the session records survive too — the record is service state, the process never was',
+  (sessionsAfterRestart.json ?? []).some((s) => s.quest === drivenId && s.state === 'completed'),
+  sessionsAfterRestart.text,
+);
 
-// -------------------------------------------------- 8. report
+// -------------------------------------------------- 9. report
 
-section('8. Result');
+section('9. Result');
 stopHost();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -372,6 +547,8 @@ if (failures) {
   console.log('  Two projects, one router — and a third born mid-run: adopted, declared, connected;');
   console.log('  a quest published, refused where it should be, taken, finished, and still there');
   console.log("  after a restart; one project's knowledge answering the other's search; a newcomer");
-  console.log('  joining through the real CLI and answering its first quest on day one.');
+  console.log('  joining through the real CLI and answering its first quest on day one — then DRIVEN:');
+  console.log('  a quest became a session became a commit became done, a dirty tree held, a decline');
+  console.log('  carried its reason, and outside work was left entirely alone (D46).');
   rmSync(scratch, { recursive: true, force: true });
 }

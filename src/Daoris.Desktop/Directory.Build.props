@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    Shared build settings for the desktop tree. Mirrors the service tree's so anyone moving between
+    them meets the same setup.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- BOM-less UTF-8 sources mojibake on a CJK-locale machine without this: csc reads them as ANSI.
+         Inherited from the family rather than rediscovered. -->
+    <CodePage>65001</CodePage>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Nothing here is published as a package. The desktop app is a deployable; the only package this
+         repository ships is the CLI, which is Node. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>
