@@ -17,6 +17,16 @@ using Lyntai.Providers.Ollama;
 //   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
 //   DAORIS_SERVICE_KEY     set ⇒ every POST under /api needs it as a bearer token
 //                          (absent: local trust — the OS account is the boundary, D21)
+//   DAORIS_MODE            local (default) or shared (D47 §3/§7). Shared is the team deployment:
+//                          EVERY /api route needs a minted key, no page is served (the remote is an
+//                          API until person-auth exists), and no machine path is ever answered.
+//                          Binding beyond loopback REQUIRES shared mode — the host refuses to start
+//                          otherwise, which is the fail-safe inversion of service design §5.
+//
+// KEY ADMINISTRATION runs on this same binary, against the same store, and exits without serving:
+//   keys mint --name <person@machine> [--days N]    prints the key ONCE; stores only its hash
+//   keys list                                       every key's public face — prefix, name, expiry
+//   keys revoke <prefix>                            ends one key; the prefix is the audit handle
 //
 // DOCTRINE IS READ-ONLY HERE (D31). No endpoint writes a rule, a knowledge document or a skill:
 // `upstream` routes an improvement through the repository that found it, where it meets that
@@ -37,6 +47,22 @@ if (OperatingSystem.IsWindows())
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
 
+var (mode, modeError) = Access.ParseMode(Environment.GetEnvironmentVariable(Access.ModeVariable));
+if (modeError is not null)
+{
+    Console.Error.WriteLine(modeError);
+    return 2;
+}
+
+var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), DefaultDatabasePath());
+
+// Key administration is a console verb on the serving binary — same store, no second tool, and it
+// exits without binding. Console minting is the whole story until person-auth exists (D47 §7).
+if (args is ["keys", .. var keyArgs])
+{
+    return await KeysVerbAsync(keyArgs, options);
+}
+
 // The bundle travels beside the executable. In development the SDK serves wwwroot from the project
 // directory — the default content root — but a PUBLISHED host is launched from anywhere, so when the
 // working directory has no bundle and the binary's directory does, the binary's wins. Without this
@@ -51,13 +77,21 @@ var contentRoot = Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(),
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = contentRoot });
 
 // The documented address, made true by construction: with nothing configured, Kestrel binds its own
-// default and the README's port is a lie. An explicit ASPNETCORE_URLS still wins.
-if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
-{
-    builder.WebHost.UseUrls("http://localhost:5177");
-}
+// default and the README's port is a lie. An explicit `--urls` or ASPNETCORE_URLS still wins — and
+// the RESOLVED value is what both the startup judgement below and the bind itself use, because a
+// refusal judged on one address while Kestrel binds another would be a gate on the wrong door.
+var urls = builder.Configuration["urls"]
+    ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+    ?? "http://localhost:5177";
+builder.WebHost.UseUrls(urls.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), DefaultDatabasePath());
+// The startup judgement (D47 §3): local trust bound beyond loopback does not warn — it does not start.
+var serviceKey = Environment.GetEnvironmentVariable("DAORIS_SERVICE_KEY");
+if (Access.RefuseStartup(mode, urls, !string.IsNullOrWhiteSpace(serviceKey)) is { } refusal)
+{
+    Console.Error.WriteLine(refusal);
+    return 2;
+}
 
 // The provider is built HERE, not in Core: the domain holds `IVectorProvider` and nothing that
 // implements one, so a model never reaches it (D22, D24). What tier that produces is Core's business.
@@ -105,16 +139,56 @@ if (!string.IsNullOrWhiteSpace(origin))
 var app = builder.Build();
 if (!string.IsNullOrWhiteSpace(origin)) app.UseCors();
 
-// The built UI, when there is one. Serving it from the same origin is what makes CORS unnecessary in
-// a real deployment, and what lets the desktop shell host exactly the same bytes.
-app.UseDefaultFiles();
-app.UseStaticFiles();
+// The built UI, when there is one — in local mode. A shared deployment serves the API and nothing
+// else: the platform in a browser arrives with person-auth, not before (D47 §7), so until then there
+// is no page a network caller could be shown.
+if (mode == ServiceMode.Local)
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
+
+// Shared mode gates EVERY route under /api, reads included (D47 §7): a remote serving the family's
+// accumulated knowledge to unauthenticated GETs would be the §5 leak with no key leaked. The message
+// never echoes what was presented; the prefix — the audit handle, non-secret by design — names an
+// expired or revoked key back to its own holder.
+if (mode == ServiceMode.Shared)
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            var header = context.Request.Headers.Authorization.ToString();
+            const string scheme = "Bearer ";
+            var presented = header.StartsWith(scheme, StringComparison.Ordinal)
+                ? header[scheme.Length..].Trim()
+                : "";
+            var validation = await composed.Keys.ValidateAsync(
+                presented, DateTimeOffset.UtcNow, context.RequestAborted);
+            if (validation.Verdict != KeyVerdict.Valid)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsJsonAsync(new ErrorResponse(validation.Verdict switch
+                {
+                    KeyVerdict.Expired =>
+                        $"key `{validation.Key!.Prefix}` expired {validation.Key.Expires:yyyy-MM-dd} — ask an operator to mint a fresh one",
+                    KeyVerdict.Revoked =>
+                        $"key `{validation.Key!.Prefix}` was revoked — ask an operator to mint a fresh one",
+                    _ => "this deployment answers only minted keys — ask an operator for one, sent as a bearer token",
+                }));
+                return;
+            }
+        }
+
+        await next();
+    });
+}
 
 // Writes need the key when one is configured. Absence means local (D21) — on a developer's machine
 // the OS account is the boundary and demanding a token would be ceremony. Set, it gates every POST
 // under /api; reads stay open because the UI is read-only by design (D31) and this deployment shape
-// is a trusted network's.
-var serviceKey = Environment.GetEnvironmentVariable("DAORIS_SERVICE_KEY");
+// is a trusted network's. Shared mode refused this variable at startup, so the two gates cannot
+// coexist: one credential model per deployment.
 if (!string.IsNullOrWhiteSpace(serviceKey))
 {
     app.Use(async (context, next) =>
@@ -248,7 +322,7 @@ app.MapPost("/api/quests/{id}/respond", async (
 app.MapGet("/api/sessions", async (
     ComposedService s, HttpContext http, string? repository, bool? includeClosed, CancellationToken ct) =>
     (await s.Sessions.ListAsync(repository, includeClosed ?? false, ct))
-        .Select(session => ToSession(session, IsLoopback(http))));
+        .Select(session => ToSession(session, MachineLocal(http))));
 
 app.MapPost("/api/sessions", async (
     ComposedService s, HttpContext http, OpenSessionRequest body, CancellationToken ct) =>
@@ -263,7 +337,7 @@ app.MapPost("/api/sessions", async (
     return outcome.Refusal switch
     {
         SessionOpenRefusal.None => Results.Ok(
-            new SessionActionResponse(ToSession(outcome.Session!, IsLoopback(http)), outcome.Message)),
+            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionOpenRefusal.QuestNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
@@ -278,7 +352,7 @@ app.MapPost("/api/sessions/{id}/state", async (
     return outcome.Refusal switch
     {
         SessionAdvanceRefusal.None => Results.Ok(
-            new SessionActionResponse(ToSession(outcome.Session!, IsLoopback(http)), outcome.Message)),
+            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
@@ -310,7 +384,7 @@ app.MapGet("/api/registry", async (ComposedService s, HttpContext http, Cancella
         r.Repository, r.Adopted, r.Registered, r.Summary, r.Owns, r.Accepts, r.Packs, r.Entries,
         // Machine-local by design (D46): a filesystem path is answered only to a caller on this
         // machine, so a remote deployment never serves anyone's disk layout to the network.
-        Root: IsLoopback(http) ? r.Root : null)));
+        Root: MachineLocal(http) ? r.Root : null)));
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
@@ -319,7 +393,82 @@ app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 });
 
 app.Run();
-return;
+return 0;
+
+// A machine path is visible only to a loopback caller of a LOCAL host (D47 §4). In shared mode the
+// answer is no for everyone — structural absence, not a policed permission: the deployment whose
+// callers are the network has no branch that serves a path.
+bool MachineLocal(HttpContext http) => mode == ServiceMode.Local && IsLoopback(http);
+
+// `keys mint|list|revoke` — the deployment's own console is where machine credentials come from
+// until person-auth exists (D47 §7). Exit codes are the contract: 0 clean, 1 the prefix named
+// nothing, 2 bad usage.
+static async Task<int> KeysVerbAsync(string[] args, ServiceOptions options)
+{
+    await using var composed = await ServiceFactory.CreateAsync(options);
+
+    switch (args)
+    {
+        case ["mint", ..]:
+        {
+            string? name = null;
+            var days = 90;
+            for (var i = 1; i < args.Length - 1; i++)
+            {
+                if (args[i] == "--name") name = args[i + 1];
+                if (args[i] == "--days" && int.TryParse(args[i + 1], out var parsed)) days = parsed;
+            }
+
+            if (string.IsNullOrWhiteSpace(name) || days <= 0)
+            {
+                Console.Error.WriteLine("usage: keys mint --name <person@machine> [--days N]");
+                return 2;
+            }
+
+            var minted = await composed.Keys.MintAsync(name, TimeSpan.FromDays(days), DateTimeOffset.UtcNow);
+            Console.WriteLine(minted.Key);
+            Console.WriteLine($"  name {name} · prefix {minted.Record.Prefix} · expires {minted.Record.Expires:yyyy-MM-dd}");
+            Console.WriteLine("  Shown once and stored hashed — copy it now. Revoke by the prefix.");
+            return 0;
+        }
+
+        case ["list"]:
+        {
+            var keys = await composed.Keys.ListAsync();
+            if (keys.Count == 0)
+            {
+                Console.WriteLine("No keys minted. `keys mint --name <person@machine>` creates one.");
+                return 0;
+            }
+
+            foreach (var key in keys)
+            {
+                var state = key.Revoked is not null ? $"revoked {key.Revoked:yyyy-MM-dd}"
+                    : key.Expires <= DateTimeOffset.UtcNow ? $"expired {key.Expires:yyyy-MM-dd}"
+                    : $"expires {key.Expires:yyyy-MM-dd}";
+                Console.WriteLine($"  {key.Prefix}  {key.Name}  {state}");
+            }
+
+            return 0;
+        }
+
+        case ["revoke", var prefix]:
+        {
+            if (await composed.Keys.RevokeAsync(prefix, DateTimeOffset.UtcNow))
+            {
+                Console.WriteLine($"Key `{prefix}` is revoked.");
+                return 0;
+            }
+
+            Console.Error.WriteLine($"No key with prefix `{prefix}`. `keys list` names them.");
+            return 1;
+        }
+
+        default:
+            Console.Error.WriteLine("usage: keys mint --name <person@machine> [--days N] | keys list | keys revoke <prefix>");
+            return 2;
+    }
+}
 
 // A convergence is a prompt to look, so the suggestion says what to read and where the change goes —
 // never "apply this". Doctrine that appeared without anyone choosing it is the failure this project

@@ -35,6 +35,8 @@ public sealed record ServiceOptions(
 /// <param name="Exchange">The publish/respond judgement, shared so no two hosts can disagree on it.</param>
 /// <param name="Sessions">Driver-started session records — the record is service state, the process never is (D46).</param>
 /// <param name="Ledger">The open/advance judgement for sessions, shared for the same reason the exchange is.</param>
+/// <param name="Keys">The shared deployment's machine credentials (D47 §7). Present in every mode —
+/// minting is deployment administration — but only shared mode's gate consults them.</param>
 /// <param name="SemanticEnabled">Whether the semantic tier answered. Report it; never imply it.</param>
 /// <remarks>
 /// Disposable, and it owns the store: the factory opened it, so the caller should not have to know that
@@ -42,7 +44,7 @@ public sealed record ServiceOptions(
 /// </remarks>
 public sealed record ComposedService(
     KnowledgeService Service, QuestStore Quests, QuestExchange Exchange,
-    SessionStore Sessions, SessionLedger Ledger, bool SemanticEnabled) : IAsyncDisposable
+    SessionStore Sessions, SessionLedger Ledger, ApiKeyStore Keys, bool SemanticEnabled) : IAsyncDisposable
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
@@ -88,6 +90,7 @@ public static class ServiceFactory
         var quests = await QuestStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var source = FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
 
         // What was pushed in earlier sessions is part of who is out there NOW — a remote service knows
@@ -120,7 +123,7 @@ public static class ServiceFactory
 
         return new ComposedService(
             service, quests, new QuestExchange(service, quests),
-            sessions, new SessionLedger(quests, sessions), service.SemanticEnabled)
+            sessions, new SessionLedger(quests, sessions), keys, service.SemanticEnabled)
         {
             Store = store,
         };
