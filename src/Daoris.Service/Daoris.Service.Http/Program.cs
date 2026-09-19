@@ -115,7 +115,13 @@ if (!string.IsNullOrWhiteSpace(options.EmbedModel))
             new LyntaiOptions());
 }
 
-var composed = await ServiceFactory.CreateAsync(options, embedder);
+// A LOCAL host relays verbs on remote-homed quests to the machine's remote, when one is configured
+// (D47 §5/§9). A shared host never relays: it is the home the others write through to.
+var remoteQuests = mode == ServiceMode.Local && RemoteConfig.Load() is { } remoteConfig
+    ? new HttpRemoteQuests(remoteConfig)
+    : null;
+
+var composed = await ServiceFactory.CreateAsync(options, embedder, remoteQuests: remoteQuests);
 builder.Services.AddSingleton(composed);
 
 // Source-generated serialization: this host publishes AOT-friendly and reflection-based JSON would be

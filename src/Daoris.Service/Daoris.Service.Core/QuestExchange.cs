@@ -10,6 +10,12 @@ public enum QuestPublishRefusal
 
     /// <summary>The target has not adopted, so it has no client to see the quest (D32, D34).</summary>
     NotAddressable,
+
+    /// <summary>
+    /// The receiver is joined to a remote that did not answer, so the quest could not be given its one
+    /// home (D47 §5). Nothing was published anywhere — a half-published quest would be two opinions.
+    /// </summary>
+    HomeUnreachable,
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -41,6 +47,12 @@ public enum QuestRespondRefusal
 
     /// <summary>Done and Declined are terminal: one title is one quest forever (D46 §3).</summary>
     Closed,
+
+    /// <summary>
+    /// The quest lives at a remote that did not answer. Nothing was changed and nothing was queued —
+    /// a transition either writes through or fails plainly (D47 §2).
+    /// </summary>
+    HomeUnreachable,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -61,11 +73,12 @@ public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Mes
 /// <para>The messages are composed here too, not only the verdicts. They are what an agent acts on, so
 /// two hosts phrasing them differently is two behaviours in all the ways that matter.</para>
 /// </remarks>
-public sealed class QuestExchange(KnowledgeService service, QuestStore quests)
+public sealed class QuestExchange(KnowledgeService service, QuestStore quests, IRemoteQuestClient? remote = null)
 {
     /// <summary>
     /// Publish a quest to another repository. Refuses a self-addressed quest and a target that has not
-    /// adopted; warns when the target has declared nothing about itself (D34).
+    /// adopted; warns when the target has declared nothing about itself (D34). A quest for a JOINED
+    /// receiver homes at the remote (D47 §5) — the publish writes through and the mirror keeps a copy.
     /// </summary>
     public async Task<QuestPublishOutcome> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now, CancellationToken ct = default)
@@ -92,6 +105,33 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests)
                 $"`{to}` has not adopted Daoris, so it has no way to see a quest. Addressable: "
                 + $"{string.Join(", ", addressable)}.",
                 Quest: null, addressable);
+        }
+
+        // Home follows the receiver, decided at publish and never migrated (D47 §5): a joined
+        // receiver's quests live at the remote, because other machines may be drivable for it and the
+        // one lock must sit where every taker can reach it.
+        if (remote is not null && target.Joined)
+        {
+            var answer = await remote.PublishAsync(from, to, title, body, ct).ConfigureAwait(false);
+            if (answer.Status == 0)
+            {
+                return new(
+                    QuestPublishRefusal.HomeUnreachable,
+                    $"`{target.Repository}` is joined to a remote that is not answering ({answer.Message}) — "
+                    + "nothing was published. Publish again when it is reachable.",
+                    Quest: null, addressable);
+            }
+
+            if (answer.Status != 200 || answer.Quest is null)
+            {
+                // The remote's own judgement said no — its registry, not ours, knows who is
+                // addressable there. Its message travels verbatim so the two doors cannot drift.
+                return new(QuestPublishRefusal.NotAddressable, answer.Message, Quest: null, addressable);
+            }
+
+            var homed = answer.Quest with { Home = "remote" };
+            await quests.MirrorAsync(homed, ct).ConfigureAwait(false);
+            return new(QuestPublishRefusal.None, answer.Message, homed, addressable);
         }
 
         var quest = await quests.PublishAsync(from, to, title, body, now, ct).ConfigureAwait(false);
@@ -138,6 +178,48 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests)
                 QuestRespondRefusal.MissingReason,
                 "Declining needs a reason: it is the part the asker can act on.",
                 Quest: null);
+        }
+
+        // A verb on a remote-homed quest writes through to its home's judgement — the one lock — and
+        // the mirror takes the result (D47 §5). An id we do not hold at all is also tried remotely
+        // when a remote exists: the mirror may simply not have caught up to a quest that lives there.
+        var local = await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false);
+        if (local is { Home: not null } || (local is null && remote is not null))
+        {
+            if (remote is null)
+            {
+                return new(
+                    QuestRespondRefusal.HomeUnreachable,
+                    $"Quest `#{id.TrimStart('#')}` lives at a remote, and this machine has none configured — "
+                    + "nothing was changed.",
+                    Quest: null);
+            }
+
+            var answer = await remote.RespondAsync(id.TrimStart('#'), action, reason, ct).ConfigureAwait(false);
+            switch (answer.Status)
+            {
+                case 0:
+                    return new(
+                        QuestRespondRefusal.HomeUnreachable,
+                        $"Quest `#{id.TrimStart('#')}` lives at a remote that is not answering "
+                        + $"({answer.Message}) — nothing was changed. A transition writes through or fails; it never queues.",
+                        Quest: null);
+                case 200 when answer.Quest is not null:
+                    var mirrored = answer.Quest with { Home = "remote" };
+                    await quests.MirrorAsync(mirrored, ct).ConfigureAwait(false);
+                    return new(QuestRespondRefusal.None, answer.Message, mirrored);
+                case 404:
+                    return new(QuestRespondRefusal.NotFound, answer.Message, Quest: null);
+                case 409:
+                    // The race, resolved at the home. For a take that reads as "someone got there
+                    // first"; for anything else the quest is closed. Either way the remote's own
+                    // message travels verbatim.
+                    return new(
+                        status == QuestStatus.Taken ? QuestRespondRefusal.AlreadyTaken : QuestRespondRefusal.Closed,
+                        answer.Message, Quest: null);
+                default:
+                    return new(QuestRespondRefusal.UnknownAction, answer.Message, Quest: null);
+            }
         }
 
         var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct)

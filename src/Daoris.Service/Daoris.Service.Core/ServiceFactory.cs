@@ -82,6 +82,10 @@ public static class ServiceFactory
         IVectorProvider? embedder = null,
         IVectorStore? vectors = null,
         IDisclosurePolicy? disclosure = null,
+        // The write-through relay (D47 §5/§9), when this machine has a remote. Passed in like the
+        // embedder: the deployment decides, the composition carries it, and both doors get the same
+        // exchange so neither can drift. A shared host passes nothing — it IS the home.
+        IRemoteQuestClient? remoteQuests = null,
         CancellationToken ct = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
@@ -122,7 +126,7 @@ public static class ServiceFactory
             registry, registrations);
 
         return new ComposedService(
-            service, quests, new QuestExchange(service, quests),
+            service, quests, new QuestExchange(service, quests, remoteQuests),
             sessions, new SessionLedger(quests, sessions), keys, service.SemanticEnabled)
         {
             Store = store,

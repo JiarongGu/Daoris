@@ -75,7 +75,13 @@ if (!string.IsNullOrWhiteSpace(serviceOptions.EmbedModel))
             new LyntaiOptions());
 }
 
-var composed = await ServiceFactory.CreateAsync(serviceOptions, embedder);
+// The write-through relay (D47 §5/§9): a verb on a remote-homed quest goes to the machine's remote,
+// when one is configured — the same seam, the same client, the same exchange the HTTP host composes,
+// so an agent's door and a browser's door cannot disagree about where a quest lives. The MCP host is
+// always a LOCAL door; a shared deployment has no stdio.
+var remoteQuests = RemoteConfig.Load() is { } remoteConfig ? new HttpRemoteQuests(remoteConfig) : null;
+
+var composed = await ServiceFactory.CreateAsync(serviceOptions, embedder, remoteQuests: remoteQuests);
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);
