@@ -61,6 +61,53 @@ public sealed class AdapterTests
         Assert.True(info.RedirectStandardError);
     }
 
+    /// <summary>`claude-code` is the supported harness (D23, one layer up) and ships in the set.</summary>
+    [Fact]
+    public void The_claude_code_adapter_is_built_in()
+    {
+        Assert.Equal("claude-code", AdapterSet.Built().Resolve("claude-code").Name);
+    }
+
+    /// <summary>
+    /// The session is the harness's non-interactive mode, in the repository root, with the composed
+    /// target as its prompt. Edits auto-accept — reversible, in-repository, D37's middle — and
+    /// everything else stays under the repository's own checked-in permission configuration: the
+    /// adapter grants nothing an interactive session there would not have.
+    /// </summary>
+    [Fact]
+    public void Claude_code_spawns_headless_with_the_target_as_the_prompt()
+    {
+        var info = AdapterSet.Built().Resolve("claude-code").Prepare(Target(), command: null);
+
+        Assert.Equal("claude", info.FileName);
+        Assert.Equal("D:/fam/Game", info.WorkingDirectory);
+        Assert.Contains("-p", info.ArgumentList);
+        Assert.Contains(info.ArgumentList, a => a.Contains("#abc123"));
+        var mode = info.ArgumentList.IndexOf("--permission-mode");
+        Assert.True(mode >= 0 && info.ArgumentList[mode + 1] == "acceptEdits");
+        Assert.Equal("abc123", info.Environment["DAORIS_QUEST_ID"]);
+    }
+
+    /// <summary>A machine whose shim needs a path names it in the config, like any other command.</summary>
+    [Fact]
+    public void Claude_code_takes_its_command_from_the_config_when_one_is_named()
+    {
+        var info = AdapterSet.Built().Resolve("claude-code").Prepare(Target(), ["C:/tools/claude.exe"]);
+
+        Assert.Equal("C:/tools/claude.exe", info.FileName);
+        Assert.Contains("-p", info.ArgumentList);
+    }
+
+    /// <summary>An adapter names a harness, never a model (D24) — which model answers is the
+    /// repository's own harness configuration, and the driver must not reach into it.</summary>
+    [Fact]
+    public void Claude_code_never_names_a_model()
+    {
+        var info = AdapterSet.Built().Resolve("claude-code").Prepare(Target(), command: null);
+
+        Assert.DoesNotContain("--model", info.ArgumentList);
+    }
+
     /// <summary>
     /// The composed target is the claiming instruction of D46 §3: take, work under the repository's
     /// own doctrine, close with done or a reasoned decline, stand down if someone already has it —

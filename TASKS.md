@@ -56,10 +56,13 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   `src/Daoris.Desktop/Daoris.Desktop.Driver` (pure planner, observation mapping, adapter seam, stub
   adapter) with its headless host `daoris-driver`, gate-verified by the family rehearsal's driver
   phase (43/43): quest → session → commit → done, dirty-tree hold, decline with reason, outside work
-  untouched, records surviving restart. **Remaining:** the `claude-code` adapter (design §5), the
-  platform's session-control surface (design §6), and the Shenora shell — the desktop sibling is
-  consumable at a released version (v0.16.0, `Shenora.Windows` + `@shenora/react`, checked
-  2026-09-19), so there is no coordination blocker.
+  untouched, records surviving restart. The **`claude-code` adapter** is in (design §5): headless
+  mode, target as the prompt, edits auto-accepted and everything else under the repository's own
+  checked-in permissions, no model ever named; it is the config default, and a real driven run is how
+  it gets verified (a deployment choice on a proven loop, §8). **Remaining:** the platform's
+  session-control surface (design §6) and the Shenora shell — the desktop sibling is consumable at a
+  released version (v0.16.0, `Shenora.Windows` + `@shenora/react`, checked 2026-09-19), so there is
+  no coordination blocker.
 
 - [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
   machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's

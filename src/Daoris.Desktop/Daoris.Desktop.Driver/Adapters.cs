@@ -67,6 +67,38 @@ public interface ISessionAdapter
     ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command);
 }
 
+/// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
+internal static class Spawning
+{
+    /// <summary>
+    /// A redirected process in the repository root. The environment, not arguments, carries the
+    /// target's pieces: any script shape can read it without parsing, and nothing quest-sized ever
+    /// hits a shell's quoting rules.
+    /// </summary>
+    public static ProcessStartInfo InRoot(SessionTarget target, string fileName, IEnumerable<string> arguments)
+    {
+        var info = new ProcessStartInfo
+        {
+            FileName = fileName,
+            WorkingDirectory = target.Root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+
+        info.Environment["DAORIS_QUEST_ID"] = target.QuestId;
+        info.Environment["DAORIS_QUEST_TITLE"] = target.Title;
+        info.Environment["DAORIS_QUEST_BODY"] = target.Body;
+        info.Environment["DAORIS_QUEST_ASKER"] = target.Asker;
+        info.Environment["DAORIS_REPOSITORY"] = target.Repository;
+        info.Environment["DAORIS_SERVICE_URL"] = target.ServiceUrl;
+        info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+
+        return info;
+    }
+}
+
 /// <summary>
 /// The stub: runs whatever command the configuration names, in the repository root, with the target
 /// in the environment. A test double with real mechanics — real spawn, real cwd, real delivery, real
@@ -85,27 +117,41 @@ public sealed class StubAdapter : ISessionAdapter
                 + """{ "commands": { "stub": ["node", "path/to/agent.mjs"] } }""");
         }
 
-        var info = new ProcessStartInfo
-        {
-            FileName = command[0],
-            WorkingDirectory = target.Root,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        foreach (var argument in command.Skip(1)) info.ArgumentList.Add(argument);
+        return Spawning.InRoot(target, command[0], command.Skip(1));
+    }
+}
 
-        // The environment, not arguments: any script shape can read it without parsing, and nothing
-        // quest-sized ever hits a shell's quoting rules.
-        info.Environment["DAORIS_QUEST_ID"] = target.QuestId;
-        info.Environment["DAORIS_QUEST_TITLE"] = target.Title;
-        info.Environment["DAORIS_QUEST_BODY"] = target.Body;
-        info.Environment["DAORIS_QUEST_ASKER"] = target.Asker;
-        info.Environment["DAORIS_REPOSITORY"] = target.Repository;
-        info.Environment["DAORIS_SERVICE_URL"] = target.ServiceUrl;
-        info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+/// <summary>
+/// The supported harness (D46 §5): Claude Code in its non-interactive mode, in the repository root,
+/// with the composed target as the prompt.
+/// </summary>
+/// <remarks>
+/// <para><b>The permission mapping is the D37 boundary, stated in the harness's own vocabulary.</b>
+/// Edits auto-accept — reversible, in-repository, the automated middle — and every other tool runs
+/// under the repository's own checked-in permission configuration, exactly as an interactive session
+/// there would. Nothing at the outward boundary is auto-approved by the driver, ever: a session that
+/// cannot proceed ends, and the observation concludes it honestly.</para>
+///
+/// <para><b>The connector is the session's voice.</b> An adopted repository's own `.mcp.json` wires
+/// the knowledge tools the prompt tells the session to claim and close its quest with — that wiring
+/// is the connector's job at adoption, not something the driver may reach in and write (that would be
+/// the very edit this whole system exists to prevent).</para>
+///
+/// <para><b>No model is ever named</b> (D24): which model answers is the harness's own configuration
+/// in that repository. The default command is `claude` off the PATH; a machine whose shim needs a
+/// path names it in `commands` like any other adapter command.</para>
+/// </remarks>
+public sealed class ClaudeCodeAdapter : ISessionAdapter
+{
+    public string Name => "claude-code";
 
-        return info;
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
+    {
+        var resolved = command is { Count: > 0 } ? command : ["claude"];
+        var arguments = resolved.Skip(1)
+            .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", "acceptEdits"]);
+
+        return Spawning.InRoot(target, resolved[0], arguments);
     }
 }
 
@@ -128,8 +174,10 @@ public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adap
 
     public static AdapterSet Built() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
     {
-        // The stub ships first so the mechanism is gate-verified before any real harness runs on it
-        // (D46 §8). `claude-code` lands next as the supported adapter; `codex` after it, explicitly.
+        // The stub gate-verifies the mechanism with no model in it (D46 §8); `claude-code` is the
+        // supported harness on top of that proven loop. `codex` arrives explicitly, later — and until
+        // it does, asking for it errors naming these two, which is the honest answer.
         ["stub"] = new StubAdapter(),
+        ["claude-code"] = new ClaudeCodeAdapter(),
     });
 }
