@@ -4,9 +4,11 @@
 2026-09-19 for D45 — the owner's direction that Daoris becomes the main driver for all projects; the
 earlier brief (a shell hosting the web build) is a strict subset of this one. **The design is settled:
 `docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
-adapter seam, the stub) and `Daoris.Desktop.Driver.Host` (the headless door, `daoris-driver`) exist and
-are driven end to end by the family rehearsal's driver phase; the `claude-code` adapter and the
-Shenora shell are what remain.
+adapter seam, the stub, the `claude-code` adapter) and `Daoris.Desktop.Driver.Host` (the headless door,
+`daoris-driver`) exist and are driven end to end by the family rehearsal's driver phase; the platform
+shows the session records read-only. **The Shenora shell is what remains**: hosting the HTTP host and
+the platform, embedding the driver, the person's session controls, and OS notification on
+`awaiting-person`.
 
 ## What it is
 
