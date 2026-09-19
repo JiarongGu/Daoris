@@ -74,6 +74,31 @@ re-adopts. The Shenora rehearsal keeps and does not expire: 6 collisions, 2 twin
 mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `check` clean at
 38,782 bytes, with `web-webview` and `durable-jobs` ready for it.
 
+## Handover — where a fresh session picks up
+
+**The D45 arc is complete: all three parts built, gated, and app-verified (2026-09-20).** There is no
+forced next build task — the connector, the local driver, and the remote all exist and are proven. A
+fresh session's realistic starting points, none of them automatic:
+
+- **Read first:** `docs/DECISIONS.md` D45 (the direction) and **D47** (the remote, with its two
+  build-time amendments); `docs/2026-09-20-remote-design.md` (the remote contract); the DRV5 entry in
+  `docs/task-archive.md` (what the six landings did); `docs/FIX-LOG.md` top two entries (the
+  stale-`dist/` and driver-mode-default traps — both bite silently).
+- **A release is the obvious next move, and REH1 blocks it.** Everything is `## Unreleased` in the
+  changelog and development runs at `0.0.x`; the changelog now covers the driver and the remote. But
+  **do not tag while REH1 is open** (below) — a release runs the release rehearsal, which is the thing
+  that intermittently fails. Clearing REH1 is the real gate on a first release.
+- **Nothing is pushed or published** — that stays the owner's call, as does adoption by any repository.
+  The live consumer count is zero (Lyntai stepped off); no repository is asked to adopt until the owner
+  says so.
+- **The held backlog items each wait on an external trigger** (a captured rehearsal failure, a second
+  repository, a real request) — pick one up only when its trigger has actually arrived, not to have
+  something to do.
+- **Verify before claiming done, always:** `npm run verify` (CLI 128 + `check`), `dotnet test
+  src/Daoris.Service` (158), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests` (49),
+  `npm run rehearse:family` (74/74), `npm run test:web` (21 + 7). If a `bin`-driven gate is red while
+  `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG).
+
 ## Backlog
 
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
