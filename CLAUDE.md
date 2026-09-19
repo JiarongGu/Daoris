@@ -8,8 +8,8 @@
 knowledge and work** across this family of projects — and, as of **D45, the driver**: the centralized
 workflow manager that will trigger and coordinate the agent sessions doing that work, one session per
 domain-owning repository. Three parts: the per-repo **connector** (built), the **local driver** desktop
-app (designed — D46, `docs/2026-09-19-driver-design.md`; build is `TASKS.md` DRV2), the **remote
-server** for teams (later). Each repository has its own agent, which owns that
+app (**built** — D46, `docs/2026-09-19-driver-design.md`; the first witnessed run is `TASKS.md` DRV4),
+the **remote server** for teams (later). Each repository has its own agent, which owns that
 domain; Daoris is how they hold one canon of doctrine between them, find where they have learned the
 same thing twice, and **ask each other for changes instead of reaching in**.
 
@@ -35,17 +35,19 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Nine commands, 121 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 81 and `Daoris.Devkit` 57.
-Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
+**Built and proven; nothing published.** Nine commands, 125 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 114, `Daoris.Devkit` 57, and the
+driver 38. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
 off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
 proof stands and the live consumer count is zero — adoption has to be near-free for the family to come
 back, which is what the automation-first direction is for.
 
-**All four artefacts exist**; only `Daoris.Desktop` — now re-scoped by D45 as **the local driver** — is
-a brief. **Nothing is published**, and development runs at `0.0.x`. The service is **deployable** (D36):
+**All five artefacts exist and are built**, including `Daoris.Desktop` — the local driver (D45/D46):
+the shell brings up the local host, carries the platform, runs the driver loop, and lands the person's
+session controls; the family rehearsal gates the whole loop with no model in it (43/43).
+**Nothing is published**, and development runs at `0.0.x`. The service is **deployable** (D36):
 local sessions all spawn the MCP host over one persistent store, and the HTTP host carries
 registrations and quests for a remote deployment, key-gated, with no model required. **Development is
 automation-first** (D37): the person sets the target and verifies the final diff; agents execute and
@@ -94,7 +96,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
 | `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
 | `src/Daoris.Web/` | **The platform** (D38) — knowledge, quests, projects; the only UI; doctrine read-only |
-| `src/Daoris.Desktop/` | **The local driver** (D45): server host + platform + agent-session control (not started; brief rewritten) |
+| `src/Daoris.Desktop/` | **The local driver** (D45/D46): the driver library + `daoris-driver` headless host + `daoris-desktop` shell |
 | `examples/` | The example family — two miniature adopters the family rehearsal drives (D39) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |
 | `canon/core/{rules,knowledge,skills}/` | The always-installed rules, on-demand knowledge, and discovery skills |
@@ -116,9 +118,11 @@ Run every command from the **workspace root**, not from a package directory.
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
   **artefact**. Run before tagging.
-- **`npm run rehearse:family`** — the "does the router work?" gate (D39). Both examples current and
-  clean, the HTTP host up over them, `connect`, a quest through its whole life, a search crossing
-  projects, restart persistence. Run when touching the service, `connect`, or the canon's shape —
+- **`npm run rehearse:family`** — the "does the router work?" gate (D39), and since D46 the "does the
+  driver drive?" gate too. Both examples current and clean, the HTTP host up over them, `connect`, a
+  quest through its whole life, a search crossing projects, restart persistence — and a quest driven
+  to done by a stub session, no model in the gate. Run when touching the service, `connect`, the
+  driver, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
   bundle over the example family: a quest through its whole life in the drawers, the verbatim

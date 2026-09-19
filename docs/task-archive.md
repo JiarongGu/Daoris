@@ -1056,7 +1056,8 @@ all passed 52/52, each leaving a transcript.
 > the service (a trigger/session surface) versus what stays in the desktop host. Read D45, D37, D32/D33
 > and the Desktop brief first.
 
-✅ done 2026-09-19 — `docs/2026-09-19-driver-design.md`, recorded as **D46**. All five questions
+✅ done 2026-09-19 (see the DRV2 entry below for the build) — `docs/2026-09-19-driver-design.md`,
+recorded as **D46**. All five questions
 settled: **spawn fresh** (one non-interactive session per quest, one active session per repository,
 clean tree only, oldest open first; wake held as an adapter capability); the **session lifecycle** is
 nine observed states stored in the service beside the quests behind a shared judgement class, with
@@ -1073,3 +1074,34 @@ spawned session claiming its own quest is what makes driven and outside work ind
 quest layer. Verification: a stub-adapter phase in the family rehearsal, so the mechanism is
 gate-verified with no model in the gate. Bonus finding: the desktop runtime sibling is released and
 consumable (v0.16.0), so DRV2 has no coordination blocker.
+
+## DRV2 — build the local driver: `Daoris.Desktop`, re-scoped (2026-09-19)
+
+> Hosts the local server, carries the platform UI, controls repositories and agent sessions per the
+> settled design — `docs/2026-09-19-driver-design.md` (D46) is the contract.
+
+✅ done 2026-09-19, in one driven day, as five landings. **The service's session surface**: a
+`sessions` table beside the quests behind a `SessionLedger` mirroring `QuestExchange` (one judgement
+for every door; the ledger never writes quest state), `GET /api/sessions` plus key-gated writes, and
+the registration's machine-local root — sent by `connect` to loopback services only, answered only to
+loopback callers, migrated in place for existing stores. **The driver**:
+`src/Daoris.Desktop/Daoris.Desktop.Driver`, a pure planner (every sitting quest carries its reason),
+an observation table (exit code × quest state — the two signals outside work also produces), clean
+trees only, transcripts captured, timeouts killed, shutdown concluding in-flight sessions as
+`stopped`; headless as `daoris-driver`; gate-verified by the family rehearsal's driver phase — 43/43,
+no model in the gate: quest → session → commit → done, a dirty-tree hold, a reasoned decline, outside
+work left entirely alone, records surviving restart. **The adapters**: the stub (a test double with
+real mechanics) and `claude-code` — headless mode, the composed claiming instruction as the prompt,
+edits auto-accepted, everything else under the repository's own checked-in permissions, no model ever
+named. **The platform's session surface**: the record beside its quest, read-only in a browser, en +
+简体中文. **The shell**: `daoris-desktop` on released Shenora.Windows 0.16.0 — brings up the HTTP host
+(adopt or own; a dev host runs from its project so the bundle serves), carries the platform in its
+WebView (the same bytes a browser gets), runs the loop in-process with `driver.json` re-read every
+tick, and lands the person's controls through the `DAORIS.DRIVER` IPC module: drivable and hold per
+repository, stop through a shared process registry with the end recorded as the person's, live
+updates over `DRIVER_TICK`. Smoke-verified live twice — up, page served, closed whole, nothing
+orphaned. Two traps recorded where the next person meets them: a dev host spawned from its `bin`
+answers every API call and serves no page (the locator carries a working directory now), and a
+MessageBox owned by the window disables it — trouble is a page, never a modal. The first REAL driven
+run is deliberately left to the person as DRV4: the adapter is a deployment choice on a proven loop,
+and witnessing it is the person's checkpoint, not a gate's.

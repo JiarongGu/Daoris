@@ -8,23 +8,30 @@
 **Goal:** one canonical set of agent-facing rules and knowledge, materialized into every repository in
 the family, kept from drifting, and improved from wherever the improvement was found — and, as of D45,
 **Daoris as the driver**: the centralized workflow manager that triggers and coordinates the agent
-sessions doing the family's work. The design is settled (D46, `docs/2026-09-19-driver-design.md`);
-the next session starts at **DRV2**.
+sessions doing the family's work. The design is settled (D46, `docs/2026-09-19-driver-design.md`) and
+**the driver is built** — parts 1 and 2 of D45 exist; part 3 (DRV3) waits on the owner's sequencing.
 
 ## State
 
-All four artefacts exist; only `Daoris.Desktop` is a brief. Nine commands, 121 CLI tests, 83 service,
-57 devkit, 52/52 release rehearsal (eight runs 2026-09-18), **29/29 family rehearsal** (2026-09-19),
-9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
-**23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
-an index row, and the answer is splitting, not raising (D28).
+**All five artefacts exist and are built.** Nine commands, 125 CLI tests, 114 service, 57 devkit,
+38 driver, 52/52 release rehearsal (eight runs 2026-09-18), **43/43 family rehearsal** including the
+driver phase (2026-09-19), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills,
+6 packs. Always-loaded core is **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon
+addition fails the gate even as an index row, and the answer is splitting, not raising (D28).
+
+**The driver drives** (D45/D46, built 2026-09-19): `Daoris.Desktop.Driver` (pure planner, observed
+lifecycle, adapter seam — stub + `claude-code`), the headless `daoris-driver`, and the shell
+`daoris-desktop` on released Shenora.Windows 0.16.0 — it brings up the local HTTP host, carries the
+platform, runs the loop in-process, and lands the person's controls (drivable/hold per repository,
+stop a running session) through the `DAORIS.DRIVER` IPC module, live-updating over `DRIVER_TICK`.
+The quest state machine is the only lock; outside sessions stay first-class.
 
 The service is **deployable** (D36) and **ships as executables** (D43): `npm run publish:service --
 --install` lands both hosts self-contained in `~/.daoris/bin` and prints the ready `.mcp.json`
 snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
 spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
 remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): the
-family rehearsal (29 checks) and the Playwright suite (6 tests) each run over a scratch copy of the
+family rehearsal (43 checks) and the Playwright suite (7 tests) each run over a scratch copy of the
 examples and take a project born mid-run through init → declare → sync → check → connect → its first
 quest. `Daoris.Web` is **the platform** (D38,
 D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
@@ -32,7 +39,7 @@ grouped by state with sitting time, projects as scannable declarations — in a 
 (sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
 headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
 speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a test pyramid
-declared in `daoris.gates.json` — a **16-test Vitest inner loop** and a **5/5 Playwright outer loop
+declared in `daoris.gates.json` — a **21-test Vitest inner loop** and a **7/7 Playwright outer loop
 over `examples/`**. Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
 canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
 Development is **automation-first** (D37): the person sets the target and verifies the final diff;
@@ -49,28 +56,13 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Backlog
 
-- [ ] **DRV2 — build the local driver: `Daoris.Desktop`, re-scoped (in progress).** The contract is
-  `docs/2026-09-19-driver-design.md` (D46); read it and D45/D37 first. **Landed 2026-09-19:** the
-  service's session surface (records + `SessionLedger`, `GET /api/sessions`, the machine-local root
-  on the registration via `connect`, loopback-guarded) and the driver itself —
-  `src/Daoris.Desktop/Daoris.Desktop.Driver` (pure planner, observation mapping, adapter seam, stub
-  adapter) with its headless host `daoris-driver`, gate-verified by the family rehearsal's driver
-  phase (43/43): quest → session → commit → done, dirty-tree hold, decline with reason, outside work
-  untouched, records surviving restart. The **`claude-code` adapter** is in (design §5): headless
-  mode, target as the prompt, edits auto-accepted and everything else under the repository's own
-  checked-in permissions, no model ever named; it is the config default, and a real driven run is how
-  it gets verified (a deployment choice on a proven loop, §8). The **platform shows the session
-  surface, read-only** (design §6): a live session's state on its quest's card, the full record —
-  state, adapter, note, evidence verbatim — in the drawer, en+zh, covered in both loops (18 Vitest,
-  7/7 Playwright including a driven-record scenario). **The shell exists** (`Daoris.Desktop.App`,
-  `daoris-desktop`, on released Shenora.Windows 0.16.0): brings up the local HTTP host (adopt or own;
-  a dev build runs from its project so the bundle serves), carries the platform in its WebView, runs
-  the driver loop in-process (`driver.json` re-read every tick — a control that needs a bounce is a
-  control nobody trusts), and shuts down whole: loop stopped, in-flight sessions ended and recorded
-  `stopped`, owned host killed — smoke-verified end to end 2026-09-19. **Remaining:** the person's
-  session controls in the platform over the IPC bridge (drivable, hold, stop, start-now — a
-  `DAORIS.DRIVER` module + `@shenora/react` detection, controls rendered only where a shell answers),
-  and the page-side rendering of `DRIVER_TICK` notifications as toasts.
+- [ ] **DRV4 — the first real driven run, witnessed.** The `claude-code` adapter is a deployment
+  choice on a gate-proven loop (design §8) and is verified by use: opt a repository in via the shell's
+  Projects toggles, publish a real quest, and watch the loop run it — the person's checkpoint, not a
+  gate's. Two claims to confirm in that run, flagged when built: the driven session's connector tools
+  load under the harness's non-interactive mode (the repository's own `.mcp.json` trust settings
+  govern — connector setup, never the driver reaching in), and the IPC payload casing of
+  `DRIVER_TICK`/`STATE` as rendered by the page (unit-tested against a mocked bridge only).
 
 - [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
   machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's
