@@ -6,7 +6,9 @@
 > `docs/2026-08-04-daoris-design.md`; the forward sequence is [`ROADMAP.md`](ROADMAP.md).
 
 **Goal:** one canonical set of agent-facing rules and knowledge, materialized into every repository in
-the family, kept from drifting, and improved from wherever the improvement was found.
+the family, kept from drifting, and improved from wherever the improvement was found — and, as of D45,
+**Daoris as the driver**: the centralized workflow manager that triggers and coordinates the agent
+sessions doing the family's work. The next session starts at **DRV1**.
 
 ## State
 
@@ -46,6 +48,26 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Backlog
 
+- [ ] **DRV1 — design the driver (start here, fresh session).** The direction is D45; the mechanism is
+  deliberately undesigned. Write `docs/<date>-driver-design.md` before any code, settling: how a quest
+  triggers a session (spawn vs wake; queue semantics; what "Daoris should have started this" means);
+  the session lifecycle attached to a quest (started, working, gates-green, done/declined, failed) and
+  where it is stored; the agent adapter seam (claude-code first, codex second — one supported, others
+  explicit, per D23's lesson); how the D37 carve-outs surface in the loop (the person's checkpoints in
+  the platform); and what part 2 needs from the service (a trigger/session surface) versus what stays
+  in the desktop host. Read D45, D37, D32/D33 and the Desktop brief first.
+
+- [ ] **DRV2 — build the local driver: `Daoris.Desktop`, re-scoped.** Hosts the local server, carries
+  the platform UI, controls repositories and agent sessions per DRV1's design. Depends on DRV1, and on
+  the desktop sibling being consumable at a released version (D22) — if it is not, that is a
+  coordination point like LYN1, not a reason to reach across.
+
+- [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
+  machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's
+  "shared may be a sync" finally lands). Folds in the old SVC2 hardening: per-person expiring keys and
+  OIDC per the service design §5, and whatever relay the local↔remote sync needs. Later in the roadmap,
+  by the owner's sequencing.
+
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken
   precondition rather than a flaky assertion. Both times it ran straight after canon files were edited
@@ -60,10 +82,6 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
   roster), so the coordinated move is **one** migration when that major ships, not two. Lyntai is not
   quest-addressable (de-adopted), and no repository is asked to adopt until Daoris is finished — so
   this is held here, not delivered anywhere.
-
-- [ ] **SVC2 — remote hardening, deferred until a deployment leaves a trusted network.** Per-person
-  expiring keys and OIDC per the service design §5, and an MCP relay from the local stdio host to a
-  remote service when a second machine actually exists. D36 records why neither is built now.
 
 - [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met.** The bilingual sibling
   carries the rule and the gate; Daoris now carries the same gate (`scripts/i18n-check.mjs`, adopted

@@ -9,6 +9,27 @@ a real consumer, not on a calendar.
 
 ---
 
+## The direction: Daoris drives (D45, set 2026-09-19)
+
+Daoris becomes **the main driver for all projects** — centralized workflow management. Work already
+routes through it as quests; the missing half is **triggering**: Daoris starts and manages the agent
+sessions (claude/codex, adapter-based) that take the work — one session per domain-owning repository,
+which is what keeps the domain separation clean. The core loop: a target becomes a quest → Daoris
+spawns the owning repository's session with it → the session works under its own gates (D37) → done or
+declined flows back → the person verifies outcomes in the platform.
+
+Three parts, in build order:
+
+| Part | What | Where it stands |
+|---|---|---|
+| **1 · The connector** | Per-repo setup: rules, skills, MCP, the join lifecycle — the CLI + canon + `.mcp.json` | **Exists**, proven by the loops (D39, D44) and shipped as executables (D43) |
+| **2 · The local driver** | `Daoris.Desktop` re-scoped: hosts the local server, carries the platform UI, controls repositories and agent sessions | **Next** — design first (`TASKS.md` DRV1), then build (DRV2) |
+| **3 · The remote server** | Team mode: shared knowledge and quests across machines, fed via the local desktop app | **Later** (DRV3; the old SVC2 hardening folds into it) |
+
+Everything below this line is the foundation the driver stands on, and it is built.
+
+---
+
 ## Four artefacts
 
 Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All but the desktop shell exist:
@@ -19,7 +40,7 @@ Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All but the 
 | `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | **built** |
 | `Daoris.Service` | Knowledge index, convergence, quests and the registry | **built and deployable** |
 | `Daoris.Web` | The platform — knowledge, quests, projects; doctrine read-only (D38) | **built** |
-| `Daoris.Desktop` | The desktop shell hosting the same web build | brief written |
+| `Daoris.Desktop` | **The local driver** (D45): hosts the server and the platform, controls repos and agent sessions | brief rewritten; design next |
 
 ## Versions
 

@@ -5,7 +5,10 @@
 ## What this is
 
 **Daoris** (道衍, "the unfolding of the way") is the **substrate for domain-owning agents to share
-knowledge and work** across this family of projects. Each repository has its own agent, which owns that
+knowledge and work** across this family of projects — and, as of **D45, the driver**: the centralized
+workflow manager that will trigger and coordinate the agent sessions doing that work, one session per
+domain-owning repository. Three parts: the per-repo **connector** (built), the **local driver** desktop
+app (design next — `TASKS.md` DRV1), the **remote server** for teams (later). Each repository has its own agent, which owns that
 domain; Daoris is how they hold one canon of doctrine between them, find where they have learned the
 same thing twice, and **ask each other for changes instead of reaching in**.
 
@@ -40,8 +43,8 @@ off the tool at its owner's request** (2026-08-17; the synced files stayed as lo
 proof stands and the live consumer count is zero — adoption has to be near-free for the family to come
 back, which is what the automation-first direction is for.
 
-**All four artefacts exist**; only `Daoris.Desktop` — the shell that hosts the same web build — is a
-brief. **Nothing is published**, and development runs at `0.0.x`. The service is **deployable** (D36):
+**All four artefacts exist**; only `Daoris.Desktop` — now re-scoped by D45 as **the local driver** — is
+a brief. **Nothing is published**, and development runs at `0.0.x`. The service is **deployable** (D36):
 local sessions all spawn the MCP host over one persistent store, and the HTTP host carries
 registrations and quests for a remote deployment, key-gated, with no model required. **Development is
 automation-first** (D37): the person sets the target and verifies the final diff; agents execute and
@@ -61,7 +64,8 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D37) and why each was made.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D45) and why each was made. **D45 is the
+  direction: Daoris drives** — read it before planning anything.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -89,7 +93,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
 | `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
 | `src/Daoris.Web/` | **The platform** (D38) — knowledge, quests, projects; the only UI; doctrine read-only |
-| `src/Daoris.Desktop/` | Desktop shell hosting `Daoris.Web`, on the desktop sibling (not started) |
+| `src/Daoris.Desktop/` | **The local driver** (D45): server host + platform + agent-session control (not started; brief rewritten) |
 | `examples/` | The example family — two miniature adopters the family rehearsal drives (D39) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |
 | `canon/core/{rules,knowledge,skills}/` | The always-installed rules, on-demand knowledge, and discovery skills |

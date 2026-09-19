@@ -941,6 +941,33 @@ retired what it did not. Fixed red-first (`RefreshTests`), guarded against the m
 proven on the real store: 16 → 14 repositories, only what is on disk. Both fixes opened
 `docs/FIX-LOG.md`, which the service now indexes like every sibling's.
 
+# Handover — end of 2026-09-19
+
+**The next session starts at `TASKS.md` DRV1** — designing the driver. The direction changed at the end
+of this stretch and is recorded as **D45**: Daoris becomes the main driver for all projects —
+centralized workflow management, triggering and coordinating the agent sessions (claude/codex,
+adapter-based) that take the quests, one session per domain-owning repository. Three parts: the
+per-repo **connector** (built: CLI, canon, MCP, join lifecycle), the **local driver** (`Daoris.Desktop`
+re-scoped — brief rewritten, design first), the **remote server** for teams (later; old SVC2 folded into
+DRV3). Read D45, D37, D32/D33 and `src/Daoris.Desktop/README.md` before designing.
+
+**State at handover.** Everything committed, tree clean, ~34 commits ahead of origin (push is the
+owner's). All 9 devkit gates green: CLI 121, service 83, devkit 57, web 16 unit + 6 Playwright;
+release rehearsal 52/52; family rehearsal **29/29** including a project born mid-run and joined through
+the real CLI (D44). The service ships as executables — `npm run publish:service -- --install` lands
+both hosts in `~/.daoris/bin` and prints the ready `.mcp.json` snippet (D43); the platform the owner
+uses runs from that installed copy, which also ends the build-lock dance with running hosts. The
+platform (D38/D40/D41/D42) speaks en + 简体中文, is built on Tailwind v4/Radix/Query/i18next with
+Storybook as the design tool, and this repository's own sessions reach the service over MCP via the
+committed `.mcp.json`.
+
+**Constraints easy to trip.** The always-loaded core is **23,988 of 24,000 bytes** — the next canon
+addition fails the gate even as an index row; split, don't raise (D28; CANON5 waits on exactly this).
+A canon change must re-sync `examples/` and this repo's own `.claude/` in the same commit — the family
+rehearsal enforces the first, `verify` the second. Do not tag a release while REH1 is open. Never edit
+the version or stamp a changelog heading by hand. And never write into another repository — the driver
+direction makes this *more* load-bearing, not less: orchestration is central, work never is.
+
 ## D43 + D44 — the server ships as executables, and the loops create their consumer (2026-09-19)
 
 ✅ done 2026-09-19 — both raised by the owner in one message: no published server executable, and no
