@@ -259,10 +259,13 @@ app.MapGet("/api/entry", async (ComposedService s, string id, CancellationToken 
     var entry = await s.Service.FindAsync(id, ct);
     return entry is null
         ? Results.NotFound(new ErrorResponse($"no entry with id '{id}'"))
-        : Results.Ok(new EntryResponse(
-            entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),
-            entry.Title, entry.RelativePath, entry.Body));
+        : Results.Ok(ToEntry(entry));
 });
+
+// One repository's own knowledge, whole — what a sync loop feeds from (D47 §4). Local provenance
+// only, because that is the only class a feed may carry: canonical doctrine is distributed by `sync`.
+app.MapGet("/api/entries", async (ComposedService s, string repository, CancellationToken ct) =>
+    (await s.Service.LocalEntriesAsync(repository, ct)).Select(ToEntry));
 
 // The landing view's endpoint (D30). Convergence is the centre of this UI, not a feature on a menu:
 // search answers a question you have, and comparison tells you which question to ask.
@@ -626,6 +629,10 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
 static QuestResponse ToQuest(Quest q) => new(
     q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated);
 
+static EntryResponse ToEntry(KnowledgeEntry entry) => new(
+    entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),
+    entry.Title, entry.RelativePath, entry.Body, entry.Anchor);
+
 // The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
 // answered only to a caller on this machine. The evidence stays — commits are the reviewable record
 // and are meant to travel; the transcript is diagnostics for the machine that ran the session.
@@ -703,7 +710,8 @@ public sealed record RepositoryResponse(string Name, int Total, int Local, int C
 public sealed record HitResponse(
     string Id, string Repository, string Kind, string Title, string Path, string? Excerpt, double Score);
 public sealed record EntryResponse(
-    string Id, string Repository, string Kind, string Provenance, string Title, string Path, string Body);
+    string Id, string Repository, string Kind, string Provenance, string Title, string Path, string Body,
+    string? Anchor);
 public sealed record ConvergenceEntryResponse(
     string Id, string Repository, string Kind, string Title, string Path);
 public sealed record ConvergenceResponse(
@@ -748,6 +756,7 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(IEnumerable<RepositoryResponse>))]
 [JsonSerializable(typeof(IEnumerable<HitResponse>))]
 [JsonSerializable(typeof(EntryResponse))]
+[JsonSerializable(typeof(IEnumerable<EntryResponse>))]
 [JsonSerializable(typeof(IEnumerable<ConvergenceResponse>))]
 [JsonSerializable(typeof(IEnumerable<QuestResponse>))]
 [JsonSerializable(typeof(PublishQuestRequest))]

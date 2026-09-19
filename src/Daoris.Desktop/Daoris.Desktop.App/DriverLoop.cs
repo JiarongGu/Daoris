@@ -60,12 +60,16 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         var home = Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
         using var service = new ServiceClient(serviceUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
 
+        // The machine's remote, when it has one (D47 §9) — the sync rides the tick, in the shell
+        // exactly as in the headless host. Absence is silent and local.
+        using var sync = RemoteSync.FromEnvironment(service.BaseUrl);
+
         while (!ct.IsCancellationRequested)
         {
             var config = DriverConfig.Load(ConfigPath);
             try
             {
-                var report = await new Daoris.Driver.Driver(service, config, AdapterSet.Built(), home, Processes)
+                var report = await new Daoris.Driver.Driver(service, config, AdapterSet.Built(), home, Processes, sync)
                     .TickAsync(ct).ConfigureAwait(false);
 
                 if (report.PlannedAnything || report.Events.Count > 0)

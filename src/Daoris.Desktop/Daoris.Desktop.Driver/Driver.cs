@@ -31,7 +31,7 @@ public sealed record TickReport(
 /// </remarks>
 public sealed class Driver(
     ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
-    SessionProcesses? processes = null)
+    SessionProcesses? processes = null, RemoteSync? sync = null)
 {
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.
@@ -40,9 +40,22 @@ public sealed class Driver(
     /// <summary>One decision-and-execution round. Returns what happened, for whoever is watching.</summary>
     public async Task<TickReport> TickAsync(CancellationToken ct = default)
     {
+        var events = new List<string>();
+
+        // The sync runs before the snapshot, so this tick plans over a fresh mirror (D47 §9). Its
+        // failure is an event, never a dead tick: records sync eventually and the next tick retries —
+        // but a feed dying quietly looks exactly like a family with nothing to say, so the wall is named.
+        if (sync is not null)
+        {
+            var synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+            if (synced.Problem is not null)
+            {
+                events.Add($"sync  {synced.Problem}");
+            }
+        }
+
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         var plan = Planner.Plan(snapshot, config);
-        var events = new List<string>();
         var progressed = false;
 
         var starts = plan.Where(c => c.Verdict == StartVerdict.Start).ToList();

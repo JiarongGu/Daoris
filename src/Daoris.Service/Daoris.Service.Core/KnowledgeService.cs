@@ -130,6 +130,20 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
+    /// One repository's own knowledge, whole — what a sync loop feeds from (D47 §4). Local provenance
+    /// only: canonical content is identical everywhere by construction and never feeds.
+    /// </summary>
+    public async Task<IReadOnlyList<KnowledgeEntry>> LocalEntriesAsync(
+        string repository, CancellationToken ct = default)
+    {
+        await EnsureIndexedAsync(ct).ConfigureAwait(false);
+        return (await store.AllAsync(ct).ConfigureAwait(false))
+            .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                && entry.Provenance == Provenance.Local)
+            .ToList();
+    }
+
+    /// <summary>
     /// Accept one repository's knowledge content from a feed — the only ingest a remote deployment has,
     /// since it never scans a filesystem (D47 §4). The disclosure judgement runs HERE, at the door,
     /// over what the repository's own reviewed manifest declared: join admits records, knowledge is a

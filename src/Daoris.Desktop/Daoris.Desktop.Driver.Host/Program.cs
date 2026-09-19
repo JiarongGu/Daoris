@@ -31,6 +31,15 @@ try
 
     using var service = ServiceClient.FromEnvironment();
 
+    // The machine's remote, when it has one (~/.daoris/remote.json, environment overriding — D47 §9):
+    // the sync rides the tick, so a headless driver on a server machine feeds and mirrors exactly as
+    // the desktop does. Absence is silent and local.
+    using var sync = RemoteSync.FromEnvironment(service.BaseUrl);
+    if (sync is not null)
+    {
+        Console.WriteLine("driver: syncing with the machine's remote each tick");
+    }
+
     if (config.Drivable.Count == 0)
     {
         Console.WriteLine($"driver: nothing is opted in — name repositories under \"drivable\" in {configPath}");
@@ -38,11 +47,11 @@ try
 
     if (once)
     {
-        Print(await new Driver(service, config, AdapterSet.Built(), home, processes).TickAsync());
+        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync).TickAsync());
     }
     else if (untilIdle)
     {
-        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes).RunUntilIdleAsync())
+        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync).RunUntilIdleAsync())
         {
             Print(report);
         }
@@ -56,7 +65,7 @@ try
             // adapter command takes effect without a restart — the shell's controls are edits to this
             // file, and a control that needs a bounce is a control nobody trusts.
             config = DriverConfig.Load(configPath);
-            Print(await new Driver(service, config, AdapterSet.Built(), home, processes).TickAsync(), quietWhenIdle: true);
+            Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync).TickAsync(), quietWhenIdle: true);
             await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds));
         }
     }
