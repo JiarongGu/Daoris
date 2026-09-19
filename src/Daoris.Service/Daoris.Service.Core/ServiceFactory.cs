@@ -33,13 +33,16 @@ public sealed record ServiceOptions(
 /// <param name="Service">The composed service. Convergence is reached through it, not beside it.</param>
 /// <param name="Quests">Work one repository has asked of another — service state, not anyone's files.</param>
 /// <param name="Exchange">The publish/respond judgement, shared so no two hosts can disagree on it.</param>
+/// <param name="Sessions">Driver-started session records — the record is service state, the process never is (D46).</param>
+/// <param name="Ledger">The open/advance judgement for sessions, shared for the same reason the exchange is.</param>
 /// <param name="SemanticEnabled">Whether the semantic tier answered. Report it; never imply it.</param>
 /// <remarks>
 /// Disposable, and it owns the store: the factory opened it, so the caller should not have to know that
 /// a database handle came back inside something called a service.
 /// </remarks>
 public sealed record ComposedService(
-    KnowledgeService Service, QuestStore Quests, QuestExchange Exchange, bool SemanticEnabled) : IAsyncDisposable
+    KnowledgeService Service, QuestStore Quests, QuestExchange Exchange,
+    SessionStore Sessions, SessionLedger Ledger, bool SemanticEnabled) : IAsyncDisposable
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
@@ -83,6 +86,7 @@ public static class ServiceFactory
 
         var store = await SqliteKnowledgeStore.OpenAsync(options.DatabasePath).ConfigureAwait(false);
         var quests = await QuestStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var source = FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
 
@@ -114,7 +118,9 @@ public static class ServiceFactory
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
             registry, registrations);
 
-        return new ComposedService(service, quests, new QuestExchange(service, quests), service.SemanticEnabled)
+        return new ComposedService(
+            service, quests, new QuestExchange(service, quests),
+            sessions, new SessionLedger(quests, sessions), service.SemanticEnabled)
         {
             Store = store,
         };
