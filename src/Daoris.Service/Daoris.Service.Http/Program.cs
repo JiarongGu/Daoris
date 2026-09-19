@@ -234,6 +234,10 @@ app.MapPost("/api/quests/{id}/respond", async (
     {
         QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(ToQuest(outcome.Quest!), outcome.Message)),
         QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        // The refused transition is a state conflict, not a bad request: the losing side of the
+        // cross-machine race reads 409 as "someone got there first" and stands down (D47 §5).
+        QuestRespondRefusal.AlreadyTaken or QuestRespondRefusal.Closed =>
+            Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });

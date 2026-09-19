@@ -35,6 +35,12 @@ public enum QuestRespondRefusal
 
     /// <summary>No quest under that id.</summary>
     NotFound,
+
+    /// <summary>Somebody got there first — the losing side of the race stands down (D47 §5).</summary>
+    AlreadyTaken,
+
+    /// <summary>Done and Declined are terminal: one title is one quest forever (D46 §3).</summary>
+    Closed,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -134,11 +140,30 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests)
                 Quest: null);
         }
 
-        var quest = await quests.SetStatusAsync(id.TrimStart('#'), status.Value, reason, now, ct)
+        var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct)
             .ConfigureAwait(false);
 
-        return quest is null
-            ? new(QuestRespondRefusal.NotFound, $"No quest `#{id.TrimStart('#')}`. Ids come from `quest_list`.", Quest: null)
-            : new(QuestRespondRefusal.None, $"Quest `#{quest.Id}` is now {quest.Status}.", quest);
+        if (move.Quest is null)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{id.TrimStart('#')}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (move.Moved)
+        {
+            return new(QuestRespondRefusal.None, $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.", move.Quest);
+        }
+
+        // The store refused the transition; the quest comes back unchanged so the answer can name the
+        // state that refused it. For a take that is the race resolving (D47 §5) — the same message a
+        // session racing an outside session already acts on.
+        return move.Quest.Status == QuestStatus.Taken
+            ? new(
+                QuestRespondRefusal.AlreadyTaken,
+                $"Quest `#{move.Quest.Id}` is already taken — someone is working it. Stand down rather than doubling the work.",
+                Quest: null)
+            : new(
+                QuestRespondRefusal.Closed,
+                $"Quest `#{move.Quest.Id}` is {move.Quest.Status} — a closed quest does not move; a new ask is a new title.",
+                Quest: null);
     }
 }

@@ -75,7 +75,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     public async Task A_quest_already_taken_is_refused()
     {
         var quest = await Publish();
-        await _quests.SetStatusAsync(quest.Id, QuestStatus.Taken, null, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now);
 
         var outcome = await _ledger.OpenAsync(quest.Id, "stub", Now);
 
@@ -87,7 +87,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     public async Task A_closed_quest_is_refused()
     {
         var quest = await Publish();
-        await _quests.SetStatusAsync(quest.Id, QuestStatus.Done, "landed", Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Done, "landed", Now);
 
         var outcome = await _ledger.OpenAsync(quest.Id, "stub", Now);
 

@@ -53,10 +53,78 @@ public sealed class QuestStoreTests : IAsyncLifetime
     {
         var quest = await Publish();
 
-        var taken = await _quests.SetStatusAsync(quest.Id, QuestStatus.Taken, null, Now.AddDays(1));
+        var taken = await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddDays(1));
 
-        Assert.Equal(QuestStatus.Taken, taken!.Status);
+        Assert.True(taken.Moved);
+        Assert.Equal(QuestStatus.Taken, taken.Quest!.Status);
         Assert.Single(await _quests.ListAsync());
+    }
+
+    /// <summary>
+    /// "The quest state machine is the only lock" (D46) — which means the SECOND take must lose in
+    /// the store itself, not in a check the caller ran a moment earlier. Two machines' drivers watching
+    /// one quest is exactly this call arriving twice (D47).
+    /// </summary>
+    [Fact]
+    public async Task A_second_take_loses_and_changes_nothing()
+    {
+        var quest = await Publish();
+
+        var first = await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        var second = await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(2));
+
+        Assert.True(first.Moved);
+        Assert.False(second.Moved);
+        Assert.Equal(QuestStatus.Taken, second.Quest!.Status);
+        Assert.Equal(Now.AddHours(1), second.Quest.Updated);
+    }
+
+    /// <summary>One title is one quest forever (D46 §3) — reopening a closed quest would break that.</summary>
+    [Fact]
+    public async Task A_closed_quest_does_not_move()
+    {
+        var quest = await Publish();
+        await _quests.MoveAsync(quest.Id, QuestStatus.Done, "landed", Now);
+
+        var retaken = await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddDays(1));
+        var redeclined = await _quests.MoveAsync(quest.Id, QuestStatus.Declined, "no", Now.AddDays(1));
+
+        Assert.False(retaken.Moved);
+        Assert.False(redeclined.Moved);
+        Assert.Equal(QuestStatus.Done, retaken.Quest!.Status);
+        Assert.Equal("landed", retaken.Quest.Note);
+    }
+
+    /// <summary>
+    /// The remote's arbitration in miniature: two hosts are two connections over one file, and they
+    /// must agree on one taker because the file's own write serialization plus the guarded UPDATE
+    /// decide — not because either host checked first (D47 §5).
+    /// </summary>
+    [Fact]
+    public async Task Two_connections_over_one_file_agree_on_one_taker()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "daoris-race-" + Guid.NewGuid().ToString("N")[..8] + ".db");
+        try
+        {
+            await using var one = new SqliteConnection($"Data Source={path};Pooling=False");
+            await using var two = new SqliteConnection($"Data Source={path};Pooling=False");
+            await one.OpenAsync();
+            await two.OpenAsync();
+            var storeOne = await QuestStore.OpenAsync(one);
+            var storeTwo = await QuestStore.OpenAsync(two);
+            var quest = await storeOne.PublishAsync("Asker", "Owner", "Race me", "why", Now);
+
+            var mine = await storeOne.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+            var theirs = await storeTwo.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+
+            Assert.True(mine.Moved);
+            Assert.False(theirs.Moved);
+            Assert.Equal(QuestStatus.Taken, theirs.Quest!.Status);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
     }
 
     /// <summary>The reason is the part the asker can act on; a bare refusal tells them nothing.</summary>
@@ -65,11 +133,11 @@ public sealed class QuestStoreTests : IAsyncLifetime
     {
         var quest = await Publish();
 
-        var declined = await _quests.SetStatusAsync(
+        var declined = await _quests.MoveAsync(
             quest.Id, QuestStatus.Declined, "That rule is deliberately local here.", Now.AddDays(1));
 
-        Assert.Equal(QuestStatus.Declined, declined!.Status);
-        Assert.Contains("deliberately local", declined.Note);
+        Assert.Equal(QuestStatus.Declined, declined.Quest!.Status);
+        Assert.Contains("deliberately local", declined.Quest.Note);
         Assert.Empty(await _quests.ListAsync());
         Assert.Single(await _quests.ListAsync(includeClosed: true));
     }
@@ -89,7 +157,7 @@ public sealed class QuestStoreTests : IAsyncLifetime
     public async Task Open_and_taken_sort_before_closed()
     {
         var done = await _quests.PublishAsync("Asker", "Owner", "Finished", "b", Now);
-        await _quests.SetStatusAsync(done.Id, QuestStatus.Done, null, Now);
+        await _quests.MoveAsync(done.Id, QuestStatus.Done, null, Now);
         await Publish("Still open");
 
         var listed = await _quests.ListAsync("Owner", includeClosed: true);
@@ -100,7 +168,10 @@ public sealed class QuestStoreTests : IAsyncLifetime
     [Fact]
     public async Task An_unknown_id_yields_nothing_rather_than_throwing()
     {
-        Assert.Null(await _quests.SetStatusAsync("zzzzzz", QuestStatus.Taken, null, Now));
+        var move = await _quests.MoveAsync("zzzzzz", QuestStatus.Taken, null, Now);
+
+        Assert.Null(move.Quest);
+        Assert.False(move.Moved);
         Assert.Null(await _quests.FindAsync("zzzzzz"));
     }
 }

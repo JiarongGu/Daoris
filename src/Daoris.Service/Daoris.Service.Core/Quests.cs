@@ -38,6 +38,10 @@ public sealed record Quest(
     DateTimeOffset Filed,
     DateTimeOffset Updated);
 
+/// <param name="Quest">The quest as it now stands — null when no such id exists.</param>
+/// <param name="Moved">Whether THIS call moved it. False with a non-null quest is a refused move.</param>
+public sealed record QuestMove(Quest? Quest, bool Moved);
+
 /// <summary>
 /// Quests, held by the service rather than written into anyone's repository.
 /// </summary>
@@ -130,23 +134,42 @@ public sealed class QuestStore
         return quest;
     }
 
-    /// <summary>Move a quest to a new status. Declining without a reason is refused by the caller.</summary>
-    public async Task<Quest?> SetStatusAsync(
+    /// <summary>
+    /// Move a quest to a new status, atomically, honouring the transition table. Declining without a
+    /// reason is refused by the caller; an illegal move is refused HERE, in the store, because the
+    /// guarded UPDATE is what makes "the quest state machine is the only lock" true when two hosts'
+    /// callers race over one file (D47 §5) — a check the caller ran a moment earlier decides nothing.
+    /// </summary>
+    /// <returns>
+    /// The quest as it now stands and whether this call moved it; a null quest means no such id.
+    /// A refused move returns the row unchanged, so the caller can name the state that refused it.
+    /// </returns>
+    public async Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default)
     {
-        var quest = await FindAsync(id, ct).ConfigureAwait(false);
-        if (quest is null) return null;
+        // The table, inlined into the WHERE so winning the move and writing it are one statement:
+        // Taken only from Open (the atomic take), closed only from live, terminal states immovable.
+        var from = string.Join(", ", AllowedFrom(status).Select(s => $"'{s}'"));
 
         await using var command = _connection.CreateCommand();
-        command.CommandText = "UPDATE quests SET status = $status, note = $note, updated = $updated WHERE id = $id";
+        command.CommandText =
+            $"UPDATE quests SET status = $status, note = $note, updated = $updated WHERE id = $id AND status IN ({from})";
         command.Parameters.AddWithValue("$status", status.ToString());
         command.Parameters.AddWithValue("$note", (object?)note ?? DBNull.Value);
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         command.Parameters.AddWithValue("$id", id);
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        var moved = await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 1;
 
-        return quest with { Status = status, Note = note, Updated = now };
+        return new(await FindAsync(id, ct).ConfigureAwait(false), moved);
     }
+
+    /// <summary>The states a move to <paramref name="target"/> may start from — D47 §5's table.</summary>
+    private static IEnumerable<string> AllowedFrom(QuestStatus target) => target switch
+    {
+        QuestStatus.Taken => [nameof(QuestStatus.Open)],
+        QuestStatus.Done or QuestStatus.Declined => [nameof(QuestStatus.Open), nameof(QuestStatus.Taken)],
+        _ => [],
+    };
 
     public async Task<Quest?> FindAsync(string id, CancellationToken ct = default)
     {

@@ -150,4 +150,51 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Taken, taken.Quest!.Status);
         Assert.Equal(QuestStatus.Done, done.Quest!.Status);
     }
+
+    /// <summary>
+    /// The cross-machine race, at the layer where it resolves (D47 §5): the second take is refused
+    /// naming the state, and the message tells the losing session what to do — stand down.
+    /// </summary>
+    [Fact]
+    public async Task Taking_a_taken_quest_is_refused_toward_standing_down()
+    {
+        var published = await Publish("Declared");
+        await _exchange.RespondAsync(published.Quest!.Id, "take", null, Now);
+
+        var second = await _exchange.RespondAsync(published.Quest.Id, "take", null, Now.AddMinutes(1));
+
+        Assert.Equal(QuestRespondRefusal.AlreadyTaken, second.Refusal);
+        Assert.Contains("already taken", second.Message);
+        Assert.Contains("stand down", second.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>One title is one quest forever (D46 §3): closed means immovable, in both directions.</summary>
+    [Fact]
+    public async Task A_closed_quest_refuses_every_move()
+    {
+        var published = await Publish("Declared");
+        await _exchange.RespondAsync(published.Quest!.Id, "done", "Landed.", Now);
+
+        var retake = await _exchange.RespondAsync(published.Quest.Id, "take", null, Now.AddDays(1));
+        var redecline = await _exchange.RespondAsync(published.Quest.Id, "decline", "second thoughts", Now.AddDays(1));
+
+        Assert.Equal(QuestRespondRefusal.Closed, retake.Refusal);
+        Assert.Equal(QuestRespondRefusal.Closed, redecline.Refusal);
+        Assert.Contains("does not move", retake.Message);
+    }
+
+    /// <summary>
+    /// Outside work is first-class (D46): someone who just did the thing closes the quest without
+    /// ever having taken it, and the table must allow that.
+    /// </summary>
+    [Fact]
+    public async Task Done_straight_from_open_is_outside_work_and_fine()
+    {
+        var published = await Publish("Declared");
+
+        var done = await _exchange.RespondAsync(published.Quest!.Id, "done", "Already had it.", Now);
+
+        Assert.Equal(QuestRespondRefusal.None, done.Refusal);
+        Assert.Equal(QuestStatus.Done, done.Quest!.Status);
+    }
 }
