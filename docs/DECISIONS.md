@@ -1239,3 +1239,44 @@ orchestration host that also does that); the service will need a trigger/session
 should start work, a session's lifecycle attached to it); and the roadmap is re-sequenced around the
 three parts. Design comes first, in a fresh session — this decision records the direction, not the
 mechanism.
+
+## D46 — The driver spawns fresh sessions that claim their own quests; driving is additive, never exclusive (2026-09-19)
+
+**Decision.** DRV1 is settled: `docs/2026-09-19-driver-design.md` is the mechanism for D45's part 2.
+The driver spawns a **fresh, non-interactive session per quest** — one active session per repository,
+onto a clean working tree only, oldest open quest first. **The spawned session claims its own quest**:
+take, work, done or decline, over its own connector, as the repository's own agent. Session **records**
+live in the service beside the quests, behind a shared judgement class so the hosts cannot drift;
+session **processes** never leave the desktop host, and the service stays spawn-free and model-free.
+The adapter seam is D23 one layer up — claude-code supported, codex explicit second, an unknown adapter
+errors naming what exists, and an adapter names a harness, never a model. The registration gains the
+one field spawning needs: the repository root, sent by `connect` (which runs in the repository and
+knows it), stored machine-locally and never leaving the machine. The mechanism is gate-verified by a
+**stub adapter** phase in the family rehearsal; the real adapter is a deployment choice on a proven
+loop, reporting itself in every record.
+
+**The owner's constraint, set the same day, shapes the whole design: driving is additive, never
+exclusive.** A repository developed outside driver-managed sessions stays first-class — its connector
+still syncs, upstreams and publishes, and a quest it publishes triggers driver sessions elsewhere
+exactly as a platform-filed one does. That is why the session claims its own quest rather than the
+driver claiming on its behalf: the quest state machine is the only lock, a driver-started session and
+an interactive one are indistinguishable at the quest layer, and nothing outside the driver ever needs
+to know the driver exists. It is also why the driver holds **no identity**: a component that never
+writes quest state needs none to be safe, and per-caller identity waits for the deployment where it
+means something (DRV3/SVC2).
+
+**Why spawn rather than wake.** The MCP host already proved the shape (D36): the session is the
+ephemeral thing and the store is what persists. A long-lived idle agent cannot be pushed to without
+inventing a channel, burns context waiting, and holds doctrine that has since synced — a fresh session
+enters through the repository's own discovery skills, which is the doctrine path in. Resuming a session
+for a follow-up is an adapter *capability*, held until real driven runs ask for it.
+
+**Session state is observed, never self-reported.** The driver moves a session by process lifetime and
+quest transitions — the two signals outside work also produces (minus the process) — rather than an
+in-band status protocol an interactive session would not speak. Gates-green is deliberately not a
+lifecycle state: it is outcome evidence in the record, because the gates belong to the repository's own
+loop (D37), not to the driver.
+
+**Rejected: the driver takes the quest before spawning.** It would attribute the claim to a component
+that is not a party to the work, need a repair path for claimed-but-never-started quests, and make
+driven work distinguishable from outside work at exactly the layer where symmetry is the guarantee.

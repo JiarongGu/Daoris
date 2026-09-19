@@ -1,8 +1,9 @@
 # Daoris.Desktop — the local driver
 
-**Status: not started. This document is the brief, rewritten 2026-09-19 for D45** — the owner's
-direction that Daoris becomes the main driver for all projects. The earlier brief (a shell hosting the
-web build) is a strict subset of this one.
+**Status: designed, not started.** This document is the brief, rewritten 2026-09-19 for D45 — the
+owner's direction that Daoris becomes the main driver for all projects. The earlier brief (a shell
+hosting the web build) is a strict subset of this one. **The design is settled:
+`docs/2026-09-19-driver-design.md` (D46) is the contract for the build (DRV2).**
 
 ## What it is
 
@@ -30,16 +31,20 @@ sitting that the driver should have started".
 - **One UI.** The platform (`Daoris.Web`) is the interface; this shell hosts the same build and adds
   the session-control surface, not a second UI.
 
-## Open questions — DRV1's design settles these before any code
+## The design, settled (DRV1, 2026-09-19)
 
-1. **Spawn or wake:** how a session is started per repository (headless CLI invocation? attached
-   terminal? what carries the quest in as the target), and what "the driver should have started this"
-   means for a quest sitting unclaimed.
-2. **The session lifecycle** attached to a quest — started, working, gates-green, done/declined,
-   failed — and where it is stored (the service already holds quests; sessions are state too).
-3. **The adapter seam**: claude-code first, codex second — one supported, others explicit, never
-   guessed (D23's lesson, one layer up).
-4. **What lives in the service vs the shell**: the trigger/session surface probably belongs to the
-   service (every client benefits); process control belongs to the desktop host.
-5. **The desktop sibling**: consumable at a released version? If not, that is a coordination point
-   like LYN1 — never a reason to reach across.
+`docs/2026-09-19-driver-design.md` answers the brief's five questions; the short form:
+
+1. **Spawn, not wake** — a fresh non-interactive session per quest, one active session per repository,
+   onto a clean tree only; the spawned session claims its own quest through its own connector, so the
+   driver never writes quest state and outside sessions stay first-class (driving is additive, never
+   exclusive — D46).
+2. **The session lifecycle** is observed, not self-reported — process lifetime plus quest transitions —
+   and its records live in the service beside the quests; processes and transcripts stay here.
+3. **The adapter seam** is D23 one layer up: claude-code supported, codex explicit second, unknown
+   adapters error naming what exists; an adapter names a harness, never a model.
+4. **The service holds state, the driver holds action**: session records and the machine-local
+   repository root go to the service; the scheduler, process control, adapters, driver config and
+   notifications live here.
+5. **The desktop sibling is consumable at a released version** — v0.16.0 (`Shenora.Windows` +
+   `@shenora/react`), checked 2026-09-19 — so there is no coordination blocker.

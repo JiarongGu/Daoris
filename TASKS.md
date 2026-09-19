@@ -8,7 +8,8 @@
 **Goal:** one canonical set of agent-facing rules and knowledge, materialized into every repository in
 the family, kept from drifting, and improved from wherever the improvement was found — and, as of D45,
 **Daoris as the driver**: the centralized workflow manager that triggers and coordinates the agent
-sessions doing the family's work. The next session starts at **DRV1**.
+sessions doing the family's work. The design is settled (D46, `docs/2026-09-19-driver-design.md`);
+the next session starts at **DRV2**.
 
 ## State
 
@@ -48,19 +49,15 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Backlog
 
-- [ ] **DRV1 — design the driver (start here, fresh session).** The direction is D45; the mechanism is
-  deliberately undesigned. Write `docs/<date>-driver-design.md` before any code, settling: how a quest
-  triggers a session (spawn vs wake; queue semantics; what "Daoris should have started this" means);
-  the session lifecycle attached to a quest (started, working, gates-green, done/declined, failed) and
-  where it is stored; the agent adapter seam (claude-code first, codex second — one supported, others
-  explicit, per D23's lesson); how the D37 carve-outs surface in the loop (the person's checkpoints in
-  the platform); and what part 2 needs from the service (a trigger/session surface) versus what stays
-  in the desktop host. Read D45, D37, D32/D33 and the Desktop brief first.
-
-- [ ] **DRV2 — build the local driver: `Daoris.Desktop`, re-scoped.** Hosts the local server, carries
-  the platform UI, controls repositories and agent sessions per DRV1's design. Depends on DRV1, and on
-  the desktop sibling being consumable at a released version (D22) — if it is not, that is a
-  coordination point like LYN1, not a reason to reach across.
+- [ ] **DRV2 — build the local driver: `Daoris.Desktop`, re-scoped (start here).** Hosts the local
+  server, carries the platform UI, controls repositories and agent sessions per the settled design —
+  `docs/2026-09-19-driver-design.md` (D46) is the contract; read it and D45/D37 first. The desktop
+  sibling is consumable at a released version (Shenora v0.16.0, `Shenora.Windows` on NuGet +
+  `@shenora/react`, checked 2026-09-19), so D22's constraint is satisfiable and there is no
+  coordination blocker. Build order the design implies: the service's session surface (records, shared
+  judgement class, `GET /api/sessions`, the machine-local root on the registration via `connect`),
+  then the driver loop with the **stub adapter** and the family-rehearsal driver phase (the gate),
+  then the `claude-code` adapter, then the shell.
 
 - [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
   machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's

@@ -1044,3 +1044,32 @@ its precondition — "capture the log before re-running" no longer depends on an
 `_fixtures/rehearsal-logs/<timestamp>.log`, outside the scratch tree a passing run deletes. Three
 runs on 2026-09-18 — two of them straight after a canon edit and sync, the twice-observed trigger —
 all passed 52/52, each leaving a transcript.
+
+## DRV1 — design the driver (2026-09-19)
+
+> The direction is D45; the mechanism is deliberately undesigned. Write `docs/<date>-driver-design.md`
+> before any code, settling: how a quest triggers a session (spawn vs wake; queue semantics; what
+> "Daoris should have started this" means); the session lifecycle attached to a quest (started,
+> working, gates-green, done/declined, failed) and where it is stored; the agent adapter seam
+> (claude-code first, codex second — one supported, others explicit, per D23's lesson); how the D37
+> carve-outs surface in the loop (the person's checkpoints in the platform); and what part 2 needs from
+> the service (a trigger/session surface) versus what stays in the desktop host. Read D45, D37, D32/D33
+> and the Desktop brief first.
+
+✅ done 2026-09-19 — `docs/2026-09-19-driver-design.md`, recorded as **D46**. All five questions
+settled: **spawn fresh** (one non-interactive session per quest, one active session per repository,
+clean tree only, oldest open first; wake held as an adapter capability); the **session lifecycle** is
+nine observed states stored in the service beside the quests behind a shared judgement class, with
+processes and transcripts staying in the desktop host and gates-green kept as outcome evidence rather
+than a state; the **adapter seam** is D23 one layer up (claude-code supported, codex explicit, unknown
+errors naming what exists, a harness named but never a model); the **D37 checkpoints** surface as the
+platform's session-control surface (drivable per repository, hold, stop, start-now; `awaiting-person`
+arrives with its analysis; the driver has no push/publish capability at all); and the **service/desktop
+split** gives the service passive session records plus a machine-local repository root on the
+registration, while the trigger action stays the driver's alone. The design's governing principle is
+the owner's, set the same day: **driving is additive, never exclusive** — outside sessions stay
+first-class, their connector flows unchanged, their quests trigger driver sessions elsewhere, and the
+spawned session claiming its own quest is what makes driven and outside work indistinguishable at the
+quest layer. Verification: a stub-adapter phase in the family rehearsal, so the mechanism is
+gate-verified with no model in the gate. Bonus finding: the desktop runtime sibling is released and
+consumable (v0.16.0), so DRV2 has no coordination blocker.

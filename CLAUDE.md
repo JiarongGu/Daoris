@@ -8,7 +8,8 @@
 knowledge and work** across this family of projects — and, as of **D45, the driver**: the centralized
 workflow manager that will trigger and coordinate the agent sessions doing that work, one session per
 domain-owning repository. Three parts: the per-repo **connector** (built), the **local driver** desktop
-app (design next — `TASKS.md` DRV1), the **remote server** for teams (later). Each repository has its own agent, which owns that
+app (designed — D46, `docs/2026-09-19-driver-design.md`; build is `TASKS.md` DRV2), the **remote
+server** for teams (later). Each repository has its own agent, which owns that
 domain; Daoris is how they hold one canon of doctrine between them, find where they have learned the
 same thing twice, and **ask each other for changes instead of reaching in**.
 
