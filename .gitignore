@@ -32,6 +32,9 @@ src/Daoris.Cli/README.md
 # The previous version listed the trees that existed when it was written, so the devkit's 397 build
 # artefacts were staged the first time it was built. Scoping by `src/*/` rather than by name would
 # be tidier and would also catch `src/Daoris.Cli/bin`, which is exactly the file it must not catch.
+# The desktop tree hit the same trap on its first build (2026-09-19): its obj/ was committed —
+# carrying machine paths, which is a sensitive-info leak — and amended out while still unpushed.
+# A new .NET tree's FIRST commit is where this bites; add the pair before `git add`.
 src/Daoris.Service/**/bin/
 src/Daoris.Service/**/obj/
 src/Daoris.Devkit/**/bin/
