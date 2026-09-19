@@ -172,8 +172,12 @@ Service design §5, built as specified; D46 held per-caller identity precisely f
 - **Attribution falls out.** Keyed writes give quest transitions and session records their principal,
   so "who took this, from which machine" is answerable — recorded because the write carried it, not
   because a second identity model was invented (§5c's rule).
-- Local trust (no key, loopback) and single-key (D36's write gate) remain what they are today —
-  loopback deployments. §3's startup refusal is what keeps them there.
+- ~~Local trust (no key, loopback) and single-key (D36's write gate) remain what they are today —
+  loopback deployments. §3's startup refusal is what keeps them there.~~ **Amended 2026-09-20, on the
+  owner's redesign grant (nothing is deployed):** D36's interim single-key gate is retired rather than
+  carried. Two trust shapes only — local trusts the loopback outright (D21; the startup refusal keeps
+  it there), shared gates every route with minted keys. `DAORIS_SERVICE_KEY` survives solely as the
+  client-side "key I present" (§5b), which in shared mode is a minted key.
 
 ## 8. What lives where
 

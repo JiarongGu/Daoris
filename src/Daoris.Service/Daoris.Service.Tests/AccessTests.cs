@@ -41,7 +41,7 @@ public sealed class AccessTests
     [InlineData("http://localhost:5177;http://127.0.0.1:9000")]
     public void Local_mode_serves_loopback(string urls)
     {
-        Assert.Null(Access.RefuseStartup(ServiceMode.Local, urls, singleKeyConfigured: false));
+        Assert.Null(Access.RefuseStartup(ServiceMode.Local, urls));
     }
 
     [Theory]
@@ -52,7 +52,7 @@ public sealed class AccessTests
     [InlineData("http://localhost:5177;http://0.0.0.0:5178")]
     public void Local_mode_refuses_to_bind_beyond_loopback(string urls)
     {
-        var refusal = Access.RefuseStartup(ServiceMode.Local, urls, singleKeyConfigured: false);
+        var refusal = Access.RefuseStartup(ServiceMode.Local, urls);
 
         Assert.NotNull(refusal);
         Assert.Contains("DAORIS_MODE=shared", refusal);
@@ -61,23 +61,6 @@ public sealed class AccessTests
     [Fact]
     public void Shared_mode_binds_anywhere()
     {
-        Assert.Null(Access.RefuseStartup(ServiceMode.Shared, "http://0.0.0.0:5177", singleKeyConfigured: false));
-    }
-
-    /// <summary>One credential model per deployment: two would drift, and the weaker one would win.</summary>
-    [Fact]
-    public void Shared_mode_refuses_the_single_key()
-    {
-        var refusal = Access.RefuseStartup(ServiceMode.Shared, "http://0.0.0.0:5177", singleKeyConfigured: true);
-
-        Assert.NotNull(refusal);
-        Assert.Contains("DAORIS_SERVICE_KEY", refusal);
-    }
-
-    /// <summary>The single key stays what it is today — a loopback deployment's write gate (D47 §7).</summary>
-    [Fact]
-    public void Local_mode_keeps_the_single_key()
-    {
-        Assert.Null(Access.RefuseStartup(ServiceMode.Local, "http://localhost:5177", singleKeyConfigured: true));
+        Assert.Null(Access.RefuseStartup(ServiceMode.Shared, "http://0.0.0.0:5177"));
     }
 }

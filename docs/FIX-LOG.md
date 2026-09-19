@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A stale `dist/` shadowed the CLI sources in every gate that drives the `bin` (2026-09-20)
+
+**Symptom.** DRV5's remote rehearsal failed at the sync: the registry showed a repository whose
+manifest declared `remote.join: true` as `joined: false`, so nothing fed the remote. The service unit
+tests and `npm test` were all green — only the gate that runs the real `bin/daoris.mjs` disagreed.
+
+**Root cause.** `bin/daoris.mjs` prefers a built `dist/cli.js` over `src/cli.ts` (a consumer's Node
+may be 22 and not strip types). A `prepack` from an earlier session had left a `dist/` on disk — **it
+is gitignored, so it was invisible to `git status`** — carrying the pre-DRV5 `connect.js`, which had
+no `join`/`shareKnowledge` in its payload. `node --test` runs the `.ts` sources directly and never
+touched `dist/`, so every source-level gate passed while every `bin`-driven gate silently ran
+month-old code. The split was masked for landings 1–5 because none of their gates exercised the new
+connect fields; landing 6 was the first to drive the `bin` through the remote declaration.
+
+**Fix.** Removed the stale `dist/`. The dev loop needs no build (D-conventions: Node 24 strips types),
+so a `dist/` present outside a release is always stale and always shadowing.
+
+**Verification.** `connect --dry-run` against a `remote`-declaring manifest now prints `join`/
+`shareKnowledge` from the sources; the remote rehearsal phase went green. **The trap to inherit:** a
+green `npm test` with a red `bin`-driven gate is the signature — suspect `dist/` first, and note that
+`git status` will not show it because it is gitignored build output.
+
 ## "Single file" leaves the SQLite native library behind (2026-09-19)
 
 **Symptom.** The installed `daoris-knowledge.exe` died on first store open with `DllNotFoundException`

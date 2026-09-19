@@ -38,26 +38,32 @@ public sealed record RemoteConfig(string Url, string Key)
 {
     public const string UrlVariable = "DAORIS_REMOTE_URL";
     public const string KeyVariable = "DAORIS_REMOTE_KEY";
+    public const string PathVariable = "DAORIS_REMOTE_CONFIG";
 
     /// <summary>Read the machine's remote, if it has one. Absence is the default and it is silent (D21).</summary>
     public static RemoteConfig? Load() => Load(
         Environment.GetEnvironmentVariable,
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remote.json"));
+        Environment.GetEnvironmentVariable(PathVariable)
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remote.json"));
 
-    /// <summary>The testable shape: the same judgement over injected surroundings.</summary>
+    /// <summary>
+    /// The testable shape: the same judgement over injected surroundings. Either environment variable
+    /// present means the environment IS the answer, whole — a half-set pair is no remote, never a mix
+    /// of an env URL with the file's key, which would quietly aim one machine's key at another's host.
+    /// </summary>
     public static RemoteConfig? Load(Func<string, string?> environment, string path)
     {
         var url = environment(UrlVariable);
         var key = environment(KeyVariable);
 
-        if (string.IsNullOrWhiteSpace(url) && File.Exists(path))
+        if (string.IsNullOrWhiteSpace(url) && string.IsNullOrWhiteSpace(key) && File.Exists(path))
         {
             try
             {
                 using var document = JsonDocument.Parse(File.ReadAllText(path));
                 var root = document.RootElement;
-                url ??= root.TryGetProperty("url", out var u) && u.ValueKind == JsonValueKind.String ? u.GetString() : null;
-                key ??= root.TryGetProperty("key", out var k) && k.ValueKind == JsonValueKind.String ? k.GetString() : null;
+                url = root.TryGetProperty("url", out var u) && u.ValueKind == JsonValueKind.String ? u.GetString() : null;
+                key = root.TryGetProperty("key", out var k) && k.ValueKind == JsonValueKind.String ? k.GetString() : null;
             }
             catch (JsonException)
             {

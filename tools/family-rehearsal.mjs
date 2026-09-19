@@ -42,8 +42,14 @@ function copyTree(from, to) {
 }
 
 const BASE = 'http://localhost:5199';
-const KEY = 'family-rehearsal-key';
+const REMOTE_BASE = 'http://localhost:5198';
+const HOST_B_BASE = 'http://localhost:5197';
 const EXAMPLES = ['engine', 'game'];
+
+// Hermetic by construction: every host and driver in this rehearsal points its remote-config lookup at
+// a file that does not exist, so a real ~/.daoris/remote.json on the developer's machine can never
+// leak a real deployment into a gate run. The remote phase then opts in per process, by env pair.
+const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(repoRoot, '_fixtures', 'family-rehearsal', 'no-remote.json') };
 
 let checks = 0;
 let failures = 0;
@@ -58,7 +64,7 @@ console.log = (...args) => {
   emit(line);
 };
 process.on('exit', (code) => {
-  stopHost();
+  stopEverything();
   transcript.push(`\nexit ${code}`);
   const logDir = join(repoRoot, '_fixtures', 'rehearsal-logs');
   mkdirSync(logDir, { recursive: true });
@@ -81,24 +87,31 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
-/** Run a command, capturing output and exit code — never throwing, so a failure is a FAIL line. */
-function run(command, cwd, env = {}) {
+/** Run a command, capturing output and exit code — never throwing, so a failure is a FAIL line. A
+ * timeout kills the child and returns its partial output, so a hung driver is a captured FAIL rather
+ * than a frozen gate. */
+function run(command, cwd, env = {}, timeout = 0) {
   try {
     const out = execSync(command, {
       cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, ...env },
+      ...(timeout ? { timeout, killSignal: 'SIGKILL' } : {}),
     });
     return { code: 0, out };
   } catch (error) {
-    return { code: error.status ?? -1, out: `${error.stdout ?? ''}${error.stderr ?? ''}` };
+    const timedOut = error.killed || error.signal === 'SIGKILL';
+    return {
+      code: error.status ?? -1,
+      out: `${error.stdout ?? ''}${error.stderr ?? ''}${timedOut ? '\n[killed: exceeded the drive timeout]' : ''}`,
+    };
   }
 }
 
-/** One HTTP call against the host. The key rides only when a step is meant to be authorized. */
-async function api(method, path, { body, key } = {}) {
-  const response = await fetch(`${BASE}${path}`, {
+/** One HTTP call against a host. The key rides only when a step is meant to be authorized. */
+async function api(method, path, { body, key, base = BASE } = {}) {
+  const response = await fetch(`${base}${path}`, {
     method,
     headers: {
       ...(body ? { 'content-type': 'application/json' } : {}),
@@ -117,38 +130,55 @@ async function api(method, path, { body, key } = {}) {
 }
 
 let host = null;
+const children = [];
 
 /**
  * The built DLL is spawned directly rather than through `dotnet run`: `run` wraps the app in a child
  * process, and killing the wrapper on Windows orphans the server on its port — after which every
  * later run fails on the bind and the failure looks like the rehearsal's.
+ *
+ * Readiness accepts 401 as listening: a shared-mode host answers nothing without a key, and "the gate
+ * is up" is exactly the signal being waited for.
  */
-async function startHost() {
-  host = spawn('dotnet', [httpDll], {
+async function startServer(env, base) {
+  const child = spawn('dotnet', [httpDll], {
     cwd: repoRoot,
     stdio: 'ignore',
-    env: {
-      ...process.env,
-      DAORIS_KNOWLEDGE_ROOT: family,
-      DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
-      DAORIS_SERVICE_KEY: KEY,
-      ASPNETCORE_URLS: BASE,
-    },
+    env: { ...process.env, ...NO_REMOTE, ...env },
   });
+  children.push(child);
   for (let attempt = 0; attempt < 100; attempt += 1) {
     try {
-      const { status } = await api('GET', '/api/status');
-      if (status === 200) return true;
+      const { status } = await api('GET', '/api/status', { base });
+      if (status === 200 || status === 401) return child;
     } catch {
       // not listening yet
     }
     await sleep(300);
   }
-  return false;
+  return null;
+}
+
+async function startHost(extraEnv = {}) {
+  host = await startServer({
+    DAORIS_KNOWLEDGE_ROOT: family,
+    DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
+    ASPNETCORE_URLS: BASE,
+    ...extraEnv,
+  }, BASE);
+  return host !== null;
 }
 
 function stopHost() {
   if (host && !host.killed) host.kill();
+  host = null;
+}
+
+function stopEverything() {
+  for (const child of children) {
+    if (child && !child.killed) child.kill();
+  }
+  children.length = 0;
   host = null;
 }
 
@@ -204,7 +234,6 @@ section('3. `daoris connect` — the real client, through the real door');
 for (const name of EXAMPLES) {
   const connect = run(`node "${cliBin}" connect`, join(examplesRoot, name), {
     DAORIS_SERVICE_URL: BASE,
-    DAORIS_SERVICE_KEY: KEY,
   });
   check(`${name}: connect exits 0`, connect.code === 0, connect.out);
 }
@@ -213,11 +242,9 @@ for (const name of EXAMPLES) {
 
 section('4. Work routes as quests — published, refused, taken, done');
 
-const unauthorized = await api('POST', '/api/refresh');
-check('a write without the key is refused (401)', unauthorized.status === 401, unauthorized.text);
-
+// No key on this door: local trust — the OS account is the boundary (D21), and the host refuses to
+// bind anywhere but the loopback in local mode. The keyed gate is the SHARED deployment's, phase 9.
 const published = await api('POST', '/api/quests', {
-  key: KEY,
   body: {
     from: 'game',
     to: 'engine',
@@ -235,7 +262,7 @@ check(
 const questId = published.json?.quest?.id ?? '';
 
 const stranger = await api('POST', '/api/quests', {
-  key: KEY,
+
   body: { from: 'game', to: 'somewhere-else', title: 'x', body: 'y' },
 });
 check(
@@ -252,19 +279,19 @@ check(
 );
 
 const bareDecline = await api('POST', `/api/quests/${questId}/respond`, {
-  key: KEY,
+
   body: { action: 'decline', reason: null },
 });
 check('declining without a reason is refused', bareDecline.status === 400, bareDecline.text);
 
 const taken = await api('POST', `/api/quests/${questId}/respond`, {
-  key: KEY,
+
   body: { action: 'take', reason: null },
 });
 check('engine takes it', taken.status === 200 && taken.json?.quest?.status === 'Taken', taken.text);
 
 const done = await api('POST', `/api/quests/${questId}/respond`, {
-  key: KEY,
+
   body: { action: 'done', reason: 'Budget landed as MaxHydrationsPerFrame.' },
 });
 check('engine finishes it', done.status === 200 && done.json?.quest?.status === 'Done', done.text);
@@ -305,7 +332,6 @@ const newcomerCheck = run(`node "${cliBin}" check`, newcomer);
 check('newcomer: check is clean on first contact', newcomerCheck.code === 0, newcomerCheck.out);
 const newcomerConnect = run(`node "${cliBin}" connect`, newcomer, {
   DAORIS_SERVICE_URL: BASE,
-  DAORIS_SERVICE_KEY: KEY,
 });
 check('newcomer: connect exits 0', newcomerConnect.code === 0, newcomerConnect.out);
 
@@ -317,7 +343,7 @@ check(
 );
 
 const firstQuest = await api('POST', '/api/quests', {
-  key: KEY,
+
   body: {
     from: 'game',
     to: 'newcomer',
@@ -331,7 +357,7 @@ check(
   firstQuest.text,
 );
 const firstAnswer = await api('POST', `/api/quests/${firstQuest.json?.quest?.id ?? ''}/respond`, {
-  key: KEY,
+
   body: { action: 'done', reason: 'Answered on day one.' },
 });
 check(
@@ -373,13 +399,22 @@ const title = process.env.DAORIS_QUEST_TITLE ?? '';
 const respond = async (action, reason) => {
   const response = await fetch(url + '/api/quests/' + id + '/respond', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+    headers: {
+      'content-type': 'application/json',
+      ...(key ? { authorization: 'Bearer ' + key } : {}),
+    },
     body: JSON.stringify({ action, reason }),
   });
-  if (!response.ok) throw new Error(action + ' failed: ' + (await response.text()));
+  return { ok: response.ok, text: await response.text() };
 };
 
-await respond('take', null);
+// The claiming judgement a real session has (D46 §3): if somebody already has the quest, stand down
+// CLEANLY — exit 0 with the quest still theirs is exactly the shape the driver concludes stood-down from.
+const takeAnswer = await respond('take', null);
+if (!takeAnswer.ok) {
+  if (/already taken/i.test(takeAnswer.text)) process.exit(0);
+  throw new Error('take failed: ' + takeAnswer.text);
+}
 if (/decline/i.test(title)) {
   await respond('decline', 'The stub declines what asks to be declined.');
   process.exit(0);
@@ -389,7 +424,8 @@ writeFileSync('answered-' + id + '.md', '# ' + title + '\\n\\nAnswered by the st
 const git = 'git -c user.name="Stub Session" -c user.email="stub@example.invalid"';
 execSync(git + ' add -A', { stdio: 'ignore' });
 execSync(git + ' commit -q -m "stub: answer quest ' + id + '"', { stdio: 'ignore' });
-await respond('done', 'Landed by the stub session.');
+const doneAnswer = await respond('done', 'Landed by the stub session.');
+if (!doneAnswer.ok) throw new Error('done failed: ' + doneAnswer.text);
 `);
 
 // The person's standing choices, scratch-local: only the newcomer is drivable, and the stub spawns.
@@ -404,13 +440,13 @@ writeFileSync(driverConfig, `${JSON.stringify({
 
 const DRIVER_ENV = {
   DAORIS_SERVICE_URL: BASE,
-  DAORIS_SERVICE_KEY: KEY,
   DAORIS_DRIVER_CONFIG: driverConfig,
+  ...NO_REMOTE,
 };
 const drive = (mode = '--until-idle') => run(`dotnet "${driverDll}" ${mode}`, scratch, DRIVER_ENV);
 
 const driven = await api('POST', '/api/quests', {
-  key: KEY,
+
   body: {
     from: 'game',
     to: 'newcomer',
@@ -464,7 +500,7 @@ check(
 
 // Declining is a real answer, and it is the session's answer — the driver only observes it.
 const declineAsk = await api('POST', '/api/quests', {
-  key: KEY,
+
   body: {
     from: 'game',
     to: 'newcomer',
@@ -486,7 +522,7 @@ check(
 // Driving is additive, never exclusive (D46 §2): a quest an outside session already took is not the
 // driver's to start — it is not even considered, and no record appears.
 const outside = await api('POST', '/api/quests', {
-  key: KEY,
+
   body: {
     from: 'game',
     to: 'newcomer',
@@ -495,7 +531,7 @@ const outside = await api('POST', '/api/quests', {
   },
 });
 await api('POST', `/api/quests/${outside.json?.quest?.id ?? ''}/respond`, {
-  key: KEY,
+
   body: { action: 'take', reason: null },
 });
 const sessionsBefore = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
@@ -532,10 +568,301 @@ check(
   sessionsAfterRestart.text,
 );
 
-// -------------------------------------------------- 9. report
+// -------------------------------------------------- 9. the remote
 
-section('9. Result');
+section('9. The remote: two machines, one lock (D47)');
+
+const remoteDb = join(scratch, 'remote.db');
+const remoteRoot = join(scratch, 'remote-root');
+mkdirSync(remoteRoot, { recursive: true });
+
+// Keys are minted on the serving binary, against the same store it will serve (D47 §7).
+const mint = (name) => run(`dotnet "${httpDll}" keys mint --name ${name} --days 2`, repoRoot, {
+  DAORIS_KNOWLEDGE_DB: remoteDb,
+});
+const mintA = mint('person@machine-a');
+const keyA = (mintA.out.split('\n')[0] ?? '').trim();
+check('a key is minted for machine a, shown once', mintA.code === 0 && keyA.startsWith('dk_'), mintA.out);
+const mintB = mint('person@machine-b');
+const keyB = (mintB.out.split('\n')[0] ?? '').trim();
+check('a second key for machine b', mintB.code === 0 && keyB.startsWith('dk_') && keyB !== keyA, mintB.out);
+
+const remoteHost = await startServer({
+  DAORIS_MODE: 'shared',
+  DAORIS_KNOWLEDGE_DB: remoteDb,
+  DAORIS_KNOWLEDGE_ROOT: remoteRoot,
+  ASPNETCORE_URLS: REMOTE_BASE,
+}, REMOTE_BASE);
+check('the shared host is up', remoteHost !== null);
+
+// The gate: every route, reads included (D47 §7) — and a refusal never echoes what was presented.
+const noKey = await api('GET', '/api/quests', { base: REMOTE_BASE });
+check('a read without a key answers 401', noKey.status === 401, noKey.text);
+const garbage = 'dk_00000000notakey';
+const wrongKey = await api('GET', '/api/quests', { base: REMOTE_BASE, key: garbage });
+check(
+  'a wrong key answers 401 without echoing what was presented',
+  wrongKey.status === 401 && !wrongKey.text.includes(garbage),
+  wrongKey.text,
+);
+const withKey = await api('GET', '/api/quests', { base: REMOTE_BASE, key: keyA });
+check('a minted key opens the door', withKey.status === 200, withKey.text);
+const page = await api('GET', '/', { base: REMOTE_BASE });
+check('the shared host serves no page — an API until person-auth exists', page.status === 404, String(page.status));
+
+// Machine B is born whole: its own family, its own store, its own host — joined, keeping its
+// knowledge home. The manifest is the declaration (D47 §4).
+const familyB = join(scratch, 'family-b');
+const borealis = join(familyB, 'borealis');
+mkdirSync(borealis, { recursive: true });
+writeFileSync(join(borealis, 'README.md'), '# borealis\n\nMachine B has this checkout.\n');
+run(`node "${cliBin}" init`, borealis);
+const borealisManifest = JSON.parse(readFileSync(join(borealis, 'daoris.json'), 'utf8'));
+borealisManifest.domain = {
+  summary: 'Machine B has this checkout.',
+  owns: ['the aurora'],
+  accepts: ['a crossing quest'],
+};
+borealisManifest.remote = { join: true, knowledge: false };
+writeFileSync(join(borealis, 'daoris.json'), `${JSON.stringify(borealisManifest, null, 2)}\n`);
+run(`node "${cliBin}" sync`, borealis);
+mkdirSync(join(borealis, '.claude', 'knowledge'), { recursive: true });
+writeFileSync(
+  join(borealis, '.claude', 'knowledge', 'private-lesson.md'),
+  '# private lesson\n\nborealis keeps this lesson at home.\n',
+);
+run('git init -q', borealis);
+run(`git ${GIT_ID} add -A`, borealis);
+run(`git ${GIT_ID} commit -q -m "borealis is born"`, borealis);
+
+const hostB = await startServer({
+  DAORIS_KNOWLEDGE_ROOT: familyB,
+  DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge-b.db'),
+  ASPNETCORE_URLS: HOST_B_BASE,
+  DAORIS_REMOTE_URL: REMOTE_BASE,
+  DAORIS_REMOTE_KEY: keyB,
+}, HOST_B_BASE);
+check('machine b’s host is up, carrying its remote', hostB !== null);
+const borealisConnect = run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+check('borealis connects on machine b', borealisConnect.code === 0, borealisConnect.out);
+
+// Machine A opts the newcomer in and restarts its host carrying the remote — the relay is a
+// composition-time choice (D47 §9), and the restart re-proves the store on the way.
 stopHost();
+const joinedManifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+joinedManifest.remote = { join: true, knowledge: true };
+writeFileSync(manifestPath, `${JSON.stringify(joinedManifest, null, 2)}\n`);
+mkdirSync(join(newcomer, '.claude', 'knowledge'), { recursive: true });
+writeFileSync(
+  join(newcomer, '.claude', 'knowledge', 'rehearsal-lesson.md'),
+  '# rehearsal lesson\n\nThe stub taught the remote a lesson about crossings.\n',
+);
+run(`git ${GIT_ID} add -A`, newcomer);
+run(`git ${GIT_ID} commit -q -m "the newcomer joins the remote"`, newcomer);
+check('machine a’s host restarts carrying its remote', await startHost({
+  DAORIS_REMOTE_URL: REMOTE_BASE,
+  DAORIS_REMOTE_KEY: keyA,
+}));
+const rejoin = run(`node "${cliBin}" connect`, newcomer, { DAORIS_SERVICE_URL: BASE });
+check('the newcomer re-registers with its declaration', rejoin.code === 0, rejoin.out);
+await api('POST', '/api/refresh');
+await api('POST', '/api/refresh', { base: HOST_B_BASE });
+
+// The sync rides the driver tick (D47 §9): machine b feeds first so the remote knows borealis, then
+// machine a feeds the newcomer and mirrors the family down.
+const driverConfigB = join(scratch, 'driver-b.json');
+writeFileSync(driverConfigB, `${JSON.stringify({
+  drivable: ['borealis'],
+  adapter: 'stub',
+  cap: 2,
+  timeoutMinutes: 2,
+  commands: { stub: ['node', stubAgent] },
+}, null, 2)}\n`);
+// Default to a single tick — one --once does sync → plan → run-to-conclusion, which is all any of
+// these steps needs. (An omitted mode used to fall through to watch-forever, which a bounded gate can
+// never end — the timeout below is the backstop, but the default is what keeps a step from ever
+// reaching it.)
+const DRIVE_TIMEOUT = 90_000;
+const driveA = (mode = '--once') => run(`dotnet "${driverDll}" ${mode}`, scratch, {
+  DAORIS_SERVICE_URL: BASE,
+  DAORIS_DRIVER_CONFIG: driverConfig,
+  DAORIS_REMOTE_URL: REMOTE_BASE,
+  DAORIS_REMOTE_KEY: keyA,
+}, DRIVE_TIMEOUT);
+const driveB = (mode = '--once', extra = {}) => run(`dotnet "${driverDll}" ${mode}`, scratch, {
+  DAORIS_SERVICE_URL: HOST_B_BASE,
+  DAORIS_DRIVER_CONFIG: driverConfigB,
+  DAORIS_REMOTE_URL: REMOTE_BASE,
+  DAORIS_REMOTE_KEY: keyB,
+  ...NO_REMOTE,
+  ...extra,
+}, DRIVE_TIMEOUT);
+
+const firstTickB = driveB('--once');
+check('machine b’s tick syncs without a problem', firstTickB.code === 0 && !/sync {2}/.test(firstTickB.out), firstTickB.out);
+const firstTickA = driveA('--once');
+check('machine a’s tick syncs without a problem', firstTickA.code === 0 && !/sync {2}/.test(firstTickA.out), firstTickA.out);
+
+const remoteRegistry = await api('GET', '/api/registry', { base: REMOTE_BASE, key: keyA });
+const remoteRows = remoteRegistry.json ?? [];
+check(
+  'the remote knows both machines’ repositories, with their declarations',
+  remoteRows.some((r) => r.repository === 'newcomer' && r.joined && r.sharesKnowledge)
+    && remoteRows.some((r) => r.repository === 'borealis' && r.joined && !r.sharesKnowledge),
+  remoteRegistry.text,
+);
+check(
+  'no machine path reached the remote registry',
+  remoteRows.length > 0 && remoteRows.every((r) => !('root' in r)) && !remoteRegistry.text.includes('_fixtures'),
+  remoteRegistry.text,
+);
+
+const familyOnA = await api('GET', '/api/registry');
+check(
+  'machine a’s registry gained borealis — a foreign row, and never a root',
+  (familyOnA.json ?? []).some((r) => r.repository === 'borealis' && r.joined && !('root' in r)),
+  familyOnA.text,
+);
+
+const lesson = await api('GET', `/api/search?q=${encodeURIComponent('lesson about crossings')}`, {
+  base: REMOTE_BASE, key: keyA,
+});
+check(
+  'the sharing repository’s knowledge answers on the remote',
+  lesson.status === 200 && (lesson.json ?? []).some((h) => h.repository === 'newcomer'),
+  lesson.text.slice(0, 300),
+);
+const withheld = await api('GET', `/api/search?q=${encodeURIComponent('keeps this lesson at home')}`, {
+  base: REMOTE_BASE, key: keyA,
+});
+check(
+  'the joined-but-not-sharing repository’s knowledge stays home',
+  withheld.status === 200 && (withheld.json ?? []).every((h) => h.repository !== 'borealis'),
+  withheld.text.slice(0, 300),
+);
+
+// The crossing: published on machine a through its own local door, homed at the remote, driven to
+// done on machine b — the loop D45's part 3 exists for.
+const crossing = await api('POST', '/api/quests', {
+  body: {
+    from: 'newcomer',
+    to: 'borealis',
+    title: 'Cross the machines',
+    body: 'Published on machine a, driven on machine b: the write-through and the mirror, end to end.',
+  },
+});
+check(
+  'a quest crosses machines through the ordinary local door',
+  crossing.status === 200 && crossing.json?.quest?.status === 'Open',
+  crossing.text,
+);
+const crossingId = crossing.json?.quest?.id ?? '';
+const onRemote = await api('GET', '/api/quests', { base: REMOTE_BASE, key: keyA });
+check(
+  '…and lives at the remote — one home per quest',
+  (onRemote.json ?? []).some((q) => q.id === crossingId && q.status === 'Open'),
+  onRemote.text,
+);
+
+const crossingRun = driveB();
+check('machine b drives the crossing to done', crossingRun.code === 0 && /completed/.test(crossingRun.out), crossingRun.out);
+const landedB = run('git log --oneline', borealis);
+check(
+  'the commit is really in borealis’ history',
+  new RegExp(`stub: answer quest ${crossingId}`).test(landedB.out),
+  landedB.out,
+);
+const closedOnRemote = await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA });
+check(
+  'the remote holds the closure',
+  (closedOnRemote.json ?? []).some((q) => q.id === crossingId && q.status === 'Done'),
+  closedOnRemote.text,
+);
+const tickBack = driveA('--once');
+const closureOnA = await api('GET', '/api/quests?repository=borealis&includeClosed=true');
+check(
+  'the closure crossed back to machine a’s mirror',
+  tickBack.code === 0 && (closureOnA.json ?? []).some((q) => q.id === crossingId && q.status === 'Done'),
+  closureOnA.text,
+);
+
+// The race (D47 §5): two machines both believe they can drive one quest, and exactly one may. The
+// quest is published on machine a, homed at the remote; an outside taker (standing in for another
+// machine's session) claims it there. Machine b then drives — its tick syncs first, sees the quest
+// already Taken at the one home, and LEAVES IT ALONE: the driver observes the lock and never starts
+// what someone else holds (D46 §2). No session is spawned, and the newcomer's checkout is untouched.
+// (The other resolution — a session that spawned before the mirror caught up, whose own take loses
+// 409 at the home and stands down — is unit-proven in QuestRelayTests; here the deterministic,
+// sync-first path is the driver-level guarantee.)
+const raced = await api('POST', '/api/quests', {
+  body: {
+    from: 'newcomer',
+    to: 'borealis',
+    title: 'Somebody else got here first',
+    body: 'The losing machine must not double the work.',
+  },
+});
+const racedId = raced.json?.quest?.id ?? '';
+const winner = await api('POST', `/api/quests/${racedId}/respond`, {
+  base: REMOTE_BASE, key: keyA, body: { action: 'take', reason: null },
+});
+check('an outside winner takes the quest at its home', winner.status === 200, winner.text);
+
+const sessionsBeforeRace = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true',
+  { base: HOST_B_BASE })).json ?? []).length;
+const race = driveB('--once');
+const sessionsAfterRace = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true',
+  { base: HOST_B_BASE })).json ?? []).length;
+check(
+  'the losing machine spawns no session for a quest already taken elsewhere',
+  race.code === 0 && sessionsAfterRace === sessionsBeforeRace,
+  `${sessionsBeforeRace} → ${sessionsAfterRace}\n${race.out}`,
+);
+const stillTheirs = await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA });
+check(
+  'the winner keeps the quest',
+  (stillTheirs.json ?? []).some((q) => q.id === racedId && q.status === 'Taken'),
+  stillTheirs.text,
+);
+
+const remoteSessions = await api('GET', '/api/sessions?includeClosed=true', { base: REMOTE_BASE, key: keyA });
+const fedRecords = remoteSessions.json ?? [];
+check(
+  'session records crossed, keyed by origin + id',
+  fedRecords.some((s) => s.id.startsWith('person@machine-b/') && s.quest === crossingId && s.state === 'completed'),
+  remoteSessions.text,
+);
+check(
+  'no fed record carries a transcript — the path never left its machine',
+  fedRecords.length > 0 && fedRecords.every((s) => !('transcript' in s)),
+  remoteSessions.text,
+);
+
+const revoke = run(`dotnet "${httpDll}" keys revoke ${keyB.slice(3, 11)}`, repoRoot, {
+  DAORIS_KNOWLEDGE_DB: remoteDb,
+});
+const revoked = await api('GET', '/api/quests', { base: REMOTE_BASE, key: keyB });
+check(
+  'a revoked key is refused by its audit prefix, without echoing the key',
+  revoke.code === 0 && revoked.status === 401
+    && revoked.text.includes(keyB.slice(3, 11)) && !revoked.text.includes(keyB),
+  revoked.text,
+);
+
+// The artefact itself: stop the remote and scan its store — nothing machine-local may be in it, and
+// nothing a repository kept home. Byte-level, because "the response strips it" is not "it never landed".
+if (remoteHost && !remoteHost.killed) remoteHost.kill();
+await sleep(700);
+const remoteBytes = readFileSync(remoteDb, 'latin1');
+check('the remote store holds no machine path at all', !remoteBytes.includes('_fixtures'),
+  'a path fragment reached the remote store');
+check('…and none of the knowledge that was kept home', !remoteBytes.includes('keeps this lesson at home'),
+  'unshared knowledge reached the remote store');
+
+// -------------------------------------------------- 10. report
+
+section('10. Result');
+stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
 console.log(`\n  ${checks - failures}/${checks} checks passed`);
@@ -549,6 +876,10 @@ if (failures) {
   console.log("  after a restart; one project's knowledge answering the other's search; a newcomer");
   console.log('  joining through the real CLI and answering its first quest on day one — then DRIVEN:');
   console.log('  a quest became a session became a commit became done, a dirty tree held, a decline');
-  console.log('  carried its reason, and outside work was left entirely alone (D46).');
+  console.log('  carried its reason, and outside work was left entirely alone (D46). Then REMOTE (D47):');
+  console.log('  two machines and a shared host with minted keys — a quest published on one machine,');
+  console.log('  driven to done on the other, the closure crossing back; a raced take standing down;');
+  console.log('  knowledge crossing only where declared; and the remote store scanned to hold no');
+  console.log('  machine path, no transcript, and nothing a repository kept home.');
   rmSync(scratch, { recursive: true, force: true });
 }

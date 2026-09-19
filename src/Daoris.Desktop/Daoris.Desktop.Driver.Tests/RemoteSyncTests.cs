@@ -123,6 +123,37 @@ public sealed class RemoteSyncTests
         Assert.Equal(["abc123", "def456"], ids);
     }
 
+    /// <summary>
+    /// The remote's registry mirrors down as FOREIGN rows only (D47 §5): a teammate's repository
+    /// becomes addressable here, while anything this machine holds keeps its own registration — the
+    /// machine with the checkout is the authority, and its root must survive the sync untouched.
+    /// </summary>
+    [Fact]
+    public void The_family_mirror_takes_foreign_rows_only_and_never_writes_a_root()
+    {
+        const string remoteRegistry = """
+            [
+              { "repository": "Shared", "adopted": true, "registered": true, "summary": "Mine.",
+                "owns": [], "accepts": [], "packs": [], "entries": 1, "joined": true, "sharesKnowledge": true },
+              { "repository": "Teammate", "adopted": true, "registered": true, "summary": "Theirs.",
+                "owns": ["their area"], "accepts": ["a quest"], "packs": [], "entries": 2,
+                "joined": true, "sharesKnowledge": false }
+            ]
+            """;
+        var localNames = new HashSet<string>(["Shared", "Quiet", "Homebody"], StringComparer.OrdinalIgnoreCase);
+
+        var foreign = RemoteSyncPayloads.ForeignRegistrations(remoteRegistry, localNames);
+
+        var (name, json) = Assert.Single(foreign);
+        Assert.Equal("Teammate", name);
+        using var document = JsonDocument.Parse(json);
+        var payload = document.RootElement;
+        Assert.False(payload.TryGetProperty("root", out _));
+        Assert.True(payload.GetProperty("join").GetBoolean());
+        Assert.False(payload.GetProperty("shareKnowledge").GetBoolean());
+        Assert.Equal("Theirs.", payload.GetProperty("domain").GetProperty("summary").GetString());
+    }
+
     [Fact]
     public void Entries_feed_with_their_anchors_and_an_empty_list_still_feeds()
     {

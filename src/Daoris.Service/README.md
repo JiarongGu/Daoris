@@ -120,16 +120,23 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 
 | Endpoint | |
 |---|---|
-| `GET /api/status` · `/api/search` · `/api/entry` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
+| `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
 | `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands |
 | `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline |
-| `POST /api/refresh` | re-scan whatever repositories the host can see |
+| `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46) |
+| `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
+| `POST /api/feed/sessions` · `/api/feed/entries` | shared mode only: what a desktop's sync feeds up (D47) |
+| `POST /api/feed/quests` | local mode only: the quest mirror a sync loop pulls down (D47) |
 
-Set `DAORIS_SERVICE_KEY` on the host and every `POST` under `/api` requires it as a bearer token —
-verified by driving it: the unauthorized write answers 401, and a registration pushed before a restart
-is still served after one. Absent means local trust: the OS account is the boundary (D21). A
-deployment reachable beyond a trusted network needs the fuller credential model in the design
-document's §5 — per-person expiring keys, OIDC for people — before it exists.
+There are exactly two trust shapes (D47 §7, as amended). **Local** — the default — trusts the
+loopback: the OS account is the boundary (D21), and the host refuses to start bound anywhere else.
+**Shared** (`DAORIS_MODE=shared`) is the team deployment: every route under `/api` needs a minted
+per-person per-machine key as a bearer token, no page is served, no machine path is ever answered, and
+keys are administered on the binary itself — `keys mint --name <person@machine> [--days N]`,
+`keys list`, `keys revoke <prefix>`. The key is shown once and stored hashed; the prefix is the
+non-secret audit handle. A machine names its remote in `~/.daoris/remote.json`
+(`{ "url": ..., "key": ... }`, `DAORIS_REMOTE_URL`/`DAORIS_REMOTE_KEY` overriding), and the desktop's
+sync loop does the rest.
 
 `ConvergenceDetector` answers a different question: **which repositories learned the same thing
 independently?** It automates the survey that produced this project's own canon — reading twelve
@@ -144,7 +151,8 @@ Configuration is by environment, and every variable is optional — the defaults
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `~/.daoris/knowledge.db` |
 | `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
 | `DAORIS_EMBED_URL` | Embedding endpoint. Default: `http://localhost:11434` (Ollama) |
-| `DAORIS_SERVICE_KEY` | HTTP host only: set ⇒ every `POST /api/*` needs it as a bearer token |
+| `DAORIS_MODE` | HTTP host only: `local` (default) or `shared` — the team deployment (D47) |
+| `DAORIS_REMOTE_URL` / `DAORIS_REMOTE_KEY` | this machine's remote, overriding `~/.daoris/remote.json` |
 
 Verified end to end against the real family with `nomic-embed-text`: **409 entries embedded in 34 s**,
 and a query whose words appear in none of the matching documents — *"stop the console from stealing

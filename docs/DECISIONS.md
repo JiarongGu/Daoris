@@ -1320,3 +1320,14 @@ controls act only where the driver is attached, and even a cross-machine stop *r
 drift; a second implementation is that bug at team scale); an offline queue for quest verbs (an
 eventually-consistent lock); OIDC as a hard requirement (one person with two machines gets an API-only
 remote with console-minted keys — the platform-from-the-remote arrives with identity).
+
+**Amended 2026-09-20, during the build, on the owner's redesign grant** ("since this app is not been
+used yet you can redesign entire application to match"): with nothing deployed, D36's interim
+single-key write gate is **retired rather than carried**. The design had kept it for continuity; the
+grant removed the reason. Two trust shapes only: local trusts the loopback outright and may bind
+nothing else (the startup refusal enforces it), shared gates every route with minted keys.
+`DAORIS_SERVICE_KEY` survives solely as the client-side "key I present" — which against a shared
+deployment is a minted key. The mid-build finding that forced a second small amendment: publishing
+across machines needs the remote's **registry** mirrored down beside its quests — foreign rows only,
+because the machine holding a checkout is the authority on its own registration and its root must
+survive the sync untouched.

@@ -36,18 +36,12 @@ public static class Access
 
     /// <summary>
     /// Why this host must not start — or null when it may. <paramref name="urls"/> is the bind list as
-    /// configured (semicolon-separated); <paramref name="singleKeyConfigured"/> is whether the
-    /// local-trust write key is set, which shared mode refuses: one credential model per deployment,
-    /// because two would drift and the weaker one would win.
+    /// configured (semicolon-separated). There are exactly two trust shapes (D47 §7, as amended):
+    /// local trusts the loopback and may bind nothing else; shared gates everything with minted keys
+    /// and may bind anywhere.
     /// </summary>
-    public static string? RefuseStartup(ServiceMode mode, string urls, bool singleKeyConfigured)
+    public static string? RefuseStartup(ServiceMode mode, string urls)
     {
-        if (mode == ServiceMode.Shared && singleKeyConfigured)
-        {
-            return "Shared mode uses minted keys (`keys mint`), not DAORIS_SERVICE_KEY — unset it. "
-                 + "One credential model per deployment.";
-        }
-
         if (mode == ServiceMode.Local)
         {
             var beyond = urls.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

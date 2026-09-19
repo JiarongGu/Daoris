@@ -14,26 +14,32 @@ public sealed record RemoteTarget(string Url, string Key)
 {
     public const string UrlVariable = "DAORIS_REMOTE_URL";
     public const string KeyVariable = "DAORIS_REMOTE_KEY";
+    public const string PathVariable = "DAORIS_REMOTE_CONFIG";
 
     /// <summary>The machine's remote, if it has one. Absence is the default and it is silent (D21).</summary>
     public static RemoteTarget? Load() => Load(
         Environment.GetEnvironmentVariable,
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remote.json"));
+        Environment.GetEnvironmentVariable(PathVariable)
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remote.json"));
 
-    /// <summary>The testable shape: the same judgement over injected surroundings.</summary>
+    /// <summary>
+    /// The testable shape: the same judgement over injected surroundings. Either environment variable
+    /// present means the environment IS the answer, whole — a half-set pair is no remote, never a mix
+    /// of an env URL with the file's key, which would quietly aim one machine's key at another's host.
+    /// </summary>
     public static RemoteTarget? Load(Func<string, string?> environment, string path)
     {
         var url = environment(UrlVariable);
         var key = environment(KeyVariable);
 
-        if (string.IsNullOrWhiteSpace(url) && File.Exists(path))
+        if (string.IsNullOrWhiteSpace(url) && string.IsNullOrWhiteSpace(key) && File.Exists(path))
         {
             try
             {
                 using var document = JsonDocument.Parse(File.ReadAllText(path));
                 var root = document.RootElement;
-                url ??= Text(root, "url");
-                key ??= Text(root, "key");
+                url = Text(root, "url");
+                key = Text(root, "key");
             }
             catch (JsonException)
             {
@@ -53,14 +59,17 @@ public sealed record RemoteTarget(string Url, string Key)
 }
 
 /// <summary>What one sync pass moved — and, when it hit a wall, what the wall said.</summary>
+/// <param name="Family">Foreign registrations mirrored down: the teammates' repositories this machine
+/// can now address, without ever seeing their disks.</param>
 /// <param name="Problem">
 /// Null on a clean pass. Records sync eventually (D47 §2), so a problem here is reported and retried
 /// next tick rather than failing the tick — but it is REPORTED, because a feed dying quietly (an
 /// expired key, an unjoined repository) looks exactly like a family with nothing to say.
 /// </param>
-public sealed record SyncReport(int Registrations, int Sessions, int Entries, int Quests, string? Problem)
+public sealed record SyncReport(
+    int Registrations, int Sessions, int Entries, int Quests, int Family, string? Problem)
 {
-    public static readonly SyncReport Nothing = new(0, 0, 0, 0, null);
+    public static readonly SyncReport Nothing = new(0, 0, 0, 0, 0, null);
 }
 
 /// <summary>
@@ -76,6 +85,19 @@ public static class RemoteSyncPayloads
     public sealed record JoinedRepository(
         string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
         IReadOnlyList<string> Packs, bool SharesKnowledge);
+
+    /// <summary>Every repository a registry answer names — joined or not, adopted or not.</summary>
+    public static IReadOnlySet<string> Names(string registryJson)
+    {
+        using var document = JsonDocument.Parse(registryJson);
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var repo in document.RootElement.EnumerateArray())
+        {
+            if (Text(repo, "repository") is { Length: > 0 } name) names.Add(name);
+        }
+
+        return names;
+    }
 
     /// <summary>The joined repositories in a local registry answer — the only ones a remote may hear of.</summary>
     public static IReadOnlyList<JoinedRepository> Joined(string registryJson)
@@ -232,6 +254,50 @@ public static class RemoteSyncPayloads
         return count == 0 ? null : (json, count);
     }
 
+    /// <summary>
+    /// The remote's registry as this machine should hear of it: FOREIGN rows only. A repository this
+    /// machine already has keeps its own registration — and its root — because the machine that holds
+    /// the checkout is the authority on it; re-posting the remote's stripped copy would overwrite the
+    /// one field spawning needs. What arrives makes teammates' repositories addressable here (D47 §5):
+    /// their quests home at the remote, and the relay carries the verbs.
+    /// </summary>
+    public static IReadOnlyList<(string Repository, string Json)> ForeignRegistrations(
+        string remoteRegistryJson, IReadOnlySet<string> localNames)
+    {
+        using var document = JsonDocument.Parse(remoteRegistryJson);
+        var foreign = new List<(string, string)>();
+        foreach (var repo in document.RootElement.EnumerateArray())
+        {
+            var name = Text(repo, "repository") ?? "";
+            if (name.Length == 0 || localNames.Contains(name)) continue;
+
+            var payload = Write(writer =>
+            {
+                writer.WriteStartObject();
+                writer.WriteString("repository", name);
+                writer.WriteStartArray("packs");
+                foreach (var pack in Strings(repo, "packs")) writer.WriteStringValue(pack);
+                writer.WriteEndArray();
+                writer.WriteStartObject("domain");
+                if (Text(repo, "summary") is { } summary) writer.WriteString("summary", summary);
+                writer.WriteStartArray("owns");
+                foreach (var owns in Strings(repo, "owns")) writer.WriteStringValue(owns);
+                writer.WriteEndArray();
+                writer.WriteStartArray("accepts");
+                foreach (var accepts in Strings(repo, "accepts")) writer.WriteStringValue(accepts);
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+                writer.WriteBoolean("join", repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True);
+                writer.WriteBoolean("shareKnowledge",
+                    repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
+                writer.WriteEndObject();
+            });
+            foreign.Add((name, payload));
+        }
+
+        return foreign;
+    }
+
     private static void Copy(Utf8JsonWriter writer, JsonElement element, string name)
     {
         if (Text(element, name) is { } value) writer.WriteString(name, value);
@@ -314,11 +380,11 @@ public sealed class RemoteSync : IDisposable
 
     public async Task<SyncReport> RunOnceAsync(CancellationToken ct = default)
     {
-        int registrations = 0, sessions = 0, entries = 0, quests = 0;
+        int registrations = 0, sessions = 0, entries = 0, quests = 0, family = 0;
         try
         {
-            var joined = RemoteSyncPayloads.Joined(
-                await GetAsync(_local, $"{_localBase}/api/registry", ct).ConfigureAwait(false));
+            var registryJson = await GetAsync(_local, $"{_localBase}/api/registry", ct).ConfigureAwait(false);
+            var joined = RemoteSyncPayloads.Joined(registryJson);
             if (joined.Count == 0) return SyncReport.Nothing;
 
             var names = joined.Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -348,6 +414,16 @@ public sealed class RemoteSync : IDisposable
                 entries += content.Count;
             }
 
+            // The remote's registry comes down as foreign rows only — teammates' repositories become
+            // addressable here, while everything this machine holds keeps its own registration.
+            foreach (var (_, payload) in RemoteSyncPayloads.ForeignRegistrations(
+                await GetAsync(_remote, $"{_remoteBase}/api/registry", ct).ConfigureAwait(false),
+                RemoteSyncPayloads.Names(registryJson)))
+            {
+                await PostAsync(_local, $"{_localBase}/api/registry", payload, ct).ConfigureAwait(false);
+                family++;
+            }
+
             var mirror = RemoteSyncPayloads.Quests(
                 await GetAsync(_remote, $"{_remoteBase}/api/quests?includeClosed=true", ct).ConfigureAwait(false),
                 names);
@@ -357,7 +433,7 @@ public sealed class RemoteSync : IDisposable
                 quests = pull.Count;
             }
 
-            return new(registrations, sessions, entries, quests, null);
+            return new(registrations, sessions, entries, quests, family, null);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -367,7 +443,7 @@ public sealed class RemoteSync : IDisposable
         {
             // Report and carry on: records sync eventually and the next tick retries — but a feed
             // dying quietly looks exactly like a family with nothing to say, so the wall is named.
-            return new(registrations, sessions, entries, quests, error.Message);
+            return new(registrations, sessions, entries, quests, family, error.Message);
         }
     }
 

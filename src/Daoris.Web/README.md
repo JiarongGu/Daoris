@@ -63,10 +63,10 @@ a merge (D21).
 
 Quests are a different kind of thing — service state (D32), already writable over the HTTP surface
 (D36) — and under the automation-first model, **filing a quest is how a person sets a target** (D37).
-So publish and respond are in the UI, through the same key-gated endpoints and the same `QuestExchange`
-judgement as every other door, with refusals shown verbatim. On a deployment that sets
-`DAORIS_SERVICE_KEY` the browser has no key to present, so the platform is honestly read-only there
-until person-auth exists (SVC2); locally — the default — the full surface works.
+So publish and respond are in the UI, through the same endpoints and the same `QuestExchange`
+judgement as every other door, with refusals shown verbatim. A shared deployment (D47) serves no page
+at all — the remote is an API until person-auth exists, and the person's window stays the desktop over
+its local host; locally — the default — the full surface works.
 
 **The active tier is stated on every screen**, never implied — a reader looking at results has no way to
 know the semantic half was absent, and would read them as complete rather than as

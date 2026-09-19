@@ -136,7 +136,8 @@ divergence.
 and the persistent store is what survives, shared by every repository's sessions on the machine — a
 quest published from one session is waiting when another starts. The HTTP host is the remote half:
 registrations persist, quests publish and answer over the same `QuestExchange` the MCP host uses, and
-`DAORIS_SERVICE_KEY` gates the writes. It needs **no model**: a remote deployment is purely a transfer
+shared mode (D47) gates every route with minted per-person keys — local mode trusts the loopback and
+may bind nothing else. It needs **no model**: a remote deployment is purely a transfer
 of request and task until a repository opts its knowledge in (D21, D24).
 
 **The platform since 2026-09-19 (D38), proven by the family rehearsal (D39).** `Daoris.Web` grew into

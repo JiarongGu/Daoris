@@ -15,8 +15,6 @@ using Lyntai.Providers.Ollama;
 //   DAORIS_EMBED_MODEL     naming one turns semantic on    (absent: lexical only, and it says so)
 //   DAORIS_EMBED_URL       the endpoint                    (default: http://localhost:11434)
 //   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
-//   DAORIS_SERVICE_KEY     set ⇒ every POST under /api needs it as a bearer token
-//                          (absent: local trust — the OS account is the boundary, D21)
 //   DAORIS_MODE            local (default) or shared (D47 §3/§7). Shared is the team deployment:
 //                          EVERY /api route needs a minted key, no page is served (the remote is an
 //                          API until person-auth exists), and no machine path is ever answered.
@@ -35,9 +33,9 @@ using Lyntai.Providers.Ollama;
 // SERVICE STATE IS WRITABLE, NARROWLY (D32, D34, D46). A repository may register what it owns, a quest
 // may be published and answered, and a driver may record its sessions — the transfer of request and
 // task is the whole point of a remote deployment, which may run with no model at all (D24) and still
-// carry it. Those writes are exactly what DAORIS_SERVICE_KEY gates; a deployment reachable beyond a
-// trusted network needs the fuller credential model in
-// docs/2026-08-05-knowledge-service-design.md §5 before it exists.
+// carry it. There are exactly two trust shapes (D47 §7, as amended): LOCAL trusts the loopback — the
+// OS account is the boundary (D21) — and SHARED gates every route with minted keys. Binding beyond
+// loopback without shared mode refuses to start, so no third shape can exist by accident.
 //
 // A REGISTRATION'S ROOT NEVER LEAVES THE MACHINE (D46). The filesystem path a repository registers is
 // answered only to loopback callers — the local driver — so a remote deployment never serves anyone's
@@ -86,8 +84,7 @@ var urls = builder.Configuration["urls"]
 builder.WebHost.UseUrls(urls.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
 // The startup judgement (D47 §3): local trust bound beyond loopback does not warn — it does not start.
-var serviceKey = Environment.GetEnvironmentVariable("DAORIS_SERVICE_KEY");
-if (Access.RefuseStartup(mode, urls, !string.IsNullOrWhiteSpace(serviceKey)) is { } refusal)
+if (Access.RefuseStartup(mode, urls) is { } refusal)
 {
     Console.Error.WriteLine(refusal);
     return 2;
@@ -197,30 +194,10 @@ if (mode == ServiceMode.Shared)
     });
 }
 
-// Writes need the key when one is configured. Absence means local (D21) — on a developer's machine
-// the OS account is the boundary and demanding a token would be ceremony. Set, it gates every POST
-// under /api; reads stay open because the UI is read-only by design (D31) and this deployment shape
-// is a trusted network's. Shared mode refused this variable at startup, so the two gates cannot
-// coexist: one credential model per deployment.
-if (!string.IsNullOrWhiteSpace(serviceKey))
-{
-    app.Use(async (context, next) =>
-    {
-        var isWrite = HttpMethods.IsPost(context.Request.Method)
-                      && context.Request.Path.StartsWithSegments("/api");
-        if (isWrite && !PresentsKey(context.Request.Headers.Authorization.ToString(), serviceKey))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            // Through the configured options, not the raw context — the raw metadata skips the
-            // camelCase policy and answers `Error` where every endpoint answers `error`.
-            await context.Response.WriteAsJsonAsync(
-                new ErrorResponse("this write needs the service key — send DAORIS_SERVICE_KEY as a bearer token"));
-            return;
-        }
-
-        await next();
-    });
-}
+// There is deliberately no third gate. D36's interim single-key write gate was retired with nothing
+// deployed (D47 §7, as amended): local mode trusts the loopback outright — the OS account is the
+// boundary (D21), and the startup refusal above keeps local mode ON the loopback — while shared mode
+// gates everything with minted keys. Two credential stories would drift, and the weaker would win.
 
 app.MapGet("/api/status", (ComposedService s) => new StatusResponse(
     Semantic: s.SemanticEnabled,
@@ -652,16 +629,6 @@ static bool IsOllamaRoot(string baseUrl) =>
     Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
     && uri.Port == 11434
     && !uri.AbsolutePath.TrimEnd('/').EndsWith("/v1", StringComparison.OrdinalIgnoreCase);
-
-// Fixed-time, so the comparison itself cannot leak how much of a guessed key matched.
-static bool PresentsKey(string header, string key)
-{
-    const string scheme = "Bearer ";
-    if (!header.StartsWith(scheme, StringComparison.Ordinal)) return false;
-    var presented = Encoding.UTF8.GetBytes(header[scheme.Length..].Trim());
-    var expected = Encoding.UTF8.GetBytes(key);
-    return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(presented, expected);
-}
 
 static IReadOnlySet<EntryKind>? ParseKinds(string? value)
 {
