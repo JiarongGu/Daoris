@@ -1280,3 +1280,43 @@ loop (D37), not to the driver.
 **Rejected: the driver takes the quest before spawning.** It would attribute the claim to a component
 that is not a party to the work, need a repair path for claimed-but-never-started quests, and make
 driven work distinguishable from outside work at exactly the layer where symmetry is the guarantee.
+
+## D47 — The remote is the same host fed by the desktop; transitions write through, records sync (2026-09-20)
+
+**Decision.** DRV3's design is settled: `docs/2026-09-20-remote-design.md` is the mechanism for D45's
+part 3. **The remote is a deployment of the existing HTTP host in shared mode** — the same executable,
+the same judgement classes — fed by the local desktop's sync loop and never required by anything local.
+The split that shapes it: **state transitions write through synchronously or fail plainly; records sync
+eventually** — because a lock that is eventually consistent is not a lock, and a session record arriving
+late loses nothing. A quest has **one home, decided at publish by whether its receiver is joined**, so
+there is never a second copy to reconcile; the cross-machine race resolves by the same stand-down path
+DRV2 built. What leaves a machine is governed by **two manifest declarations (join; share knowledge),
+silence meaning local** (D21), and the strip is structural: the feed's DTOs carry no field for roots,
+transcripts, or private content. Identity is service design §5 built as specified — per-person
+per-machine expiring keys for machines, OIDC for people, every route gated in shared mode, and a host
+asked to bind beyond loopback without that model refuses to start.
+
+**Git-as-store, priced and declined** (§6/§8.1 asked for the pricing before any host). D45 changed the
+question: when quests were passive records, "shared may be a sync" — the driver made them an execution
+queue, and a queue two machines race needs an arbiter that refuses the second `take` *before* work
+starts, where git surfaces the conflict at push time, after the duplicate session already ran. The
+serialization point a lock needs *is* a host — git-as-store hides the deployment rather than removing
+it — and the hosting cost it was avoiding was already paid by D36/D43. What survives of the git
+argument stays in its original home: the repositories remain the versioned, reviewable source of truth.
+
+**The lock becomes code.** "The quest state machine is the only lock" was honored by convention:
+`SetStatusAsync` moves any quest anywhere with only an existence check, tolerable under one machine's
+in-order sessions, a duplicated-work generator under two. The build gives quests the transition table
+sessions already have — Open→Taken atomic in the store, closed quests immovable — in the shared
+judgement class, so local mode gets the same honesty for free.
+
+**Knowledge feeds as content, never vectors** (`model-decoupling`): each deployment embeds with its own
+provider, nothing is lost because vectors are not persisted even locally, and a model-less remote still
+serves lexical search and says so. Only local-provenance entries feed — canon is already distributed by
+`sync`. **Records sync, processes never** (D46 §4 landed): session records feed keyed by origin + id,
+controls act only where the driver is attached, and even a cross-machine stop *request* is held open.
+
+**Rejected:** a separately-built remote service (D36 moved judgement to one place so doors cannot
+drift; a second implementation is that bug at team scale); an offline queue for quest verbs (an
+eventually-consistent lock); OIDC as a hard requirement (one person with two machines gets an API-only
+remote with console-minted keys — the platform-from-the-remote arrives with identity).

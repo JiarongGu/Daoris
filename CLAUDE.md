@@ -9,7 +9,8 @@ knowledge and work** across this family of projects — and, as of **D45, the dr
 workflow manager that will trigger and coordinate the agent sessions doing that work, one session per
 domain-owning repository. Three parts: the per-repo **connector** (built), the **local driver** desktop
 app (**built and proven by a real driven run** — D46, `docs/2026-09-19-driver-design.md`), the
-**remote server** for teams (later). Each repository has its own agent, which owns that
+**remote server** for teams (**designed** — D47, `docs/2026-09-20-remote-design.md`; the build is
+DRV5). Each repository has its own agent, which owns that
 domain; Daoris is how they hold one canon of doctrine between them, find where they have learned the
 same thing twice, and **ask each other for changes instead of reaching in**.
 
@@ -67,7 +68,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D45) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D47) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
@@ -87,8 +88,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 
 ## Layout
 
-**Four artefacts, one workspace.** All four exist; only the desktop shell is unbuilt, and it carries a
-`README.md` stating its brief.
+**Five artefacts, one workspace.** All five exist and are built (D46).
 
 | Path | Holds |
 |---|---|

@@ -24,7 +24,7 @@ Three parts, in build order:
 |---|---|---|
 | **1 · The connector** | Per-repo setup: rules, skills, MCP, the join lifecycle — the CLI + canon + `.mcp.json` | **Exists**, proven by the loops (D39, D44) and shipped as executables (D43) |
 | **2 · The local driver** | `Daoris.Desktop` re-scoped: hosts the local server, carries the platform UI, controls repositories and agent sessions | **Built and proven** (D46, 2026-09-19) — the driver, both adapters, the shell, the controls; a real `claude-code` session drove a real quest to done (DRV4) |
-| **3 · The remote server** | Team mode: shared knowledge and quests across machines, fed via the local desktop app | **Later** (DRV3; the old SVC2 hardening folds into it) |
+| **3 · The remote server** | Team mode: shared knowledge and quests across machines, fed via the local desktop app | **Designed** (DRV3 → D47, `docs/2026-09-20-remote-design.md`; the old SVC2 hardening folds in) — the build is DRV5 |
 
 Everything below this line is the foundation the driver stands on, and it is built.
 

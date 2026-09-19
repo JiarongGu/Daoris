@@ -1153,3 +1153,38 @@ construction. The scratch world remains under `_fixtures/real-drive` (gitignored
 transcript, for the owner's own look. One nested-run note for whoever repeats this from inside an
 agent session: strip the `CLAUDE*` environment before starting the driver, so the spawned session
 starts as cleanly as a real deployment's would.
+
+## DRV3 — design the remote server (2026-09-20)
+
+> The remote server, for teams. Multi-user sharing of knowledge and quests across machines, **fed via
+> the local desktop app** (local-first; the remote is fed, not authored — D21's "shared may be a sync"
+> finally lands). Folds in the old SVC2 hardening: per-person expiring keys and OIDC per the service
+> design §5, and whatever relay the local↔remote sync needs. Write `docs/<date>-remote-design.md`
+> before any code, settling at least: what syncs and what never leaves a machine; whether the remote is
+> a deployment of the existing HTTP host or a store the local hosts sync against; how quests flow
+> across machines without breaking "the quest state machine is the only lock" when two machines'
+> drivers watch one quest; person-auth (OIDC) vs machine keys (§5a); and what the driver/platform need
+> to say about a remote's sessions (records sync, processes never — D46 §4).
+
+✅ done 2026-09-20 (design; the build continues as DRV5) — `docs/2026-09-20-remote-design.md`, recorded
+as **D47**. All five questions settled. **What syncs**: two manifest declarations (join; share
+knowledge), silence meaning local; the strip is structural — the feed's DTOs carry no field for roots,
+transcripts, private content, or unjoined repositories, and knowledge feeds as content, never vectors
+(each deployment embeds with its own provider; nothing is lost — vectors are not persisted even
+locally). **What the remote is**: a deployment of the existing HTTP host in shared mode — git-as-store
+was priced as §8.1 asked and declined, because D45 turned quests into an execution queue and a queue
+two machines race needs an arbiter that refuses the second `take` before work starts, which git only
+surfaces at push time, after the duplicate session already ran. **The lock**: one home per quest,
+decided at publish by whether the receiver is joined; transitions write through synchronously or fail
+plainly while records sync eventually; and the build hardens the convention into code — a quest
+transition table with an atomic Open→Taken in the shared judgement class, because today
+`SetStatusAsync` moves any quest anywhere on an existence check alone, which two watching drivers turn
+into a duplicated-work generator. The race resolves by DRV2's existing stand-down, no new states.
+**Identity**: service design §5 as specified — per-person per-machine expiring keys, OIDC for people
+with the dev scheme inert outside Development, every route gated in shared mode, and a host binding
+beyond loopback without that model refuses to start. **Sessions**: records feed keyed by origin + id,
+transcripts stay home (today's unguarded `transcript` field on `GET /api/sessions` is a named gap the
+build closes), controls act only where the driver is attached, and even the cross-machine stop request
+is held as an open question. Verification is a remote phase in the family rehearsal: two simulated
+machines, one raced quest, the strip proven by scanning the remote store, keys refused and never
+leaked, no model in the gate.
