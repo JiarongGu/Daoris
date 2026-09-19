@@ -1129,3 +1129,27 @@ Ollama root, so skipping that check would have silently broken the default deplo
 touched nothing here — this service never made a text call. 114/114 service, 43/43 family rehearsal
 over the real 3.2 packages, verify clean. The Lyntai adoption half of the old note is unchanged:
 de-adopted, not quest-addressable, and nobody is asked to adopt until Daoris is finished.
+
+## DRV4 — the first real driven run (2026-09-19)
+
+> The `claude-code` adapter is a deployment choice on a gate-proven loop (design §8) and is verified
+> by use. Two claims to confirm in that run: the driven session's connector tools load under the
+> harness's non-interactive mode, and the IPC payload casing of `DRIVER_TICK`/`STATE`.
+
+✅ done 2026-09-19 — a real session drove a real quest to done in 71 seconds, and both flagged claims
+are confirmed. The setup was the loops' own shape: a scratch-born project (`init` → domain → `sync` →
+`check` → `connect`, git-initialized, its own `.mcp.json` naming the knowledge host and its own
+`.claude/settings.local.json` trusting it and allowlisting git), a scratch HTTP host, quest `#c2ce87`
+("Leave a first note") published through the door, and `daoris-driver --until-idle` with
+`adapter: claude-code`. The driver spawned a real headless session in the newborn's tree; the session
+**claimed its own quest over its own connector** — the MCP tools loaded under
+`-p --permission-mode acceptEdits` with only the repository's own trust settings, which was claim one —
+wrote `NOTES.md`, committed it (`add NOTES.md — the repository's first note`), and closed the quest
+`done` with a note naming the commit. The driver observed all of it: session record `completed`,
+"the quest reached done.", evidence carrying the exact commit, tree clean after. Claim two fell to
+reading rather than running: the desktop runtime's one frozen IPC serializer is
+`JsonNamingPolicy.CamelCase` (its `IpcJson`), so the page's `events`/`configPath` reads are correct by
+construction. The scratch world remains under `_fixtures/real-drive` (gitignored) with the session
+transcript, for the owner's own look. One nested-run note for whoever repeats this from inside an
+agent session: strip the `CLAUDE*` environment before starting the driver, so the spawned session
+starts as cleanly as a real deployment's would.

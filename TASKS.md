@@ -24,7 +24,11 @@ lifecycle, adapter seam — stub + `claude-code`), the headless `daoris-driver`,
 `daoris-desktop` on released Shenora.Windows 0.16.0 — it brings up the local HTTP host, carries the
 platform, runs the loop in-process, and lands the person's controls (drivable/hold per repository,
 stop a running session) through the `DAORIS.DRIVER` IPC module, live-updating over `DRIVER_TICK`.
-The quest state machine is the only lock; outside sessions stay first-class.
+The quest state machine is the only lock; outside sessions stay first-class. **The loop is proven
+with a real session** (DRV4, 2026-09-19): a scratch-born project, a real quest, a real `claude-code`
+session spawned by the driver — it claimed its quest over its own connector under headless
+`acceptEdits`, committed the work, closed the quest `done` with its note, and the driver's record
+carries the commit as evidence, 71 seconds end to end.
 
 The service is **deployable** (D36) and **ships as executables** (D43): `npm run publish:service --
 --install` lands both hosts self-contained in `~/.daoris/bin` and prints the ready `.mcp.json`
@@ -55,14 +59,6 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 38,782 bytes, with `web-webview` and `durable-jobs` ready for it.
 
 ## Backlog
-
-- [ ] **DRV4 — the first real driven run, witnessed.** The `claude-code` adapter is a deployment
-  choice on a gate-proven loop (design §8) and is verified by use: opt a repository in via the shell's
-  Projects toggles, publish a real quest, and watch the loop run it — the person's checkpoint, not a
-  gate's. Two claims to confirm in that run, flagged when built: the driven session's connector tools
-  load under the harness's non-interactive mode (the repository's own `.mcp.json` trust settings
-  govern — connector setup, never the driver reaching in), and the IPC payload casing of
-  `DRIVER_TICK`/`STATE` as rendered by the page (unit-tested against a mocked bridge only).
 
 - [ ] **DRV3 — the remote server, for teams.** Multi-user sharing of knowledge and quests across
   machines, **fed via the local desktop app** (local-first; the remote is fed, not authored — D21's
