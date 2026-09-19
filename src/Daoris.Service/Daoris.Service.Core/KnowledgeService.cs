@@ -3,6 +3,11 @@ namespace Daoris.Knowledge;
 /// <summary>How much one repository contributes to the index.</summary>
 public sealed record RepositorySummary(string Repository, int Total, int Local, int Canonical);
 
+/// <param name="Accepted">Whether the feed was taken. A refusal names the missing declaration.</param>
+/// <param name="Message">The full answer, phrased once here so no two doors can drift on it.</param>
+/// <param name="Entries">How many entries now stand for that repository, when accepted.</param>
+public sealed record FeedOutcome(bool Accepted, string Message, int Entries);
+
 /// <summary>
 /// The service, as a client sees it: search, read, list, refresh.
 /// </summary>
@@ -122,6 +127,47 @@ public sealed class KnowledgeService(
         }
 
         registry?.Register(registration);
+    }
+
+    /// <summary>
+    /// Accept one repository's knowledge content from a feed — the only ingest a remote deployment has,
+    /// since it never scans a filesystem (D47 §4). The disclosure judgement runs HERE, at the door,
+    /// over what the repository's own reviewed manifest declared: join admits records, knowledge is a
+    /// second declaration, and silence refused both. Accepted entries are normalized — the repository
+    /// name from the registration, provenance forced Local, because canonical doctrine is distributed
+    /// by `sync`, never by the feed — and replace that repository's entries wholesale, so the feed is
+    /// idempotent.
+    /// </summary>
+    public async Task<FeedOutcome> FeedAsync(
+        string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default)
+    {
+        var registration = (await RegistryAsync(ct).ConfigureAwait(false))
+            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+
+        if (registration is null || !registration.Joined)
+        {
+            return new(
+                Accepted: false,
+                $"`{repository}` has not joined this deployment — the manifest's `remote.join` is the "
+                + "declaration that admits it, and silence means local.",
+                Entries: 0);
+        }
+
+        if (!registration.SharesKnowledge)
+        {
+            return new(
+                Accepted: false,
+                $"`{registration.Repository}` joined without sharing knowledge — its records travel, its "
+                + "knowledge stays home. `remote.knowledge` is the declaration that changes that.",
+                Entries: 0);
+        }
+
+        var normalized = entries
+            .Select(entry => entry with { Repository = registration.Repository, Provenance = Provenance.Local })
+            .ToList();
+        await store.ReplaceRepositoryAsync(registration.Repository, normalized, ct).ConfigureAwait(false);
+
+        return new(Accepted: true, $"Indexed {normalized.Count} entries from `{registration.Repository}`.", normalized.Count);
     }
 
     /// <summary>Re-read every repository and rebuild the index.</summary>

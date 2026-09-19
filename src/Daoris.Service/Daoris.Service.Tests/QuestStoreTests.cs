@@ -165,6 +165,55 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Equal("Still open", listed[0].Title);
     }
 
+    /// <summary>
+    /// A mirror row copies its home's state (D47 §5): one home per quest means local verbs cannot move
+    /// it — only the next mirror can, because only the home decided anything. This is what keeps two
+    /// stores from ever holding two opinions about one quest.
+    /// </summary>
+    [Fact]
+    public async Task A_mirrored_quest_is_immovable_locally_and_updated_by_the_next_mirror()
+    {
+        var remote = new Quest(
+            "abc123", "Asker", "Owner", "Do it", "why", QuestStatus.Open, null, Now, Now, Home: "remote");
+        await _quests.MirrorAsync(remote);
+
+        var moved = await _quests.MoveAsync("abc123", QuestStatus.Taken, null, Now.AddHours(1));
+
+        Assert.False(moved.Moved);
+        Assert.Equal(QuestStatus.Open, moved.Quest!.Status);
+        Assert.Equal("remote", moved.Quest.Home);
+
+        await _quests.MirrorAsync(remote with { Status = QuestStatus.Taken, Updated = Now.AddHours(2) });
+
+        Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync("abc123"))!.Status);
+        Assert.Single(await _quests.ListAsync());
+    }
+
+    /// <summary>A store created before the remote existed has no home column and must survive the upgrade.</summary>
+    [Fact]
+    public async Task An_existing_store_without_the_home_column_is_migrated_in_place()
+    {
+        await using var old = new SqliteConnection("Data Source=:memory:");
+        await old.OpenAsync();
+        await using (var create = old.CreateCommand())
+        {
+            create.CommandText = """
+                CREATE TABLE quests (
+                  id TEXT PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, title TEXT NOT NULL,
+                  body TEXT NOT NULL, status TEXT NOT NULL, note TEXT NULL, filed TEXT NOT NULL, updated TEXT NOT NULL
+                );
+                INSERT INTO quests VALUES ('e1de11', 'A', 'B', 'Old ask', 'why', 'Open', NULL, '2026-01-01', '2026-01-01');
+                """;
+            await create.ExecuteNonQueryAsync();
+        }
+
+        var store = await QuestStore.OpenAsync(old);
+        var elder = (await store.ListAsync()).Single();
+
+        Assert.Null(elder.Home);
+        Assert.True((await store.MoveAsync("e1de11", QuestStatus.Taken, null, Now)).Moved);
+    }
+
     [Fact]
     public async Task An_unknown_id_yields_nothing_rather_than_throwing()
     {

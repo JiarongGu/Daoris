@@ -72,6 +72,11 @@ public sealed record Session(
         SessionState.StoodDown => "stood-down",
         _ => state.ToString().ToLowerInvariant(),
     };
+
+    /// <summary>The reverse of <see cref="Spell"/>: what every door accepts back, tolerantly.</summary>
+    public static bool TryParse(string value, out SessionState state) =>
+        Enum.TryParse(value.Replace("-", "", StringComparison.Ordinal), ignoreCase: true, out state)
+        && Enum.IsDefined(state);
 }
 
 /// <summary>
@@ -179,6 +184,33 @@ public sealed class SessionStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         return moved;
+    }
+
+    /// <summary>
+    /// Copy another machine's session record into this store, whole (D47 §6). The judgement already ran
+    /// where the process lived — the ledger's rules governed the original — so a fed record upserts
+    /// verbatim and is never re-judged. The caller keys it by origin + id; the transcript never arrives,
+    /// because the feed has no field for a machine path.
+    /// </summary>
+    public async Task MirrorAsync(Session record, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated)
+            ON CONFLICT (id) DO UPDATE SET
+              state = $state, note = $note, evidence = $evidence, updated = $updated
+            """;
+        command.Parameters.AddWithValue("$id", record.Id);
+        command.Parameters.AddWithValue("$quest", record.Quest);
+        command.Parameters.AddWithValue("$repository", record.Repository);
+        command.Parameters.AddWithValue("$adapter", record.Adapter);
+        command.Parameters.AddWithValue("$state", record.State.ToString());
+        command.Parameters.AddWithValue("$note", (object?)record.Note ?? DBNull.Value);
+        command.Parameters.AddWithValue("$evidence", (object?)record.Evidence ?? DBNull.Value);
+        command.Parameters.AddWithValue("$created", record.Created.ToString("O"));
+        command.Parameters.AddWithValue("$updated", record.Updated.ToString("O"));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<Session?> FindAsync(string id, CancellationToken ct = default)

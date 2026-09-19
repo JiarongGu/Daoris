@@ -165,7 +165,14 @@ if (mode == ServiceMode.Shared)
                 : "";
             var validation = await composed.Keys.ValidateAsync(
                 presented, DateTimeOffset.UtcNow, context.RequestAborted);
-            if (validation.Verdict != KeyVerdict.Valid)
+            if (validation.Verdict == KeyVerdict.Valid)
+            {
+                // The key's name IS the caller's identity — per person, per machine — and it is what
+                // fed records are attributed to (D47 §7): recorded because the write carried it, not
+                // because a second identity model was invented.
+                context.Items["daoris.principal"] = validation.Key!.Name;
+            }
+            else
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 await context.Response.WriteAsJsonAsync(new ErrorResponse(validation.Verdict switch
@@ -374,7 +381,9 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         body.Domain?.Accepts ?? [],
         body.Packs ?? [],
         Entries: 0,
-        Root: string.IsNullOrWhiteSpace(body.Root) ? null : body.Root,
+        // A shared deployment never stores a machine path, even one a buggy client sent: the feed has
+        // no field for it by design (D47 §4), and what must not be served is best not kept.
+        Root: mode == ServiceMode.Shared || string.IsNullOrWhiteSpace(body.Root) ? null : body.Root,
         Joined: body.Join ?? false,
         // Knowledge feeds only from a joined repository (D47 §4) — narrowed here as well as in the
         // CLI, because this door also answers clients the CLI never saw.
@@ -393,9 +402,126 @@ app.MapGet("/api/registry", async (ComposedService s, HttpContext http, Cancella
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
+    // A shared deployment is fed, not scanned (D47 §4): fed entries are the only entries it has, and a
+    // filesystem scan here would ghost-sweep every one of them for repositories it cannot see.
+    if (mode == ServiceMode.Shared)
+    {
+        return Results.Conflict(new ErrorResponse(
+            "a shared deployment is fed, not scanned — entries arrive with each desktop's sync"));
+    }
+
     var report = await s.Service.RefreshAsync(ct);
-    return new RefreshResponse(report.Entries, report.Repositories, report.Withheld, report.SemanticError);
+    return Results.Ok(new RefreshResponse(report.Entries, report.Repositories, report.Withheld, report.SemanticError));
 });
+
+// ——— The feed doors (D47 §§4–6). Which doors exist depends on the deployment's role: a SHARED host
+// is fed by desktops — records and content arrive attributed to the key that carried them — while a
+// LOCAL host is never fed by anyone; it feeds, and takes only the quest mirror its own sync loop
+// pulls down. A door with no meaning in a mode does not exist in that mode.
+if (mode == ServiceMode.Shared)
+{
+    // Session records, keyed by origin + id — the judgement already ran where the process lived; the
+    // record upserts whole and is never re-judged (D47 §6). There is no transcript field to strip,
+    // because the DTO carries none. Only joined repositories' records are taken (§4).
+    app.MapPost("/api/feed/sessions", async (
+        ComposedService s, HttpContext http, FeedSessionsRequest body, CancellationToken ct) =>
+    {
+        var origin = http.Items["daoris.principal"] as string;
+        if (string.IsNullOrWhiteSpace(origin))
+        {
+            return Results.BadRequest(new ErrorResponse("the feed carries its key's identity — this door answers only keyed callers"));
+        }
+
+        var records = body.Records ?? [];
+        var joined = (await s.Service.RegistryAsync(ct)).Where(r => r.Joined)
+            .Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var record in records)
+        {
+            if (string.IsNullOrWhiteSpace(record.Id) || string.IsNullOrWhiteSpace(record.Quest)
+                || string.IsNullOrWhiteSpace(record.Repository) || !Session.TryParse(record.State ?? "", out _))
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    $"record `{record.Id}` is not a session record — id, quest, repository and a known state are required"));
+            }
+
+            if (!joined.Contains(record.Repository))
+            {
+                return Results.Conflict(new ErrorResponse(
+                    $"`{record.Repository}` has not joined this deployment — its records stay home"));
+            }
+        }
+
+        foreach (var record in records)
+        {
+            Session.TryParse(record.State!, out var state);
+            await s.Sessions.MirrorAsync(new Session(
+                $"{origin}/{record.Id}", record.Quest, record.Repository, record.Adapter ?? "unknown",
+                state, record.Note, record.Evidence, Transcript: null, record.Created, record.Updated), ct);
+        }
+
+        return Results.Ok(new FeedResponse(records.Count, $"{records.Count} session record(s) mirrored from `{origin}`."));
+    });
+
+    // Knowledge content — never vectors (D47 §4): each deployment embeds with its own provider, and
+    // this one still serves lexical search with none. The disclosure judgement is the service's own
+    // (FeedAsync), so any future door shares it.
+    app.MapPost("/api/feed/entries", async (ComposedService s, FeedEntriesRequest body, CancellationToken ct) =>
+    {
+        if (string.IsNullOrWhiteSpace(body.Repository))
+        {
+            return Results.BadRequest(new ErrorResponse("repository is required"));
+        }
+
+        var entries = new List<KnowledgeEntry>();
+        foreach (var entry in body.Entries ?? [])
+        {
+            if (!Enum.TryParse<EntryKind>(entry.Kind ?? "", ignoreCase: true, out var kind) || !Enum.IsDefined(kind))
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    $"unknown kind '{entry.Kind}' — one of: rule, knowledge, skill, decision, fix, taskoutcome"));
+            }
+
+            entries.Add(new KnowledgeEntry(
+                body.Repository, kind, Provenance.Local, entry.Title ?? "", entry.Body ?? "",
+                entry.RelativePath ?? "", entry.Anchor));
+        }
+
+        var outcome = await s.Service.FeedAsync(body.Repository, entries, ct);
+        return outcome.Accepted
+            ? Results.Ok(new FeedResponse(outcome.Entries, outcome.Message))
+            : Results.Conflict(new ErrorResponse(outcome.Message));
+    });
+}
+else
+{
+    // The mirror half of the sync (D47 §5): remote-homed quests land here for reading and planning.
+    // MirrorAsync marks every row with its home, which is what makes it immovable locally — verbs on
+    // it write through to the remote, and the next mirror carries the result back.
+    app.MapPost("/api/feed/quests", async (ComposedService s, FeedQuestsRequest body, CancellationToken ct) =>
+    {
+        var quests = body.Quests ?? [];
+        foreach (var quest in quests)
+        {
+            if (string.IsNullOrWhiteSpace(quest.Id)
+                || !Enum.TryParse<QuestStatus>(quest.Status ?? "", ignoreCase: true, out var status)
+                || !Enum.IsDefined(status))
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    $"quest `{quest.Id}` is not mirrorable — an id and a known status are required"));
+            }
+        }
+
+        foreach (var quest in quests)
+        {
+            Enum.TryParse<QuestStatus>(quest.Status!, ignoreCase: true, out var status);
+            await s.Quests.MirrorAsync(new Quest(
+                quest.Id.TrimStart('#'), quest.From, quest.To, quest.Title, quest.Body,
+                status, quest.Note, quest.Filed, quest.Updated, Home: "remote"), ct);
+        }
+
+        return Results.Ok(new FeedResponse(quests.Count, $"{quests.Count} quest(s) mirrored."));
+    });
+}
 
 app.Run();
 return 0;
@@ -599,6 +725,17 @@ public sealed record SessionResponse(
 public sealed record OpenSessionRequest(string Quest, string Adapter);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
+public sealed record FeedSessionRecord(
+    string Id, string Quest, string Repository, string? Adapter, string? State,
+    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated);
+public sealed record FeedSessionsRequest(IReadOnlyList<FeedSessionRecord>? Records);
+public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
+public sealed record FeedEntriesRequest(string Repository, IReadOnlyList<FeedEntryRecord>? Entries);
+public sealed record FeedQuestRecord(
+    string Id, string From, string To, string Title, string Body, string? Status, string? Note,
+    DateTimeOffset Filed, DateTimeOffset Updated);
+public sealed record FeedQuestsRequest(IReadOnlyList<FeedQuestRecord>? Quests);
+public sealed record FeedResponse(int Accepted, string Message);
 public sealed record ErrorResponse(string Error);
 
 [JsonSerializable(typeof(StatusResponse))]
@@ -618,5 +755,9 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(OpenSessionRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
+[JsonSerializable(typeof(FeedSessionsRequest))]
+[JsonSerializable(typeof(FeedEntriesRequest))]
+[JsonSerializable(typeof(FeedQuestsRequest))]
+[JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;

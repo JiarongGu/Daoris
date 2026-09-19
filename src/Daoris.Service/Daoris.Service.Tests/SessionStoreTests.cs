@@ -127,4 +127,41 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Null(await _sessions.SetStateAsync("zzzzzzzz", SessionState.Working, null, null, null, Now));
         Assert.Null(await _sessions.FindAsync("zzzzzzzz"));
     }
+
+    /// <summary>
+    /// A fed record is the copy of a judgement that already ran on the machine that owns the process
+    /// (D47 §6): it upserts whole and is never re-judged — the ledger's rules governed the original.
+    /// Keyed by origin + id, because two machines will eventually mint the same random id.
+    /// </summary>
+    [Fact]
+    public async Task A_mirrored_record_upserts_whole_and_carries_no_transcript()
+    {
+        var fed = new Session(
+            "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code",
+            SessionState.Working, null, null, null, Now, Now);
+
+        await _sessions.MirrorAsync(fed);
+        await _sessions.MirrorAsync(fed with
+        {
+            State = SessionState.Completed,
+            Evidence = "commit deadbee",
+            Updated = Now.AddHours(1),
+        });
+
+        var read = (await _sessions.ListAsync(includeClosed: true)).Single(s => s.Id == "alice-laptop/ab12cd34");
+        Assert.Equal(SessionState.Completed, read.State);
+        Assert.Equal("commit deadbee", read.Evidence);
+        Assert.Null(read.Transcript);
+    }
+
+    /// <summary>The wire spelling parses back — the same tolerance the ledger's advance door has.</summary>
+    [Fact]
+    public void The_wire_spelling_parses_back()
+    {
+        Assert.True(Session.TryParse("stood-down", out var stood) && stood == SessionState.StoodDown);
+        Assert.True(Session.TryParse("awaiting-person", out var parked) && parked == SessionState.AwaitingPerson);
+        Assert.True(Session.TryParse("Working", out var working) && working == SessionState.Working);
+        Assert.False(Session.TryParse("paused", out _));
+        Assert.False(Session.TryParse("", out _));
+    }
 }
