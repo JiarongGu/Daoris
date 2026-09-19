@@ -246,10 +246,12 @@ app.MapPost("/api/quests/{id}/respond", async (
 // what the platform renders and what survives a driver restart; the process handle stays with the
 // driver that owns it. Judgement is the shared ledger's, so this door and any other cannot drift.
 app.MapGet("/api/sessions", async (
-    ComposedService s, string? repository, bool? includeClosed, CancellationToken ct) =>
-    (await s.Sessions.ListAsync(repository, includeClosed ?? false, ct)).Select(ToSession));
+    ComposedService s, HttpContext http, string? repository, bool? includeClosed, CancellationToken ct) =>
+    (await s.Sessions.ListAsync(repository, includeClosed ?? false, ct))
+        .Select(session => ToSession(session, IsLoopback(http))));
 
-app.MapPost("/api/sessions", async (ComposedService s, OpenSessionRequest body, CancellationToken ct) =>
+app.MapPost("/api/sessions", async (
+    ComposedService s, HttpContext http, OpenSessionRequest body, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(body.Quest) || string.IsNullOrWhiteSpace(body.Adapter))
     {
@@ -260,21 +262,23 @@ app.MapPost("/api/sessions", async (ComposedService s, OpenSessionRequest body, 
 
     return outcome.Refusal switch
     {
-        SessionOpenRefusal.None => Results.Ok(new SessionActionResponse(ToSession(outcome.Session!), outcome.Message)),
+        SessionOpenRefusal.None => Results.Ok(
+            new SessionActionResponse(ToSession(outcome.Session!, IsLoopback(http)), outcome.Message)),
         SessionOpenRefusal.QuestNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
 
 app.MapPost("/api/sessions/{id}/state", async (
-    ComposedService s, string id, AdvanceSessionRequest body, CancellationToken ct) =>
+    ComposedService s, HttpContext http, string id, AdvanceSessionRequest body, CancellationToken ct) =>
 {
     var outcome = await s.Ledger.AdvanceAsync(
         id, body.State ?? "", body.Note, body.Evidence, body.Transcript, DateTimeOffset.UtcNow, ct);
 
     return outcome.Refusal switch
     {
-        SessionAdvanceRefusal.None => Results.Ok(new SessionActionResponse(ToSession(outcome.Session!), outcome.Message)),
+        SessionAdvanceRefusal.None => Results.Ok(
+            new SessionActionResponse(ToSession(outcome.Session!, IsLoopback(http)), outcome.Message)),
         SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
@@ -336,8 +340,12 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
 static QuestResponse ToQuest(Quest q) => new(
     q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated);
 
-static SessionResponse ToSession(Session s) => new(
-    s.Id, s.Quest, s.Repository, s.Adapter, s.StateName, s.Note, s.Evidence, s.Transcript,
+// The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
+// answered only to a caller on this machine. The evidence stays — commits are the reviewable record
+// and are meant to travel; the transcript is diagnostics for the machine that ran the session.
+static SessionResponse ToSession(Session s, bool loopback) => new(
+    s.Id, s.Quest, s.Repository, s.Adapter, s.StateName, s.Note, s.Evidence,
+    Transcript: loopback ? s.Transcript : null,
     s.Created, s.Updated);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
