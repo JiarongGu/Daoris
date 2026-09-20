@@ -90,6 +90,22 @@ Run against the local checkout (read-only) and an installed `dsh`, over a scratc
 same discipline as every rehearsal: **driven, not read about.** Each probe has a pass shape; a probe
 that cannot pass is evidence, not failure.
 
+**Session prerequisites, so nothing is discovered mid-probe:**
+
+- **A model API key, supplied by the person at session time.** Probes 1, 4, 5, 6 and 8 run a real
+  agent loop, and a real loop calls a real model — this is an *evaluation*, not a gate, so the
+  no-model rule for gates does not apply, but the key never lands in a file and the session says which
+  provider answered (D24's reporting instinct). Without a key, probes 2, 3 and 7 still run — protocol
+  handshake, event vocabulary and version history need no completion — and the session downgrades
+  honestly rather than stalling.
+- **Hermetic dsh state.** dsh keeps a Harness home (`$DSH_HOME`); every probe sets it to a scratch
+  directory so nothing touches the person's real profiles, credentials or sessions — the same
+  discipline the rehearsals apply to `~/.daoris`. Probes run over a scratch repository, never the
+  tracked examples and never a real one.
+- **Scope guard.** Probes 1–2 are the core and decide A and most of B; 3–8 follow as evidence permits,
+  and DOCS1 rides along. If the session runs long, it splits at the evidence note — a half-evaluated
+  option is recorded as exactly that, never rounded up to a decision.
+
 1. **The headless run** (`dsh headless` / one-shot): give it a quest-shaped target in a scratch repo;
    observe exit code, what landed in git, and what the session log records. *Pass: DRV4's shape — a
    commit, a readable durable record.* This is option A's whole requirement.
