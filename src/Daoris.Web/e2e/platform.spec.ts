@@ -149,6 +149,10 @@ test("a driven session's record reaches the drawer (D46)", async ({ page, reques
   await expect(dialog.getByText('working')).toBeVisible();
   await expect(dialog.getByText(new RegExp(`${session.id} · stub`))).toBeVisible();
   await expect(dialog.getByText('the process is alive')).toBeVisible();
+
+  // Read-only is the arc's central claim: the record renders, the control does not — stop reaches a
+  // PROCESS, and a browser has none to reach (D46 §6).
+  await expect(dialog.getByRole('button', { name: 'stop session' })).toHaveCount(0);
 });
 
 test('the console speaks 中文', async ({ page }) => {

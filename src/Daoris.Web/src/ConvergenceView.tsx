@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Convergence } from './api';
-import { Card, PageHeader, useErrorNotify } from './ui';
+import type { Convergence } from './api';
+import { useConvergence } from './queries';
+import { Card, type Notify, PageHeader, useErrorNotify } from './ui';
 import { cn } from './lib/cn';
+import { useDebounced } from './lib/useDebounced';
 
 /**
  * The knowledge half's lead view (D30). The threshold is a control rather than a constant,
@@ -13,25 +14,17 @@ import { cn } from './lib/cn';
  * The suggestion under each group is the SERVICE's sentence, verbatim — a command to run where the
  * file lives, never a button that applies it (D21, D31).
  */
-export function ConvergenceView({ semantic, onOpen, onError }: {
+export function ConvergenceView({ semantic, onOpen, notify }: {
   semantic: boolean;
   onOpen: (id: string) => void;
-  onError: (message: string) => void;
+  notify: Notify;
 }) {
   const { t } = useTranslation();
   const [threshold, setThreshold] = useState(0.75);
-  const [debounced, setDebounced] = useState(threshold);
+  const debounced = useDebounced(threshold, 200);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(threshold), 200);
-    return () => clearTimeout(timer);
-  }, [threshold]);
-
-  const groups = useQuery({
-    queryKey: ['convergence', debounced],
-    queryFn: ({ signal }) => api.convergence(debounced, signal),
-  });
-  useErrorNotify(groups.error, onError);
+  const groups = useConvergence(debounced);
+  useErrorNotify(groups.error, notify);
 
   return (
     <section>

@@ -13,7 +13,6 @@
 
   "common.close": "close",
   "common.dismiss": "dismiss",
-  "common.reading": "reading…",
   "common.cancel": "never mind",
 
   "time.justNow": "just now",
@@ -157,7 +156,6 @@
   "search.searching": "searching…",
   "search.empty": "No matches. Lexical search matches words — a repository that reached the same conclusion in different vocabulary will not appear here. That is what the convergence view is for.",
 
-  "language.label": "Language",
   "language.en": "English",
   "language.zh": "中文"
 }

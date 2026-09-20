@@ -1,10 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Convergence, Entry, Hit } from './api';
-import { useQuests, useRefreshIndex, useRepositories, useStatus } from './queries';
-import { api } from './api';
+import { useEntry, useQuests, useRefreshIndex, useRepositories, useStatus } from './queries';
 import {
-  Button, Icon, type IconName, LanguageSwitcher, Tip, Toasts, type ToastItem,
+  Button, Icon, type IconName, LanguageSwitcher, Tip, Toasts, type ToastItem, useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
 import { OverviewView } from './OverviewView';
@@ -33,7 +31,7 @@ const NAV: { tab: Tab; icon: IconName }[] = [
 export function App() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('overview');
-  const [reading, setReading] = useState<Entry | null>(null);
+  const [readingId, setReadingId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToast = useRef(1);
 
@@ -41,6 +39,8 @@ export function App() {
   const repositories = useRepositories();
   // The badge shares the Quests view's cache — one fetch, two readers.
   const outstanding = useQuests(null, false);
+  // The Reader's document rides the same cache as every other read — re-opening an entry is free.
+  const reading = useEntry(readingId);
   const refresh = useRefreshIndex();
 
   const dismiss = useCallback((id: number) => {
@@ -53,15 +53,15 @@ export function App() {
     setToasts((current) => [...current.slice(-3), { id, text, kind }]);
   }, []);
 
-  const fail = useCallback((text: string) => notify(text, 'error'), [notify]);
-
-  const open = useCallback((id: string) => {
-    api.entry(id).then(setReading).catch((e: Error) => fail(e.message));
-  }, [fail]);
+  useErrorNotify(reading.error, notify);
 
   const onRefresh = () => refresh.mutate(undefined, {
-    onSuccess: (report) => notify(t('sidebar.refreshed', report)),
-    onError: (e) => fail((e as Error).message),
+    onSuccess: (report) => {
+      notify(t('sidebar.refreshed', report));
+      // The semantic half's failure is the service's own sentence — dropped nowhere (D24).
+      if (report.semanticError) notify(report.semanticError, 'error');
+    },
+    onError: (e) => notify((e as Error).message, 'error'),
   });
 
   const indexed = (repositories.data ?? []).reduce((sum, r) => sum + r.total, 0);
@@ -133,17 +133,15 @@ export function App() {
           {tab === 'quests' && <QuestsView notify={notify} />}
           {tab === 'projects' && <ProjectsView notify={notify} />}
           {tab === 'convergence' && (
-            <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={open} onError={fail} />
+            <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
           )}
-          {tab === 'search' && <SearchView onOpen={open} onError={fail} />}
+          {tab === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
         </div>
       </main>
 
-      {reading && <Reader entry={reading} onClose={() => setReading(null)} />}
+      {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}
       <Toasts items={toasts} onClose={dismiss} />
       <ShellSignals notify={notify} />
     </div>
   );
 }
-
-export type { Convergence, Hit };

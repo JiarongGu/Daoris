@@ -5,10 +5,11 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowLeftRight, Check, ChevronDown, Clock, GitMerge, Inbox, Languages, LayoutGrid, Layers,
+  ArrowLeftRight, Check, ChevronDown, GitMerge, Inbox, Languages, LayoutGrid, Layers,
   Plus, RotateCw, Search, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { Quest } from './api';
 import { cn } from './lib/cn';
 
 // The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
@@ -26,7 +27,6 @@ const ICONS = {
   plus: Plus,
   x: X,
   check: Check,
-  clock: Clock,
   inbox: Inbox,
   languages: Languages,
 } as const;
@@ -75,6 +75,17 @@ const PILL_TONE: Record<string, string> = {
   taken: 'border-st-taken text-st-taken bg-st-taken/10',
   done: 'border-st-done text-st-done bg-st-done/10',
   declined: 'border-st-declined text-st-declined bg-st-declined/10',
+};
+
+/**
+ * The one mapping from a quest's wire status to its pill tone — exhaustive at compile time, so a
+ * fifth status cannot ship half-toned. Views read this rather than lower-casing the wire value.
+ */
+export const QUEST_TONE: Record<Quest['status'], keyof typeof PILL_TONE> = {
+  Open: 'open',
+  Taken: 'taken',
+  Done: 'done',
+  Declined: 'declined',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */
@@ -289,6 +300,9 @@ export function Tip({ content, children }: { content: string; children: ReactNod
 
 export type ToastItem = { id: number; text: string; kind: 'ok' | 'error' };
 
+/** The one shape a view's outcome channel has — declared once, not restated at every prop. */
+export type Notify = (text: string, kind?: 'ok' | 'error') => void;
+
 /**
  * Outcomes and errors, spoken from one corner — the service's sentence verbatim, because the refusal
  * text is the contract. Radix provides the timers, swipe-dismissal and the a11y announcements.
@@ -350,7 +364,7 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
 }
 
 /** Surface a query error as a toast exactly once per change. */
-export function useErrorNotify(error: unknown, notify: (text: string, kind?: 'ok' | 'error') => void) {
+export function useErrorNotify(error: unknown, notify: Notify) {
   useEffect(() => {
     if (error) notify((error as Error).message, 'error');
   }, [error, notify]);

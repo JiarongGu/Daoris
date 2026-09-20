@@ -13,7 +13,6 @@
 
   "common.close": "关闭",
   "common.dismiss": "忽略",
-  "common.reading": "读取中…",
   "common.cancel": "算了",
 
   "time.justNow": "刚刚",
@@ -157,7 +156,6 @@
   "search.searching": "搜索中…",
   "search.empty": "没有匹配。字面搜索只认词——换一套词汇得出同一结论的仓库不会出现在这里。那正是同归视图的用处。",
 
-  "language.label": "语言",
   "language.en": "English",
   "language.zh": "中文"
 }

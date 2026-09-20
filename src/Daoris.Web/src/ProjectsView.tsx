@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry, useRepositories } from './queries';
 import { useDriver, useSetDrivable, useSetHold } from './shell';
-import { Card, CheckField, Chip, PageHeader, SkeletonRows, Tip, useErrorNotify } from './ui';
+import { Card, CheckField, Chip, type Notify, PageHeader, SkeletonRows, Tip, useErrorNotify } from './ui';
 
 /**
  * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
@@ -9,14 +9,15 @@ import { Card, CheckField, Chip, PageHeader, SkeletonRows, Tip, useErrorNotify }
  * repository's own act (D32): Daoris never writes into a sibling, so nothing joins by being seen; the
  * join steps are proposed as text, never a button (D31's shape).
  */
-export function ProjectsView({ notify }: { notify: (text: string, kind?: 'ok' | 'error') => void }) {
+export function ProjectsView({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const registry = useRegistry();
   const repositories = useRepositories();
   const driver = useDriver();
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
-  useErrorNotify(registry.error ?? repositories.error, notify);
+  // The driver bridge included: a STATE that fails silently reads as a machine with no driver.
+  useErrorNotify(registry.error ?? repositories.error ?? driver.error, notify);
 
   const adopted = (registry.data ?? []).filter((r) => r.adopted);
   const outside = (registry.data ?? []).filter((r) => !r.adopted);

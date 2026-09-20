@@ -6,10 +6,18 @@ import { api } from './api';
 // invalidation after every mutation instead of hand-rolled reload calls that each view remembered —
 // or forgot — to make.
 
+// The single source of query-key truth — invalidations included. A prefix written as a string
+// literal at an invalidation site survives a rename silently; one written here does not.
 export const keys = {
   status: ['status'] as const,
   repositories: ['repositories'] as const,
   registry: ['registry'] as const,
+  driver: ['driver'] as const,
+  entry: (id: string) => ['entry', id] as const,
+  convergence: (minimumSimilarity: number) => ['convergence', minimumSimilarity] as const,
+  search: (q: string, localOnly: boolean) => ['search', q, localOnly] as const,
+  allQuests: ['quests'] as const,
+  allSessions: ['sessions'] as const,
   quests: (repository: string | null, includeClosed: boolean) =>
     ['quests', repository ?? 'all', includeClosed] as const,
   sessions: (repository: string | null, includeClosed: boolean) =>
@@ -38,11 +46,32 @@ export const useSessions = (repository: string | null, includeClosed: boolean) =
     queryFn: ({ signal }) => api.sessions(repository, includeClosed, signal),
   });
 
+/** One document, read on demand — the Reader's fetch, cached like every other read. */
+export const useEntry = (id: string | null) =>
+  useQuery({
+    queryKey: keys.entry(id ?? ''),
+    queryFn: ({ signal }) => api.entry(id ?? '', signal),
+    enabled: id !== null,
+  });
+
+export const useConvergence = (minimumSimilarity: number) =>
+  useQuery({
+    queryKey: keys.convergence(minimumSimilarity),
+    queryFn: ({ signal }) => api.convergence(minimumSimilarity, signal),
+  });
+
+export const useSearch = (q: string, localOnly: boolean) =>
+  useQuery({
+    queryKey: keys.search(q, localOnly),
+    queryFn: ({ signal }) => api.search(q, localOnly, signal),
+    enabled: q.length >= 2,
+  });
+
 /** Everything a quest mutation can change: every quests query, and the registry's counts. */
 function useInvalidateQuestWork() {
   const client = useQueryClient();
   return () => {
-    void client.invalidateQueries({ queryKey: ['quests'] });
+    void client.invalidateQueries({ queryKey: keys.allQuests });
     void client.invalidateQueries({ queryKey: keys.registry });
   };
 }
@@ -68,7 +97,7 @@ export const useRespondQuest = () => {
 export const useRefreshIndex = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => api.refresh() as Promise<{ entries: number; repositories: number }>,
+    mutationFn: () => api.refresh(),
     // A re-scan can change anything the index feeds.
     onSuccess: () => void client.invalidateQueries(),
   });

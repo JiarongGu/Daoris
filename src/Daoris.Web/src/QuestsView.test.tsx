@@ -20,7 +20,12 @@ const REGISTRY = [
 ];
 
 // A driven session's record, attached to the quest above (D46): active, so the card wears its state.
+// TWO records for the one quest, deliberately — a retry is its own record, and the view must show
+// where things stand now (the later one), not the failed first attempt.
 const SESSIONS = [{
+  id: 's0f1r2s3', quest: 'abc123', repository: 'engine', adapter: 'stub', state: 'failed',
+  note: 'the first attempt died', created: '2026-09-01T22:00:00Z', updated: '2026-09-01T23:00:00Z',
+}, {
   id: 's1a2b3c4', quest: 'abc123', repository: 'engine', adapter: 'stub', state: 'working',
   note: 'the process is alive', evidence: 'commits landed:\nfff000 stub: answer quest abc123',
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
@@ -84,5 +89,23 @@ describe('QuestsView', () => {
     expect(within(dialog).getByText('working')).toBeInTheDocument();
     expect(within(dialog).getByText(/s1a2b3c4 · stub/)).toBeInTheDocument();
     expect(within(dialog).getByText(/stub: answer quest abc123/)).toBeInTheDocument();
+  });
+
+  it('a retried quest shows its freshest attempt, never the failed first one', async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText(/s1a2b3c4 · stub/)).toBeInTheDocument();
+    expect(within(dialog).queryByText('failed')).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/s0f1r2s3/)).not.toBeInTheDocument();
+  });
+
+  it('a browser offers no stop — the control reaches a process, and only the desktop has one', async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    // The record renders (above); the control must not — a browser could only wish (D46 §6).
+    expect(within(dialog).getByText('working')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'stop session' })).not.toBeInTheDocument();
   });
 });

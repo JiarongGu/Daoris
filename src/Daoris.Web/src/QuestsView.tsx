@@ -5,8 +5,8 @@ import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions }
 import { useDriver, useStopSession } from './shell';
 import { ago, sittingDays } from './format';
 import {
-  Button, Card, CheckField, Drawer, EmptyState, Icon, PageHeader, Pill, SectionTitle,
-  SelectField, SkeletonRows, useErrorNotify,
+  Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
+  SectionTitle, SelectField, SkeletonRows, useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
 
@@ -37,11 +37,11 @@ const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '' };
  * door — and the acting happens in the detail drawer, where there is room to act deliberately.
  * Sitting time is the management signal, so a week of silence wears a mark.
  *
- * Publish and respond go through the same key-gated endpoints and the same `QuestExchange` judgement
- * as every other door, refusals surfaced verbatim — the service's sentence is the contract, so it is
- * never translated or rephrased here.
+ * Publish and respond go through the same endpoints and the same `QuestExchange` judgement as every
+ * other door, refusals surfaced verbatim — the service's sentence is the contract, so it is never
+ * translated or rephrased here.
  */
-export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'error') => void }) {
+export function QuestsView({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const [repository, setRepository] = useState(EVERYONE);
   const [includeClosed, setIncludeClosed] = useState(false);
@@ -58,7 +58,9 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
   const stop = useStopSession();
   const publish = usePublishQuest();
   const respond = useRespondQuest();
-  useErrorNotify(quests.error ?? registry.error, notify);
+  // Every query this view renders from, the arc's new ones included — a session surface or driver
+  // bridge that fails silently is indistinguishable from a family with no driver attached.
+  useErrorNotify(quests.error ?? registry.error ?? sessions.error ?? driver.error, notify);
 
   // The freshest attempt per quest: a retry is its own record, and the drawer shows where things
   // stand now, not the history (the service keeps that).
@@ -112,7 +114,7 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
 
   const card = (quest: Quest) => {
     const sat = sittingDays(quest.filed);
-    const tone = quest.status.toLowerCase() as 'open' | 'taken' | 'done' | 'declined';
+    const tone = QUEST_TONE[quest.status];
     const session = sessionFor.get(quest.id);
     return (
       <Card
@@ -216,7 +218,7 @@ export function QuestsView({ notify }: { notify: (text: string, kind?: 'ok' | 'e
           onClose={() => setDetail(null)}
           meta={
             <>
-              <Pill tone={detail.status.toLowerCase() as 'open' | 'taken' | 'done' | 'declined'}>
+              <Pill tone={QUEST_TONE[detail.status]}>
                 {t(`status.${detail.status}`)}
               </Pill>
               <span className="font-mono text-[0.72rem] text-ink-faint">#{detail.id}</span>

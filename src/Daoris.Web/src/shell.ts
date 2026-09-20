@@ -1,42 +1,42 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getBridge, isShenoraAvailable } from '@shenora/react';
+import { getBridge, useShenora } from '@shenora/react';
+import { keys } from './queries';
 
-// The shell's half of the platform (D46 §6). In a browser none of this exists — isShenoraAvailable()
-// is false, the query never runs, and every control gated on it stays unrendered. That is the design,
-// not a degradation: the controls act where a driver is attached, and only the desktop has one.
+// The shell's half of the platform (D46 §6). In a browser none of this exists — the bridge is absent,
+// the query never runs, and every control gated on it stays unrendered. That is the design, not a
+// degradation: the controls act where a driver is attached, and only the desktop has one.
 
-/** The driver's standing state, as the DAORIS.DRIVER module answers it. */
+/**
+ * The driver's standing state, as the page reads it. The DAORIS.DRIVER module answers more (its
+ * config path, cap, adapter, poll interval); the fields land here when a surface reads them.
+ */
 export type DriverState = {
-  configPath: string;
   drivable: string[];
   holds: string[];
-  cap: number;
-  adapter: string;
-  pollSeconds: number;
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
 };
 
-export const shellPresent = (): boolean => isShenoraAvailable();
-
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>
   getBridge().invoke<TData>('DAORIS.DRIVER', type, payload ? { payload } : {});
 
-export const driverKey = ['driver'] as const;
-
-export const useDriver = () =>
-  useQuery({
-    queryKey: driverKey,
+export const useDriver = () => {
+  // The same detection path ShellSignals uses — one answer to "is a shell here", not two that can
+  // drift. (The kit reads the bridge per render; in the desktop the bridge exists before the page.)
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.driver,
     queryFn: () => call<DriverState>('STATE'),
-    enabled: shellPresent(),
+    enabled: isAvailable,
   });
+};
 
 /** One mutation shape for the two toggles: edit the file, and the loop looks now, not at the poll. */
 function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (variables: TVariables) => call<DriverState>(type, variables),
-    onSuccess: (state) => client.setQueryData(driverKey, state),
+    onSuccess: (state) => client.setQueryData(keys.driver, state),
   });
 }
 
@@ -48,8 +48,8 @@ export const useStopSession = () => {
   return useMutation({
     mutationFn: (id: string) => call<{ stopped: boolean }>('STOP_SESSION', { id }),
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ['sessions'] });
-      void client.invalidateQueries({ queryKey: driverKey });
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.driver });
     },
   });
 };

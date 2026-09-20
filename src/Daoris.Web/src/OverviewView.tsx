@@ -2,8 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { useQuests, useRegistry, useRepositories } from './queries';
 import { ago, compact, sittingDays } from './format';
 import {
-  Card, CardHeader, Button, EmptyState, Icon, PageHeader, Pill, SkeletonRows, Tile, Tip,
-  useErrorNotify,
+  Card, CardHeader, Button, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
+  SkeletonRows, Tile, Tip, useErrorNotify,
 } from './ui';
 
 /**
@@ -17,7 +17,7 @@ import {
  */
 export function OverviewView({ onNavigate, notify }: {
   onNavigate: (tab: 'quests' | 'projects') => void;
-  notify: (text: string, kind?: 'ok' | 'error') => void;
+  notify: Notify;
 }) {
   const { t } = useTranslation();
   const repositories = useRepositories();
@@ -96,7 +96,7 @@ export function OverviewView({ onNavigate, notify }: {
                   onClick={() => onNavigate('quests')}
                   className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-[0.9rem] hover:bg-accent-soft"
                 >
-                  <Pill tone={quest.status.toLowerCase() as 'open' | 'taken'}>
+                  <Pill tone={QUEST_TONE[quest.status]}>
                     {t(`status.${quest.status}`)}
                   </Pill>
                   <span className="font-medium">{quest.title}</span>

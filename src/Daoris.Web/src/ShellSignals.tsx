@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { driverKey } from './shell';
+import { keys } from './queries';
+import type { Notify } from './ui';
 
 type Tick = { events?: string[] };
 
@@ -11,7 +12,7 @@ type Tick = { events?: string[] };
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
-export function ShellSignals({ notify }: { notify: (text: string, kind?: 'ok' | 'error') => void }) {
+export function ShellSignals({ notify }: { notify: Notify }) {
   const { isAvailable, bridge } = useShenora();
   const client = useQueryClient();
 
@@ -26,9 +27,9 @@ export function ShellSignals({ notify }: { notify: (text: string, kind?: 'ok' | 
   useShenoraEvent<Tick>('DAORIS', 'DRIVER_TICK', (tick) => {
     // The driver's own sentences, verbatim — like every system sentence in this UI.
     for (const line of tick?.events ?? []) notify(line);
-    void client.invalidateQueries({ queryKey: ['sessions'] });
-    void client.invalidateQueries({ queryKey: ['quests'] });
-    void client.invalidateQueries({ queryKey: driverKey });
+    void client.invalidateQueries({ queryKey: keys.allSessions });
+    void client.invalidateQueries({ queryKey: keys.allQuests });
+    void client.invalidateQueries({ queryKey: keys.driver });
   });
 
   useShenoraEvent<{ message?: string }>('DAORIS', 'DRIVER_ERROR', (error) => {

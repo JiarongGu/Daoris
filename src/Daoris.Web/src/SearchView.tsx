@@ -1,35 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from './api';
-import { CheckField, PageHeader, useErrorNotify } from './ui';
+import { useSearch } from './queries';
+import { CheckField, type Notify, PageHeader, useErrorNotify } from './ui';
+import { useDebounced } from './lib/useDebounced';
 
 /**
  * The supporting view. Useful once you know what you are looking for — which is exactly the case
  * convergence cannot help with, and vice versa.
  */
-export function SearchView({ onOpen, onError }: {
+export function SearchView({ onOpen, notify }: {
   onOpen: (id: string) => void;
-  onError: (message: string) => void;
+  notify: Notify;
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [localOnly, setLocalOnly] = useState(true);
-  const [debounced, setDebounced] = useState('');
+  const debounced = useDebounced(query, 250).trim();
 
-  useEffect(() => {
-    // Debounced: every keystroke is an index query, and the early ones are answers to a question the
-    // person had not finished asking.
-    const timer = setTimeout(() => setDebounced(query.trim()), 250);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const hits = useQuery({
-    queryKey: ['search', debounced, localOnly],
-    queryFn: ({ signal }) => api.search(debounced, localOnly, signal),
-    enabled: debounced.length >= 2,
-  });
-  useErrorNotify(hits.error, onError);
+  const hits = useSearch(debounced, localOnly);
+  useErrorNotify(hits.error, notify);
 
   return (
     <section>

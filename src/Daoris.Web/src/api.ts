@@ -32,8 +32,6 @@ export type QuestAction = { quest: Quest; message: string };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
   owns: string[]; accepts: string[]; packs: string[]; entries: number;
-  /** Machine-local (D46): present only when the service answers a caller on its own machine. */
-  root?: string;
 };
 export type SessionState =
   | 'queued' | 'starting' | 'working' | 'awaiting-person'
@@ -41,7 +39,12 @@ export type SessionState =
 /** A driver-started session's RECORD (D46) — the process lives on the driving machine, never here. */
 export type Session = {
   id: string; quest: string; repository: string; adapter: string; state: SessionState;
-  note?: string; evidence?: string; transcript?: string; created: string; updated: string;
+  note?: string; evidence?: string; created: string; updated: string;
+};
+
+/** What one re-scan changed — and, when the semantic half failed, the service's own sentence. */
+export type RefreshReport = {
+  entries: number; repositories: number; withheld: number; semanticError?: string;
 };
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
@@ -63,7 +66,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
   if (!response.ok) {
     // The service's refusal sentence IS the contract — a publish to a non-adopter, a decline with no
-    // reason, a keyed deployment refusing a browser write. It reaches the person verbatim (D38).
+    // reason, a respond racing a take that already won. It reaches the person verbatim (D38).
     const parsed = await response.json().catch(() => null);
     throw new Error(parsed?.error ?? `${response.status} ${response.statusText}`);
   }
@@ -96,9 +99,7 @@ export const api = {
     post<QuestAction>('/api/quests', quest),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
-  refresh: async () => {
-    const response = await fetch('/api/refresh', { method: 'POST' });
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-    return response.json();
-  },
+  // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
+  // not scanned — reaches the person as the sentence, never as a bare status code.
+  refresh: () => post<RefreshReport>('/api/refresh', {}),
 };

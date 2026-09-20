@@ -66,7 +66,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
   with the timeout and `NO_REMOTE` always applied.
 - [ ] **The claude-code layout is still hardcoded in `analyze.ts`/`twins.ts`** beside the harness
   descriptor that owns it — route the tier names, target, and index filename through the descriptor.
-- [ ] Web: status→tone casts copy-pasted three times (one narrowed wrongly); invalidations bypass the
+- [x] Web: status→tone casts copy-pasted three times (one narrowed wrongly); invalidations bypass the
   `keys` factory; a hand-rolled entry fetch beside a file of TanStack hooks; `refresh` skips the `post`
   helper and loses the refusal sentence; debounce duplicated in two views.
 
@@ -81,7 +81,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
   unused imports in `config.ts` and six test files (`noUnusedLocals` now on); three references to
   `.mjs` modules that became `.ts` (one inside a user-facing error message); `stage-package.mjs`'s
   shadowing rationale describing a hazard `canon.ts` closed.
-- [ ] Web: the "key-gated endpoints" sentence the README fix missed in `QuestsView.tsx`; the "keyed
+- [x] Web: the "key-gated endpoints" sentence the README fix missed in `QuestsView.tsx`; the "keyed
   deployment refusing a browser write" example (a shared deployment serves no page); dead type
   re-exports; an unused icon; two unused i18n keys in both catalogs; four `DriverState` fields the page
   never reads.
@@ -123,7 +123,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
   payload asserts no machine path survives.
 - [ ] The ledger answers `UnknownState` for `"99"` (with the parse fix); a shared deployment never
   scans (with the back-door fix).
-- [ ] Web: stop is absent in a browser (the arc's central read-only claim, unasserted in both loops);
+- [x] Web: stop is absent in a browser (the arc's central read-only claim, unasserted in both loops);
   `SET_HOLD` reaches the IPC module; the freshest-attempt-per-quest reduction with two records.
 
 ## Deferred, with reasons
@@ -140,3 +140,9 @@ commits; unchecked items are deliberately deferred with the reason inline.
   otherwise it stays a noted collision hazard with the family rehearsal.
 - **`daoris declare` as a command** — `declare()` is deleted rather than wired; a command nobody asked
   for is doctrine nobody chose.
+- **Wiring the page to the host's `NUDGE` (start-now)** — the host verb exists and the driver's
+  `Nudge()` is real, but no page surface calls it yet; wiring it is a small feature (publish →
+  look-now), not a cleanup, so it stays deferred and the desktop brief says so honestly.
+- **Storybook stories for the session states and driver controls** — the arc's components have no
+  stories; the README's "every component state" claim is softened instead, and the stories arrive with
+  the next design pass.
