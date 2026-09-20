@@ -88,6 +88,37 @@ Set by the owner with §2, and binding on every WSP/SES item — two properties 
 *from one machine* is a domain that wants splitting — the same answer the driver gives to parallel
 sessions in one tree. (Cross-workspace *asking* is deliberately out of scope; see §10.)
 
+## 2b. Management parity: two surfaces, one truth
+
+Set by the owner (2026-09-20): **everything Daoris asks a person to manage is properly manageable in
+the desktop app or via the `daoris` CLI** — no configuration whose only interface is hand-editing a
+JSON file, and no capability stranded on a machine with no screen (a headless server running
+`daoris-driver` is "just another machine" — D47 — and must be settable from a terminal). The shape
+that makes parity cheap is one the driver already proved: **the files and the doors are the API; the
+surfaces are editors over them.** `driver.json` re-read every tick is the pattern — the desktop's
+checkboxes and a CLI verb edit the same file the person could edit by hand, and hand-editing keeps
+working because the file, not the surface, is the truth.
+
+| Managed thing | The truth | CLI | Desktop |
+|---|---|---|---|
+| Registration + workspace wiring | the store, via the doors | `daoris connect [--workspace]`; a retire verb beside it | Projects add / update / remove (§7) |
+| The remotes map | `~/.daoris/remotes.json` | `daoris remote list\|add\|remove` (file-local, offline; the key prompted or from env, echoed redacted, never tracked) | a settings surface over the same file |
+| Driver choices (drivable, holds, cap) | `~/.daoris/driver.json` | `daoris driver ...` (file-local, offline) | the existing controls (D46 §6) |
+| Harness toolchain + credential profiles | the profile directories; each harness's own store | `daoris harness list\|install\|update\|login\|profile ...` (spawns the harness's own tooling; no secret touched) | the roster (interactive design §4) |
+| Server keys | the deployment's store | stays the **server binary's** console (`keys mint\|...`) — an operator act on the deployment, deliberately not a client verb | shown, never minted, except for a host the shell itself owns |
+| Quests and sessions | the store, via the doors | deliberately none (D31 as amended) — parity is satisfied by the platform and MCP | the platform, as today |
+
+**What this does to the CLI's offline discipline — deliberately, and structurally.** The guarantee was
+"only `connect.ts` may contain a network primitive"; it becomes "**only the named management modules
+may**", with the load-bearing half unchanged and still tested: *nothing `check` — or any doctrine
+command — transitively imports may reach a network primitive.* Doctrine commands stay offline by
+construction; management commands are the opt-in, loopback-talking class `connect` already founded.
+Most of the new verbs need no network at all — they edit machine-local files — and none of this
+touches the published package's zero-dependency guarantee (spawning a harness's installer is
+`child_process`, not a dependency). The command count grows past nine; pre-1.0, commands may be added
+without ceremony (the v0.1 contract's own words), and `status` grows to report the machine's wiring
+alongside the manifest's declarations when asked (`status --machine`, a local read).
+
 ## 3. The registry becomes managed; the scan becomes an import
 
 Today the family is discovered by scanning a root folder, and the registry is partly derived from that

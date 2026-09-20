@@ -87,9 +87,9 @@ this backlog and granted structural redesign (nothing is deployed); the design s
 two contracts and eight build items. **Start at WSP1.**
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
-  (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48/D49** (the
-  direction and the argued rejections), with D45–D47 behind them for the driver and remote these
-  extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
+  (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
+  direction, the argued rejections, and management parity — D50 binds every item), with D45–D47
+  behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   mirror-down feed-back and shared-scan fixes — WSP4 builds directly on those lessons).
 - **The build order is stated at the top of the backlog** — WSP1 is the foundation; do not start WSP3/
   WSP4 before it. Schema changes rebuild rather than migrate (the store's own rule, and nothing is
@@ -107,10 +107,12 @@ two contracts and eight build items. **Start at WSP1.**
 
 ## Backlog
 
-**The next arc: workspaces and the interactive surface (D48/D49, designed 2026-09-20).** The owner's
-direction, designed under the standing redesign grant — the two contracts are
+**The next arc: workspaces and the interactive surface (D48/D49, designed 2026-09-20; D50 binds every
+item).** The owner's direction, designed under the standing redesign grant — the two contracts are
 `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`; read them before
-building anything below. Build order: WSP1 first (everything else stands on it), then WSP2–WSP4 in
+building anything below. **D50 — management parity — applies across the arc**: everything a person
+manages gets a proper surface in the desktop or the `daoris` CLI (files and doors are the truth,
+surfaces are editors; the offline-discipline test evolves to a named management class — design §2b). Build order: WSP1 first (everything else stands on it), then WSP2–WSP4 in
 order; SES1→SES2 can interleave after WSP1; SES3 and CANON6 are independent. Each item is one
 session-sized landing, TDD, gates green, moved to the archive on completion.
 
@@ -127,13 +129,16 @@ session-sized landing, TDD, gates green, moved to the archive on completion.
   declaration, machine-local path); the folder scan becomes `import` (first run imports the old root,
   once, and says so); refresh reads registered paths and names absences; the desktop's add/update/
   remove over the loopback host (registration lifecycle only — never deletes files, doctrine
-  unwritable, manifest edits land as uncommitted diffs). Design §3/§7.
+  unwritable, manifest edits land as uncommitted diffs); CLI parity (D50): a retire verb beside
+  `connect`, and `import` callable from the terminal. Design §3/§7/§2b.
 
 - [ ] **WSP3 — remotes become a map.** `~/.daoris/remotes.json` (workspace → url/key; env pair kept
   for one workspace via `DAORIS_REMOTE_WORKSPACE`, both twins' test tables moving together); the sync
   loop runs per workspace; the shared host gains its `DAORIS_WORKSPACE` identity and refuses feeds/
-  registrations naming another, plainly; the quest relay resolves its remote by the quest's workspace.
-  Design §5.
+  registrations naming another, plainly; the quest relay resolves its remote by the quest's workspace;
+  CLI parity (D50): `daoris remote list|add|remove` over the same file, offline, key prompted or from
+  env and echoed redacted, plus `status --machine` reporting the wiring; the desktop's settings
+  surface edits the same file. Design §5/§2b.
 
 - [ ] **WSP4 — knowledge sync semantics.** Feeds carry git provenance stamped by the driver (commit,
   committedAt, branch; `WorkingTree` reads HEAD); default-branch-only knowledge (records/quests travel
@@ -157,8 +162,10 @@ session-sized landing, TDD, gates green, moved to the archive on completion.
   through the console; **credential profiles** — named, isolated harness config homes selected at
   spawn via the environment seam, machine default per harness, optional default per workspace,
   per-session picker; Daoris stores directories and names, never secrets; the record carries harness
-  version + profile name at spawn; spawn-on-missing and spawn-on-logged-out refuse naming the action.
-  Interactive design §4.
+  version + profile name at spawn; spawn-on-missing and spawn-on-logged-out refuse naming the action;
+  CLI parity (D50): `daoris harness list|install|update|login|profile ...` and `daoris driver ...`
+  (drivable/hold/cap over `driver.json`) — a headless machine sets all of this from the terminal.
+  Interactive design §4; workspace design §2b.
 
 - [ ] **CANON6 — doctrine must not hard-require Daoris (coexistence, D48).** Audit the 8 core rules
   for instructions only Daoris can perform (the known case: `repository-owns-its-work`'s "publish a

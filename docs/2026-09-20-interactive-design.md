@@ -79,6 +79,11 @@ memory. The toolchain manager makes it Daoris's job — **explicitly, never auto
 - **Detect freely, act on request.** Each adapter gains a `Probe` — locate the binary, report its
   version (`claude --version` etc.) — run at driver startup and on demand; the platform shows the
   roster: harness, version, present/absent. Detection is free and read-only.
+- **Two surfaces, one truth** (management parity — workspace design §2b): everything here is equally
+  manageable from a terminal — `daoris harness list|install|update|login|profile ...` — because a
+  headless machine running `daoris-driver` has no roster page and still needs its harnesses and
+  profiles set up. Both surfaces do the same thing: spawn the harness's own tooling into the right
+  profile home; neither holds a secret.
 - **Install and update are the person's click**, per harness, using that harness's own official
   mechanism (an adapter obligation, beside spawn: `claude-code` via its documented installer/npm
   package, `codex` via its own). Output streams through §2's console (it is a process like any other).

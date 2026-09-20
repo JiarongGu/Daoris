@@ -72,9 +72,9 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D49) and why each was made. **D45 is the
-  direction: Daoris drives** — read it before planning anything; **D48/D49 are the next arc**
-  (workspaces; the interactive surface), designed and build-ready.
+- `docs/DECISIONS.md` — the numbered decision log (D1–D50) and why each was made. **D45 is the
+  direction: Daoris drives** — read it before planning anything; **D48–D50 are the next arc**
+  (workspaces; the interactive surface; management parity), designed and build-ready.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

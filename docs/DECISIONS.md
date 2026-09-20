@@ -1421,3 +1421,26 @@ from the platform, and Daoris installs and updates those harness CLIs itself. Th
 **What this preserves.** Driving stays additive (D46): outside sessions, hand work, and the browser's
 read-only view are untouched. The service stays spawn-free and model-free; processes and streams stay
 with the driver; D31/D37/D38's boundaries do not move.
+
+## D50 — Everything is manageable from the desktop or the CLI; files are the API, surfaces are editors (2026-09-20)
+
+**Decision.** Set by the owner, 2026-09-20, cross-cutting D48/D49: every configuration Daoris asks a
+person to manage has a proper surface — the desktop app or the `daoris` CLI — with no capability whose
+only interface is hand-editing JSON, and none stranded on a machine with no screen (a headless server
+running `daoris-driver` is just another machine, D47, and must be settable from a terminal). The
+mechanism is the pattern the driver already proved with `driver.json`: **the machine-local files and
+the service's doors are the truth; the CLI and the desktop are two editors over the same truth**, and
+hand-editing keeps working because the file, not the surface, is authoritative. The command map is
+workspace design §2b: `daoris remote|driver|harness` families (file-local or spawning the harness's
+own tooling — mostly no network at all), registration verbs beside `connect`, `status --machine`.
+
+**The one structural consequence, made deliberately:** the CLI's offline guarantee evolves from "only
+`connect.ts` may contain a network primitive" to "only the named management modules may" — with the
+half that matters unchanged and still held by the same transitive-import test: **nothing a doctrine
+command reaches may touch the network.** `check`, `sync`, `upstream` and the rest stay offline by
+construction; the management class is opt-in and loopback-talking, as `connect` always was. The
+zero-dependency guarantee is untouched.
+
+**Boundaries that do not move:** server key minting stays the deployment console's operator act, never
+a client verb; quests stay out of the CLI (D31 as amended) — parity there is satisfied by the platform
+and MCP; doctrine stays unwritable from every management surface.
