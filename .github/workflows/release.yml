@@ -178,6 +178,17 @@ jobs:
       - name: Verify gate
         run: npm run verify
 
+      # The two .NET suites this job used to skip entirely. The rehearsals below drive the service and
+      # the driver end to end, which is why the gap survived a release rehearsal and eight landings —
+      # an end-to-end pass is not a substitute for the unit judgement underneath it, and a store rule
+      # or a payload guard can break without any rehearsal noticing. Both target plain net10.0, so
+      # there was never a portability reason either.
+      - name: Service gate
+        run: dotnet test src/Daoris.Service --nologo
+
+      - name: Driver gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --nologo
+
       - name: Release rehearsal
         run: npm run rehearse
 

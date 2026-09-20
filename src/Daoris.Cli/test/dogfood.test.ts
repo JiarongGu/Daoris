@@ -121,6 +121,36 @@ test('no canon file instructs a service-only action without its tool-absent path
   }
 });
 
+/**
+ * The declared gates and the release workflow are two lists that must agree — and they silently did
+ * not.
+ *
+ * `daoris.gates.json` declared `dotnet test src/Daoris.Service` (248 tests) and the workflow never ran
+ * it; the driver's 130 were in neither. What hid it for eight landings is the most useful part: the
+ * rehearsals drive the service AND the driver end to end, so the workflow looked thorough and every
+ * release rehearsal passed. **An end-to-end pass is not a substitute for the judgement underneath
+ * it** — a store rule or a payload guard can break without any rehearsal noticing, which is precisely
+ * what those unit suites exist to catch.
+ *
+ * Substring rather than exact match, because the workflow appends runner flags (`--nologo`). One
+ * direction only: the workflow legitimately runs more than the gates (both rehearsals), and a test
+ * that forbade that would be wrong about the thing it is guarding.
+ */
+test('every declared gate is actually run by the release workflow', () => {
+  const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
+    gates: { name: string; run: string }[];
+  };
+  const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'));
+
+  assert.ok(gates.gates.length >= 4, 'the gate list emptied — that is not a pass');
+  for (const gate of gates.gates) {
+    assert.ok(
+      workflow.includes(gate.run),
+      `the '${gate.name}' gate is declared in daoris.gates.json but the release workflow never runs `
+      + `it: ${gate.run}`);
+  }
+});
+
 test('daoris holds its own doctrine and checks clean', () => {
   assert.equal(existsSync(join(repoRoot, 'daoris.json')), true, 'run: node bin/daoris.mjs init');
   const lock = readLock(repoRoot);

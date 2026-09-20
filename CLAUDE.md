@@ -189,10 +189,14 @@ Run every command from the **workspace root**, not from a package directory.
   browser still owns what the RECORD shows and what must be ABSENT; the controls belong to the vitest
   inner loop over a mocked bridge (`docs/2026-09-19-frontend-architecture.md` §4).
 - **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only,
-  with `dry_run` defaulting to true; it runs all four gates on Linux before publishing, and builds and
-  tests the devkit and service binaries on Linux, Windows and macOS. Nothing runs on push — **a gate
+  with `dry_run` defaulting to true; it runs **every gate `daoris.gates.json` declares** plus both
+  rehearsals on Linux before publishing, and builds the service binaries and builds-and-tests the
+  devkit on Linux, Windows and macOS. Nothing runs on push — **a gate
   you did not run locally has not been run.** Development happens on Windows and the release gates on
-  Linux, which is exactly the gap that hid D25's line-ending assumption.
+  Linux, which is exactly the gap that hid D25's line-ending assumption. **The declared set and the
+  workflow are two lists that must agree**, and they silently did not: the service's 248 tests were
+  declared and never run, and the driver's 130 were in neither. A rehearsal driving the same code end
+  to end is what hid it — and is not a substitute for the judgement underneath.
 - **Changing what `sync` does with a file? Read `docs/DECISIONS.md` D19 first.** That state space is
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - `node --test` — tests only.
