@@ -8,7 +8,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
 
 ## Bugs the gates had not caught
 
-- [ ] **The mirror-down feeds itself back up, and an empty entries feed is a delete.** `RemoteSync`'s
+- [x] **The mirror-down feeds itself back up, and an empty entries feed is a delete.** `RemoteSync`'s
   `Joined()` selects on the `joined` flag alone (`src/Daoris.Desktop/Daoris.Desktop.Driver/RemoteSync.cs:103`),
   and mirror-down writes foreign registrations into the local registry carrying that flag. On the next
   tick the feed-up loop includes the teammate's repository, this machine has no checkout, `/api/entries`

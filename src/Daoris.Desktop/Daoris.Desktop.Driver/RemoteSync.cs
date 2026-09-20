@@ -99,7 +99,14 @@ public static class RemoteSyncPayloads
         return names;
     }
 
-    /// <summary>The joined repositories in a local registry answer — the only ones a remote may hear of.</summary>
+    /// <summary>
+    /// The joined repositories in a local registry answer — the only ones a remote may hear of FROM
+    /// here. Joined alone is not enough: mirrored-down teammate rows carry the flag too, and feeding
+    /// one back up would speak for a repository this machine cannot see — worse, its empty entries
+    /// feed is a replacement, wiping the teammate's shared knowledge from a machine that never had it.
+    /// The root is the checkout and the checkout is the authority (D47 §5), so a root is required —
+    /// and the local host answers roots to this loopback caller, so a rootless row IS a foreign one.
+    /// </summary>
     public static IReadOnlyList<JoinedRepository> Joined(string registryJson)
     {
         using var document = JsonDocument.Parse(registryJson);
@@ -107,6 +114,7 @@ public static class RemoteSyncPayloads
         foreach (var repo in document.RootElement.EnumerateArray())
         {
             if (!(repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True)) continue;
+            if (Text(repo, "root") is not { Length: > 0 }) continue;
 
             joined.Add(new JoinedRepository(
                 Text(repo, "repository") ?? "",

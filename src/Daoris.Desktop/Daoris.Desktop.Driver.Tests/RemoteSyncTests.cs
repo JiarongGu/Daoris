@@ -20,7 +20,9 @@ public sealed class RemoteSyncTests
             "root": "C:/somewhere/private/Quiet", "joined": true, "sharesKnowledge": false },
           { "repository": "Homebody", "adopted": true, "registered": true, "summary": "Stays local.",
             "owns": [], "accepts": [], "packs": [], "entries": 0,
-            "root": "C:/somewhere/private/Homebody", "joined": false, "sharesKnowledge": false }
+            "root": "C:/somewhere/private/Homebody", "joined": false, "sharesKnowledge": false },
+          { "repository": "Teammate", "adopted": true, "registered": true, "summary": "Mirrored down.",
+            "owns": [], "accepts": [], "packs": [], "entries": 2, "joined": true, "sharesKnowledge": true }
         ]
         """;
 
@@ -32,6 +34,20 @@ public sealed class RemoteSyncTests
         Assert.Equal(["Shared", "Quiet"], joined.Select(r => r.Repository));
         Assert.True(joined[0].SharesKnowledge);
         Assert.False(joined[1].SharesKnowledge);
+    }
+
+    /// <summary>
+    /// A mirrored-down teammate row is joined and rootless — this machine holds no checkout of it, so
+    /// nothing about it may feed UP from here. Without this, the next tick after a mirror would feed
+    /// the teammate's repository from a machine that cannot see it — and an empty entries feed is a
+    /// replacement, so their shared knowledge on the remote would be wiped by a machine that never had
+    /// it. The root is the checkout, and the checkout is the authority (D47 §5).
+    /// </summary>
+    [Fact]
+    public void A_mirrored_down_row_never_feeds_back_up()
+    {
+        Assert.DoesNotContain(
+            "Teammate", RemoteSyncPayloads.Joined(RegistryJson).Select(r => r.Repository));
     }
 
     /// <summary>
