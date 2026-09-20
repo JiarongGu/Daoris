@@ -100,6 +100,15 @@ and the family is an explicit list that `connect`, `retire` and `import` maintai
 - **The build order is stated at the top of the backlog** — WSP1 and WSP2 are in, so WSP3 is next and
   WSP4 follows it. Schema changes rebuild rather than migrate (the store's own rule, and nothing is
   deployed); WSP1 bumped the entry store to schema 2 on exactly that basis.
+- **WSP3 specifically:** read workspace design **§5** (one shared deployment serves one workspace; the
+  remotes map) and **§2b** (the `daoris remote` family and `status --machine`) before touching
+  anything. The known trap is named in the item itself — `RemoteConfig` and `RemoteTarget` are twins
+  and **move together with their test tables**; the whole-pair-or-nothing env rule is unchanged, and
+  `DAORIS_REMOTE_WORKSPACE` is what names which workspace the env pair serves. The new CLI verbs are
+  file-local and offline: they edit `~/.daoris/remotes.json` and must NOT reach `service.ts` (see the
+  conventions note in `CLAUDE.md` about keeping the network in one module).
+- **The last two landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
+  (WSP1) and `7333f74` (WSP2). Both are gate-green; `git log` is the reviewable record.
 - **What WSP1/WSP2 left for their successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle and manages it, but no view filters by one yet), and
   per-workspace remotes — until WSP3 a shared host still serves one circle because it holds one store,
