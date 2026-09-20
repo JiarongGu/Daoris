@@ -142,9 +142,10 @@ nothing is pushed or published, and a release is still blocked on REH1.
   2 on exactly that basis, while the registration store adds columns, because a registration that
   vanished on an upgrade is the failure that store exists to prevent — and the session store does the
   same, for the same reason (SES3 added two).
-- **The arc's eight landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
+- **The arc's landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
   (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4), `15ba288` (SES1), `a965feb`
-  (SES2), `49da224` (SES3, with `aa24ea7` closing its outer loops) and `2487ec8` (CANON6). All
+  (SES2), `49da224` (SES3, with `aa24ea7` closing its outer loops) and `2487ec8` (CANON6), then the
+  review: `6f45276` (the gate list) and `beaab13` (the shell's head). All
   gate-green; `git log` is the reviewable record.
 - **What the arc left for its successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
