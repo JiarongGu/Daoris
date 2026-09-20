@@ -109,8 +109,8 @@ one that stands. **Start at SES2** (chat sessions — it builds directly on SES1
   2 on exactly that basis, while the registration store adds columns, because a registration that
   vanished on an upgrade is the failure that store exists to prevent.
 - **The last five landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
-  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4) and SES1's. All gate-green; `git log`
-  is the reviewable record.
+  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4) and `15ba288` (SES1). All gate-green;
+  `git log` is the reviewable record.
 - **What the WSP arc left for its successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
   the wiring, but no view filters by one yet).
