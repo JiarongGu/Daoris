@@ -22,8 +22,10 @@ one deployment per circle — and a feed carries the commit it speaks for, so th
 is the one that stands. **All three SES items have landed too**: a session's console streams live, a
 person can hold a conversation with an agent in any repository, and Daoris manages the harnesses those
 sessions run on — installing and updating them through their own mechanisms, and holding many accounts
-per harness as named credential profiles without ever touching a credential. **D49 is complete; one
-item of the arc remains — canon coexistence (CANON6).**
+per harness as named credential profiles without ever touching a credential. And **CANON6 has landed**:
+the canon instructs exactly one thing that needs a service running — publishing a quest — and it now
+names the alternative in the same breath, so an adopted repository stays workable for contributors who
+do not run Daoris. **The whole D48/D49/D50 arc is built; the backlog holds only held items.**
 
 ## State
 
@@ -33,8 +35,8 @@ item of the arc remains — canon coexistence (CANON6).**
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
-**23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
-an index row, and the answer is splitting, not raising (D28).
+**23,862 of 24,000 bytes** — 138 bytes of headroom after CANON6's split, still far less than any new
+rule, so the next canon addition fails the gate and the answer is splitting, not raising (D28).
 
 **The remote exists** (D47/DRV5, built 2026-09-20): the same HTTP host in shared mode gates every
 route with per-person per-machine minted keys (`keys mint|list|revoke`, hashed with an audit prefix,
@@ -90,18 +92,23 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-**The arc is nearly done: workspaces and the interactive surface (D48/D49, 2026-09-20, each amended
+**The arc is done: workspaces and the interactive surface (D48/D49/D50, 2026-09-20, each amended
 the same day on the owner's corrections).** The owner set the direction in this backlog and granted
 structural redesign (nothing is deployed); the design session turned it into two contracts and eight
-build items, of which **seven landed 2026-09-20** — all four WSP items and all three SES items.
-**The workspace arc is complete**: a
+build items, and **all eight landed 2026-09-20**.
+**The workspace arc**: a
 registry row carries the workspace, every cross-repository answer is scoped by it, the family is an
 explicit list that `connect`, `retire` and `import` maintain, each circle syncs with the one deployment
 its own entry names, and a feed carries the commit it speaks for so the newest canonical view is the
-one that stands. **D49 is complete too**: the console streams, a conversation is a session, and the
+one that stands. **The interactive arc**: the console streams, a conversation is a session, and the
 harnesses those sessions run on are Daoris's to find, install, update and hold many accounts for —
-without ever touching a credential. **Start at CANON6**, the one item left in the arc (coexistence,
-independent of everything and constrained by the byte budget).
+without ever touching a credential. **And coexistence**: the canon no longer instructs anything a
+contributor without Daoris cannot do.
+
+**There is no next item in the arc.** What remains in the backlog is four **held** items, each waiting
+on an external trigger that has not arrived — do not pick one up until it has. **The next direction is
+the owner's to set**, and the honest summary for them is: everything designed is built and gate-proven,
+nothing is pushed or published, and a release is still blocked on REH1.
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -109,15 +116,13 @@ independent of everything and constrained by the byte budget).
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
-- **CANON6 specifically** (small, and constrained): read workspace design **§2a**. It is an audit of
-  the 8 core rules for instructions only Daoris can perform — the known case is
-  `repository-owns-its-work`'s "publish a quest" — each gaining the tool-absent path in the same
-  breath, plus the principle in `.claude/knowledge/canon-authoring.md`. **The budget is the whole
-  difficulty**: the always-loaded core is 12 bytes from its limit, so a carve-out that does not fit is
-  a D28 split of principle from detail, never a raised limit. A canon change must re-sync `examples/`
-  in the same commit, and `npm run rehearse:family` enforces that.
-- **The build order is stated at the top of the backlog** — every WSP and SES item is in, so CANON6
-  is the only one left in the arc. Schema changes rebuild rather
+- **Touching the canon? Read `.claude/knowledge/canon-authoring.md` first**, and know two things
+  CANON6 settled. The coexistence test is **file or service**, never family vocabulary: what `sync`
+  writes is committed, so a generated index, a lock file and every vendored rule survive the tool's
+  absence — only a *service* (publishing a quest) is a dead end without Daoris, and it is the only
+  one. And a canon change **must re-sync `examples/` in the same commit**: `npm run rehearse:family`
+  fails on an uncommitted example diff, which reads as a broken gate and is the gate working.
+- **The build order is stated at the top of the backlog** — every item is in. Schema changes rebuild rather
   than migrate (the store's own rule, and nothing is deployed); WSP1 bumped the entry store to schema
   2 on exactly that basis, while the registration store adds columns, because a registration that
   vanished on an upgrade is the failure that store exists to prevent — and the session store does the
@@ -182,14 +187,6 @@ Build order: **every WSP item, SES1 and SES2 are done** (2026-09-20, in the arch
 is SES3 and CANON6, independent of each other. Each item is one session-sized landing, TDD, gates
 green, moved to the archive on completion.
 
-- [ ] **CANON6 — doctrine must not hard-require Daoris (coexistence, D48).** Audit the 8 core rules
-  for instructions only Daoris can perform (the known case: `repository-owns-its-work`'s "publish a
-  quest"); every named mechanism gains the tool-absent path in the same breath ("…and file the request
-  with that repository's owner where the quest system does not exist"); the principle lands in
-  `.claude/knowledge/canon-authoring.md`. Under the byte budget's discipline — a carve-out that does
-  not fit is a D28 split, not a raised limit — and a canon change re-syncs `examples/` in the same
-  commit, as ever. Workspace design §2a.
-
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken
   precondition rather than a flaky assertion. Both times it ran straight after canon files were edited
@@ -204,8 +201,9 @@ green, moved to the archive on completion.
   carries the rule and the gate; Daoris now carries the same gate (`scripts/i18n-check.mjs`, adopted
   from it deliberately — D42). Two repositories, one lesson: a missing translation "works" in English
   and is discovered by the first reader it fails. Held rather than written because the always-loaded
-  core is 12 bytes from its budget — even an index row fails the gate — so canonizing waits on the
-  D28-shaped split of principle from detail, or lands as pack knowledge for web repositories.
+  core has **138 bytes** of room (CANON6 freed 126 of them) and any new rule is an order of magnitude
+  larger — so canonizing still waits on a D28-shaped split of principle from detail, or lands as pack
+  knowledge for web repositories, which is where it most likely belongs anyway.
 
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until

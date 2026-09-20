@@ -81,6 +81,46 @@ test('no canon file names a private sibling project or a machine path', () => {
   }
 });
 
+/**
+ * Doctrine must not hard-require the tool that shipped it (D48 §2a, CANON6).
+ *
+ * An adopted repository stays fully workable for contributors who do not run Daoris — their agents
+ * included, because those agents load the same vendored markdown. Almost everything the canon names
+ * survives that: `sync` COMMITS what it writes, so a generated index, a lock file and a vendored rule
+ * are all still there for someone who never installed anything.
+ *
+ * A **service** is the exception, and the only one: publishing a quest needs something running. A rule
+ * that says "publish a quest" and stops reads as a dead end to exactly the reader who cannot, so it
+ * must name the tool-absent path in the same breath — the principle is canonical, the mechanism
+ * degrades.
+ *
+ * This fails silently without a check, which is why there is one: nothing breaks, no gate goes red,
+ * and a contributor's agent simply has nothing to do when it reaches that line.
+ */
+test('no canon file instructs a service-only action without its tool-absent path', () => {
+  const canon = readCanon(join(repoRoot, 'canon'));
+  // The one service-shaped mechanism the canon names. Deliberately not a broad vocabulary scan: the
+  // audit that wrote this rule first "fixed" a rule naming the generated index, which needed nothing,
+  // because it matched on family words instead of on what actually needs a process running.
+  const serviceOnly = /\bquests?\b/i;
+  // The carve-out, in any of the shapes it is reasonable to write. A rewording that drops all three
+  // fails here — a loud false positive, which is the right trade for a guarantee that is otherwise
+  // invisible, and it forces the next author to decide rather than drift.
+  const degrades = /where (?:none|it) (?:does|exists)|where none does not|where the quest system does not/i;
+
+  for (const pack of canon.packs.values()) {
+    for (const file of pack.files) {
+      const text = readText(join(repoRoot, 'canon', file.source));
+      if (!serviceOnly.test(text)) continue;
+
+      assert.ok(
+        degrades.test(text),
+        `${file.source} instructs a quest without naming what to do where no quest system exists. `
+        + 'Doctrine must not hard-require Daoris (D48 §2a) — name the alternative in the same breath.');
+    }
+  }
+});
+
 test('daoris holds its own doctrine and checks clean', () => {
   assert.equal(existsSync(join(repoRoot, 'daoris.json')), true, 'run: node bin/daoris.mjs init');
   const lock = readLock(repoRoot);

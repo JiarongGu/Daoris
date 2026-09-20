@@ -45,8 +45,9 @@ applies most where the action feels smallest.
 
 ## How to apply
 
-- **Never write into another repository.** Publish a quest. There is no case where writing across is the
-  answer, because the quest system is the answer.
+- **Never write into another repository.** Publish the request — a quest where a request system exists,
+  a message to that repository's owner where none does. There is no case where writing across is the
+  answer, because the request is.
 - **If you have already written, stop and report it.** Say what you touched and where. Do not undo it —
   the owner can, with context you do not have, and losing their work while tidying is the realistic
   outcome of trying.

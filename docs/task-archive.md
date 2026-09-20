@@ -1226,6 +1226,53 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## CANON6 — doctrine must not hard-require Daoris (2026-09-20)
+
+> **CANON6 — doctrine must not hard-require Daoris (coexistence, D48).** Audit the 8 core rules
+> for instructions only Daoris can perform (the known case: `repository-owns-its-work`'s "publish a
+> quest"); every named mechanism gains the tool-absent path in the same breath ("…and file the request
+> with that repository's owner where the quest system does not exist"); the principle lands in
+> `.claude/knowledge/canon-authoring.md`. Under the byte budget's discipline — a carve-out that does
+> not fit is a D28 split, not a raised limit — and a canon change re-syncs `examples/` in the same
+> commit, as ever. Workspace design §2a.
+
+✅ done 2026-09-20 — the audit found **one** case in the whole canon, and why it is only one is the
+part worth keeping. **What `sync` writes is committed.** A generated index, a lock file and every
+vendored rule are all still *there* for a contributor who never installed anything, so naming them
+costs a non-user nothing. A **service** is the exception: publishing a quest needs a process running,
+and it is the only thing the canon instructs that does. The test is therefore **file or service, not
+family vocabulary** — and that correction was earned, because the first pass "fixed"
+`skills-workflow` for naming the generated index, which needed nothing at all. The mis-fix is written
+into `canon-authoring.md` as the example, so the next reader inherits the sharpened test rather than
+the instinct that produced it.
+
+`repository-owns-its-work` and its companion `reaching-in` now name the alternative in the same
+breath — *a quest where a request system exists, a message to that repository's owner where none
+does* — and the rule's vocabulary moved from "quest" to "request" throughout, because the principle is
+about the request travelling rather than about the mechanism carrying it.
+
+**The carve-out paid for itself, which was not the expected outcome.** The rule had been restating in
+always-loaded text what its own on-demand document already said better: the revert-mechanics sentence
+duplicated two bullets of `reaching-in.md`, and a "moving target" paragraph re-argued what that
+document's own analysis says at length. Splitting those out freed **126 bytes** against a carve-out
+costing far less — the core went from 23,988/24,000 (12 bytes of headroom) to **23,862** (138). The
+D28 discipline did not merely permit the change; it found the fat.
+
+**A gate holds it**, beside the machine-path scanner it is modelled on: no canon file may instruct a
+quest without also naming what to do where no quest system exists. Watched failing against the
+pre-CANON6 wording, with the message that names the fix. It is deliberately narrow — one
+service-shaped mechanism, three accepted phrasings — because the broad version is exactly the mistake
+the audit made by hand. One trap for whoever changes the canon next: `npm run rehearse:family` checks
+`git status` for the examples, so it fails until the re-sync is **in the commit** — which reads as a
+broken gate the first time and is the gate working.
+
+A premise worth surfacing rather than silently resolving: **D28 moved the default budget to 30000
+precisely because 24000 "fired on the canon rather than on a repository's own material", and Daoris's
+own manifest still carries a pre-D28 24000.** By D28's own reasoning that number is wrong for the one
+repository whose always-loaded material *is* the doctrine. The owner's direction says to split rather
+than raise, so this landing split — and the split was genuinely right here. Whether Daoris's own
+manifest should move to the D28 default is the owner's call, not this task's. Tests grew 192 → 193 CLI.
+
 ## SES3 — the toolchain (2026-09-20)
 
 > **SES3 — the toolchain.** Adapter `Probe` (locate + version + per-profile login state, run at

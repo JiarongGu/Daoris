@@ -23,6 +23,24 @@ an ignored rule still costs context on every single session.
 - **State the principle and the reason. Leave the mechanism to the adopter.** "Never hand-edit the
   version; the release workflow bumps from whatever the file says" is canonical. "Run `dev.mjs doctor`"
   is not — that belongs in the adopting repository's own local document.
+- **Where a mechanism must be named, name its tool-absent path in the same breath.** A rule that
+  instructs an action only one tool can perform reads as a *dead end* to anyone working without it —
+  and that is not a hypothetical reader. An adopted repository stays fully workable for contributors
+  who do not run this tool, their agents included (`docs/DECISIONS.md` D48); those agents load the same
+  vendored markdown and find an instruction they cannot carry out. So: *never write into another
+  repository; publish a quest where a request system exists, and file the request with that
+  repository's owner where none does.* **The principle is canonical; the mechanism degrades.**
+  - **The test is a file or a service, not a vocabulary.** What `sync` writes is committed, so a
+    generated index, a lock file and a vendored rule are all still *there* for someone who has never
+    installed anything — naming them costs a non-user nothing. A **service** is the opposite: publish a
+    quest, search the family, ask what a sibling accepts. Those are the dead ends, and they are the
+    whole list. Applying this by hunting for family vocabulary instead finds the wrong rules: the
+    audit that established it first "fixed" a rule naming the generated index, which needed nothing.
+  - **The budget makes the cost real, and that is the point.** A carve-out costs always-loaded bytes in
+    every repository forever, so one that does not fit is a *split* — the detail moves to the on-demand
+    tier and the rule keeps the principle — never a raised limit (`docs/DECISIONS.md` D28). The audit
+    that established this found its own bytes: the rule it corrected had been restating, in
+    always-loaded text, what its own on-demand document already said better.
 - **No product names, no build commands, no repository-specific layouts.** Say "the always-loaded rules
   directory", not a specific path; say "a scan run by the pre-commit hook", not a script name.
 - **Lead with the failure that motivated it.** Every rule worth canonizing exists because something went

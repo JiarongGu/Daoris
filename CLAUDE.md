@@ -86,12 +86,17 @@ and `daoris driver` do all of it from a terminal (D50).
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
 
-**Two things to know before changing anything.** The always-loaded core sits at **23,988 of 24,000
-bytes** — 12 bytes of headroom, so the next canon addition fails the budget gate even as an index row.
-That is the gate working, and the answer is to split principle from detail rather than raise the limit
-(D28). And **never write into another
+**Three things to know before changing anything.** The always-loaded core sits at **23,862 of 24,000
+bytes** — 138 bytes of headroom, still far less than any new rule, so the next canon addition fails the
+budget gate. That is the gate working, and the answer is to split principle from detail rather than
+raise the limit (D28) — CANON6 did exactly that and paid for its own carve-out. And **never write into
+another
 repository**: that constraint is absolute (D32), it was broken here and cost a sibling an uncommitted
-edit, and `.claude/knowledge/reaching-in.md` is the account.
+edit, and `.claude/knowledge/reaching-in.md` is the account. And **doctrine must not hard-require
+Daoris** (D48 §2a): the canon instructs exactly one thing that needs a service running — publishing a
+quest — and it names the alternative in the same breath, held by a canon scan. Everything else `sync`
+writes is committed, so it survives the tool's absence; the test is *file or service*, never family
+vocabulary (`.claude/knowledge/canon-authoring.md`).
 
 **Never edit the version by hand, and never stamp a changelog heading.** Both belong to the release
 workflow (`tools/release-prep.mjs`); the desktop sibling burned a version outright on exactly this. A

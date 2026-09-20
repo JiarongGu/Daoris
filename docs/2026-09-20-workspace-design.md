@@ -95,6 +95,19 @@ Set by the owner with §2, and binding on every WSP/SES item — two properties 
      repository's owner where it does not.* This lands as a canon-authoring principle plus an audit of
      the existing core rules (backlog CANON6), under the byte budget's discipline — a carve-out that
      does not fit is a D28 split, not a raised limit.
+
+     **Built 2026-09-20 (CANON6).** The audit found **one** case in the whole canon, and the reason it
+     is only one is the useful part: **what `sync` writes is committed**, so a generated index, a lock
+     file and every vendored rule are all still *there* for a contributor who never installed
+     anything — naming them costs a non-user nothing. A **service** is the exception, and publishing a
+     quest is the only thing the canon instructs that needs one. The first pass got this wrong and
+     "fixed" `skills-workflow` for naming the generated index, which needed nothing; the corrected
+     test is *file or service*, not *family vocabulary*, and it is written down in
+     `canon-authoring.md` with the mis-fix as its example. The rule and its companion knowledge
+     document now name the alternative in the same breath, a canon-scan gate holds it (watched
+     failing against the pre-CANON6 wording), and the carve-out **paid for itself**: the rule had been
+     restating, in always-loaded text, what its own on-demand document already said better — the split
+     freed 126 bytes, taking the core from 12 bytes of headroom to 138.
    - **A non-user editing a vendored rule breaks nothing**: the next sync by a user reports drift,
      which is the system working — drift is a signal to review, never a failure of the contributor.
 

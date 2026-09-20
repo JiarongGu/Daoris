@@ -26,9 +26,13 @@ network.
   that "done" means your own gates green plus a reviewable diff, and that mid-run questions batch to
   a checkpoint instead of interrupting.
 - **`repository-owns-its-work`** (new core rule) — **never write into another repository.** Not its
-  code, not its files, not its backlog. Publish a quest and let its own agent take it. There is no
-  remaining case where writing across is the answer, because the quest system is the answer; a request
-  to do it anyway is the user's call to make explicitly, not a judgement to reach alone.
+  code, not its files, not its backlog. Publish the request and let whoever works there take it: a
+  quest where a request system exists, a message to that repository's owner where none does. There is
+  no remaining case where writing across is the answer, because the request is; a request to do it
+  anyway is the user's call to make explicitly, not a judgement to reach alone.
+  **Adopting repositories:** this rule names the only doctrine mechanism that needs a service running,
+  and it names the alternative in the same breath on purpose — a contributor who does not use this
+  tool, or whose agent does not, still has something to do when they read it.
 - **`reaching-in`** (new core knowledge) — what happens when you do it anyway, kept because the failure
   was not the first edit but everything that followed. One file written into a sibling; a removal script
   that over-deleted 171 lines; a repair that restored from the last commit and destroyed an unstaged

@@ -102,7 +102,14 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Eight core rules**, each confirmed by appearing independently in multiple repositories in the family:
   `sensitive-info`, `task-lifecycle`, `no-tmp-for-repo-files`, `file-tool-discipline`,
   `persist-working-state`, `no-global-memory`, `skills-workflow` — and `repository-owns-its-work`:
-  never write into another repository; publish a quest and let its own agent take it.
+  never write into another repository; publish the request and let whoever works there take it.
+- **The doctrine does not require the tool that ships it.** An adopted repository stays fully workable
+  for contributors who do not run Daoris, their agents included — they load the same vendored markdown.
+  That survives almost everything the canon names, because what `sync` writes is committed: a generated
+  index, a lock file and every rule are still there for someone who never installed anything. A
+  *service* is the exception, and publishing a quest is the only one the canon instructs — so it names
+  the alternative in the same breath ("a message to that repository's owner where none does"), and a
+  gate refuses any canon file that instructs a quest without one.
 - **Five core knowledge documents**, each knowledge rather than a rule because it applies to a
   situation, not to every task — a distinction the budget gate enforced more than once.
   `model-decoupling` (the model is a deployment choice: specify the feature without naming one, select
