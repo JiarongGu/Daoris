@@ -28,8 +28,9 @@ names the alternative in the same breath, so an adopted repository stays workabl
 do not run Daoris. **The whole D48/D49/D50 arc is built.** It was then **reviewed** at the owner's
 request (REV2, in the archive), which found two things no gate could: the release workflow ran one of
 the four declared gates, and the shell's 1,128 lines had no tests at all — so every refusal the desktop
-made was reaching people as a blank failure. Both are fixed and gated. **The backlog holds only held
-items.**
+made was reaching people as a blank failure. Both are fixed and gated, along with four smaller things
+the same review noticed. **What the arc left behind is three backlog items — CANON7, WSP5, HARNESS2 —
+and CANON7 is a decision for the owner that CANON5 is parked behind.**
 
 ## State
 
@@ -109,10 +110,11 @@ harnesses those sessions run on are Daoris's to find, install, update and hold m
 without ever touching a credential. **And coexistence**: the canon no longer instructs anything a
 contributor without Daoris cannot do.
 
-**There is no next item in the arc.** What remains in the backlog is four **held** items, each waiting
-on an external trigger that has not arrived — do not pick one up until it has. **The next direction is
-the owner's to set**, and the honest summary for them is: everything designed is built and gate-proven,
-nothing is pushed or published, and a release is still blocked on REH1.
+**The arc is closed and reviewed (REV2).** What is left is three **actionable** leftovers and four
+**held** items. Start with **CANON7** — it is a decision to bring the owner rather than work to do, it
+takes minutes, and **CANON5 is parked behind it**. Then **WSP5** (the workspace switcher, web-only) or
+**HARNESS2** (a `codex` session adapter). Do not pick up a held item until its trigger has arrived.
+Nothing is pushed or published, and a release is still blocked on REH1.
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -147,12 +149,9 @@ nothing is pushed or published, and a release is still blocked on REH1.
   (SES2), `49da224` (SES3, with `aa24ea7` closing its outer loops) and `2487ec8` (CANON6), then the
   review: `6f45276` (the gate list) and `beaab13` (the shell's head). All
   gate-green; `git log` is the reviewable record.
-- **What the arc left for its successors, deliberately:** the platform's workspace *switcher*
-  (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
-  the wiring, but no view filters by one yet); and a **`codex` session adapter** — SES3 made codex
-  manageable as a TOOL (`daoris harness` knows its installer, its home variable and how it reports a
-  login) without giving the driver an adapter that spawns it, because a permission posture and an
-  `exec` shape are things D23 says are added deliberately, on proof, never guessed.
+- **What the arc left behind is now three backlog items, not prose** — CANON7, WSP5 and HARNESS2. They
+  were carried as handover sentences for a while, which is how work quietly stops being work; the
+  backlog is where something is still to do.
 - **Every capability has TWO doors, and anything new inherits both.** The desktop's IPC and
   `daoris-driver chat` run the same `ChatRunner`; `daoris harness` and `daoris driver` do from a
   terminal what the roster and the checkboxes do from a screen. What is shell-only is the STREAM, not
@@ -194,15 +193,48 @@ nothing is pushed or published, and a release is still blocked on REH1.
 
 ## Backlog
 
-**The next arc: workspaces and the interactive surface (D48/D49, designed 2026-09-20; D50 binds every
-item).** The owner's direction, designed under the standing redesign grant — the two contracts are
-`docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`; read them before
-building anything below. **D50 — management parity — applies across the arc**: everything a person
-manages gets a proper surface in the desktop or the `daoris` CLI (files and doors are the truth,
-surfaces are editors; the offline-discipline test evolves to a named management class — design §2b).
-Build order: **every WSP item, SES1 and SES2 are done** (2026-09-20, in the archive) — what remains
-is SES3 and CANON6, independent of each other. Each item is one session-sized landing, TDD, gates
-green, moved to the archive on completion.
+**The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
+them. The three items below it left behind are **actionable now**; the four after them are **held**,
+each waiting on an external trigger that has not arrived. Each item is one session-sized landing, TDD,
+gates green, moved to the archive on completion.
+
+### Open — the arc's leftovers, in the order they are worth doing
+
+- [ ] **CANON7 — decide whether this repository's own `coreBudgetBytes` moves to the D28 default.**
+  **An owner decision first, then a one-line change and the prose that cites it.** Daoris's manifest
+  carries `24000`, written before D28 moved the default to **30000**; the always-loaded core now sits
+  at **23,862**, so 138 bytes remain and the next canon addition fails the gate. The tension is not
+  subtle: D28 raised the default *precisely because* 24000 "fired on the **canon** rather than on a
+  repository's own material… That is backwards: the budget exists to constrain what a repository
+  chooses to carry, not to cap what the doctrine may contain" — and this is the one repository whose
+  always-loaded material IS the doctrine. The counter-argument is real too, and is why the number has
+  not moved: every adopter pays for the core on every session, so a tight self-imposed limit here is a
+  forcing function, and CANON6 shows it working (it found 126 bytes of genuine duplication rather than
+  spending any). **Do not decide this by building it.** Bring the owner the two readings; if the answer
+  is to move, it is `daoris.json` plus every place that quotes the number (`CLAUDE.md`, this file,
+  `docs/DECISIONS.md` gets an amendment saying which way and why). **CANON5 is parked behind this.**
+
+- [ ] **WSP5 — the platform's workspace switcher.** The one thing §8's Web row promised that the WSP
+  arc did not land, and it was left deliberately: Projects shows each repository's circle and its fed
+  commit, the Machine view shows the wiring, but **no view filters by workspace**. Workspace design §4
+  states the shape — "one more filter, not a new view" — over the `workspace` argument the search,
+  registry and convergence doors already take. The honest scope question to answer first: whether the
+  switcher is a global chrome control (one circle at a time, like a git branch) or a per-view filter;
+  §4's "scoped to one workspace per query" argues for the first, and the second is what a filter
+  usually becomes. Web-only; no service change.
+
+- [ ] **HARNESS2 — a `codex` session adapter.** **Not HARNESS1** (that is a second harness *layout*,
+  a doctrine question; this is a second harness the driver can spawn). SES3 already made codex
+  manageable as a TOOL — `daoris harness` knows its installer, its `CODEX_HOME` seam and how it
+  reports a login, all verified against the real binary — so what is missing is only the
+  `ISessionAdapter`: `Prepare`, `PrepareChat`, and `Interactive`. Two things make it more than a copy
+  of `ClaudeCodeAdapter`, and both are why D23 says an adapter arrives deliberately and on proof: its
+  non-interactive shape is `codex exec`, not a `-p` flag, and **its permission posture is the D37
+  boundary in another tool's vocabulary** — the `acceptEdits` equivalent has to be established, not
+  guessed. Land it the way `claude-code` was landed: the stub proves the loop, then a real driven run
+  proves the adapter (DRV4's shape).
+
+### Held — each waits on a trigger that has not arrived
 
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken
@@ -220,7 +252,8 @@ green, moved to the archive on completion.
   and is discovered by the first reader it fails. Held rather than written because the always-loaded
   core has **138 bytes** of room (CANON6 freed 126 of them) and any new rule is an order of magnitude
   larger — so canonizing still waits on a D28-shaped split of principle from detail, or lands as pack
-  knowledge for web repositories, which is where it most likely belongs anyway.
+  knowledge for web repositories, which is where it most likely belongs anyway. **Its trigger is
+  CANON7**: the budget question is the reason this is held, so settle that first.
 
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until
