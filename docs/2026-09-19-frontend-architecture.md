@@ -78,6 +78,33 @@ its job over the example family. Development runs the same suite in watch/UI mod
 fail, make it pass — with subagents taking mechanical slices (catalog translation, story authoring)
 where they help.
 
+## 4a. How a failure becomes a sentence (2026-09-20)
+
+**Two transports, two shapes, one rule: the person reads a sentence, never a code.**
+
+- **The HTTP service answers prose, rendered verbatim.** A refusal from `QuestExchange` or the session
+  ledger is the contract — it names what holds a repository, or what to run — and the platform never
+  translates or rephrases it. That half is older than this section and does not move.
+- **The shell's bridge rejects with a structured `code` and `parameters`**, because the framework's
+  contract is that the *client* produces the text (`errors.<CODE>`). That is also what lets a
+  machine-local refusal speak 中文, which a verbatim host string never could.
+
+`sentence()` in `format.ts` is the one place that knows the difference: a rejection carrying a `code`
+is looked up and interpolated, anything else passes through as the message it already was. **Every
+`onError` goes through it** — a site that reaches for `(error as Error).message` directly is the bug
+this section exists to prevent, and it is invisible, because that field is populated with a developer
+fallback rather than being empty.
+
+One deliberate exception rides the same machinery: **`DRIVER_REFUSED` carries the driver's own
+sentence as a parameter** and its catalogue entry is `{{message}}`. `DriverException` is documented as
+"a driver error a person can act on", and those sentences name what exists and what to run;
+re-authoring each in two languages would mean two copies to drift. A test asserts that entry still
+interpolates, because a translation that dropped the placeholder would silently replace every driver
+refusal with one fixed sentence.
+
+Adding a refusal is therefore three things, and a test holds each: a code in `Refusals`, an entry in
+**both** catalogues, and a throw site using it.
+
 ## 5. What Storybook is here, and is not
 
 It is the **design tool**: where states are designed, reviewed and kept — including the states real

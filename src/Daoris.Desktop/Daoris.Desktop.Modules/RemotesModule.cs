@@ -23,7 +23,7 @@ namespace Daoris.Desktop;
 /// picker does: this is machine-local state, and the service deliberately has no door onto it — a
 /// browser over a keyed remote must never be able to read, or re-point, where a machine syncs.</para>
 /// </remarks>
-internal sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBase(events: events)
+public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.REMOTES";
 
@@ -52,9 +52,11 @@ internal sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleB
                 {
                     // Half a pair is no remote in every loader (D48 §5) — refused here rather than
                     // written, so the file never holds an entry that silently does nothing.
-                    throw new InvalidOperationException(
+                    throw Refusals.Because(
+                        Refusals.RemoteHalfDeclared,
                         $"`{workspace}` needs both an address and a key: a half-declared remote is no remote, "
-                        + "and one written into the map would simply be skipped.");
+                        + "and one written into the map would simply be skipped.",
+                        ("workspace", workspace));
                 }
 
                 var remotes = new Dictionary<string, RemoteTarget>(

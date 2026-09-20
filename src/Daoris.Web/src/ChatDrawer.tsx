@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from './api';
 import { SessionConsole } from './SessionConsole';
-import { sessionTool } from './format';
+import { sentence, sessionTool } from './format';
 import { useEndChat, useSendMessage, useStopSession } from './shell';
 import { Button, Drawer, type Notify, Pill } from './ui';
 
@@ -46,7 +46,7 @@ export function ChatDrawer({ session, onClose, notify }: {
         if (!result.sent) notify(t('chat.notListening'), 'error');
         else setDraft('');
       },
-      onError: (error: unknown) => notify((error as Error).message, 'error'),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };
 
@@ -69,7 +69,7 @@ export function ChatDrawer({ session, onClose, notify }: {
               <Button
                 onClick={() => end.mutate(session.id, {
                   onSuccess: () => notify(t('chat.ending')),
-                  onError: (error: unknown) => notify((error as Error).message, 'error'),
+                  onError: (error: unknown) => notify(sentence(error), 'error'),
                 })}
               >
                 {t('chat.finish')}
@@ -78,7 +78,7 @@ export function ChatDrawer({ session, onClose, notify }: {
                 variant="danger"
                 onClick={() => stop.mutate(session.id, {
                   onSuccess: () => notify(t('quests.session.stopped', { id: session.id })),
-                  onError: (error: unknown) => notify((error as Error).message, 'error'),
+                  onError: (error: unknown) => notify(sentence(error), 'error'),
                 })}
               >
                 {t('chat.stop')}

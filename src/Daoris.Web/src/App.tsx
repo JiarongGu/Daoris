@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { sentence } from './format';
 import { useEntry, useQuests, useRefreshIndex, useRepositories, useStatus } from './queries';
 import {
   Button, Icon, type IconName, LanguageSwitcher, Tip, Toasts, type ToastItem, useErrorNotify,
@@ -69,7 +70,7 @@ export function App() {
       // The semantic half's failure is the service's own sentence — dropped nowhere (D24).
       if (report.semanticError) notify(report.semanticError, 'error');
     },
-    onError: (e) => notify((e as Error).message, 'error'),
+    onError: (e) => notify(sentence(e), 'error'),
   });
 
   const indexed = (repositories.data ?? []).reduce((sum, r) => sum + r.total, 0);

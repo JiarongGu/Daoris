@@ -25,12 +25,16 @@ sessions run on — installing and updating them through their own mechanisms, a
 per harness as named credential profiles without ever touching a credential. And **CANON6 has landed**:
 the canon instructs exactly one thing that needs a service running — publishing a quest — and it now
 names the alternative in the same breath, so an adopted repository stays workable for contributors who
-do not run Daoris. **The whole D48/D49/D50 arc is built; the backlog holds only held items.**
+do not run Daoris. **The whole D48/D49/D50 arc is built.** It was then **reviewed** at the owner's
+request (REV2, in the archive), which found two things no gate could: the release workflow ran one of
+the four declared gates, and the shell's 1,128 lines had no tests at all — so every refusal the desktop
+made was reaching people as a blank failure. Both are fixed and gated. **The backlog holds only held
+items.**
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-192 CLI tests, 248 service, 57 devkit, 130 driver, 53/53 release rehearsal (52/52 across eight runs
+193 CLI tests, 248 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
 2026-09-18, plus a no-staged-leftovers check since REV1), **154/154 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
@@ -74,7 +78,7 @@ grouped by state with sitting time, projects as scannable declarations — in a 
 (sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
 headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
 speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a test pyramid
-declared in `daoris.gates.json` — a **50-test Vitest inner loop** (the shell-attached surfaces, over a
+declared in `daoris.gates.json` — a **55-test Vitest inner loop** (the shell-attached surfaces, over a
 mocked bridge) and a **9/9 Playwright outer loop over `examples/`** (the real bundle over the real
 host — including, since SES3, what a browser must NEVER learn about the machine it is not running on). Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
 canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
@@ -116,6 +120,17 @@ nothing is pushed or published, and a release is still blocked on REH1.
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
+- **The gates are a list, and it is checked.** `daoris.gates.json` declares six; a CLI test asserts the
+  release workflow runs every one, because they silently disagreed for eight landings and both
+  rehearsals passing is exactly what hid it. Adding a test project means adding it to **both**.
+- **Adding a refusal to a desktop module is three things**, and a test holds each: a code in
+  `Refusals`, an entry in **both** locale catalogues, and a throw site using it. A thrown exception's
+  message reaches nobody — the host maps it to a generic code carrying only the exception type, which
+  is why every module sentence was invisible until REV2 (`docs/FIX-LOG.md`). `DriverException` is the
+  one exemption and it is mapped once, at the module boundary, so the driver's own wording travels.
+- **The modules tests are serialized on purpose** (`Parallelism.cs`): those modules resolve every path
+  from process-global environment variables, so two test classes at once trample each other. Found by
+  a second class turning two passing tests red.
 - **Touching the canon? Read `.claude/knowledge/canon-authoring.md` first**, and know two things
   CANON6 settled. The coexistence test is **file or service**, never family vocabulary: what `sync`
   writes is committed, so a generated index, a lock file and every vendored rule survive the tool's
@@ -172,7 +187,7 @@ nothing is pushed or published, and a release is still blocked on REH1.
 - **Verify before claiming done, always:** `npm run verify` (CLI 192 + `check` + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (130), `npm run rehearse:family` (154/154), `npm run test:web` (50 + 9). If a `bin`-driven gate is red
+  (130), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (39), `npm run rehearse:family` (154/154), `npm run test:web` (55 + 9). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 

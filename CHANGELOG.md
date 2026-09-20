@@ -361,6 +361,11 @@ The first version: doctrine that installs, is checked, and flows back.
   login|profile …` and `daoris driver list|drive|hold|resume|cap|adapter` set all of it from a
   terminal, because a server with no screen is still a machine; the desktop's roster edits the same
   files. Neither reaches a network.
+- **Fixed: every refusal the desktop made reached you as a blank failure.** When the app could not do
+  something — a remote missing half its pair, a declaration form pointed at a repository that has not
+  adopted, a conversation asked for before the driver is up, an adapter it does not have — it had a
+  sentence written for you, and you never saw one of them. Now you do, in your own language, and the
+  driver's own wording travels word for word.
 - **Fixed: `refresh` re-read the repositories but never the folder.** The root's subdirectories were
   listed once at startup, so a repository created afterwards was invisible to the index while being
   fully registered and quest-addressable — and the refresh reported success either way.

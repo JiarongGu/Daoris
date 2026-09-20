@@ -5,6 +5,39 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Every desktop refusal reached the person as a generic failure (2026-09-20)
+
+**Symptom.** Found by the first tests the shell's IPC modules had ever had. A module refuses by
+throwing with a written sentence — "`aurora` needs both an address and a key", "unknown adapter
+'codex' — one of: claude-code, stub", "the driver is still coming up" — and **none of those sentences
+reached the page.** The bridge answered `UNKNOWN_ERROR` carrying one parameter: the exception TYPE.
+Five deliberate refusals, plus every `DriverException` the driver library raises, all rendered as the
+same blank failure.
+
+**Root cause.** Two halves that each looked right. The host maps an *unhandled* exception to a generic
+code by design — its contract is a structured `code` + `parameters`, translated client-side
+(`errors.{code}`), with `Message` documented as "untranslated fallback for logs/dev; not for end
+users". The page, meanwhile, showed `(error as Error).message` — correct for the HTTP service, whose
+refusals are prose rendered verbatim, and wrong for the bridge, which was never speaking prose.
+Neither half was obviously broken on its own.
+
+**Why it survived.** The page's own suite mocks the bridge and asserts the mock's invented string, so
+it proved the page renders what it is given and nothing about what it is given. The host half had no
+test project at all — 1,128 lines of shell behind a `net10.0-windows` TFM. **The contract was asserted
+on neither side**, which is what a mock agreeing with a mock always means.
+
+**Fix.** Refusals are declared once (`Refusals`) and thrown as `ShenoraException` with a code and
+parameters; `DriverException` is mapped once at the module boundary to `DRIVER_REFUSED` carrying its
+message, so the driver's own sentences travel verbatim — the same class as the service's, which this
+platform has always shown word for word. The page gained one `sentence()` helper: a coded rejection
+becomes `errors.{code}` interpolated, anything else stays the message it already was.
+
+**Verification.** 39 tests in the new `Daoris.Desktop.Modules.Tests`, asserting the *code* rather than
+the English (a refusal identified by its sentence is one no other language can render), plus a
+catalogue test that every code a module can raise has an entry in **both** locale files — watched
+failing before the entries existed. **The trap to inherit:** when two halves are mocked against each
+other, the mock is the specification, and it is one nobody wrote down. Test the side that decides.
+
 ## A login-state pattern that matched its own negation (2026-09-20)
 
 **Symptom.** Caught by a test written alongside SES3's harness descriptors, before anything ran: the

@@ -135,7 +135,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
 | `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
 | `src/Daoris.Web/` | **The platform** (D38) — knowledge, quests, projects; the only UI; doctrine read-only |
-| `src/Daoris.Desktop/` | **The local driver** (D45/D46): the driver library + `daoris-driver` headless host + `daoris-desktop` shell |
+| `src/Daoris.Desktop/` | **The local driver** (D45/D46): the driver library + `daoris-driver` headless host + the shell's **modules** (every IPC surface the page talks to — plain `net10.0`, so it is tested and gated like everything else) + the `daoris-desktop` window |
 | `examples/` | The example family — two miniature adopters the family rehearsal drives (D39) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |
 | `canon/core/{rules,knowledge,skills}/` | The always-installed rules, on-demand knowledge, and discovery skills |

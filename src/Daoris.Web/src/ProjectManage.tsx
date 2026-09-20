@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { sentence } from './format';
 import type { Registration } from './api';
 import { useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
@@ -35,7 +36,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
   const choose = () => pick.mutate(undefined, {
     // Null is the person cancelling the dialog: an answer, and not a thing to report as a failure.
     onSuccess: (inspection) => { if (inspection) setFound(inspection); },
-    onError: (error: unknown) => notify((error as Error).message, 'error'),
+    onError: (error: unknown) => notify(sentence(error), 'error'),
   });
 
   const add = () => {
@@ -57,7 +58,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
         notify(t('projects.manage.added', { name: found.name, workspace: registered.workspace }));
         onClose();
       },
-      onError: (error: unknown) => notify((error as Error).message, 'error'),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };
 
@@ -141,7 +142,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
   const [accepts, setAccepts] = useState(project.accepts.join('\n'));
   const [confirming, setConfirming] = useState(false);
 
-  const fail = (error: unknown) => notify((error as Error).message, 'error');
+  const fail = (error: unknown) => notify(sentence(error), 'error');
 
   const saveWiring = () => wire.mutate({ repository: project.repository, workspace }, {
     onSuccess: (wired) => notify(t('projects.manage.wired', {

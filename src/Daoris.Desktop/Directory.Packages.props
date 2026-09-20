@@ -15,9 +15,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The desktop runtime sibling, consumed as a LIBRARY at a RELEASED version (D22) — the one leaf
-         package; Shenora core arrives transitively. Verified on nuget.org 2026-09-19. -->
+    <!-- The desktop runtime sibling, consumed as a LIBRARY at a RELEASED version (D22). Verified on
+         nuget.org 2026-09-19. `Shenora.Windows` is the WINDOW half — WinForms and WebView2 — and only
+         `Daoris.Desktop.App` needs it. `Shenora` is the cross-platform half that carries the event bus
+         and the IPC module base; the modules project names it directly so it can build, and be tested,
+         with no desktop present. Both move together: they are one release. -->
     <PackageVersion Include="Shenora.Windows" Version="0.16.0" />
+    <PackageVersion Include="Shenora" Version="0.16.0" />
   </ItemGroup>
 
   <ItemGroup>

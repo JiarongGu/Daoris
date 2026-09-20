@@ -1,5 +1,6 @@
 import { type ButtonHTMLAttributes, type ReactNode, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { sentence } from './format';
 import * as Toast from '@radix-ui/react-toast';
 import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -367,7 +368,7 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
 /** Surface a query error as a toast exactly once per change. */
 export function useErrorNotify(error: unknown, notify: Notify) {
   useEffect(() => {
-    if (error) notify((error as Error).message, 'error');
+    if (error) notify(sentence(error), 'error');
   }, [error, notify]);
 }
 

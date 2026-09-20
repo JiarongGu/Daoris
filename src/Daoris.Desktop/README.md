@@ -12,8 +12,19 @@ here, and which named credential profile does this run as — and since D47 the 
 and mirroring the remote's quests and foreign registrations down, once **per workspace** since D48 §5,
 because one shared deployment serves one circle) and `Daoris.Desktop.Driver.Host`
 (`daoris-driver`) are driven end to end by the family rehearsal's driver, two-machine remote and
-remotes-map phases. **`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
-shell: it brings up the local HTTP host — adopting one already running, spawning and owning one
+remotes-map phases.
+
+**`Daoris.Desktop.Modules`** is the shell's **head**, split out from its window 2026-09-20: the loop,
+the host supervisor, and every IPC module the platform page talks to (`DAORIS.DRIVER`,
+`DAORIS.REGISTRY`, `DAORIS.REMOTES`) — plus `Refusals`, where a refusal is declared once as a code the
+page translates. Plain `net10.0`, because none of it is WinForms; it had been Windows-only by accident
+of where it was written, and that accident cost it every test it should have had. **The contract
+between the page and this machine was asserted on neither side** — the page's suite mocks the bridge,
+this half had no test project — which is how five written refusals reached people as a blank failure
+for as long as they existed (`docs/FIX-LOG.md`). It now carries 39 tests and its own gate.
+
+**`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
+window, and now only the window: it brings up the local HTTP host — adopting one already running, spawning and owning one
 otherwise, a dev build run from its project so the bundle serves — carries the platform in its WebView
 (`ProductionUrl`, the same bytes a browser gets), runs the driver's shared watch loop in-process with
 `driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed

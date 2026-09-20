@@ -29,6 +29,31 @@ export function sittingDays(iso: string): number {
 }
 
 /**
+ * The sentence a failure puts in front of the person, whichever half of the platform it came from.
+ *
+ * @remarks
+ * Two transports, two shapes, one rule: **the person reads a sentence, never a code.**
+ *
+ * The HTTP service answers refusals as prose and the platform renders them VERBATIM — that is the
+ * older half of this rule and it does not move. The shell's bridge is the other half: it rejects with
+ * a structured `code` and `parameters`, because the framework's contract is that the client produces
+ * the text (`errors.{code}`) — which is also what lets a refusal speak 中文.
+ *
+ * An unmapped code falls back to a sentence rather than to the code itself. It happens when the page
+ * is older than the host, and a bare `SOMETHING_FAILED` in front of a person is barely better than the
+ * generic failure this whole seam was fixed to replace.
+ */
+export function sentence(error: unknown): string {
+  const code = (error as { code?: unknown } | null)?.code;
+  if (typeof code !== 'string' || !code) return (error as Error)?.message ?? '';
+
+  const parameters = (error as { parameters?: Record<string, string> }).parameters ?? {};
+  const key = `errors.${code}`;
+  const translated = i18n.t(key, parameters);
+  return translated === key ? i18n.t('errors.UNKNOWN') : translated;
+}
+
+/**
  * What a session ran ON and AS (D49 §4): the harness, the version observed at spawn, and the named
  * credential profile.
  *

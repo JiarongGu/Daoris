@@ -1226,6 +1226,51 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## REV2 — the arc reviewed, and the shell's head made testable (2026-09-20)
+
+> Asked for by the owner after the arc closed: "we really need to do review and e2e tests."
+
+✅ done 2026-09-20 — a review of the eight landings, and the two things it found. Neither was visible
+from any gate, which is the point of having reviewed rather than re-run.
+
+**Finding one: the declared gates and the release workflow were two lists that disagreed.** The
+workflow ran exactly one `dotnet test` — the devkit's. `dotnet test src/Daoris.Service` (248 tests)
+was DECLARED in `daoris.gates.json` and never run; the driver's 130 were in neither, including the
+planner, the adapter seam, the whole SES3 toolchain and the guard that stops a credential profile name
+crossing a machine boundary. `CLAUDE.md` claimed the workflow "runs all four gates", which it did not.
+What hid it is worth keeping: **both rehearsals drive the service and the driver end to end**, so the
+workflow looked thorough and every release rehearsal passed. An end-to-end pass is not a substitute
+for the judgement underneath it. Fixed in the workflow, the declared set and the prose, with a check
+that every declared gate appears in the workflow — watched failing against the pre-fix file, where it
+names the service gate exactly.
+
+**Finding two: 1,128 lines of shell with no tests, and a contract asserted on neither side.** The
+three IPC modules are the whole surface between the platform page and this machine. The page's own
+suite mocks the bridge; this half had no test project. **A mock agreeing with a mock proves the two
+mocks agree** — and underneath that, every deliberate refusal these modules make was reaching people
+as a generic failure, because the host maps an unhandled exception to `UNKNOWN_ERROR` carrying only
+the exception type. Five written sentences, plus every `DriverException`, dropped on the floor for as
+long as they had existed (`docs/FIX-LOG.md`).
+
+**What was built.** `Daoris.Desktop.Modules` — plain `net10.0`, holding the loop, the host supervisor
+and the three modules; `Daoris.Desktop.App` keeps only what needs a window. None of it was ever
+WinForms: it was Windows-only by accident of where it was written, and the accident was the reason it
+had no tests. The refusals became declared codes thrown as `ShenoraException`, with `DriverException`
+mapped once at the module boundary so the driver's own sentences travel verbatim — the same class as
+the service's, which this platform has always rendered word for word. The page gained one `sentence()`
+helper and every `onError` goes through it.
+
+**Three of my own mistakes, each caught by the thing being built.** A redaction assertion read raw
+JSON, where the ellipsis is `…` — it would have passed on a leak of a differently-shaped key. A
+second test class turned two passing tests red by trampling process-global environment variables:
+these modules resolve every path from the environment, so the suite is serialized, and a suite whose
+result depends on scheduling is worse than a missing one. And `HARNESS_UNMANAGED` was unreachable —
+`Toolchain()` throws for an unknown adapter before it can return null — which is what led to mapping
+`DriverException` once instead of duplicating its judgement.
+
+Gates: a new `modules` gate (39 tests), declared and in the workflow. CLI 193, service 248, driver
+130, modules 39, devkit 57, web 55 + 9 e2e, family rehearsal 154/154.
+
 ## CANON6 — doctrine must not hard-require Daoris (2026-09-20)
 
 > **CANON6 — doctrine must not hard-require Daoris (coexistence, D48).** Audit the 8 core rules

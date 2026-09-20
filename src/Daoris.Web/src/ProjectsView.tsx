@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Registration } from './api';
 import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
 import { ChatDrawer } from './ChatDrawer';
-import { ago } from './format';
+import { ago, sentence } from './format';
 import { useRegistry, useRepositories, useSessions } from './queries';
 import { useDriver, useHarnesses, useSetDrivable, useSetHold, useStartChat } from './shell';
 import {
@@ -71,7 +71,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
         if (!result.sessionId) notify(result.message, 'error');
         else setChatting(result.sessionId);
       },
-      onError: (error: unknown) => notify((error as Error).message, 'error'),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };
 
@@ -80,7 +80,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
   const named = (names: string[], repository: string) =>
     names.some((name) => name.toLowerCase() === repository.toLowerCase());
-  const onDriverError = (e: unknown) => notify((e as Error).message, 'error');
+  const onDriverError = (e: unknown) => notify(sentence(e), 'error');
 
   return (
     <section>

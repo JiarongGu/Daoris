@@ -29,6 +29,13 @@
   "settings.wiring.wired": "{{workspace}} 已在本机接线。",
   "settings.wiring.unwired": "{{workspace}} 从此不再向外同步。部署那边什么都没变。",
 
+  "errors.REMOTE_HALF_DECLARED": "{{workspace}} 需要同时给出地址和密钥。只声明一半等于没有接线——写进映射也会被直接跳过。",
+  "errors.REPOSITORY_NOT_ADOPTED": "{{repository}} 尚未接入 Daoris，因而没有可编辑的声明。接入由它自己的智能体完成；此表单只修改已经存在的声明。",
+  "errors.DRIVER_NOT_READY": "驱动仍在启动，其服务尚未应答。稍候。",
+  "errors.HARNESS_ACTION_UNKNOWN": "没有名为 {{action}} 的工具链操作。",
+  "errors.DRIVER_REFUSED": "{{message}}",
+  "errors.UNKNOWN": "本机有操作被拒绝，且未说明原因。详情见驱动日志。",
+
   "harness.title": "工具链",
   "harness.body": "会话所依托的智能体工具，以及它们所用的账号。Daoris 负责发现它们、以它们自己的方式安装与更新，并为每个账号单独保管一份配置目录。",
   "harness.absent": "未安装",

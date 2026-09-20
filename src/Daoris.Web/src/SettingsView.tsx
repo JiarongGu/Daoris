@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { sentence } from './format';
 import {
   useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useUnwireRemote, useWireRemote,
 } from './shell';
@@ -31,7 +32,7 @@ export function SettingsView({ notify }: { notify: Notify }) {
   const [key, setKey] = useState('');
 
   const remotes = wiring.data?.remotes ?? [];
-  const onError = (error: unknown) => notify((error as Error).message, 'error');
+  const onError = (error: unknown) => notify(sentence(error), 'error');
 
   const add = () => wire.mutate(
     { workspace: workspace.trim(), url: url.trim(), key: key.trim() },
@@ -180,7 +181,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
         : notify(
           t('harness.failed', { harness, action: t(`harness.${action}`), code: result.exitCode }),
           'error')),
-      onError: (error: unknown) => notify((error as Error).message, 'error'),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };
 

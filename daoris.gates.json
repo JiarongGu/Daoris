@@ -6,6 +6,7 @@
     { "name": "service", "run": "dotnet test src/Daoris.Service" },
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },
     { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests" },
+    { "name": "modules", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests" },
     { "name": "web", "run": "npm run test:web" }
   ],
 

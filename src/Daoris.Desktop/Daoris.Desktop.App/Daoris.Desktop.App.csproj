@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The window's head: the loop, the supervisor and every IPC module the page talks to. Separated
+         because none of it is WinForms, and being in here cost it every test it should have had. -->
+    <ProjectReference Include="..\Daoris.Desktop.Modules\Daoris.Desktop.Modules.csproj" />
     <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
   </ItemGroup>
 

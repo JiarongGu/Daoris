@@ -19,7 +19,7 @@ namespace Daoris.Desktop;
 /// `sync`, the collision review — and a shell that wrote a manifest would be doing that work from
 /// outside, badly. This answers three facts about a folder and leaves every decision to the person.</para>
 /// </remarks>
-internal sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) : ModuleBase(events: events)
+public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.REGISTRY";
 
@@ -105,9 +105,11 @@ internal sealed class RegistryModule(IEventBus events, Func<string?> pickFolder)
         {
             // Adoption is the repository's own agent's job (`daoris init`, then the collision review).
             // A shell that wrote a first manifest would be doing that work from outside, badly.
-            throw new InvalidOperationException(
+            throw Refusals.Because(
+                Refusals.RepositoryNotAdopted,
                 $"`{Path.GetFileName(path)}` has not adopted Daoris. Its own agent runs `daoris init` "
-                + "and the adoption review; this form edits a declaration that already exists.");
+                + "and the adoption review; this form edits a declaration that already exists.",
+                ("repository", Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, '/'))));
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(manifest));

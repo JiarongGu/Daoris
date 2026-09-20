@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The shell's HEAD, separated from its WINDOW (2026-09-20).
+
+       Everything the platform page can ask this machine for — the driver controls and the live
+       console, the harness roster, the folder inspection, the remotes map — plus the loop and the
+       host supervisor underneath them. None of it is WinForms; it was Windows-only by accident of
+       where it was first written, and that accident cost it every test it should have had: 1,128
+       lines of shell sat behind a `net10.0-windows` TFM with no test project, while the page that
+       talks to it asserted against a MOCKED bridge. The contract between them was held on neither
+       side.
+
+       Plain net10.0, so its tests run on Linux with every other gate. `Daoris.Desktop.App` keeps only
+       what genuinely needs a window: the WinForms host, the WebView, and the folder dialog — which is
+       injected here as a `Func<string?>` precisely so this half never needs one. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Daoris.Desktop</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The event bus and the IPC module base. The Windows package pulls the same assembly in
+         transitively for the shell; naming it here is what lets this half build without a desktop.
+         A RELEASED version, as D22 requires of every Shenora consumption. -->
+    <PackageReference Include="Shenora" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+  </ItemGroup>
+
+</Project>

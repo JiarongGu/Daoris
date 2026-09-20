@@ -29,6 +29,13 @@
   "settings.wiring.wired": "{{workspace}} is wired on this machine.",
   "settings.wiring.unwired": "{{workspace}} syncs nowhere from here now. Nothing at the deployment changed.",
 
+  "errors.REMOTE_HALF_DECLARED": "{{workspace}} needs both an address and a key. A half-declared remote is no remote — one written into the map would simply be skipped.",
+  "errors.REPOSITORY_NOT_ADOPTED": "{{repository}} has not adopted Daoris, so there is no declaration to edit. Its own agent runs the adoption; this form changes one that already exists.",
+  "errors.DRIVER_NOT_READY": "The driver is still coming up — its service is not answering yet. A moment.",
+  "errors.HARNESS_ACTION_UNKNOWN": "There is no harness action called {{action}}.",
+  "errors.DRIVER_REFUSED": "{{message}}",
+  "errors.UNKNOWN": "Something on this machine refused, and did not say why. The driver's log has the detail.",
+
   "harness.title": "Harnesses",
   "harness.body": "The agent tools sessions run on, and the accounts they run as. Daoris finds them, installs and updates them through their own mechanisms, and keeps each account in its own configuration directory.",
   "harness.absent": "not installed",

@@ -11,7 +11,7 @@ namespace Daoris.Desktop;
 /// loop already re-reads it every tick. Stopping a session is the one control that touches a process,
 /// through the shared registry, and the driver records the end as the person's.
 /// </summary>
-internal sealed class DriverModule : ModuleBase
+public sealed class DriverModule : ModuleBase
 {
     private readonly IEventBus _events;
     private readonly DriverLoop _loop;
@@ -28,8 +28,30 @@ internal sealed class DriverModule : ModuleBase
 
     public override string ModuleName => "DAORIS.DRIVER";
 
+    /// <summary>
+    /// Route, and let the driver's own refusals reach the person.
+    /// </summary>
+    /// <remarks>
+    /// <b>An unhandled exception becomes a generic `UNKNOWN_ERROR` carrying only its TYPE</b>, so every
+    /// sentence `DriverException` was written to deliver — "unknown adapter 'x' — one of: …", "that
+    /// harness declares no installer" — used to be dropped on the floor and shown as a bare failure.
+    /// Mapped once, here, rather than at each throw site: the driver library is where those sentences
+    /// live, and a per-site wrapping is a list somebody eventually forgets to append to.
+    /// </remarks>
     protected override async Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await RouteAsync(request, cancellationToken);
+        }
+        catch (DriverException error)
+        {
+            throw Refusals.Because(Refusals.DriverRefused, error.Message, ("message", error.Message));
+        }
+    }
+
+    private async Task<object?> RouteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         switch (request.Type)
         {
@@ -85,7 +107,8 @@ internal sealed class DriverModule : ModuleBase
                 var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
                 if (_loop.Chat is not { } chat)
                 {
-                    throw new InvalidOperationException(
+                    throw Refusals.Because(
+                        Refusals.DriverNotReady,
                         "the driver is still coming up — its service is not answering yet. A moment.");
                 }
 
@@ -181,8 +204,10 @@ internal sealed class DriverModule : ModuleBase
                 var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
                 var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
                 var config = DriverConfig.Load(_loop.ConfigPath);
+                // A DriverException, so it travels the same way `Toolchain` already refuses an adapter
+                // name it does not know: one mapping, one shape, and the driver's own sentence intact.
                 var toolchain = _loop.Harnesses.Toolchain(harness)
-                    ?? throw new InvalidOperationException(
+                    ?? throw new DriverException(
                         $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
 
                 var command = config.Commands.GetValueOrDefault(harness);
@@ -200,8 +225,10 @@ internal sealed class DriverModule : ModuleBase
                             ?? _loop.Harnesses.Settings.Resolve(harness, null, null)
                             ?? "default"),
                         stream, cancellationToken),
-                    _ => throw new InvalidOperationException(
-                        $"unknown harness action '{action}' — one of: install, update, login"),
+                    _ => throw Refusals.Because(
+                        Refusals.HarnessActionUnknown,
+                        $"unknown harness action '{action}' — one of: install, update, login",
+                        ("action", action)),
                 };
 
                 // Whatever it did, what this machine HAS has probably changed — so the next question

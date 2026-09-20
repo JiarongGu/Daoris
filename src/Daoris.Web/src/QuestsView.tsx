@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session, SessionState } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
 import { useDriver, useStopSession } from './shell';
-import { ago, sessionTool, sittingDays } from './format';
+import { ago, sentence, sessionTool, sittingDays } from './format';
 import { SessionConsole } from './SessionConsole';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
@@ -87,7 +87,7 @@ export function QuestsView({ notify }: { notify: Notify }) {
       setDraft(EMPTY_DRAFT);
       setComposing(false);
     },
-    onError: (e) => notify((e as Error).message, 'error'),
+    onError: (e) => notify(sentence(e), 'error'),
   });
 
   const onRespond = (quest: Quest, action: 'take' | 'done' | 'decline', why: string | null = null) =>
@@ -98,7 +98,7 @@ export function QuestsView({ notify }: { notify: Notify }) {
         setDeclining(false);
         setReason('');
       },
-      onError: (e) => notify((e as Error).message, 'error'),
+      onError: (e) => notify(sentence(e), 'error'),
     });
 
   const openDetail = (quest: Quest) => {
@@ -307,7 +307,7 @@ export function QuestsView({ notify }: { notify: Notify }) {
                       disabled={stop.isPending}
                       onClick={() => stop.mutate(session.id, {
                         onSuccess: () => notify(t('quests.session.stopped', { id: session.id })),
-                        onError: (e) => notify((e as Error).message, 'error'),
+                        onError: (e) => notify(sentence(e), 'error'),
                       })}
                     >
                       {t('quests.session.stop')}
