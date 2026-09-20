@@ -1339,3 +1339,64 @@ deployment is a minted key. The mid-build finding that forced a second small ame
 across machines needs the remote's **registry** mirrored down beside its quests — foreign rows only,
 because the machine holding a checkout is the authority on its own registration and its root must
 survive the sync untouched.
+
+## D48 — The workspace is the unit of sharing; a server serves one; the registry is managed (2026-09-20)
+
+**Decision.** Set by the owner, 2026-09-20, in the backlog, under the standing redesign grant (nothing
+is deployed): repositories belong to **workspaces**, and everything that crosses repositories —
+knowledge search, convergence, the registry, quests, session records, and every remote — is scoped to
+one. The mechanism is `docs/2026-09-20-workspace-design.md`; the load-bearing choices, argued there:
+
+- **Membership is a manifest field** (`workspace`), tracked and reviewed like `domain` and `remote`,
+  with absence meaning the default workspace — the `no-global-memory` argument applied to membership:
+  a fact every clone and teammate must agree on cannot live in a machine-local mapping. One repository,
+  one workspace; a repository serving two circles is a domain that wants splitting.
+- **One shared deployment serves one workspace**, declared as its identity (`DAORIS_WORKSPACE`),
+  refusing feeds and registrations that name another. The machine's remote config becomes a map,
+  workspace → { url, key } (`~/.daoris/remotes.json`), and the sync loop runs per workspace. Rejected:
+  a multi-tenant server — it puts the sharing boundary inside one store and one key space, where a
+  scoping bug becomes a disclosure; the self-contained host (D43) makes a second workspace a second
+  process over a second file.
+- **The registry becomes the authority and the folder scan becomes `import`.** The ghost-repository
+  fix already showed scan-as-authority failing, and one root folder cannot express membership that
+  does not follow disk layout. The desktop manages add/update/remove — registration lifecycle only;
+  files are never deleted, adoption stays the repository's own agent's job, doctrine stays unwritable
+  (D31).
+- **Remote knowledge sync gets real semantics**: feeds carry git provenance stamped by the driver
+  (commit, commit time, branch); only the default branch feeds knowledge (records and quests still
+  travel from any checkout); replacement is monotonic by commit time so a stale checkout can never
+  clobber a fresher one; the remote serves each repository's fed provenance. Delete stays free —
+  wholesale replacement by the newest canonical view. Rejected: per-entry merge (the index is derived
+  data; merging derivations invents a second truth beside git) and wall-clock last-writer-wins (the
+  flapping this exists to end).
+
+**Why now.** The sharing boundary today is an accident of folder layout — right for one person with
+one folder of checkouts, wrong the first time one machine holds two circles' repositories. Nothing is
+deployed, so the boundary can be drawn deliberately instead of retrofitted around data.
+
+## D49 — Daoris is the working surface: chat sessions, the live console, managed harnesses (2026-09-20)
+
+**Decision.** Set by the owner, 2026-09-20, in the backlog: a person works *in* Daoris — sees a
+session's console live, opens a chat session with an agent (claude code / codex) in any repository
+from the platform, and Daoris installs and updates those harness CLIs itself. The mechanism is
+`docs/2026-09-20-interactive-design.md`; the load-bearing choices:
+
+- **A chat is a session** — the entity D46 built, entered by a person instead of planned from a quest:
+  `Kind: driven | chat`, quest optional, the same observed lifecycle, and the same one-session-per-
+  repository lock, because two agents in one working tree corrupt it regardless of who is typing. The
+  adapter seam grows one capability, `interactive` (the seam D46 §5 held open); the **harness carries
+  the model and the conversation** — Daoris pipes text and still makes no model calls at all (D24).
+  Rejected: a Daoris-owned chat loop calling a model API — it would duplicate what every harness is
+  and produce sessions with no doctrine path in.
+- **The console is the existing transcript capture, teed** to a bounded ring buffer and streamed over
+  the shell's IPC bridge only — output is transcript-class material and never leaves the machine
+  (D47 §4). A browser and a teammate see the record; only the desktop sees the stream.
+- **Harnesses are detected freely and installed/updated only on the person's explicit action**, via
+  each harness's own official mechanism, never mid-session — a tool changing under a running loop is
+  the moving-target problem one layer down. The session record gains the harness version observed at
+  spawn. Rejected: auto-update, and pinning harness versions in the manifest (machine tooling is not
+  repository doctrine).
+
+**What this preserves.** Driving stays additive (D46): outside sessions, hand work, and the browser's
+read-only view are untouched. The service stays spawn-free and model-free; processes and streams stay
+with the driver; D31/D37/D38's boundaries do not move.
