@@ -64,6 +64,14 @@ real UI/UX.** That is a different product from what exists: the platform today i
 console*, which optimises for scanning state, and a working surface optimises for holding attention on
 one thing while several others run.
 
+**Interposed 2026-09-21 (owner): the dsh evaluation comes before the view is built.**
+[deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) (MIT) already supplied the
+surface's structure (D52 as amended); the owner has asked whether Daoris should adopt its *function*
+too — anywhere from a third harness, through ACP as the driver's session protocol, to the working
+surface running as a dsh deployment. `docs/2026-09-21-dsh-direction.md` is the plan; **DSH1** is the
+evaluation, next; **SURF4a–d and the UI halves of SURF5/SURF6 hold on its decision**, while SURF2/3
+and the substrate stand under every option.
+
 The research is `docs/2026-09-20-working-surface-research.md`; the contract is
 `docs/2026-09-21-working-surface-design.md` (SURF1, done 2026-09-21). The question that came before
 any screen is settled as **D51**: **the tree is the unit of exclusion, and a repository may have more

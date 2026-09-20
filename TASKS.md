@@ -123,9 +123,14 @@ first because everything follows from it) and **D52** (the surface, twice amende
 layout structure is deepseek-harness's, and the build is component by component). **SURF2 and SURF3
 have landed** (2026-09-21): the lock keys on the tree; the trees exist, opt-in per repository, grown
 per session before the record, refusing to die holding work — and a dirty root no longer holds the
-driver, which was the point. **The next work is SURF4a** — the atoms and helpers — then SURF4b–d,
-SURF5, SURF6 in order. Read the contract, the components doc and both decisions before picking any of
-them up.
+driver, which was the point.
+
+**The next work is DSH1** (owner, 2026-09-21): evaluate deepseek-harness for *functional* adoption —
+"maybe fully adopt its function too" — with `docs/2026-09-21-dsh-direction.md` as the plan: four
+options from a third harness to a full re-platform, the boundary inventory, eight hands-on probes
+with pass shapes, DOCS1 as a strand. **SURF4a–d and the UI halves of SURF5/SURF6 hold until its
+decision lands**; the substrate (SURF2/3, the driver, the service) stands under every option. The
+output is an evidence note, a numbered decision the owner makes, and a build order.
 
 Smaller and independent of them: **CANON7** (a decision to bring the owner rather than work to do — it
 takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only) or
@@ -229,12 +234,34 @@ items below, in order. The three after them are the arc's leftovers, **actionabl
 after those are **held**, each waiting on an external trigger that has not arrived. Each item is one
 session-sized landing, TDD, gates green, moved to the archive on completion.
 
+### The dsh direction — evaluate before the view is built (owner, 2026-09-21)
+
+**Set by the owner:** deepseek-harness is a good example to use — *maybe fully adopt its function
+too* — and the direction starts next session. **The plan is
+`docs/2026-09-21-dsh-direction.md`**: the option space (a third harness · ACP as the driver's session
+protocol · the working surface as a dsh deployment · full re-platform), the boundary inventory
+(D1/D24, D23, D37, D46/D47 — and which option touches which), the eight hands-on probes with their
+pass shapes, and the sequencing. **SURF4a–d and the UI halves of SURF5/SURF6 hold until this
+decides** — the decision could change what the view is built on; SURF2/SURF3 and the substrate stand
+under every option.
+
+- [ ] **DSH1 — evaluate dsh, and decide what Daoris hands it.** One session, next. Run the plan's
+  eight probes against the local checkout and an installed `dsh` over a scratch repository — headless
+  run, the ACP session and its event vocabulary against the timeline's needs, claude-code's ACP story,
+  the hook-config bridge, subagent delegation to real claude-code, the approval map onto D37, the
+  breaking-change price, and (only if still live) the one-trivial-plugin build cost. **DOCS1 runs as a
+  strand of this session** — the docs-system study, cheapest while the checkout is warm. Output: an
+  evidence note, a **numbered decision** naming the chosen and rejected options with reasons — the
+  owner decides; option D reopens D1 and says so — and a build order. `deepseek-harness` is at
+  developer preview: pin exactly, vendor nothing, price the churn (probe 7).
+
 ### The working surface — the build order (D51/D52, designed 2026-09-21)
 
 The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
 them in order.** SURF2 and SURF3 are done (2026-09-21, in the archive): the lock keys on the tree,
-and the trees exist — opt-in per repository, grown per session, refusing to die holding work. **The
-next work is SURF4a.**
+and the trees exist — opt-in per repository, grown per session, refusing to die holding work.
+**SURF4a–d and the UI halves of SURF5/SURF6 are HELD on DSH1** (above): the design stands either way,
+but what the view is built ON is exactly what DSH1 decides.
 Everything with a screen in it also follows `docs/2026-09-21-working-surface-components.md` — the
 surface is built **component by component**, each with its story and its own test, because a rail, a
 head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
@@ -329,7 +356,8 @@ runtime (its surfaces are built natively against claude/codex through the adapte
 
 - [ ] **DOCS1 — study deepseek-harness's documentation system, and take what converges** (owner,
   2026-09-21: it is itself code-generated, so "take its design for code-gen skill/structure
-  instructions as an example to improve our docs system too"). Its `docs/AGENTS.md` is a documentation
+  instructions as an example to improve our docs system too"). **Runs as a strand of DSH1**, not
+  separately. Its `docs/AGENTS.md` is a documentation
   *standard with gates*: a one-home-per-fact tier taxonomy (standing orders / architecture map /
   subsystem references / decision notes / postmortems / cookbooks / package contracts), **per-document
   word budgets in a manifest enforced by `verify-doc-budgets`** with a relocate → condense → raise
@@ -344,7 +372,9 @@ runtime (its surfaces are built natively against claude/codex through the adapte
   doc-budget manifest as a devkit gate, the compile-checked doc examples, the notes lifecycle) and
   what is already covered. MIT; a ported script carries its notice.
 
-- [ ] **HARNESS2 — a `codex` session adapter.** **Not HARNESS1** (that is a second harness *layout*,
+- [ ] **HARNESS2 — a `codex` session adapter.** **Waits for DSH1**: if the adapter seam gains an ACP
+  protocol door, this may be an ACP configuration rather than a hand-built `ISessionAdapter` — build
+  it after that is known, not before. **Not HARNESS1** (that is a second harness *layout*,
   a doctrine question; this is a second harness the driver can spawn). SES3 already made codex
   manageable as a TOOL — `daoris harness` knows its installer, its `CODEX_HOME` seam and how it
   reports a login, all verified against the real binary — so what is missing is only the

@@ -115,11 +115,16 @@ risk, **authorship** was.
   `docs/2026-09-20-working-surface-research.md`), carried by **D51** — *the tree is the unit of
   exclusion, and a repository may have more than one*, which keeps "two agents in one tree corrupt it"
   intact and drops only the incidental cap that a repository has one tree — and **D52**, the surface
-  itself. The build order is **SURF2–SURF6** in `TASKS.md`, in order; SURF2 moves the lock without
-  changing any behaviour, which is what makes the rest safe. **Anything with a screen in it is built
-  component by component** — `docs/2026-09-21-working-surface-components.md` (D52 as amended): a story
-  before the component, its own test, and **a molecule imports no hook**, which is what makes every
-  state reachable by passing props.
+  itself. SURF2 and SURF3 have landed — the lock keys on the tree, and the trees exist. **Anything
+  with a screen in it is built component by component** —
+  `docs/2026-09-21-working-surface-components.md` (D52 as amended): a story before the component, its
+  own test, and **a molecule imports no hook**, which is what makes every state reachable by passing
+  props. **Before the view is built, the dsh evaluation decides what it is built ON** (owner,
+  2026-09-21): `docs/2026-09-21-dsh-direction.md` is the plan and **DSH1** in the backlog is the next
+  session — deepseek-harness supplied the surface's structure already, and the open question is how
+  much of its *function* Daoris adopts, from a third harness to ACP as the driver's session protocol
+  to hosting its console outright. SURF4a–d hold until that decision; the substrate stands under every
+  option.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
