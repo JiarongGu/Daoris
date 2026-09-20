@@ -1,4 +1,4 @@
-import type { CanonFile, Canon, CommandArgs, Lock, Manifest, PlannedWrite, Rename, SyncPlan }
+import type { Canon, CommandArgs, Lock, Manifest, PlannedWrite, Rename, SyncPlan }
   from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync, rmSync } from 'node:fs';

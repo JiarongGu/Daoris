@@ -1,23 +1,22 @@
-import { readManifest, writeManifest } from './config.ts';
+// **The only module in this CLI permitted to touch the network**, and the reason the offline
+// guarantee is scoped rather than absolute.
+//
+// D8 says `check` works offline, because it runs inside build gates and a gate that can fail on a
+// network call is not a gate. That is about the doctrine operations — `check`, `sync`, `index`,
+// `upstream` — all of which are pure local hashing against the lock and stay that way.
+//
+// `connect` is a different thing: an explicit, opt-in registration with a knowledge service, never
+// run by a gate and never on the path of anything that is. A repository that never runs it loses
+// nothing but discoverability.
+//
+// A test enforces exactly this shape: no other module may contain a network primitive, and nothing
+// `check` reaches may import this one.
+
+import { readManifest } from './config.ts';
 import { DaorisError } from './errors.ts';
 import type { CommandArgs, Domain, Manifest } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
-/**
- * **The only module in this CLI permitted to touch the network**, and the reason the offline guarantee
- * is scoped rather than absolute.
- *
- * D8 says `check` works offline, because it runs inside build gates and a gate that can fail on a
- * network call is not a gate. That is about the doctrine operations — `check`, `sync`, `index`,
- * `upstream` — all of which are pure local hashing against the lock and stay that way.
- *
- * `connect` is a different thing: an explicit, opt-in registration with a knowledge service, never run
- * by a gate and never on the path of anything that is. A repository that never runs it loses nothing
- * but discoverability.
- *
- * A test enforces exactly this shape: no other module may contain a network primitive, and nothing
- * `check` reaches may import this one.
- */
 const REGISTRY_PATH = '/api/registry';
 
 /** Where the service is, and the key it wants — supplied by the environment, never committed. */
@@ -66,7 +65,6 @@ export function isLocalService(url: string): boolean {
 export function registration(root: string, manifest: Manifest, name: string, serviceUrl: string): {
   repository: string;
   packs: string[];
-  canonSource: string;
   domain: Domain | null;
   join: boolean;
   shareKnowledge: boolean;
@@ -75,7 +73,6 @@ export function registration(root: string, manifest: Manifest, name: string, ser
   return {
     repository: name,
     packs: manifest.packs,
-    canonSource: manifest.source,
     domain: manifest.domain ?? null,
     join: manifest.remote?.join ?? false,
     shareKnowledge: manifest.remote?.knowledge ?? false,
@@ -133,10 +130,4 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
   write(`  owns ${manifest.domain!.owns.length} area(s); accepts ${manifest.domain!.accepts.length} kind(s)`);
   write('  siblings can now address quests here, and see what is worth asking.');
   return 0;
-}
-
-/** Kept out of the manifest writer so a caller can update a domain without rewriting the file by hand. */
-export function declare(root: string, domain: Domain): void {
-  const manifest = readManifest(root);
-  writeManifest(root, { ...manifest, domain, harnessDescriptor: undefined } as unknown as Manifest);
 }

@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 import { readManifest } from '../src/config.ts';
 import { commandInit, commandStatus } from '../src/commands.ts';
@@ -200,6 +199,32 @@ test('status --json emits the same facts as the text, machine-readable', () => {
   assert.equal(report.update.available, '0.1.0');
   assert.equal(report.update.versionOnly, false);
   assert.ok(Array.isArray(report.drifted));
+  // Silence means local (D47 §4), and status says so rather than omitting the question.
+  assert.equal(report.remote, null);
+
+  delete process.env.DAORIS_CANON;
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+/**
+ * The remote declaration is the manifest's one disclosure control (D47 §4), and "what is this
+ * repository sharing?" is exactly the question status exists to answer — it was the one manifest
+ * field status could not report.
+ */
+test('status surfaces the remote declaration, in both shapes', () => {
+  const canonFx = canonFixture();
+  const repoFx = makeFixture('cmd-status-remote');
+  repoFx.write('daoris.json', '{"source":"s","packs":[],"remote":{"join":true,"knowledge":true}}');
+  process.env.DAORIS_CANON = canonFx.root;
+
+  const json: string[] = [];
+  commandStatus({ root: repoFx.root, argv: ['--json'], write: (s: string) => json.push(s), packageRoot: '' });
+  assert.deepEqual(JSON.parse(json.join('\n')).remote, { join: true, knowledge: true });
+
+  const text: string[] = [];
+  commandStatus({ root: repoFx.root, write: (s: string) => text.push(s), packageRoot: '' });
+  assert.match(text.join('\n'), /remote\s+join \+ knowledge/);
 
   delete process.env.DAORIS_CANON;
   canonFx.cleanup();

@@ -1,4 +1,4 @@
-import type { CommandArgs } from './types.ts';
+import type { CommandArgs, LockLike } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { join } from 'node:path';
 import { listMarkdown, readText, writeTextAtomic } from './fsx.ts';
@@ -78,7 +78,7 @@ function summarize(description: string, limit = 110): string {
  */
 export function buildIndex(
   { root, target, lock }:
-  { root: string; target: string; lock: { entries: readonly { target: string }[] } | null },
+  { root: string; target: string; lock: LockLike | null },
 ): string {
   const locked = lockIndex(lock);
   return [

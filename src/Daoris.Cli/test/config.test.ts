@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 import { readManifest, writeManifest, readLock, writeLock, lockIndex } from '../src/config.ts';
 import { DaorisError } from '../src/errors.ts';
@@ -85,9 +84,48 @@ test('declaring knowledge without join is refused, naming the fix', () => {
   fx.cleanup();
 });
 
+/** A JSON `null` means what absence means — local, silently — not a crash on the dereference. */
+test('a null remote declaration reads as silence', () => {
+  const fx = makeFixture('config-remote-null');
+  fx.write('daoris.json', '{"source":"s","remote":null}');
+  assert.equal(readManifest(fx.root).remote, undefined);
+  fx.cleanup();
+});
+
+/**
+ * A corrupt file is a TOOL error (exit 2), never a bare SyntaxError: unhandled, Node exits 1, which a
+ * build gate reads as policy failure — the one thing a broken file is not.
+ */
+test('a manifest or lock that is not JSON fails as a tool error naming the file', () => {
+  const fx = makeFixture('config-corrupt');
+  fx.write('daoris.json', '{ not json');
+  const manifest = captureError(() => readManifest(fx.root));
+  assert.ok(manifest instanceof DaorisError);
+  assert.equal(manifest.exitCode, 2);
+  assert.match(manifest.message, /daoris\.json/);
+
+  fx.write('daoris.json', '{"source":"s"}');
+  fx.write('daoris.lock', '{ also not json');
+  const lock = captureError(() => readLock(fx.root));
+  assert.ok(lock instanceof DaorisError);
+  assert.equal(lock.exitCode, 2);
+  fx.cleanup();
+});
+
 test('writeManifest produces re-readable JSON', () => {
   const fx = makeFixture('config-write');
   writeManifest(fx.root, { source: 's', packs: ['p'], target: '.claude', coreBudgetBytes: 100 });
   assert.deepEqual(readManifest(fx.root).packs, ['p']);
+  fx.cleanup();
+});
+
+/** The path any future `daoris declare --join` takes: the declaration must survive the round trip. */
+test('a remote declaration survives writeManifest and readManifest intact', () => {
+  const fx = makeFixture('config-remote-roundtrip');
+  writeManifest(fx.root, {
+    source: 's', packs: [], target: '.claude', coreBudgetBytes: 100,
+    remote: { join: true, knowledge: true },
+  });
+  assert.deepEqual(readManifest(fx.root).remote, { join: true, knowledge: true });
   fx.cleanup();
 });

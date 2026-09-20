@@ -8,7 +8,7 @@ import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from 
 import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
 import { inspect } from './drift.ts';
-import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from './harness.ts';
+import { HARNESSES, DEFAULT_HARNESS } from './harness.ts';
 import { DaorisError } from './errors.ts';
 
 const DEFAULT_TARGET = '.claude';
@@ -146,6 +146,9 @@ export function commandStatus(
       drifted: inspection?.drifted ?? [],
       missing: inspection?.missing ?? [],
       stalePacks: inspection?.stalePacks ?? [],
+      // The one disclosure control in the manifest (D47 §4) — "what is this repository sharing?" is
+      // exactly the question status exists to answer, and silence means local.
+      remote: manifest.remote ?? null,
       local,
       canonSourceAvailable: canonAvailable,
       update: update ? { ...update, notes } : null,
@@ -157,6 +160,9 @@ export function commandStatus(
   write(`  source        ${manifest.source}`);
   write(`  packs         ${['core', ...manifest.packs].join(', ')}`);
   write(`  canon         ${lock ? `${lock.canonVersion} (${lock.entries.length} files)` : 'never synced'}`);
+  if (manifest.remote) {
+    write(`  remote        join${manifest.remote.knowledge ? ' + knowledge' : ''} (declared in daoris.json)`);
+  }
 
   if (inspection) {
     write(`  core budget   ${inspection.coreBytes} / ${manifest.coreBudgetBytes} bytes`);

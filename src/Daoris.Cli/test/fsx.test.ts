@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import type { Fixture } from './_fixture.ts';
 import { makeFixture } from './_fixture.ts';
 import { normalize, readText, writeTextAtomic, sha256, listMarkdown } from '../src/fsx.ts';
 

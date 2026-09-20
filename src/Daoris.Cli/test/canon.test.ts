@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 import { readCanon, selectFiles, resolveCanonRoot } from '../src/canon.ts';
 import { DaorisError } from '../src/errors.ts';

@@ -11,6 +11,10 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": true,
+    // Dead imports and locals are refactor residue, and nothing else here reports them: strict mode
+    // does not, and a review sweep found six test files carrying one import for zero uses.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
 
     // Imports name the `.ts` file they actually resolve to, so `node --test` runs the sources
     // directly with no build — and the emit rewrites them to `.js` for the published package.

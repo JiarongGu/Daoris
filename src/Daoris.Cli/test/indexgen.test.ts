@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Fixture } from './_fixture.ts';
 import { makeFixture } from './_fixture.ts';
 import { buildIndex, INDEX_PATH } from '../src/indexgen.ts';
 

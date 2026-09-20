@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { registration, isLocalService } from '../src/connect.ts';
+import { commandConnect, registration, isLocalService } from '../src/connect.ts';
+import { readManifest } from '../src/config.ts';
+import { DaorisError } from '../src/errors.ts';
+import { makeFixture } from './_fixture.ts';
 import type { Manifest } from '../src/types.ts';
 
 const manifest = {
@@ -55,4 +58,72 @@ test('the registration carries the remote declaration, and silence means local',
   const silent = registration('/home/dev/Repo', manifest, 'Repo', 'https://daoris.example.com');
   assert.equal(silent.join, false);
   assert.equal(silent.shareKnowledge, false);
+});
+
+/**
+ * The two layers of remote defaulting — readManifest's normalization and registration's `?? false` —
+ * were each proven alone and their agreement proven nowhere. A REAL manifest file goes through both
+ * here, so neither layer can drift into emitting a combination the other refuses.
+ */
+test('a manifest read from disk and put on the wire says the same thing at both layers', () => {
+  const fx = makeFixture('connect-layers');
+  fx.write('daoris.json', JSON.stringify({
+    source: 's',
+    domain: { summary: 'A test repo.', owns: ['itself'], accepts: ['a quest'] },
+    remote: { join: true },
+  }));
+
+  const body = registration(fx.root, readManifest(fx.root), 'Repo', 'https://daoris.example.com');
+
+  assert.equal(body.join, true);
+  assert.equal(body.shareKnowledge, false);
+  fx.cleanup();
+});
+
+/**
+ * The FIX-LOG names `connect --dry-run` printing the remote declaration as the verification for the
+ * stale-dist regression — until now a manual step. This is the same payload assertion, bin-independent.
+ */
+test('connect --dry-run prints the exact payload, remote declaration and root included', async () => {
+  const fx = makeFixture('connect-dry-run');
+  fx.write('daoris.json', JSON.stringify({
+    source: 's',
+    domain: { summary: 'A test repo.', owns: ['itself'], accepts: ['a quest'] },
+    remote: { join: true, knowledge: true },
+  }));
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  const out: string[] = [];
+  const code = await commandConnect({
+    root: fx.root, argv: ['--dry-run'], write: (s: string) => out.push(s), packageRoot: '',
+  });
+
+  assert.equal(code, 0);
+  const payload = JSON.parse(out.slice(0, -1).join('\n'));
+  assert.equal(payload.join, true);
+  assert.equal(payload.shareKnowledge, true);
+  assert.equal(payload.root, fx.root);
+  assert.match(out.at(-1)!, /would register/);
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
+});
+
+/** Registering an empty declaration is refused as POLICY (exit 1) — the one exit-1 in connect. */
+test('connect refuses a repository that has not said what it is', async () => {
+  const fx = makeFixture('connect-undeclared');
+  fx.write('daoris.json', '{"source":"s"}');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  try {
+    await commandConnect({ root: fx.root, argv: [], write: () => {}, packageRoot: '' });
+    assert.fail('expected a refusal');
+  } catch (error) {
+    assert.ok(error instanceof DaorisError);
+    assert.equal(error.exitCode, 1);
+    assert.match(error.message, /domain/);
+  }
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
 });

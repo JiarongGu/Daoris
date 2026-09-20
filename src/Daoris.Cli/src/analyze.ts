@@ -3,16 +3,23 @@ import type {
 } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { listFiles, listMarkdown, readText, sha256 } from './fsx.ts';
 import { renderCanonFile } from './document.ts';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.ts';
-import { lockIndex, readLock, readManifest } from './config.ts';
+import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
 import { significantTokens, containment } from './twins.ts';
-import { harnessVerdict, verifyHarnessContract } from './harness.ts';
+import {
+  DEFAULT_HARNESS, HARNESSES, harnessVerdict, tierNames, verifyHarnessContract,
+} from './harness.ts';
 
-const DEFAULT_TARGET = '.claude';
-const TIERS = ['rules', 'knowledge', 'skills'];
+// Pre-adoption there is no manifest to resolve a harness from, so this command reads the DEFAULT
+// harness's descriptor — one definition, not a constant quietly asserting one harness's conventions
+// as universal (the exact scatter the descriptor seam retired).
+const CLAUDE = HARNESSES[DEFAULT_HARNESS]!;
+const DEFAULT_TARGET = CLAUDE.defaultTarget;
+const TIERS = tierNames(CLAUDE);
+const INDEX_FILE = basename(CLAUDE.indexPath);
 
 /**
  * What a repository already has, before daoris touches it.
@@ -24,7 +31,7 @@ function survey(root: string, target: string): Survey {
   const found: Survey = { rules: [], knowledge: [], skills: [] };
   for (const tier of ['rules', 'knowledge'] as const) {
     for (const file of listMarkdown(join(root, target, tier))) {
-      if (file === 'RULES_INDEX.md') continue;
+      if (file === INDEX_FILE) continue;
       found[tier].push({ target: `${tier}/${file}`, bytes: statSync(join(root, target, tier, file)).size });
     }
   }
@@ -142,7 +149,7 @@ function findTwinsAgainstCanon(
   for (const tier of TIERS) {
     const dir = join(root, target, tier);
     for (const file of listMarkdown(dir)) {
-      if (file === 'RULES_INDEX.md') continue;
+      if (file === INDEX_FILE) continue;
       const local = `${tier}/${file}`;
       // A file at a canonical path is a collision, which is reported separately and more precisely.
       if (canonical.some((c) => c.target === local)) continue;
@@ -219,7 +226,7 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   }
 
   const target = manifest?.target ?? DEFAULT_TARGET;
-  const budgetLimit = manifest?.coreBudgetBytes ?? 30000;
+  const budgetLimit = manifest?.coreBudgetBytes ?? DEFAULT_CORE_BUDGET_BYTES;
   const requested = argv.filter((arg) => !arg.startsWith('--'));
   const packs = requested.length ? requested : (manifest?.packs ?? []);
 

@@ -147,10 +147,10 @@ export interface Lock {
  * The part of the lock most readers need.
  *
  * `canonVersion` and `source` are provenance the writer stamps; everything that merely asks "what did
- * Daoris put here" wants only the entries, and saying so keeps those callers from having to invent
- * provenance they do not have.
+ * Daoris put here" wants only the entries' targets, and saying so keeps those callers from having to
+ * invent provenance they do not have. A full `Lock` satisfies this, and so does a test fixture.
  */
-export type LockLike = Pick<Lock, 'entries'>;
+export type LockLike = { entries: readonly Pick<LockEntry, 'target'>[] };
 
 /** What `sync` decided about one file, before anything is written. */
 export interface PlannedWrite extends CanonFile {

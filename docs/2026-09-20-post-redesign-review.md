@@ -37,7 +37,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
 - [x] **`/api/feed/quests` validates two fields and lets four nulls through** to non-coalesced SQLite
   parameters (a 500 where its sibling door answers 400). **Conflict shapes diverge**: the quest door
   teaches clients 409 means "someone got there first"; the session doors answer 400 for the same class.
-- [ ] **A corrupt manifest escapes the CLI's exit-code contract.** `JSON.parse` is unguarded in
+- [x] **A corrupt manifest escapes the CLI's exit-code contract.** `JSON.parse` is unguarded in
   `config.ts`, and `"remote": null` passes the `!== undefined` guard and dereferences null — a tool
   error (exit 2 by contract) surfaces as an unhandled stack trace with exit 1, which a gate reads as
   policy failure.
@@ -71,8 +71,10 @@ commits; unchecked items are deliberately deferred with the reason inline.
   a shared `copyTree`.
 - [ ] **Three driver helpers in the family rehearsal, diverged three ways** — one parameterized helper
   with the timeout and `NO_REMOTE` always applied.
-- [ ] **The claude-code layout is still hardcoded in `analyze.ts`/`twins.ts`** beside the harness
-  descriptor that owns it — route the tier names, target, and index filename through the descriptor.
+- [x] **The claude-code layout is still hardcoded in `analyze.ts`/`twins.ts`** beside the harness
+  descriptor that owns it — the tier names, target, index filename and budget default now come from
+  the default descriptor and `config`'s one constant. (The `Survey` shape's tier keys stay literal:
+  they are the canon's vocabulary, and generalizing them is HARNESS1's held work.)
 - [x] Web: status→tone casts copy-pasted three times (one narrowed wrongly); invalidations bypass the
   `keys` factory; a hand-rolled entry fetch beside a file of TanStack hooks; `refresh` skips the `post`
   helper and loses the refusal sentence; debounce duplicated in two views.
@@ -84,10 +86,11 @@ commits; unchecked items are deliberately deferred with the reason inline.
   gate; `SqliteKnowledgeStore`'s "every entry can be re-read from the repositories" rationale (untrue on
   a shared deployment); `RegisterRequest.CanonSource` parsed and never read; dead `using`; `Planner.cs`'s
   unread `busy` set; `SyncReport`'s five counts computed and discarded.
-- [ ] CLI: `declare()` exported and never called; `LockLike` documented and consumed by nothing;
-  unused imports in `config.ts` and six test files (`noUnusedLocals` now on); three references to
-  `.mjs` modules that became `.ts` (one inside a user-facing error message); `stage-package.mjs`'s
-  shadowing rationale describing a hazard `canon.ts` closed.
+- [x] CLI: `declare()` exported and never called; `LockLike` documented and consumed by nothing;
+  unused imports in `config.ts` and seven test files (`noUnusedLocals`/`noUnusedParameters` now on);
+  three references to `.mjs` modules that became `.ts` (one inside a user-facing error message);
+  `canonSource` sent by `connect` and read by nothing on either side (dropped from both). The
+  `stage-package.mjs` rationale rewrite lands with the tools batch.
 - [x] Web: the "key-gated endpoints" sentence the README fix missed in `QuestsView.tsx`; the "keyed
   deployment refusing a browser write" example (a shared deployment serves no page); dead type
   re-exports; an unused icon; two unused i18n keys in both catalogs; four `DriverState` fields the page
@@ -122,8 +125,10 @@ commits; unchecked items are deliberately deferred with the reason inline.
 
 ## Test gaps worth closing now
 
-- [ ] `connect --dry-run` printing `join`/`shareKnowledge` — the FIX-LOG's own named verification for
-  the stale-`dist/` regression, currently manual.
+- [x] `connect --dry-run` printing `join`/`shareKnowledge` — the FIX-LOG's own named verification for
+  the stale-`dist/` regression, currently manual. Also landed: the two remote-defaulting layers proven
+  against one real file, the write→read round trip, the undeclared-domain exit-1 refusal, `"remote":
+  null` as silence, and `status` reporting the declaration in both shapes.
 - [x] `RemoteConfig.Load` (Core) — zero tests, while its driver twin is table-tested; the guarantee is
   security-relevant ("never a mix of an env URL with the file's key"). `HttpRemoteQuests.Parse` gained
   its own table too — the only judgement in the relay transport, previously bypassed by the fake.

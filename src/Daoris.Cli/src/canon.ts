@@ -6,7 +6,7 @@ import type { Canon, CanonFile, Pack } from './types.ts';
 
 /**
  * The canon's own vocabulary for what a document IS: always-loaded, read-on-demand, or invoked by
- * name. Where each one lands on disk is the harness's business (src/harness.mjs), which is why this
+ * name. Where each one lands on disk is the harness's business (src/harness.ts), which is why this
  * list describes doctrine rather than directories — and why there is still no `tier` field (D7).
  */
 const TIERS = ['rules', 'knowledge', 'skills'];
@@ -14,7 +14,7 @@ const TIERS = ['rules', 'knowledge', 'skills'];
 /**
  * The canon ships INSIDE the package, so the pinned ref in a repo's manifest is
  * itself the version pin and no command ever fetches anything (D11). That is the
- * published layout, staged at pack time by tools/stage-canon.mjs.
+ * published layout, staged at pack time by tools/stage-package.mjs.
  *
  * In THIS repository the canon lives at the root instead, because it is data the
  * whole project shares rather than the CLI's private asset — so a development

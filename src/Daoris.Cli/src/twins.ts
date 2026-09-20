@@ -4,9 +4,14 @@ import { join } from 'node:path';
 import { listMarkdown, readText } from './fsx.ts';
 import { parseFrontmatter, stripHeader } from './document.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
+import { DEFAULT_HARNESS, HARNESSES, tierNames } from './harness.ts';
+import { basename } from 'node:path';
 
-const INDEX_FILE = 'RULES_INDEX.md';
-const TIERS = ['rules', 'knowledge', 'skills'];
+// From the default harness's descriptor — one definition of the layout, not a constant quietly
+// asserting it here a fourth time (doctor's callers always have a manifest, but its layout facts
+// must be the same ones every other command reads).
+const INDEX_FILE = basename(HARNESSES[DEFAULT_HARNESS]!.indexPath);
+const TIERS = tierNames(HARNESSES[DEFAULT_HARNESS]!);
 
 /** Words this common carry no signal about what a document is about. */
 const STOPWORDS = new Set([

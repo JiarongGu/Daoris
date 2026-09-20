@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { readText, writeTextAtomic } from './fsx.ts';
 import { DaorisError } from './errors.ts';
 import { DEFAULT_HARNESS, resolveHarness } from './harness.ts';
-import type { Lock, LockEntry, LockLike, Manifest } from './types.ts';
+import type { Lock, Manifest } from './types.ts';
 
 export const MANIFEST_FILE = 'daoris.json';
 const LOCK_FILE = 'daoris.lock';
@@ -26,14 +26,34 @@ const LOCK_VERSION = 1;
  * earned its keep on — it caught a 45% overage on first contact with one adopter, and forced the
  * retirement of an 8.3 KB duplicated rule in another.
  */
-const DEFAULTS = { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudgetBytes: 30000 };
+export const DEFAULT_CORE_BUDGET_BYTES = 30000;
+
+const DEFAULTS: Pick<Manifest, 'packs' | 'harness' | 'coreBudgetBytes'> & { target: string | null } =
+  { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudgetBytes: DEFAULT_CORE_BUDGET_BYTES };
+
+/**
+ * JSON.parse behind the exit-code contract: a corrupt manifest or lock is a TOOL error (2), and a bare
+ * SyntaxError escaping to Node's top level reports 1 — which a build gate reads as policy failure,
+ * the one thing a broken file is not.
+ */
+function parseJson<T>(file: string, text: string): T {
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    throw new DaorisError(`${file} is not valid JSON — ${(error as Error).message}`);
+  }
+}
 
 export function readManifest(root: string): Manifest {
   const file = join(root, MANIFEST_FILE);
   if (!existsSync(file)) {
     throw new DaorisError(`no ${MANIFEST_FILE} in '${root}' — run 'daoris init' first`);
   }
-  const manifest = { ...DEFAULTS, ...JSON.parse(readText(file)) } as Manifest;
+  const parsed = parseJson<Partial<Manifest>>(file, readText(file));
+  // A JSON `"remote": null` means what absence means — local, silently — not a crash on the
+  // dereference below. The type says the field is never null; the file is under no such obligation.
+  if ((parsed as Record<string, unknown>).remote === null) delete parsed.remote;
+  const manifest = { ...DEFAULTS, ...parsed } as Manifest;
   if (!manifest.source) throw new DaorisError(`${MANIFEST_FILE} has no 'source'`);
 
   // Knowledge feeds only from a joined repository (D47 §4): a manifest saying "share my knowledge but
@@ -63,7 +83,7 @@ export function writeManifest(root: string, manifest: Partial<Manifest>): void {
 
 export function readLock(root: string): Lock | null {
   const file = join(root, LOCK_FILE);
-  return existsSync(file) ? JSON.parse(readText(file)) : null;
+  return existsSync(file) ? parseJson<Lock>(file, readText(file)) : null;
 }
 
 /**
