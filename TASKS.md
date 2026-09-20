@@ -90,8 +90,8 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 **The next arc is under way: workspaces and the interactive surface (D48/D49, 2026-09-20, each amended
 the same day on the owner's corrections).** The owner set the direction in this backlog and granted
 structural redesign (nothing is deployed); the design session turned it into two contracts and eight
-build items, of which **all four WSP items and SES1 landed 2026-09-20**. **The workspace arc is
-complete**: a
+build items, of which **all four WSP items, SES1 and SES2 landed 2026-09-20**. **The workspace arc
+is complete**: a
 registry row carries the workspace, every cross-repository answer is scoped by it, the family is an
 explicit list that `connect`, `retire` and `import` maintain, each circle syncs with the one deployment
 its own entry names, and a feed carries the commit it speaks for so the newest canonical view is the
@@ -105,6 +105,26 @@ budget).
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
+- **SES3 specifically** (the large one): read interactive design **§4** and workspace design
+  **§2b** before touching anything. Its shape is three additions to the adapter seam beside `Prepare`
+  and `PrepareChat` — a **probe** (locate, version, per-profile login state), an **install/update**
+  action using each harness's own official mechanism, and an **environment seam** naming the profile
+  home (`claude-code`'s config-dir variable, `codex`'s home variable). The load-bearing rule is the
+  one the design states twice: **Daoris manages directories and names, never secrets** — login is the
+  harness's own flow run INTO a profile directory, streamed through SES1's console like any other
+  process, and the record carries the profile NAME and the harness version at spawn, never anything
+  from inside the profile. Two refusals mirror each other and should read alike: spawning onto a
+  missing harness, and spawning onto a logged-out profile — each names the action that fixes it
+  rather than failing bare. Never mid-session, never unasked (a tool changing under a running loop is
+  `reaching-in` one layer down), and **both surfaces** get it: `daoris harness list|install|update|
+  login|profile ...` and `daoris driver ...` exist because a headless machine has no roster page.
+- **CANON6 specifically** (small, and constrained): read workspace design **§2a**. It is an audit of
+  the 8 core rules for instructions only Daoris can perform — the known case is
+  `repository-owns-its-work`'s "publish a quest" — each gaining the tool-absent path in the same
+  breath, plus the principle in `.claude/knowledge/canon-authoring.md`. **The budget is the whole
+  difficulty**: the always-loaded core is 12 bytes from its limit, so a carve-out that does not fit is
+  a D28 split of principle from detail, never a raised limit. A canon change must re-sync `examples/`
+  in the same commit, and `npm run rehearse:family` enforces that.
 - **The build order is stated at the top of the backlog** — the WSP items, SES1 and SES2 are all
   in, so the next landing is SES3 or CANON6. Schema changes rebuild rather
   than migrate (the store's own rule, and nothing is deployed); WSP1 bumped the entry store to schema
