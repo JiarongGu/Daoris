@@ -88,17 +88,36 @@ memory. The toolchain manager makes it Daoris's job — **explicitly, never auto
 - **Versions are recorded**: the session record's `adapter` gains the harness version observed at
   spawn, so "which tool produced this" is answerable later — the same authorship instinct as
   version-stamping (D-release), applied to the tool that did the work.
+- **Credential profiles: one harness, many accounts** (set by the owner, 2026-09-20). A harness holds
+  one login per configuration home, so switching accounts today means re-logging-in — the toolchain
+  manager makes accounts **named profiles** instead: each profile is an isolated harness configuration
+  directory Daoris owns the *location* of (`~/.daoris/harnesses/<harness>/<profile>/`), selected at
+  spawn by the environment seam every harness already has for exactly this (`claude-code`'s config-dir
+  variable; `codex`'s home variable — an adapter obligation, beside spawn and probe). **Login is the
+  harness's own flow, run into the profile** — a person-action streamed through §2's console like an
+  install — so **Daoris never sees, stores, or copies a credential**: the harness's own store holds
+  it, inside the profile, under the user's OS account, which is the same boundary it lives behind
+  today. Switching accounts is choosing a profile: a machine default per harness, an optional default
+  per **workspace** (the natural cut — a work account for the work workspace, a personal one at home;
+  the wiring layer of the workspace design §2, not anything tracked), and a per-session picker for a
+  chat. The session record carries the **profile name** at spawn beside the version — never anything
+  from inside it — so "which account did this run as" is answerable without a secret ever leaving the
+  profile. The probe reports each profile's login state the way the harness reports it (logged in /
+  not), and a spawn onto a logged-out profile refuses naming the login action, the same shape as a
+  missing binary.
 - Rejected: **auto-update** (a gate's tool must not change between two runs nobody diffed); **Daoris
   pinning harness versions in the manifest** (the harness is machine tooling, not repository doctrine —
-  the repository's own docs may demand a minimum, but the manifest stays inert data about doctrine).
+  the repository's own docs may demand a minimum, but the manifest stays inert data about doctrine);
+  **Daoris holding tokens itself** (a second credential store is a second thing to leak, and the
+  harness already has one — Daoris manages directories and names, never secrets).
 
 ## 5. What lives where (the D46 §7 table, extended)
 
 | The service (passive; model-free; spawn-free) | The driver / desktop |
 |---|---|
-| Session records — now with `Kind`, optional quest, harness version | The ring buffers, the console stream, chat input — over IPC only |
+| Session records — now with `Kind`, optional quest, harness version + profile name | The ring buffers, the console stream, chat input — over IPC only |
 | Quests, unchanged — a chat uses the same doors | The `interactive` spawns, PTY/stdio wiring per adapter |
-| Nothing about the toolchain — a remote has no binaries to manage | Probe, install, update; the roster surface |
+| Nothing about the toolchain — a remote has no binaries to manage | Probe, install, update; the roster surface; credential profiles (directories and names — the secrets stay in each harness's own store) |
 
 ## 6. How it is verified
 
@@ -108,9 +127,12 @@ and the family rehearsal's driver phase gains: a chat session opened in an examp
 delivered, output observed in order, the record closing `completed` with `Kind: chat`; the
 repository-busy refusal when a chat holds the tree a driven quest wants. The ring buffer and the
 tee are unit-tested in the driver suite (bounded, ordered, file unchanged). Probe is unit-tested
-against a fake binary; install/update are person-actions on real installers and stay out of gates —
-the refusal-names-the-action path is what gets a test. The `claude-code` interactive adapter is then
-a deployment choice on a proven loop, reporting itself in every record (D24's split, again).
+against a fake binary; install/update and login are person-actions on real installers and stay out of
+gates — the refusal-names-the-action paths (missing binary; logged-out profile) are what get tests.
+Profile selection is gate-testable with the stub: the environment seam is observable, so the rehearsal
+asserts a spawn under profile A carries A's configuration home and its record names A. The
+`claude-code` interactive adapter is then a deployment choice on a proven loop, reporting itself in
+every record (D24's split, again).
 
 ## 7. Deliberately not in this design
 

@@ -14,7 +14,9 @@ sessions doing the family's work. Parts 1 and 2 of D45 are **built and proven by
 (DRV5, six landings, in the archive)** — the remote server exists, gate-proven by the family
 rehearsal's two-machine phase. **All three parts of D45 are built.** The owner set the next direction
 2026-09-20: **workspaces as the unit of sharing, and Daoris as the working surface** — designed the
-same day as D48/D49 with two contracts and seven build items in the backlog below.
+same day as D48/D49 (each amended the same day on the owner's corrections: membership is git-style
+wiring, never tracked; coexistence with non-users is binding; harness accounts are named credential
+profiles) with two contracts and eight build items in the backlog below.
 
 ## State
 
@@ -80,8 +82,9 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 ## Handover — where a fresh session picks up
 
 **The next arc is designed and build-ready: workspaces and the interactive surface (D48/D49,
-2026-09-20).** The owner set the direction in this backlog and granted structural redesign (nothing is
-deployed); the design session turned it into two contracts and seven build items. **Start at WSP1.**
+2026-09-20, each amended the same day on the owner's corrections).** The owner set the direction in
+this backlog and granted structural redesign (nothing is deployed); the design session turned it into
+two contracts and eight build items. **Start at WSP1.**
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48/D49** (the
@@ -108,15 +111,17 @@ deployed); the design session turned it into two contracts and seven build items
 direction, designed under the standing redesign grant — the two contracts are
 `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`; read them before
 building anything below. Build order: WSP1 first (everything else stands on it), then WSP2–WSP4 in
-order; SES1→SES2 can interleave after WSP1; SES3 is independent. Each item is one session-sized
-landing, TDD, gates green, moved to the archive on completion.
+order; SES1→SES2 can interleave after WSP1; SES3 and CANON6 are independent. Each item is one
+session-sized landing, TDD, gates green, moved to the archive on completion.
 
-- [ ] **WSP1 — the workspace exists.** The `workspace` manifest field end to end (normalized at read,
-  absence = `default`; carried by `connect`, reported by `status`, scaffolded by `init`); every
+- [ ] **WSP1 — the workspace exists.** Membership is wiring, never tracked (D48 as amended — the git
+  shape): the registry row carries the workspace, `connect --workspace <name>` sets it (preserved on
+  upsert, defaulting to the existing row then `default`), **the manifest is untouched**; every
   cross-repo entity (registration, entry, quest, session) carries its workspace; search/convergence/
   registry/quest scoping with the same-workspace clause in `QuestExchange` (refusal names both sides);
-  MCP tools gain `workspace` with the ambient-repository default; the family rehearsal grows the
-  two-workspace phase (a search and a quest refused across the boundary, with the sentence). Design §2/§4.
+  MCP tools gain `workspace` with the ambient default resolved from the registry by path; the family
+  rehearsal grows the two-workspace phase (a search and a quest refused across the boundary, with the
+  sentence). Design §2/§2a/§4.
 
 - [ ] **WSP2 — the registry becomes managed.** Registry-as-authority (explicit list: name, workspace,
   declaration, machine-local path); the folder scan becomes `import` (first run imports the old root,
@@ -146,10 +151,22 @@ landing, TDD, gates green, moved to the archive on completion.
   through their own connector; the rehearsal drives a chat to `completed` and the repository-busy
   refusal. Interactive design §3.
 
-- [ ] **SES3 — the toolchain.** Adapter `Probe` (locate + version, run at startup and on demand); the
-  platform's roster (harness, version, present/absent); install/update on the person's explicit action
-  via each harness's own mechanism, streaming through the console; spawn-on-missing refuses naming the
-  install action; the session record gains the harness version at spawn. Interactive design §4.
+- [ ] **SES3 — the toolchain.** Adapter `Probe` (locate + version + per-profile login state, run at
+  startup and on demand); the platform's roster (harness, version, present/absent, profiles);
+  install/update and login on the person's explicit action via each harness's own mechanism, streaming
+  through the console; **credential profiles** — named, isolated harness config homes selected at
+  spawn via the environment seam, machine default per harness, optional default per workspace,
+  per-session picker; Daoris stores directories and names, never secrets; the record carries harness
+  version + profile name at spawn; spawn-on-missing and spawn-on-logged-out refuse naming the action.
+  Interactive design §4.
+
+- [ ] **CANON6 — doctrine must not hard-require Daoris (coexistence, D48).** Audit the 8 core rules
+  for instructions only Daoris can perform (the known case: `repository-owns-its-work`'s "publish a
+  quest"); every named mechanism gains the tool-absent path in the same breath ("…and file the request
+  with that repository's owner where the quest system does not exist"); the principle lands in
+  `.claude/knowledge/canon-authoring.md`. Under the byte budget's discipline — a carve-out that does
+  not fit is a D28 split, not a raised limit — and a canon change re-syncs `examples/` in the same
+  commit, as ever. Workspace design §2a.
 
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken

@@ -1347,10 +1347,24 @@ is deployed): repositories belong to **workspaces**, and everything that crosses
 knowledge search, convergence, the registry, quests, session records, and every remote — is scoped to
 one. The mechanism is `docs/2026-09-20-workspace-design.md`; the load-bearing choices, argued there:
 
-- **Membership is a manifest field** (`workspace`), tracked and reviewed like `domain` and `remote`,
-  with absence meaning the default workspace — the `no-global-memory` argument applied to membership:
-  a fact every clone and teammate must agree on cannot live in a machine-local mapping. One repository,
-  one workspace; a repository serving two circles is a domain that wants splitting.
+- ~~Membership is a manifest field~~ **Amended 2026-09-20, the same day, on the owner's correction:
+  membership is wiring, like a git remote — never tracked.** Git tracks nothing about its hosting;
+  where a clone syncs is local configuration and who you are there is your credential, which is why
+  forks and mirrors work. So: a repository's workspace is a **registry row on the machine** (set by
+  the desktop or `connect --workspace`), the **workspace's server is the team's authority** on
+  membership (only its keyed accounts can register there — account + key identify membership, the
+  git-hosting shape; the account is the key's principal today, the OIDC person later), and **nothing
+  about workspaces enters a tracked file**. The manifest keeps only the `remote` disclosure flags: MAY
+  is tracked and reviewed, WHERE is the machine's wiring, WHO is the account. Two machines wiring one
+  repository to different workspaces is a feature (one repo, two remotes), not a conflict. The first
+  draft's manifest field is the rejected alternative: it wrote one deployment's grouping into every
+  clone, broke the fork case, and taxed contributors who never run Daoris.
+- **Coexistence is binding** (set with the correction): local Daoris works alone with no server, no
+  account, no wiring; and a Daoris-adopted repository stays fully workable — agents included — for
+  contributors who do not run Daoris. Nothing Daoris adds may sit on a non-user's critical path
+  (`daoris check` is the only gate-adjacent piece: zero-dep, offline, npx-pinned), and canon doctrine
+  must not hard-require Daoris mechanics — a rule naming a mechanism carries the tool-absent path in
+  the same breath (CANON6 audits the existing core under the byte budget's discipline).
 - **One shared deployment serves one workspace**, declared as its identity (`DAORIS_WORKSPACE`),
   refusing feeds and registrations that name another. The machine's remote config becomes a map,
   workspace → { url, key } (`~/.daoris/remotes.json`), and the sync loop runs per workspace. Rejected:
@@ -1396,6 +1410,13 @@ from the platform, and Daoris installs and updates those harness CLIs itself. Th
   the moving-target problem one layer down. The session record gains the harness version observed at
   spawn. Rejected: auto-update, and pinning harness versions in the manifest (machine tooling is not
   repository doctrine).
+- **Multiple accounts per harness are named credential profiles** (added by the owner the same day):
+  each profile is an isolated harness configuration home Daoris owns the *location* of, selected at
+  spawn through the environment seam every harness carries; login is the harness's own flow run into
+  the profile, so **Daoris never sees, stores, or copies a credential** — it manages directories and
+  names. Switching accounts is choosing a profile (machine default per harness, optional default per
+  workspace, per-session picker), and the record names the profile at spawn. Rejected: Daoris holding
+  tokens itself — a second credential store is a second thing to leak, and the harness already has one.
 
 **What this preserves.** Driving stays additive (D46): outside sessions, hand work, and the browser's
 read-only view are untouched. The service stays spawn-free and model-free; processes and streams stay

@@ -20,30 +20,73 @@ boundary, drawn deliberately: **the workspace is the unit of sharing.** Everythi
 repositories — search, convergence, the registry, quests, session records, and every remote — is
 scoped to one workspace. Everything inside one repository is unchanged.
 
-## 2. Where a workspace is declared: the manifest
+## 2. Where membership lives: wiring, like a git remote — never a tracked declaration
 
-`daoris.json` gains one field:
+**Set by the owner (2026-09-20, amending the first draft of this design): membership works like git.**
+Git tracks nothing about its hosting — the repository carries no remote, no account, no org; *where*
+a clone syncs is local configuration (`.git/config`), and *who* you are there is your credential. A
+fork, a mirror, and a private copy all work because membership was never written into the tree.
+Daoris does the same:
 
-```json
-{ "workspace": "aurora" }
-```
+- **A repository's workspace is a row in the machine's registry** (§3) — set when the person adds the
+  repository to a workspace (the desktop's add flow, or `daoris connect --workspace <name>`), preserved
+  across re-registration, defaulting to `default`. It is the analog of `git remote add`: local wiring,
+  per machine, changeable without touching the tree.
+- **The workspace's server is the team's authority on membership** — a repository is in workspace
+  `aurora`, as far as the team is concerned, when it is registered at aurora's server, and only keyed
+  accounts can do that. Identity is the existing model (service design §5): today the account is the
+  key's principal (per person, per machine, named `person@machine`), later the OIDC person; the key
+  was minted *by that workspace's server*, so **holding the key is what identifies membership locally
+  — account + key, exactly the git-hosting shape.** Teammates converge on one workspace the way they
+  converge on one `origin`: because that is where the team's server is, not because the tree says so.
+- **Nothing about workspaces is tracked.** The manifest keeps exactly what it has: `remote`
+  — *may* this repository's material leave the machine (join; knowledge) — because disclosure is the
+  repository's reviewed call. The layering is three questions with three homes: **MAY** (the manifest,
+  tracked), **WHERE** (the machine's wiring — registry row + remotes map, §5), **WHO** (the account
+  the key names, server-side). `status` stays offline and reports the manifest's declaration; the
+  platform reports the wiring.
+- **Two machines may wire one repository differently**, and that is a feature, not a conflict — the
+  same repository can feed a work workspace from the office machine and a personal one at home, as a
+  git repository pushes to two remotes. Each server's registry is its own truth; nothing needs
+  reconciling because nothing claims to be global.
 
-- **Absence means the default workspace**, normalized to the name `default` at read — the same
-  silence-is-the-safe-default rule as `remote` (D21), and what makes every existing manifest already
-  correct. A machine that never declares workspaces behaves exactly as today: one family, one scope.
-- **The manifest, not a machine-local mapping**, for the `no-global-memory` reason: membership is a
-  fact about the repository — every clone of it, every teammate — and a fact in a tracked, reviewed
-  file can be corrected by review and traced to the change that motivated it. A machine-local mapping
-  would let two machines file the same repository under two workspaces and never notice.
-- **Not a folder-level workspace file**, because the owner's own framing kills it: "some repo might
-  belong to different workspace" — membership does not follow disk layout, and a design that assumes
-  co-located checkouts breaks on the first repository that lives elsewhere.
-- `connect` carries `workspace` in the registration exactly as it carries `domain` and the remote
-  declarations. `status` reports it. Nouns only, like everything in the manifest (D26).
+Rejected — **a `workspace` field in the manifest** (this design's own first draft): it writes one
+deployment's grouping into every clone, which breaks the fork/mirror case git solves by tracking
+nothing; it forces the coexistence cost of §2a onto people who never run Daoris; and the consistency
+it promised is provided better by the server (only its keys can register there) than by a tracked
+string two machines can still disagree about editing. Rejected — **a folder-level workspace file**:
+membership does not follow disk layout ("some repo might belong to different workspace"), and it
+assumes co-located checkouts.
 
-**A repository belongs to exactly one workspace.** A repository that genuinely serves two circles is a
-repository whose domain wants splitting — the same answer the driver gives to parallel sessions in one
-tree. (Cross-workspace *asking* is deliberately out of scope; see §10.)
+## 2a. Coexistence: Daoris works alone, and beside people who do not use it
+
+Set by the owner with §2, and binding on every WSP/SES item — two properties that must stay true:
+
+1. **Local Daoris works alone.** No server, no account, no key, no workspace wiring — the default is
+   and remains a fully useful single-machine deployment (D21). Workspaces without any remote are just
+   local grouping labels in the registry; a machine that never names one runs exactly as today.
+2. **A Daoris-adopted repository stays fully workable for contributors who do not run Daoris** —
+   including their agents. What `sync` materializes is plain markdown any harness loads with no Daoris
+   present; that is already the design ("a convention in the repository still works when the tool
+   changes") and it must not erode. Concretely:
+   - **Nothing Daoris adds may sit on a contributor's critical path.** The only gate-adjacent piece is
+     `daoris check`, and it is zero-dependency, offline, and pinned via `npx` — runnable with no
+     account, no service, no setup. A repository wiring it into verify costs a non-user nothing but a
+     download; everything else (connect, quests, the driver) is opt-in surface a non-user never meets.
+   - **Canon doctrine must not hard-require Daoris mechanics.** A rule that instructs an action only
+     Daoris can perform ("publish a quest") reads as a dead end to an agent working without the
+     service. Every canon rule that names a Daoris mechanism must carry the tool-absent path in the
+     same breath — the principle is canonical, the mechanism degrades: *never write into another
+     repository; publish a quest where the quest system exists, and file the request with that
+     repository's owner where it does not.* This lands as a canon-authoring principle plus an audit of
+     the existing core rules (backlog CANON6), under the byte budget's discipline — a carve-out that
+     does not fit is a D28 split, not a raised limit.
+   - **A non-user editing a vendored rule breaks nothing**: the next sync by a user reports drift,
+     which is the system working — drift is a signal to review, never a failure of the contributor.
+
+**A repository belongs to one workspace per machine.** A repository that genuinely serves two circles
+*from one machine* is a domain that wants splitting — the same answer the driver gives to parallel
+sessions in one tree. (Cross-workspace *asking* is deliberately out of scope; see §10.)
 
 ## 3. The registry becomes managed; the scan becomes an import
 
@@ -73,10 +116,10 @@ person (D21) — but **every cross-repository answer is scoped**:
 - **Search, convergence, the registry list**: scoped to one workspace per query. The platform gains a
   workspace switcher (one more filter, not a new view); the MCP tools gain an optional `workspace`
   argument. The default scope is **the workspace of the repository the session runs in**, resolved
-  from the working directory's manifest — an agent session asking "has anyone solved this" means its
-  own circle, not every circle the machine can see. With no ambient repository and no argument, the
-  answer states the workspaces it spans rather than silently mixing them (the D24 shape: report the
-  scope that ran).
+  from the machine's registry by the working directory's path (§2 — wiring, not the tree) — an agent
+  session asking "has anyone solved this" means its own circle, not every circle the machine can see.
+  With no ambient repository and no argument, the answer states the workspaces it spans rather than
+  silently mixing them (the D24 shape: report the scope that ran).
 - **Quests are intra-workspace.** Publishing checks that `from` and `to` share a workspace, and the
   refusal names both sides' workspaces. Addressability already gates on adoption (D33/D34); this adds
   one more clause to the same judgement in `QuestExchange`, where both hosts share it.
@@ -162,11 +205,13 @@ machine paths (D46/D47: paths never reach a browser).
   registers it with workspace + declaration, through the same door `connect` uses. Adoption itself —
   sync, collisions, the review — remains the repository's own agent's job (`adoption.md`); adding to
   the workspace is registration, not adoption.
-- **Update**: edit the declaration (domain, workspace, remote flags) → the shell writes `daoris.json`
-  **in the repository** and re-registers. This is the person editing their own tracked file through a
-  form instead of a text editor; the diff lands uncommitted for the repository's own review flow, and
-  doctrine (rules/knowledge/skills) stays unwritable from every surface (D31) — the manifest is inert
-  data (D26), not doctrine.
+- **Update**: two different acts, kept visibly apart. Changing the **wiring** (which workspace this
+  repository belongs to on this machine) edits the registry row only — local, instant, no file
+  touched, like re-pointing a git remote. Changing the **declaration** (domain, the `remote`
+  disclosure flags) edits `daoris.json` **in the repository** and re-registers — the person editing
+  their own tracked file through a form instead of a text editor; the diff lands uncommitted for the
+  repository's own review flow, and doctrine (rules/knowledge/skills) stays unwritable from every
+  surface (D31) — the manifest is inert data (D26), not doctrine.
 - **Remove**: retire the registration, with the sentence saying what it does **not** do — no files
   deleted, no history touched; the repository simply stops being addressable and indexed here.
 - A browser over a keyed remote sees the workspace's registry read-only, as it sees everything.
@@ -175,7 +220,7 @@ machine paths (D46/D47: paths never reach a browser).
 
 | Layer | Change |
 |---|---|
-| CLI (`types.ts`, `config.ts`, `connect.ts`, `commands.ts`) | `workspace` manifest field, normalized at read; carried by `connect`; reported by `status`; `init` scaffolds it. Nothing else — every doctrine command is per-repository and untouched |
+| CLI (`connect.ts` only) | `connect --workspace <name>` — a wiring statement to the local host, preserved on upsert, defaulting to the existing row's workspace and then to `default`. **The manifest is untouched** (§2/§2a) — no tracked file changes, and every doctrine command is per-repository and untouched |
 | Service Core | `Workspace` on registration/entry/quest/session; the registry becomes the managed list (+paths machine-local); scan → import; quest exchange gains the same-workspace clause; the feed doors gain provenance + monotonic + default-branch judgement; schema version bumps and rebuilds (no migrations, by the store's own rule — and nothing is deployed) |
 | Hosts | `DAORIS_WORKSPACE` identity on the shared host, refusals naming workspaces; `/api/repositories` provenance; MCP tools gain `workspace` args with ambient default |
 | Driver / Desktop | `RemoteTarget` → the remotes map (env pair kept for one workspace); sync loop per workspace; feed stamps git provenance; the shell's repo management (add/update/remove) over the loopback host |
@@ -184,8 +229,9 @@ machine paths (D46/D47: paths never reach a browser).
 
 ## 9. Build order (the backlog's WSP items)
 
-1. **WSP1 — the workspace exists**: manifest field end to end, every entity carries it, scoping of
-   search/registry/quests, the rehearsal's two-workspace assertions. Everything else stands on this.
+1. **WSP1 — the workspace exists**: the registry row carries it (wiring, §2), `connect --workspace`
+   sets it, every entity carries it, scoping of search/registry/quests, the rehearsal's two-workspace
+   assertions. Everything else stands on this.
 2. **WSP2 — the managed registry**: registry-as-authority, `import`, the desktop's add/update/remove.
 3. **WSP3 — remotes become a map**: per-workspace remotes, sync loop per workspace, host identity.
 4. **WSP4 — knowledge sync semantics**: provenance, monotonic replace, default-branch-only, served
