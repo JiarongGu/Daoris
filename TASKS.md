@@ -110,9 +110,9 @@ budget).
   than migrate (the store's own rule, and nothing is deployed); WSP1 bumped the entry store to schema
   2 on exactly that basis, while the registration store adds columns, because a registration that
   vanished on an upgrade is the failure that store exists to prevent.
-- **The last five landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
-  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4) and `15ba288` (SES1). All gate-green;
-  `git log` is the reviewable record.
+- **The last six landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
+  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4), `15ba288` (SES1) and `a965feb`
+  (SES2). All gate-green; `git log` is the reviewable record.
 - **What the WSP arc left for its successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
   the wiring, but no view filters by one yet).
