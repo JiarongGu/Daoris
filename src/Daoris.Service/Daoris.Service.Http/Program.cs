@@ -391,6 +391,69 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
     return Results.Ok(new RegisteredResponse(body.Repository, DateTimeOffset.UtcNow, registered.InWorkspace));
 });
 
+// The registration lifecycle's other two verbs (D48 §3/§7). Neither touches a file: retiring ends a
+// registration and re-wiring edits one field, which is what makes "remove" safe to put on a screen.
+// The machine-path half of adding stays with the shell — a browser is never told, and never tells, a
+// filesystem path (D46/D47 §4).
+app.MapDelete("/api/registry/{repository}", async (
+    ComposedService s, string repository, CancellationToken ct) =>
+{
+    var retired = await s.Service.RetireAsync(repository, ct);
+    return Results.Ok(new RetiredResponse(
+        repository, retired,
+        retired
+            ? $"`{repository}` is no longer registered here. Nothing was deleted: its files, its history "
+              + "and its doctrine are its own — it has simply stopped being addressable and indexed on "
+              + "this machine, and its entries leave the index on the next refresh."
+            : $"`{repository}` was not registered here, so there was nothing to retire."));
+});
+
+// Re-wiring only — the workspace, and nothing else about the row (design §7: the two updates are kept
+// visibly apart, because one is local instant wiring and the other edits a tracked file).
+app.MapPost("/api/registry/{repository}/workspace", async (
+    ComposedService s, string repository, WireRequest body, CancellationToken ct) =>
+{
+    var existing = (await s.Service.RegistryAsync(ct: ct))
+        .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+    if (existing is null)
+    {
+        return Results.NotFound(new ErrorResponse(
+            $"`{repository}` is not registered here — `daoris connect` from inside it, or add it from Projects."));
+    }
+
+    var wired = await s.Service.RegisterAsync(
+        existing with { Workspace = Workspaces.Normalize(body.Workspace) }, DateTimeOffset.UtcNow, ct);
+
+    return Results.Ok(new RegisteredResponse(wired.Repository, DateTimeOffset.UtcNow, wired.InWorkspace));
+});
+
+// The bootstrap, as a verb a person runs (D48 §3). Local only: a shared deployment is fed, and has no
+// disk of its own to read — the same sentence that keeps it off its own filesystem.
+app.MapPost("/api/registry/import", async (ComposedService s, ImportRequest body, CancellationToken ct) =>
+{
+    if (mode == ServiceMode.Shared)
+    {
+        return Results.Conflict(new ErrorResponse(
+            "a shared deployment is fed, not scanned — it has no checkouts of its own to import"));
+    }
+
+    var folder = string.IsNullOrWhiteSpace(body.Folder) ? options.RepositoryRoot : body.Folder;
+    if (!Directory.Exists(folder))
+    {
+        return Results.BadRequest(new ErrorResponse($"no such folder: '{folder}'"));
+    }
+
+    var imported = await s.Service.ImportAsync(folder, DateTimeOffset.UtcNow, ct);
+    var names = imported.Select(r => r.Repository).ToList();
+
+    return Results.Ok(new ImportedResponse(
+        folder, names.Count, names,
+        names.Count == 0
+            ? $"Nothing under '{folder}' — an import registers a folder's immediate subdirectories."
+            : $"Registered {names.Count} from '{folder}': {string.Join(", ", names)}. Existing rows kept "
+              + "their workspace: an import states none, and unstated wiring is preserved."));
+});
+
 app.MapGet("/api/registry", async (
     ComposedService s, HttpContext http, string? workspace, CancellationToken ct) =>
     (await s.Service.RegistryAsync(workspace, ct)).Select(r => new RegistrationResponse(
@@ -411,7 +474,8 @@ app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
     }
 
     var report = await s.Service.RefreshAsync(ct);
-    return Results.Ok(new RefreshResponse(report.Entries, report.Repositories, report.Withheld, report.SemanticError));
+    return Results.Ok(new RefreshResponse(
+        report.Entries, report.Repositories, report.Withheld, report.SemanticError, report.Absent));
 });
 
 // ——— The feed doors (D47 §§4–6). Which doors exist depends on the deployment's role: a SHARED host

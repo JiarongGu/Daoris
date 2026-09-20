@@ -99,16 +99,23 @@ public static class ServiceFactory
         var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        source ??= FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
 
-        // What was pushed in earlier sessions is part of who is out there NOW — a remote service knows
-        // the family only through these, and even a local one may be told about a repository it cannot
-        // scan. Loaded before the first read so a restart is invisible to a client.
-        var registry = new Registry(options.RepositoryRoot);
+        // The registry is the authority now (D48 §3): the list is what has been registered, not what a
+        // folder happens to hold. Loaded before the first read so a restart is invisible to a client.
+        var registry = new Registry();
         foreach (var registration in await registrations.AllAsync(ct).ConfigureAwait(false))
         {
             registry.Register(registration);
         }
+
+        // Whether this deployment READS THE LOCAL DISK at all is one decision with two consequences,
+        // and they must not drift apart: a fed deployment neither reads checkouts for knowledge
+        // (D47 §4) nor bootstraps a registry from whatever sits beside its binary. A caller that
+        // supplies its own source is saying "I am fed"; that is the same sentence, so it decides both.
+        var readsLocalCheckouts = source is null;
+        // The index reads the REGISTERED paths (D48 §3) — resolved per read, so a repository added or
+        // retired a moment ago is in or out of the very next refresh without a restart.
+        source ??= new FileSystemKnowledgeSource(() => RegisteredRoots(registry));
 
         IKnowledgeSearch search = new SqliteKnowledgeSearch(store);
 
@@ -129,6 +136,25 @@ public static class ServiceFactory
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
             registry, registrations);
 
+        // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
+        // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come
+        // up to an empty family after the upgrade — and an empty family is indistinguishable from a
+        // broken one. Once, because a second run would resurrect everything the person retired.
+        if (readsLocalCheckouts && !await registrations.WasImportedAsync(ct).ConfigureAwait(false))
+        {
+            var imported = await service.ImportAsync(options.RepositoryRoot, DateTimeOffset.UtcNow, ct)
+                .ConfigureAwait(false);
+            await registrations.MarkImportedAsync(options.RepositoryRoot, ct).ConfigureAwait(false);
+            if (imported.Count > 0)
+            {
+                // stderr, not stdout: the MCP host's stdout IS the protocol channel.
+                Console.Error.WriteLine(
+                    $"daoris: first run over this index — imported {imported.Count} repositories from "
+                    + $"'{options.RepositoryRoot}' into the registry, which is the authority from now on. "
+                    + "Add with `daoris connect`, remove with `daoris retire`, re-scan with `daoris import`.");
+            }
+        }
+
         return new ComposedService(
             service, quests, new QuestExchange(service, quests, remoteQuests),
             sessions, new SessionLedger(quests, sessions), keys, service.SemanticEnabled)
@@ -136,4 +162,20 @@ public static class ServiceFactory
             Store = store,
         };
     }
+
+    /// <summary>
+    /// The checkouts the index reads — every registered repository that named one.
+    /// </summary>
+    /// <remarks>
+    /// A row with no root is a FOREIGN registration: a teammate's repository, mirrored down from a
+    /// remote, which this machine has no copy of (D47 §9). It belongs on the map and has nothing here
+    /// to read, and the distinction is structural rather than a flag — a mirror has no field for a
+    /// machine path, so it cannot carry one.
+    /// </remarks>
+    private static IReadOnlyList<string> RegisteredRoots(Registry registry) =>
+        registry.Read(new Dictionary<string, int>())
+            .Select(r => r.Root)
+            .Where(root => !string.IsNullOrWhiteSpace(root))
+            .Select(root => root!)
+            .ToList();
 }

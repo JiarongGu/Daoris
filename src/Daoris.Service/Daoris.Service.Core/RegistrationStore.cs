@@ -47,7 +47,16 @@ public sealed class RegistrationStore
                   packs      TEXT NOT NULL,
                   updated    TEXT NOT NULL,
                   root       TEXT NULL,
-                  workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}'
+                  workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
+                  adopted    INTEGER NOT NULL DEFAULT 1
+                );
+
+                -- Facts about the registry itself rather than about any repository — today exactly one:
+                -- whether this store has ever been managed, which is what keeps the bootstrap import
+                -- from running twice and resurrecting what someone retired (D48 §3).
+                CREATE TABLE IF NOT EXISTS registry_meta (
+                  key   TEXT PRIMARY KEY,
+                  value TEXT NOT NULL
                 );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -65,6 +74,10 @@ public sealed class RegistrationStore
             // Workspaces arrived last (D48), and every registration that predates them belongs to the
             // one group there was — which is what the default spells.
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
+            // Adoption became a stored fact when the registry became the authority (D48 §3): before
+            // that it was derived from a scan, and every row here arrived by being pushed — which is
+            // what adoption looks like from a service. Hence the default.
+            ("adopted", "adopted INTEGER NOT NULL DEFAULT 1"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -97,15 +110,16 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted)
             VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
-                    COALESCE($workspace, '{Workspaces.Default}'))
+                    COALESCE($workspace, '{Workspaces.Default}'), $adopted)
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated,
-              root = $root, joined = $joined, shares_knowledge = $shares,
+              root = $root, joined = $joined, shares_knowledge = $shares, adopted = $adopted,
               workspace = COALESCE($workspace, workspace, '{Workspaces.Default}')
             RETURNING workspace
             """;
+        command.Parameters.AddWithValue("$adopted", registration.Adopted ? 1 : 0);
         command.Parameters.AddWithValue(
             "$workspace",
             registration.Workspace is null ? DBNull.Value : Workspaces.Normalize(registration.Workspace));
@@ -123,12 +137,52 @@ public sealed class RegistrationStore
         return registration with { Workspace = Workspaces.Normalize(effective) };
     }
 
-    /// <summary>Every declaration ever pushed. Entry counts are the index's to add, not ours to store.</summary>
+    /// <summary>
+    /// Take a repository off the map. <b>Nothing on disk is touched</b>: this ends a registration, and
+    /// the repository's files are its own (D48 §3/§7).
+    /// </summary>
+    /// <returns>Whether there was a row to retire; false is an answer, not a failure.</returns>
+    public async Task<bool> DeleteAsync(string repository, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "DELETE FROM registrations WHERE repository = $repository COLLATE NOCASE";
+        command.Parameters.AddWithValue("$repository", repository);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }
+
+    /// <summary>
+    /// Whether this store has ever been managed — and marking that it now has.
+    /// </summary>
+    /// <remarks>
+    /// The bootstrap import runs exactly once (D48 §3). Running it again on every start would
+    /// resurrect every repository the person deliberately retired, which would make "remove" mean
+    /// "until the next restart". The marker is set whether or not the import found anything: an empty
+    /// root is still an answer, and asking again next time would re-open the same hole.
+    /// </remarks>
+    public async Task<bool> WasImportedAsync(CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM registry_meta WHERE key = 'bootstrap-import'";
+        return Convert.ToInt32(await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
+    }
+
+    /// <summary>Record that the bootstrap import has happened, and from where.</summary>
+    public async Task MarkImportedAsync(string folder, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "INSERT OR REPLACE INTO registry_meta (key, value) VALUES ('bootstrap-import', $folder)";
+        command.Parameters.AddWithValue("$folder", folder);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Every registration this machine holds. Entry counts are the index's to add, not ours to store.</summary>
     public async Task<IReadOnlyList<Registration>> AllAsync(CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
         command.CommandText =
-            "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace FROM registrations";
+            "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted "
+            + "FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -136,7 +190,7 @@ public sealed class RegistrationStore
         {
             registrations.Add(new Registration(
                 reader.GetString(0),
-                Adopted: true,
+                Adopted: reader.GetInt32(9) != 0,
                 reader.IsDBNull(1) ? null : reader.GetString(1),
                 FromJson(reader.GetString(2)),
                 FromJson(reader.GetString(3)),

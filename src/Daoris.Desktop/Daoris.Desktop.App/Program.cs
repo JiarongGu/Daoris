@@ -55,6 +55,11 @@ internal static class Program
         builder.Services.AddSingleton<MainForm>();
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();
+        // The one thing a page cannot do: name a directory on this machine (D48 §7). Everything else
+        // about managing a repository is an ordinary call to the loopback host.
+        builder.Services.AddSingleton<Func<string?>>(sp => () =>
+            sp.GetRequiredService<MainForm>().PickFolder());
+        builder.Services.AddIpcModule<RegistryModule>();
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.

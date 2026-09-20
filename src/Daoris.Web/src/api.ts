@@ -37,6 +37,14 @@ export type QuestAction = { quest: Quest; message: string };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
   owns: string[]; accepts: string[]; packs: string[]; entries: number; workspace?: string;
+  /**
+   * The checkout on THIS machine — answered only to a loopback caller of a local host (D46/D47 §4),
+   * so it is absent in a browser over a remote and absent for a teammate's mirrored registration. Its
+   * presence is exactly the question "is there a working tree here to manage".
+   */
+  root?: string;
+  joined?: boolean;
+  sharesKnowledge?: boolean;
 };
 export type SessionState =
   | 'queued' | 'starting' | 'working' | 'awaiting-person'
@@ -47,10 +55,19 @@ export type Session = {
   note?: string; evidence?: string; created: string; updated: string; workspace?: string;
 };
 
-/** What one re-scan changed — and, when the semantic half failed, the service's own sentence. */
+/**
+ * What one re-scan changed — and, when the semantic half failed, the service's own sentence.
+ *
+ * `absent` names registered repositories whose checkout is no longer where the registry says it is
+ * (D48 §3). Named rather than skipped: a repository that quietly stops contributing looks exactly like
+ * one with nothing to say, and the count still looks healthy.
+ */
 export type RefreshReport = {
-  entries: number; repositories: number; withheld: number; semanticError?: string;
+  entries: number; repositories: number; withheld: number; semanticError?: string; absent?: string[];
 };
+
+/** What a retire actually did — and its sentence, which is mostly about what it did NOT do. */
+export type Retired = { repository: string; retired: boolean; message: string };
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(path, { signal });
@@ -63,11 +80,12 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
+async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
   const response = await fetch(path, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    method,
+    ...(body === undefined
+      ? {}
+      : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
   });
   if (!response.ok) {
     // The service's refusal sentence IS the contract — a publish to a non-adopter, a decline with no
@@ -100,6 +118,18 @@ export const api = {
       + (repository ? `&repository=${encodeURIComponent(repository)}` : ''),
       signal,
     ),
+  // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine
+  // is touched, and adding a repository still needs the shell — a page may not name a machine path.
+  registerRepository: (body: {
+    repository: string; root?: string; workspace?: string;
+    domain?: { summary?: string; owns: string[]; accepts: string[] };
+    packs?: string[]; join?: boolean; shareKnowledge?: boolean;
+  }) => post<{ repository: string; workspace: string }>('/api/registry', body),
+  wireRepository: (repository: string, workspace: string) =>
+    post<{ repository: string; workspace: string }>(
+      `/api/registry/${encodeURIComponent(repository)}/workspace`, { workspace }),
+  retireRepository: (repository: string) =>
+    post<Retired>(`/api/registry/${encodeURIComponent(repository)}`, undefined, 'DELETE'),
   publishQuest: (quest: { from: string; to: string; title: string; body: string }) =>
     post<QuestAction>('/api/quests', quest),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>

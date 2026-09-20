@@ -1226,6 +1226,45 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## WSP2 — the registry becomes managed (2026-09-20)
+
+> **WSP2 — the registry becomes managed.** Registry-as-authority (explicit list: name, workspace,
+> declaration, machine-local path); the folder scan becomes `import` (first run imports the old root,
+> once, and says so); refresh reads registered paths and names absences; the desktop's add/update/
+> remove over the loopback host (registration lifecycle only — never deletes files, doctrine
+> unwritable, manifest edits land as uncommitted diffs); CLI parity (D50): a retire verb beside
+> `connect`, and `import` callable from the terminal. Design §3/§7/§2b.
+
+✅ done 2026-09-20 — the scan stopped being an authority and became a verb. **The registry** is an
+explicit list: `Registry` holds what was registered and nothing else, `RegistryImport` is the old
+manifest-reading scan demoted to a proposal, and adoption became a stored column because a row for a
+folder with no manifest still belongs on the map. **The index reads registered paths**, resolved per
+read, so a repository added or retired a moment ago is in or out of the very next refresh — and a
+folder nobody registered contributes nothing, which is the whole of §3 in one assertion. **Absences
+are named**: a registered checkout that is no longer where the registry says it is is reported by
+every refresh door, while a row that never named a path — a teammate's mirrored registration — is not
+an absence, because it has no checkout here by construction. **The bootstrap** imports the configured
+root exactly once per store, marked in a `registry_meta` row and announced on stderr; without it a
+machine that had been running on `DAORIS_KNOWLEDGE_ROOT` would come up to an empty family, and an
+empty family is indistinguishable from a broken one. It runs only where the deployment reads local
+checkouts at all — the same sentence that keeps a shared host off its own disk, made one variable so
+the two cannot drift. **Two CLI verbs**: `daoris retire [name]` (the registration only; the service's
+own "nothing was deleted" sentence reaches the person verbatim, and retiring what is already retired
+exits clean) and `daoris import [folder]` (absolute paths, because the service may sit in a different
+directory; safe to re-run because an import states no workspace). **Three doors**: `DELETE
+/api/registry/{name}`, `POST /api/registry/{name}/workspace` (re-wiring only, kept apart from the
+declaration on purpose), and `POST /api/registry/import`, refused on a shared deployment for the same
+reason refresh is. **The desktop manages repositories**: a `DAORIS.REGISTRY` module supplies the one
+thing a page cannot — a folder pick and what is true about it — while registering, re-wiring and
+retiring go through the ordinary loopback door rather than a second IPC path onto the same judgement;
+the declaration form merges into `daoris.json` property by property so nothing it does not know about
+is silently dropped, and leaves the diff uncommitted. **The offline guarantee became a class**: the
+network moved into one `service.ts`, so the test still reads as one sentence, and the transitive half
+now walks from every doctrine command rather than only `check`. The Playwright suite's D44 newcomer
+gained its `connect` — it had been joining by being scanned, which is exactly the silence this item
+removed, and the test was reading it as a pass. Tests grew 139→147 CLI, 193→201 service, 27→30 web
+vitest, 87→94 family rehearsal.
+
 ## WSP1 — the workspace exists (2026-09-20)
 
 > **WSP1 — the workspace exists.** Membership is wiring, never tracked (D48 as amended — the git

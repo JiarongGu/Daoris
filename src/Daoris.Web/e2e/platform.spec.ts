@@ -82,9 +82,13 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
 
 test('a project created mid-run joins, and the platform shows it (D44)', async ({ page }) => {
   // The lifecycle the next real family needs proven: a project that did not exist when the host
-  // started is born, joins through the REAL CLI — init, declare, sync, check — and becomes a member
-  // in the UI, quest-addressable at once. The host roots at a scratch family, so nothing tracked is
-  // touched.
+  // started is born, joins through the REAL CLI — init, declare, sync, check, connect — and becomes a
+  // member in the UI, quest-addressable at once. The host roots at a scratch family, so nothing
+  // tracked is touched.
+  //
+  // `connect` is what JOINS (D48 §3): the registry is an explicit list now, so being in the folder is
+  // not being a member. Before that it was the scan that admitted this newcomer — which is exactly the
+  // silence the managed registry removed, and this test was reading it as a pass.
   const newcomer = join(repoRoot, '_fixtures', 'web-e2e', 'family', 'newcomer');
   const cli = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
   mkdirSync(newcomer, { recursive: true });
@@ -100,6 +104,10 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   execSync(`node "${cli}" sync`, { cwd: newcomer });
   execSync(`node "${cli}" check`, { cwd: newcomer });
+  execSync(`node "${cli}" connect`, {
+    cwd: newcomer,
+    env: { ...process.env, DAORIS_SERVICE_URL: 'http://localhost:5196' },
+  });
 
   await page.goto('/');
   await nav(page, 'Projects').click();

@@ -1,50 +1,20 @@
-// **The only module in this CLI permitted to touch the network**, and the reason the offline
-// guarantee is scoped rather than absolute.
+// `connect` — the registration half of the management class (D50). An explicit, opt-in registration
+// with a knowledge service, never run by a gate and never on the path of anything that is; a
+// repository that never runs it loses nothing but discoverability.
 //
-// D8 says `check` works offline, because it runs inside build gates and a gate that can fail on a
-// network call is not a gate. That is about the doctrine operations — `check`, `sync`, `index`,
-// `upstream` — all of which are pure local hashing against the lock and stay that way.
-//
-// `connect` is a different thing: an explicit, opt-in registration with a knowledge service, never
-// run by a gate and never on the path of anything that is. A repository that never runs it loses
-// nothing but discoverability.
-//
-// A test enforces exactly this shape: no other module may contain a network primitive, and nothing
-// `check` reaches may import this one.
+// The network itself lives in `service.ts`, which is the one module the offline-discipline tests name.
+// D8's guarantee is about the DOCTRINE operations — `check`, `sync`, `index`, `upstream` — all of
+// which are pure local hashing against the lock and stay that way.
 
 import { readManifest } from './config.ts';
 import { DaorisError } from './errors.ts';
+import { endpoint, isLocalService, refusal, request } from './service.ts';
 import type { CommandArgs, Domain, Manifest } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
 const REGISTRY_PATH = '/api/registry';
 
-/** Where the service is, and the key it wants — supplied by the environment, never committed. */
-export function endpoint(env: NodeJS.ProcessEnv = process.env): { url: string; key: string | null } {
-  const url = env.DAORIS_SERVICE_URL;
-  if (!url) {
-    throw new DaorisError(
-      'no DAORIS_SERVICE_URL — `connect` registers this repository with a knowledge service, and needs\n'
-      + '  to know where one is. Set it in your environment; a local service is usually\n'
-      + '  http://localhost:5177. Everything else daoris does works without one.');
-  }
-
-  return { url: url.replace(/\/+$/, ''), key: env.DAORIS_SERVICE_KEY ?? null };
-}
-
-/**
- * Whether a service URL points at this machine. The hostname, not a substring — a remote host named
- * `localhost.example.com` is exactly the trap a substring check walks into. An unparseable URL answers
- * false: when in doubt, the machine path stays home.
- */
-export function isLocalService(url: string): boolean {
-  try {
-    const { hostname } = new URL(url);
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]';
-  } catch {
-    return false;
-  }
-}
+export { endpoint, isLocalService } from './service.ts';
 
 /**
  * What this repository tells a service about itself.
@@ -132,34 +102,22 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
       1);
   }
 
-  const { url, key } = endpoint();
+  const { url } = endpoint();
   const body = registration(root, manifest, name, url, flagValue(argv, '--workspace'));
   if (argv.includes('--dry-run')) {
     write(JSON.stringify(body, null, 2));
     write(`daoris: would register with ${url}${REGISTRY_PATH}`);
     return 0;
   }
-  const response = await fetch(`${url}${REGISTRY_PATH}`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(key ? { authorization: `Bearer ${key}` } : {}),
-    },
-    body: JSON.stringify(body),
-  }).catch((error: Error) => {
-    throw new DaorisError(
-      `could not reach the service at ${url} — ${error.message}\n`
-      + '  Nothing else daoris does needs it; this only affects discoverability.');
-  });
-
-  if (!response.ok) {
-    throw new DaorisError(`the service refused the registration: ${response.status} ${response.statusText}`);
+  const { status, json } = await request('POST', REGISTRY_PATH, body);
+  if (status < 200 || status >= 300) {
+    throw new DaorisError(`the service refused the registration: ${refusal(status, json)}`);
   }
 
   // The workspace the service says TOOK, not the one that was asked for — silence preserves whatever
   // the row already held, so the only honest way to report the wiring is to read it back. A service
   // too old to answer with one simply goes unmentioned rather than being guessed at.
-  const landed = await response.json().catch(() => null) as { workspace?: string } | null;
+  const landed = json as { workspace?: string } | null;
 
   write(`daoris: registered ${name} with ${url}`);
   write(`  owns ${manifest.domain!.owns.length} area(s); accepts ${manifest.domain!.accepts.length} kind(s)`);

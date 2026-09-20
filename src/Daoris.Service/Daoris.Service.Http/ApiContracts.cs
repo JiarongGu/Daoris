@@ -26,7 +26,8 @@ public sealed record QuestResponse(
 public sealed record PublishQuestRequest(string From, string To, string Title, string Body);
 public sealed record RespondQuestRequest(string? Action, string? Reason);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
-public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
+public sealed record RefreshResponse(
+    int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent);
 public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
 // `Workspace` is null on the way IN when the client said nothing — which is what preserves the row
 // (D48 §2). It is never null on the way out: a reader is told which circle it is looking at.
@@ -34,6 +35,10 @@ public sealed record RegisterRequest(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge, string? Workspace);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At, string Workspace);
+public sealed record RetiredResponse(string Repository, bool Retired, string Message);
+public sealed record WireRequest(string? Workspace);
+public sealed record ImportRequest(string? Folder);
+public sealed record ImportedResponse(string Folder, int Imported, IReadOnlyList<string> Repositories, string Message);
 public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
@@ -71,6 +76,10 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(RefreshResponse))]
 [JsonSerializable(typeof(RegisterRequest))]
 [JsonSerializable(typeof(RegisteredResponse))]
+[JsonSerializable(typeof(RetiredResponse))]
+[JsonSerializable(typeof(WireRequest))]
+[JsonSerializable(typeof(ImportRequest))]
+[JsonSerializable(typeof(ImportedResponse))]
 [JsonSerializable(typeof(IEnumerable<RegistrationResponse>))]
 [JsonSerializable(typeof(IEnumerable<SessionResponse>))]
 [JsonSerializable(typeof(OpenSessionRequest))]

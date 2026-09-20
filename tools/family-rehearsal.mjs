@@ -644,9 +644,81 @@ check(
   `${auroraQuests.text}\n${toolsQuests.text}`,
 );
 
-// -------------------------------------------------- 10. the remote
+// -------------------------------------------------- 10. the registration lifecycle
 
-section('10. The remote: two machines, one lock (D47)');
+section('10. The registry is the authority, managed from a terminal (D48/D50)');
+
+// A folder nobody registered is not a member. The scan stopped being the authority, which is the
+// whole of §3 — and the way that fails silently is by a repository being served that nobody added.
+const uninvited = join(family, 'uninvited');
+mkdirSync(join(uninvited, '.claude', 'knowledge'), { recursive: true });
+writeFileSync(join(uninvited, 'daoris.json'), `${JSON.stringify({ source: 's', packs: [] }, null, 2)}\n`);
+writeFileSync(
+  join(uninvited, '.claude', 'knowledge', 'uninvited.md'),
+  '# uninvited\n\nPresent in the folder, and nobody asked for it.\n',
+);
+await api('POST', '/api/refresh');
+const uninvitedRegistry = await api('GET', '/api/registry');
+const uninvitedSearch = await api('GET', `/api/search?q=${encodeURIComponent('nobody asked for it')}`);
+check(
+  'a folder nobody registered is neither listed nor indexed — the scan is not the authority',
+  (uninvitedRegistry.json ?? []).every((r) => r.repository !== 'uninvited')
+    && (uninvitedSearch.json ?? []).every((h) => h.repository !== 'uninvited'),
+  `${uninvitedRegistry.text.slice(0, 300)}\n${uninvitedSearch.text.slice(0, 300)}`,
+);
+
+// …and the verb that adds it. `import` is the old scan, demoted to something a person runs.
+const imported = run(`node "${cliBin}" import "${family}"`, scratch, { DAORIS_SERVICE_URL: BASE });
+const afterImport = await api('GET', '/api/registry');
+check(
+  '`daoris import` registers the folder, uninvited included',
+  imported.code === 0 && (afterImport.json ?? []).some((r) => r.repository === 'uninvited'),
+  `${imported.out}\n${afterImport.text.slice(0, 300)}`,
+);
+check(
+  '…and re-importing re-points nobody: an import states no workspace, and unstated wiring is kept',
+  (afterImport.json ?? []).find((r) => r.repository === 'atelier')?.workspace === 'aurora'
+    && (afterImport.json ?? []).find((r) => r.repository === 'foundry')?.workspace === 'tools',
+  afterImport.text,
+);
+
+// Retiring: the one control a person is right to be nervous about, so it says what it does not do.
+const retired = run(`node "${cliBin}" retire`, uninvited, { DAORIS_SERVICE_URL: BASE });
+const afterRetire = await api('GET', '/api/registry');
+check(
+  '`daoris retire` takes it off the map, and the sentence says nothing was deleted',
+  retired.code === 0 && /[Nn]othing was deleted/.test(retired.out)
+    && (afterRetire.json ?? []).every((r) => r.repository !== 'uninvited'),
+  `${retired.out}\n${afterRetire.text.slice(0, 300)}`,
+);
+check(
+  '…and it is true: every file the repository had is still there',
+  existsSync(join(uninvited, 'daoris.json'))
+    && existsSync(join(uninvited, '.claude', 'knowledge', 'uninvited.md')),
+  'retiring a registration deleted files',
+);
+const retiredAgain = run(`node "${cliBin}" retire`, uninvited, { DAORIS_SERVICE_URL: BASE });
+check(
+  'retiring what is already retired is an answer, not a failure',
+  retiredAgain.code === 0 && /not registered/.test(retiredAgain.out),
+  retiredAgain.out,
+);
+
+// A registered checkout that vanished is NAMED. The ghost fix taught the other direction of this:
+// a repository that quietly stops contributing looks exactly like one with nothing to say.
+run(`node "${cliBin}" import "${family}"`, scratch, { DAORIS_SERVICE_URL: BASE });
+rmSync(uninvited, { recursive: true, force: true });
+const absent = await api('POST', '/api/refresh');
+check(
+  'a registered checkout that is gone is named by the refresh, never silently skipped',
+  absent.status === 200 && (absent.json?.absent ?? []).includes('uninvited'),
+  absent.text,
+);
+run(`node "${cliBin}" retire uninvited`, scratch, { DAORIS_SERVICE_URL: BASE });
+
+// -------------------------------------------------- 11. the remote
+
+section('11. The remote: two machines, one lock (D47)');
 
 const remoteDb = join(scratch, 'remote.db');
 const remoteRoot = join(scratch, 'remote-root');
@@ -950,9 +1022,9 @@ check('the remote store holds no machine path at all', !remoteBytes.includes('_f
 check('…and none of the knowledge that was kept home', !remoteBytes.includes('keeps this lesson at home'),
   'unshared knowledge reached the remote store');
 
-// -------------------------------------------------- 11. report
+// -------------------------------------------------- 12. report
 
-section('11. Result');
+section('12. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 

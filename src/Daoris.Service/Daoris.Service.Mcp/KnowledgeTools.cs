@@ -353,13 +353,19 @@ public sealed class KnowledgeTools(
     {
         var report = await service.RefreshAsync(ct).ConfigureAwait(false);
         var withheld = report.Withheld > 0 ? $", {report.Withheld} withheld by policy" : "";
+        // Named, never silently skipped (D48 §3): a registered checkout that has moved contributes
+        // nothing while the count still looks healthy — the ghost failure from the other direction.
+        var absent = report.Absent.Count > 0
+            ? $"\n⚠ Registered but not on disk: {string.Join(", ", report.Absent)} — moved, deleted, or "
+              + "registered from another machine. Re-register with `daoris connect`, or retire it."
+            : "";
         var recall = report.SemanticError is { Length: > 0 } error
             ? $"Lexical recall only — semantic indexing failed and was skipped: {error}"
             : service.SemanticEnabled
                 ? "Lexical and semantic recall are both active."
                 : "Lexical recall only — set DAORIS_EMBED_MODEL to enable semantic search, which is "
                   + "what finds two repositories that reached the same conclusion in different words.";
-        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.\n{recall}";
+        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.{absent}\n{recall}";
     }
 
 }

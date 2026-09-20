@@ -115,6 +115,97 @@ describe('the shell-attached platform', () => {
   });
 });
 
+/**
+ * Managing the machine's repositories (D48 §7). Three properties are worth a test rather than a
+ * comment, because each fails silently: the machine path comes from the SHELL and never from the page,
+ * retiring says what it does not do, and the two kinds of update stay visibly apart.
+ */
+describe('the shell-attached registry management', () => {
+  const PICKED = {
+    path: 'D:/repos/borealis', name: 'borealis', exists: true, adopted: true, git: true,
+    summary: 'The aurora.', owns: ['the sky'], accepts: ['a quest'], packs: [], join: false,
+    shareKnowledge: false,
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'DELETE') {
+        return Response.json({
+          repository: 'engine', retired: true,
+          message: 'Nothing was deleted: its files, its history and its doctrine are its own.',
+        });
+      }
+      if (url === '/api/registry' && init?.method === 'POST') {
+        return Response.json({ repository: 'borealis', workspace: 'aurora' });
+      }
+      if (url.includes('/workspace')) return Response.json({ repository: 'engine', workspace: 'tools' });
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      type === 'PICK_FOLDER' ? PICKED : DRIVER_STATE);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('adding a repository takes its path from the shell, never from the page', async () => {
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'add repository' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'choose a folder…' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', {});
+    expect(await screen.findByText('D:/repos/borealis')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'register it' }));
+
+    const posted = vi.mocked(fetch).mock.calls
+      .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
+    expect(JSON.parse(String(posted![1]!.body))).toMatchObject({
+      repository: 'borealis', root: 'D:/repos/borealis',
+    });
+  });
+
+  /**
+   * The one thing a person must be able to trust about a remove button. The service composes the
+   * sentence; the panel says it before the click, and the answer repeats it after.
+   */
+  it('retiring says what it does not do, before and after', async () => {
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'manage' }));
+    const drawer = await screen.findByRole('dialog');
+    expect(within(drawer).getByText(/Nothing is deleted/)).toBeInTheDocument();
+
+    // Two clicks, deliberately: the first is not the destructive one.
+    await userEvent.click(within(drawer).getByRole('button', { name: 'retire' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'yes, retire it' }));
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/registry/engine', { method: 'DELETE' });
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing was deleted'));
+  });
+
+  /** Re-wiring is a row on this machine; it must not touch the repository's tracked file. */
+  it('re-wiring edits one row and writes no file', async () => {
+    show(<ProjectsView notify={() => {}} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'manage' }));
+    const drawer = await screen.findByRole('dialog');
+    await userEvent.clear(within(drawer).getByLabelText('workspace'));
+    await userEvent.type(within(drawer).getByLabelText('workspace'), 'tools');
+    await userEvent.click(within(drawer).getByRole('button', { name: 're-wire' }));
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/api/registry/engine/workspace',
+      expect.objectContaining({ method: 'POST' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.REGISTRY', 'WRITE_DECLARATION', expect.anything());
+  });
+});
+
 describe('the shell push channel (ShellSignals)', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));

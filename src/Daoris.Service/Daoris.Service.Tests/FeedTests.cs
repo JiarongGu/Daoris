@@ -16,11 +16,11 @@ public sealed class FeedTests
 
     public FeedTests()
     {
-        // A registry rooted nowhere: pushed registrations are the only family, the remote's own shape.
+        // Registrations are the only family here — the remote's own shape, and since D48 §3 every
+        // deployment's shape: the registry is an explicit list, never a view over a folder.
         _service = new KnowledgeService(
             _store, new LexicalKnowledgeSearch(_store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly,
-            registry: new Registry(Path.Combine(Path.GetTempPath(), "daoris-nowhere-" + Guid.NewGuid().ToString("N")[..8])));
+            DisclosurePolicy.LocalOnly, registry: new Registry());
     }
 
     private Task Register(string name, bool joined, bool shares) => _service.RegisterAsync(
@@ -110,8 +110,7 @@ public sealed class SessionFeedTests : IAsyncLifetime
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly,
-            registry: new Registry(Path.Combine(Path.GetTempPath(), "daoris-nowhere-" + Guid.NewGuid().ToString("N")[..8])));
+            DisclosurePolicy.LocalOnly, registry: new Registry());
         await service.RegisterAsync(
             new Registration("Joined", Adopted: true, null, [], [], [], Entries: 0, Joined: true), Now);
         await service.RegisterAsync(

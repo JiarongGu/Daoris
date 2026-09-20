@@ -65,7 +65,9 @@ public sealed class QuestRelayTests : IAsyncLifetime
         var store = new InMemoryKnowledgeStore();
         _service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly, registry: new Registry(_root));
+            DisclosurePolicy.LocalOnly, registry: new Registry());
+        // The registry is an explicit list (D48 §3); the manifests above are imported into it.
+        await _service.ImportAsync(_root, DateTimeOffset.UtcNow);
     }
 
     public async Task DisposeAsync()

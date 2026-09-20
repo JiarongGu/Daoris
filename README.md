@@ -54,7 +54,9 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
 | `status` | Packs, versions, drift, local files, and what a pending update would change; `--json` for an agent |
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
-| `connect` | Registers this repo with a knowledge service — what it owns, what it accepts, and (with `--workspace`) which circle it shares within. **The only command that uses the network**, and it is opt-in |
+| `connect` | Registers this repo with a knowledge service — what it owns, what it accepts, and (with `--workspace`) which circle it shares within |
+| `retire` | Takes a repository off this machine's registry. **Ends the registration only** — no file, history or doctrine is ever touched |
+| `import` | Registers a folder's subdirectories in one go. Safe to re-run, and it never re-points anyone's workspace |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
@@ -66,6 +68,15 @@ seeing the other. Membership is **wiring, like a git remote** — `connect --wor
 in this machine's registry and writes nothing into the repository, so a fork, a mirror and a second
 machine may each wire the same repository differently. Omitting the flag leaves existing wiring alone;
 a repository nobody ever wired is in `default`, which is exactly how a machine with one circle behaves.
+
+**`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
+no gate ever runs them. Every other command above is offline by construction. **The machine's registry
+is the authority** on who is in the family: being in a folder is not being a member, so a repository
+joins by connecting and leaves by retiring. `import` is the old folder scan, demoted to something a
+person runs — useful for bootstrapping a machine that already has a folder of checkouts, and safe to
+re-run because it states no workspace and unstated wiring is preserved. A store that has never been
+managed imports its configured root **once**, and says so. A registered checkout that is no longer
+where the registry says it is gets **named** by the next refresh rather than silently skipped.
 
 **`--force` is the only way to lose work here**, so it names every file it overwrites or discards. Daoris
 otherwise refuses in all three destructive cases: a file you edited, a file you wrote before adopting,

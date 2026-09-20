@@ -21,7 +21,9 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // The family this exchange sees: one declared adopter, one adopter that has said nothing,
-        // and one repository that has not adopted at all.
+        // and one repository that has not adopted at all. Written as manifests and IMPORTED, because
+        // the registry is an explicit list now (D48 §3) — and because reading a real manifest is what
+        // makes "adopted" and "declared" the same two facts the running system distinguishes.
         Repo("Declared", """
             {
               "source": "s", "packs": [],
@@ -38,7 +40,8 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly, registry: new Registry(_root));
+            DisclosurePolicy.LocalOnly, registry: new Registry());
+        await service.ImportAsync(_root, Now);
 
         _exchange = new QuestExchange(service, quests);
     }

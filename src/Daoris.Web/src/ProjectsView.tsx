@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Registration } from './api';
+import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
 import { useRegistry, useRepositories } from './queries';
 import { useDriver, useSetDrivable, useSetHold } from './shell';
-import { Card, CheckField, Chip, type Notify, PageHeader, SkeletonRows, Tip, useErrorNotify } from './ui';
+import {
+  Button, Card, CheckField, Chip, type Notify, PageHeader, SkeletonRows, Tip, useErrorNotify,
+} from './ui';
 
 /**
  * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
@@ -19,6 +24,12 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   // The driver bridge included: a STATE that fails silently reads as a machine with no driver.
   useErrorNotify(registry.error ?? repositories.error ?? driver.error, notify);
 
+  // The management surfaces exist where a shell does (D48 §7) — the same gate as every control, and
+  // for the same reason: managing repositories means touching machine paths, and a browser has none.
+  const attached = driver.data !== undefined;
+  const [adding, setAdding] = useState(false);
+  const [managing, setManaging] = useState<Registration | null>(null);
+
   const adopted = (registry.data ?? []).filter((r) => r.adopted);
   const outside = (registry.data ?? []).filter((r) => !r.adopted);
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
@@ -28,7 +39,18 @@ export function ProjectsView({ notify }: { notify: Notify }) {
 
   return (
     <section>
-      <PageHeader title={t('projects.title')} description={t('projects.description')} />
+      <PageHeader
+        title={t('projects.title')}
+        description={t('projects.description')}
+        action={attached
+          ? <Button variant="primary" onClick={() => setAdding(true)}>{t('projects.manage.add')}</Button>
+          : undefined}
+      />
+
+      {adding && <AddProjectDrawer onClose={() => setAdding(false)} notify={notify} />}
+      {managing && (
+        <ManageProjectDrawer project={managing} onClose={() => setManaging(null)} notify={notify} />
+      )}
 
       {registry.isPending && <SkeletonRows rows={4} />}
 
@@ -109,6 +131,9 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                       label={t('projects.driver.hold')}
                     />
                   )}
+                  <Button variant="ghost" className="ml-auto" onClick={() => setManaging(project)}>
+                    {t('projects.manage.open')}
+                  </Button>
                 </p>
               )}
             </Card>

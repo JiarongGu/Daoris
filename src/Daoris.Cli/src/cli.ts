@@ -10,6 +10,7 @@ import { commandInit, commandStatus } from './commands.ts';
 import { commandDoctor } from './twins.ts';
 import { commandAnalyze } from './analyze.ts';
 import { commandConnect } from './connect.ts';
+import { commandImport, commandRetire } from './manage.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
@@ -29,8 +30,14 @@ const USAGE = `daoris <command> [options]
   doctor               report local documents that look like canonical ones
                        under a different name (advisory; never fails)
   connect              register this repo with a knowledge service: what it owns
-                       and what it accepts, so siblings know what to ask of it.
-                       The ONLY command that uses the network, and it is opt-in
+                       and what it accepts, so siblings know what to ask of it
+  retire [name]        take a repository off this machine's registry. Ends the
+                       registration ONLY — no file, history or doctrine is touched
+  import [folder]      register a folder's subdirectories in one go; safe to
+                       re-run, and it never re-points anyone's workspace
+
+  connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
+  service, and no gate ever runs them. Every doctrine command above is offline.
 
 Options:
   --dry-run            print the plan; write nothing
@@ -52,6 +59,8 @@ const commands: Record<string, (args: CommandArgs) => ExitCode | Promise<ExitCod
   status: commandStatus,
   doctor: commandDoctor,
   connect: commandConnect,
+  retire: commandRetire,
+  import: commandImport,
   analyze: commandAnalyze,
 };
 

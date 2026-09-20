@@ -37,8 +37,8 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Nine commands, 139 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 193, `Daoris.Devkit` 57, and the
+**Built and proven; nothing published.** Eleven commands, 147 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 201, `Daoris.Devkit` 57, and the
 driver 53. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
@@ -53,10 +53,14 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode — with
 the quest lock hardened into code (an atomic guarded `Taken`, closed quests immovable) and the
 desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
-gates the whole thing with no model: driver loop, a two-machine remote crossing, **and the workspace
-boundary** (87/87). The D48 arc is under way: **the workspace exists** (WSP1) — it is the unit of
-sharing, it is **wiring rather than a tracked declaration** (`connect --workspace`, a registry row, no
-manifest field), and every cross-repository entity and answer carries or is scoped by it.
+gates the whole thing with no model: driver loop, a two-machine remote crossing, **the workspace
+boundary and the registration lifecycle** (94/94). The D48 arc is under way. **The workspace exists**
+(WSP1) — it is the unit of sharing, it is **wiring rather than a tracked declaration**
+(`connect --workspace`, a registry row, no manifest field), and every cross-repository entity and
+answer carries or is scoped by it. **The registry is the authority** (WSP2) — an explicit list, not a
+view over a folder: `connect` adds, `retire` removes (touching no file), `import` is the old scan
+demoted to a verb, a store that has never been managed imports its root once and says so, and a
+registered checkout that has vanished is named rather than silently skipped.
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
@@ -73,7 +77,7 @@ workflow (`tools/release-prep.mjs`); the desktop sibling burned a version outrig
 hand-bump leaves every file perfectly consistent and still wrong — consistency was never the property at
 risk, **authorship** was.
 
-- `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
+- `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
 - `docs/DECISIONS.md` — the numbered decision log (D1–D50) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are the current arc**
@@ -134,7 +138,9 @@ Run every command from the **workspace root**, not from a package directory.
   projects, restart persistence, a quest driven to done by a stub session — then two workspaces on one
   machine, wired by `connect --workspace` with no tracked file touched, a search answering from one
   circle while the other holds the same lesson word for word, and a quest across the boundary refused
-  naming both sides — then a shared host with
+  naming both sides — then the registration lifecycle from a terminal: a folder nobody registered
+  staying invisible, `import` adding it without re-pointing anyone's workspace, `retire` removing it
+  with every file still there, and a vanished checkout named — then a shared host with
   minted keys, two simulated machines, a quest crossing them, a raced take standing down, and the
   remote's store scanned for anything machine-local. No model anywhere in the gate. Run when touching
   the service, `connect`, the driver, the remote, or the canon's shape —
@@ -166,10 +172,13 @@ Run every command from the **workspace root**, not from a package directory.
 - **Every write is atomic, BOM-less UTF-8, LF** — write beside, then rename. Never build file content by
   echoing through the console.
 - **Exit codes are the contract:** `0` clean · `1` policy failure · `2` tool error.
-- **`check` works offline, and so does every doctrine command.** `connect` is the single exception and
-  is opt-in (D35). Two tests hold the line: only `connect.ts` may contain a network primitive, and
-  nothing `check` transitively imports may reach it — the second is the one that matters, because a gate
-  breaks by an import three modules deep, not by an obvious `fetch`.
+- **`check` works offline, and so does every doctrine command.** The exceptions are the **management
+  class** — `connect`, `retire`, `import` — which are opt-in, loopback-talking and never run by a gate
+  (D35, D50). Two tests hold the line: only `service.ts` may contain a network primitive, and nothing
+  any doctrine command transitively imports may reach it — the second is the one that matters, because
+  a gate breaks by an import three modules deep, not by an obvious `fetch`. **Keep the network in that
+  one module**: a management class whose members each opened a socket would turn the first test into a
+  list, and a list is something people append to.
 - **Plan and apply are separate functions**, so a plan can be printed or asserted without touching disk.
 - **TDD** — failing test first. **Commit per task, automatically, once gates are green** (D37 as
   amended) — the landed history is the reviewable record. **Push, publish, release and history

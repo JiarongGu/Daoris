@@ -102,3 +102,42 @@ export const useRefreshIndex = () => {
     onSuccess: () => void client.invalidateQueries(),
   });
 };
+
+/**
+ * The registration lifecycle (D48 §3/§7).
+ *
+ * A registration change moves who is on the map, what each is wired to, and what the index will read
+ * next — so all three invalidate the same broad set rather than each guessing which views care.
+ */
+function useInvalidateRegistry() {
+  const client = useQueryClient();
+  return () => {
+    void client.invalidateQueries({ queryKey: keys.registry });
+    void client.invalidateQueries({ queryKey: keys.repositories });
+  };
+}
+
+export const useRegisterRepository = () => {
+  const invalidate = useInvalidateRegistry();
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.registerRepository>[0]) => api.registerRepository(body),
+    onSuccess: invalidate,
+  });
+};
+
+export const useWireRepository = () => {
+  const invalidate = useInvalidateRegistry();
+  return useMutation({
+    mutationFn: ({ repository, workspace }: { repository: string; workspace: string }) =>
+      api.wireRepository(repository, workspace),
+    onSuccess: invalidate,
+  });
+};
+
+export const useRetireRepository = () => {
+  const invalidate = useInvalidateRegistry();
+  return useMutation({
+    mutationFn: (repository: string) => api.retireRepository(repository),
+    onSuccess: invalidate,
+  });
+};

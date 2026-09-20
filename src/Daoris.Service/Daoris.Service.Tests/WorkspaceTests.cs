@@ -335,7 +335,7 @@ public sealed class WorkspaceQuestTests : IAsyncLifetime
         var store = new InMemoryKnowledgeStore();
         _service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly, registry: new Registry(_root));
+            DisclosurePolicy.LocalOnly, registry: new Registry());
 
         // The wiring: two of them in one circle, one in another. Nothing about this is in any manifest.
         foreach (var (name, workspace) in new[] { ("engine", "aurora"), ("game", "aurora"), ("ledger", "tools") })

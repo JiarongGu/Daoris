@@ -9,15 +9,17 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Nine commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Eleven commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness, index
   freshness and the always-loaded budget; `upstream` promotes a locally-improved file back into the
   canon (`--all` for every edit at once); `index` regenerates `RULES_INDEX.md` from what is on disk;
   `status` summarizes — the remote disclosure declaration included — and reports when a newer canon is
   available; `doctor` reports local documents that restate a canonical one under a different name; and
-  `connect`, the one networked command and opt-in (D35), registers the repository with a knowledge
-  service, carrying its declaration and — to a local service only — its root.
+  the three opt-in **management** commands (D35, D50) talk to a knowledge service — `connect` registers
+  the repository, carrying its declaration and, to a local service only, its root; `retire` takes it
+  off the machine's registry without touching a file; `import` registers a folder's subdirectories at
+  once.
 - **`doctor` covers the one gap the lock cannot.** A repository's own rule duplicating a canonical one is
   local, and local is invisible by design — it surfaced on the first adoption only because someone read
   the generated index end to end. Advisory by construction: word overlap is crude, and a false positive
@@ -282,6 +284,38 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Fixed: `refresh` re-read the repositories but never the folder.** The root's subdirectories were
   listed once at startup, so a repository created afterwards was invisible to the index while being
   fully registered and quest-addressable — and the refresh reported success either way.
+
+### The managed registry
+
+- **The registry is the authority; being in a folder is not being a member.** The family used to be
+  whatever a root folder happened to hold, and that failed the way scans fail: what a scan does not say
+  governs as much as what it says, and nobody reviews a silence. Now it is an explicit list — name,
+  workspace, declaration, and the checkout path, machine-locally. The index reads the registered paths,
+  so a folder nobody added contributes nothing.
+- **Two new commands, `retire` and `import`.** `daoris retire [name]` takes a repository off this
+  machine's registry and **nothing else** — no file, no history, no doctrine — and says so; retiring
+  something already retired is an answer, not a failure. `daoris import [folder]` is the old folder
+  scan, demoted to a verb a person runs: safe to re-run, because it states no workspace and unstated
+  wiring is preserved.
+- **A store that has never been managed imports its root once, and says so.** Without it, a machine
+  that had been running on `DAORIS_KNOWLEDGE_ROOT` would come up to an empty family after the upgrade —
+  and an empty family is indistinguishable from a broken one. Once, because a second run would
+  resurrect everything the person deliberately retired. A deployment that is fed rather than scanned
+  imports nothing, by the same rule that keeps it off its own disk.
+- **A registered checkout that vanished is named.** `refresh` reports it — moved, deleted, or
+  registered from another machine — instead of quietly indexing nothing while the count still looks
+  healthy. A registration with no path is not an absence: a teammate's mirrored row has no checkout
+  here by construction.
+- **The desktop manages the machine's repositories.** Projects gains add, re-wire, declaration and
+  retire where a shell is attached — the shell supplies the folder (a browser may never learn a machine
+  path) and the page registers through the ordinary loopback door. The two kinds of update are kept
+  visibly apart: re-wiring edits one row here and touches no file; editing the declaration writes
+  `daoris.json` in that repository and leaves the diff uncommitted for its own review. Adoption stays
+  that repository's own act, shown as commands to run rather than a button. Doctrine stays unwritable.
+- **The CLI's offline guarantee is now stated over a class, not a command.** `check`, `sync`,
+  `upstream` and the rest are offline by construction; `connect`, `retire` and `import` are the opt-in
+  management commands, and all three speak through one module — so the test still reads "exactly one
+  file may touch the network, and nothing a doctrine command reaches may import it".
 
 ### Proven
 

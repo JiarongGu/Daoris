@@ -282,6 +282,11 @@ machine paths (D46/D47: paths never reach a browser).
    name a circle could write itself into someone else's). Still owed from §8's Web row: the workspace
    switcher — Projects shows each repository's circle, but no view filters by one yet.
 2. **WSP2 — the managed registry**: registry-as-authority, `import`, the desktop's add/update/remove.
+   **Built 2026-09-20.** Two rules its successors inherit: the bootstrap import runs **once** per store
+   (marked in the store itself — anything that re-ran it would resurrect every repository someone
+   retired), and *reads local checkouts* is one variable deciding both "does this deployment scan for
+   knowledge" and "does it bootstrap a registry", because those are the same sentence and two copies
+   would drift.
 3. **WSP3 — remotes become a map**: per-workspace remotes, sync loop per workspace, host identity.
 4. **WSP4 — knowledge sync semantics**: provenance, monotonic replace, default-branch-only, served
    provenance. (Lands after WSP3 because the refusals belong to a workspace's host, but the Core

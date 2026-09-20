@@ -85,5 +85,17 @@ public interface IDisclosurePolicy
 /// than thrown: the lexical index is complete and usable either way, and taking a whole refresh down
 /// for the optional half would trade the feature that works for the one that does not.
 /// </param>
+/// <param name="Absent">
+/// Registered repositories whose checkout is no longer where the registry says it is (D48 §3). Named,
+/// never silently skipped: a repository that quietly stops contributing looks exactly like one with
+/// nothing to say, and the refresh would otherwise report a healthy count over a moved checkout — the
+/// ghost failure from the other direction. A registration that never named a path is not an absence:
+/// a teammate's mirrored row has no checkout here by construction.
+/// </param>
 public sealed record IndexReport(
-    string Source, int Repositories, int Entries, int Withheld, string? SemanticError = null);
+    string Source, int Repositories, int Entries, int Withheld, string? SemanticError = null,
+    IReadOnlyList<string>? Absent = null)
+{
+    /// <summary>The absences, never null — a caller reporting "none" should not have to branch.</summary>
+    public IReadOnlyList<string> Absent { get; init; } = Absent ?? [];
+}

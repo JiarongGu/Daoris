@@ -127,6 +127,45 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
+    /// Take a repository off the map (D48 §3).
+    /// </summary>
+    /// <remarks>
+    /// <b>Nothing on disk is touched.</b> This ends a registration: the repository stops being
+    /// addressable and stops being indexed here, and its entries leave on the next refresh by the ghost
+    /// rule. Its files, its history and its doctrine are its own — the one thing a person must be able
+    /// to trust about a remove is what it does not do.
+    /// </remarks>
+    /// <returns>Whether there was a registration to retire; false is an answer, not a failure.</returns>
+    public async Task<bool> RetireAsync(string repository, CancellationToken ct = default)
+    {
+        var stored = registrations is not null
+            && await registrations.DeleteAsync(repository, ct).ConfigureAwait(false);
+        var known = registry?.Retire(repository) ?? false;
+        return stored || known;
+    }
+
+    /// <summary>
+    /// Register everything a folder's subdirectories propose (D48 §3) — the bootstrap, run deliberately.
+    /// </summary>
+    /// <remarks>
+    /// An import proposes no workspace, so re-importing a folder never re-points a repository someone
+    /// wired: unstated is preserved by the upsert. Existing rows are updated from their manifests,
+    /// which is what makes `import` the right answer to "I edited several declarations at once".
+    /// </remarks>
+    /// <returns>The registrations as they now stand, in name order.</returns>
+    public async Task<IReadOnlyList<Registration>> ImportAsync(
+        string folder, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var imported = new List<Registration>();
+        foreach (var proposal in RegistryImport.Propose(folder))
+        {
+            imported.Add(await RegisterAsync(proposal, now, ct).ConfigureAwait(false));
+        }
+
+        return imported;
+    }
+
+    /// <summary>
     /// The workspace a repository is wired to on this machine, or the default when nobody has said.
     /// </summary>
     /// <remarks>
@@ -246,6 +285,8 @@ public sealed class KnowledgeService(
                     : Workspaces.Default,
                 ct).ConfigureAwait(false);
 
+            report = report with { Absent = AbsentCheckouts() };
+
             // Embedding happens here rather than inside the index, because it is the expensive,
             // optional half: the store is usable the moment the refresh returns, and semantic recall
             // arrives when it arrives.
@@ -280,6 +321,21 @@ public sealed class KnowledgeService(
             _refreshLock.Release();
         }
     }
+
+    /// <summary>
+    /// Registered repositories whose checkout is not where the registry says it is (D48 §3).
+    /// </summary>
+    /// <remarks>
+    /// A row with no path is not an absence — a teammate's mirrored registration has no checkout here
+    /// by construction (D47 §9), and reporting it as missing would turn a normal remote family into a
+    /// screen of false alarms.
+    /// </remarks>
+    private IReadOnlyList<string> AbsentCheckouts() =>
+        (registry?.Read(new Dictionary<string, int>()) ?? [])
+            .Where(r => !string.IsNullOrWhiteSpace(r.Root) && !Directory.Exists(r.Root))
+            .Select(r => r.Repository)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
 
     /// <summary>
     /// Index on first use when there is nothing to search. A persisted index survives restarts, so

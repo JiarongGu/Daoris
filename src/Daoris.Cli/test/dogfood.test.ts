@@ -93,22 +93,32 @@ test('daoris holds its own doctrine and checks clean', () => {
  * D8's offline guarantee, scoped to what it actually claims.
  *
  * The guarantee is about the DOCTRINE operations — `check` above all, because it runs inside build
- * gates and a gate that can fail on a network call is not a gate. `connect` is a different thing: an
- * explicit, opt-in registration with a knowledge service, never run by a gate.
+ * gates and a gate that can fail on a network call is not a gate. The MANAGEMENT commands are a
+ * different thing (D50): `connect`, `retire` and `import` are explicit, opt-in conversations with a
+ * knowledge service, never run by a gate.
  *
  * This was briefly written as "nothing anywhere in the CLI may open a socket", which is a stronger
  * claim than D8 makes and would have made a client impossible. Two assertions replace it, and together
  * they are the real invariant: exactly one module may reach the network, and nothing on `check`'s path
- * may import it.
+ * may import it — directly or three modules deep.
+ *
+ * The first half survived the management class growing past one command because the network itself
+ * stayed in one file. Had each verb opened its own socket, "the named management modules" would be a
+ * list that grows, and a list that grows is one somebody eventually appends to without thinking.
  */
 const NETWORK = /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(|(?:^|[^\w.])require\(['"]https?['"]\)|from\s+['"]node:https?['"]/;
 
-test('only the connect client may touch the network', () => {
+/** The one module permitted a network primitive. Every management command speaks through it. */
+const SERVICE_CLIENT = 'service.ts';
+
+test('only the service client may touch the network', () => {
   for (const dir of ['src', 'bin']) {
     for (const file of listFiles(join(cliRoot, dir), (n) => n.endsWith('.ts') || n.endsWith('.mjs'))) {
-      if (file === 'connect.ts') continue;
+      if (file === SERVICE_CLIENT) continue;
       const text = readText(join(cliRoot, dir, file));
-      assert.equal(NETWORK.test(text), false, `${dir}/${file} reaches the network — only connect.ts may`);
+      assert.equal(
+        NETWORK.test(text), false,
+        `${dir}/${file} reaches the network — only ${SERVICE_CLIENT} may`);
     }
   }
 });
@@ -116,23 +126,32 @@ test('only the connect client may touch the network', () => {
 /**
  * The half that matters most. A gate would not realistically break by someone adding `fetch` to
  * `drift.ts`; it would break by an innocuous import three modules deep acquiring one for it.
+ *
+ * Walked from every DOCTRINE command's entry point, not only `check`'s: they all run offline, and a
+ * test that named one of them would be silent the day `sync` grew a "just ask the service" shortcut.
  */
-test('nothing check reaches can import the connect client', () => {
-  const seen = new Set<string>();
-  const walk = (module: string): void => {
-    if (seen.has(module)) return;
-    seen.add(module);
-    const file = join(cliRoot, 'src', module);
-    if (!existsSync(file)) return;
-    // Both `from './x.ts'` and a bare `import './x.ts'` — the second was missed at first, and a
-    // side-effect import is exactly how a module acquires a dependency nobody meant to add.
-    for (const match of readText(file).matchAll(/(?:from|import)\s+'\.\/([\w.-]+\.ts)'/g)) walk(match[1]!);
-  };
+test('nothing a doctrine command reaches can import the service client', () => {
+  const doctrine = ['drift.ts', 'materialize.ts', 'indexgen.ts', 'upstream.ts', 'commands.ts', 'twins.ts', 'analyze.ts'];
 
-  walk('drift.ts');
+  for (const entry of doctrine) {
+    const seen = new Set<string>();
+    const walk = (module: string): void => {
+      if (seen.has(module)) return;
+      seen.add(module);
+      const file = join(cliRoot, 'src', module);
+      if (!existsSync(file)) return;
+      // Both `from './x.ts'` and a bare `import './x.ts'` — the second was missed at first, and a
+      // side-effect import is exactly how a module acquires a dependency nobody meant to add.
+      for (const match of readText(file).matchAll(/(?:from|import)\s+'\.\/([\w.-]+\.ts)'/g)) walk(match[1]!);
+    };
 
-  assert.equal(seen.has('connect.ts'), false, `check reaches: ${[...seen].sort().join(', ')}`);
-  assert.ok(seen.size > 1, 'the walk found nothing, so it proved nothing');
+    walk(entry);
+
+    assert.equal(
+      seen.has(SERVICE_CLIENT), false,
+      `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
+    assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
+  }
 });
 
 /**
