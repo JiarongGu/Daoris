@@ -123,7 +123,7 @@ independent of everything and constrained by the byte budget).
   same, for the same reason (SES3 added two).
 - **The last seven landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
   (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4), `15ba288` (SES1), `a965feb`
-  (SES2) and SES3's. All gate-green; `git log` is the reviewable record.
+  (SES2) and `49da224` (SES3). All gate-green; `git log` is the reviewable record.
 - **What the arc left for its successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
   the wiring, but no view filters by one yet); and a **`codex` session adapter** — SES3 made codex
