@@ -29,7 +29,7 @@ item of the arc remains — canon coexistence (CANON6).**
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
 192 CLI tests, 248 service, 57 devkit, 130 driver, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **151/151 family rehearsal** including the
+2026-09-18, plus a no-staged-leftovers check since REV1), **154/154 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
@@ -64,7 +64,7 @@ The service is **deployable** (D36) and **ships as executables** (D43): `npm run
 snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
 spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
 remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): the
-family rehearsal (43 checks then; 75 today) and the Playwright suite (7 tests) each run over a scratch
+family rehearsal (43 checks then; 154 today) and the Playwright suite (9 tests) each run over a scratch
 copy of the examples and take a project born mid-run through init → declare → sync → check → connect →
 its first quest. `Daoris.Web` is **the platform** (D38,
 D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
@@ -72,8 +72,9 @@ grouped by state with sitting time, projects as scannable declarations — in a 
 (sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
 headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
 speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a test pyramid
-declared in `daoris.gates.json` — a **27-test Vitest inner loop** and a **7/7 Playwright outer loop
-over `examples/`**. Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
+declared in `daoris.gates.json` — a **50-test Vitest inner loop** (the shell-attached surfaces, over a
+mocked bridge) and a **9/9 Playwright outer loop over `examples/`** (the real bundle over the real
+host — including, since SES3, what a browser must NEVER learn about the machine it is not running on). Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
 canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
 Development is **automation-first** (D37): the person sets the target and verifies the final diff;
 agents execute and gates verify the middle. `docs/FIX-LOG.md` carries fix root causes, indexed by the
@@ -165,7 +166,7 @@ independent of everything and constrained by the byte budget).
 - **Verify before claiming done, always:** `npm run verify` (CLI 192 + `check` + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (130), `npm run rehearse:family` (151/151), `npm run test:web` (50 + 7). If a `bin`-driven gate is red
+  (130), `npm run rehearse:family` (154/154), `npm run test:web` (50 + 9). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 

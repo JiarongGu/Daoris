@@ -178,8 +178,11 @@ Run every command from the **workspace root**, not from a package directory.
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
   bundle over the example family: a quest through its whole life in the drawers, the verbatim
-  refusal, 中文. Declared in `daoris.gates.json`; it rebuilds the host, so stop a running instance
-  first.
+  refusal, a session record naming the tool and account that did the work, **what a browser must
+  never learn about this machine**, 中文. Declared in `daoris.gates.json`; it rebuilds the host, so
+  stop a running instance first. **A shell-only surface is not out of its reach entirely** — the
+  browser still owns what the RECORD shows and what must be ABSENT; the controls belong to the vitest
+  inner loop over a mocked bridge (`docs/2026-09-19-frontend-architecture.md` §4).
 - **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only,
   with `dry_run` defaulting to true; it runs all four gates on Linux before publishing, and builds and
   tests the devkit and service binaries on Linux, Windows and macOS. Nothing runs on push — **a gate

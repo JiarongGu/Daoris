@@ -906,6 +906,17 @@ writeFileSync(driverConfigB, `${JSON.stringify({
 // these steps needs. (An omitted mode used to fall through to watch-forever, which a bounded gate can
 // never end — the shared helper's timeout is the backstop, but the default is what keeps a step from
 // ever reaching it.)
+// Machine b runs its sessions as a NAMED ACCOUNT (D49 §4). The name is distinctive on purpose: it is
+// what the scans below look for. Which account a session ran as is machine-local — a person may well
+// have named a profile after themselves — so it must answer on the machine that ran it and nowhere
+// else, exactly like the transcript beside it (D47 §4).
+const machineBHarness = join(scratch, 'machine-b', 'harnesses.json');
+const machineBProfile = join(scratch, 'machine-b', 'harnesses', 'stub', 'mach-b-account');
+mkdirSync(machineBProfile, { recursive: true });
+writeFileSync(join(machineBProfile, 'credentials.json'), '{}\n');
+writeFileSync(machineBHarness, `${JSON.stringify(
+  { defaults: { stub: 'mach-b-account' }, workspaces: {} }, null, 2)}\n`);
+
 const driveA = (mode = '--once') => driver({
   serviceUrl: BASE, config: driverConfig, mode,
   remote: { DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyA },
@@ -913,6 +924,7 @@ const driveA = (mode = '--once') => driver({
 const driveB = (mode = '--once') => driver({
   serviceUrl: HOST_B_BASE, config: driverConfigB, mode,
   remote: { DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyB },
+  harness: { DAORIS_HARNESS_CONFIG: machineBHarness },
 });
 
 const firstTickB = driveB('--once');
@@ -1055,6 +1067,24 @@ check(
   remoteSessions.text,
 );
 
+// Which TOOL did the work travels; which ACCOUNT it ran as does not (D49 §4). The positive half
+// matters as much as the negative one: a field that crossed as null because nothing ever set it
+// would pass the second check and prove nothing.
+const ownRecords = await api('GET', '/api/sessions?repository=borealis&includeClosed=true',
+  { base: HOST_B_BASE });
+check(
+  'machine b’s own record names the account it ran as, and the tool that ran it',
+  (ownRecords.json ?? []).some((s) => s.profile === 'mach-b-account'
+    && s.harnessVersion === 'stub-harness 1.0.0'),
+  ownRecords.text,
+);
+check(
+  '…and the fed record carries the tool version but never the account name',
+  fedRecords.some((s) => s.harnessVersion === 'stub-harness 1.0.0')
+    && fedRecords.every((s) => !s.profile),
+  remoteSessions.text,
+);
+
 const revoke = run(`dotnet "${httpDll}" keys revoke ${keyB.slice(3, 11)}`, repoRoot, {
   DAORIS_KNOWLEDGE_DB: remoteDb,
 });
@@ -1075,6 +1105,12 @@ check('the remote store holds no machine path at all', !remoteBytes.includes('_f
   'a path fragment reached the remote store');
 check('…and none of the knowledge that was kept home', !remoteBytes.includes('keeps this lesson at home'),
   'unshared knowledge reached the remote store');
+// The account a session ran as is the newest thing on this list, and the one most likely to be a
+// person's own name (D49 §4). Byte-level like the rest, and for the same reason: three guards drop
+// it — the feed has no field, the payload builder omits it, the store's mirror writes NULL — and
+// "three guards" is a claim about code, while this is a claim about the artefact.
+check('…and no account name a session ran as', !remoteBytes.includes('mach-b-account'),
+  'a credential profile name reached the remote store');
 
 // -------------------------------------------------- 12. the remotes are a map
 
@@ -1757,7 +1793,8 @@ if (totals.failures) {
   console.log('  a quest became a session became a commit became done, a dirty tree held, a decline');
   console.log('  carried its reason, and outside work was left entirely alone (D46). Then REMOTE (D47):');
   console.log('  two machines and a shared host with minted keys — a quest published on one machine,');
-  console.log('  driven to done on the other, the closure crossing back; a raced take standing down;');
+  console.log('  driven to done on the other under a named account, the closure crossing back with the');
+  console.log('  tool version but never the account name; a raced take standing down;');
   console.log('  knowledge crossing only where declared; and the remote store scanned to hold no');
   console.log('  machine path, no transcript, and nothing a repository kept home. And WORKSPACES');
   console.log('  (D48): two circles on one machine, wired by `connect --workspace` and written into no');

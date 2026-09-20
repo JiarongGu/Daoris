@@ -1290,8 +1290,22 @@ the problem; and the roster crashed a mocked bridge answering another shape — 
 recorded, restated on a new surface. The rehearsal gates all of it with no account, credential or
 model: the stub became a fake *binary* as well as a fake session, so a spawn under profile `alpha` is
 asserted to carry alpha's configuration home **from the session's own output** rather than from the
-record's word for it. Tests grew 192 CLI (+28), 248 service (+3), 130 driver (+32), 50 web vitest
-(+6), 151/151 family rehearsal (+16); release rehearsal 53/53 and `test:web` 7/7 unchanged.
+record's word for it.
+
+**The outer loops were the part that had to be asked for.** A first pass left the Playwright suite at
+7/7 — the roster and the picker are shell-only, so a browser cannot reach them, and it is easy to read
+"cannot reach" as "nothing to test". Two things were reachable and both are now held: the record's new
+fields rendered over the real bundle and the real host (the whole chain — request contract, ledger, two
+store columns, response shape, formatter, DOM — where a nullable field quietly stops arriving and no
+mock would notice), and the *negative* guarantee that **a browser learns nothing about this machine's
+harnesses**, which is precisely the surface where that must hold. The cross-machine half went into the
+family rehearsal: machine b drives under a named account, its own record says so, the fed record
+carries the tool version and never the name, and the remote's store is scanned byte-level for it —
+"three guards drop it" is a claim about code, and this is a claim about the artefact. One of the two
+new e2e assertions was written against the page heading ("This machine") instead of the sidebar label
+("Machine") and could never have failed; watching both sabotages is what found it. Tests grew 192 CLI
+(+28), 248 service (+3), 130 driver (+32), 50 web vitest
+(+6), 154/154 family rehearsal (+19); release rehearsal 53/53 unchanged, `test:web` 7→9.
 
 ## SES2 — chat sessions (2026-09-20)
 

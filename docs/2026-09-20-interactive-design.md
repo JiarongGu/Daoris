@@ -235,7 +235,21 @@ The family rehearsal gates all of it with no account, no credential and no model
 *binary* as well as a fake session — it answers `--version` and `--login-state` — so a spawn under
 profile `alpha` is asserted to carry alpha's configuration home **from the session's own output**
 rather than from the record's word for it, a logged-out profile holds the start recording nothing, an
-uninstalled harness holds it the same way, and both surfaces are driven from a terminal.
+uninstalled harness holds it the same way, and both surfaces are driven from a terminal. Its remote
+phase carries the other half: machine b drives under a named account, its own record says so, the fed
+record carries the tool version and **never** the account name, and the remote's store is scanned
+byte-level for it — three guards drop that name, and "three guards" is a claim about code while the
+scan is a claim about the artefact.
+
+**What the browser loop holds, and what it structurally cannot.** The roster and the per-conversation
+picker ride the shell's bridge, so Playwright — which drives a real browser over the real bundle —
+cannot reach them, and the platform's shell-attached surfaces stay the vitest inner loop's to hold
+with a mocked bridge. Two things there ARE browser-reachable and both are gated: the session record's
+new fields, rendered end to end through the real host (the chain from request contract to DOM is
+where a nullable field quietly stops arriving), and the negative guarantee that **a browser learns
+nothing about this machine's harnesses** — no reachable settings tab, no roster, no picker, no
+configuration home anywhere on the page. That last one belongs in the browser suite precisely because
+a browser is the place it has to hold.
 
 ## 5. What lives where (the D46 §7 table, extended)
 

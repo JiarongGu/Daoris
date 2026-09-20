@@ -61,7 +61,18 @@ copy — the tokens are the only theme.
 
 `npm run test:web` (a root script) builds the web app, builds the HTTP host, boots it over
 `examples/` with a scratch store, and runs Playwright against the real bundle the host serves — the
-same artefact a person uses, not a dev server with different behaviour. It joins `daoris.gates.json`,
+same artefact a person uses, not a dev server with different behaviour.
+
+**Where the line between the two loops falls, and why it is not a gap.** Every surface gated on a
+shell (the driver controls, the console, chat, the harness roster and its profile picker) is
+*unreachable* from a browser by construction — the bridge is absent, so the query never fires. Those
+belong to the Vitest inner loop, which mocks the bridge and can therefore drive them. It is easy to
+read "the outer loop cannot reach it" as "the outer loop has nothing to say", and that is the mistake
+worth naming: the browser suite still owns two things about any shell-only feature. **What the record
+shows** — a session's fields travel over HTTP and render in a drawer, so the whole chain from request
+contract to DOM is browser-testable even when the controls are not. And **what a browser must never
+learn** — the absence of a machine-local surface is a disclosure guarantee, and a real browser over
+the real bundle is the only place it can honestly be checked. SES3 added one of each. It joins `daoris.gates.json`,
 so the devkit's `verify` — and therefore the release workflow — refuses a release whose UI cannot do
 its job over the example family. Development runs the same suite in watch/UI mode: change, see it
 fail, make it pass — with subagents taking mechanical slices (catalog translation, story authoring)

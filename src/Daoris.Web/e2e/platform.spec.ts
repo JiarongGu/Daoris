@@ -163,6 +163,73 @@ test("a driven session's record reaches the drawer (D46)", async ({ page, reques
   await expect(dialog.getByRole('button', { name: 'stop session' })).toHaveCount(0);
 });
 
+/**
+ * Which tool, and which account, did the work (D49 §4).
+ *
+ * The inner loop holds the formatter with a mocked record; this holds the whole chain over the real
+ * artefact — the request contract, the ledger, the two store columns, the response shape, and the
+ * drawer's line — because every one of those is a place a nullable field quietly stops arriving and
+ * no test that mocks the host would notice.
+ */
+test('a session record names the tool version and the account it ran as (D49 §4)', async ({ page, request }) => {
+  // `game`, not `engine`: the test above leaves a working session holding `engine`, and one session
+  // per repository is the whole point of that lock. A suite that runs in order inherits its own state.
+  const published = await request.post('/api/quests', {
+    data: {
+      from: 'engine', to: 'game',
+      title: 'Prove the record names its tool',
+      body: 'Seeded to prove the harness version and the profile survive the round trip.',
+    },
+  });
+  const quest = (await published.json() as { quest: { id: string } }).quest;
+
+  // Through the same door the driver uses: it observes both before it spawns, because the service has
+  // no binaries to look at (D46 §7) and records what it is told.
+  const opened = await request.post('/api/sessions', {
+    data: {
+      quest: quest.id, adapter: 'stub',
+      harnessVersion: 'stub-harness 9.9.9', profile: 'work',
+    },
+  });
+  // Asserted before it is used: a refusal here is a sentence worth reading, and `undefined.id` is not.
+  expect(opened.ok(), await opened.text()).toBe(true);
+  const session = (await opened.json() as { session: { id: string } }).session;
+  await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'starting' } });
+  await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'working' } });
+
+  await page.goto('/');
+  await nav(page, 'Quests').click();
+  await page.getByText('Prove the record names its tool').first().click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText(new RegExp(`${session.id} · stub · stub-harness 9\\.9\\.9 · as work`))).toBeVisible();
+});
+
+/**
+ * **A browser must never learn what is installed on somebody's machine, or which accounts it holds.**
+ *
+ * The roster and the per-conversation profile picker ride the shell's bridge and have no HTTP route
+ * at all (D47 §4) — a profile home is a filesystem path. In a browser the bridge is absent, so the
+ * queries never fire and the surfaces never render; asserting that here, over the real bundle, is the
+ * only place the guarantee is checked against a real browser rather than against a mock that was told
+ * to be absent.
+ */
+test('a browser learns nothing about this machine’s harnesses (D49 §4)', async ({ page }) => {
+  await page.goto('/');
+
+  // The machine's settings are not even reachable: the tab is shell-only. Its SIDEBAR label is
+  // `Machine` — the page heading reads "This machine", and asserting on that one would have been a
+  // check that could never fail, which is worse than no check at all.
+  await expect(nav(page, 'Machine')).toHaveCount(0);
+
+  await nav(page, 'Projects').click();
+  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
+  // No roster, no picker, and nothing that would name a configuration home.
+  await expect(page.getByText('Harnesses')).toHaveCount(0);
+  await expect(page.getByLabel(/the next conversation runs as/)).toHaveCount(0);
+  await expect(page.getByText(/\.daoris[\\/]harnesses/)).toHaveCount(0);
+});
+
 test('the console speaks 中文', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '中文' }).click();
