@@ -48,6 +48,27 @@ the desktop **or** the CLI. The contracts are `docs/2026-09-20-workspace-design.
 | **SES1 · The live console** | The capture pump tees into a bounded per-session buffer; the shell streams it to the session drawer, verbatim and desktop-only | **Built** (2026-09-20) — the transcript stays the durable record; the window states what it dropped |
 | **SES2 · Chat sessions** | A conversation is a session: `driven \| chat`, quest optional, the same one-session-per-repository lock; the seam grows `interactive`; two doors (desktop, and a terminal) | **Built** (2026-09-20) — the rehearsal holds one with no model in it, publishing the work that came up rather than editing across |
 | **SES3 · The toolchain** | Harnesses Daoris installs and updates, with named credential profiles | **Built** (2026-09-20) — each harness's own mechanism, only on the person's action; a profile is a directory Daoris owns the location of, and never its contents |
+| **CANON6 · Coexistence** | Doctrine must not hard-require Daoris: a named mechanism carries its tool-absent path in the same breath | **Built** (2026-09-20) — one case in the whole canon, because what `sync` writes is committed; only a *service* is a dead end without the tool |
+
+**Reviewed after it closed (REV2, 2026-09-20).** Two things no gate could see: the release workflow
+ran one of four declared gates, and the shell's 1,128 lines had no tests — so every refusal the
+desktop made reached people as a blank failure. Both fixed and gated.
+
+---
+
+## The next direction: the desktop as a working surface (set 2026-09-20)
+
+**The desktop half is becoming a user-driven application, and it should hold code sessions the way a
+terminal agent CLI does — across different agents, repositories and concurrent sessions, designed with
+real UI/UX.** That is a different product from what exists: the platform today is an *operations
+console*, which optimises for scanning state, and a working surface optimises for holding attention on
+one thing while several others run.
+
+The research is done and written down — `docs/2026-09-20-working-surface-research.md` — and **SURF1**
+in `TASKS.md` is the design session it feeds. One question comes before any screen: **does the working
+tree stay the unit of exclusion, or does a session get its own worktree?** Concurrency across
+repositories needs nothing; concurrency *within* one changes the registry, the clean-tree rule,
+evidence, provenance and the ledger's lock. It is a numbered decision, not a layout choice.
 
 ---
 

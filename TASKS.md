@@ -29,8 +29,11 @@ do not run Daoris. **The whole D48/D49/D50 arc is built.** It was then **reviewe
 request (REV2, in the archive), which found two things no gate could: the release workflow ran one of
 the four declared gates, and the shell's 1,128 lines had no tests at all — so every refusal the desktop
 made was reaching people as a blank failure. Both are fixed and gated, along with four smaller things
-the same review noticed. **What the arc left behind is three backlog items — CANON7, WSP5, HARNESS2 —
-and CANON7 is a decision for the owner that CANON5 is parked behind.**
+the same review noticed. **The owner then set the next direction (2026-09-20): the desktop becomes a
+user-driven working surface — code sessions the way a terminal agent CLI holds them, but across
+agents, repositories and concurrent sessions, designed with real UI/UX (SURF1, researched in
+`docs/2026-09-20-working-surface-research.md`).** Beside it sit three smaller leftovers — CANON7,
+WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind.
 
 ## State
 
@@ -110,11 +113,15 @@ harnesses those sessions run on are Daoris's to find, install, update and hold m
 without ever touching a credential. **And coexistence**: the canon no longer instructs anything a
 contributor without Daoris cannot do.
 
-**The arc is closed and reviewed (REV2).** What is left is three **actionable** leftovers and four
-**held** items. Start with **CANON7** — it is a decision to bring the owner rather than work to do, it
-takes minutes, and **CANON5 is parked behind it**. Then **WSP5** (the workspace switcher, web-only) or
-**HARNESS2** (a `codex` session adapter). Do not pick up a held item until its trigger has arrived.
-Nothing is pushed or published, and a release is still blocked on REH1.
+**The arc is closed and reviewed (REV2), and the owner has set the next direction: the desktop becomes
+a working surface (SURF1).** That is the large one and it is a *design* session — read
+`docs/2026-09-20-working-surface-research.md` before anything else, and settle the isolation model as a
+numbered decision before drawing a single screen; it is the question everything else follows from.
+
+Smaller and independent of it: **CANON7** (a decision to bring the owner rather than work to do — it
+takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only) or
+**HARNESS2** (a `codex` session adapter). Four **held** items sit below those; do not pick one up until
+its trigger has arrived. Nothing is pushed or published, and a release is still blocked on REH1.
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -197,6 +204,43 @@ Nothing is pushed or published, and a release is still blocked on REH1.
 them. The three items below it left behind are **actionable now**; the four after them are **held**,
 each waiting on an external trigger that has not arrived. Each item is one session-sized landing, TDD,
 gates green, moved to the archive on completion.
+
+### The next direction — the desktop becomes a working surface
+
+**Set by the owner, 2026-09-20:** the desktop half of Daoris is becoming a **user-driven
+application**, so it must be developed with real UI/UX — and it should hold **code sessions the way a
+terminal agent CLI does, but across different agents, repositories, and concurrent sessions.**
+
+- [ ] **SURF1 — design the working surface.** A design session producing a contract and a numbered
+  decision, the way D41 → `2026-09-19-platform-ux.md` and D48/D49 → their two contracts did. **The
+  research is already done and written down: read `docs/2026-09-20-working-surface-research.md`
+  first** — it records what the field has settled on, what Daoris already has that the field does not,
+  and the questions the design must answer. Three things from it govern the session:
+  - **The platform today is an operations console; this asks for a working surface, and they are
+    different products.** One optimises for scanning state, the other for holding attention on one
+    thing while several others run. The existing design language (tokens, the validated status
+    palette, the accessibility rules) stays — a second visual language inside one app is what D41 was
+    written to prevent — but the *shape* of the shell is open.
+  - **Settle the isolation model FIRST, and record it as a decision, because it is not a layout
+    question.** The field's answer is worktree-per-session; Daoris's is one active session per
+    repository, enforced in one place and asserted in both directions by the rehearsal. Concurrency
+    *across* repositories needs no change; concurrency *within* one does, and a working surface will
+    make people want it. Choosing the worktree moves the unit of exclusion off the repository and
+    touches the registry, the clean-tree rule, evidence, `WorkingTree`, WSP4's provenance stamp and
+    the ledger's lock. Choosing to keep the lock is coherent and caps a person at one session per
+    repository forever. **Either way it is D-numbered before anything is drawn.**
+  - **Mid-run visibility is load-bearing, not decoration** — no-visibility sessions showed 3× the
+    abandonment at identical output quality. SES1's console exists but lives in a drawer; the design
+    should assume it is promoted, and that `AwaitingPerson` — a state that already means "only the
+    person can clear this" and has **no surface at all** — gets one.
+
+  Boundaries that do not move, and should be restated in the contract: D38 (one UI — desktop-only is
+  allowed only where it is *structurally* desktop-only, as the console and chat already are under
+  D47 §4), D31 (doctrine unwritable everywhere), D37 (a better approval surface must not widen
+  autonomy; destructive, irreversible and outward-facing stay human), D24 (no model named).
+
+  Expected output: a design document, a decision entry, and a build order of session-sized items —
+  not code.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

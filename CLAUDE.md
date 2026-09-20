@@ -106,9 +106,16 @@ risk, **authorship** was.
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
 - `docs/DECISIONS.md` — the numbered decision log (D1–D50) and why each was made. **D45 is the
-  direction: Daoris drives** — read it before planning anything; **D48–D50 are the current arc**
-  (workspaces; the interactive surface; management parity) — WSP1–4 and SES1–3 have landed; CANON6
-  is what remains.
+  direction: Daoris drives** — read it before planning anything; **D48–D50 are the closed arc**
+  (workspaces; the interactive surface; management parity) — WSP1–4, SES1–3 and CANON6 have all landed.
+- **The next direction is the desktop as a working surface** (owner, 2026-09-20): code sessions the
+  way a terminal agent CLI holds them, across agents, repositories and concurrent sessions, designed
+  with real UI/UX. **`docs/2026-09-20-working-surface-research.md` is the research; SURF1 in the
+  backlog is the design session.** It has one question to settle before any screen is drawn — whether
+  the working tree stays the unit of exclusion, or a session gets its own worktree — and that is a
+  numbered decision, not a layout choice.
+- `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
+  validated status palette, the interaction rules. Read before changing anything a person looks at.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
