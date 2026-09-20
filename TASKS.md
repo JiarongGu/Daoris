@@ -41,7 +41,7 @@ CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANO
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-194 CLI tests, 248 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
+203 CLI tests, 248 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
 2026-09-18, plus a no-staged-leftovers check since REV1), **154/154 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
@@ -203,7 +203,12 @@ its trigger has arrived. Nothing is pushed or published, and a release is still 
   call, and the live consumer count is zero.
 - **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
   up only when its trigger has actually arrived.
-- **Verify before claiming done, always:** `npm run verify` (CLI 194 + `check` + version agreement),
+- **The shell has a dev loop now (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click`. It
+  is **not a gate** — it starts the real window on a scratch machine of its own, and `eval` is the one
+  instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
+  console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
+  land a surface: seeing the real thing is the step that had no tooling at all.
+- **Verify before claiming done, always:** `npm run verify` (CLI 203 + `check` + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
   (130), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (39), `npm run rehearse:family` (154/154), `npm run test:web` (55 + 9). If a `bin`-driven gate is red

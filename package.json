@@ -16,6 +16,7 @@
     "rehearse": "node tools/release-rehearsal.mjs",
     "rehearse:family": "node tools/family-rehearsal.mjs",
     "test:web": "npm --prefix src/Daoris.Web run test && npm --prefix src/Daoris.Web run build && dotnet build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e",
+    "desktop": "node tools/desktop.mjs",
     "publish:service": "node tools/service-publish.mjs",
     "release-prep:check": "node tools/release-prep.mjs --check"
   },

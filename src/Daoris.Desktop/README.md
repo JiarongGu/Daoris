@@ -50,6 +50,45 @@ platform UI, and **controls the repositories and their agent sessions** — spaw
 coordinating development sessions (claude/codex, through an adapter seam) one per domain-owning
 repository. Built on the family's desktop runtime sibling, consumed at a released version (D22).
 
+## The dev loop — `tools/desktop.mjs` (2026-09-21)
+
+Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the
+bridge is absent in a browser, by construction) and the vitest suite drives a *mock* of this machine,
+so the only way to look at the real window was to open it by hand. `npm run desktop -- <command>` is
+that instrument. **It is not a gate** — it starts nothing in CI and asserts nothing — it is how a
+person or an agent starts the shell and sees what it actually rendered.
+
+| command | what |
+|---|---|
+| `doctor` | what is built, what is running, what a scratch run would use — and whether an installed host would be adopted instead of this workspace's |
+| `build [--release]` | the platform bundle into the host's `wwwroot`, then the host, then the shell. That order is the dependency order: a host built before the bundle serves the previous one |
+| `run [--real] [--fresh]` | start the shell **on a machine of its own**, with the debug port attached |
+| `restart` · `kill` | stop the shell **this checkout built** — matched by executable path, never by process name |
+| `shot [name]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it) |
+| `eval "<js>"` | evaluate inside the running shell's page — **the only instrument that sees the bridge-attached half** (the Machine view, the driver controls, the console, chat) |
+| `click "<css>"` | click exactly one element, and say what it clicked; a selector matching none or several is a refusal, not a first match |
+
+**A dev run gets its own machine, and that is a safety property rather than a convenience.** The shell
+runs the driver loop, and the driver spawns **real agent sessions in real repositories**. So `run`
+redirects every `~/.daoris` file, clears the remote environment pair (inherited, it would feed a real
+deployment from a scratch store), takes a port of its own, passes `--app-root` so the WebView2 profile
+and window state are its own too, and copies `examples/` to work over. `--real` is the person's own
+Daoris and is spelled out for that reason. A test asserts the redirect list against the sources that
+build `~/.daoris` paths, because a name missing there does not fail — it edits the person's real
+config.
+
+Two couplings the tool holds that nothing else does, both found by running it: the debug port needs
+**`DOTNET_ENVIRONMENT=Development`** as well (the runtime sets `AdditionalBrowserArguments`, which
+makes WebView2 ignore the environment variable, so it re-appends it itself — only in dev mode, which
+is why a shipped window has nothing to attach to), and the scratch port needs **`ASPNETCORE_URLS`** as
+well (the shell *probes* `DAORIS_SERVICE_URL` while the host *binds* `ASPNETCORE_URLS`, and nothing
+passes one to the other — move only the probe and the window waits on the splash forever).
+
+Captures and the scratch machine live under `_fixtures/`, which is gitignored: a window capture can
+show real repository content, so it never enters a tracked file (`sensitive-info`). Every capture
+prunes afterwards — newest 25, at most 150 MB — because a full-resolution PNG is megabytes and a
+capture folder nobody measures grows until somebody does.
+
 ## The loop it exists to run (D45)
 
 A target becomes a quest → the driver starts (or wakes) the owning repository's agent session with that

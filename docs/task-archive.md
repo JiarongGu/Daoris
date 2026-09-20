@@ -1701,3 +1701,55 @@ The build order is five session-sized items, SURF2–SURF6, in `TASKS.md`: the l
 (behaviour identical, proven by the rehearsal), session trees, the Work view, attention, review. No
 code landed; the verification plan names what each loop owns, including the browser's negative
 guarantee — a browser sees records and never a stream, a diff, a tree path or a notification setting.
+
+## DEV1 — a dev loop for the desktop shell (2026-09-21)
+
+> Asked for by the owner the same day: "you can create devtools for desktop development too" — with a
+> family sibling's `devtools/` named as the example, and the instruction to **review it and take only
+> the tools needed**.
+
+✅ done 2026-09-21 — `tools/desktop.mjs` (+ `tools/cdp.mjs`, `tools/shot-window.ps1`),
+`npm run desktop`, 9 tests in the CLI suite, documented in `src/Daoris.Desktop/README.md`.
+
+**The gap it closes.** Every other surface here has a loop that can see it; the shell has none.
+Playwright cannot reach it by construction (no bridge in a browser) and the vitest loop drives a
+*mock* of this machine — so the Machine view, the driver controls, the console and chat had never
+been seen by anything but a person opening the window. REV2 is what that costs. Seven commands:
+`doctor`, `build`, `run`, `restart`, `kill`, `shot`, `eval`, `click`. **It is deliberately not a
+gate** — it declares nothing in `daoris.gates.json` and asserts nothing about the product; it is the
+instrument, and the seventh gate it would otherwise have become is a seventh row two lists must agree
+on.
+
+**What was taken from the sibling, and what was left.** Taken: the zero-dependency CDP client (Node's
+global `WebSocket` is all it needs — a dev tool that drags in a driver library cannot run on a fresh
+clone), the PrintWindow capture with `PW_RENDERFULLCONTENT` (the plain flag captures the chrome and
+leaves the page blank), and three lessons each bought by an incident there — discriminate the process
+by **executable path** rather than name, **identify the page before reporting its answer**, and prune
+the capture folder by policy rather than by memory. Left: its 55 KB dispatcher (the hand-copied
+`dev.mjs` is the pathology `Daoris.Devkit` exists to remove), everything mobile, media, mac, iOS or
+LAN, and every static sweep — `check-sensitive`, `doc-claims`, `dead-i18n`, the layout audits — because
+Daoris's devkit already owns the universal gates and `Daoris.Web` already owns its i18n parity gate.
+Left with a trigger: the native background-input tool (CDP already drives the page, so it earns its
+place only if a check needs input the page cannot receive) and the runtime's `__shenora` dev
+interceptor (it would let `eval` call IPC modules directly, but it needs a production-reachable enable
+path, which is a product change rather than tooling).
+
+**A dev run gets its own machine — a safety property, not a convenience.** The shell runs the driver
+loop, and the driver spawns real agent sessions in real repositories. So `run` redirects every
+`~/.daoris` file, **clears** the remote environment pair (inherited, the hermetic-rehearsal mechanism
+would feed a real deployment from a scratch store), takes its own port, passes `--app-root` so the
+WebView2 profile and window state are its own, and copies `examples/` to work over. `--real` is
+spelled out. A test asserts the redirect list against every source that builds a `~/.daoris` path,
+because a missing name does not fail — it edits the person's real config — and both that test and the
+process-name pairing were sabotage-checked.
+
+**Two couplings found by running it, which is the argument for the tool in one line.** The debug port
+needs `DOTNET_ENVIRONMENT=Development` as well: the runtime sets `AdditionalBrowserArguments`, which
+makes WebView2 ignore `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`, so it re-appends that variable itself
+and only in dev mode — which is exactly why a shipped window has nothing to attach to. And a scratch
+port needs `ASPNETCORE_URLS` as well: the shell *probes* `DAORIS_SERVICE_URL` while the host *binds*
+`ASPNETCORE_URLS`, with nothing passing one to the other, so moving only the probe leaves the window
+on its splash forever. Proven end to end on the real window: started on a scratch machine, read back
+its six nav items **including `Machine`**, clicked through to Projects, and captured a 2560×1600 PNG
+of the WebView2 composition. Nothing in the shipped app changed — the whole debug surface is two
+environment variables a dev run sets.

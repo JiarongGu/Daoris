@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fourteen commands, 194 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fourteen commands, 203 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 248, `Daoris.Devkit` 57, and the
 driver 130. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
@@ -151,7 +151,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 | `canon/core/{rules,knowledge,skills}/` | The always-installed rules, on-demand knowledge, and discovery skills |
 | `canon/packs/<name>/` | `pack.json` + `rules/` + `knowledge/` + `skills/` |
 | `canon/CHANGELOG.md` | Why each canon version changed — `status` prints the entries a repo is skipping |
-| `tools/` | This repository's own release tooling; not shipped |
+| `tools/` | This repository's own release tooling and dev loops; not shipped |
 
 `canon/`, `LICENSE` and `README.md` live at the root and are **staged into the CLI package at pack
 time** (`tools/stage-package.mjs`, run by `prepack`) — npm's `files` cannot reach outside a package
@@ -209,6 +209,12 @@ Run every command from the **workspace root**, not from a package directory.
   to end is what hid it — and is not a substitute for the judgement underneath.
 - **Changing what `sync` does with a file? Read `docs/DECISIONS.md` D19 first.** That state space is
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
+- **`npm run desktop -- <doctor|build|run|shot|eval|click|restart|kill>`** — the shell's dev loop, and
+  **not a gate**: it starts the real window on a scratch machine of its own and lets you *see* it —
+  `eval` is the only instrument that reaches the bridge-attached half (the Machine view, the driver
+  controls, the console, chat), which Playwright cannot reach and the vitest loop only mocks. A run
+  redirects every `~/.daoris` file because the driver loop starts with the app and spawns **real
+  sessions**; `--real` is your own machine and says so. `src/Daoris.Desktop/README.md` has the table.
 - `node --test` — tests only.
 - `node src/Daoris.Cli/bin/daoris.mjs <command>` — run the CLI against this repository.
 - `DAORIS_CANON=<path>` overrides the canon root; this is how tests drive a fixture canon.

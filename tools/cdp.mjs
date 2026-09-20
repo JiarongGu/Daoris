@@ -1,0 +1,111 @@
+/**
+ * A minimal DevTools-Protocol client — enough to ask a running WebView2 what it is showing.
+ *
+ * Zero dependencies: Node ships a global `WebSocket`, which is all CDP needs. That matters here for
+ * the same reason it matters in the CLI — a dev tool that drags in a driver library is a dev tool
+ * nobody can run on a fresh clone without a network.
+ *
+ * Adapted from the family sibling's `devtools/scripts/cdp.mjs`, read read-only, and deliberately
+ * trimmed: that copy also LAUNCHES a headless Chromium (profile directories, Edge-sync flags, target
+ * disambiguation across restored tabs), because four of its tools drive a browser. Nothing here ever
+ * launches a browser — the desktop shell is started by `desktop.mjs run`, which knows the port it
+ * asked for — so the launching half would be carried code with no caller. What was kept is the part
+ * that was bought with incidents: the id-matched client, and the rule that you identify a page
+ * before reporting its answer.
+ */
+
+/**
+ * Find a port nobody is listening on, starting at `preferred`.
+ *
+ * ⚠ A port is not ours because a browser answers on it. The sibling's suite once ran entirely inside
+ * an unrelated application's WebView2 that happened to hold its hard-coded port: the checks that only
+ * needed *a* page passed, and the ones that cared which host they were in read exactly like an app
+ * regression. Pick a free one, and attach only to something we started.
+ */
+export async function freePort(preferred, span = 20) {
+  for (let port = preferred; port < preferred + span; port += 1) {
+    // ANY answer means something is listening — not just an OK one. Testing `response.ok` would call
+    // a port held by some other HTTP server free, and the shell would then fail to bind it.
+    const taken = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(700) })
+      .then(() => true)
+      .catch(() => false);
+    if (!taken) return port;
+  }
+  throw new Error(`no free port in ${preferred}..${preferred + span - 1}`);
+}
+
+/**
+ * Choose the page to drive.
+ *
+ * Not `targets.find(t => t.type === 'page')`: the first page is only the one you meant when nothing
+ * else is open. The shell has exactly one page, so this is mostly a guard against attaching to a
+ * devtools window or a foreign target and reporting its answer as the shell's.
+ */
+export function pickPageTarget(targets) {
+  return (targets ?? []).find((t) => t.type === 'page' && !String(t.url).startsWith('devtools://')) ?? null;
+}
+
+/** The targets a CDP endpoint is serving, or null when nothing is listening there. */
+export async function targetsAt(port) {
+  const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(2000) })
+    .catch(() => null);
+  return response ? response.json() : null;
+}
+
+/** One socket, id-matched replies. */
+export class Cdp {
+  constructor(url) {
+    this.ws = new WebSocket(url);
+    this.id = 0;
+    this.pending = new Map();
+  }
+
+  open() {
+    return new Promise((resolve, reject) => {
+      this.ws.addEventListener('open', () => resolve(this));
+      // Wrapped rather than passing `reject` straight in: the raw handler rejects with an Event, and
+      // "[object Event]" in a failed run says nothing about what went wrong.
+      this.ws.addEventListener('error', () => reject(new Error('CDP socket failed')));
+      this.ws.addEventListener('message', (event) => {
+        const message = JSON.parse(event.data);
+        const slot = this.pending.get(message.id);
+        if (!slot) return;
+        this.pending.delete(message.id);
+        if (message.error) slot.reject(new Error(message.error.message));
+        else slot.resolve(message.result);
+      });
+    });
+  }
+
+  send(method, params = {}) {
+    const id = (this.id += 1);
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.ws.send(JSON.stringify({ id, method, params }));
+    });
+  }
+
+  /** Evaluate an expression, awaiting a promise result, and return its JSON value. */
+  async evaluate(expression) {
+    const result = await this.send('Runtime.evaluate', {
+      expression,
+      awaitPromise: true,
+      returnByValue: true,
+    });
+    if (result.exceptionDetails) {
+      throw new Error(result.exceptionDetails.exception?.description ?? 'the expression threw');
+    }
+
+    // An expression with no value — a bare statement, or one the page navigated away from — has no
+    // `result` at all, and reading `.value` off undefined turns a benign nothing into a TypeError.
+    return result.result?.value;
+  }
+
+  close() {
+    try {
+      this.ws.close();
+    } catch {
+      /* already gone */
+    }
+  }
+}
