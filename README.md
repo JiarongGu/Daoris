@@ -58,11 +58,14 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `retire` | Takes a repository off this machine's registry. **Ends the registration only** — no file, history or doctrine is ever touched |
 | `import` | Registers a folder's subdirectories in one go. Safe to re-run, and it never re-points anyone's workspace |
 | `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits a file under your profile and talks to nothing** |
+| `harness` | The agent tools sessions run on, and the accounts they run as: `list`, `install`/`update`/`login <harness>`, `profile list\|add\|remove\|default …`. **Spawns each harness's own tooling; never handles a credential** |
+| `driver` | What this machine drives (`~/.daoris/driver.json`): `list`, `drive`/`undrive`, `hold`/`resume`, `cap <n>`, `adapter <name>`. **Edits one file under your profile** |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
-promote every locally-edited canonical file at once. `connect` accepts `--workspace <name>`, and
-`status` accepts `--machine` to report this machine's wiring beside the repository's own declaration.
+promote every locally-edited canonical file at once. `connect` accepts `--workspace <name>`,
+`status` accepts `--machine` to report this machine's wiring beside the repository's own declaration,
+and `harness login` accepts `--profile <name>`.
 
 **A workspace is the unit of sharing**: knowledge, quests and session records cross between repositories
 within one and never across one, so a machine can hold a game family and a work family without either
@@ -79,8 +82,20 @@ edits that map, `status --machine` reports it, and a workspace with no entry syn
 what every machine does until someone says otherwise. A key is never printed back; only its audit
 prefix, the same handle the deployment's own `keys list` shows.
 
+**One harness, many accounts.** A harness holds one login per configuration home, so `daoris harness`
+makes accounts **named profiles**: each is an isolated configuration directory whose *location* Daoris
+owns (`~/.daoris/harnesses/<harness>/<profile>/`), selected at spawn through the environment variable
+that harness already has for it. Logging in runs the harness's own flow inside that directory, so
+**Daoris never sees, stores, or copies a credential** — it manages directories and names, and the
+secret stays in the harness's own store under your OS account. Pick one per machine, one per workspace
+(a work account for the work circle), or one for a single conversation; the session record then names
+the account and the tool version it ran as. A spawn onto a missing harness or a profile nobody has
+signed into refuses **naming the action that fixes it**, rather than failing bare.
+
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
-no gate ever runs them. `remote` is management too and speaks to nothing at all. Every other command
+no gate ever runs them. `remote`, `harness` and `driver` are management too and reach no network at
+all; they edit files under your profile, and `harness` additionally spawns each harness's own
+installer, updater or login flow, only ever when you ask it to. Every other command
 above is offline by construction. **The machine's registry
 is the authority** on who is in the family: being in a folder is not being a member, so a repository
 joins by connecting and leaves by retiring. `import` is the old folder scan, demoted to something a

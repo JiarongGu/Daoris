@@ -12,6 +12,8 @@ import { commandAnalyze } from './analyze.ts';
 import { commandConnect } from './connect.ts';
 import { commandImport, commandRetire } from './manage.ts';
 import { commandRemote } from './remotes.ts';
+import { commandHarness } from './toolchain.ts';
+import { commandDriver } from './driverconfig.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
@@ -42,10 +44,25 @@ const USAGE = `daoris <command> [options]
                          add <workspace> --url U   wire a workspace's deployment
                          remove <workspace>        unwire it here; the
                                                    deployment is untouched
+  harness [verb]       this machine's agent harnesses and the accounts they run
+                       as. Daoris manages directories and names, never secrets:
+                         list                      installed? version? profiles?
+                         install|update <harness>  its OWN mechanism, never auto
+                         login <harness> [--profile P]
+                                                   its own login flow, run INTO
+                                                   a profile directory
+                         profile list|add|remove <harness> <profile>
+                         profile default <harness> <profile> [--workspace W]
+  driver [verb]        what this machine drives (~/.daoris/driver.json):
+                         list                      adapter, cap, what is opted in
+                         drive|undrive <repo>      opt a repository in, or out
+                         hold|resume <repo>        pause one, or release it
+                         cap <n> · adapter <name>
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
-  service, and no gate ever runs them. remote is management too and speaks to
-  nothing — it edits ~/.daoris/remotes.json. Every doctrine command is offline.
+  service, and no gate ever runs them. remote, harness and driver are management
+  too and reach no network — they edit files under ~/.daoris, and harness spawns
+  each harness's own tooling. Every doctrine command is offline.
 
 Options:
   --dry-run            print the plan; write nothing
@@ -59,6 +76,8 @@ Options:
   --url <url>          the deployment a workspace syncs with (remote add)
   --key <key>          its key; or DAORIS_REMOTE_KEY, or typed in (remote add).
                        Never printed back — only its audit prefix
+  --profile <name>     which credential profile to act on (harness login) —
+                       a named, isolated configuration home for that harness
   --help, --version`;
 
 /** Commands are registered here as they land. @returns {number} process exit code */
@@ -74,6 +93,8 @@ const commands: Record<string, (args: CommandArgs) => ExitCode | Promise<ExitCod
   retire: commandRetire,
   import: commandImport,
   remote: commandRemote,
+  harness: commandHarness,
+  driver: commandDriver,
   analyze: commandAnalyze,
 };
 

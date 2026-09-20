@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session, SessionState } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
 import { useDriver, useStopSession } from './shell';
-import { ago, sittingDays } from './format';
+import { ago, sessionTool, sittingDays } from './format';
 import { SessionConsole } from './SessionConsole';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
@@ -296,7 +296,8 @@ export function QuestsView({ notify }: { notify: Notify }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
                   <span className="font-mono text-[0.72rem] text-ink-faint">
-                    {session.id} · {session.adapter} · {t('quests.session.moved', { ago: ago(session.updated) })}
+                    {session.id} · {sessionTool(session)}
+                    {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
                   </span>
                   {/* Stop reaches a PROCESS, so it renders only where one is actually running — the
                       shell's driver — never in a browser that could only wish (D46 §6). */}

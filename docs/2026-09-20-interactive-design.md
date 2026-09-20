@@ -172,6 +172,71 @@ memory. The toolchain manager makes it Daoris's job — **explicitly, never auto
   **Daoris holding tokens itself** (a second credential store is a second thing to leak, and the
   harness already has one — Daoris manages directories and names, never secrets).
 
+**Built 2026-09-20 (SES3).** The mechanisms were verified against the real binaries *before* a line was
+written, because every one of them is a claim about somebody else's program and a guessed one fails in
+a person's terminal saying something untrue: `claude auth status` answers **JSON with a `loggedIn`
+boolean**, `codex login status` answers a **sentence**, `CLAUDE_CONFIG_DIR` and `CODEX_HOME` genuinely
+isolate an account, and `codex` refuses to start when its home names a path that does not exist. Eight
+choices the building settled:
+
+- **Silence means the harness's own configuration home — not an empty profile.** With no profile named
+  anywhere, the environment seam is not set at all and the spawn is byte-for-byte what it was before
+  this existed. Pointing a person who never asked for profiles at a fresh configuration directory
+  would log them out of their own tool, which is the loudest available way to break "Daoris works
+  alone" (D48 §2a). The whole feature is therefore additive, and an adapter that declares no toolchain
+  is checked for nothing.
+- **Login state is asked of the harness, never sniffed off disk — and it has three values.** Both
+  supported harnesses **exit 0 whether or not they are logged in**, so the OUTPUT is the answer and the
+  exit code is deliberately not consulted; an answer this build cannot read is `unknown`, and unknown
+  is **permissive**. Only a definite *logged out* refuses. Same shape as WSP4's undeclared canonical
+  line: refusing work because a tool reworded its own status sentence would be worse than letting the
+  harness refuse for itself. The first pattern written for `codex` was unanchored, and `"Not logged
+  in"` contains `"logged in"` — it reported every logged-out profile as logged in, and a test found it.
+- **A cached "no" is re-asked before it is given.** Detection spawns a process, so probes are cached
+  across ticks; but a cached *absent* or *logged out* would keep refusing after the person did exactly
+  what the refusal told them to. A yes is trusted, a no is checked again — one extra process, on the
+  path that was about to fail anyway.
+- **The profile name stays on the machine that ran the session; the version travels.** The design said
+  the record carries both, and it does — but a *name a person chose*, quite possibly after themselves,
+  is machine wiring in the sense D48 §2 draws, so it is guarded exactly as the transcript is (D47 §4):
+  stripped for a non-loopback caller, absent from the feed's shape, and written as a literal NULL by
+  the store's mirror. Two guards and a missing field for one rule, because this is the kind of thing
+  that leaks through whichever half somebody forgot. A harness *version* is a fact about a tool, and
+  it crosses.
+- **A profile is a directory, and the directory is the contract.** There is no register of profiles to
+  disagree with the disk — the same argument that made the registry the authority rather than a view
+  over a scan (D48 §3). A name that could escape that directory is refused rather than normalised, and
+  `profile remove` clears the WIRING and says out loud that it deleted nothing: the directory holds a
+  credential the harness put there, and destroying one is never a side effect.
+- **Install is a whole command; update and login are the harness's own subcommands.** A machine without
+  the harness cannot run the harness, so installing is that harness's package manager; a harness that
+  is present updates and authenticates itself. The shapes differ because the meanings do.
+- **The CLI inherits the terminal; the desktop streams.** A login flow asks questions and waits for a
+  code, so `daoris harness login` gives the harness the person's terminal outright — capturing the
+  stream to pretty-print it would turn a working login into a hung one. The desktop relays the same
+  process through §2's console, under `<harness>:<action>` rather than a session id, because it is not
+  a session and must never look like one.
+- **The refusals are asked before the record exists**, in the same place as the clean-tree rule, and
+  they mirror each other on purpose: a missing binary and a logged-out profile are the same kind of
+  answer, and each names the action that fixes it. A held start records nothing, so the quest stays
+  open and nobody's.
+
+**What the CLI and the driver share is a FILE and a LAYOUT, not code** — `~/.daoris/harnesses.json`
+plus `harnesses/<harness>/<profile>/` — the same twin arrangement the remotes map established (WSP3),
+with three rules asserted in both test tables: a profile is a directory; resolution is chosen → the
+workspace's → the machine's → none; and none means the harness's own home. Two consequences for
+whoever extends this: the CLI's managed set (`claude-code`, `codex`) is deliberately **not** the
+driver's adapter set — managing a tool and spawning sessions on it are different questions, and
+`codex` is manageable here while no adapter spawns it — and the CLI's `driver` verbs edit a file the
+C# side owns, so **every edit preserves the fields it has no verb for**; an editor that rewrote
+`driver.json` from its own idea of the shape would silently delete the command the stub adapter runs.
+
+The family rehearsal gates all of it with no account, no credential and no model: the stub is a fake
+*binary* as well as a fake session — it answers `--version` and `--login-state` — so a spawn under
+profile `alpha` is asserted to carry alpha's configuration home **from the session's own output**
+rather than from the record's word for it, a logged-out profile holds the start recording nothing, an
+uninstalled harness holds it the same way, and both surfaces are driven from a terminal.
+
 ## 5. What lives where (the D46 §7 table, extended)
 
 | The service (passive; model-free; spawn-free) | The driver / desktop |

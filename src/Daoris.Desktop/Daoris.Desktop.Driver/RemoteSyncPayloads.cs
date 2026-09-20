@@ -137,6 +137,10 @@ public static class RemoteSyncPayloads
                 // to parse.
                 Copy(writer, session, "quest");
                 Copy(writer, session, "kind");
+                // Which TOOL produced this travels (D49 §4); which ACCOUNT it ran as does not. The
+                // profile name is dropped here, at parse, exactly as the transcript is — machine-local
+                // material leaves this function or it leaves the machine.
+                Copy(writer, session, "harnessVersion");
                 writer.WriteString("repository", repository);
                 writer.WriteString("adapter", Text(session, "adapter"));
                 writer.WriteString("state", Text(session, "state"));

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from './api';
 import { SessionConsole } from './SessionConsole';
+import { sessionTool } from './format';
 import { useEndChat, useSendMessage, useStopSession } from './shell';
 import { Button, Drawer, type Notify, Pill } from './ui';
 
@@ -57,7 +58,7 @@ export function ChatDrawer({ session, onClose, notify }: {
         <span className="flex flex-wrap items-center gap-2">
           <Pill tone={live ? 'taken' : 'neutral'}>{t(`sessionState.${session.state}`)}</Pill>
           <span className="font-mono text-[0.72rem] text-ink-faint">
-            {session.id} · {session.adapter}
+            {session.id} · {sessionTool(session)}
           </span>
         </span>
       }

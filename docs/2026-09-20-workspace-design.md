@@ -117,8 +117,8 @@ working because the file, not the surface, is the truth.
 |---|---|---|---|
 | Registration + workspace wiring | the store, via the doors | `daoris connect [--workspace]`; a retire verb beside it | Projects add / update / remove (§7) |
 | The remotes map | `~/.daoris/remotes.json` | `daoris remote list\|add\|remove` (file-local, offline; the key prompted or from env, echoed redacted, never tracked) | a settings surface over the same file |
-| Driver choices (drivable, holds, cap) | `~/.daoris/driver.json` | `daoris driver ...` (file-local, offline) | the existing controls (D46 §6) |
-| Harness toolchain + credential profiles | the profile directories; each harness's own store | `daoris harness list\|install\|update\|login\|profile ...` (spawns the harness's own tooling; no secret touched) | the roster (interactive design §4) |
+| Driver choices (drivable, holds, cap) | `~/.daoris/driver.json` | `daoris driver ...` (file-local, offline) — **built (SES3)**, and it preserves every field it has no verb for, since the C# side owns that file | the existing controls (D46 §6) |
+| Harness toolchain + credential profiles | the profile directories (`~/.daoris/harnesses/<harness>/<profile>/`) + `~/.daoris/harnesses.json`; the credential is each harness's own store | `daoris harness list\|install\|update\|login\|profile ...` (spawns the harness's own tooling; no secret touched) — **built (SES3)** | the roster, and a per-conversation picker (interactive design §4) — **built (SES3)** |
 | Server keys | the deployment's store | stays the **server binary's** console (`keys mint\|...`) — an operator act on the deployment, deliberately not a client verb | shown, never minted, except for a host the shell itself owns |
 | Quests and sessions | the store, via the doors | deliberately none (D31 as amended) — parity is satisfied by the platform and MCP | the platform, as today |
 

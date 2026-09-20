@@ -499,6 +499,133 @@ describe('the machine settings surface', () => {
   });
 });
 
+/**
+ * The toolchain roster (D49 §4, D50): which harnesses this machine has, and which accounts they hold.
+ *
+ * Shell-only for the sharpest reason yet — a profile HOME is a filesystem path (D47 §4) — so, like
+ * the wiring above, every call must land on the bridge and none on the API.
+ *
+ * The property that matters most here is a negative one: **no credential is anywhere on this
+ * surface.** There is nowhere to type one, nothing that reads one, and logging in spawns the
+ * harness's own flow. The last test in this block is what fails if that ever stops being true.
+ */
+describe('the harness roster', () => {
+  const ROSTER = {
+    settingsPath: 'C:/somewhere/.daoris/harnesses.json',
+    adapter: 'claude-code',
+    harnesses: [
+      {
+        harness: 'claude-code', present: true, version: 'claude 9.9.9', problem: null,
+        machineDefault: 'personal',
+        profiles: [
+          { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' },
+          { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'out' },
+        ],
+      },
+      {
+        harness: 'codex', present: false, version: null,
+        problem: '`codex` is not on this machine\'s PATH', machineDefault: null, profiles: [],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'HARNESSES' ? ROSTER : WIRING));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('reads the roster over the bridge and never over the service', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('claude 9.9.9')).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', {});
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  /** An absent harness names what it is and offers the action, rather than leaving a blank row. */
+  it('an absent harness says so and offers its own installer', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('not installed')).toBeTruthy();
+    expect(screen.getByText(/is not on this machine's PATH/)).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'install' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'codex', action: 'install' },
+    });
+  });
+
+  it('each profile shows its login state, and logging in names the profile', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('logged in')).toBeTruthy();
+    expect(screen.getByText('not logged in')).toBeTruthy();
+
+    // Two profiles, two buttons — the second one is `work`, which is the logged-out one.
+    const logins = screen.getAllByRole('button', { name: 'log in' });
+    await userEvent.click(logins[1]!);
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'login', profile: 'work' },
+    });
+  });
+
+  /**
+   * Daoris manages directories and names, never secrets. There is no field for a token, no call
+   * carrying one, and the surface says where the credential actually lives.
+   */
+  it('offers nowhere to put a credential, and says where one lives instead', async () => {
+    const { container } = show(<SettingsView notify={() => {}} />);
+    await screen.findByText('claude 9.9.9');
+
+    const card = screen.getByText('Harnesses').closest('section, div')!;
+    expect(within(card as HTMLElement).queryByLabelText(/token|password|credential/i)).toBeNull();
+    expect(container.textContent).toContain('the harness stores itself');
+  });
+
+  /** A shell older than this surface answers something else; the rest of the page must stand. */
+  it('an answer that is not a roster leaves the wiring card standing', async () => {
+    invoke.mockImplementation(async () => WIRING); // no `harnesses` anywhere in it
+
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('aurora')).toBeTruthy();
+    expect(screen.queryByText('Harnesses')).toBeNull();
+  });
+
+  /**
+   * The per-session picker (D49 §4). Empty is not "no profile": it means whatever this machine
+   * already decided — the workspace's default, then the machine's — which is what the label says and
+   * what the payload omitting the field means.
+   */
+  it('projects offer a profile for the next conversation, and omit it when unchosen', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'START_CHAT') return { sessionId: null, message: 'busy' };
+      return DRIVER_STATE;
+    });
+
+    show(<ProjectsView notify={() => {}} />);
+    await screen.findByLabelText(/the next conversation runs as/);
+
+    await userEvent.click(screen.getByRole('button', { name: 'chat' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
+      payload: { repository: 'engine' },
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText(/the next conversation runs as/), 'work');
+    await userEvent.click(screen.getByRole('button', { name: 'chat' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
+      payload: { repository: 'engine', profile: 'work' },
+    });
+  });
+});
+
 describe('the shell push channel (ShellSignals)', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));

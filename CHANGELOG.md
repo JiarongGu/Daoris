@@ -330,6 +330,30 @@ The first version: doctrine that installs, is checked, and flows back.
   no screen has `daoris-driver chat --repository <name>`, where stdin is the person and stdout is the
   session. Same runner, same lock, same record — what stays desktop-only is the *stream*, not the
   capability.
+- **Daoris manages the harnesses, and never a credential.** It finds the agent tools on the machine,
+  reports their versions, and installs or updates them **through their own official mechanisms, only
+  when asked** — never automatically and never mid-session, because a tool that changed between two
+  runs nobody diffed is a gate that stopped meaning anything.
+- **One harness, many accounts — as named profiles.** A harness holds one login per configuration
+  home, so switching accounts used to mean logging in again. Now an account is a named, isolated
+  configuration directory whose *location* Daoris owns, selected at spawn through the environment
+  variable each harness already has for exactly this. Choose one per machine, one per workspace — a
+  work account for the work circle, a personal one at home — or one for a single conversation.
+  **Daoris never sees, stores, or copies a credential**: logging in runs the harness's own flow inside
+  that directory, and what it obtains stays in the harness's own store under your OS account. What
+  Daoris keeps is a directory and a name.
+- **A record says which tool and which account did the work.** Every session now carries the harness
+  version observed at spawn and the profile it ran as — the same authorship instinct as stamping a
+  release, applied to the tool that did the work. The version travels with the record; the account
+  name stays on the machine that ran it, guarded like the transcript beside it.
+- **A spawn that cannot work refuses before anything is recorded, naming the fix.** A harness that is
+  not installed, or a profile nobody has signed into, holds the start with the sentence that says what
+  to run — not a bare not-found. The quest stays open and nobody's, and doing what the sentence says
+  releases it on the very next tick, with nothing restarted.
+- **Two more commands, and both surfaces do the same thing.** `daoris harness list|install|update|
+  login|profile …` and `daoris driver list|drive|hold|resume|cap|adapter` set all of it from a
+  terminal, because a server with no screen is still a machine; the desktop's roster edits the same
+  files. Neither reaches a network.
 - **Fixed: `refresh` re-read the repositories but never the folder.** The root's subdirectories were
   listed once at startup, so a repository created afterwards was invisible to the index while being
   fully registered and quest-addressable — and the refresh reported success either way.

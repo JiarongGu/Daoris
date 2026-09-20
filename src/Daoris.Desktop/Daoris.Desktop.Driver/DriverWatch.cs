@@ -15,9 +15,18 @@ public sealed class DriverWatch(
     ServiceClient service, string configPath, string home, SessionProcesses processes, RemoteSyncSet? sync,
     // The live console, where something is watching (D49 §2). Null in the headless host: a buffer
     // nobody reads is memory spent on an audience that does not exist.
-    SessionOutput? output = null)
+    SessionOutput? output = null,
+    // The harness cache (D49 §4), shared across ticks for the same reason the process registry is:
+    // a probe spawns a process, and re-detecting every harness every tick would be absurd.
+    HarnessRoster? harnesses = null)
 {
     private CancellationTokenSource _pause = new();
+
+    /// <summary>This machine's harnesses, as the loop sees them — also what a roster surface reads.</summary>
+    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(AdapterSet.Built());
+
+    /// <inheritdoc cref="_harnesses"/>
+    public HarnessRoster Harnesses => _harnesses;
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
@@ -46,7 +55,8 @@ public sealed class DriverWatch(
             var config = DriverConfig.Load(configPath);
             try
             {
-                var report = await new Driver(service, config, AdapterSet.Built(), home, processes, sync, output)
+                var report = await new Driver(
+                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses)
                     .TickAsync(ct).ConfigureAwait(false);
                 await onReport(report, config).ConfigureAwait(false);
             }

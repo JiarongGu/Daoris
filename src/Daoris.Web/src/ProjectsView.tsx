@@ -5,7 +5,7 @@ import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
 import { ChatDrawer } from './ChatDrawer';
 import { ago } from './format';
 import { useRegistry, useRepositories, useSessions } from './queries';
-import { useDriver, useSetDrivable, useSetHold, useStartChat } from './shell';
+import { useDriver, useHarnesses, useSetDrivable, useSetHold, useStartChat } from './shell';
 import {
   Button, Card, CheckField, Chip, type Notify, PageHeader, SkeletonRows, Tip, useErrorNotify,
 } from './ui';
@@ -39,6 +39,19 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   const sessions = useSessions(null, false);
   const startChat = useStartChat();
   const [chatting, setChatting] = useState<string | null>(null);
+
+  // The per-session picker (D49 §4): which credential profile the NEXT conversation runs as. One
+  // control rather than one per row, because it is a standing choice for the next thing a person
+  // starts — and empty is not "no profile", it is "whatever this machine already decided", which is
+  // what the label says. Absent entirely when there is nothing to choose between.
+  const harnesses = useHarnesses();
+  const [profile, setProfile] = useState('');
+  // Shape-tolerant for the same reason the roster is: an older shell answers a request it has never
+  // heard of with something else, and a page that could not start a conversation because of it would
+  // be a worse failure than one that simply offers no picker.
+  const spawning = (Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [])
+    .find((h) => h.harness === harnesses.data?.adapter);
+  const choices = Array.isArray(spawning?.profiles) ? spawning.profiles : [];
   const chatIn = (repository: string) =>
     (sessions.data ?? []).find((s) => s.repository === repository && s.kind === 'chat');
   const chat = (sessions.data ?? []).find((s) => s.id === chatting);
@@ -50,9 +63,11 @@ export function ProjectsView({ notify }: { notify: Notify }) {
       return;
     }
 
-    startChat.mutate(repository, {
+    startChat.mutate({ repository, profile: profile || undefined }, {
       onSuccess: (result) => {
-        // A refusal is the ledger's own sentence — the repository is busy, or has no checkout here.
+        // A refusal is the ledger's own sentence — the repository is busy, has no checkout here, or
+        // (since D49 §4) its harness is missing or the chosen profile is logged out. Each of those
+        // names the action that fixes it, which is why the sentence is shown rather than summarised.
         if (!result.sessionId) notify(result.message, 'error');
         else setChatting(result.sessionId);
       },
@@ -76,6 +91,26 @@ export function ProjectsView({ notify }: { notify: Notify }) {
           ? <Button variant="primary" onClick={() => setAdding(true)}>{t('projects.manage.add')}</Button>
           : undefined}
       />
+
+      {attached && choices.length > 0 && (
+        <label className="mb-3.5 flex flex-wrap items-center gap-2 text-[0.8rem] text-ink-faint">
+          {t('projects.chatAs')}
+          <select
+            value={profile}
+            onChange={(event) => setProfile(event.target.value)}
+            className="rounded-control border border-line bg-raised px-2 py-1 text-[0.8rem] text-ink"
+          >
+            <option value="">{t('projects.chatAsDefault')}</option>
+            {choices.map((choice) => (
+              // A logged-out profile is offered and labelled rather than hidden: the spawn refuses
+              // with the sentence that names the login action, which teaches more than a missing row.
+              <option key={choice.name} value={choice.name}>
+                {choice.login === 'out' ? t('harness.profileOut', { name: choice.name }) : choice.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {adding && <AddProjectDrawer onClose={() => setAdding(false)} notify={notify} />}
       {managing && (

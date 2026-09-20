@@ -30,8 +30,13 @@ public sealed class ChatRunner(
     AdapterSet adapters,
     string home,
     SessionProcesses processes,
-    SessionOutput? output = null)
+    SessionOutput? output = null,
+    HarnessRoster? harnesses = null)
 {
+    // Shared with the driver where a shell has both, so a probe is paid for once; its own where it
+    // does not, which is the headless chat door's case.
+    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
+
     /// <summary>
     /// Open a chat and put a harness behind it. The record is the service's; the process is this
     /// machine's, and never leaves it (D46 §7).
@@ -40,9 +45,13 @@ public sealed class ChatRunner(
     /// Called when the conversation ends, with the state the record took. The caller decides what that
     /// becomes — a console line, an IPC event, nothing at all.
     /// </param>
+    /// <param name="profile">
+    /// The per-session picker (D49 §4): which credential profile this conversation runs as. Null takes
+    /// the workspace's default, then the machine's, then the harness's own configuration home.
+    /// </param>
     public async Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
-        Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+        Func<string, string, Task>? onEnded = null, string? profile = null, CancellationToken ct = default)
     {
         var resolved = adapters.Resolve(adapter);
         if (!resolved.Interactive)
@@ -56,9 +65,9 @@ public sealed class ChatRunner(
         }
 
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
-        var root = snapshot.Repositories
-            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase))
-            ?.Root;
+        var known = snapshot.Repositories
+            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+        var root = known?.Root;
         if (string.IsNullOrWhiteSpace(root))
         {
             return new(
@@ -67,7 +76,16 @@ public sealed class ChatRunner(
                 + "tree. `daoris connect` from inside it, or add it from Projects.");
         }
 
-        var (sessionId, message) = await service.OpenChatAsync(repository, resolved.Name, ct)
+        // The harness and the account (D49 §4), asked before the record exists — the same place the
+        // `interactive` question is asked, and for the same reason. The circle comes from the registry
+        // row, which is the machine's own wiring and the only honest source for it (D48 §2).
+        var selection = await _harnesses
+            .SelectAsync(resolved.Name, config, known!.Workspace, profile, ct)
+            .ConfigureAwait(false);
+        if (!selection.Allowed) return new(null, selection.Refusal!);
+
+        var (sessionId, message) = await service
+            .OpenChatAsync(repository, resolved.Name, selection.Version, selection.Profile, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
 
@@ -78,9 +96,16 @@ public sealed class ChatRunner(
         try
         {
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
-            process = Process.Start(resolved.PrepareChat(
+
+            var info = resolved.PrepareChat(
                 new ChatTarget(repository, root, service.BaseUrl),
-                config.Commands.GetValueOrDefault(resolved.Name)))
+                config.Commands.GetValueOrDefault(resolved.Name));
+            if (resolved.Toolchain is { } toolchain)
+            {
+                HarnessProbe.Apply(info, toolchain, selection.ProfileHome);
+            }
+
+            process = Process.Start(info)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
         catch (Exception error) when (error is not OperationCanceledException)

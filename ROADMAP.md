@@ -47,7 +47,7 @@ the desktop **or** the CLI. The contracts are `docs/2026-09-20-workspace-design.
 | **WSP4 · Knowledge sync semantics** | Git provenance stamped by the driver, with monotonic, default-branch-only replacement, served and shown | **Built** (2026-09-20) — the rehearsal proves a newer feed replacing (a deletion travelling with it), a stale one refused as *information*, and an unmerged branch refused though newer |
 | **SES1 · The live console** | The capture pump tees into a bounded per-session buffer; the shell streams it to the session drawer, verbatim and desktop-only | **Built** (2026-09-20) — the transcript stays the durable record; the window states what it dropped |
 | **SES2 · Chat sessions** | A conversation is a session: `driven \| chat`, quest optional, the same one-session-per-repository lock; the seam grows `interactive`; two doors (desktop, and a terminal) | **Built** (2026-09-20) — the rehearsal holds one with no model in it, publishing the work that came up rather than editing across |
-| **SES3 · The toolchain** | Harnesses Daoris installs and updates, with named credential profiles | Designed (D49) |
+| **SES3 · The toolchain** | Harnesses Daoris installs and updates, with named credential profiles | **Built** (2026-09-20) — each harness's own mechanism, only on the person's action; a profile is a directory Daoris owns the location of, and never its contents |
 
 ---
 

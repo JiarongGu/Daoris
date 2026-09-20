@@ -83,7 +83,8 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
     /// the registry row is the machine's own wiring (D48 §2), and it is the only honest source.</para>
     /// </remarks>
     public async Task<SessionOpenOutcome> OpenChatAsync(
-        string repository, string adapter, DateTimeOffset now, CancellationToken ct = default)
+        string repository, string adapter, DateTimeOffset now,
+        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
     {
         var known = registry is null
             ? null
@@ -112,7 +113,9 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
         }
 
         var session = await sessions
-            .CreateAsync(null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat, ct)
+            .CreateAsync(
+                null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
+                harnessVersion, profile, ct)
             .ConfigureAwait(false);
 
         return new(
@@ -126,7 +129,8 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
     /// already has an active session.
     /// </summary>
     public async Task<SessionOpenOutcome> OpenAsync(
-        string questId, string adapter, DateTimeOffset now, CancellationToken ct = default)
+        string questId, string adapter, DateTimeOffset now,
+        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
     {
         var quest = await quests.FindAsync(questId.TrimStart('#'), ct).ConfigureAwait(false);
         if (quest is null)
@@ -161,7 +165,9 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
         // The record's circle is the quest's circle — derived, never passed beside it, so a record can
         // never be filed under a workspace its quest does not belong to (D48 §4).
         var session = await sessions
-            .CreateAsync(quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven, ct)
+            .CreateAsync(
+                quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
+                harnessVersion, profile, ct)
             .ConfigureAwait(false);
 
         return new(

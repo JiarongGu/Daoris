@@ -27,3 +27,27 @@ export function ago(iso: string): string {
 export function sittingDays(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
+
+/**
+ * What a session ran ON and AS (D49 §4): the harness, the version observed at spawn, and the named
+ * credential profile.
+ *
+ * @remarks
+ * Every part after the harness name is absent-tolerant, and each absence means something real rather
+ * than something missing. No version: the record predates the toolchain, or the harness could not be
+ * asked. No profile: it ran in the harness's own configuration home — or the reader is a browser over
+ * a keyed remote, where the profile name deliberately never travels, machine-local like the
+ * transcript. Neither is an error, so neither gets a placeholder that looks like one.
+ *
+ * Shared by the quest drawer and the chat drawer for the same reason the console is: a conversation
+ * is a session, and rendering it twice is how the two quietly stop agreeing.
+ */
+export function sessionTool(
+  session: { adapter: string; harnessVersion?: string | null; profile?: string | null },
+): string {
+  return [
+    session.adapter,
+    session.harnessVersion || null,
+    session.profile ? i18n.t('quests.session.asProfile', { profile: session.profile }) : null,
+  ].filter(Boolean).join(' · ');
+}

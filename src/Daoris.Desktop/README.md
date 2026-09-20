@@ -3,8 +3,11 @@
 **Status: built — the driver, its headless host, and the shell all exist, and the person's controls
 landed.** The brief was rewritten 2026-09-19 for D45; **the design is settled:
 `docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
-adapter seam with its `interactive` capability (D49 §3), the stub, the `claude-code` adapter,
-`ChatRunner` for conversations, and since D47 the machine's **remote sync** —
+adapter seam with its `interactive` capability (D49 §3) and its `Toolchain` (D49 §4 — where a harness's
+binary, version question, configuration-home variable and own install/update/login flows are declared),
+the stub, the `claude-code` adapter,
+`ChatRunner` for conversations, `HarnessRoster` — one judgement for both spawn doors: is the harness
+here, and which named credential profile does this run as — and since D47 the machine's **remote sync** —
 `RemoteSync` rides the tick, feeding joined registrations, session records and opted-in knowledge up
 and mirroring the remote's quests and foreign registrations down, once **per workspace** since D48 §5,
 because one shared deployment serves one circle) and `Daoris.Desktop.Driver.Host`
@@ -18,7 +21,10 @@ by the page — drivable and hold per repository, stop a running session, and si
 console**: `TAIL_SESSION` for a session's backlog and batched `SESSION_OUTPUT` events for what it says
 next, fed by the capture pump's tee into a bounded per-session buffer that never leaves this machine;
 since D49 §3 **conversations** too — `START_CHAT`, `SESSION_INPUT`, `END_CHAT` and a `SESSION_ENDED`
-event over the same bridge, and `daoris-driver chat --repository <name>` for a machine with no screen),
+event over the same bridge, and `daoris-driver chat --repository <name>` for a machine with no screen;
+and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine has and `HARNESS_ACTION`
+for the person's install, update or login, each spawning that harness's own mechanism and relaying it
+through the console under `<harness>:<action>`, never a session id, because it is not a session),
 edits the machine's wiring
 over `DAORIS.REMOTES` (the Machine view, over the same `~/.daoris/remotes.json` the CLI edits — a key
 goes in and only its audit prefix comes back), and takes the loop and its
@@ -63,7 +69,9 @@ sitting that the driver should have started".
 2. **The session lifecycle** is observed, not self-reported — process lifetime plus quest transitions —
    and its records live in the service beside the quests; processes and transcripts stay here.
 3. **The adapter seam** is D23 one layer up: claude-code supported, codex explicit second, unknown
-   adapters error naming what exists; an adapter names a harness, never a model.
+   adapters error naming what exists; an adapter names a harness, never a model. Since D49 §4 it also
+   declares that harness **as a tool** — and managing a tool is a different question from spawning
+   sessions on it, which is why `codex` is manageable from `daoris harness` while no adapter spawns it.
 4. **The service holds state, the driver holds action**: session records and the machine-local
    repository root go to the service; the scheduler, process control, adapters, driver config and
    notifications live here.

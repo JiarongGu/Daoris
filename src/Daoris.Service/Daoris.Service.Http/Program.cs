@@ -343,7 +343,11 @@ app.MapPost("/api/sessions", async (
         return Results.BadRequest(new ErrorResponse("quest and adapter are required"));
     }
 
-    var outcome = await s.Ledger.OpenAsync(body.Quest, body.Adapter, DateTimeOffset.UtcNow, ct);
+    // The harness version and the profile are observed by the DRIVER before it spawns (D49 §4) — the
+    // service has no binaries to look at, which is exactly the D46 §7 split: records here, processes
+    // there. It records what it is told and judges none of it.
+    var outcome = await s.Ledger.OpenAsync(
+        body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, ct);
 
     return outcome.Refusal switch
     {
@@ -373,7 +377,7 @@ app.MapPost("/api/sessions/chat", async (
         body.Repository,
         // The adapter is the harness, never a model (D24). Silence takes the supported one.
         string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
-        DateTimeOffset.UtcNow, ct);
+        DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, ct);
 
     return outcome.Refusal switch
     {
@@ -568,7 +572,7 @@ if (mode == ServiceMode.Shared)
             origin,
             (body.Records ?? []).Select(r => new FedSessionRecord(
                 r.Id, r.Quest, r.Repository, r.Adapter, r.State, r.Note, r.Evidence, r.Created, r.Updated,
-                r.Kind))
+                r.Kind, r.HarnessVersion))
                 .ToList(),
             ct);
 
@@ -700,10 +704,15 @@ static EntryResponse ToEntry(KnowledgeEntry entry) => new(
 // The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
 // answered only to a caller on this machine. The evidence stays — commits are the reviewable record
 // and are meant to travel; the transcript is diagnostics for the machine that ran the session.
+// The PROFILE NAME is guarded the same way and for the same reason (D49 §4): which account a session
+// ran as is this machine's wiring, and it is the one field a person is likely to name after
+// themselves. The harness version is a fact about a tool and travels with the record.
 static SessionResponse ToSession(Session s, bool loopback) => new(
     s.Id, s.Quest, s.Repository, s.Adapter, s.StateName, s.Note, s.Evidence,
     Transcript: loopback ? s.Transcript : null,
-    s.Created, s.Updated, s.Workspace, s.Kind.ToString().ToLowerInvariant());
+    s.Created, s.Updated, s.Workspace, s.Kind.ToString().ToLowerInvariant(),
+    s.HarnessVersion,
+    Profile: loopback ? s.Profile : null);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

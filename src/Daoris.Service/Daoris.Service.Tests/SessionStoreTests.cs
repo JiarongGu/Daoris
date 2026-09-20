@@ -165,6 +165,58 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.False(Session.TryParse("", out _));
     }
 
+    /// <summary>
+    /// What a session ran ON and AS (D49 §4) — written once at spawn, and never revised by a later
+    /// state change, which is about how it ENDED rather than about what it was.
+    /// </summary>
+    [Fact]
+    public async Task A_record_carries_the_tool_and_the_account_it_ran_as()
+    {
+        var session = await _sessions.CreateAsync(
+            "abc123", "Owner", "claude-code", Now,
+            harnessVersion: "2.1.220 (Claude Code)", profile: "work");
+
+        await _sessions.SetStateAsync(
+            session.Id, SessionState.Completed, "done", null, null, Now.AddHours(1));
+
+        var read = await _sessions.FindAsync(session.Id);
+        Assert.Equal("2.1.220 (Claude Code)", read!.HarnessVersion);
+        Assert.Equal("work", read.Profile);
+    }
+
+    /// <summary>Whitespace is nothing said — an empty version would read as a version of "".</summary>
+    [Fact]
+    public async Task An_unstated_tool_or_account_is_null_rather_than_blank()
+    {
+        var session = await _sessions.CreateAsync(
+            "abc123", "Owner", "stub", Now, harnessVersion: "  ", profile: "");
+
+        var read = await _sessions.FindAsync(session.Id);
+        Assert.Null(read!.HarnessVersion);
+        Assert.Null(read.Profile);
+    }
+
+    /// <summary>
+    /// <b>The account name never crosses a machine boundary</b> (D49 §4) — machine-local, exactly like
+    /// the transcript beside it. Written as a literal NULL by the mirror rather than taken from the
+    /// record, so a caller that filled the field cannot make it travel by accident: the feed has no
+    /// field for it, and the store would refuse it anyway. Two guards, one rule.
+    /// </summary>
+    [Fact]
+    public async Task A_mirrored_record_keeps_the_tool_version_and_never_the_account()
+    {
+        var fed = new Session(
+            "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code",
+            SessionState.Working, null, null, null, Now, Now,
+            HarnessVersion: "2.1.220 (Claude Code)", Profile: "alice-personal");
+
+        await _sessions.MirrorAsync(fed);
+
+        var read = await _sessions.FindAsync("alice-laptop/ab12cd34");
+        Assert.Equal("2.1.220 (Claude Code)", read!.HarnessVersion);
+        Assert.Null(read.Profile);
+    }
+
     /// <summary>A chat is the same row with no quest in it (D49 §3).</summary>
     [Fact]
     public async Task A_chat_round_trips_with_no_quest()

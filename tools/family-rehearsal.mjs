@@ -46,6 +46,11 @@ const EXAMPLES = ['engine', 'game'];
 // by pointing the lookup at a map this run wrote itself.
 const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json') };
 
+// The same guard for the toolchain (D49 §4). Profiles live BESIDE this file, so pointing it into
+// scratch keeps the developer's real ~/.daoris/harnesses.json — and their real credential
+// directories — entirely out of a gate run. The toolchain phase opts into a map it writes itself.
+const NO_HARNESS = { DAORIS_HARNESS_CONFIG: join(scratch, 'no-harness.json') };
+
 openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
 const { totals, check, section } = makeChecker();
 
@@ -57,12 +62,14 @@ const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env
 // FAIL, never a frozen gate — and NO_REMOTE is always underneath: a phase that wants a remote opts in
 // by env pair, which outranks the config-file lookup by the loader's own rule.
 const DRIVE_TIMEOUT = 90_000;
-const driver = ({ serviceUrl, config, remote = {}, mode = '--once' }) =>
+const driver = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once' }) =>
   run(`dotnet "${driverDll}" ${mode}`, scratch, {
     DAORIS_SERVICE_URL: serviceUrl,
     DAORIS_DRIVER_CONFIG: config,
     ...NO_REMOTE,
+    ...NO_HARNESS,
     ...remote,
+    ...harness,
   }, DRIVE_TIMEOUT);
 
 /** One HTTP call against a host. The key rides only when a step is meant to be authorized. */
@@ -339,7 +346,22 @@ run(`git ${GIT_ID} commit -q -m "the newcomer is born"`, newcomer);
 const stubAgent = join(scratch, 'stub-agent.mjs');
 writeFileSync(stubAgent, `
 import { execSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
+
+// The stub is a fake BINARY as well as a fake session (D49 §4): before anything else it answers the
+// two questions the toolchain probe asks any harness — its version, and whether a configuration home
+// has been logged into. Answered FIRST and exited immediately, because a probe that fell through
+// into the session body would take a quest nobody asked it to.
+if (process.argv.includes('--version')) {
+  console.log('stub-harness 1.0.0');
+  process.exit(0);
+}
+if (process.argv.includes('--login-state')) {
+  // Logged in when the harness has put something in the profile — which is what a real login does.
+  const home = process.env.DAORIS_STUB_CONFIG_DIR;
+  console.log(home && existsSync(home + '/credentials.json') ? 'logged-in' : 'logged-out');
+  process.exit(0);
+}
 
 const url = process.env.DAORIS_SERVICE_URL;
 const key = process.env.DAORIS_SERVICE_KEY;
@@ -369,6 +391,10 @@ if (!takeAnswer.ok) {
 // disk (the durable record, D46 §4) and to the live console (D49 §2). This is what the gate reads
 // back out of the transcript afterwards.
 console.log('stub: taking quest ' + id);
+// Which credential profile this spawn actually runs as, straight out of the environment seam
+// (D49 §4) — observable, so the gate can assert the session really ran in that configuration home
+// rather than trusting the record's word for it.
+console.log('stub: config home ' + (process.env.DAORIS_STUB_CONFIG_DIR ?? '(the harness’s own)'));
 
 if (/decline/i.test(title)) {
   await respond('decline', 'The stub declines what asks to be declined.');
@@ -1386,6 +1412,20 @@ section('14. A conversation is a session (D49 §3)');
 const stubChat = join(scratch, 'stub-chat.mjs');
 writeFileSync(stubChat, `
 import { createInterface } from 'node:readline';
+import { existsSync } from 'node:fs';
+
+// The same two probe answers as the driven stub, and for a sharper reason: this script blocks on
+// stdin, so a probe that fell through into the conversation body would hang until the driver's
+// patience ran out and then report the harness as absent — refusing a chat that would have worked.
+if (process.argv.includes('--version')) {
+  console.log('stub-harness 1.0.0');
+  process.exit(0);
+}
+if (process.argv.includes('--login-state')) {
+  const home = process.env.DAORIS_STUB_CONFIG_DIR;
+  console.log(home && existsSync(home + '/credentials.json') ? 'logged-in' : 'logged-out');
+  process.exit(0);
+}
 
 const url = process.env.DAORIS_SERVICE_URL;
 const repository = process.env.DAORIS_REPOSITORY;
@@ -1433,7 +1473,7 @@ writeFileSync(chatInput, 'what is this repository for?\npublish something\n');
 const chatRun = run(
   `dotnet "${driverDll}" chat --repository newcomer --adapter stub < "${chatInput}"`,
   scratch,
-  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: chatConfig },
+  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: chatConfig, ...NO_HARNESS },
   DRIVE_TIMEOUT,
 );
 check(
@@ -1520,9 +1560,187 @@ check(
   unknownChat.text,
 );
 
-// -------------------------------------------------- 15. report
+// -------------------------------------------------- 15. which tool, and which account
 
-section('15. Result');
+section('15. The toolchain: which tool, and which account (D49 §4)');
+
+// Everything here is scratch-local: the profile tree lives beside this file, so the developer's real
+// ~/.daoris and their real credential directories are nowhere near this gate. The stub is a fake
+// BINARY as well as a fake session — it answers `--version` and `--login-state` — which is what lets
+// the whole feature be proven with no account, no credential and no model anywhere in it.
+const toolchainHome = join(scratch, 'toolchain');
+const harnessConfig = join(toolchainHome, 'harnesses.json');
+const HARNESS_ENV = { DAORIS_HARNESS_CONFIG: harnessConfig };
+const profileAt = (harness, name) => join(toolchainHome, 'harnesses', harness, name);
+mkdirSync(toolchainHome, { recursive: true });
+
+// `alpha` has been logged into — the harness put something in it, which is what a login does.
+// `fresh` is a directory nobody has ever signed into.
+mkdirSync(profileAt('stub', 'alpha'), { recursive: true });
+writeFileSync(join(profileAt('stub', 'alpha'), 'credentials.json'), '{}\n');
+mkdirSync(profileAt('stub', 'fresh'), { recursive: true });
+
+const setProfile = (name) => writeFileSync(
+  harnessConfig, `${JSON.stringify({ defaults: { stub: name }, workspaces: {} }, null, 2)}\n`);
+setProfile('alpha');
+
+const underProfile = await api('POST', '/api/quests', {
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'Run as a named account',
+    body: 'The spawn should carry alpha’s configuration home, and the record should name it.',
+  },
+});
+const profileRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
+check(
+  'a session spawns under the machine’s default profile',
+  profileRun.code === 0 && /completed/.test(profileRun.out),
+  profileRun.out,
+);
+
+const profiled = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => s.quest === (underProfile.json?.quest?.id ?? ''));
+check(
+  'the record names the account it ran as, and the version of the tool that ran it',
+  profiled?.profile === 'alpha' && profiled?.harnessVersion === 'stub-harness 1.0.0',
+  JSON.stringify(profiled),
+);
+// The record's word is not the evidence — the SESSION's own is. The environment seam is observable,
+// so the gate reads back what the spawned process actually had rather than what the driver claimed.
+check(
+  '…and the session really ran in that configuration home, not just in the record',
+  existsSync(profiled?.transcript ?? '')
+    && readFileSync(profiled.transcript, 'utf8').includes(`stub: config home ${profileAt('stub', 'alpha')}`),
+  `${profiled?.transcript}`,
+);
+
+// A profile nobody has logged into refuses BEFORE anything is recorded, and names the action.
+setProfile('fresh');
+const loggedOutAsk = await api('POST', '/api/quests', {
+  body: {
+    from: 'game', to: 'newcomer',
+    title: 'Run as an account nobody signed into',
+    body: 'It should be held, with the sentence that says how to fix it.',
+  },
+});
+const sessionsBeforeRefusal =
+  ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
+const loggedOutRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV });
+check(
+  'a logged-out profile holds the start, naming the login action rather than failing bare',
+  loggedOutRun.code === 0
+    && /not logged in/.test(loggedOutRun.out)
+    && /daoris harness login stub --profile fresh/.test(loggedOutRun.out),
+  loggedOutRun.out,
+);
+check(
+  '…and nothing was recorded, so the quest is still open and nobody’s',
+  ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length
+    === sessionsBeforeRefusal
+  && ((await api('GET', '/api/quests?repository=newcomer')).json ?? [])
+    .some((q) => q.id === (loggedOutAsk.json?.quest?.id ?? '') && q.status === 'Open'),
+  loggedOutRun.out,
+);
+
+// A harness that is not on this machine refuses the same way, for the same reason — the two answers
+// mirror each other deliberately, and each names what fixes it.
+const missingConfig = join(scratch, 'driver-missing-harness.json');
+writeFileSync(missingConfig, `${JSON.stringify({
+  drivable: ['newcomer'], adapter: 'stub', cap: 2, timeoutMinutes: 2,
+  commands: { stub: ['daoris-no-such-harness-anywhere'] },
+}, null, 2)}\n`);
+const missingRun = driver({ serviceUrl: BASE, config: missingConfig, harness: HARNESS_ENV });
+check(
+  'a harness that is not installed holds the start, naming the install action',
+  missingRun.code === 0 && /not installed on this machine/.test(missingRun.out),
+  missingRun.out,
+);
+
+// Put the machine back, and let the held quest through — a held quest that never ran would leave the
+// next phase looking at a queue nobody explained.
+setProfile('alpha');
+const releasedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
+check(
+  'logging the account in releases the queue with no restart — the file is the truth',
+  releasedRun.code === 0 && /completed/.test(releasedRun.out),
+  releasedRun.out,
+);
+
+// D50, from a terminal: the same directories and the same file, through the real CLI. A machine with
+// no screen sets all of this up the same way the desktop's roster does.
+const cliHarness = (args) => run(`node "${cliBin}" harness ${args}`, scratch, HARNESS_ENV);
+const added = cliHarness('profile add claude-code work');
+check(
+  '`daoris harness profile add` creates the directory and says it is empty until you log in',
+  added.code === 0 && existsSync(profileAt('claude-code', 'work')) && /empty until you log into it/.test(added.out),
+  added.out,
+);
+const defaulted = cliHarness('profile default claude-code work --workspace aurora');
+check(
+  '`daoris harness profile default --workspace` wires one circle’s account',
+  defaulted.code === 0
+    && JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'] === 'work',
+  defaulted.out,
+);
+// The stub's own default, written by hand above, survives the CLI's edit — the CLI is an editor over
+// the file, not its owner.
+check(
+  '…and the edit left every other wiring in the file standing',
+  JSON.parse(readFileSync(harnessConfig, 'utf8')).defaults?.stub === 'alpha',
+  readFileSync(harnessConfig, 'utf8'),
+);
+const typo = cliHarness('profile default claude-code typo');
+check(
+  'a default naming a profile that does not exist is refused, naming the ones that do',
+  typo.code !== 0 && /has no profile `typo`/.test(typo.out) && /work/.test(typo.out),
+  typo.out,
+);
+const removed = cliHarness('profile remove claude-code work');
+check(
+  '`profile remove` un-defaults it and deletes nothing — the credential is the harness’s',
+  removed.code === 0 && /directory is untouched/.test(removed.out)
+    && existsSync(profileAt('claude-code', 'work'))
+    && !JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'],
+  removed.out,
+);
+
+// And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
+// checkboxes edit and the loop re-reads every tick.
+const cliDriver = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+const held = cliDriver('hold newcomer');
+check(
+  '`daoris driver hold` pauses a repository from a terminal',
+  held.code === 0 && JSON.parse(readFileSync(driverConfig, 'utf8')).holds?.includes('newcomer'),
+  held.out,
+);
+check(
+  '…and the edit preserved the adapter command the loop needs — an editor, not the file’s owner',
+  JSON.parse(readFileSync(driverConfig, 'utf8')).commands?.stub?.[1] === stubAgent,
+  readFileSync(driverConfig, 'utf8'),
+);
+const holdBites = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title: 'Held from a terminal', body: 'The hold should bite.' },
+});
+const heldRunFromCli = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV });
+check(
+  '…and the driver honours it on the very next tick, with no restart',
+  heldRunFromCli.code === 0 && /held by the person/.test(heldRunFromCli.out),
+  heldRunFromCli.out,
+);
+const resumed = cliDriver('resume newcomer');
+const resumedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
+check(
+  '`daoris driver resume` releases it, and the quest runs',
+  resumed.code === 0 && resumedRun.code === 0
+    && ((await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [])
+      .some((q) => q.id === (holdBites.json?.quest?.id ?? '') && q.status === 'Done'),
+  resumedRun.out,
+);
+
+// -------------------------------------------------- 16. report
+
+section('16. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -1558,6 +1776,12 @@ if (totals.failures) {
   console.log('  CONVERSATION (D49 §3): a chat held from a terminal with no model in it — answering');
   console.log('  what it heard, publishing the work that came up rather than editing across, ending');
   console.log('  on end-of-input as a first-class record with no quest and a transcript of its own,');
-  console.log('  while the working tree stayed the unit of exclusion in both directions.');
+  console.log('  while the working tree stayed the unit of exclusion in both directions. And the');
+  console.log('  TOOLCHAIN (D49 §4): a session spawned under a named credential profile — the record');
+  console.log('  naming the account and the tool version, and the session itself proving it really ran');
+  console.log('  in that configuration home; a profile nobody had signed into holding the start with');
+  console.log('  the sentence that says how to fix it, and recording nothing; a harness that is not');
+  console.log('  installed held the same way; and all of it set from a terminal, where a profile');
+  console.log('  removed left its directory untouched and a hold took effect on the very next tick.');
   rmSync(scratch, { recursive: true, force: true });
 }

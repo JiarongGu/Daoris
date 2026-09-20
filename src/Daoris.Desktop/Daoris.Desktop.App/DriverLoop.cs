@@ -40,6 +40,17 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
     /// <summary>Where this loop reads the person's choices — what the control surface edits.</summary>
     public string ConfigPath { get; } = DriverConfig.ResolvePath();
 
+    /// <summary>
+    /// This machine's harnesses and the accounts they run as (D49 §4) — the roster surface reads it,
+    /// and both spawn doors ask it the same question before starting anything.
+    /// </summary>
+    /// <remarks>
+    /// Constructed eagerly, unlike <see cref="Chat"/>: detection needs no service, so a person can see
+    /// what is installed and log a profile in while the host is still coming up — which is exactly the
+    /// moment a machine being set up has the question.
+    /// </remarks>
+    public HarnessRoster Harnesses { get; } = new(AdapterSet.Built());
+
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
     public void Nudge() => _watch?.Nudge();
@@ -99,9 +110,11 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
 
         // Conversations share everything the loop has — the same service, the same process registry
         // (so one lock and one "stop" reach both kinds), the same console buffer.
-        Chat = new ChatRunner(service, AdapterSet.Built(), home, Processes, Output);
+        // …and the same harness roster, so one probe serves both doors and a login the person just
+        // did is seen by whichever of them asks next.
+        Chat = new ChatRunner(service, AdapterSet.Built(), home, Processes, Output, Harnesses);
 
-        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output);
+        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output, Harnesses);
         await _watch.RunAsync(
             async (report, _) =>
             {

@@ -55,19 +55,25 @@ public sealed record RegistrationResponse(
     string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch);
 // `Quest` is null for a chat (D49 §3) and `Kind` says which way in it was — the same record either
 // way, which is the point: a conversation is a session, not a second kind of thing.
+// `HarnessVersion` and `Profile` say which tool and which account produced this (D49 §4). The profile
+// is machine-local and guarded like the transcript beside it: it answers to the machine that ran the
+// session and travels no further.
 public sealed record SessionResponse(
     string Id, string? Quest, string Repository, string Adapter, string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
-    string Workspace, string Kind);
-public sealed record OpenSessionRequest(string Quest, string Adapter);
-public sealed record OpenChatRequest(string Repository, string? Adapter);
+    string Workspace, string Kind, string? HarnessVersion, string? Profile);
+public sealed record OpenSessionRequest(string Quest, string Adapter, string? HarnessVersion, string? Profile);
+public sealed record OpenChatRequest(string Repository, string? Adapter, string? HarnessVersion, string? Profile);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 // `Quest` is null for a chat and `Kind` says which it was (D49 §3) — both travel, because a teammate
-// seeing a record deserves to know somebody was talking rather than that work was planned.
+// seeing a record deserves to know somebody was talking rather than that work was planned. So does
+// `HarnessVersion` (D49 §4): which tool produced this is a fact about a tool. There is deliberately
+// NO profile field — which account a session ran as is machine-local, like the transcript.
 public sealed record FeedSessionRecord(
     string Id, string? Quest, string Repository, string? Adapter, string? State,
-    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated, string? Kind);
+    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated, string? Kind,
+    string? HarnessVersion);
 public sealed record FeedSessionsRequest(IReadOnlyList<FeedSessionRecord>? Records);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
 // The three provenance fields are the feed's claim about WHICH point in the history it speaks for

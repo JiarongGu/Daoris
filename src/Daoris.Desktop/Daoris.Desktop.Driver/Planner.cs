@@ -4,7 +4,13 @@ namespace Daoris.Driver;
 public sealed record QuestView(string Id, string From, string To, string Title, string Body, string Status);
 
 /// <summary>A registration as the service answered it. The root is present only from a local service.</summary>
-public sealed record RepoView(string Repository, bool Adopted, string? Root);
+/// <param name="Workspace">
+/// The circle this repository is wired into on THIS machine (D48 §2) — the registry row, which is the
+/// only honest source for it. The toolchain reads it to pick a workspace's credential profile
+/// (D49 §4): a work account for the work circle, a personal one at home.
+/// </param>
+public sealed record RepoView(
+    string Repository, bool Adopted, string? Root, string Workspace = RemoteTarget.DefaultWorkspace);
 
 /// <summary>An ACTIVE session as the service answered it — closed ones never reach the planner.</summary>
 public sealed record SessionView(string Id, string Repository);
@@ -43,7 +49,9 @@ public enum StartVerdict
 /// <param name="Verdict"><see cref="StartVerdict.Start"/>, or why not.</param>
 /// <param name="Reason">The sentence a person reads. "Sitting" must always say why (D46 §3).</param>
 /// <param name="Root">Where a start would spawn — carried so the executor never re-derives it.</param>
-public sealed record Consideration(QuestView Quest, StartVerdict Verdict, string Reason, string? Root = null);
+/// <param name="Workspace">The receiver's circle, carried for the same reason — and read by the toolchain.</param>
+public sealed record Consideration(
+    QuestView Quest, StartVerdict Verdict, string Reason, string? Root = null, string? Workspace = null);
 
 /// <summary>
 /// The decision half of a tick: which open quests start, and why every other one is sitting.
@@ -123,7 +131,7 @@ public static class Planner
 
             slots--;
             startedThisTick[quest.To] = quest.Id;
-            return new(quest, StartVerdict.Start, $"starting in `{quest.To}`.", repo.Root);
+            return new(quest, StartVerdict.Start, $"starting in `{quest.To}`.", repo.Root, repo.Workspace);
         }
     }
 }

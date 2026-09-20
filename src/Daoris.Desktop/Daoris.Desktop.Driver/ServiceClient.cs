@@ -74,13 +74,18 @@ public sealed class ServiceClient : IDisposable
 
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
-        string questId, string adapter, CancellationToken ct = default)
+        string questId, string adapter, string? harnessVersion = null, string? profile = null,
+        CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("quest", questId);
             writer.WriteString("adapter", adapter);
+            // Observed by this side before the spawn (D49 §4) — the service has no binaries to look
+            // at. Omitted when unknown rather than sent blank, as every optional field here is.
+            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
+            if (profile is not null) writer.WriteString("profile", profile);
             writer.WriteEndObject();
         });
 
@@ -105,13 +110,16 @@ public sealed class ServiceClient : IDisposable
     /// and the sentence names what holds it.
     /// </summary>
     public async Task<(string? SessionId, string Message)> OpenChatAsync(
-        string repository, string adapter, CancellationToken ct = default)
+        string repository, string adapter, string? harnessVersion = null, string? profile = null,
+        CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("repository", repository);
             writer.WriteString("adapter", adapter);
+            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
+            if (profile is not null) writer.WriteString("profile", profile);
             writer.WriteEndObject();
         });
 
@@ -195,7 +203,10 @@ public sealed class ServiceClient : IDisposable
             repositories.Add(new RepoView(
                 Text(repo, "repository") ?? "",
                 repo.TryGetProperty("adopted", out var adopted) && adopted.ValueKind == JsonValueKind.True,
-                Text(repo, "root")));
+                Text(repo, "root"),
+                // The machine's own wiring (D48 §2). An older host that does not answer it leaves the
+                // default, which is what an unwired machine has always meant.
+                RemoteTarget.Workspace(Text(repo, "workspace"))));
         }
 
         return repositories;

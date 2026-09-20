@@ -5,6 +5,52 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A login-state pattern that matched its own negation (2026-09-20)
+
+**Symptom.** Caught by a test written alongside SES3's harness descriptors, before anything ran: the
+`codex` login check declared `in: /logged in/i` and `out: /not logged in/i`. The probe asks `in`
+first, so **every logged-out profile reported as logged in** — "Not logged in" contains "logged in".
+
+**Root cause.** The two supported harnesses answer the same question in two shapes. `claude auth
+status` answers a FIELD (`"loggedIn": true` / `false`), where the two patterns are mutually exclusive
+and order is irrelevant. `codex login status` answers a SENTENCE, where one answer is a superstring of
+the other — so an unanchored pattern is not a test of the answer, it is a test of the vocabulary. The
+descriptor was written by analogy with the field-shaped one, which is where the analogy stops holding.
+
+**Fix.** Anchor it: `/^\s*logged in/im` and `/^\s*not logged in/im`. The `m` flag matters too — the
+harness prints a warning line before the answer when its home does not exist.
+
+**Verification.** The assertion that fails is `assert.ok(!codex.in.test('Not logged in'))`, watched
+failing against the original pattern; a second case pins the warning-line form. The guarantee this
+protects is the whole logged-out refusal: with the original pattern, a spawn onto an account nobody
+had signed into would have proceeded silently and failed inside the harness instead of refusing with
+the sentence that fixes it. **The trap to inherit:** when a check has a positive and a negative
+pattern, assert the negative input against the POSITIVE pattern. Two patterns that each match their
+own input prove nothing about the pair — and a sentence-shaped answer usually contains its own
+negation.
+
+## A surface crashed on a host answering an unexpected shape — twice now (2026-09-20)
+
+**Symptom.** SES3's harness roster called `roster.data.harnesses.map(...)`; the existing shell test
+suite mocks the bridge to answer one object for every request, so the machine settings page threw and
+took the wiring card down with it. SES1 hit the identical failure in the session drawer, where a
+mocked bridge answering the wrong object crashed the console.
+
+**Root cause.** A page and a shell are versioned independently: **a shell older than a surface answers
+a request it has never heard of with something else entirely**, and a mocked bridge is the same shape
+as that older shell, which is why the tests find it. The failure is not the missing data — it is that
+a new, optional capability took down the surface it was added to.
+
+**Fix.** Validate the shape before using it (`Array.isArray(...) ? ... : null`) and render nothing when
+it is not there; the rest of the page stands. Applied to the roster, the per-conversation profile
+picker, and — since SES1 — the console.
+
+**Verification.** `an answer that is not a roster leaves the wiring card standing` and its SES1 twin,
+each driven by a bridge deliberately answering the wrong object. **The trap to inherit, now on its
+second occurrence:** every new IPC request is an optional capability, so **the surface consuming it
+must degrade to absent, never to a crash** — and the test that proves it is a bridge answering the
+wrong shape, not a bridge answering nothing.
+
 ## `keys mint` indexed the server's own disk (2026-09-20)
 
 **Symptom.** Caught by WSP3's new rehearsal phase, on its first run: a workspace's shared deployment

@@ -73,6 +73,22 @@ public enum SessionKind
 /// the same one-session-per-repository lock — which is the point: a conversation is a session, not a
 /// second kind of thing with its own rules to keep in step.
 /// </param>
+/// <param name="HarnessVersion">
+/// The harness version observed at spawn (D49 §4) — "which tool produced this", answerable later. The
+/// same authorship instinct as version-stamping a release, applied to the tool that did the work. It
+/// travels: it is a fact about a tool, not about a machine.
+/// </param>
+/// <param name="Profile">
+/// Which named credential profile the session ran as (D49 §4) — a NAME, never a path and never
+/// anything from inside the profile.
+/// </param>
+/// <remarks>
+/// <b>The profile name is machine-local, and is guarded exactly as the transcript is</b> (D47 §4): it
+/// answers "which account did this run as" to the machine that ran it, and travels no further. It is
+/// wiring in the sense D48 §2 draws — WHERE and WHO are the machine's and the account's — and it is
+/// the one field here a person might well name after themselves. The version is a fact about a tool
+/// and travels; this is not.
+/// </remarks>
 public sealed record Session(
     string Id,
     string? Quest,
@@ -85,7 +101,9 @@ public sealed record Session(
     DateTimeOffset Created,
     DateTimeOffset Updated,
     string Workspace = Workspaces.Default,
-    SessionKind Kind = SessionKind.Driven)
+    SessionKind Kind = SessionKind.Driven,
+    string? HarnessVersion = null,
+    string? Profile = null)
 {
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
@@ -151,7 +169,11 @@ public sealed class SessionStore
                   created    TEXT NOT NULL,
                   updated    TEXT NOT NULL,
                   workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
-                  kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'
+                  kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}',
+                  -- D49 §4: which tool, and which account. Written once at spawn and never moved —
+                  -- a record of what ran, not a field a later state change may revise.
+                  harness_version TEXT NULL,
+                  profile         TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
                 """;
@@ -165,6 +187,8 @@ public sealed class SessionStore
         {
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
             ("kind", $"kind TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'"),
+            ("harness_version", "harness_version TEXT NULL"),
+            ("profile", "profile TEXT NULL"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -215,11 +239,13 @@ public sealed class SessionStore
               created    TEXT NOT NULL,
               updated    TEXT NOT NULL,
               workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
-              kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'
+              kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}',
+              harness_version TEXT NULL,
+              profile         TEXT NULL
             );
             INSERT INTO sessions_relaxed
               SELECT id, quest, repository, adapter, state, note, evidence, transcript, created,
-                     updated, workspace, kind
+                     updated, workspace, kind, harness_version, profile
               FROM sessions;
             DROP TABLE sessions;
             ALTER TABLE sessions_relaxed RENAME TO sessions;
@@ -234,19 +260,25 @@ public sealed class SessionStore
     /// </summary>
     public async Task<Session> CreateAsync(
         string? quest, string repository, string adapter, DateTimeOffset now,
-        string? workspace = null, SessionKind kind = SessionKind.Driven, CancellationToken ct = default)
+        string? workspace = null, SessionKind kind = SessionKind.Driven,
+        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
-            SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind);
+            SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
+            // Written at creation and never again: these say what the spawn ran ON and AS, and a
+            // later state change is about how it ended, not about what it was.
+            Blank(harnessVersion), Blank(profile));
 
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile)
             """;
         command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$kind", session.Kind.ToString());
+        command.Parameters.AddWithValue("$harnessVersion", (object?)session.HarnessVersion ?? DBNull.Value);
+        command.Parameters.AddWithValue("$profile", (object?)session.Profile ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", session.Id);
         command.Parameters.AddWithValue("$quest", (object?)session.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", session.Repository);
@@ -305,14 +337,18 @@ public sealed class SessionStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL)
             ON CONFLICT (id) DO UPDATE SET
               state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace,
-              kind = $kind
+              kind = $kind, harness_version = $harnessVersion
             """;
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(record.Workspace));
         command.Parameters.AddWithValue("$kind", record.Kind.ToString());
+        // The version crosses; the PROFILE NAME never does — machine-local, like the transcript beside
+        // it (D47 §4). Written as a literal NULL rather than from the record, so a caller that filled
+        // the field cannot make it travel by accident.
+        command.Parameters.AddWithValue("$harnessVersion", (object?)record.HarnessVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", record.Id);
         command.Parameters.AddWithValue("$quest", (object?)record.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", record.Repository);
@@ -392,5 +428,12 @@ public sealed class SessionStore
             // A row with a kind this build does not know is a DRIVEN record as far as anything here
             // can act on it: the lifecycle is identical, and refusing to read a record would lose the
             // trace of work that actually happened.
-            : SessionKind.Driven);
+            : SessionKind.Driven,
+        reader.IsDBNull(reader.GetOrdinal("harness_version"))
+            ? null : reader.GetString(reader.GetOrdinal("harness_version")),
+        reader.IsDBNull(reader.GetOrdinal("profile")) ? null : reader.GetString(reader.GetOrdinal("profile")));
+
+    /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
+    private static string? Blank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

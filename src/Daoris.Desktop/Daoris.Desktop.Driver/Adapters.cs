@@ -92,6 +92,19 @@ public interface ISessionAdapter
         throw new DriverException(
             $"the `{Name}` adapter cannot hold a conversation — it spawns a harness that takes its "
             + "target once and runs to completion. Chat with an adapter that declares `interactive`.");
+
+    /// <summary>
+    /// This harness AS A TOOL (D49 §4): where its binary is, how it reports its version, which
+    /// environment variable names its configuration home, and how to run its own install, update and
+    /// login flows.
+    /// </summary>
+    /// <remarks>
+    /// Null — the default — is an adapter Daoris manages nothing about. It spawns exactly as it did
+    /// before the toolchain existed, which is what lets a new adapter arrive without first answering
+    /// questions about an installer it may not have. An adapter opts in when the answers are real:
+    /// every field here is a claim about somebody else's tool, and a guessed one is worse than none.
+    /// </remarks>
+    HarnessToolchain? Toolchain => null;
 }
 
 /// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
@@ -173,6 +186,20 @@ public sealed class StubAdapter : ISessionAdapter
     public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
         Spawning.ChatInRoot(target, Command(command)[0], Command(command).Skip(1));
 
+    /// <summary>
+    /// A toolchain with real mechanics and no tool behind it — the same trick as the adapter itself
+    /// (D46 §8). There is nothing to install or update (the "binary" is whatever the config names),
+    /// but the <b>version, the environment seam and the login question are genuine</b>, which is what
+    /// lets the family rehearsal gate profile selection and the logged-out refusal with no account,
+    /// no credential and no model anywhere in it.
+    /// </summary>
+    public HarnessToolchain? Toolchain => new(
+        Binary: [],
+        VersionArguments: ["--version"],
+        ProfileVariable: "DAORIS_STUB_CONFIG_DIR",
+        LoginCheck: new LoginQuestion(
+            ["--login-state"], LoggedIn: @"logged-in", LoggedOut: @"logged-out"));
+
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
             ? command
@@ -239,6 +266,37 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
             target, resolved[0], resolved.Skip(1).Concat(["--permission-mode", "acceptEdits"]));
     }
 
+    /// <summary>
+    /// The harness's own mechanisms (D49 §4), <b>verified against the real binary</b> before they were
+    /// written down — every line of this is a claim about somebody else's tool, and a guessed one
+    /// fails at the worst moment, in a person's terminal, saying something that is not true.
+    /// </summary>
+    /// <remarks>
+    /// <para>Install is a whole command because a machine without the harness cannot run it; update
+    /// and login are the harness's own subcommands, because a present harness updates and authenticates
+    /// itself.</para>
+    ///
+    /// <para><b>The login question answers JSON with a boolean, and the binary exits 0 either way</b> —
+    /// so the output is the answer and the exit code is deliberately not consulted. It also volunteers
+    /// an email, an organisation and a subscription tier; Daoris reads the boolean and keeps nothing
+    /// else. That is `Daoris manages directories and names, never secrets` meeting a harness that
+    /// offers more than it was asked for.</para>
+    ///
+    /// <para><c>CLAUDE_CONFIG_DIR</c> is the environment seam: a spawn under it is genuinely a separate
+    /// account — a fresh directory reports logged out while the machine's own home reports logged in.</para>
+    /// </remarks>
+    public HarnessToolchain? Toolchain => new(
+        Binary: ["claude"],
+        VersionArguments: ["--version"],
+        ProfileVariable: "CLAUDE_CONFIG_DIR",
+        Install: ["npm", "install", "-g", "@anthropic-ai/claude-code"],
+        UpdateArguments: ["update"],
+        LoginArguments: ["auth", "login"],
+        LoginCheck: new LoginQuestion(
+            ["auth", "status"],
+            LoggedIn: @"""loggedIn""\s*:\s*true",
+            LoggedOut: @"""loggedIn""\s*:\s*false"));
+
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : ["claude"];
 }
@@ -251,6 +309,9 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 /// </summary>
 public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adapters)
 {
+    /// <summary>Every adapter this build has, in a stable order — what a roster enumerates.</summary>
+    public IReadOnlyList<string> Names => [.. adapters.Keys.OrderBy(k => k, StringComparer.Ordinal)];
+
     public ISessionAdapter Resolve(string name)
     {
         if (adapters.TryGetValue(name, out var adapter)) return adapter;

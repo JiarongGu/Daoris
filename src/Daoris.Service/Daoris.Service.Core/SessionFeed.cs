@@ -6,10 +6,15 @@ namespace Daoris.Knowledge;
 /// `driven` or `chat`. It travels because a teammate seeing a record deserves to know which it was —
 /// and because without it every mirrored conversation would arrive looking like planned work.
 /// </param>
+/// <param name="HarnessVersion">
+/// Which tool produced this (D49 §4). It travels because it is a fact about a tool. The PROFILE NAME
+/// deliberately has no field here: which account a session ran as is machine-local, guarded like the
+/// transcript — and a field that does not exist cannot be filled in by accident.
+/// </param>
 public sealed record FedSessionRecord(
     string? Id, string? Quest, string? Repository, string? Adapter, string? State,
     string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated,
-    string? Kind = null);
+    string? Kind = null, string? HarnessVersion = null);
 
 /// <summary>Why a feed of records was not taken — or <see cref="None"/> when it was.</summary>
 public enum SessionFeedRefusal
@@ -87,7 +92,13 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                 // record of work that happened is worth keeping even when a field is from a future.
                 Enum.TryParse<SessionKind>(record.Kind, ignoreCase: true, out var kind)
                     ? kind
-                    : SessionKind.Driven), ct)
+                    : SessionKind.Driven,
+                record.HarnessVersion,
+                // No profile, structurally: the fed record has no field for one, and the store's
+                // mirror writes a literal NULL. Two guards for one rule, the same doubling the
+                // transcript gets — because a name a person chose for themselves is the kind of thing
+                // that leaks through whichever half somebody forgot.
+                Profile: null), ct)
                 .ConfigureAwait(false);
         }
 

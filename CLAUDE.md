@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Twelve commands, 164 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 245, `Daoris.Devkit` 57, and the
-driver 98. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
+**Built and proven; nothing published.** Fourteen commands, 192 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 248, `Daoris.Devkit` 57, and the
+driver 130. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
 off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
@@ -54,8 +54,8 @@ minted keys, no page and no machine path served, refusing to bind beyond loopbac
 the quest lock hardened into code (an atomic guarded `Taken`, closed quests immovable) and the
 desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
 gates the whole thing with no model: driver loop, a two-machine remote crossing, **the workspace
-boundary, the registration lifecycle, the remotes map, which commit speaks and a whole
-conversation** (135/135). The D48 arc is under way. **The
+boundary, the registration lifecycle, the remotes map, which commit speaks, a whole
+conversation and a session running as a named account** (151/151). The D48 arc is under way. **The
 workspace exists** (WSP1) — it is the unit of sharing, it is **wiring rather than a tracked
 declaration** (`connect --workspace`, a registry row, no manifest field), and every cross-repository
 entity and answer carries or is scoped by it. **The registry is the authority** (WSP2) — an explicit
@@ -75,7 +75,13 @@ verbatim and desktop-only: output is transcript-class material and has no HTTP s
 conversation is a session** (D49/SES2) — `Kind: driven | chat`, quest optional, the same lock on the
 same working tree; the adapter seam grows `interactive`, the harness carries the model and Daoris
 pipes text, and a chat runs from the desktop or from `daoris-driver chat` on a machine with no
-screen.
+screen. **The toolchain is Daoris's** (D49/SES3) — it finds each harness, reports its version, and
+installs, updates and logs it in **through that harness's own mechanism, only when asked**; many
+accounts per harness are **named credential profiles**, isolated configuration directories whose
+location Daoris owns and whose contents it never touches, chosen per machine, per workspace or per
+conversation. A record names the tool version and the account it ran as; a spawn onto a missing
+harness or a profile nobody signed into refuses **naming the action that fixes it**. `daoris harness`
+and `daoris driver` do all of it from a terminal (D50).
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
@@ -96,7 +102,8 @@ risk, **authorship** was.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
 - `docs/DECISIONS.md` — the numbered decision log (D1–D50) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are the current arc**
-  (workspaces; the interactive surface; management parity) — WSP1–4, SES1 and SES2 have landed.
+  (workspaces; the interactive surface; management parity) — WSP1–4 and SES1–3 have landed; CANON6
+  is what remains.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -162,8 +169,12 @@ Run every command from the **workspace root**, not from a package directory.
   repository in another circle reaches it not at all, and a registration declaring another workspace
   refused naming both — then which commit speaks: a newer feed replacing wholesale and carrying a
   deletion with it, a stale one refused as information, an unmerged branch refused though newer, and
-  the fed commit served back. No model anywhere in the gate. Run when touching
-  the service, `connect`, the driver, the remote, or the canon's shape —
+  the fed commit served back — then a conversation held from a terminal, and the toolchain: a session
+  spawned under a named credential profile and proving from its own output that it ran in that
+  configuration home, a logged-out profile and an uninstalled harness each holding the start with the
+  sentence that fixes it, and both surfaces driven from a terminal.
+  No model, no account and no credential anywhere in the gate. Run when touching
+  the service, `connect`, the driver, the remote, the toolchain, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
   bundle over the example family: a quest through its whole life in the drawers, the verbatim
@@ -193,12 +204,15 @@ Run every command from the **workspace root**, not from a package directory.
   echoing through the console.
 - **Exit codes are the contract:** `0` clean · `1` policy failure · `2` tool error.
 - **`check` works offline, and so does every doctrine command.** The exceptions are the **management
-  class** — `connect`, `retire`, `import` — which are opt-in, loopback-talking and never run by a gate
-  (D35, D50). Two tests hold the line: only `service.ts` may contain a network primitive, and nothing
-  any doctrine command transitively imports may reach it — the second is the one that matters, because
+  class** — `connect`, `retire`, `import` talk to a service; `remote`, `harness` and `driver` edit
+  files under the profile — all opt-in and never run by a gate (D35, D50). Three tests hold the line:
+  only `service.ts` may contain a network primitive, only `toolchain.ts` may spawn a harness, and
+  nothing
+  any doctrine command transitively imports may reach either — the last is the one that matters, because
   a gate breaks by an import three modules deep, not by an obvious `fetch`. **Keep the network in that
   one module**: a management class whose members each opened a socket would turn the first test into a
-  list, and a list is something people append to.
+  list, and a list is something people append to. Spawning is the same shape of rule for the same
+  reason — what makes it fine (a person asked for it) stops holding the moment `check` can reach it.
 - **Plan and apply are separate functions**, so a plan can be printed or asserted without touching disk.
 - **TDD** — failing test first. **Commit per task, automatically, once gates are green** (D37 as
   amended) — the landed history is the reviewable record. **Push, publish, release and history

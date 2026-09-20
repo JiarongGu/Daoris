@@ -130,16 +130,39 @@ test('only the service client may touch the network', () => {
  * Walked from every DOCTRINE command's entry point, not only `check`'s: they all run offline, and a
  * test that named one of them would be silent the day `sync` grew a "just ask the service" shortcut.
  */
-test('nothing a doctrine command reaches can import the service client', () => {
-  const doctrine = ['drift.ts', 'materialize.ts', 'indexgen.ts', 'upstream.ts', 'commands.ts', 'twins.ts', 'analyze.ts'];
+const DOCTRINE = [
+  'drift.ts', 'materialize.ts', 'indexgen.ts', 'upstream.ts', 'commands.ts', 'twins.ts', 'analyze.ts',
+];
 
-  for (const entry of doctrine) {
+test('nothing a doctrine command reaches can import the service client', () => {
+  for (const entry of DOCTRINE) {
     const seen = reachableFrom(entry);
 
     assert.equal(
       seen.has(SERVICE_CLIENT), false,
       `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
     assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
+  }
+});
+
+/**
+ * The same guarantee, one door further out (D49 §4). `toolchain.ts` SPAWNS PROCESSES — each harness's
+ * own installer, updater and login flow, which is the whole point of it — and a doctrine command that
+ * reached it could run one of them inside a build gate.
+ *
+ * It is the same shape of rule as the network one and it is worth stating separately, because the
+ * reasoning that makes spawning fine (opt-in, a person asked for it, never run by a gate) is exactly
+ * the reasoning that stops holding the moment `check` can reach it.
+ */
+const SPAWNS = 'toolchain.ts';
+
+test('nothing a doctrine command reaches can spawn a harness', () => {
+  for (const entry of DOCTRINE) {
+    const seen = reachableFrom(entry);
+
+    assert.equal(
+      seen.has(SPAWNS), false,
+      `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
   }
 });
 
@@ -171,7 +194,7 @@ function reachableFrom(entry: string): Set<string> {
  * append to without thinking.
  */
 test('the file-local management verbs reach no network module either', () => {
-  for (const entry of ['remotes.ts', 'remotemap.ts']) {
+  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts']) {
     const seen = reachableFrom(entry);
 
     assert.equal(

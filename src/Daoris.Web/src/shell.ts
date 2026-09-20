@@ -246,12 +246,83 @@ export function useSessionConsole(sessionId: string | null) {
 export const useStartChat = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (repository: string) =>
-      call<{ sessionId: string | null; message: string }>('START_CHAT', { repository }),
+    // The profile is the per-session picker (D49 §4). Omitted is not "no profile": it takes the
+    // workspace's default, then the machine's, then the harness's own configuration home — the same
+    // resolution a driven session gets, so a conversation is not a second set of rules.
+    mutationFn: ({ repository, profile }: { repository: string; profile?: string }) =>
+      call<{ sessionId: string | null; message: string }>(
+        'START_CHAT', profile ? { repository, profile } : { repository }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.driver });
     },
+  });
+};
+
+/**
+ * This machine's harnesses, and the accounts they run as (D49 §4, D50).
+ *
+ * @remarks
+ * **Shell-only, like every machine-local surface** — a browser over a keyed remote has no business
+ * knowing which tools are installed on somebody's laptop, let alone which accounts they hold. The
+ * profile HOME is a filesystem path, which is the sharpest reason this rides the bridge and has no
+ * HTTP route (D47 §4).
+ *
+ * **Daoris manages directories and names, never secrets.** `login` runs the harness's own flow into a
+ * profile directory and streams it through the console; nothing here reads, stores or forwards a
+ * credential, and `login` is only ever the person pressing something.
+ */
+export type HarnessProfile = { name: string; home: string; login: 'in' | 'out' | 'unknown' };
+export type HarnessReport = {
+  harness: string;
+  present: boolean;
+  version: string | null;
+  problem: string | null;
+  machineDefault: string | null;
+  profiles: HarnessProfile[];
+};
+export type HarnessRoster = {
+  settingsPath: string;
+  /** Which adapter this machine spawns sessions with — `driver.json`'s, shown beside the roster. */
+  adapter: string;
+  harnesses: HarnessReport[];
+};
+
+export const useHarnesses = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.harnesses,
+    queryFn: () => call<HarnessRoster>('HARNESSES'),
+    enabled: isAvailable,
+    // Detection spawns a process per harness, so this is not something to re-run on every focus. The
+    // roster has a refresh, and every action refreshes it — which is when it can actually have changed.
+    staleTime: Infinity,
+  });
+};
+
+/**
+ * Install, update, or log a profile in — each by that harness's OWN mechanism.
+ *
+ * @remarks
+ * Never automatic and never mid-session (D49 §4): a tool that changed under a running loop is a
+ * moving target nobody diffed. The output arrives as `SESSION_OUTPUT` under `<harness>:<action>`, so
+ * the same console component renders it.
+ */
+export const useHarnessAction = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (action: { harness: string; action: 'install' | 'update' | 'login'; profile?: string }) =>
+      call<{ harness: string; action: string; exitCode: number }>('HARNESS_ACTION', action),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
+  });
+};
+
+/** Ask the tools again rather than answering from before — the person pressing "look again". */
+export const useRefreshHarnesses = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => call<HarnessRoster>('HARNESSES', { refresh: true }),
+    onSuccess: (roster) => client.setQueryData(keys.harnesses, roster),
   });
 };
 

@@ -71,6 +71,14 @@ export type Session = {
   id: string; quest?: string | null; repository: string; adapter: string; state: SessionState;
   kind?: 'driven' | 'chat';
   note?: string; evidence?: string; created: string; updated: string; workspace?: string;
+  /** The harness version observed at spawn (D49 §4) — which tool produced this, answerable later. */
+  harnessVersion?: string | null;
+  /**
+   * Which named credential profile it ran as. Machine-local and answered only to the machine that
+   * ran it, exactly like the transcript — so a browser over a keyed remote sees null here, and that
+   * is the guarantee working rather than a field the service forgot to fill.
+   */
+  profile?: string | null;
 };
 
 /**

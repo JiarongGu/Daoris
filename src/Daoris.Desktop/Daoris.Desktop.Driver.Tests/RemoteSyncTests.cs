@@ -145,6 +145,32 @@ public sealed class RemoteSyncTests
         Assert.Equal("the quest reached done.", record.GetProperty("note").GetString());
     }
 
+    /// <summary>
+    /// Which TOOL produced a session travels; which ACCOUNT it ran as does not (D49 §4).
+    /// </summary>
+    /// <remarks>
+    /// The harness version is a fact about a tool, and a teammate reading a record deserves it. The
+    /// profile NAME is this machine's wiring — and it is the one field here a person is likely to name
+    /// after themselves — so it is dropped at parse, exactly as the transcript is: machine-local
+    /// material leaves this function, or it leaves the machine.
+    /// </remarks>
+    [Fact]
+    public void The_tool_version_crosses_and_the_account_name_does_not()
+    {
+        const string sessionsJson = """
+            [{ "id": "ab12cd34", "quest": "abc123", "repository": "Shared", "adapter": "claude-code",
+               "state": "completed", "harnessVersion": "2.1.220 (Claude Code)", "profile": "jane-personal",
+               "created": "2026-09-20T09:00:00+00:00", "updated": "2026-09-20T09:05:00+00:00" }]
+            """;
+
+        var feed = RemoteSyncPayloads.Sessions(sessionsJson, new HashSet<string>(["Shared"]));
+
+        Assert.NotNull(feed);
+        Assert.Contains("2.1.220", feed!.Value.Json);
+        Assert.DoesNotContain("jane-personal", feed.Value.Json);
+        Assert.DoesNotContain("profile", feed.Value.Json);
+    }
+
     /// <summary>A record already carrying an origin is somebody else's, mirrored here — never re-fed.</summary>
     [Fact]
     public void Nothing_to_feed_is_null_not_an_empty_envelope()

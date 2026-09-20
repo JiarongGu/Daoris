@@ -31,11 +31,16 @@ public sealed record TickReport(
 /// </remarks>
 public sealed class Driver(
     ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
-    SessionProcesses? processes = null, RemoteSyncSet? sync = null, SessionOutput? output = null)
+    SessionProcesses? processes = null, RemoteSyncSet? sync = null, SessionOutput? output = null,
+    HarnessRoster? harnesses = null)
 {
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.
     private readonly SessionProcesses _processes = processes ?? new SessionProcesses();
+
+    // The same sharing, for the same reason: a probe spawns a process, so the cache has to outlive
+    // one tick or every quest would re-detect every harness. Per-instance when nobody passes one.
+    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
 
     /// <summary>One decision-and-execution round. Returns what happened, for whoever is watching.</summary>
     public async Task<TickReport> TickAsync(CancellationToken ct = default)
@@ -108,9 +113,24 @@ public sealed class Driver(
             return ($"held  #{quest.Id} → {quest.To}: {detail}", false);
         }
 
+        // The harness, and which account it runs as (D49 §4) — asked BEFORE the record is opened, in
+        // the same place and for the same reason as the clean-tree rule above: a session record for a
+        // spawn that could never have happened would hold the repository and explain nothing. A
+        // missing binary and a logged-out profile are the same shape of answer, and each names the
+        // action that fixes it.
+        var selection = await _harnesses
+            .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, ct)
+            .ConfigureAwait(false);
+        if (!selection.Allowed)
+        {
+            return ($"held  #{quest.Id} → {quest.To}: {selection.Refusal}", false);
+        }
+
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
-        var (sessionId, message) = await service.OpenSessionAsync(quest.Id, config.Adapter, ct).ConfigureAwait(false);
+        var (sessionId, message) = await service
+            .OpenSessionAsync(quest.Id, config.Adapter, selection.Version, selection.Profile, ct)
+            .ConfigureAwait(false);
         if (sessionId is null)
         {
             return ($"refused  #{quest.Id} → {quest.To}: {message}", false);
@@ -122,6 +142,14 @@ public sealed class Driver(
             var target = new SessionTarget(
                 quest.Id, quest.Title, quest.Body, quest.From, quest.To, root, service.BaseUrl);
             var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
+
+            // The environment seam every harness already carries for exactly this (D49 §4). Applied
+            // by the driver rather than inside the adapter's Prepare, so one line governs both doors
+            // and no adapter can forget it.
+            if (adapter.Toolchain is { } toolchain)
+            {
+                HarnessProbe.Apply(info, toolchain, selection.ProfileHome);
+            }
 
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 

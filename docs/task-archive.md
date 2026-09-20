@@ -1226,6 +1226,73 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## SES3 — the toolchain (2026-09-20)
+
+> **SES3 — the toolchain.** Adapter `Probe` (locate + version + per-profile login state, run at
+> startup and on demand); the platform's roster (harness, version, present/absent, profiles);
+> install/update and login on the person's explicit action via each harness's own mechanism, streaming
+> through the console; **credential profiles** — named, isolated harness config homes selected at
+> spawn via the environment seam, machine default per harness, optional default per workspace,
+> per-session picker; Daoris stores directories and names, never secrets; the record carries harness
+> version + profile name at spawn; spawn-on-missing and spawn-on-logged-out refuse naming the action;
+> CLI parity (D50): `daoris harness list|install|update|login|profile ...` and `daoris driver ...`
+> (drivable/hold/cap over `driver.json`) — a headless machine sets all of this from the terminal.
+> Interactive design §4; workspace design §2b.
+
+✅ done 2026-09-20 — Daoris manages the harnesses, and never a credential. **Every mechanism was
+verified against the real binaries before a line was written**, because each is a claim about somebody
+else's program: `claude auth status` answers JSON with a `loggedIn` boolean, `codex login status`
+answers a sentence, `CLAUDE_CONFIG_DIR` and `CODEX_HOME` genuinely isolate an account, and `codex`
+refuses to start when its home names a path that does not exist (so Daoris creates a profile home as
+part of selecting it). Both binaries **exit 0 either way**, so the output is the answer and the exit
+code is never consulted — and `claude auth status` volunteers an email, an org and a subscription
+tier, of which Daoris reads one boolean and keeps nothing else.
+
+**The additive rule is the load-bearing one: silence means the harness's own configuration home.**
+With no profile named anywhere the environment seam is not set at all and a spawn is what it always
+was — pointing someone who never asked for profiles at a fresh directory would log them out of their
+own tool, which is the loudest available way to break "Daoris works alone" (D48 §2a). An adapter that
+declares no toolchain is checked for nothing, for the same reason.
+
+**Login state has three values and unknown is permissive.** Only a definite *logged out* refuses; an
+answer this build cannot read is no evidence, the same judgement WSP4 made about an undeclared
+canonical line. The first `codex` pattern was unanchored and `"Not logged in"` contains `"logged
+in"` — it reported every logged-out profile as logged in, and a test found it. **A cached refusal is
+re-asked before it is given**, so doing what the sentence said releases the queue on the next tick
+with nothing restarted.
+
+**One narrowing of the design, deliberately: the profile NAME stays on the machine that ran the
+session; the version travels.** A name a person quite possibly chose after themselves is machine
+wiring in D48 §2's sense, so it is guarded exactly as the transcript is — stripped for a non-loopback
+caller, absent from the feed's shape, and written as a literal NULL by the store's mirror. Three
+guards for one rule. A harness *version* is a fact about a tool, and it crosses.
+
+**A profile is a directory, and the directory is the contract** — no register to disagree with the
+disk, the same argument that made the registry the authority over a scan. `profile remove` clears the
+wiring and says out loud that it deleted nothing: the directory holds a credential the harness put
+there. The CLI and the driver share **a file and a layout, not code** (`~/.daoris/harnesses.json` plus
+`harnesses/<harness>/<profile>/`), the twin arrangement WSP3 established, with three rules asserted in
+both test tables. Two asymmetries its successors inherit: the CLI's *managed* set is not the driver's
+*adapter* set (`codex` is manageable while no adapter spawns it), and the CLI's `driver` verbs edit a
+file the C# side owns, so **every edit preserves the fields it has no verb for** — an editor that
+rewrote `driver.json` from its own idea of the shape would delete the command the stub adapter runs.
+
+**Two surfaces, one truth**: `daoris harness …` and `daoris driver …` for a machine with no screen,
+the desktop's roster and per-conversation picker over the same files. The CLI *inherits the terminal*
+for install/update/login — a login flow asks questions and waits for a code, and capturing the stream
+to pretty-print it would turn a working login into a hung one — while the desktop relays the same
+process through SES1's console under `<harness>:<action>`, never a session id, because it is not a
+session and must not look like one.
+
+Three defects the tests found: the unanchored `codex` pattern above; `daoris driver list` returned
+early when nothing was drivable, hiding exactly the inert hold a person would most likely believe was
+the problem; and the roster crashed a mocked bridge answering another shape — the same lesson SES1
+recorded, restated on a new surface. The rehearsal gates all of it with no account, credential or
+model: the stub became a fake *binary* as well as a fake session, so a spawn under profile `alpha` is
+asserted to carry alpha's configuration home **from the session's own output** rather than from the
+record's word for it. Tests grew 192 CLI (+28), 248 service (+3), 130 driver (+32), 50 web vitest
+(+6), 151/151 family rehearsal (+16); release rehearsal 53/53 and `test:web` 7/7 unchanged.
+
 ## SES2 — chat sessions (2026-09-20)
 
 > **SES2 — chat sessions.** `Session.Kind: driven | chat`, quest optional; the adapter seam grows

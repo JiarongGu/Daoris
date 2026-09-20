@@ -19,17 +19,19 @@ wiring, never tracked; coexistence with non-users is binding; harness accounts a
 profiles) with two contracts and eight build items. **All four WSP items are built** (2026-09-20, in
 the archive): the workspace exists, the registry is the authority, the machine's remotes are a map —
 one deployment per circle — and a feed carries the commit it speaks for, so the newest canonical view
-is the one that stands, and **SES1 and SES2 have landed**: a session's console streams live, and a
-person can hold a conversation with an agent in any repository. Two items remain — the harness
-toolchain (SES3) and canon coexistence (CANON6).
+is the one that stands. **All three SES items have landed too**: a session's console streams live, a
+person can hold a conversation with an agent in any repository, and Daoris manages the harnesses those
+sessions run on — installing and updating them through their own mechanisms, and holding many accounts
+per harness as named credential profiles without ever touching a credential. **D49 is complete; one
+item of the arc remains — canon coexistence (CANON6).**
 
 ## State
 
-**All five artefacts exist and are built, and all three parts of D45 with them.** Twelve commands,
-164 CLI tests, 245 service, 57 devkit, 98 driver, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **135/135 family rehearsal** including the
-driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map and
-which-commit-speaks and conversation phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
+**All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
+192 CLI tests, 248 service, 57 devkit, 130 driver, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **151/151 family rehearsal** including the
+driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
+which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
 **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
 an index row, and the answer is splitting, not raising (D28).
@@ -87,17 +89,18 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-**The next arc is under way: workspaces and the interactive surface (D48/D49, 2026-09-20, each amended
+**The arc is nearly done: workspaces and the interactive surface (D48/D49, 2026-09-20, each amended
 the same day on the owner's corrections).** The owner set the direction in this backlog and granted
 structural redesign (nothing is deployed); the design session turned it into two contracts and eight
-build items, of which **all four WSP items, SES1 and SES2 landed 2026-09-20**. **The workspace arc
-is complete**: a
+build items, of which **seven landed 2026-09-20** — all four WSP items and all three SES items.
+**The workspace arc is complete**: a
 registry row carries the workspace, every cross-repository answer is scoped by it, the family is an
 explicit list that `connect`, `retire` and `import` maintain, each circle syncs with the one deployment
 its own entry names, and a feed carries the commit it speaks for so the newest canonical view is the
-one that stands. **Start at SES3** (the harness toolchain and credential profiles — the last and largest
-item of D49) or **CANON6** (coexistence, independent of everything and constrained by the byte
-budget).
+one that stands. **D49 is complete too**: the console streams, a conversation is a session, and the
+harnesses those sessions run on are Daoris's to find, install, update and hold many accounts for —
+without ever touching a credential. **Start at CANON6**, the one item left in the arc (coexistence,
+independent of everything and constrained by the byte budget).
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -105,19 +108,6 @@ budget).
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
-- **SES3 specifically** (the large one): read interactive design **§4** and workspace design
-  **§2b** before touching anything. Its shape is three additions to the adapter seam beside `Prepare`
-  and `PrepareChat` — a **probe** (locate, version, per-profile login state), an **install/update**
-  action using each harness's own official mechanism, and an **environment seam** naming the profile
-  home (`claude-code`'s config-dir variable, `codex`'s home variable). The load-bearing rule is the
-  one the design states twice: **Daoris manages directories and names, never secrets** — login is the
-  harness's own flow run INTO a profile directory, streamed through SES1's console like any other
-  process, and the record carries the profile NAME and the harness version at spawn, never anything
-  from inside the profile. Two refusals mirror each other and should read alike: spawning onto a
-  missing harness, and spawning onto a logged-out profile — each names the action that fixes it
-  rather than failing bare. Never mid-session, never unasked (a tool changing under a running loop is
-  `reaching-in` one layer down), and **both surfaces** get it: `daoris harness list|install|update|
-  login|profile ...` and `daoris driver ...` exist because a headless machine has no roster page.
 - **CANON6 specifically** (small, and constrained): read workspace design **§2a**. It is an audit of
   the 8 core rules for instructions only Daoris can perform — the known case is
   `repository-owns-its-work`'s "publish a quest" — each gaining the tool-absent path in the same
@@ -125,22 +115,31 @@ budget).
   difficulty**: the always-loaded core is 12 bytes from its limit, so a carve-out that does not fit is
   a D28 split of principle from detail, never a raised limit. A canon change must re-sync `examples/`
   in the same commit, and `npm run rehearse:family` enforces that.
-- **The build order is stated at the top of the backlog** — the WSP items, SES1 and SES2 are all
-  in, so the next landing is SES3 or CANON6. Schema changes rebuild rather
+- **The build order is stated at the top of the backlog** — every WSP and SES item is in, so CANON6
+  is the only one left in the arc. Schema changes rebuild rather
   than migrate (the store's own rule, and nothing is deployed); WSP1 bumped the entry store to schema
   2 on exactly that basis, while the registration store adds columns, because a registration that
-  vanished on an upgrade is the failure that store exists to prevent.
-- **The last six landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
-  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4), `15ba288` (SES1) and `a965feb`
-  (SES2). All gate-green; `git log` is the reviewable record.
-- **What the WSP arc left for its successors, deliberately:** the platform's workspace *switcher*
+  vanished on an upgrade is the failure that store exists to prevent — and the session store does the
+  same, for the same reason (SES3 added two).
+- **The last seven landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
+  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4), `15ba288` (SES1), `a965feb`
+  (SES2) and SES3's. All gate-green; `git log` is the reviewable record.
+- **What the arc left for its successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
-  the wiring, but no view filters by one yet).
-- **Conversations have TWO doors, and SES3 inherits both.** The desktop's IPC (`START_CHAT`,
-  `SESSION_INPUT`, `END_CHAT`) and `daoris-driver chat --repository <name>` run the same
-  `ChatRunner`; what is shell-only is the STREAM, not the capability (D47 §4 protects transcript-class
-  material, and D50 forbids stranding a capability on a screenless machine). A harness picker or a
-  credential profile belongs on both, for the same reason.
+  the wiring, but no view filters by one yet); and a **`codex` session adapter** — SES3 made codex
+  manageable as a TOOL (`daoris harness` knows its installer, its home variable and how it reports a
+  login) without giving the driver an adapter that spawns it, because a permission posture and an
+  `exec` shape are things D23 says are added deliberately, on proof, never guessed.
+- **Every capability has TWO doors, and anything new inherits both.** The desktop's IPC and
+  `daoris-driver chat` run the same `ChatRunner`; `daoris harness` and `daoris driver` do from a
+  terminal what the roster and the checkboxes do from a screen. What is shell-only is the STREAM, not
+  the capability (D47 §4 protects transcript-class material, and D50 forbids stranding a capability on
+  a screenless machine).
+- **The toolchain's rules, in one place** (SES3, interactive design §4): silence means the harness's
+  own configuration home, so the feature is purely additive; login state is asked of the harness, has
+  three values, and only a definite *out* refuses; a cached refusal is re-asked before it is given; the
+  profile NAME never leaves the machine while the harness VERSION does; a profile IS a directory, and
+  removing one deletes nothing. The CLI's *managed* set is deliberately not the driver's *adapter* set.
 - **Two endings that mean different things:** end of input lets the harness wind up (`completed`);
   `stop` is the person's interrupt (`stopped`). Anything that grows a third way out should say which
   of those it is.
@@ -163,9 +162,10 @@ budget).
   call, and the live consumer count is zero.
 - **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
   up only when its trigger has actually arrived.
-- **Verify before claiming done, always:** `npm run verify` (CLI 164 + `check` + version agreement),
-  `dotnet test src/Daoris.Service` (245), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (98), `npm run rehearse:family` (135/135), `npm run test:web` (44 + 7). If a `bin`-driven gate is red
+- **Verify before claiming done, always:** `npm run verify` (CLI 192 + `check` + version agreement),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
+  `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
+  (130), `npm run rehearse:family` (151/151), `npm run test:web` (50 + 7). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -180,17 +180,6 @@ surfaces are editors; the offline-discipline test evolves to a named management 
 Build order: **every WSP item, SES1 and SES2 are done** (2026-09-20, in the archive) — what remains
 is SES3 and CANON6, independent of each other. Each item is one session-sized landing, TDD, gates
 green, moved to the archive on completion.
-
-- [ ] **SES3 — the toolchain.** Adapter `Probe` (locate + version + per-profile login state, run at
-  startup and on demand); the platform's roster (harness, version, present/absent, profiles);
-  install/update and login on the person's explicit action via each harness's own mechanism, streaming
-  through the console; **credential profiles** — named, isolated harness config homes selected at
-  spawn via the environment seam, machine default per harness, optional default per workspace,
-  per-session picker; Daoris stores directories and names, never secrets; the record carries harness
-  version + profile name at spawn; spawn-on-missing and spawn-on-logged-out refuse naming the action;
-  CLI parity (D50): `daoris harness list|install|update|login|profile ...` and `daoris driver ...`
-  (drivable/hold/cap over `driver.json`) — a headless machine sets all of this from the terminal.
-  Interactive design §4; workspace design §2b.
 
 - [ ] **CANON6 — doctrine must not hard-require Daoris (coexistence, D48).** Audit the 8 core rules
   for instructions only Daoris can perform (the known case: `repository-owns-its-work`'s "publish a

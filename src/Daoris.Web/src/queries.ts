@@ -15,6 +15,8 @@ export const keys = {
   driver: ['driver'] as const,
   /** The machine's wiring — shell-only, like the driver's state (D48 §5). */
   remotes: ['remotes'] as const,
+  /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */
+  harnesses: ['harnesses'] as const,
   entry: (id: string) => ['entry', id] as const,
   convergence: (minimumSimilarity: number) => ['convergence', minimumSimilarity] as const,
   search: (q: string, localOnly: boolean) => ['search', q, localOnly] as const,

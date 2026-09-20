@@ -102,6 +102,9 @@ internal sealed class DriverModule : ModuleBase
                     // probably open, and a record that moved silently reads as one that hung.
                     onEnded: (session, state) =>
                         _events.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state }),
+                    // The per-session picker (D49 §4). Absent takes the workspace's default, then the
+                    // machine's, then the harness's own configuration home.
+                    profile: Optional(request, "profile"),
                     cancellationToken);
 
                 _loop.Nudge();
@@ -134,6 +137,79 @@ internal sealed class DriverModule : ModuleBase
                 return new { Stopped = stopped };
             }
 
+            // This machine's harnesses, and the accounts they run as (D49 §4). Detection is free and
+            // read-only — it asks each tool its own version and each profile's own login state — so
+            // the page may ask whenever it likes; `refresh` is the person pressing "look again".
+            case "HARNESSES":
+            {
+                var refresh = request.Payload is { } payload
+                    && payload.TryGetProperty("refresh", out var again)
+                    && again.ValueKind == JsonValueKind.True;
+
+                var config = DriverConfig.Load(_loop.ConfigPath);
+                var roster = await _loop.Harnesses.RosterAsync(config, refresh, cancellationToken);
+
+                return new
+                {
+                    _loop.Harnesses.SettingsPath,
+                    Adapter = config.Adapter,
+                    Harnesses = roster.Select(report => new
+                    {
+                        Harness = report.Adapter,
+                        report.Present,
+                        report.Version,
+                        report.Problem,
+                        report.MachineDefault,
+                        // The profile HOME is a machine path, and this bridge is the one surface
+                        // allowed to carry one (D47 §4) — the page renders it so a person can find
+                        // the directory they were told Daoris owns.
+                        Profiles = report.Profiles.Select(profile => new
+                        {
+                            profile.Name,
+                            profile.Home,
+                            Login = profile.Login.ToString().ToLowerInvariant(),
+                        }).ToArray(),
+                    }).ToArray(),
+                };
+            }
+
+            // The person's explicit action on a harness (D49 §4): its own installer, its own updater,
+            // its own login flow. Never automatic, never mid-session, never unasked — and streamed
+            // line by line through the console, because it is a process like any other.
+            case "HARNESS_ACTION":
+            {
+                var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
+                var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
+                var config = DriverConfig.Load(_loop.ConfigPath);
+                var toolchain = _loop.Harnesses.Toolchain(harness)
+                    ?? throw new InvalidOperationException(
+                        $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+
+                var command = config.Commands.GetValueOrDefault(harness);
+                var stream = Relay(harness, action);
+
+                var code = action switch
+                {
+                    "install" => await HarnessActions.InstallAsync(toolchain, stream, cancellationToken),
+                    "update" => await HarnessActions.UpdateAsync(toolchain, command, stream, cancellationToken),
+                    "login" => await HarnessActions.LoginAsync(
+                        toolchain, command,
+                        HarnessSettings.ProfileHome(
+                            _loop.Harnesses.Home, harness,
+                            Optional(request, "profile")
+                            ?? _loop.Harnesses.Settings.Resolve(harness, null, null)
+                            ?? "default"),
+                        stream, cancellationToken),
+                    _ => throw new InvalidOperationException(
+                        $"unknown harness action '{action}' — one of: install, update, login"),
+                };
+
+                // Whatever it did, what this machine HAS has probably changed — so the next question
+                // asks the tool again rather than answering from before.
+                await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
+                return new { Harness = harness, Action = action, ExitCode = code };
+            }
+
             // "Look now": a person who just published a quest should not watch a poll countdown.
             case "NUDGE":
                 _loop.Nudge();
@@ -144,6 +220,40 @@ internal sealed class DriverModule : ModuleBase
             default:
                 throw UnknownType(request);
         }
+    }
+
+    /// <summary>An optional string on a request — absent and blank are the same answer: unstated.</summary>
+    private static string? Optional(IpcRequest request, string name) =>
+        request.Payload is { } payload
+        && payload.TryGetProperty(name, out var value)
+        && value.ValueKind == JsonValueKind.String
+        && value.GetString() is { Length: > 0 } text
+            ? text
+            : null;
+
+    /// <summary>
+    /// A harness action's output, relayed as it happens — the same console the session drawer already
+    /// renders (D49 §2), because an install that printed nothing until it finished is indistinguishable
+    /// from one that hung.
+    /// </summary>
+    /// <remarks>
+    /// <para>Keyed by `harness:action` rather than a session id: it is not a session, has no record,
+    /// and must never look like one. The page subscribes to it exactly as it subscribes to a
+    /// session's.</para>
+    ///
+    /// <para>The sequence still counts, because the page's merge rule is "drop anything already
+    /// seen" — every line arriving as number 0 would render as one line repeatedly overwritten. There
+    /// is no backlog to catch up on here (nothing buffers a harness action), so the counter starts at
+    /// 1 and only has to be monotonic.</para>
+    /// </remarks>
+    private Action<string> Relay(string harness, string action)
+    {
+        var sequence = 0L;
+        return line => _events.EmitAsync("DAORIS", "SESSION_OUTPUT", new
+        {
+            Session = $"{harness}:{action}",
+            Lines = new[] { new { Sequence = Interlocked.Increment(ref sequence), Text = line } },
+        });
     }
 
     private object State()

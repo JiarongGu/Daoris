@@ -27,9 +27,11 @@ internal static class ChatConsole
         if (string.IsNullOrWhiteSpace(repository))
         {
             Console.Error.WriteLine(
-                "usage: daoris-driver chat --repository <name> [--adapter <name>]\n"
+                "usage: daoris-driver chat --repository <name> [--adapter <name>] [--profile <name>]\n"
                 + "  Messages are read from stdin, one per line; the session's output goes to stdout.\n"
-                + "  End of input ends the conversation, and the record says how it finished.");
+                + "  End of input ends the conversation, and the record says how it finished.\n"
+                + "  --profile picks which credential profile to run as; omitted takes the workspace's\n"
+                + "  default, then the machine's (`daoris harness profile ...`).");
             return 2;
         }
 
@@ -55,7 +57,9 @@ internal static class ChatConsole
             {
                 ended.TrySetResult(state);
                 return Task.CompletedTask;
-            }).ConfigureAwait(false);
+            },
+            // The per-session picker, on the surface a machine with no screen has (D49 §4, D50).
+            profile: Flag(args, "--profile")).ConfigureAwait(false);
 
         if (start.SessionId is null)
         {
