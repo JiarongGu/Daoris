@@ -37,8 +37,15 @@ export function SettingsView({ notify }: { notify: Notify }) {
   const add = () => wire.mutate(
     { workspace: workspace.trim(), url: url.trim(), key: key.trim() },
     {
-      onSuccess: () => {
-        notify(t('settings.wiring.wired', { workspace: workspace.trim() || 'default' }));
+      onSuccess: (state) => {
+        // "Wired" and "in effect" are two different things, and only here do they come apart: the
+        // edit always lands in the FILE, but with the environment pair set no loader reads that file
+        // (D48 §5). Saying only "wired" while the new row does not appear reads as an edit that
+        // failed — so the sentence says what actually happened, using the answer's own flag rather
+        // than this form's idea of the machine.
+        notify(t(
+          state.fromEnvironment ? 'settings.wiring.wiredButOverridden' : 'settings.wiring.wired',
+          { workspace: workspace.trim() || 'default' }));
         // The key never lingers in a form's state once it has landed in the file.
         setWorkspace('');
         setUrl('');

@@ -178,7 +178,8 @@ public sealed record HarnessSettings(
 
             return new HarnessSettings(defaults, workspaces);
         }
-        catch (Exception error) when (error is JsonException or IOException)
+        catch (Exception error)
+            when (error is JsonException or IOException or UnauthorizedAccessException)
         {
             return new HarnessSettings();
         }
@@ -467,6 +468,13 @@ public static class HarnessProbe
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
                 process.Kill(entireProcessTree: true);
+
+                // The two reads are still outstanding, and abandoning them leaves faulted tasks
+                // nobody observes — a process that hung is exactly when they fault. Awaited to
+                // completion and discarded: the answer is already "it did not answer".
+                await Task.WhenAll(stdout, stderr).ContinueWith(
+                    _ => { }, TaskScheduler.Default).ConfigureAwait(false);
+
                 return (false, "", $"`{resolved[0]}` did not answer within {Patience.TotalSeconds:0}s");
             }
 

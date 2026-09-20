@@ -28,6 +28,7 @@
   "settings.wiring.remove": "断开",
   "settings.wiring.wired": "{{workspace}} 已在本机接线。",
   "settings.wiring.unwired": "{{workspace}} 从此不再向外同步。部署那边什么都没变。",
+  "settings.wiring.wiredButOverridden": "{{workspace}} 已写入映射——但本机的远端由环境变量指定，文件并非当前生效的那份。取消该环境变量后，刚才接的线才会生效。",
 
   "errors.REMOTE_HALF_DECLARED": "{{workspace}} 需要同时给出地址和密钥。只声明一半等于没有接线——写进映射也会被直接跳过。",
   "errors.REPOSITORY_NOT_ADOPTED": "{{repository}} 尚未接入 Daoris，因而没有可编辑的声明。接入由它自己的智能体完成；此表单只修改已经存在的声明。",

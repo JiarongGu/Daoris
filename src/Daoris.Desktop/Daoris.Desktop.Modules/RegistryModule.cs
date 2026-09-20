@@ -124,7 +124,11 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
                 property.WriteTo(writer);
             }
 
-            var sent = payload ?? default;
+            // `?? default` would be a JsonElement of kind Undefined, and every reader below throws on
+            // one — a defensive line that defends nothing and fails obscurely. Unreachable today (the
+            // `path` lookup above would have failed first on a null payload), which is exactly why it
+            // was worth removing rather than trusting: nothing would have caught it changing.
+            var sent = payload is { ValueKind: JsonValueKind.Object } given ? given : EmptyObject;
             writer.WriteStartObject("domain");
             writer.WriteString("summary", String(sent, "summary") ?? "");
             WriteStrings(writer, "owns", Strings(sent, "owns"));
@@ -145,6 +149,9 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
         File.WriteAllText(beside, System.Text.Encoding.UTF8.GetString(buffer.ToArray()).ReplaceLineEndings("\n") + "\n");
         File.Move(beside, manifest, overwrite: true);
     }
+
+    /// <summary>An object with no properties — what every reader below treats as "nothing was sent".</summary>
+    private static readonly JsonElement EmptyObject = JsonDocument.Parse("{}").RootElement.Clone();
 
     private static void WriteStrings(Utf8JsonWriter writer, string name, IReadOnlyList<string> values)
     {
@@ -181,10 +188,13 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
                 // is read — this one was written by hand as often as by the CLI.
                 join && remote is not null && Bool(remote.Value, "knowledge"));
         }
-        catch (JsonException)
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
             // A manifest that will not parse is adopted-but-unreadable: the repository's own tooling
-            // will say why, and the person still needs to see that something is there.
+            // will say why, and the person still needs to see that something is there. Unreadable for
+            // any other reason lands here too — a file open in another process, or one this account
+            // may not read — because the question being asked is "is there a repository here", and a
+            // locked file is not an answer of "no", nor a reason to take the folder picker down.
             return new Declaration(null, [], [], [], false, false);
         }
     }
