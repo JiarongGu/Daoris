@@ -11,13 +11,6 @@ public sealed class FeedTests
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-20T10:00:00Z");
 
-    private sealed class NoSource : IKnowledgeSource
-    {
-        public string Name => "test";
-        public Task<IReadOnlyList<KnowledgeEntry>> ReadAsync(CancellationToken ct = default) =>
-            Task.FromResult<IReadOnlyList<KnowledgeEntry>>([]);
-    }
-
     private readonly InMemoryKnowledgeStore _store = new();
     private readonly KnowledgeService _service;
 
@@ -25,7 +18,7 @@ public sealed class FeedTests
     {
         // A registry rooted nowhere: pushed registrations are the only family, the remote's own shape.
         _service = new KnowledgeService(
-            _store, new LexicalKnowledgeSearch(_store), new NoSource(),
+            _store, new LexicalKnowledgeSearch(_store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly,
             registry: new Registry(Path.Combine(Path.GetTempPath(), "daoris-nowhere-" + Guid.NewGuid().ToString("N")[..8])));
     }

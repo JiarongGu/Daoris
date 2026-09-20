@@ -576,6 +576,17 @@ const remoteDb = join(scratch, 'remote.db');
 const remoteRoot = join(scratch, 'remote-root');
 mkdirSync(remoteRoot, { recursive: true });
 
+// A decoy repository on the SERVER'S own disk, under the root the shared host is pointed at. A shared
+// deployment is fed, not scanned (D47 §4) — and not only at the refresh route: the service indexes on
+// first use when its store is empty, so without the empty-source composition the host's first request
+// would scan this in and serve it to every keyed caller.
+const decoy = join(remoteRoot, 'server-decoy');
+mkdirSync(join(decoy, '.claude', 'knowledge'), { recursive: true });
+writeFileSync(
+  join(decoy, '.claude', 'knowledge', 'server-secret.md'),
+  '# server secret\n\nThe shared host must never scan this off its own disk.\n',
+);
+
 // Keys are minted on the serving binary, against the same store it will serve (D47 §7).
 const mint = (name) => run(`dotnet "${httpDll}" keys mint --name ${name} --days 2`, repoRoot, {
   DAORIS_KNOWLEDGE_DB: remoteDb,
@@ -609,6 +620,17 @@ const withKey = await api('GET', '/api/quests', { base: REMOTE_BASE, key: keyA }
 check('a minted key opens the door', withKey.status === 200, withKey.text);
 const page = await api('GET', '/', { base: REMOTE_BASE });
 check('the shared host serves no page — an API until person-auth exists', page.status === 404, String(page.status));
+
+// The read above was the shared host's first — exactly when index-on-first-use would have scanned.
+const decoySearch = await api(
+  'GET', `/api/search?q=${encodeURIComponent('server secret')}`, { base: REMOTE_BASE, key: keyA });
+const decoyRepos = await api('GET', '/api/repositories', { base: REMOTE_BASE, key: keyA });
+check(
+  'the shared host never scans its own disk — the decoy repository beside it stays unserved',
+  decoySearch.status === 200 && !(decoySearch.json ?? []).some((hit) => hit.repository === 'server-decoy')
+    && decoyRepos.status === 200 && !(decoyRepos.json ?? []).some((r) => r.repository === 'server-decoy'),
+  `${decoySearch.text.slice(0, 200)} | ${decoyRepos.text.slice(0, 200)}`,
+);
 
 // Machine B is born whole: its own family, its own store, its own host — joined, keeping its
 // knowledge home. The manifest is the declaration (D47 §4).

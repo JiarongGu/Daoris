@@ -20,13 +20,6 @@ public sealed class QuestRelayTests : IAsyncLifetime
     private KnowledgeService _service = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-20T10:00:00Z");
 
-    private sealed class NoSource : IKnowledgeSource
-    {
-        public string Name => "test";
-        public Task<IReadOnlyList<KnowledgeEntry>> ReadAsync(CancellationToken ct = default) =>
-            Task.FromResult<IReadOnlyList<KnowledgeEntry>>([]);
-    }
-
     private sealed class FakeRemote : IRemoteQuestClient
     {
         public RemoteQuestAnswer NextAnswer { get; set; } = new(0, "unreachable", null);
@@ -71,7 +64,7 @@ public sealed class QuestRelayTests : IAsyncLifetime
 
         var store = new InMemoryKnowledgeStore();
         _service = new KnowledgeService(
-            store, new LexicalKnowledgeSearch(store), new NoSource(),
+            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, registry: new Registry(_root));
     }
 

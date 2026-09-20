@@ -118,7 +118,12 @@ var remoteQuests = mode == ServiceMode.Local && RemoteConfig.Load() is { } remot
     ? new HttpRemoteQuests(remoteConfig)
     : null;
 
-var composed = await ServiceFactory.CreateAsync(options, embedder, remoteQuests: remoteQuests);
+// A shared deployment is fed, not scanned (D47 §4) — and not only at the refresh route: the service
+// indexes on first use when its store is empty, so a shared host composed with the filesystem source
+// would scan the server's own disk on its first request and serve what it found to keyed callers.
+var composed = await ServiceFactory.CreateAsync(
+    options, embedder, remoteQuests: remoteQuests,
+    source: mode == ServiceMode.Shared ? new EmptyKnowledgeSource() : null);
 builder.Services.AddSingleton(composed);
 
 // Source-generated serialization: this host publishes AOT-friendly and reflection-based JSON would be

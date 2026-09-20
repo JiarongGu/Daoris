@@ -15,7 +15,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
   answers `[]`, and the remote's `ReplaceRepositoryAsync` wipes the teammate's shared knowledge. The
   rehearsal's knowledge assertions run before the pull that would trigger it. Fix: the machine holding
   the checkout is the authority, and a checkout is what `root` means — `Joined()` requires a root.
-- [ ] **Shared mode scans the server's disk through the back door.** `/api/refresh` refuses in shared
+- [x] **Shared mode scans the server's disk through the back door.** `/api/refresh` refuses in shared
   mode, but `EnsureIndexedAsync` (`src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs:234`)
   scans unconditionally on the first read or feed against an empty store — a fresh shared deployment's
   first request indexes whatever sits near the binary and serves it to keyed callers.

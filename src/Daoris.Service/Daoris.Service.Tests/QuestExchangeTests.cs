@@ -18,13 +18,6 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     private QuestExchange _exchange = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-18T10:00:00Z");
 
-    private sealed class NoSource : IKnowledgeSource
-    {
-        public string Name => "test";
-        public Task<IReadOnlyList<KnowledgeEntry>> ReadAsync(CancellationToken ct = default) =>
-            Task.FromResult<IReadOnlyList<KnowledgeEntry>>([]);
-    }
-
     public async Task InitializeAsync()
     {
         // The family this exchange sees: one declared adopter, one adopter that has said nothing,
@@ -44,7 +37,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
 
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(
-            store, new LexicalKnowledgeSearch(store), new NoSource(),
+            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, registry: new Registry(_root));
 
         _exchange = new QuestExchange(service, quests);

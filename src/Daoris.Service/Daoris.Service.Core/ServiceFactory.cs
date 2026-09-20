@@ -86,6 +86,10 @@ public static class ServiceFactory
         // embedder: the deployment decides, the composition carries it, and both doors get the same
         // exchange so neither can drift. A shared host passes nothing — it IS the home.
         IRemoteQuestClient? remoteQuests = null,
+        // What the index reads from, when the deployment is not the usual scan-this-folder one. A
+        // shared host passes EmptyKnowledgeSource, because it is fed and never scans (D47 §4) — the
+        // route refusal alone would leave the index-on-first-use path free to scan the server's disk.
+        IKnowledgeSource? source = null,
         CancellationToken ct = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
@@ -95,7 +99,7 @@ public static class ServiceFactory
         var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var source = FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
+        source ??= FileSystemKnowledgeSource.UnderFolder(options.RepositoryRoot);
 
         // What was pushed in earlier sessions is part of who is out there NOW — a remote service knows
         // the family only through these, and even a local one may be told about a repository it cannot
