@@ -1538,3 +1538,16 @@ research's progressive delegation is declined by name, because approval fatigue 
 and a surface that learns from a trained reviewer learns the wrong thing), D24 (no model named), and
 D41's tokens, status palette and accessibility rules. The build order is five session-sized items,
 SURF2–SURF6.
+
+**Amended 2026-09-21, the same day, on the owner's direction — the surface is built component by
+component.** "This is a large UI/UX as a whole, so develop it component by component — more of an
+atomic design pattern — so each part can be tested one by one." The method is
+`docs/2026-09-21-working-surface-components.md`, and it changes the build rather than the design:
+SURF4 becomes four items cut along the layers (atoms and helpers, the rail, the attended session, the
+view), each part gets a story before it exists and its own test, and **a molecule imports no hook** —
+the rule that makes every state reachable by passing props, asserted by a test so it cannot quietly
+stop being true. What was deliberately *not* adopted is the folder taxonomy: `atoms/molecules/organisms/`
+scatters one feature across three directories and starts a taxonomy argument on every file, so the
+layer is the dependency rule and the surface's components sit together in `src/work/`. Nothing about
+D41's language or D42's stack moves — stories import the shipped components, so design and product
+cannot drift.

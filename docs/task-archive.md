@@ -1753,3 +1753,40 @@ on its splash forever. Proven end to end on the real window: started on a scratc
 its six nav items **including `Machine`**, clicked through to Projects, and captured a 2560×1600 PNG
 of the WebView2 composition. Nothing in the shipped app changed — the whole debug surface is two
 environment variables a dev run sets.
+
+## SURF1a — the working surface's component plan (2026-09-21)
+
+> Asked for by the owner after the design landed: "because this is a large UI/UX as a whole you
+> probably need to develop this component by component — more of an atomic design pattern — so that
+> you can test each part one by one (you can setup a development plan for this)."
+
+✅ done 2026-09-21 — `docs/2026-09-21-working-surface-components.md`, recorded as **D52's amendment**;
+SURF4 is now SURF4a–d in the backlog, and SURF5/SURF6's UI halves name their molecules.
+
+**What it changes: the build, not the design.** Every existing view was built whole and is tested
+whole (`shell.test.tsx` drives three views end to end), which is right for a list and a drawer. The
+Work view is a rail, a head, a live stream, a timeline, a composer, an attention band and a diff
+pane — assembled as one file, **the first thing that renders is the last thing**, and the states that
+matter most (nine session states, a parked session, a stream that dropped 12,000 lines) are reachable
+only by arranging the world that produces them.
+
+**The layer is a dependency rule, not a folder chart.** Atoms → molecules → organisms → page → shell,
+with the one load-bearing rule: **a molecule imports no hook**, so every state is reachable by passing
+props — and it is *checkable*, so a test asserts that no presentational file imports `./queries` or
+`./shell`, in the same shape as the gate-list and catalogue checks already here. Three loops per part,
+in order: a story first (D42 — and a story for a component that does not exist is the cheapest failing
+test), vitest (props for a molecule, the mocked bridge for an organism), then the real window via
+DEV1's `npm run desktop -- run|eval|shot`, which is the loop that did not exist when the other views
+were built. Plus one multiplier with no new gate row: `composeStories` renders every story inside the
+existing vitest run.
+
+**Deliberately not adopted: the `atoms/molecules/organisms/` folder taxonomy.** It scatters one
+feature across three directories and starts a taxonomy argument on every file; the surface's
+components sit together in `src/work/` and shared atoms stay in `ui.tsx`, where the other four views
+already find them. Recorded as reversible — moving files later is mechanical, unpicking a hook out of
+twelve molecules is not.
+
+**The inventory is derived, not invented** — every row cites the design section that asks for it: three
+atoms (`Dot`, `MonoWell`, `MetaLine`), two pure helpers, seven molecules, six organisms, one page. The
+helper worth naming is **`SESSION_TONE`**: `QUEST_TONE` exists because a fifth quest status must not
+ship half-toned, and a session pill today is `live ? taken : neutral` — eight states wearing two tones.

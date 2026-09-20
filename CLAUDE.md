@@ -116,7 +116,10 @@ risk, **authorship** was.
   exclusion, and a repository may have more than one*, which keeps "two agents in one tree corrupt it"
   intact and drops only the incidental cap that a repository has one tree — and **D52**, the surface
   itself. The build order is **SURF2–SURF6** in `TASKS.md`, in order; SURF2 moves the lock without
-  changing any behaviour, which is what makes the rest safe.
+  changing any behaviour, which is what makes the rest safe. **Anything with a screen in it is built
+  component by component** — `docs/2026-09-21-working-surface-components.md` (D52 as amended): a story
+  before the component, its own test, and **a molecule imports no hook**, which is what makes every
+  state reachable by passing props.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).

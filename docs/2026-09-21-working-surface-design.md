@@ -268,15 +268,21 @@ The same discipline: **driven, not asserted, no model in the gate.**
 
 ## 11. The build order
 
-Five session-sized items, each TDD, each gate-green, each moved to the archive on completion.
+Session-sized items, each TDD, each gate-green, each moved to the archive on completion.
 
 | Item | What lands |
 |---|---|
 | **SURF2** | The lock keys on the tree. The session record names its tree; `ActiveForAsync` and the ledger's refusals move with it; the planner keeps its repository rule. Nothing creates a tree yet — every session runs in the registered root, so behaviour is identical and the rehearsal proves it. |
 | **SURF3** | Session trees. `git worktree` under `~/.daoris/trees/`, opt-in per repository, with both editors (D50); `connect` refused from a linked worktree; removal that refuses to destroy work; the feed still reads only the registered root. |
-| **SURF4** | The Work view. The sixth nav item, the rail, the attended session, the promoted stream, the timeline, the composer, session start moved here, the last-view memory. |
+| **SURF4a–d** | The Work view, **component by component** — the atoms and the two helpers, the rail, the attended session, then the view. |
 | **SURF5** | Attention. Overview's *what needs you* band, `AwaitingPerson`'s surface and its three moves, the sidebar counts, the OS notification and its setting, and the terminal's half on `daoris-driver`. |
 | **SURF6** | Review. The diff over the bridge, bounded and stated; merge and discard as the person's acts; the browser's absence gated. |
+
+**How the screens are built is its own document** (owner's direction, 2026-09-21, recorded as D52's
+amendment): `docs/2026-09-21-working-surface-components.md` carries the layers, the inventory and the
+loops each part passes. It restructures the build and changes nothing above it — a rail, a head, a
+live stream, a timeline, a composer and a diff assembled as one view would be a file in which the
+first thing that renders is the last thing.
 
 ## 12. Deliberately not in this design
 

@@ -111,3 +111,11 @@ It is the **design tool**: where states are designed, reviewed and kept — incl
 data rarely shows (a declined quest with a long note, an empty family, a keyed remote's read-only
 refusal). It is not a second app: stories import the shipped components and the shipped tokens, so a
 divergence between design and product is a build error, not a discovery.
+
+**Since 2026-09-21 it is also the first loop a component passes** (D52 as amended,
+`docs/2026-09-21-working-surface-components.md`): the working surface is built component by component,
+and a story for a component that does not exist yet is the cheapest available failing test. Two rules
+come with it and apply to anything built that way — **a presentational component imports no hook**, so
+every state is reachable by passing props rather than by arranging the world that produces it (a test
+asserts the import boundary), and **every story is also a smoke test**, rendered by `composeStories`
+inside the existing vitest run rather than behind a new gate row.

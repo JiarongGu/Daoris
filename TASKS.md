@@ -128,9 +128,11 @@ takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace
 **HARNESS2** (a `codex` session adapter). Four **held** items sit below those; do not pick one up until
 its trigger has arrived. Nothing is pushed or published, and a release is still blocked on REH1.
 
-- **Read first for SURF work:** `docs/2026-09-21-working-surface-design.md` (the contract) with
-  `docs/2026-09-20-working-surface-research.md` behind it (the field, and what Daoris already has that
-  it does not), and **D51/D52**. Two sentences from it carry the most weight: the planner keeps one
+- **Read first for SURF work:** `docs/2026-09-21-working-surface-design.md` (the contract),
+  `docs/2026-09-21-working-surface-components.md` (**how the screens get built** — the layers, the
+  inventory, the three loops each part passes) with
+  `docs/2026-09-20-working-surface-research.md` behind them (the field, and what Daoris already has
+  that it does not), and **D51/D52**. Two sentences from the contract carry the most weight: the planner keeps one
   *driven* session per repository even after the lock moves (D46 §9 survives — pacing a domain and
   preventing corruption are different jobs), and **a fresh tree holds nothing git does not track**,
   which is the price the creating sentence has to state out loud.
@@ -227,6 +229,10 @@ session-sized landing, TDD, gates green, moved to the archive on completion.
 
 The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
 them in order**: SURF2 moves the lock without changing behaviour, which is what makes SURF3 safe.
+Everything with a screen in it also follows `docs/2026-09-21-working-surface-components.md` — the
+surface is built **component by component**, each with its story and its own test, because a rail, a
+head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
+thing that renders is the last thing.
 
 - [ ] **SURF2 — the lock keys on the tree** (design §2, D51). The session record names the **tree** it
   runs in; `SessionStore.ActiveForAsync` and `SessionLedger`'s two refusals key on that instead of the
@@ -253,18 +259,46 @@ them in order**: SURF2 moves the lock without changing behaviour, which is what 
   rule stays on the root and is vacuous in a fresh tree, which is how a person's work in flight stops
   holding the driver.
 
-- [ ] **SURF4 — the Work view** (design §3, D52). The sixth nav item: the sessions rail grouped by
-  repository with **derived identity** (repository · kind · the quest's title or the conversation's
-  first line · state · age), and the attended session — head, the **promoted** stream, the observed
-  timeline, and the chat composer with its two distinct endings. It is the one view that breaks the
-  reading-width cap. Starting a session moves here (repository, harness, profile, and whether it opens
-  its own tree); **the stream gets one home** — Quests keeps the record summary and gains a door, and
-  Projects keeps the registry's own controls. The shell remembers the last view. Both locale
-  catalogues, stories for the states real data rarely shows, and the vitest inner loop over a mocked
-  bridge; the Playwright loop holds the record half. **No step-parsing of the stream** — it was
-  rejected by name (D52), and re-proposing it needs the D23/D24 argument answered first.
+**SURF4 is four items, cut along the layers** (owner, 2026-09-21: *"this is a large UI/UX as a whole,
+so develop it component by component — more of an atomic design pattern — so each part can be tested
+one by one"*). The method, the inventory and the dependency rule are
+`docs/2026-09-21-working-surface-components.md`; read it before starting any of the four. Its one
+load-bearing rule: **a molecule imports no hook**, which is what makes every state reachable by
+passing props — and a test asserts it, so it cannot quietly stop being true.
 
-- [ ] **SURF5 — attention** (design §4, D52). Overview's **what needs you** band (parked first, then
+- [ ] **SURF4a — the parts everything else is made of** (components §4). Three atoms in `ui.tsx` with
+  a story per state — `Dot` (live/attention, always beside a label, never hue alone), `MonoWell` (the
+  verbatim well with its "what fell out" footer, extracted from `SessionConsole`), `MetaLine`. Two
+  pure helpers: **`SESSION_TONE`**, exhaustive at compile time — the twin of `QUEST_TONE`, and the
+  reason it exists, since a session pill today is `live ? taken : neutral` and wears two tones for
+  nine states — and **`sessionTitle`**, the one derivation of a session's identity, so the rail and
+  the head cannot disagree. Then the **presentational-import check** (no `./queries` or `./shell`
+  from a molecule; sabotage-test it) and **stories as smoke tests** via `composeStories` inside the
+  existing vitest run — no new gate row.
+
+- [ ] **SURF4b — the rail** (components §4–§5). `SessionRow` and `RepositoryGroup` as props-only
+  molecules — all nine states, driven vs chat, no quest, long and CJK titles, selected — then
+  `SessionRail` over them: grouped by repository, the group header carrying drivable/held/busy, the
+  empty state, selection. Mocked-bridge vitest for the organism only.
+
+- [ ] **SURF4c — the attended session** (design §3, components §4). `SessionHead` (state, repository,
+  tree, quest, tool + account, age; parked sessions show their analysis at the top), `TimelineEntry`
+  and `SessionTimeline` — the **observed** audit layer: state changes, quest transitions, commits
+  landing. **No step-parsing of the stream**: it was rejected by name (D52), and re-proposing it means
+  answering the D23/D24 argument first. The stream is promoted out of the drawer into
+  `AttendedSession` — `SessionConsole` moves, it does not get rewritten. First real-window pass
+  (`npm run desktop -- shot`).
+
+- [ ] **SURF4d — the view** (design §3). `Composer` with its two distinct endings, then `WorkView`:
+  the full-bleed layout (the one view that breaks the reading-width cap), the sixth nav item, the
+  last-view memory, and **one home for the stream** — Quests keeps the record summary and gains a door,
+  Projects keeps the registry's own controls. Starting a session moves here (repository, harness,
+  profile, and whether it opens its own tree). Both locale catalogues throughout; the page suite in
+  the vitest shape `shell.test.tsx` already uses, Playwright for the record half, and a real-window
+  pass to close it.
+
+- [ ] **SURF5 — attention** (design §4, D52; its UI half follows the component plan —
+  `AttentionRow` as a props-only molecule, `AttentionBand` over it). Overview's **what needs you** band (parked first, then
   finished-and-unreviewed, then quests nobody can take); `AwaitingPerson`'s surface — its analysis at
   the top of the head, and exactly the three moves the ledger already allows, **no new states**; the
   sidebar's two counts, only one of which wears a status hue; and the **OS notification on park and on
@@ -273,7 +307,8 @@ them in order**: SURF2 moves the lock without changing behaviour, which is what 
   `daoris-driver` on the machine that holds the sessions (the `daoris` CLI's offline shape does not
   change), because a headless machine has no screen to notify and still needs the answer (D50).
 
-- [ ] **SURF6 — review: the diff** (design §5, D52). The session's landed work as a diff, computed by
+- [ ] **SURF6 — review: the diff** (design §5, D52; same method — `DiffFileRow` as a molecule with
+  every file state in its story, `DiffPane` over it). The session's landed work as a diff, computed by
   git where the tree is and carried over the bridge — desktop-only for the console's reason (D47 §4),
   measured from the `HEAD` the driver already records, **bounded and saying what it truncated**. Merge
   into the canonical line and discard the tree are the person's explicit acts: merge is local and
