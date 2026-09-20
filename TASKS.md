@@ -31,14 +31,17 @@ the four declared gates, and the shell's 1,128 lines had no tests at all — so 
 made was reaching people as a blank failure. Both are fixed and gated, along with four smaller things
 the same review noticed. **The owner then set the next direction (2026-09-20): the desktop becomes a
 user-driven working surface — code sessions the way a terminal agent CLI holds them, but across
-agents, repositories and concurrent sessions, designed with real UI/UX (SURF1, researched in
-`docs/2026-09-20-working-surface-research.md`).** Beside it sit three smaller leftovers — CANON7,
-WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind.
+agents, repositories and concurrent sessions, designed with real UI/UX (researched in
+`docs/2026-09-20-working-surface-research.md`).** That direction is now **designed** (SURF1 →
+`docs/2026-09-21-working-surface-design.md`, 2026-09-21): **D51** settles the isolation model — the
+tree is the unit of exclusion and a repository may have more than one — and **D52** settles the
+surface, with a build order of five items, **SURF2–SURF6**. Beside them sit three smaller leftovers —
+CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind.
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-193 CLI tests, 248 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
+194 CLI tests, 248 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
 2026-09-18, plus a no-staged-leftovers check since REV1), **154/154 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
@@ -113,17 +116,26 @@ harnesses those sessions run on are Daoris's to find, install, update and hold m
 without ever touching a credential. **And coexistence**: the canon no longer instructs anything a
 contributor without Daoris cannot do.
 
-**The arc is closed and reviewed (REV2), and the owner has set the next direction: the desktop becomes
-a working surface (SURF1).** That is the large one and it is a *design* session — read
-`docs/2026-09-20-working-surface-research.md` before anything else, and settle the isolation model as a
-numbered decision before drawing a single screen; it is the question everything else follows from.
+**The arc is closed and reviewed (REV2), the owner set the next direction — the desktop becomes a
+working surface — and SURF1 has designed it (2026-09-21).** The contract is
+`docs/2026-09-21-working-surface-design.md`; the decisions are **D51** (the isolation model, settled
+first because everything follows from it) and **D52** (the surface). **The next work is SURF2** — the
+lock keys on the tree, with behaviour deliberately unchanged — and then SURF3–SURF6 in order. Read the
+contract and both decisions before picking any of them up; each item cites its sections.
 
-Smaller and independent of it: **CANON7** (a decision to bring the owner rather than work to do — it
+Smaller and independent of them: **CANON7** (a decision to bring the owner rather than work to do — it
 takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only) or
 **HARNESS2** (a `codex` session adapter). Four **held** items sit below those; do not pick one up until
 its trigger has arrived. Nothing is pushed or published, and a release is still blocked on REH1.
 
-- **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
+- **Read first for SURF work:** `docs/2026-09-21-working-surface-design.md` (the contract) with
+  `docs/2026-09-20-working-surface-research.md` behind it (the field, and what Daoris already has that
+  it does not), and **D51/D52**. Two sentences from it carry the most weight: the planner keeps one
+  *driven* session per repository even after the lock moves (D46 §9 survives — pacing a domain and
+  preventing corruption are different jobs), and **a fresh tree holds nothing git does not track**,
+  which is the price the creating sentence has to state out loud.
+- **Read first for anything else** — the arc the SURF work stands on:
+  `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
   direction, the argued rejections, and management parity — D50 binds every item), with D45–D47
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
@@ -191,7 +203,7 @@ its trigger has arrived. Nothing is pushed or published, and a release is still 
   call, and the live consumer count is zero.
 - **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
   up only when its trigger has actually arrived.
-- **Verify before claiming done, always:** `npm run verify` (CLI 192 + `check` + version agreement),
+- **Verify before claiming done, always:** `npm run verify` (CLI 194 + `check` + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
   (130), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (39), `npm run rehearse:family` (154/154), `npm run test:web` (55 + 9). If a `bin`-driven gate is red
@@ -201,46 +213,69 @@ its trigger has arrived. Nothing is pushed or published, and a release is still 
 ## Backlog
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
-them. The three items below it left behind are **actionable now**; the four after them are **held**,
-each waiting on an external trigger that has not arrived. Each item is one session-sized landing, TDD,
-gates green, moved to the archive on completion.
+them. **SURF1 designed the next direction and is in the archive too**; its build order is the five
+items below, in order. The three after them are the arc's leftovers, **actionable now**; the four
+after those are **held**, each waiting on an external trigger that has not arrived. Each item is one
+session-sized landing, TDD, gates green, moved to the archive on completion.
 
-### The next direction — the desktop becomes a working surface
+### The working surface — the build order (D51/D52, designed 2026-09-21)
 
-**Set by the owner, 2026-09-20:** the desktop half of Daoris is becoming a **user-driven
-application**, so it must be developed with real UI/UX — and it should hold **code sessions the way a
-terminal agent CLI does, but across different agents, repositories, and concurrent sessions.**
+The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
+them in order**: SURF2 moves the lock without changing behaviour, which is what makes SURF3 safe.
 
-- [ ] **SURF1 — design the working surface.** A design session producing a contract and a numbered
-  decision, the way D41 → `2026-09-19-platform-ux.md` and D48/D49 → their two contracts did. **The
-  research is already done and written down: read `docs/2026-09-20-working-surface-research.md`
-  first** — it records what the field has settled on, what Daoris already has that the field does not,
-  and the questions the design must answer. Three things from it govern the session:
-  - **The platform today is an operations console; this asks for a working surface, and they are
-    different products.** One optimises for scanning state, the other for holding attention on one
-    thing while several others run. The existing design language (tokens, the validated status
-    palette, the accessibility rules) stays — a second visual language inside one app is what D41 was
-    written to prevent — but the *shape* of the shell is open.
-  - **Settle the isolation model FIRST, and record it as a decision, because it is not a layout
-    question.** The field's answer is worktree-per-session; Daoris's is one active session per
-    repository, enforced in one place and asserted in both directions by the rehearsal. Concurrency
-    *across* repositories needs no change; concurrency *within* one does, and a working surface will
-    make people want it. Choosing the worktree moves the unit of exclusion off the repository and
-    touches the registry, the clean-tree rule, evidence, `WorkingTree`, WSP4's provenance stamp and
-    the ledger's lock. Choosing to keep the lock is coherent and caps a person at one session per
-    repository forever. **Either way it is D-numbered before anything is drawn.**
-  - **Mid-run visibility is load-bearing, not decoration** — no-visibility sessions showed 3× the
-    abandonment at identical output quality. SES1's console exists but lives in a drawer; the design
-    should assume it is promoted, and that `AwaitingPerson` — a state that already means "only the
-    person can clear this" and has **no surface at all** — gets one.
+- [ ] **SURF2 — the lock keys on the tree** (design §2, D51). The session record names the **tree** it
+  runs in; `SessionStore.ActiveForAsync` and `SessionLedger`'s two refusals key on that instead of the
+  repository name, and both sentences name the tree that holds it. **Nothing creates a tree yet** —
+  every session's tree is the registered root, so behaviour is identical and the family rehearsal
+  proves it, which is the whole point of landing this separately. The session store **adds a column**
+  and preserves its rows (a record is the reviewable trace of work that happened; nothing can
+  re-derive it). The tree path is **machine-local material and inherits the transcript's three
+  guards** — stripped for a non-loopback caller, absent from the feed's shape, a literal NULL in the
+  store's mirror — and the rehearsal's byte-level scan of the remote store grows a third string to
+  look for, beside the root and the profile name.
 
-  Boundaries that do not move, and should be restated in the contract: D38 (one UI — desktop-only is
-  allowed only where it is *structurally* desktop-only, as the console and chat already are under
-  D47 §4), D31 (doctrine unwritable everywhere), D37 (a better approval surface must not widen
-  autonomy; destructive, irreversible and outward-facing stay human), D24 (no model named).
+- [ ] **SURF3 — session trees** (design §2, D51). `git worktree` under
+  `~/.daoris/trees/<workspace>/<repository>/`, created **only on request** and opt-in per repository,
+  with both editors (D50: the desktop, and a `daoris driver` verb). Branch named for the session,
+  never reused, based on the canonical line as WSP4 already resolves it — falling back to the root's
+  `HEAD` where none is declared, **saying which it used**. Four rules carry the risk: **the creating
+  sentence states that a fresh tree holds nothing git does not track** (no dependencies, no build
+  outputs — the price of D51, paid per repository); **`connect` from a linked worktree is refused
+  naming the main one** (`--git-common-dir` against `--git-dir`; a re-pointed registration keeps
+  working right up until the tree is removed, which is the worst failure available here); **removal
+  refuses to destroy work**, naming what would be lost; and **the feed still reads only the registered
+  root**, so WSP4's provenance model is untouched — assert it rather than assume it. The clean-tree
+  rule stays on the root and is vacuous in a fresh tree, which is how a person's work in flight stops
+  holding the driver.
 
-  Expected output: a design document, a decision entry, and a build order of session-sized items —
-  not code.
+- [ ] **SURF4 — the Work view** (design §3, D52). The sixth nav item: the sessions rail grouped by
+  repository with **derived identity** (repository · kind · the quest's title or the conversation's
+  first line · state · age), and the attended session — head, the **promoted** stream, the observed
+  timeline, and the chat composer with its two distinct endings. It is the one view that breaks the
+  reading-width cap. Starting a session moves here (repository, harness, profile, and whether it opens
+  its own tree); **the stream gets one home** — Quests keeps the record summary and gains a door, and
+  Projects keeps the registry's own controls. The shell remembers the last view. Both locale
+  catalogues, stories for the states real data rarely shows, and the vitest inner loop over a mocked
+  bridge; the Playwright loop holds the record half. **No step-parsing of the stream** — it was
+  rejected by name (D52), and re-proposing it needs the D23/D24 argument answered first.
+
+- [ ] **SURF5 — attention** (design §4, D52). Overview's **what needs you** band (parked first, then
+  finished-and-unreviewed, then quests nobody can take); `AwaitingPerson`'s surface — its analysis at
+  the top of the head, and exactly the three moves the ledger already allows, **no new states**; the
+  sidebar's two counts, only one of which wears a status hue; and the **OS notification on park and on
+  end**, never for an ending the person caused, per machine and off in one click — the shell's own
+  code over WinForms, which **closes driver design open question 5**. The terminal's half is
+  `daoris-driver` on the machine that holds the sessions (the `daoris` CLI's offline shape does not
+  change), because a headless machine has no screen to notify and still needs the answer (D50).
+
+- [ ] **SURF6 — review: the diff** (design §5, D52). The session's landed work as a diff, computed by
+  git where the tree is and carried over the bridge — desktop-only for the console's reason (D47 §4),
+  measured from the `HEAD` the driver already records, **bounded and saying what it truncated**. Merge
+  into the canonical line and discard the tree are the person's explicit acts: merge is local and
+  reversible and stays a press because it is where D37's verification lands; discard confirms and
+  names what would be lost. The evidence string is unchanged for whoever reads the record from
+  another machine. Playwright holds the negative guarantee: a browser sees the record and never a
+  diff, a stream, a tree path or a notification setting.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

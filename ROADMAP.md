@@ -56,7 +56,7 @@ desktop made reached people as a blank failure. Both fixed and gated.
 
 ---
 
-## The next direction: the desktop as a working surface (set 2026-09-20)
+## The next arc: the desktop as a working surface (D51/D52, set 2026-09-20, designed 2026-09-21)
 
 **The desktop half is becoming a user-driven application, and it should hold code sessions the way a
 terminal agent CLI does — across different agents, repositories and concurrent sessions, designed with
@@ -64,11 +64,24 @@ real UI/UX.** That is a different product from what exists: the platform today i
 console*, which optimises for scanning state, and a working surface optimises for holding attention on
 one thing while several others run.
 
-The research is done and written down — `docs/2026-09-20-working-surface-research.md` — and **SURF1**
-in `TASKS.md` is the design session it feeds. One question comes before any screen: **does the working
-tree stay the unit of exclusion, or does a session get its own worktree?** Concurrency across
-repositories needs nothing; concurrency *within* one changes the registry, the clean-tree rule,
-evidence, provenance and the ledger's lock. It is a numbered decision, not a layout choice.
+The research is `docs/2026-09-20-working-surface-research.md`; the contract is
+`docs/2026-09-21-working-surface-design.md` (SURF1, done 2026-09-21). The question that came before
+any screen is settled as **D51**: **the tree is the unit of exclusion, and a repository may have more
+than one.** "One session per repository" was two claims welded together — *two agents in one tree
+corrupt it*, which is permanent, and *a repository has one tree*, which was only ever a fact about how
+the registry was built. Unwelding them lets the person and the driver work in one repository at once
+without weakening anything; D46 §9 survives, because the planner still paces a domain at one driven
+session. **D52** settles the surface: Work as a sixth view rather than a second application, the
+stream promoted with an observed timeline beside it (and no screen-scraping of another program's
+stdout), `AwaitingPerson` given a surface at last, review as a real diff, and no PTY.
+
+| Item | What | Where it stands |
+|---|---|---|
+| **SURF2 · The lock keys on the tree** | The record names its tree; the ledger's refusals move with it; the planner's rule does not. Nothing creates a tree yet, so behaviour is identical | **Next** |
+| **SURF3 · Session trees** | `git worktree` under `~/.daoris/trees/`, on request and opt-in; `connect` refused from a linked worktree; removal that refuses to destroy work; only the registered root ever feeds | Planned |
+| **SURF4 · The Work view** | The sessions rail, the attended session, the promoted stream, the timeline, the composer; one home for the stream | Planned |
+| **SURF5 · Attention** | Overview's *what needs you*, `AwaitingPerson`'s surface, the sidebar counts, OS notification on park and end | Planned |
+| **SURF6 · Review** | The diff over the bridge, bounded; merge and discard as the person's acts | Planned |
 
 ---
 

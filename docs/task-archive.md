@@ -1637,3 +1637,67 @@ git-as-store prescription closed per D47, D36/D31 gained their supersession note
 design's second amendment is marked in place. Tests grew 128→135 CLI, 158→170 service, 49→53 driver,
 21→27 web vitest, 52→53 release rehearsal, 74→75 family rehearsal — the new checks are the guarantees
 the arc claimed in prose.
+
+## SURF1 — design the working surface (2026-09-21)
+
+> A design session producing a contract and a numbered decision, the way D41 →
+> `2026-09-19-platform-ux.md` and D48/D49 → their two contracts did. **The research is already done and
+> written down: read `docs/2026-09-20-working-surface-research.md` first** — it records what the field
+> has settled on, what Daoris already has that the field does not, and the questions the design must
+> answer. Three things from it govern the session: the platform today is an operations console and this
+> asks for a working surface, which are different products; **settle the isolation model FIRST, and
+> record it as a decision, because it is not a layout question**; and mid-run visibility is
+> load-bearing, not decoration. Boundaries restated in the contract: D38, D31, D37, D24. Expected
+> output: a design document, a decision entry, and a build order of session-sized items — not code.
+
+✅ done 2026-09-21 (design; the build continues as SURF2–SURF6) —
+`docs/2026-09-21-working-surface-design.md`, recorded as **D51** (the isolation model) and **D52** (the
+surface). Every question of research §5 is answered, and the collision of §4 is settled first.
+
+**The isolation model (D51): the tree is the unit of exclusion, and a repository may have more than
+one.** "One active session per repository" turned out to be two claims welded together — *two agents in
+one working tree corrupt each other's git state*, which is the reason and does not move, and *a
+repository has one working tree*, which is not a fact about git at all but about how the registry was
+built. Unwelding them keeps the guarantee and drops the incidental cap. **D46 §9 survives intact**: the
+planner keeps one *driven* session per repository, because pacing a domain and preventing corruption
+are different jobs and a shared mechanism would make one answer the other; what the second tree buys is
+the person and the driver coexisting, and a person is not a second workstream. Nine rules make it safe,
+each with its reason — the registered root is the only tree that feeds (WSP4 untouched); Daoris owns the
+location and git the contents (the credential-profile arrangement, D49 §4); a tree exists only on
+request, so silence is today's behaviour byte for byte; **a fresh tree holds nothing git does not
+track, and the sentence that creates it says so**, because the missing dependencies are this
+decision's real price; the clean-tree rule stays on the root and is vacuous in a fresh tree, which is
+how a person's work in flight stops holding the driver without a session being entangled with it;
+nothing merges itself and nothing deletes itself; `connect` from a linked worktree is refused naming
+the main one, because a re-pointed registration keeps working right up until that tree is removed; and
+a tree path is machine-local material carrying the transcript's three guards. Rejected with reasons:
+keeping the repository as the unit (coherent and free, and it caps the product permanently — with
+nothing deployed, the unit of exclusion is the worst thing here to retrofit), a container per session
+(isolates the toolchain too, so every harness, profile and gate must live in an image somebody
+maintains), and one directory switching branches (serialises exactly what must run at once).
+
+**The surface (D52).** Work is a **sixth view, not a second application** — D41's language stays whole
+and only Work's shape is new, because inverting the shell around sessions produces a second visual
+language inside one app within a week. Sessions are **grouped by repository with derived identity**
+(tab overload is the field's named anti-pattern; hand-naming waits until two real sessions cannot be
+told apart). The **stream is promoted out of the drawer and gets one home**, with a **timeline of what
+was observed** beside it — state and quest transitions, tool and account, commits landing — and
+**parsing the stream into steps is rejected by name**: the field's activity panel assumes structured
+events, Daoris has none, and the only way to get them is to screen-scrape another program's stdout,
+which is the coupling D23/D24 exist to prevent. **`AwaitingPerson` finally has a surface** — its
+analysis at the top of the head and exactly the three moves the ledger already allows, no new states —
+beside Overview's *what needs you* band, two sidebar counts, and an **OS notification on park and on
+end, never for an ending the person caused**, which closes driver design open question 5 as the shell's
+own code. **Review becomes a diff**, computed where the tree is and carried over the bridge
+(machine-local, desktop-only, D47 §4), bounded and stating what it truncated, with merge and discard as
+the person's explicit acts — merge stays a press because it is where D37's verification lands. **No
+PTY**: SES2's transcript-and-input is kept, the escape hatch is the person's own terminal via
+`daoris-driver chat`, and the open question carries its trigger. D37 is restated in the form this
+surface needs — **a better approval surface must not widen autonomy** — and the research's progressive
+delegation is declined by name, because approval fatigue trains the reviewer and a surface that learns
+from a trained reviewer learns the wrong thing.
+
+The build order is five session-sized items, SURF2–SURF6, in `TASKS.md`: the lock keys on the tree
+(behaviour identical, proven by the rehearsal), session trees, the Work view, attention, review. No
+code landed; the verification plan names what each loop owns, including the browser's negative
+guarantee — a browser sees records and never a stream, a diff, a tree path or a notification setting.
