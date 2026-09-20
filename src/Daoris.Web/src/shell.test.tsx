@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -207,6 +207,84 @@ describe('the shell-attached registry management', () => {
 
     expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/registry/engine', { method: 'DELETE' });
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing was deleted'));
+  });
+
+  /**
+   * The console (D49 §2): the transcript capture, streaming. It reaches the page over the shell's
+   * bridge and has no HTTP route at all, because output is transcript-class material and never leaves
+   * the machine that produced it (D47 §4).
+   */
+  it('a session drawer asks the driver for the console and renders it verbatim', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? {
+          session: 's1a2b3c4',
+          lines: [{ sequence: 1, text: '$ npm test' }, { sequence: 2, text: 'ok 1337 passing' }],
+          sequence: 2, live: true, dropped: 0,
+        }
+      : DRIVER_STATE));
+
+    show(<QuestsView notify={() => {}} />);
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+
+    expect(await screen.findByText(/ok 1337 passing/)).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', {
+      payload: { id: 's1a2b3c4' },
+    });
+  });
+
+  /** Live lines arrive as events and join the backlog as one stream, keyed by the driver's sequence. */
+  it('live output joins the backlog without repeating what was already shown', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'first' }], sequence: 1, live: true, dropped: 0 }
+      : DRIVER_STATE));
+
+    show(<QuestsView notify={() => {}} />);
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    await screen.findByText(/first/);
+
+    // A batch that repeats a line the page already holds, and adds one it does not.
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_OUTPUT')!({
+        session: 's1a2b3c4',
+        lines: [{ sequence: 1, text: 'first' }, { sequence: 2, text: 'second' }],
+      });
+    });
+
+    const well = await screen.findByText(/second/);
+    expect(well.textContent).toBe('first\nsecond');
+  });
+
+  /**
+   * The console is the part of the drawer that may be missing — a shell older than this surface
+   * answers something else entirely. It degrades to absent; the RECORD is what the drawer is for.
+   */
+  it('an answer that is not a console leaves the record standing', async () => {
+    invoke.mockImplementation(async () => DRIVER_STATE); // no `lines` anywhere in it
+
+    show(<QuestsView notify={() => {}} />);
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+
+    expect(await screen.findByText(/s1a2b3c4 · claude-code/)).toBeTruthy();
+    expect(screen.queryByText('console')).toBeNull();
+  });
+
+  /** Another session's output is not this drawer's — the event carries whose it is. */
+  it('a batch for a different session is ignored', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'mine' }], sequence: 1, live: true, dropped: 0 }
+      : DRIVER_STATE));
+
+    show(<QuestsView notify={() => {}} />);
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    await screen.findByText(/mine/);
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_OUTPUT')!({
+        session: 'somebody-else', lines: [{ sequence: 1, text: 'theirs' }],
+      });
+    });
+
+    expect(screen.queryByText(/theirs/)).toBeNull();
   });
 
   /**

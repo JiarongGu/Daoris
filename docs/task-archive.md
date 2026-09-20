@@ -1226,6 +1226,31 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## SES1 — the console (2026-09-20)
+
+> **SES1 — the console.** The capture pump tees to a bounded per-session ring buffer; the shell's
+> IPC gains `TAIL_SESSION` + `SESSION_OUTPUT`; the session drawer renders the stream verbatim,
+> desktop-only (transcript-class material never leaves the machine, D47 §4). Interactive design §2.
+
+✅ done 2026-09-20 — a person can watch a session say things, instead of reading a file afterwards.
+**The pump tees**: one loop, two destinations, and the file is written first — the durable copy must
+never lose a line to an in-memory reader's problem. `SessionOutput` holds 500 lines per session and
+16 sessions, lives beside `SessionProcesses` in the driver (transcript-class material has no HTTP
+surface, structurally, not by policy), and is **optional** — the headless host constructs none, so a
+buffer exists only where something reads it. **Sequence numbers make two sources one stream**: the
+page asks `TAIL_SESSION` once on open, lives on batched `SESSION_OUTPUT` events after that, drops
+what it has seen, and closes a gap by asking rather than by rendering one. **Everything bounded says
+so** — dropped lines are counted and shown, because a console that silently skipped the middle of a
+log is a worse lie than one that showed nothing. **Eviction never takes a live session's buffer**,
+and an ended one is kept because how a session finished is what someone most wants to read.
+**Batched on a ~120ms window** in a shell-side `ConsoleRelay`: per-line events would turn a chatty
+session into a stalled window. **The console degrades to absent** — found by a test, where a mocked
+bridge answering the wrong shape crashed the whole drawer, which is exactly what a console must never
+do to a record. The gate reaches the durable half only: the rehearsal's stub now says something, and
+the transcript is read back to prove the pump still writes it — the in-memory half has no headless
+door by design and is held by unit and platform tests. Tests grew 74→89 driver, 36→40 web vitest,
+123→124 family rehearsal.
+
 ## WSP4 — knowledge sync semantics (2026-09-20)
 
 > **WSP4 — knowledge sync semantics.** Feeds carry git provenance stamped by the driver (commit,

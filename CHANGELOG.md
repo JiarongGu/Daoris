@@ -306,6 +306,15 @@ The first version: doctrine that installs, is checked, and flows back.
   flagged as such on the wire and the sync reports it as news rather than as a wall. Records and
   quests still travel from any checkout; only knowledge waits for the canonical line. A checkout git
   cannot answer for feeds no knowledge, and the machine that holds it says so itself.
+
+### The working surface
+
+- **A session's console, live.** The driver already captured every session's output to a transcript;
+  that capture now tees into a bounded window the desktop streams to the session drawer as it
+  happens — verbatim, never translated, and desktop-only: output is transcript-class material and has
+  no HTTP route at all, so a browser over a keyed remote sees the record and never the stream. The
+  window states what it dropped rather than showing two halves of a log as though they joined, and
+  the transcript on the driving machine still holds everything.
 - **Fixed: `refresh` re-read the repositories but never the folder.** The root's subdirectories were
   listed once at startup, so a repository created afterwards was invisible to the index while being
   fully registered and quest-addressable — and the refresh reported success either way.

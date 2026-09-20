@@ -13,7 +13,10 @@ shell: it brings up the local HTTP host — adopting one already running, spawni
 otherwise, a dev build run from its project so the bundle serves — carries the platform in its WebView
 (`ProductionUrl`, the same bytes a browser gets), runs the driver's shared watch loop in-process with
 `driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed
-by the page — drivable and hold per repository, stop a running session), edits the machine's wiring
+by the page — drivable and hold per repository, stop a running session, and since D49 §2 **the live
+console**: `TAIL_SESSION` for a session's backlog and batched `SESSION_OUTPUT` events for what it says
+next, fed by the capture pump's tee into a bounded per-session buffer that never leaves this machine),
+edits the machine's wiring
 over `DAORIS.REMOTES` (the Machine view, over the same `~/.daoris/remotes.json` the CLI edits — a key
 goes in and only its audit prefix comes back), and takes the loop and its
 owned host down with it on close, in-flight sessions ended and recorded `stopped`. The one designed

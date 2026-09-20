@@ -23,6 +23,13 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
     /// <summary>The live processes, shared across ticks — how "stop that session" reaches its target.</summary>
     public SessionProcesses Processes { get; } = new();
 
+    /// <summary>
+    /// What sessions are saying, as they say it (D49 §2) — shared across ticks for the same reason the
+    /// processes are, and readable only through this shell: output is transcript-class material and
+    /// never leaves the machine (D47 §4).
+    /// </summary>
+    public SessionOutput Output { get; } = new();
+
     /// <summary>Where this loop reads the person's choices — what the control surface edits.</summary>
     public string ConfigPath { get; } = DriverConfig.ResolvePath();
 
@@ -73,7 +80,17 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         // tick, in the shell exactly as in the headless host. Absence is silent and local.
         using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, key);
 
-        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync);
+        // Live console lines become IPC events, BATCHED by the library's relay (D49 §2). The shell's
+        // half is only what a batch becomes: the page asks for the backlog once over `TAIL_SESSION`
+        // and takes everything after it from here.
+        using var console = new ConsoleRelay(Output, (session, lines) =>
+            eventBus.EmitAsync("DAORIS", "SESSION_OUTPUT", new
+            {
+                Session = session,
+                Lines = lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
+            }));
+
+        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output);
         await _watch.RunAsync(
             async (report, _) =>
             {

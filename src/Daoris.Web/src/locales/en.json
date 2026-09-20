@@ -130,6 +130,9 @@
   "quests.session.hint": "started by the driver, and observed rather than self-reported — the process runs on the driving machine; this is its record.",
   "quests.session.stop": "stop session",
   "quests.session.stopped": "session {{id}} is being stopped — the record will say the person ended it.",
+  "quests.session.console": "console",
+  "quests.session.streaming": "live",
+  "quests.session.dropped": "{{count}} earlier line(s) fell outside the window — the transcript on the driving machine has them all",
 
   "sessionState.queued": "queued",
   "sessionState.starting": "starting",

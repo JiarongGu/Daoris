@@ -36,6 +36,33 @@ speak.
   console beneath it, verbatim in a monospace well; the driver's own sentences stay toasts. No
   translation, ever: output is data (the platform's i18n boundary).
 
+**Built 2026-09-20 (SES1).** Five choices the building settled:
+
+- **A sequence number per line, monotonic within a session.** It is what makes the backlog and the
+  live stream one stream: the page asks once on open, takes events after that, drops anything it has
+  already seen, and — if a batch does not continue where the last one ended — asks the driver for the
+  gap instead of rendering two halves as though they joined. Neither side keeps a cursor for the other.
+- **The bound is stated, not hidden.** The window holds 500 lines per session and says how many fell
+  out of it. A console that silently skipped the middle of a build log would be a worse lie than one
+  that showed nothing; the transcript on disk still has all of it.
+- **Events are batched on a ~120ms window.** One event per line is the obvious shape and the wrong
+  one: a session can emit thousands in a second, and a bridge carrying one message each turns
+  watching into a stalled window.
+- **Eviction never takes a live session's buffer.** Sixteen sessions are retained; the oldest ENDED
+  one goes first, and with all of them live nothing is evicted — dropping the console of a session
+  someone is watching would be the wrong answer to a full table. A buffer is kept after its session
+  ends, because how it finished is what a person most wants to read.
+- **The console degrades to absent.** It is the part of the drawer that may be missing — an older
+  shell answers something else entirely — so the page tolerates any shape and the record above it
+  stands regardless. Found by a test: a mocked bridge answering the wrong object crashed the drawer,
+  which is precisely what a console must never do.
+
+**What the family rehearsal can reach, and what it cannot.** The gate drives the headless host, which
+has no IPC bridge by design, so it proves the DURABLE half: the transcript still holds what the
+session said after the pump grew a second destination. The in-memory half — the buffer's bounds,
+ordering and eviction, and the page's merge of backlog with live lines — is held by the driver's own
+tests and the platform's.
+
 ## 3. Chat sessions: a conversation is a session
 
 A chat is **a person-initiated, interactive session in one repository** — the same entity the driver

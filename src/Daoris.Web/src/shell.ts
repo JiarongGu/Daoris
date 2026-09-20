@@ -1,5 +1,6 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getBridge, useShenora } from '@shenora/react';
+import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
 
 // The shell's half of the platform (D46 §6). In a browser none of this exists — the bridge is absent,
@@ -141,6 +142,95 @@ export const useWireRemote = () =>
   useWiringChange<{ workspace: string; url: string; key: string }>('SET');
 
 export const useUnwireRemote = () => useWiringChange<{ workspace: string }>('REMOVE');
+
+/**
+ * A session's console, live (D49 §2).
+ *
+ * @remarks
+ * **Desktop-only, structurally.** Output is transcript-class material — it can carry machine paths,
+ * and a transcript never leaves the machine that produced it (D47 §4) — so it arrives over the
+ * shell's bridge and has no HTTP route at all. A browser over a keyed remote sees the session's
+ * record, as it always did, and never its stream.
+ *
+ * The backlog is asked for once on open; live lines arrive as `SESSION_OUTPUT` batches. The driver's
+ * sequence numbers are what make those two sources one stream: anything already seen is dropped, and
+ * a gap — a batch that does not continue where the last one ended — is closed by asking the driver
+ * for what is missing rather than by rendering a hole nobody can see.
+ */
+export type ConsoleLine = { sequence: number; text: string };
+export type SessionTail = {
+  session: string;
+  lines: ConsoleLine[];
+  sequence: number;
+  /** Whether more is coming. False once the session's process has ended. */
+  live: boolean;
+  /** Lines that fell out of the driver's bounded window before the page asked. Shown, never hidden. */
+  dropped: number;
+};
+
+/** The page keeps what the driver keeps: enough to read, never a log file in a render tree. */
+const CONSOLE_LINES = 500;
+
+export function useSessionConsole(sessionId: string | null) {
+  const { isAvailable } = useShenora();
+  const [lines, setLines] = useState<ConsoleLine[]>([]);
+  const [live, setLive] = useState(false);
+  const [dropped, setDropped] = useState(0);
+  // The newest sequence the page holds — read inside the event handler, which must not re-subscribe
+  // every time a line arrives.
+  const seen = useRef(0);
+
+  // Defensive about the shape, deliberately: a shell older than this surface answers something else
+  // entirely, and the console is the part of the drawer that may be missing. The RECORD above it is
+  // what the drawer exists to show, and a console cannot be allowed to take it down.
+  const take = useCallback((tail: SessionTail | undefined) => {
+    setLive(Boolean(tail?.live));
+    setDropped(tail?.dropped ?? 0);
+    setLines((held) => {
+      const fresh = (tail?.lines ?? []).filter((line) => line.sequence > seen.current);
+      if (fresh.length === 0) return held;
+      seen.current = fresh[fresh.length - 1]!.sequence;
+      return [...held, ...fresh].slice(-CONSOLE_LINES);
+    });
+  }, []);
+
+  useEffect(() => {
+    seen.current = 0;
+    setLines([]);
+    setLive(false);
+    setDropped(0);
+    if (!isAvailable || !sessionId) return;
+
+    let current = true;
+    void getBridge()
+      .invoke<SessionTail>('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: sessionId } })
+      .then((tail) => { if (current) take(tail); })
+      // A console that failed to load is a quiet absence, not a toast: the record above it is the
+      // thing the drawer exists to show, and it is already there.
+      .catch(() => {});
+
+    return () => { current = false; };
+  }, [isAvailable, sessionId, take]);
+
+  useShenoraEvent('DAORIS', 'SESSION_OUTPUT', (payload) => {
+    const batch = payload as SessionTail | undefined;
+    if (!sessionId || batch?.session !== sessionId || !batch.lines?.length) return;
+
+    const first = batch.lines[0]!.sequence;
+    if (seen.current > 0 && first > seen.current + 1) {
+      // Something was missed. Ask for it rather than showing two halves as though they joined.
+      void getBridge()
+        .invoke<SessionTail>('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: sessionId, after: seen.current } })
+        .then(take)
+        .catch(() => {});
+      return;
+    }
+
+    take({ ...batch, live: true });
+  });
+
+  return { lines, live, dropped };
+}
 
 export const useStopSession = () => {
   const client = useQueryClient();

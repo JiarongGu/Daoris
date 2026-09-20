@@ -31,7 +31,7 @@ public sealed record TickReport(
 /// </remarks>
 public sealed class Driver(
     ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
-    SessionProcesses? processes = null, RemoteSyncSet? sync = null)
+    SessionProcesses? processes = null, RemoteSyncSet? sync = null, SessionOutput? output = null)
 {
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.
@@ -132,7 +132,7 @@ public sealed class Driver(
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             using var tracked = _processes.Track(sessionId, process);
-            var capture = CaptureAsync(process, transcript, ct);
+            var capture = CaptureAsync(process, transcript, sessionId, ct);
 
             await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
 
@@ -188,6 +188,14 @@ public sealed class Driver(
 
             return ($"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}", true);
         }
+        finally
+        {
+            // However this ended, the stream is over. The buffer stays readable so whoever was
+            // watching can see how it finished; the transcript remains the durable copy either way.
+            // In the finally rather than the happy path, because a session that FAILED is the one
+            // whose last lines someone most wants to read.
+            output?.Close(sessionId);
+        }
     }
 
     /// <summary>
@@ -213,20 +221,34 @@ public sealed class Driver(
         }
     }
 
-    /// <summary>Both streams into one transcript file — diagnostic, never the record (D46 §4).</summary>
-    private static async Task CaptureAsync(Process process, string transcript, CancellationToken ct)
+    /// <summary>
+    /// Both streams into one transcript file — diagnostic, never the record (D46 §4) — and, since
+    /// D49 §2, teed into the live console as they pass.
+    /// </summary>
+    /// <remarks>
+    /// One pump, two destinations, and the file is written FIRST: the durable copy must never be the
+    /// thing that loses a line to an in-memory reader's problem. The console is optional because the
+    /// headless driver has nobody to show it to — the buffer exists only where something reads it.
+    /// </remarks>
+    private async Task CaptureAsync(Process process, string transcript, string sessionId, CancellationToken ct)
     {
         await using var file = new StreamWriter(transcript, append: false);
-        var stdout = PumpAsync(process.StandardOutput, file, ct);
-        var stderr = PumpAsync(process.StandardError, file, ct);
+        var stdout = PumpAsync(process.StandardOutput, file, sessionId, output, ct);
+        var stderr = PumpAsync(process.StandardError, file, sessionId, output, ct);
         await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
+    }
 
-        static async Task PumpAsync(StreamReader reader, StreamWriter file, CancellationToken ct)
+    /// <summary>
+    /// One stream into the transcript and the console. Internal rather than local so the tee itself is
+    /// testable without a process: the property worth holding is that a line reaches BOTH.
+    /// </summary>
+    internal static async Task PumpAsync(
+        TextReader reader, TextWriter file, string sessionId, SessionOutput? output, CancellationToken ct)
+    {
+        while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
-            while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
-            {
-                lock (file) file.WriteLine(line);
-            }
+            lock (file) file.WriteLine(line);
+            output?.Append(sessionId, line);
         }
     }
 }

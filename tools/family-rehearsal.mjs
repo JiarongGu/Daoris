@@ -365,6 +365,11 @@ if (!takeAnswer.ok) {
   if (/already taken/i.test(takeAnswer.text)) process.exit(0);
   throw new Error('take failed: ' + takeAnswer.text);
 }
+// A session says things while it works, and the driver captures every line: to the transcript on
+// disk (the durable record, D46 §4) and to the live console (D49 §2). This is what the gate reads
+// back out of the transcript afterwards.
+console.log('stub: taking quest ' + id);
+
 if (/decline/i.test(title)) {
   await respond('decline', 'The stub declines what asks to be declined.');
   process.exit(0);
@@ -435,6 +440,16 @@ check(
   JSON.stringify(completed),
 );
 check('the transcript path was recorded', Boolean(completed?.transcript), JSON.stringify(completed));
+// The capture pump tees since D49 §2 — the console is a second destination, never a replacement.
+// What this gate can reach is the DURABLE half: the file still holds what the session said. The
+// in-memory half rides the shell's IPC bridge, which has no headless door by design, and is held by
+// the driver's own tests and the platform's.
+check(
+  'and the transcript holds what the session actually said',
+  existsSync(completed?.transcript ?? '')
+    && readFileSync(completed.transcript, 'utf8').includes(`stub: taking quest ${drivenId}`),
+  `${completed?.transcript}`,
+);
 const landed = run('git log --oneline', newcomer);
 check(
   'the commit is really in the newcomer’s history',

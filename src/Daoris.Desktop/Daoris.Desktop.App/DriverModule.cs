@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
@@ -36,6 +37,31 @@ internal sealed class DriverModule(IEventBus events, DriverLoop loop) : ModuleBa
                 var held = PayloadHelper.GetRequiredValue<bool>(request.Payload, "held");
                 Change(config => config.WithHold(repository, held));
                 return Task.FromResult<object?>(State());
+            }
+
+            // The console's backlog (D49 §2): what this session has said, or what it has said since
+            // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
+            // that just opened catches up, and how one that missed a batch closes the gap — the
+            // sequence numbers are the driver's, so neither side has to remember the other.
+            case "TAIL_SESSION":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                // Absent means "everything you have": a page opening a drawer has seen nothing, and
+                // making it say so explicitly would be ceremony with a wrong default available.
+                var after = request.Payload is { } payload
+                    && payload.TryGetProperty("after", out var seen)
+                    && seen.ValueKind == JsonValueKind.Number
+                        ? seen.GetInt64()
+                        : 0;
+                var tail = loop.Output.Tail(id, after);
+                return Task.FromResult<object?>(new
+                {
+                    Session = id,
+                    Lines = tail.Lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
+                    tail.Sequence,
+                    tail.Live,
+                    tail.Dropped,
+                });
             }
 
             case "STOP_SESSION":

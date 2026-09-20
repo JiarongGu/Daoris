@@ -12,7 +12,10 @@ namespace Daoris.Driver;
 /// control that needs a bounce is a control nobody trusts.
 /// </remarks>
 public sealed class DriverWatch(
-    ServiceClient service, string configPath, string home, SessionProcesses processes, RemoteSyncSet? sync)
+    ServiceClient service, string configPath, string home, SessionProcesses processes, RemoteSyncSet? sync,
+    // The live console, where something is watching (D49 §2). Null in the headless host: a buffer
+    // nobody reads is memory spent on an audience that does not exist.
+    SessionOutput? output = null)
 {
     private CancellationTokenSource _pause = new();
 
@@ -43,7 +46,7 @@ public sealed class DriverWatch(
             var config = DriverConfig.Load(configPath);
             try
             {
-                var report = await new Driver(service, config, AdapterSet.Built(), home, processes, sync)
+                var report = await new Driver(service, config, AdapterSet.Built(), home, processes, sync, output)
                     .TickAsync(ct).ConfigureAwait(false);
                 await onReport(report, config).ConfigureAwait(false);
             }
