@@ -30,7 +30,7 @@ Three parts, in build order:
 
 ---
 
-## Four artefacts
+## Five artefacts
 
 Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All five exist:
 
@@ -51,8 +51,8 @@ that workflow and is never edited by hand.
 
 ## 0.0.x — doctrine that installs, is checked, and flows back — **built**
 
-Nine commands, a canon of 8 core rules, 4 core knowledge documents, 5 core skills and 6 packs,
-120 tests. Core installs everywhere;
+Nine commands, a canon of 8 core rules, 5 core knowledge documents, 5 core skills and 6 packs,
+135 CLI tests. Core installs everywhere;
 packs are named in the manifest; the repository's own files are invisible to the tool. Drift and adoption
 collisions are distinguished by provenance and both refuse. Retirement removes a rule from every
 repository at once, and a rename is reported as one. `check` is offline by construction and gates on the
@@ -64,9 +64,10 @@ to `0.0.1` then surfaced D13 — drift was measured against the wrong side, so a
 could not propagate at all.
 
 The skills layer that once stood between here and a release is done: `doc-loader` and `pattern-finder`
-start a task, `post-feature` and `fix-log` close one, `caveman` governs output, and `skills-workflow` is
-a seventh core rule. Each was canonized from the copies found across twelve repositories and reduced to
-what they share (D14). The `doc-*` maintenance family is deliberately held (`TASKS.md` CANON4).
+start a task, `post-feature` and `fix-log` close one, `caveman` governs output, and `skills-workflow`
+joined the core rules. Each was canonized from the copies found across twelve repositories and reduced
+to what they share (D14). The `doc-*` maintenance family is deliberately not canonized (D29;
+`docs/task-archive.md` CANON4).
 
 ## Built — `Daoris.Devkit`: the same pathology, one layer down
 
@@ -111,15 +112,16 @@ a pack nobody installs is.
 service, two modes: local needs no server, no account and no network, and must stay fully useful alone.
 Shared mode is opt-in, indexing is opt-in per repository, and the untracked local directory is a hard
 exclusion rather than a permission — several siblings are private, and centralising their content is
-exactly what `sensitive-info` keeps out of tracked files. The shared store should be a **git repository**
-before a database.
+exactly what `sensitive-info` keeps out of tracked files. The shared store is one SQLite file behind
+the shared-mode host: git-as-store was priced and declined when the driver turned quests into an
+execution queue (D47 §3) — a queue two machines race needs an arbiter that refuses the second take
+before work starts, and the serialization point a lock needs is a host.
 
-**Built by composition** (D22), which is what makes the scope plausible. Embeddings, the vector store,
-semantic recall, provider routing and MCP hosting already ship in the cognition sibling; the shell,
-WebView2 surface and IPC bridge already ship in the desktop one. What remains is wiring — and Daoris
-becomes the **first external consumer either has had**, so building on them validates them. A library
-with no consumer is unvalidated, exactly as a pack nobody installs is. Released versions only: three
-repositories coupled at HEAD are one repository with extra steps.
+**Built by composition** (D22), which is what made the scope plausible. Embeddings, the vector store,
+semantic recall, provider routing and MCP hosting already shipped in the cognition sibling; the shell,
+WebView2 surface and IPC bridge in the desktop one. The wiring is done, and Daoris became the **first
+external consumer either had**, validating both. Released versions only: three repositories coupled at
+HEAD are one repository with extra steps.
 
 **LLM-assisted merge is the capability none of the existing tooling can supply.** `doctor` provably
 cannot see convergence — the same principle in different words scores like an unrelated document (D17) —

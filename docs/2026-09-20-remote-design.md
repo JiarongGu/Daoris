@@ -52,9 +52,10 @@ database, and §8.1 asked whether shared needs hosting at all. Priced against wh
 
 **Shared mode is configuration, not a build** (D21). And it carries the sibling's fail-safe inversion
 (service design §5): **a host asked to bind beyond loopback without shared mode's credential model
-configured refuses to start.** Today the key middleware is skipped entirely when no key is set and
-GETs are never gated even with one (`Http/Program.cs:117-135`) — right for loopback trust, and
-exactly what must be unreachable on a network interface.
+configured refuses to start.** At design time the key middleware was skipped entirely when no key was
+set and GETs were never gated even with one — right for loopback trust, and exactly what must be
+unreachable on a network interface. *(That interim single-key middleware is retired — see §7 as
+amended: two trust shapes only.)*
 
 ## 4. The disclosure boundary at the sync
 
@@ -195,6 +196,10 @@ Service design §5, built as specified; D46 held per-caller identity precisely f
   driver/desktop layer so `daoris-driver` headless feeds identically: a server machine with checkouts
   and a key is just another machine, not a special deployment. The loop pushes the feed (idempotent
   upserts, resumed after restart) and pulls the quest mirror on the same cadence as the driver tick.
+  **Amended 2026-09-20, during the build:** the loop also mirrors the remote's **registry** down —
+  foreign rows only, because the machine holding a checkout is the authority on its own registration
+  and its root must survive the sync untouched. Without it, publishing across machines had no
+  addressee: machine A could not name a repository only machine B had ever registered.
 - **Quest verbs relay through the judgement seam.** The write-through for remote-homed quests lives
   behind `QuestExchange` in Core with the remote client selected at each composition root — both
   local doors (MCP stdio, HTTP) get it identically, the same no-drift argument as D36. Sessions keep

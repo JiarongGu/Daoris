@@ -5,7 +5,7 @@ host carries the same service for a browser or a remote deployment. The core rea
 knowledge into addressable entries, classifies each as canonical or local, stores them in SQLite,
 answers ranked queries over FTS5, and finds where repositories learned the same lesson independently.
 Quests and pushed registrations persist in the same database, so what one session publishes another
-session — or another machine's `connect` — finds waiting. **81 tests**, two of which run against the
+session — or another machine's `connect` — finds waiting. **170 tests**, two of which run against the
 real sibling repositories rather than fixtures.
 
 ## The registry — who is out there, and what they own
@@ -256,12 +256,16 @@ by diverging. The service indexes the second kind.
   and the untracked local directory is a hard exclusion rather than a permission.
 - **Authorization mirrors repository access** rather than inventing a second model that would eventually
   disagree with the first, silently.
-- **A git repository as the shared store**, before a database: free, versioned, reviewable, and its
-  access control already *is* the rule above rather than a copy of it.
+- **A git repository as the shared store**, before a database — a direction the driver later closed:
+  D47 priced git-as-store and declined it, because a quest queue two machines race needs an arbiter
+  that refuses the second take *before* work starts, and the serialization point a lock needs IS a
+  host. Shared mode is a deployment of this host; the repositories stay the versioned, reviewable
+  source of truth.
 - **LLM-assisted merge proposes; a person disposes.** Doctrine that appeared without anyone choosing it
   is the failure this whole project exists to prevent.
 - **Built by composition** (D22) — the cognition sibling supplies embeddings, the vector store, routing
   and MCP hosting; the desktop sibling supplies the shell. Released versions only, never working trees.
 
-The sharpest open question is still the first one: **does shared mode need hosting at all?** If the store
-is a git repository and the client is local, "shared" may be a sync rather than a server.
+What was the sharpest open question — does shared mode need hosting at all? — is settled (D47 §3):
+it does, it is this same binary in shared mode, and it is built, gate-proven by the family rehearsal's
+two-machine phase. The surviving ceiling is the SQLite file, held until a real team outgrows it.

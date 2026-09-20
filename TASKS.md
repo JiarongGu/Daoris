@@ -17,9 +17,10 @@ rehearsal's two-machine phase. **All three parts of D45 are built.**
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Nine commands,
-128 CLI tests, 158 service, 57 devkit, 49 driver, 52/52 release rehearsal (eight runs 2026-09-18),
-**74/74 family rehearsal** including the driver and two-machine remote phases (2026-09-20), 9 devkit
-gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
+135 CLI tests, 170 service, 57 devkit, 53 driver, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **75/75 family rehearsal** including the
+driver, two-machine remote, and never-scans phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
+5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
 **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
 an index row, and the answer is splitting, not raising (D28).
 
@@ -51,15 +52,15 @@ The service is **deployable** (D36) and **ships as executables** (D43): `npm run
 snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
 spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
 remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): the
-family rehearsal (43 checks) and the Playwright suite (7 tests) each run over a scratch copy of the
-examples and take a project born mid-run through init → declare → sync → check → connect → its first
-quest. `Daoris.Web` is **the platform** (D38,
+family rehearsal (43 checks then; 75 today) and the Playwright suite (7 tests) each run over a scratch
+copy of the examples and take a project born mid-run through init → declare → sync → check → connect →
+its first quest. `Daoris.Web` is **the platform** (D38,
 D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
 grouped by state with sitting time, projects as scannable declarations — in a designed console shell
 (sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
 headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
 speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a test pyramid
-declared in `daoris.gates.json` — a **21-test Vitest inner loop** and a **7/7 Playwright outer loop
+declared in `daoris.gates.json` — a **27-test Vitest inner loop** and a **7/7 Playwright outer loop
 over `examples/`**. Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
 canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
 Development is **automation-first** (D37): the person sets the target and verifies the final diff;
@@ -81,9 +82,11 @@ forced next build task — the connector, the local driver, and the remote all e
 fresh session's realistic starting points, none of them automatic:
 
 - **Read first:** `docs/DECISIONS.md` D45 (the direction) and **D47** (the remote, with its two
-  build-time amendments); `docs/2026-09-20-remote-design.md` (the remote contract); the DRV5 entry in
-  `docs/task-archive.md` (what the six landings did); `docs/FIX-LOG.md` top two entries (the
-  stale-`dist/` and driver-mode-default traps — both bite silently).
+  build-time amendments); `docs/2026-09-20-remote-design.md` (the remote contract); the DRV5 and REV1
+  entries in `docs/task-archive.md` (the six landings, then the post-redesign sweep over them —
+  `docs/2026-09-20-post-redesign-review.md` is the finding-by-finding record); `docs/FIX-LOG.md` top
+  entries (the mirror-down feed-back and shared-scan fixes, and the stale-`dist/` trap — now closed
+  structurally by `postpack --clean` and a rehearsal check).
 - **A release is the obvious next move, and REH1 blocks it.** Everything is `## Unreleased` in the
   changelog and development runs at `0.0.x`; the changelog now covers the driver and the remote. But
   **do not tag while REH1 is open** (below) — a release runs the release rehearsal, which is the thing
@@ -94,21 +97,13 @@ fresh session's realistic starting points, none of them automatic:
 - **The held backlog items each wait on an external trigger** (a captured rehearsal failure, a second
   repository, a real request) — pick one up only when its trigger has actually arrived, not to have
   something to do.
-- **Verify before claiming done, always:** `npm run verify` (CLI 128 + `check`), `dotnet test
-  src/Daoris.Service` (158), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests` (49),
-  `npm run rehearse:family` (74/74), `npm run test:web` (21 + 7). If a `bin`-driven gate is red while
-  `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG).
+- **Verify before claiming done, always:** `npm run verify` (CLI 135 + `check` + version agreement),
+  `dotnet test src/Daoris.Service` (170), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
+  (53), `npm run rehearse:family` (75/75), `npm run test:web` (27 + 7). If a `bin`-driven gate is red
+  while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
+  --clean` and the rehearsal's leftover check now remove and assert that case away.
 
 ## Backlog
-
-- [ ] **REV1 — the post-redesign review sweep: fix, dedup, and re-document the D45–D47 arc.** Five
-  parallel audits over the arc's ~94 files; the consolidated findings live in
-  `docs/2026-09-20-post-redesign-review.md`, grouped by disposition, each checked off as its commit
-  lands. Headline: the remote sync could wipe a teammate's shared knowledge (mirror-down rows feed back
-  up empty), shared mode scans the server's disk through `EnsureIndexedAsync`, `postpack --clean` was
-  never implemented (the FIX-LOG's stale-`dist/` trap is still manufacturable), and `CLAUDE.md` names a
-  `daoris request` command that does not exist. In progress this session; whatever remains unchecked
-  stays open here.
 
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken

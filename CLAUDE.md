@@ -15,8 +15,9 @@ domain; Daoris is how they hold one canon of doctrine between them, find where t
 same thing twice, and **ask each other for changes instead of reaching in**.
 
 That last part is the constraint everything else serves: **repositories are not developed across.** A
-change you need elsewhere is a request filed in that repository's own backlog, worked by whoever knows
-that code — because the *why* behind a codebase does not travel, and a request does (`daoris request`).
+change you need elsewhere is a quest published to the service, taken by whoever knows that code —
+because the *why* behind a codebase does not travel, and a request does (`quest_publish` over MCP, or
+the platform's Quests view; the CLI deliberately has no quest command, D31 as amended).
 
 The **CLI is a zero-dependency Node program plus a canon of markdown** — not a library, not a framework,
 and it makes no model calls at all. The **service** is the half that may use one: it indexes the family's
@@ -36,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Nine commands, 128 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 158, `Daoris.Devkit` 57, and the
-driver 49. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
+**Built and proven; nothing published.** Nine commands, 135 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 170, `Daoris.Devkit` 57, and the
+driver 53. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
 off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
@@ -52,7 +53,7 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode — with
 the quest lock hardened into code (an atomic guarded `Taken`, closed quests immovable) and the
 desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
-gates the whole thing with no model: driver loop **and** a two-machine remote crossing (74/74).
+gates the whole thing with no model: driver loop **and** a two-machine remote crossing (75/75).
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
@@ -115,27 +116,30 @@ directory, and D11 makes shipping the canon *inside* the package load-bearing.
 
 Run every command from the **workspace root**, not from a package directory.
 
-- **`npm run verify`** — the "am I done?" gate: every test, then `daoris check` against Daoris's own
-  doctrine. Run before claiming a change is complete.
+- **`npm run verify`** — the "am I done?" gate: every CLI test, `daoris check` against Daoris's own
+  doctrine, then `release-prep --check` (every shipped version reference agrees, example pins
+  included). Run before claiming a change is complete.
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
   **artefact**. Run before tagging.
-- **`npm run rehearse:family`** — the "does the router work?" gate (D39), and since D46 the "does the
-  driver drive?" gate too. Both examples current and clean, the HTTP host up over them, `connect`, a
-  quest through its whole life, a search crossing projects, restart persistence — and a quest driven
-  to done by a stub session, no model in the gate. Run when touching the service, `connect`, the
-  driver, or the canon's shape —
+- **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
+  driver drive?" gate, and since D47 the "does the remote cross?" gate too. Both examples current and
+  clean, the HTTP host up over them, `connect`, a quest through its whole life, a search crossing
+  projects, restart persistence, a quest driven to done by a stub session — then a shared host with
+  minted keys, two simulated machines, a quest crossing them, a raced take standing down, and the
+  remote's store scanned for anything machine-local. No model anywhere in the gate. Run when touching
+  the service, `connect`, the driver, the remote, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
   bundle over the example family: a quest through its whole life in the drawers, the verbatim
   refusal, 中文. Declared in `daoris.gates.json`; it rebuilds the host, so stop a running instance
   first.
-- **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only, with
-  `dry_run` defaulting to true; it runs both gates on Linux before publishing. Nothing runs on push, and
-  nothing runs on Windows or macOS — **a gate you did not run locally has not been run.** Development
-  happens on Windows and the release on Linux, which is exactly the gap that hid D25's line-ending
-  assumption.
+- **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only,
+  with `dry_run` defaulting to true; it runs all four gates on Linux before publishing, and builds and
+  tests the devkit and service binaries on Linux, Windows and macOS. Nothing runs on push — **a gate
+  you did not run locally has not been run.** Development happens on Windows and the release gates on
+  Linux, which is exactly the gap that hid D25's line-ending assumption.
 - **Changing what `sync` does with a file? Read `docs/DECISIONS.md` D19 first.** That state space is
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - `node --test` — tests only.

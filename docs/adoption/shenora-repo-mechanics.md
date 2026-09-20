@@ -1,5 +1,6 @@
 <!--
-  PREPARED FOR AN ADOPTION THAT HAS NOT RUN YET — see TASKS.md, CANON3.
+  PREPARED FOR AN ADOPTION THAT HAS NOT RUN YET — the rehearsal's record is docs/task-archive.md
+  CANON3; adoption itself stays the owner's call (TASKS.md, "State").
 
   This is a draft of the LOCAL `repo-mechanics.md` that the adopting repository should end up with:
   the material its `sensitive-info` and `windows-dev-gotchas` rules carried that the canon does NOT

@@ -12,8 +12,8 @@ Five views, three halves of one job — landing on management (D40):
 | View | What it answers |
 |---|---|
 | **Overview** | the landing: is anything sitting and for how long, the family's health as tiles, the repositories by what the index holds |
-| **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline |
-| **Projects** | who is in the family, what each owns and accepts as scannable chips — and who cannot be asked yet, with the join steps proposed as text |
+| **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline — and, beside a driven quest, its session **record** (D46): state, adapter, note and evidence, read-only in a browser, with stop offered only where a shell's driver actually holds the process |
+| **Projects** | who is in the family, what each owns and accepts as scannable chips — and who cannot be asked yet, with the join steps proposed as text; in the desktop shell, the person's per-machine driver controls (drive / hold) per repository |
 | **Convergence** | where two repositories reached the same conclusion independently — the knowledge half's lead view |
 | **Search** | what the family has already learned about X |
 
@@ -32,7 +32,8 @@ status pill never appears without its text label.
 | Icons | **lucide-react**, tree-shaken |
 | Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation |
 | i18n | **react-i18next**, `en` + `zh`, flat dotted keys; `scripts/i18n-check.mjs` fails the build when the catalogs diverge |
-| Design tool | **Storybook** (`npm run storybook`) — every component state and the token gallery, on the shipped code |
+| Shell bridge | **@shenora/react** — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`shell.ts`, `ShellSignals.tsx`); in a browser none of it mounts, by design |
+| Design tool | **Storybook** (`npm run storybook`) — the component states and the token gallery, on the shipped code (the arc's session states and driver controls do not have stories yet) |
 | Test loop | **Vitest + Testing Library** as the millisecond inner loop (view logic, primitives, catalogs — with the sibling's proven jsdom shims), **Playwright** as the outer loop — the real host over `examples/`, driving the shipped bundle. `npm run test:web` at the workspace root runs the whole pyramid |
 
 **The i18n boundary:** UI chrome translates; **data does not**. Quest content, registry declarations,
@@ -50,7 +51,7 @@ for it you must already know it exists. So Convergence leads the knowledge views
 for when you know what you are looking for.
 
 The similarity threshold is a slider rather than a constant. Measured on this family, 0.82 returns
-nothing, 0.75 returns the true pairs, and 0.60 begins pulling in unrelated documents — a default nobody
+nothing, 0.70 returns the true pairs, and 0.60 begins pulling in unrelated documents — a default nobody
 can move would be wrong for someone.
 
 ## Doctrine reads; service state writes (D31, D38)
@@ -74,9 +75,10 @@ complete-for-word-overlap (D24).
 
 ## One UI, two shells
 
-This app is the **only** UI. It is served over HTTP for the browser, and the same build is intended for
-`Daoris.Desktop`. Two shells, one codebase; a second hand-written desktop UI would be the same divergence
-problem in a new place.
+This app is the **only** UI. It is served over HTTP for the browser, and `Daoris.Desktop` carries the
+same build in its WebView — the same bytes a browser gets, plus the shell's capabilities (the driver
+controls) that only exist where a driver does. Two shells, one codebase; a second hand-written desktop
+UI would be the same divergence problem in a new place.
 
 The build outputs into `../Daoris.Service/Daoris.Service.Http/wwwroot`, so the page and the API share one
 origin. That is what makes CORS unnecessary in a real deployment — the `DAORIS_WEB_ORIGIN` variable

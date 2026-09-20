@@ -9,13 +9,15 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Eight commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Nine commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness, index
   freshness and the always-loaded budget; `upstream` promotes a locally-improved file back into the
   canon (`--all` for every edit at once); `index` regenerates `RULES_INDEX.md` from what is on disk;
-  `status` summarizes and reports when a newer canon is available; `doctor` reports local documents that
-  restate a canonical one under a different name.
+  `status` summarizes — the remote disclosure declaration included — and reports when a newer canon is
+  available; `doctor` reports local documents that restate a canonical one under a different name; and
+  `connect`, the one networked command and opt-in (D35), registers the repository with a knowledge
+  service, carrying its declaration and — to a local service only — its root.
 - **`doctor` covers the one gap the lock cannot.** A repository's own rule duplicating a canonical one is
   local, and local is invisible by design — it surfaced on the first adoption only because someone read
   the generated index end to end. Advisory by construction: word overlap is crude, and a false positive
@@ -132,10 +134,13 @@ The first version: doctrine that installs, is checked, and flows back.
   caught 2 of 11; 0.3 catches 7 with no false positive. The threshold is asymmetric on purpose — the
   command is advisory, so a false positive costs a dismissed line and a miss costs lasting duplication.
   It also now states the duplicate it *cannot* find: word overlap detects restatement, not convergence.
-- **Three packs.** `windows-machine` (traps that succeed wrongly rather than failing),
+- **Six packs.** `windows-machine` (traps that succeed wrongly rather than failing),
   `dotnet-library` (package boundaries, naming, DI variation points, shipping registries, and API design),
   `storage-sql` (type affinity on read, migration numbering, full-text search for scripts without word
-  boundaries).
+  boundaries), `desktop-app` (verifying a real desktop application — driving the running app, what
+  synthetic input does not prove), `web-webview` (a web UI inside a native shell — resource serving,
+  thread affinity, the silent failures), and `durable-jobs` (long-running work that survives a restart
+  — lanes, checkpoints, resume) — each with its reasoning in `canon/CHANGELOG.md`.
 - Every canon file carries frontmatter that generates its index row; tests assert that, plus that no canon
   file contains a machine path.
 

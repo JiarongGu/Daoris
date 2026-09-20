@@ -1225,3 +1225,34 @@ in every `bin`-driven gate (green `npm test`, red rehearsal), and an omitted dri
 to watch-forever (the rehearsal's drive helpers default `--once` with a kill-timeout backstop now).
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
+
+## REV1 — the post-redesign review sweep: fix, dedup, and re-document the D45–D47 arc (2026-09-20)
+
+> Five parallel audits over the arc's ~94 files; the consolidated findings live in
+> `docs/2026-09-20-post-redesign-review.md`, grouped by disposition, each checked off as its commit
+> lands. Headline: the remote sync could wipe a teammate's shared knowledge (mirror-down rows feed back
+> up empty), shared mode scans the server's disk through `EnsureIndexedAsync`, `postpack --clean` was
+> never implemented (the FIX-LOG's stale-`dist/` trap is still manufacturable), and `CLAUDE.md` names a
+> `daoris request` command that does not exist.
+
+✅ done 2026-09-20, in nine commits, every finding fixed or deferred with its reason in the review
+record. **Bugs**: the mirror-down feed-back (feed-up now requires a root — the checkout is the
+authority) and the shared-scan back door (shared mode composes `EmptyKnowledgeSource`; the rehearsal
+plants a decoy and asserts it stays unserved — watched red under sabotage) both landed in
+`docs/FIX-LOG.md`; the ledger's numeric-state hole closed onto `Session.TryParse`; session-door
+conflicts wear 409 like the quest door; `/api/feed/quests` validates every bound field; a corrupt
+manifest or lock fails as exit 2 naming the file; the desktop splash completes `HostReady` on every
+path; `postpack --clean` exists, removes `dist/`, and the release rehearsal asserts nothing staged
+outlives a pack. **Dedup/refactor**: Http `Program.cs` 745→486 (contracts, keys console, and a
+two-host `HostComposition` out; route groups declined as indirection); `ParseKinds` and the session
+feed judgement moved to Core (D36); `RemoteSync` split three ways with a tested ordering contract;
+`DriverHttp` and `DriverWatch` replaced three transports and two loops; the rehearsal kit
+(`tools/rehearsal-kit.mjs`, `tools/fsx.mjs`) replaced five `copyTree`s and two diverged harnesses; the
+web platform gained `QUEST_TONE`, keys-factory invalidations, a cached Reader and `useDebounced`, and
+its new surfaces stopped failing silently. **Docs**: `daoris request` excised, "81 tests"/"Eight
+commands"/"Three packs"/"Four artefacts" corrected, the Desktop brief's stale "Remaining" list
+replaced, `domain` + `remote` documented in the README with `status` reporting the declaration, the
+git-as-store prescription closed per D47, D36/D31 gained their supersession notes, and the remote
+design's second amendment is marked in place. Tests grew 128→135 CLI, 158→170 service, 49→53 driver,
+21→27 web vitest, 52→53 release rehearsal, 74→75 family rehearsal — the new checks are the guarantees
+the arc claimed in prose.

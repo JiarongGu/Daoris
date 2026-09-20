@@ -23,7 +23,9 @@ diff at the end (`autonomous-development`, D37):
    Wire it into the project's own verification.
 5. **`daoris connect`** *(opt-in)* — pushes the declaration to a knowledge service, which is how a
    **remote** service learns the project exists at all. On one machine the service reads manifests off
-   disk and this step only confirms the path works.
+   disk and this step only confirms the path works. The manifest's `remote` declaration travels with
+   the registration (D47): `join` opts the project into a team deployment, `knowledge` — a second,
+   separate declaration — feeds its indexed content too, and silence means local.
 
 An agent session reaches the shared index and the quests by registering the MCP server in the
 project's own `.mcp.json` — see `src/Daoris.Service/README.md` for the entry.
@@ -55,6 +57,13 @@ transcript in `_fixtures/rehearsal-logs/`:
 - a quest goes `game → engine`; one to a stranger is **refused naming who is addressable**; declining
   without a reason is refused; the quest is taken and finished;
 - `game`'s own knowledge answers a search made from outside it;
+- a third project is **born mid-run** (D44) — init, declare, sync, check, connect — and answers its
+  first quest on day one;
+- the **driver drives** (D46): a quest becomes a stub session becomes a commit becomes done, a dirty
+  tree holds the start, and the person's stop is honoured — no model in the gate;
+- the **remote crosses** (D47): a shared host with minted keys, two simulated machines, a quest
+  crossing them to done, a raced take standing down, and the remote's store scanned to hold nothing
+  machine-local;
 - the host is killed and restarted, and **nothing is lost**.
 
 The examples are tracked in full — manifests, locks, synced doctrine — so they are readable as

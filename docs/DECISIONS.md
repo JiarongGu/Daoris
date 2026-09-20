@@ -778,9 +778,11 @@ edit box** — it puts the change where review happens and leaves the judgement 
 authentication-for-writes from the first version entirely.
 
 **Amended 2026-09-18 (D36).** The HTTP surface now carries the *service-state* writes — registry
-registrations and quests — gated by `DAORIS_SERVICE_KEY` when set. **Doctrine** remains unwritable from
-the browser and from every endpoint, which is the part this decision was actually about: no rule,
-knowledge document or skill can be edited anywhere but the repository that owns it, through review.
+registrations and quests — gated by `DAORIS_SERVICE_KEY` when set *(that interim single-key gate was
+itself retired 2026-09-20 — D47 as amended: loopback trust in local mode, minted keys on every route in
+shared)*. **Doctrine** remains unwritable from the browser and from every endpoint, which is the part
+this decision was actually about: no rule, knowledge document or skill can be edited anywhere but the
+repository that owns it, through review.
 
 ## D32 — Cross-repository work is a quest, not an edit
 
@@ -988,6 +990,12 @@ the HARNESS1 reasoning).
 **Consequence.** The quest-ledger pattern — holding outbound quests in this repository's backlog
 "until a service runs" — ends, because the service runs. Addressing still gates on adoption (D33), so
 a sibling that has stepped off the tool is not addressable until it re-adopts; nothing changes there.
+
+**Amended 2026-09-20 (D47, as amended).** The interim single-key write gate is retired, with nothing
+deployed. Two trust shapes only: **local** trusts the loopback outright and may bind nothing else (the
+startup refusal enforces it), **shared** gates every route — reads included — with minted per-person
+per-machine keys. `DAORIS_SERVICE_KEY` survives solely as the client-side "key I present", which
+against a shared deployment is a minted key; no server-side code consults it.
 
 ## D37 — Development is automation-first: the person sets the target and verifies the outcome; gates verify the middle (2026-09-18)
 

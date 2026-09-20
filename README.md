@@ -97,12 +97,26 @@ still wants a read-through by hand; `doctor` shortens that job rather than repla
   "source": "github:JiarongGu/Daoris#v0.0.1",
   "packs": ["dotnet-library"],
   "target": ".claude",
-  "coreBudgetBytes": 30000
+  "coreBudgetBytes": 30000,
+  "domain": {
+    "summary": "One line: what this repository is, for someone who has never opened it.",
+    "owns": ["the areas where a change belongs here rather than anywhere else"],
+    "accepts": ["the kinds of work worth asking of it"]
+  },
+  "remote": { "join": true, "knowledge": false }
 }
 ```
 
 `daoris.lock` sits beside it, generated: one entry per materialized file, recording its pack, canonical
 path, version, and content hash. Both are tracked, so a reviewer sees exactly what changed.
+
+`domain` is the repository's declaration to the family — it is what makes a quest addressable rather
+than a guess, and `daoris connect` refuses to register without one. `remote` is the one **disclosure**
+control: whether this repository joins a team's remote deployment (its registration, quests and
+session records become visible there), and — a second, separate declaration — whether its indexed
+knowledge content feeds too. It lives in the manifest, tracked and reviewed, because disclosure is the
+repository's call, not one person's local toggle; **absence means local, silently**, and `knowledge`
+without `join` is refused. `daoris status` reports the declaration.
 
 ## Three layers
 
@@ -133,18 +147,26 @@ skill used to be, except that it is generated and therefore never stale.
 needing a tweak will otherwise simply edit it, which is exactly how the copies diverged. The header says
 where the file came from and to use `daoris upstream`; the lock's hash catches the edit either way.
 
-## Beyond the CLI: the service and the platform
+## Beyond the CLI: the service, the platform, the driver
 
 The CLI is the doctrine half. **`Daoris.Service`** indexes what every adopting repository has learned,
 finds where two repositories reached the same conclusion in different words, holds the **registry** —
 what each repository owns and accepts — and carries **quests**: how one repository asks another for
 work instead of reaching in. **`Daoris.Web`** is the platform over it — knowledge, quests and projects
-in one window, with doctrine read-only everywhere. See `src/Daoris.Service/README.md` and
-`src/Daoris.Web/README.md`.
+in one window, with doctrine read-only everywhere. **`Daoris.Desktop`** is the driver (D45): the
+desktop shell hosts the local service, carries the same platform bundle, and runs the loop that turns
+the quest queue into an execution queue — spawning a fresh agent session per open quest, one per
+repository, onto a clean tree only; the spawned session claims its own quest, so driven and outside
+work are indistinguishable at the quest layer. The same HTTP host in **shared mode** is the team
+remote (D47): every route gated by minted per-person per-machine keys, fed by each desktop's sync
+loop, never required by anything local. See `src/Daoris.Service/README.md`, `src/Daoris.Web/README.md`
+and `src/Daoris.Desktop/README.md`.
 
 **Worked example:** [`examples/`](examples/README.md) is a two-project family — an engine and a game —
 and `npm run rehearse:family` drives the whole arrangement through the real artefacts: adoption,
-registration, a quest's full life, knowledge crossing projects, a restart losing nothing.
+registration, a quest's full life, knowledge crossing projects, a restart losing nothing, a quest
+driven to done by the driver's stub session, and a two-machine remote crossing — all with no model in
+the gate.
 
 ## Developing Daoris
 

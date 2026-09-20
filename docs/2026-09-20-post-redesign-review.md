@@ -103,25 +103,25 @@ commits; unchecked items are deliberately deferred with the reason inline.
 
 ## Documentation corrections (wrong, then stale)
 
-- [ ] `CLAUDE.md` names `daoris request` — no such command exists (quests live in the service, D31 as
+- [x] `CLAUDE.md` names `daoris request` — no such command exists (quests live in the service, D31 as
   amended); its release-workflow claims miss the four-gate run and the three-OS devkit matrix; the
   `rehearse:family` description stops at D46.
-- [ ] `src/Daoris.Service/README.md` says "81 tests" (158) and still carries "does shared mode need
+- [x] `src/Daoris.Service/README.md` says "81 tests" (158) and still carries "does shared mode need
   hosting at all?" as an open question D47 priced and declined. `ROADMAP.md` still prescribes
   git-as-store, says "Four artefacts" over a five-row table, "4 core knowledge documents" (5), and
   points at a backlog id that archived (CANON4).
-- [ ] `CHANGELOG.md` (Unreleased) says "Eight commands" (nine; `connect` has no bullet) and "Three
+- [x] `CHANGELOG.md` (Unreleased) says "Eight commands" (nine; `connect` has no bullet) and "Three
   packs" (six). `TASKS.md` says the rehearsal is 43 checks in one place and 74 in another.
-- [ ] `src/Daoris.Desktop/README.md` lists shipped session controls as "Remaining" and never mentions
+- [x] `src/Daoris.Desktop/README.md` lists shipped session controls as "Remaining" and never mentions
   the remote sync; the two binaries' header comments omit the remote env trio they read.
-- [ ] Root `README.md` documents neither `domain` nor `remote` in the manifest — the arc's biggest doc
+- [x] Root `README.md` documents neither `domain` nor `remote` in the manifest — the arc's biggest doc
   gap: a shipped, review-gated disclosure field with no user-facing documentation. `status` cannot
   report it either (the one manifest field it cannot answer for).
-- [ ] `docs/2026-09-20-remote-design.md` §9 lacks the second D47 amendment note (the registry mirrored
+- [x] `docs/2026-09-20-remote-design.md` §9 lacks the second D47 amendment note (the registry mirrored
   down, foreign rows only) that §7 got for the first; §3's "today" paragraph describes the retired gate
   with no pointer. `docs/DECISIONS.md` D36 lacks the supersession note the file's convention gives
   every other superseded entry.
-- [ ] `src/Daoris.Web/README.md`: the five-view table predates the session surface and controls; the
+- [x] `src/Daoris.Web/README.md`: the five-view table predates the session surface and controls; the
   convergence threshold reads 0.75 where the decision record and the view both say 0.70; the "same
   build is intended for Daoris.Desktop" sentence describes a shipped thing as future.
 
@@ -153,8 +153,8 @@ commits; unchecked items are deliberately deferred with the reason inline.
 - **`FeedQuestRecord`/`QuestResponse` merge** — the nullability difference is validation-bearing;
   deliberately left as two records. (`FeedSessionRecord`'s missing `Transcript` is load-bearing and was
   never a candidate.)
-- **Moving the web e2e host off port 5199** — done as part of this sweep only if trivially safe;
-  otherwise it stays a noted collision hazard with the family rehearsal.
+- ~~Moving the web e2e host off port 5199~~ — it proved trivially safe and was done (5196, three
+  edits), so it is not deferred after all.
 - **`daoris declare` as a command** — `declare()` is deleted rather than wired; a command nobody asked
   for is doctrine nobody chose.
 - **Wiring the page to the host's `NUDGE` (start-now)** — the host verb exists and the driver's

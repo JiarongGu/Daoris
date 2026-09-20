@@ -1,17 +1,21 @@
 # Daoris.Desktop — the local driver
 
-**Status: built — the driver, its headless host, and the shell all exist.** The brief was rewritten
-2026-09-19 for D45; **the design is settled: `docs/2026-09-19-driver-design.md` (D46) is the
-contract.** `Daoris.Desktop.Driver` (the loop, the adapter seam, the stub, the `claude-code` adapter)
-and `Daoris.Desktop.Driver.Host` (`daoris-driver`) are driven end to end by the family rehearsal's
-driver phase; the platform shows session records read-only. **`Daoris.Desktop.App`** (`daoris-desktop`,
-on Shenora.Windows 0.16.0 — released, D22) is the shell: it brings up the local HTTP host — adopting
-one already running, spawning and owning one otherwise, a dev build run from its project so the bundle
-serves — carries the platform in its WebView (`ProductionUrl`, the same bytes a browser gets), runs
-the driver loop in-process with `driver.json` re-read every tick, forwards tick reports over the IPC
-bridge, and takes the loop and its owned host down with it on close, in-flight sessions ended and
-recorded `stopped`. **Remaining:** the person's session controls in the platform (drivable / hold /
-stop / start-now, over the IPC bridge) and the page-side consumption of the tick notifications.
+**Status: built — the driver, its headless host, and the shell all exist, and the person's controls
+landed.** The brief was rewritten 2026-09-19 for D45; **the design is settled:
+`docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
+adapter seam, the stub, the `claude-code` adapter, and since D47 the machine's **remote sync** —
+`RemoteSync` rides the tick, feeding joined registrations, session records and opted-in knowledge up
+and mirroring the remote's quests and foreign registrations down) and `Daoris.Desktop.Driver.Host`
+(`daoris-driver`) are driven end to end by the family rehearsal's driver and two-machine remote
+phases. **`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
+shell: it brings up the local HTTP host — adopting one already running, spawning and owning one
+otherwise, a dev build run from its project so the bundle serves — carries the platform in its WebView
+(`ProductionUrl`, the same bytes a browser gets), runs the driver's shared watch loop in-process with
+`driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed
+by the page — drivable and hold per repository, stop a running session), and takes the loop and its
+owned host down with it on close, in-flight sessions ended and recorded `stopped`. The one designed
+control not yet wired page-side is **start-now**: the host answers `NUDGE`, and no page surface calls
+it yet.
 
 ## What it is
 
