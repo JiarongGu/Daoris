@@ -232,6 +232,48 @@ export function useSessionConsole(sessionId: string | null) {
   return { lines, live, dropped };
 }
 
+/**
+ * A conversation with an agent in one repository (D49 §3).
+ *
+ * @remarks
+ * Shell-only, because a chat is a process on this machine and processes never leave the driver
+ * (D46 §7). The record is the service's — a teammate sees that a chat happened — and only the stream
+ * and the typing are here.
+ *
+ * Daoris makes no model calls: the harness carries the model and the conversation, and these three
+ * verbs move text and nothing else (D24, `model-decoupling`).
+ */
+export const useStartChat = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (repository: string) =>
+      call<{ sessionId: string | null; message: string }>('START_CHAT', { repository }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.driver });
+    },
+  });
+};
+
+/** One message into the session. False means it ended while the person was typing — an answer. */
+export const useSendMessage = () =>
+  useMutation({
+    mutationFn: (message: { id: string; text: string }) =>
+      call<{ sent: boolean }>('SESSION_INPUT', message),
+  });
+
+/**
+ * Finish a conversation: the harness gets end-of-input, says what it was going to say, and exits.
+ * `useStopSession` is the other verb and means something else — the person cut it off.
+ */
+export const useEndChat = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call<{ ended: boolean }>('END_CHAT', { id }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }),
+  });
+};
+
 export const useStopSession = () => {
   const client = useQueryClient();
   return useMutation({

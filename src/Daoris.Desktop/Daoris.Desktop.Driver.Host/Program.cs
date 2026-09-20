@@ -17,10 +17,21 @@ using Daoris.Driver;
 //   --until-idle  tick until nothing starts, then exit — the deterministic mode a gate drives
 //   (default)     watch: tick forever, pollSeconds apart
 //
+//   chat --repository <name> [--adapter <name>]
+//                 hold a conversation in a repository (D49 §3): stdin is the person, stdout is the
+//                 session, end of input ends it. One session per repository, as ever.
+//
 // Exit codes keep the family contract: 0 clean · 2 tool error.
 if (OperatingSystem.IsWindows())
 {
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+}
+
+// A conversation from a terminal (D49 §3, D50): the same ledger, the same lock, the same record —
+// the desktop is where a person usually chats, and a machine with no screen is still a machine.
+if (args is ["chat", .. var chatArgs])
+{
+    return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
 }
 
 var once = args.Contains("--once");

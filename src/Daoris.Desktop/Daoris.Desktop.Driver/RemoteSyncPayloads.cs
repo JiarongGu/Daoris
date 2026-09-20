@@ -131,7 +131,12 @@ public static class RemoteSyncPayloads
                 count++;
                 writer.WriteStartObject();
                 writer.WriteString("id", id);
-                writer.WriteString("quest", Text(session, "quest"));
+                // A chat serves no quest (D49 §3) — the field is omitted rather than sent empty, and
+                // the KIND travels so a teammate sees that somebody was talking rather than that work
+                // was planned. Omitted-when-absent, because a blank quest id reads as one that failed
+                // to parse.
+                Copy(writer, session, "quest");
+                Copy(writer, session, "kind");
                 writer.WriteString("repository", repository);
                 writer.WriteString("adapter", Text(session, "adapter"));
                 writer.WriteString("state", Text(session, "state"));

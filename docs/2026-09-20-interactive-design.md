@@ -98,6 +98,35 @@ doctrine path in; the harness *is* the chat. Rejected: **quest-required chat** �
 starting work that is not yet shaped as an ask; the quest system is where the work lands, not the toll
 to start talking.
 
+**Built 2026-09-20 (SES2).** Six choices the building settled:
+
+- **A headless door exists too: `daoris-driver chat --repository <name>`.** The design said "the
+  desktop shell, and only there", and what that clause protects is the STREAM — output is
+  transcript-class and never leaves the machine (D47 §4). A terminal on the same machine breaks
+  nothing, and D50 forbids stranding a capability on a machine with no screen. It is the same
+  `ChatRunner` with a different reporting half, and it is what lets the family rehearsal gate a whole
+  conversation with no model in it: stdin is the person, stdout is the session.
+- **End of input ends a conversation; stop cuts it off.** Two verbs, two meanings, two records:
+  closing stdin lets the harness say what it was going to say and exit (`completed`), while `stop`
+  stays the person's interrupt (`stopped`). A surface that offered only one would make "I am done
+  talking" indistinguishable from "stop what you are doing".
+- **A chat's process has stdin; a driven one structurally does not.** Sending to a driven session
+  answers false because there is no stream to write to — it was given its whole target at once and
+  has nobody to take turns with. The UI follows that rather than restating it: a repository held by a
+  *driven* session offers to start a chat (and gets the ledger's refusal naming what holds it), never
+  to "open" a session nothing is listening to.
+- **`quest` became nullable by REBUILDING the table and copying the rows.** SQLite cannot drop a NOT
+  NULL constraint. The entry store may rebuild by discarding because its contents are derived; a
+  session record is the reviewable trace of work that happened and nothing can re-derive it, so the
+  rows move across.
+- **The ledger reads the registry.** A chat names its repository directly instead of inheriting it
+  from a quest, so it is the one path that can name one that does not exist — and the circle its
+  record belongs to comes from the registry row, which is the machine's own wiring (D48 §2).
+- **`interactive` is a default-false capability on the seam.** An adapter that has not been wired for
+  turn-taking says so and refuses in the harness's own terms, rather than spawning a process that
+  will never answer — the same rule as an unknown adapter name (D23). `claude-code` and the stub
+  declare it; anything new opts in after the work is actually done.
+
 ## 4. The toolchain: harnesses Daoris installs and updates
 
 The driver depends on the harness binaries existing (`claude`, `codex`); today that is the person's

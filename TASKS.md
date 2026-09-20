@@ -19,16 +19,17 @@ wiring, never tracked; coexistence with non-users is binding; harness accounts a
 profiles) with two contracts and eight build items. **All four WSP items are built** (2026-09-20, in
 the archive): the workspace exists, the registry is the authority, the machine's remotes are a map —
 one deployment per circle — and a feed carries the commit it speaks for, so the newest canonical view
-is the one that stands, and **SES1 has landed**: a session's console streams live to the desktop.
-Three items remain — chat sessions, the harness toolchain, and canon coexistence.
+is the one that stands, and **SES1 and SES2 have landed**: a session's console streams live, and a
+person can hold a conversation with an agent in any repository. Two items remain — the harness
+toolchain (SES3) and canon coexistence (CANON6).
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Twelve commands,
-164 CLI tests, 235 service, 57 devkit, 89 driver, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **124/124 family rehearsal** including the
+164 CLI tests, 245 service, 57 devkit, 98 driver, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **135/135 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map and
-which-commit-speaks phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
+which-commit-speaks and conversation phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
 **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
 an index row, and the answer is splitting, not raising (D28).
@@ -94,8 +95,9 @@ complete**: a
 registry row carries the workspace, every cross-repository answer is scoped by it, the family is an
 explicit list that `connect`, `retire` and `import` maintain, each circle syncs with the one deployment
 its own entry names, and a feed carries the commit it speaks for so the newest canonical view is the
-one that stands. **Start at SES2** (chat sessions — it builds directly on SES1's console) or **CANON6**
-(coexistence, independent of everything). SES3 is the large one.
+one that stands. **Start at SES3** (the harness toolchain and credential profiles — the last and largest
+item of D49) or **CANON6** (coexistence, independent of everything and constrained by the byte
+budget).
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -103,8 +105,8 @@ one that stands. **Start at SES2** (chat sessions — it builds directly on SES1
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
-- **The build order is stated at the top of the backlog** — the WSP items and SES1 are all in, so
-  the next landing is SES2, SES3 or CANON6. Schema changes rebuild rather
+- **The build order is stated at the top of the backlog** — the WSP items, SES1 and SES2 are all
+  in, so the next landing is SES3 or CANON6. Schema changes rebuild rather
   than migrate (the store's own rule, and nothing is deployed); WSP1 bumped the entry store to schema
   2 on exactly that basis, while the registration store adds columns, because a registration that
   vanished on an upgrade is the failure that store exists to prevent.
@@ -114,10 +116,14 @@ one that stands. **Start at SES2** (chat sessions — it builds directly on SES1
 - **What the WSP arc left for its successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
   the wiring, but no view filters by one yet).
-- **SES1's console is the seam SES2 enters through.** The buffer is per session and the page merges a
-  backlog with live batches by sequence; a chat adds INPUT (`SESSION_INPUT`) to the same session, so
-  the output half is already there. What SES1 deliberately did not do: nothing tails a session from
-  the headless host — the bridge is the shell's, by D47 §4, and a chat has the same constraint.
+- **Conversations have TWO doors, and SES3 inherits both.** The desktop's IPC (`START_CHAT`,
+  `SESSION_INPUT`, `END_CHAT`) and `daoris-driver chat --repository <name>` run the same
+  `ChatRunner`; what is shell-only is the STREAM, not the capability (D47 §4 protects transcript-class
+  material, and D50 forbids stranding a capability on a screenless machine). A harness picker or a
+  credential profile belongs on both, for the same reason.
+- **Two endings that mean different things:** end of input lets the harness wind up (`completed`);
+  `stop` is the person's interrupt (`stopped`). Anything that grows a third way out should say which
+  of those it is.
 - **Four things that will bite if forgotten:** being in a folder is no longer being a member (a
   repository joins by `connect` and leaves by `retire`); the bootstrap import runs **once** per store,
   and anything that re-ran it would resurrect every repository someone retired; **a feed never names
@@ -138,8 +144,8 @@ one that stands. **Start at SES2** (chat sessions — it builds directly on SES1
 - **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
   up only when its trigger has actually arrived.
 - **Verify before claiming done, always:** `npm run verify` (CLI 164 + `check` + version agreement),
-  `dotnet test src/Daoris.Service` (235), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (89), `npm run rehearse:family` (124/124), `npm run test:web` (40 + 7). If a `bin`-driven gate is red
+  `dotnet test src/Daoris.Service` (245), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
+  (98), `npm run rehearse:family` (135/135), `npm run test:web` (44 + 7). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -151,15 +157,9 @@ item).** The owner's direction, designed under the standing redesign grant — t
 building anything below. **D50 — management parity — applies across the arc**: everything a person
 manages gets a proper surface in the desktop or the `daoris` CLI (files and doors are the truth,
 surfaces are editors; the offline-discipline test evolves to a named management class — design §2b).
-Build order: **every WSP item and SES1 are done** (2026-09-20, in the archive) — what remains is
-SES2 (which builds on SES1's console), SES3, and CANON6, the last two independent of everything. Each
-item is one session-sized landing, TDD, gates green, moved to the archive on completion.
-
-- [ ] **SES2 — chat sessions.** `Session.Kind: driven | chat`, quest optional; the adapter seam grows
-  `interactive` (stub first, scripted exchange in the gate; `claude-code` supported, `codex` explicit);
-  one-session-per-repository holds for chats; `SESSION_INPUT` over IPC; chats may take/publish quests
-  through their own connector; the rehearsal drives a chat to `completed` and the repository-busy
-  refusal. Interactive design §3.
+Build order: **every WSP item, SES1 and SES2 are done** (2026-09-20, in the archive) — what remains
+is SES3 and CANON6, independent of each other. Each item is one session-sized landing, TDD, gates
+green, moved to the archive on completion.
 
 - [ ] **SES3 — the toolchain.** Adapter `Probe` (locate + version + per-profile login state, run at
   startup and on demand); the platform's roster (harness, version, present/absent, profiles);

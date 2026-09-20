@@ -196,7 +196,9 @@ public static class ServiceFactory
 
         return new ComposedService(
             service, quests, new QuestExchange(service, quests, remoteQuests),
-            sessions, new SessionLedger(quests, sessions), keys, service.SemanticEnabled)
+            // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
+            // repository it runs in, and therefore which circle its record belongs to (D49 §3).
+            sessions, new SessionLedger(quests, sessions, service), keys, service.SemanticEnabled)
         {
             Store = store,
         };

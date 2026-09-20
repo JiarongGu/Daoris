@@ -60,9 +60,16 @@ export type Registration = {
 export type SessionState =
   | 'queued' | 'starting' | 'working' | 'awaiting-person'
   | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped';
-/** A driver-started session's RECORD (D46) — the process lives on the driving machine, never here. */
+/**
+ * A session's RECORD (D46) — the process lives on the driving machine, never here.
+ *
+ * `kind` is how it was entered (D49 §3): the driver planned a `driven` one from a quest, a person
+ * opened a `chat`. Everything else about them is the same, which is the point — and it is why
+ * `quest` is optional: a conversation may serve none.
+ */
 export type Session = {
-  id: string; quest: string; repository: string; adapter: string; state: SessionState;
+  id: string; quest?: string | null; repository: string; adapter: string; state: SessionState;
+  kind?: 'driven' | 'chat';
   note?: string; evidence?: string; created: string; updated: string; workspace?: string;
 };
 

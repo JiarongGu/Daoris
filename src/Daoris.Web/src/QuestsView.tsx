@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session, SessionState } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
-import { useDriver, useSessionConsole, useStopSession } from './shell';
+import { useDriver, useStopSession } from './shell';
 import { ago, sittingDays } from './format';
+import { SessionConsole } from './SessionConsole';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
   SectionTitle, SelectField, SkeletonRows, useErrorNotify,
@@ -66,6 +67,9 @@ export function QuestsView({ notify }: { notify: Notify }) {
   // stand now, not the history (the service keeps that).
   const sessionFor = new Map<string, Session>();
   for (const session of sessions.data ?? []) {
+    // A chat may serve no quest at all (D49 §3) — it belongs to its repository, and it is shown in
+    // Projects rather than here. Only a session that names a quest can mark one.
+    if (!session.quest) continue;
     const held = sessionFor.get(session.quest);
     if (!held || session.updated >= held.updated) sessionFor.set(session.quest, session);
   }
@@ -395,51 +399,5 @@ export function QuestsView({ notify }: { notify: Notify }) {
         </Drawer>
       )}
     </section>
-  );
-}
-
-/**
- * A session's console, live (D49 §2) — the transcript capture as it happens.
- *
- * @remarks
- * **Verbatim, and never translated**: output is data, which is where the platform's i18n boundary
- * sits. The chrome around it speaks the active language; what the session said does not.
- *
- * It renders only where a shell is attached, because only a driver has a stream to give — in a
- * browser the hook asks nobody and this stays absent, which is the same rule the stop control
- * follows. The window is bounded, so what fell out of it is stated rather than quietly skipped.
- */
-function SessionConsole({ id }: { id: string }) {
-  const { t } = useTranslation();
-  const { lines, live, dropped } = useSessionConsole(id);
-  const well = useRef<HTMLPreElement>(null);
-
-  // Follow the tail while it is running: a console a person has to scroll to watch is one they will
-  // stop watching. Only while live — scrolling a finished log out from under a reader is rude.
-  useEffect(() => {
-    if (live && well.current) well.current.scrollTop = well.current.scrollHeight;
-  }, [lines, live]);
-
-  if (lines.length === 0 && !live) return null;
-
-  return (
-    <div className="mt-3">
-      <p className="mb-1 flex items-baseline gap-2 text-[0.72rem] text-ink-faint">
-        <span>{t('quests.session.console')}</span>
-        {live && (
-          <span className="inline-flex items-center gap-1 text-accent">
-            <span className="inline-block size-1.5 animate-pulse rounded-full bg-accent" />
-            {t('quests.session.streaming')}
-          </span>
-        )}
-        {dropped > 0 && <span>{t('quests.session.dropped', { count: dropped })}</span>}
-      </p>
-      <pre
-        ref={well}
-        className="m-0 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-control border border-line bg-raised px-3 py-2.5 font-mono text-[0.75rem] leading-relaxed text-ink-soft"
-      >
-        {lines.map((line) => line.text).join('\n')}
-      </pre>
-    </div>
   );
 }

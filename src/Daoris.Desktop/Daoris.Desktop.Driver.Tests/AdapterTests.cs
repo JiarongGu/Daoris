@@ -129,4 +129,83 @@ public sealed class AdapterTests
         Assert.DoesNotContain("D32", prompt);
         Assert.DoesNotContain("D46", prompt);
     }
+
+    // ——— The interactive capability (D49 §3). Declared honestly and opted into: an adapter that has
+    // not been wired for a conversation says so, and asking errors naming what the harness is.
+
+    private static ChatTarget Chat() => new("Game", "D:/fam/Game", "http://localhost:5177");
+
+    [Fact]
+    public void The_built_adapters_declare_whether_they_can_hold_a_conversation()
+    {
+        Assert.True(AdapterSet.Built().Resolve("stub").Interactive);
+        Assert.True(AdapterSet.Built().Resolve("claude-code").Interactive);
+    }
+
+    /// <summary>
+    /// A chat's process has stdin open — that IS the seam: the person's messages go in, the harness's
+    /// answers come out, and Daoris pipes text without ever being the conversation.
+    /// </summary>
+    [Fact]
+    public void A_chat_is_spawned_with_the_person_s_channel_open()
+    {
+        var info = AdapterSet.Built().Resolve("claude-code").PrepareChat(Chat(), null);
+
+        Assert.True(info.RedirectStandardInput);
+        Assert.True(info.RedirectStandardOutput);
+        Assert.Equal("D:/fam/Game", info.WorkingDirectory);
+        Assert.Equal("Game", info.Environment["DAORIS_REPOSITORY"]);
+        Assert.Equal("http://localhost:5177", info.Environment["DAORIS_SERVICE_URL"]);
+    }
+
+    /// <summary>
+    /// No quest variables at all, rather than empty ones: a conversation serves no quest, and a blank
+    /// id would read to a session as one it failed to parse.
+    /// </summary>
+    [Fact]
+    public void A_chat_carries_no_quest_and_no_target_prompt()
+    {
+        var info = AdapterSet.Built().Resolve("claude-code").PrepareChat(Chat(), null);
+
+        Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ID"));
+        Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
+        // And no one-shot prompt: the person supplies the first message.
+        Assert.DoesNotContain("-p", info.ArgumentList);
+    }
+
+    /// <summary>The permission posture does not soften because a person is watching (D46 §5).</summary>
+    [Fact]
+    public void A_chat_runs_under_the_same_permission_posture_as_driven_work()
+    {
+        var info = AdapterSet.Built().Resolve("claude-code").PrepareChat(Chat(), null);
+
+        Assert.Contains("--permission-mode", info.ArgumentList);
+        Assert.Contains("acceptEdits", info.ArgumentList);
+        Assert.DoesNotContain("--dangerously-skip-permissions", info.ArgumentList);
+    }
+
+    /// <summary>
+    /// An adapter that has not been wired for turn-taking refuses in the harness's own terms, rather
+    /// than spawning something that will never answer — the same shape as an unknown adapter name.
+    /// </summary>
+    [Fact]
+    public void A_non_interactive_adapter_says_so_rather_than_spawning_a_silent_process()
+    {
+        // Through the interface, which is where the default lives — and where every caller reaches it.
+        ISessionAdapter adapter = new OneShotAdapter();
+
+        Assert.False(adapter.Interactive);
+        var error = Assert.Throws<DriverException>(() => adapter.PrepareChat(Chat(), null));
+        Assert.Contains("one-shot", error.Message);
+        Assert.Contains("conversation", error.Message);
+    }
+
+    /// <summary>A harness that takes its target once and runs to completion — the default shape.</summary>
+    private sealed class OneShotAdapter : ISessionAdapter
+    {
+        public string Name => "one-shot";
+
+        public System.Diagnostics.ProcessStartInfo Prepare(
+            SessionTarget target, IReadOnlyList<string>? command) => new();
+    }
 }

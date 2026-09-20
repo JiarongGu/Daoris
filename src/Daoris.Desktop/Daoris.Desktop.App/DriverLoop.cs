@@ -30,6 +30,13 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
     /// </summary>
     public SessionOutput Output { get; } = new();
 
+    /// <summary>
+    /// Conversations, once the loop is up (D49 §3) — null before the host answers, because a chat
+    /// needs the service that holds its record. The control surface says so rather than failing
+    /// obscurely: "not yet" is a state a person can wait out.
+    /// </summary>
+    public ChatRunner? Chat { get; private set; }
+
     /// <summary>Where this loop reads the person's choices — what the control surface edits.</summary>
     public string ConfigPath { get; } = DriverConfig.ResolvePath();
 
@@ -89,6 +96,10 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
                 Session = session,
                 Lines = lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
             }));
+
+        // Conversations share everything the loop has — the same service, the same process registry
+        // (so one lock and one "stop" reach both kinds), the same console buffer.
+        Chat = new ChatRunner(service, AdapterSet.Built(), home, Processes, Output);
 
         _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output);
         await _watch.RunAsync(

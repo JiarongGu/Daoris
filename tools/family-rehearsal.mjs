@@ -1375,9 +1375,154 @@ check(
   'a refused feed left its entries in the store',
 );
 
-// -------------------------------------------------- 14. report
+// -------------------------------------------------- 14. a conversation
 
-section('14. Result');
+section('14. A conversation is a session (D49 §3)');
+
+// A chat is the entity D46 built, entered by a person instead of planned from a quest: the same
+// record, the same observed lifecycle, the same one-session-per-repository lock. Driven here through
+// the headless door, because a machine with no screen is still a machine (D47/D50) — and because it
+// is what lets a scripted exchange gate the whole loop with no model in it.
+const stubChat = join(scratch, 'stub-chat.mjs');
+writeFileSync(stubChat, `
+import { createInterface } from 'node:readline';
+
+const url = process.env.DAORIS_SERVICE_URL;
+const repository = process.env.DAORIS_REPOSITORY;
+
+// A conversation knows which repository it is the agent for, and where to reach the service if what
+// is said turns into work worth asking for. It knows no quest: there is none.
+if (process.env.DAORIS_QUEST_ID) throw new Error('a chat must carry no quest');
+console.log('chat: listening in ' + repository);
+
+for await (const line of createInterface({ input: process.stdin })) {
+  if (/publish/i.test(line)) {
+    // The connector path, from inside a conversation (D49 §3): work that came up while talking is
+    // published as a quest like any other, never edited across.
+    const response = await fetch(url + '/api/quests', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        from: repository,
+        to: 'game',
+        title: 'Something that came up in conversation',
+        body: 'Published by a chat session through its own connector.',
+      }),
+    });
+    console.log('chat: published — ' + response.status);
+  } else {
+    console.log('chat heard: ' + line);
+  }
+}
+
+console.log('chat: the person stopped talking');
+`);
+
+const chatConfig = join(scratch, 'driver-chat.json');
+writeFileSync(chatConfig, `${JSON.stringify({
+  drivable: [], adapter: 'stub', cap: 1, timeoutMinutes: 2,
+  commands: { stub: ['node', stubChat] },
+}, null, 2)}\n`);
+
+// Stdin is the person, so the exchange is a file: two messages, then end of input. That END is the
+// point — it finishes the conversation rather than killing it, which is what makes the record
+// `completed` instead of `stopped`.
+const chatInput = join(scratch, 'chat-input.txt');
+writeFileSync(chatInput, 'what is this repository for?\npublish something\n');
+
+const chatRun = run(
+  `dotnet "${driverDll}" chat --repository newcomer --adapter stub < "${chatInput}"`,
+  scratch,
+  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: chatConfig },
+  DRIVE_TIMEOUT,
+);
+check(
+  'a conversation runs from a terminal and answers what it hears',
+  chatRun.code === 0 && /chat heard: what is this repository for\?/.test(chatRun.out),
+  chatRun.out,
+);
+check(
+  '…and the session said where it was listening',
+  /chat: listening in newcomer/.test(chatRun.out),
+  chatRun.out,
+);
+check(
+  '…and end of input ended it rather than cutting it off',
+  /chat: the person stopped talking/.test(chatRun.out),
+  chatRun.out,
+);
+
+const chatRecords = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true');
+const chatRecord = (chatRecords.json ?? []).find((s) => s.kind === 'chat');
+check(
+  'the chat is a first-class session record, serving no quest',
+  chatRecord?.state === 'completed' && !chatRecord?.quest && chatRecord?.adapter === 'stub',
+  JSON.stringify(chatRecord),
+);
+check(
+  '…with its transcript kept like any other session’s',
+  Boolean(chatRecord?.transcript) && existsSync(chatRecord.transcript)
+    && readFileSync(chatRecord.transcript, 'utf8').includes('chat heard:'),
+  `${chatRecord?.transcript}`,
+);
+
+const fromChat = await api('GET', '/api/quests?repository=game&includeClosed=true');
+check(
+  'work that came up in conversation was PUBLISHED, never edited across',
+  (fromChat.json ?? []).some((q) => q.from === 'newcomer'
+    && q.title === 'Something that came up in conversation'),
+  fromChat.text.slice(0, 300),
+);
+
+// The lock is the working tree, and it does not care which way in a session came.
+const firstChat = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', adapter: 'stub' } });
+const secondChat = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', adapter: 'stub' } });
+check('a chat opens through the ordinary door', firstChat.status === 200, firstChat.text);
+check(
+  'a second conversation in the same repository is refused, naming what holds it',
+  secondChat.status === 409 && /newcomer/.test(secondChat.text)
+    && /one session per repository/i.test(secondChat.text),
+  secondChat.text,
+);
+// A fresh, OPEN quest for the same repository — the driven door refuses on quest state before it
+// ever looks at the tree, so a closed one would prove the wrong refusal.
+const rival = await api('POST', '/api/quests', {
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'A quest the conversation is in the way of',
+    body: 'The tree is the unit of exclusion, whoever is holding it.',
+  },
+});
+const chatBlocksDriven = await api('POST', '/api/sessions', {
+  body: { quest: rival.json?.quest?.id, adapter: 'stub' },
+});
+check(
+  '…and so is a DRIVEN session, with the refusal saying a chat has it',
+  chatBlocksDriven.status === 409 && /a chat/.test(chatBlocksDriven.text),
+  chatBlocksDriven.text,
+);
+
+// Put the tree back: a queued record with no process would hold the repository forever.
+await api('POST', `/api/sessions/${firstChat.json?.session?.id}/state`, { body: { state: 'stopped' } });
+const freed = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', adapter: 'stub' } });
+check(
+  'a finished conversation frees the repository',
+  freed.status === 200,
+  freed.text,
+);
+await api('POST', `/api/sessions/${freed.json?.session?.id}/state`, { body: { state: 'stopped' } });
+
+const unknownChat = await api('POST', '/api/sessions/chat', { body: { repository: 'nobody', adapter: 'stub' } });
+check(
+  'a conversation in a repository nobody registered is refused, and says how to register it',
+  unknownChat.status === 404 && /connect/.test(unknownChat.text),
+  unknownChat.text,
+);
+
+// -------------------------------------------------- 15. report
+
+section('15. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -1409,6 +1554,10 @@ if (totals.failures) {
   console.log('  from — a newer commit replacing wholesale and carrying a deletion with it, a stale');
   console.log('  one refused as information rather than as a failure, an unmerged branch refused');
   console.log('  though it was newer, a feed naming no commit refused outright, and the commit each');
-  console.log('  copy stands on served back so staleness is seen rather than assumed.');
+  console.log('  copy stands on served back so staleness is seen rather than assumed. And a');
+  console.log('  CONVERSATION (D49 §3): a chat held from a terminal with no model in it — answering');
+  console.log('  what it heard, publishing the work that came up rather than editing across, ending');
+  console.log('  on end-of-input as a first-class record with no quest and a transcript of its own,');
+  console.log('  while the working tree stayed the unit of exclusion in both directions.');
   rmSync(scratch, { recursive: true, force: true });
 }

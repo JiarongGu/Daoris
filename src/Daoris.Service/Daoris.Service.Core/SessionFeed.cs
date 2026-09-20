@@ -1,16 +1,22 @@
 namespace Daoris.Knowledge;
 
 /// <summary>One record as a feed carries it — already judged where the process lived (D47 §6).</summary>
+/// <param name="Quest">Null for a chat, which may serve none (D49 §3).</param>
+/// <param name="Kind">
+/// `driven` or `chat`. It travels because a teammate seeing a record deserves to know which it was —
+/// and because without it every mirrored conversation would arrive looking like planned work.
+/// </param>
 public sealed record FedSessionRecord(
     string? Id, string? Quest, string? Repository, string? Adapter, string? State,
-    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated);
+    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated,
+    string? Kind = null);
 
 /// <summary>Why a feed of records was not taken — or <see cref="None"/> when it was.</summary>
 public enum SessionFeedRefusal
 {
     None,
 
-    /// <summary>A record missing what a record is — id, quest, repository, a known state.</summary>
+    /// <summary>A record missing what a record is — id, repository, a known state.</summary>
     Malformed,
 
     /// <summary>A record for a repository that has not joined this deployment.</summary>
@@ -46,12 +52,15 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
         // Judge everything before mirroring anything, so a refused feed changes nothing at all.
         foreach (var record in records)
         {
-            if (string.IsNullOrWhiteSpace(record.Id) || string.IsNullOrWhiteSpace(record.Quest)
+            // The quest is NOT required: a chat may serve none (D49 §3), and demanding one here
+            // would make a conversation unmirrorable — a teammate would see the repository fall
+            // silent rather than see that somebody was talking in it.
+            if (string.IsNullOrWhiteSpace(record.Id)
                 || string.IsNullOrWhiteSpace(record.Repository) || !Session.TryParse(record.State ?? "", out _))
             {
                 return new(
                     SessionFeedRefusal.Malformed,
-                    $"record `{record.Id}` is not a session record — id, quest, repository and a known state are required",
+                    $"record `{record.Id}` is not a session record — id, repository and a known state are required",
                     Records: 0);
             }
 
@@ -69,11 +78,16 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
         {
             Session.TryParse(record.State!, out var state);
             await sessions.MirrorAsync(new Session(
-                $"{origin}/{record.Id}", record.Quest!, record.Repository!, record.Adapter ?? "unknown",
+                $"{origin}/{record.Id}", record.Quest, record.Repository!, record.Adapter ?? "unknown",
                 state, record.Note, record.Evidence, Transcript: null, record.Created, record.Updated,
                 workspaces.TryGetValue(record.Repository!, out var workspace)
                     ? workspace
-                    : Workspaces.Default), ct)
+                    : Workspaces.Default,
+                // An unknown kind mirrors as driven, the same tolerance the store reads rows with: a
+                // record of work that happened is worth keeping even when a field is from a future.
+                Enum.TryParse<SessionKind>(record.Kind, ignoreCase: true, out var kind)
+                    ? kind
+                    : SessionKind.Driven), ct)
                 .ConfigureAwait(false);
         }
 

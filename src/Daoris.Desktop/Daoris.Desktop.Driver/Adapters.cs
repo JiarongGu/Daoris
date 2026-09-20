@@ -50,6 +50,15 @@ public static class TargetPrompt
         """;
 }
 
+/// <param name="Repository">Whose agent the conversation is.</param>
+/// <param name="Root">The working tree it runs in.</param>
+/// <param name="ServiceUrl">Where the service is, so the session can take or publish quests itself.</param>
+/// <remarks>
+/// A chat carries no quest (D49 §3) — that is the whole point: it is for work not yet shaped as an
+/// ask. It may take one mid-conversation through its own connector, exactly as a driven session does.
+/// </remarks>
+public sealed record ChatTarget(string Repository, string Root, string ServiceUrl);
+
 /// <summary>
 /// One harness adapter: how a session is spawned, and how the target reaches it. An adapter names a
 /// harness, never a model (D24) — which model answers is that harness's own configuration in that
@@ -65,6 +74,24 @@ public interface ISessionAdapter
     /// process lifetime, because observing it is the driver's half of the contract (D46 §5).
     /// </summary>
     ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command);
+
+    /// <summary>
+    /// Whether this harness can be wired for turn-taking (D49 §3) — stdin carrying the person's
+    /// messages, stdout streaming the harness's.
+    /// </summary>
+    /// <remarks>
+    /// Declared honestly and opted into, never assumed: an adapter that has not been wired for a
+    /// conversation says so, and asking for one errors naming what the harness is — the same rule
+    /// that governs an unknown adapter name (D23). Default false, so a new adapter is non-interactive
+    /// until someone has actually done the work.
+    /// </remarks>
+    bool Interactive => false;
+
+    /// <summary>The process that would be a CHAT: the same spawn, with stdin open.</summary>
+    ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        throw new DriverException(
+            $"the `{Name}` adapter cannot hold a conversation — it spawns a harness that takes its "
+            + "target once and runs to completion. Chat with an adapter that declares `interactive`.");
 }
 
 /// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
@@ -77,23 +104,49 @@ internal static class Spawning
     /// </summary>
     public static ProcessStartInfo InRoot(SessionTarget target, string fileName, IEnumerable<string> arguments)
     {
+        var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl);
+
+        info.Environment["DAORIS_QUEST_ID"] = target.QuestId;
+        info.Environment["DAORIS_QUEST_TITLE"] = target.Title;
+        info.Environment["DAORIS_QUEST_BODY"] = target.Body;
+        info.Environment["DAORIS_QUEST_ASKER"] = target.Asker;
+        info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+
+        return info;
+    }
+
+    /// <summary>
+    /// The same shell for a CHAT (D49 §3), with stdin open so the person's messages reach the harness.
+    /// </summary>
+    /// <remarks>
+    /// The quest variables are absent rather than empty: a conversation serves no quest, and a blank
+    /// `DAORIS_QUEST_ID` would read to a session as an id it failed to parse. What it gets is what is
+    /// true — which repository it is the agent for, and where to reach the service if the conversation
+    /// turns into a quest worth taking or publishing.
+    /// </remarks>
+    public static ProcessStartInfo ChatInRoot(
+        ChatTarget target, string fileName, IEnumerable<string> arguments)
+    {
+        var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl);
+        info.RedirectStandardInput = true;
+        return info;
+    }
+
+    private static ProcessStartInfo Shell(
+        string root, string fileName, IEnumerable<string> arguments, string repository, string serviceUrl)
+    {
         var info = new ProcessStartInfo
         {
             FileName = fileName,
-            WorkingDirectory = target.Root,
+            WorkingDirectory = root,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
 
-        info.Environment["DAORIS_QUEST_ID"] = target.QuestId;
-        info.Environment["DAORIS_QUEST_TITLE"] = target.Title;
-        info.Environment["DAORIS_QUEST_BODY"] = target.Body;
-        info.Environment["DAORIS_QUEST_ASKER"] = target.Asker;
-        info.Environment["DAORIS_REPOSITORY"] = target.Repository;
-        info.Environment["DAORIS_SERVICE_URL"] = target.ServiceUrl;
-        info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+        info.Environment["DAORIS_REPOSITORY"] = repository;
+        info.Environment["DAORIS_SERVICE_URL"] = serviceUrl;
 
         return info;
     }
@@ -108,17 +161,24 @@ public sealed class StubAdapter : ISessionAdapter
 {
     public string Name => "stub";
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
-    {
-        if (command is null || command.Count == 0)
-        {
-            throw new DriverException(
+    /// <summary>
+    /// Interactive, so the whole conversation loop can be gated with no model in it (D46 §8's argument,
+    /// one layer on): a scripted exchange is a real spawn, a real stdin, a real stream and a real exit.
+    /// </summary>
+    public bool Interactive => true;
+
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        Spawning.InRoot(target, Command(command)[0], Command(command).Skip(1));
+
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        Spawning.ChatInRoot(target, Command(command)[0], Command(command).Skip(1));
+
+    private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 }
+            ? command
+            : throw new DriverException(
                 "the stub adapter needs a command — name one in driver.json: "
                 + """{ "commands": { "stub": ["node", "path/to/agent.mjs"] } }""");
-        }
-
-        return Spawning.InRoot(target, command[0], command.Skip(1));
-    }
 }
 
 /// <summary>
@@ -145,14 +205,42 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 {
     public string Name => "claude-code";
 
+    /// <summary>
+    /// The supported harness holds a conversation (D49 §3): run without a one-shot prompt it takes
+    /// turns on its own streams, which is all this seam asks of it.
+    /// </summary>
+    public bool Interactive => true;
+
     public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
     {
-        var resolved = command is { Count: > 0 } ? command : ["claude"];
+        var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
             .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", "acceptEdits"]);
 
         return Spawning.InRoot(target, resolved[0], arguments);
     }
+
+    /// <summary>
+    /// A conversation: no target prompt, because the person supplies the first message.
+    /// </summary>
+    /// <remarks>
+    /// <para>The permission posture is the SAME as a driven session's and for the same reason — the
+    /// repository's own checked-in configuration governs, and nothing at the outward boundary is ever
+    /// auto-approved (D46 §5, obligation 3). A chat does not get more latitude because a person is
+    /// watching; the person being present is why a dirty tree is allowed, not why a push would be.</para>
+    ///
+    /// <para>No model is named here either (D24): which model answers is the harness's own
+    /// configuration in that repository.</para>
+    /// </remarks>
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
+    {
+        var resolved = Resolve(command);
+        return Spawning.ChatInRoot(
+            target, resolved[0], resolved.Skip(1).Concat(["--permission-mode", "acceptEdits"]));
+    }
+
+    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 } ? command : ["claude"];
 }
 
 /// <summary>

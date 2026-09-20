@@ -26,7 +26,17 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         await _connection.OpenAsync();
         _quests = await QuestStore.OpenAsync(_connection);
         _sessions = await SessionStore.OpenAsync(_connection);
-        _ledger = new SessionLedger(_quests, _sessions);
+
+        // A registry too, because a chat names its repository directly rather than inheriting it from
+        // a quest (D49 §3) — and a repository nobody registered has no working tree to talk in.
+        var store = new InMemoryKnowledgeStore();
+        var service = new KnowledgeService(
+            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
+            DisclosurePolicy.LocalOnly, registry: new Registry());
+        await service.RegisterAsync(
+            new Registration("Owner", Adopted: true, "A repo.", [], [], [], Entries: 0), Now);
+
+        _ledger = new SessionLedger(_quests, _sessions, service);
     }
 
     public async Task DisposeAsync() => await _connection.DisposeAsync();
@@ -264,6 +274,91 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var resumed = await Advance(opened.Session.Id, "working");
 
         Assert.Equal(SessionAdvanceRefusal.None, resumed.Refusal);
+    }
+
+    // ——— Chats (D49 §3). The same entity, entered by a person instead of planned from a quest: the
+    // same record, the same observed lifecycle, and above all the same lock.
+
+    [Fact]
+    public async Task A_chat_opens_with_no_quest_at_all()
+    {
+        var outcome = await _ledger.OpenChatAsync("Owner", "stub", Now);
+
+        Assert.Equal(SessionOpenRefusal.None, outcome.Refusal);
+        Assert.Equal(SessionKind.Chat, outcome.Session!.Kind);
+        Assert.Null(outcome.Session.Quest);
+        Assert.Equal(SessionState.Queued, outcome.Session.State);
+        Assert.Equal("Owner", outcome.Session.Repository);
+    }
+
+    /// <summary>A chat runs IN a repository, so there has to be one on this machine's registry.</summary>
+    [Fact]
+    public async Task A_chat_in_a_repository_nobody_registered_is_refused()
+    {
+        var outcome = await _ledger.OpenChatAsync("Stranger", "stub", Now);
+
+        Assert.Equal(SessionOpenRefusal.RepositoryUnknown, outcome.Refusal);
+        Assert.Contains("connect", outcome.Message);
+        Assert.Null(outcome.Session);
+    }
+
+    /// <summary>
+    /// The lock is the working tree, not the kind of work: two agents in one tree corrupt each other's
+    /// git state regardless of who is typing.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_cannot_open_where_a_driven_session_is_working()
+    {
+        var quest = await Publish();
+        await _ledger.OpenAsync(quest.Id, "stub", Now);
+
+        var outcome = await _ledger.OpenChatAsync("Owner", "stub", Now);
+
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, outcome.Refusal);
+        Assert.Contains("one session per repository", outcome.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>…and the same in reverse: a conversation holds the tree exactly as driven work does.</summary>
+    [Fact]
+    public async Task A_driven_session_cannot_start_where_a_chat_is_open_and_the_refusal_says_it_is_a_chat()
+    {
+        await _ledger.OpenChatAsync("Owner", "stub", Now);
+        var quest = await Publish();
+
+        var outcome = await _ledger.OpenAsync(quest.Id, "stub", Now);
+
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, outcome.Refusal);
+        // Naming WHAT holds it is the actionable half: a person stops a chat differently from the way
+        // they wait out a driven run.
+        Assert.Contains("a chat", outcome.Message);
+    }
+
+    /// <summary>A chat that ended releases the tree, like any other finished session.</summary>
+    [Fact]
+    public async Task A_finished_chat_frees_the_repository()
+    {
+        var chat = await _ledger.OpenChatAsync("Owner", "stub", Now);
+        await Advance(chat.Session!.Id, "starting");
+        await Advance(chat.Session.Id, "working");
+        await Advance(chat.Session.Id, "completed");
+
+        var again = await _ledger.OpenChatAsync("Owner", "stub", Now);
+
+        Assert.Equal(SessionOpenRefusal.None, again.Refusal);
+    }
+
+    /// <summary>
+    /// A chat moves through the same lifecycle — observed, not self-reported. Nothing about the state
+    /// machine is chat-specific, which is what keeps one set of rules rather than two that drift.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_walks_the_same_lifecycle()
+    {
+        var chat = await _ledger.OpenChatAsync("Owner", "stub", Now);
+
+        Assert.Equal(SessionAdvanceRefusal.None, (await Advance(chat.Session!.Id, "starting")).Refusal);
+        Assert.Equal(SessionAdvanceRefusal.None, (await Advance(chat.Session.Id, "working")).Refusal);
+        Assert.Equal(SessionAdvanceRefusal.None, (await Advance(chat.Session.Id, "stopped")).Refusal);
     }
 
     private Task<SessionAdvanceOutcome> Advance(string id, string state) =>

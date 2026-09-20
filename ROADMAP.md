@@ -46,7 +46,8 @@ the desktop **or** the CLI. The contracts are `docs/2026-09-20-workspace-design.
 | **WSP3 · Remotes become a map** | One deployment per workspace (`~/.daoris/remotes.json`), a per-workspace sync loop, the shared host's own `DAORIS_WORKSPACE` identity, and both editors over the one file — `daoris remote`, `status --machine`, the desktop's Machine view | **Built** (2026-09-20) — the rehearsal proves only the wired circle feeds, and a registration declaring another workspace is refused naming both |
 | **WSP4 · Knowledge sync semantics** | Git provenance stamped by the driver, with monotonic, default-branch-only replacement, served and shown | **Built** (2026-09-20) — the rehearsal proves a newer feed replacing (a deletion travelling with it), a stale one refused as *information*, and an unmerged branch refused though newer |
 | **SES1 · The live console** | The capture pump tees into a bounded per-session buffer; the shell streams it to the session drawer, verbatim and desktop-only | **Built** (2026-09-20) — the transcript stays the durable record; the window states what it dropped |
-| **SES2–SES3 · The working surface** | Chat sessions, and the managed harness toolchain with credential profiles | Designed (D49) |
+| **SES2 · Chat sessions** | A conversation is a session: `driven \| chat`, quest optional, the same one-session-per-repository lock; the seam grows `interactive`; two doors (desktop, and a terminal) | **Built** (2026-09-20) — the rehearsal holds one with no model in it, publishing the work that came up rather than editing across |
+| **SES3 · The toolchain** | Harnesses Daoris installs and updates, with named credential profiles | Designed (D49) |
 
 ---
 

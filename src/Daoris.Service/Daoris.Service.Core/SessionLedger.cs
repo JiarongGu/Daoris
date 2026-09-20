@@ -13,6 +13,13 @@ public enum SessionOpenRefusal
 
     /// <summary>The repository already has an active session — the working tree is the unit of exclusion.</summary>
     RepositoryBusy,
+
+    /// <summary>
+    /// No such repository on this machine's registry. A chat runs IN a repository, so there has to be
+    /// one — and a chat is the one way in that names a repository directly rather than inheriting it
+    /// from a quest, which is why only this path can fail that way.
+    /// </summary>
+    RepositoryUnknown,
 }
 
 /// <param name="Refusal"><see cref="SessionOpenRefusal.None"/> when a session was queued.</param>
@@ -58,8 +65,62 @@ public sealed record SessionAdvanceOutcome(SessionAdvanceRefusal Refusal, string
 /// git state, so the tree is the unit of exclusion. A parked session still holds its repository: the
 /// person clearing it is the flow control, not an inconvenience to route around.</para>
 /// </remarks>
-public sealed class SessionLedger(QuestStore quests, SessionStore sessions)
+public sealed class SessionLedger(QuestStore quests, SessionStore sessions, KnowledgeService? registry = null)
 {
+    /// <summary>
+    /// Open a chat in a repository (D49 §3) — a person-initiated session serving no quest yet.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The same lock, for the same reason.</b> One active session per repository holds for
+    /// chats exactly as for driven work: two agents in one working tree corrupt each other's git
+    /// state regardless of who is typing. The refusal names the session that holds it.</para>
+    ///
+    /// <para><b>No quest, and no quest required.</b> The point of a chat is starting work that is not
+    /// yet shaped as an ask; a chat may take a quest mid-conversation through its own connector, or
+    /// end by publishing several. The quest system is where the work lands, not the toll to begin.</para>
+    ///
+    /// <para><b>The circle comes from the repository</b>, because there is no quest to take it from —
+    /// the registry row is the machine's own wiring (D48 §2), and it is the only honest source.</para>
+    /// </remarks>
+    public async Task<SessionOpenOutcome> OpenChatAsync(
+        string repository, string adapter, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var known = registry is null
+            ? null
+            : (await registry.RegistryAsync(ct: ct).ConfigureAwait(false))
+                .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+
+        if (known is null)
+        {
+            return new(
+                SessionOpenRefusal.RepositoryUnknown,
+                $"`{repository}` is not registered on this machine, so there is no working tree to talk "
+                + "in. `daoris connect` from inside it, or add it from Projects.",
+                Session: null);
+        }
+
+        var active = await sessions.ActiveForAsync(known.Repository, ct).ConfigureAwait(false);
+        if (active is not null)
+        {
+            return new(
+                SessionOpenRefusal.RepositoryBusy,
+                $"`{known.Repository}` already has an active session — `{active.Id}` "
+                + $"({Spell(active.State)}{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). "
+                + "One session per repository: the working tree is the unit of exclusion, and that is "
+                + "true of a conversation exactly as it is of driven work.",
+                Session: null);
+        }
+
+        var session = await sessions
+            .CreateAsync(null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat, ct)
+            .ConfigureAwait(false);
+
+        return new(
+            SessionOpenRefusal.None,
+            $"Chat `{session.Id}` opened in `{known.Repository}`, via {adapter}.",
+            session);
+    }
+
     /// <summary>
     /// Queue a session for an open quest. Refuses an unknown or non-open quest, and a repository that
     /// already has an active session.
@@ -91,16 +152,16 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions)
         {
             return new(
                 SessionOpenRefusal.RepositoryBusy,
-                $"`{quest.To}` already has an active session — `{active.Id}` ({Spell(active.State)}, "
-                + $"quest `#{active.Quest}`). One session per repository: the working tree is the unit "
-                + "of exclusion.",
+                $"`{quest.To}` already has an active session — `{active.Id}` ({Spell(active.State)}"
+                + $"{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). One session "
+                + "per repository: the working tree is the unit of exclusion.",
                 Session: null);
         }
 
         // The record's circle is the quest's circle — derived, never passed beside it, so a record can
         // never be filed under a workspace its quest does not belong to (D48 §4).
         var session = await sessions
-            .CreateAsync(quest.Id, quest.To, adapter, now, quest.Workspace, ct)
+            .CreateAsync(quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven, ct)
             .ConfigureAwait(false);
 
         return new(

@@ -1226,6 +1226,39 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## SES2 — chat sessions (2026-09-20)
+
+> **SES2 — chat sessions.** `Session.Kind: driven | chat`, quest optional; the adapter seam grows
+> `interactive` (stub first, scripted exchange in the gate; `claude-code` supported, `codex`
+> explicit); one-session-per-repository holds for chats; `SESSION_INPUT` over IPC; chats may
+> take/publish quests through their own connector; the rehearsal drives a chat to `completed` and the
+> repository-busy refusal. Interactive design §3.
+
+✅ done 2026-09-20 — a conversation is a session, not a second kind of thing. **The record gained a
+`Kind` and lost its required quest**: `quest` became nullable by rebuilding the table and COPYING the
+rows, because a session record is the trace of work that happened and nothing can re-derive it — the
+entry store's discard-and-rebuild rule does not transfer. **The ledger judges chats in the same
+place** with the same lock: one active session per repository, in both directions, and the refusal
+names *what* holds it ("a chat" or the quest) because a person stops a conversation differently from
+the way they wait out a driven run. A chat also has the one failure mode driven work cannot — an
+unregistered repository — since it names its tree directly rather than inheriting it from a quest.
+**The seam grew `interactive`**, default false: an adapter that has not been wired for turn-taking
+refuses in the harness's own terms rather than spawning something that will never answer. A chat's
+process has stdin; a driven one structurally does not, and the UI follows that rather than restating
+it. **`ChatRunner`** spawns, relays the person's lines, keeps the transcript and console exactly as
+the driven path does, and concludes from what it observes — Daoris pipes text and makes no model
+calls; the harness carries the model and the conversation. **Two endings, two meanings**: end of
+input lets the harness wind up (`completed`), `stop` is the person's interrupt (`stopped`). **Two
+doors**: the desktop's (`START_CHAT`, `SESSION_INPUT`, `END_CHAT`, and a `SESSION_ENDED` event) with
+a drawer over SES1's console, and `daoris-driver chat --repository <name>` for a machine with no
+screen — the same runner, a different reporting half, and what lets the gate drive a whole
+conversation with no model in it. The rehearsal holds one from a terminal: it answers what it hears,
+**publishes** the work that came up rather than editing across, ends on end-of-input as a record with
+no quest and a transcript of its own, and the tree stays the unit of exclusion in both directions.
+A flaw the tests caught: the chat button matched any live session, so it would have opened an input
+box in front of a driven session that has no channel to listen on. Tests grew 235→245 service,
+89→98 driver, 40→44 web vitest, 124→135 family rehearsal.
+
 ## SES1 — the console (2026-09-20)
 
 > **SES1 — the console.** The capture pump tees to a bounded per-session ring buffer; the shell's

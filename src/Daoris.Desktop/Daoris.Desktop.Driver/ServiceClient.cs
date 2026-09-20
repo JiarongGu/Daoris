@@ -99,6 +99,37 @@ public sealed class ServiceClient : IDisposable
         return (Text(session, "id"), Text(document.RootElement, "message") ?? "");
     }
 
+    /// <summary>
+    /// Ask the ledger to open a CHAT in a repository (D49 §3) — a person's session, serving no quest
+    /// yet. A refusal is an answer, not an exception: the usual one is that the repository is busy,
+    /// and the sentence names what holds it.
+    /// </summary>
+    public async Task<(string? SessionId, string Message)> OpenChatAsync(
+        string repository, string adapter, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("repository", repository);
+            writer.WriteString("adapter", adapter);
+            writer.WriteEndObject();
+        });
+
+        using var response = await _http.PostAsync(
+            $"{_base}/api/sessions/chat", new StringContent(body, Encoding.UTF8, "application/json"), ct)
+            .ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        using var document = JsonDocument.Parse(payload);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return (null, Text(document.RootElement, "error") ?? payload);
+        }
+
+        var session = document.RootElement.GetProperty("session");
+        return (Text(session, "id"), Text(document.RootElement, "message") ?? "");
+    }
+
     /// <summary>Move a session's record. The ledger judges; the driver reports what it observed.</summary>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,

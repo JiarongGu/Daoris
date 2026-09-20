@@ -3,7 +3,8 @@
 **Status: built — the driver, its headless host, and the shell all exist, and the person's controls
 landed.** The brief was rewritten 2026-09-19 for D45; **the design is settled:
 `docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
-adapter seam, the stub, the `claude-code` adapter, and since D47 the machine's **remote sync** —
+adapter seam with its `interactive` capability (D49 §3), the stub, the `claude-code` adapter,
+`ChatRunner` for conversations, and since D47 the machine's **remote sync** —
 `RemoteSync` rides the tick, feeding joined registrations, session records and opted-in knowledge up
 and mirroring the remote's quests and foreign registrations down, once **per workspace** since D48 §5,
 because one shared deployment serves one circle) and `Daoris.Desktop.Driver.Host`
@@ -15,7 +16,9 @@ otherwise, a dev build run from its project so the bundle serves — carries the
 `driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed
 by the page — drivable and hold per repository, stop a running session, and since D49 §2 **the live
 console**: `TAIL_SESSION` for a session's backlog and batched `SESSION_OUTPUT` events for what it says
-next, fed by the capture pump's tee into a bounded per-session buffer that never leaves this machine),
+next, fed by the capture pump's tee into a bounded per-session buffer that never leaves this machine;
+since D49 §3 **conversations** too — `START_CHAT`, `SESSION_INPUT`, `END_CHAT` and a `SESSION_ENDED`
+event over the same bridge, and `daoris-driver chat --repository <name>` for a machine with no screen),
 edits the machine's wiring
 over `DAORIS.REMOTES` (the Machine view, over the same `~/.daoris/remotes.json` the CLI edits — a key
 goes in and only its audit prefix comes back), and takes the loop and its

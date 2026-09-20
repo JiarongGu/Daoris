@@ -318,6 +318,113 @@ describe('the shell-attached registry management', () => {
 });
 
 /**
+ * Conversations (D49 §3): a session a person entered rather than the driver planned. Shell-only,
+ * because a chat is a process on this machine and processes never leave the driver (D46 §7) — and
+ * Daoris pipes text without ever being the conversation: no model is named anywhere in this surface.
+ */
+describe('chat sessions', () => {
+  const CHAT = {
+    id: 'c0ffee11', quest: null, repository: 'engine', adapter: 'stub', state: 'working',
+    kind: 'chat', created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('a repository with no live session offers to start one, and opens what comes back', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'START_CHAT') return { sessionId: 'c0ffee11', message: 'Chat `c0ffee11` opened in `engine`, via stub.' };
+      if (type === 'TAIL_SESSION') return { session: 'c0ffee11', lines: [], sequence: 0, live: true, dropped: 0 };
+      return DRIVER_STATE;
+    });
+
+    show(<ProjectsView notify={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'chat' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
+      payload: { repository: 'engine' },
+    });
+  });
+
+  /**
+   * A refusal is the ledger's own sentence, verbatim — and the drawer does not open on one: a
+   * conversation that was refused has no session to show.
+   *
+   * The fixture holds a live DRIVEN session in `engine`, which is the case worth pinning: a driven
+   * session holds the tree but has no channel to speak into, so the button offers to start a chat
+   * (and the ledger refuses, naming what holds it) rather than opening an input box nothing is
+   * listening to.
+   */
+  it('a refused chat surfaces the service sentence and opens nothing', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'START_CHAT'
+      ? { sessionId: null, message: '`engine` already has an active session — `s1a2b3c4` (working, quest `#abc123`).' }
+      : DRIVER_STATE));
+    const notify = vi.fn();
+
+    show(<ProjectsView notify={notify} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'chat' }));
+
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('already has an active session'), 'error');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('typing sends one message over the bridge and clears the box', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      // A live chat in the repository: the button opens it rather than starting a second.
+      if (url.startsWith('/api/sessions')) return Response.json([CHAT]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_INPUT') return { sent: true };
+      if (type === 'TAIL_SESSION') return { session: 'c0ffee11', lines: [], sequence: 0, live: true, dropped: 0 };
+      return DRIVER_STATE;
+    });
+
+    show(<ProjectsView notify={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'open session' }));
+
+    const box = await screen.findByLabelText('message');
+    await userEvent.type(box, 'what is this repository for?');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'c0ffee11', text: 'what is this repository for?' },
+    });
+    expect((box as HTMLTextAreaElement).value).toBe('');
+  });
+
+  /**
+   * Finishing and stopping are different verbs and mean different things: end-of-input lets the
+   * harness wind up, a stop cuts it off and the record says the person did.
+   */
+  it('finishing and stopping are offered separately', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/sessions')) return Response.json([CHAT]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'END_CHAT') return { ended: true };
+      if (type === 'TAIL_SESSION') return { session: 'c0ffee11', lines: [], sequence: 0, live: true, dropped: 0 };
+      return DRIVER_STATE;
+    });
+
+    show(<ProjectsView notify={() => {}} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'open session' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'finish' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: 'c0ffee11' } });
+    expect(screen.getByRole('button', { name: 'stop it' })).toBeTruthy();
+  });
+});
+
+/**
  * The machine's wiring (D48 §5, D50): which deployment serves each workspace here. Shell-only and
  * more strictly than the rest — the service has no route onto this at all, so every call must land on
  * the bridge and none on the API.

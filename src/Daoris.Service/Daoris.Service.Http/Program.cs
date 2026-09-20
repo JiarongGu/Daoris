@@ -358,6 +358,34 @@ app.MapPost("/api/sessions", async (
     };
 });
 
+// A chat is a session a person entered rather than the driver planned (D49 §3) — same record, same
+// lock, no quest required. The process is the driver's, as ever: this opens the RECORD, and only a
+// driver on this machine can put a harness behind it.
+app.MapPost("/api/sessions/chat", async (
+    ComposedService s, HttpContext http, OpenChatRequest body, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(body.Repository))
+    {
+        return Results.BadRequest(new ErrorResponse("repository is required"));
+    }
+
+    var outcome = await s.Ledger.OpenChatAsync(
+        body.Repository,
+        // The adapter is the harness, never a model (D24). Silence takes the supported one.
+        string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
+        DateTimeOffset.UtcNow, ct);
+
+    return outcome.Refusal switch
+    {
+        SessionOpenRefusal.None => Results.Ok(
+            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+        SessionOpenRefusal.RepositoryUnknown => Results.NotFound(new ErrorResponse(outcome.Message)),
+        // Busy is a state conflict, the same shape the driven door and the quest lock teach.
+        SessionOpenRefusal.RepositoryBusy => Results.Conflict(new ErrorResponse(outcome.Message)),
+        _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+    };
+});
+
 app.MapPost("/api/sessions/{id}/state", async (
     ComposedService s, HttpContext http, string id, AdvanceSessionRequest body, CancellationToken ct) =>
 {
@@ -539,7 +567,8 @@ if (mode == ServiceMode.Shared)
         var outcome = await new SessionFeed(s.Service, s.Sessions).FeedAsync(
             origin,
             (body.Records ?? []).Select(r => new FedSessionRecord(
-                r.Id, r.Quest, r.Repository, r.Adapter, r.State, r.Note, r.Evidence, r.Created, r.Updated))
+                r.Id, r.Quest, r.Repository, r.Adapter, r.State, r.Note, r.Evidence, r.Created, r.Updated,
+                r.Kind))
                 .ToList(),
             ct);
 
@@ -674,7 +703,7 @@ static EntryResponse ToEntry(KnowledgeEntry entry) => new(
 static SessionResponse ToSession(Session s, bool loopback) => new(
     s.Id, s.Quest, s.Repository, s.Adapter, s.StateName, s.Note, s.Evidence,
     Transcript: loopback ? s.Transcript : null,
-    s.Created, s.Updated, s.Workspace);
+    s.Created, s.Updated, s.Workspace, s.Kind.ToString().ToLowerInvariant());
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

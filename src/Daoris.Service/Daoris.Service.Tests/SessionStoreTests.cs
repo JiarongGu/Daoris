@@ -164,4 +164,92 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.False(Session.TryParse("paused", out _));
         Assert.False(Session.TryParse("", out _));
     }
+
+    /// <summary>A chat is the same row with no quest in it (D49 §3).</summary>
+    [Fact]
+    public async Task A_chat_round_trips_with_no_quest()
+    {
+        var chat = await _sessions.CreateAsync(
+            null, "Owner", "stub", Now, workspace: null, kind: SessionKind.Chat);
+
+        var read = await _sessions.FindAsync(chat.Id);
+
+        Assert.Equal(SessionKind.Chat, read!.Kind);
+        Assert.Null(read.Quest);
+        // And it holds the repository exactly as driven work does — the lock reads the same row.
+        Assert.Equal(chat.Id, (await _sessions.ActiveForAsync("Owner"))!.Id);
+    }
+}
+
+/// <summary>
+/// The upgrade that let a session have no quest (D49 §3).
+/// </summary>
+/// <remarks>
+/// SQLite cannot drop a NOT NULL constraint, so the table is rebuilt — and the rows are COPIED, not
+/// discarded. The entry store may rebuild by discarding because its contents are derived; a session
+/// record is the reviewable trace of work that actually happened, and nothing can re-derive it.
+/// </remarks>
+public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
+{
+    private SqliteConnection _connection = null!;
+    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-19T10:00:00Z");
+
+    public async Task InitializeAsync()
+    {
+        _connection = new SqliteConnection("Data Source=:memory:");
+        await _connection.OpenAsync();
+
+        // The table exactly as it stood before chats: quest NOT NULL, no kind column.
+        await using var old = _connection.CreateCommand();
+        old.CommandText = """
+            CREATE TABLE sessions (
+              id         TEXT PRIMARY KEY,
+              quest      TEXT NOT NULL,
+              repository TEXT NOT NULL,
+              adapter    TEXT NOT NULL,
+              state      TEXT NOT NULL,
+              note       TEXT NULL,
+              evidence   TEXT NULL,
+              transcript TEXT NULL,
+              created    TEXT NOT NULL,
+              updated    TEXT NOT NULL,
+              workspace  TEXT NOT NULL DEFAULT 'default'
+            );
+            INSERT INTO sessions (id, quest, repository, adapter, state, evidence, created, updated, workspace)
+            VALUES ('old12345', 'abc123', 'Elder', 'claude-code', 'Completed', 'commit deadbee',
+                    '2026-09-18T10:00:00+00:00', '2026-09-18T11:00:00+00:00', 'aurora');
+            """;
+        await old.ExecuteNonQueryAsync();
+    }
+
+    public async Task DisposeAsync() => await _connection.DisposeAsync();
+
+    [Fact]
+    public async Task The_upgrade_keeps_every_record_and_lets_a_chat_open()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+
+        var elder = await sessions.FindAsync("old12345");
+        Assert.NotNull(elder);
+        Assert.Equal("abc123", elder!.Quest);
+        Assert.Equal("commit deadbee", elder.Evidence);
+        Assert.Equal("aurora", elder.Workspace);
+        // Everything that predates kinds is driven — which is what it was.
+        Assert.Equal(SessionKind.Driven, elder.Kind);
+
+        var chat = await sessions.CreateAsync(
+            null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);
+        Assert.Null((await sessions.FindAsync(chat.Id))!.Quest);
+    }
+
+    /// <summary>Opening twice must not rebuild twice — a guard that ran every time would be a rewrite
+    /// of the whole table on every start, and the second one would find nothing to relax.</summary>
+    [Fact]
+    public async Task The_rebuild_runs_once()
+    {
+        await SessionStore.OpenAsync(_connection);
+        var second = await SessionStore.OpenAsync(_connection);
+
+        Assert.NotNull(await second.FindAsync("old12345"));
+    }
 }

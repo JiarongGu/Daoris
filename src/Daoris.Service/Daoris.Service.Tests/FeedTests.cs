@@ -303,6 +303,24 @@ public sealed class SessionFeedTests : IAsyncLifetime
         Assert.Empty(await _sessions.ListAsync(includeClosed: true));
     }
 
+    /// <summary>
+    /// A conversation mirrors as a conversation (D49 §3): no quest, and the KIND travels. Without it
+    /// every chat would arrive at a teammate's deployment looking like planned work — and demanding a
+    /// quest would make it unmirrorable, so the repository would simply fall silent instead.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_mirrors_with_no_quest_and_says_it_was_a_chat()
+    {
+        var outcome = await _feed.FeedAsync(
+            "alice-laptop",
+            [Record(id: "c0ffee11", quest: null) with { Kind = "Chat" }]);
+
+        Assert.Equal(SessionFeedRefusal.None, outcome.Refusal);
+        var mirrored = Assert.Single(await _sessions.ListAsync(includeClosed: true));
+        Assert.Equal(SessionKind.Chat, mirrored.Kind);
+        Assert.Null(mirrored.Quest);
+    }
+
     /// <summary>A refused feed changes nothing — the good record beside the bad one stays unmirrored.</summary>
     [Fact]
     public async Task A_malformed_record_refuses_the_whole_feed_before_anything_lands()

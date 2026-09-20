@@ -59,6 +59,68 @@ public sealed class SessionProcesses
         lock (_gate) return _running.TryGetValue(sessionId, out var entry) && entry.StopRequested;
     }
 
+    /// <summary>
+    /// Send a person's message to a chat session (D49 §3) — one line into the harness's stdin.
+    /// </summary>
+    /// <remarks>
+    /// False for a session that has ended, and for a DRIVEN one: a driven session's process is spawned
+    /// without an input stream at all, because it was given its whole target at once and has nobody to
+    /// take turns with. That is a structural answer, not a policy — there is no stream to write to.
+    /// </remarks>
+    public bool Send(string sessionId, string message)
+    {
+        Entry? entry;
+        lock (_gate)
+        {
+            if (!_running.TryGetValue(sessionId, out entry)) return false;
+        }
+
+        try
+        {
+            var input = entry.Process.StandardInput;
+            lock (entry)
+            {
+                input.WriteLine(message);
+                input.Flush();
+            }
+
+            return true;
+        }
+        catch (Exception error) when (error is InvalidOperationException or IOException or ObjectDisposedException)
+        {
+            // Exited between the lookup and the write, or spawned with no input stream. Either way the
+            // message went nowhere, and the caller is told rather than left to assume it landed.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Close a chat's input — the person has finished talking, and the harness should wind up.
+    /// </summary>
+    /// <remarks>
+    /// Ending the conversation rather than killing it: a harness given end-of-input finishes what it
+    /// was saying and exits on its own, which is a `completed` record. `Stop` is the other verb, and
+    /// it means something different — the person cut it off.
+    /// </remarks>
+    public bool CloseInput(string sessionId)
+    {
+        Entry? entry;
+        lock (_gate)
+        {
+            if (!_running.TryGetValue(sessionId, out entry)) return false;
+        }
+
+        try
+        {
+            entry.Process.StandardInput.Close();
+            return true;
+        }
+        catch (Exception error) when (error is InvalidOperationException or IOException or ObjectDisposedException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>Register a live process. Dispose the handle when the session concludes.</summary>
     public IDisposable Track(string sessionId, Process process)
     {

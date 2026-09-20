@@ -36,8 +36,25 @@ public enum SessionState
     Stopped,
 }
 
+/// <summary>How a session was entered — the one thing that differs between them (D49 §3).</summary>
+public enum SessionKind
+{
+    /// <summary>Planned from a quest by the driver: the loop D46 built.</summary>
+    Driven,
+
+    /// <summary>
+    /// Opened by a person, to talk. It may serve no quest at all, may take one mid-conversation
+    /// through its own connector, or may end by publishing new ones — the quest system is where work
+    /// lands, not the toll to start talking.
+    /// </summary>
+    Chat,
+}
+
 /// <param name="Id">Short random handle — an attempt, so never content-derived: a retry is a new record.</param>
-/// <param name="Quest">The quest this session was started to serve.</param>
+/// <param name="Quest">
+/// The quest this session was started to serve — <b>null for a chat</b>, which may serve none (D49 §3).
+/// A driven session always has one: it is what the driver planned from.
+/// </param>
 /// <param name="Repository">The repository it runs in — the quest's receiver, denormalized for listing.</param>
 /// <param name="Adapter">Which harness adapter spawned it. A name for the record, never a model (D24).</param>
 /// <param name="State">Where it is.</param>
@@ -51,9 +68,14 @@ public enum SessionState
 /// the two can never disagree. The driver itself is per machine and crosses workspaces (design §4):
 /// the workspace decides where a record travels, not which machine may work it.
 /// </param>
+/// <param name="Kind">
+/// Driven or chat (D49 §3). It changes almost nothing — the same record, the same observed lifecycle,
+/// the same one-session-per-repository lock — which is the point: a conversation is a session, not a
+/// second kind of thing with its own rules to keep in step.
+/// </param>
 public sealed record Session(
     string Id,
-    string Quest,
+    string? Quest,
     string Repository,
     string Adapter,
     SessionState State,
@@ -62,7 +84,8 @@ public sealed record Session(
     string? Transcript,
     DateTimeOffset Created,
     DateTimeOffset Updated,
-    string Workspace = Workspaces.Default)
+    string Workspace = Workspaces.Default,
+    SessionKind Kind = SessionKind.Driven)
 {
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
@@ -117,7 +140,8 @@ public sealed class SessionStore
             command.CommandText = $"""
                 CREATE TABLE IF NOT EXISTS sessions (
                   id         TEXT PRIMARY KEY,
-                  quest      TEXT NOT NULL,
+                  -- Nullable since D49 §3: a chat may serve no quest at all.
+                  quest      TEXT NULL,
                   repository TEXT NOT NULL,
                   adapter    TEXT NOT NULL,
                   state      TEXT NOT NULL,
@@ -126,46 +150,105 @@ public sealed class SessionStore
                   transcript TEXT NULL,
                   created    TEXT NOT NULL,
                   updated    TEXT NOT NULL,
-                  workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}'
+                  workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
+                  kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'
                 );
                 CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // Records made before workspaces existed belong to the one circle there was. They must survive
-        // the upgrade: a session record is the reviewable trace of work that actually happened.
-        await using (var probe = _connection.CreateCommand())
+        // Records made before a column existed must survive its arrival: a session record is the
+        // reviewable trace of work that actually happened, and a store that dropped them on an upgrade
+        // would lose exactly the history the person reviews. Workspaces came with D48, kinds with D49.
+        foreach (var (column, definition) in new[]
         {
-            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = 'workspace'";
+            ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
+            ("kind", $"kind TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'"),
+        })
+        {
+            await using var probe = _connection.CreateCommand();
+            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = $name";
+            probe.Parameters.AddWithValue("$name", column);
             var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
             if (present == 0)
             {
                 await using var alter = _connection.CreateCommand();
-                alter.CommandText =
-                    $"ALTER TABLE sessions ADD COLUMN workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'";
+                alter.CommandText = $"ALTER TABLE sessions ADD COLUMN {definition}";
                 await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
         }
+
+        await RelaxQuestAsync(ct).ConfigureAwait(false);
     }
 
-    /// <summary>Record a new attempt, queued. Random id: two attempts at one quest are two records.</summary>
+    /// <summary>
+    /// Let `quest` be null on a table created before chats existed (D49 §3).
+    /// </summary>
+    /// <remarks>
+    /// SQLite cannot drop a NOT NULL constraint, so the table is rebuilt and the rows are COPIED —
+    /// not recreated empty. The entry store rebuilds by discarding, and may: it holds derived data.
+    /// This one holds records of work that happened, which nothing can re-derive. Guarded by a probe
+    /// so it runs once, on the one upgrade that needs it, and never again.
+    /// </remarks>
+    private async Task RelaxQuestAsync(CancellationToken ct)
+    {
+        await using (var probe = _connection.CreateCommand())
+        {
+            probe.CommandText =
+                "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = 'quest' AND \"notnull\" = 1";
+            var constrained = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
+            if (constrained == 0) return;
+        }
+
+        await using var rebuild = _connection.CreateCommand();
+        rebuild.CommandText = $"""
+            CREATE TABLE sessions_relaxed (
+              id         TEXT PRIMARY KEY,
+              quest      TEXT NULL,
+              repository TEXT NOT NULL,
+              adapter    TEXT NOT NULL,
+              state      TEXT NOT NULL,
+              note       TEXT NULL,
+              evidence   TEXT NULL,
+              transcript TEXT NULL,
+              created    TEXT NOT NULL,
+              updated    TEXT NOT NULL,
+              workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
+              kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'
+            );
+            INSERT INTO sessions_relaxed
+              SELECT id, quest, repository, adapter, state, note, evidence, transcript, created,
+                     updated, workspace, kind
+              FROM sessions;
+            DROP TABLE sessions;
+            ALTER TABLE sessions_relaxed RENAME TO sessions;
+            CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
+            """;
+        await rebuild.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Record a new attempt, queued. Random id: two attempts at one quest are two records — and a
+    /// chat, which may name no quest at all, is the same record with a different way in (D49 §3).
+    /// </summary>
     public async Task<Session> CreateAsync(
-        string quest, string repository, string adapter, DateTimeOffset now,
-        string? workspace = null, CancellationToken ct = default)
+        string? quest, string repository, string adapter, DateTimeOffset now,
+        string? workspace = null, SessionKind kind = SessionKind.Driven, CancellationToken ct = default)
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
-            SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace));
+            SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind);
 
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind)
             """;
         command.Parameters.AddWithValue("$workspace", session.Workspace);
+        command.Parameters.AddWithValue("$kind", session.Kind.ToString());
         command.Parameters.AddWithValue("$id", session.Id);
-        command.Parameters.AddWithValue("$quest", session.Quest);
+        command.Parameters.AddWithValue("$quest", (object?)session.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", session.Repository);
         command.Parameters.AddWithValue("$adapter", session.Adapter);
         command.Parameters.AddWithValue("$state", session.State.ToString());
@@ -222,14 +305,16 @@ public sealed class SessionStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind)
             ON CONFLICT (id) DO UPDATE SET
-              state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace
+              state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace,
+              kind = $kind
             """;
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(record.Workspace));
+        command.Parameters.AddWithValue("$kind", record.Kind.ToString());
         command.Parameters.AddWithValue("$id", record.Id);
-        command.Parameters.AddWithValue("$quest", record.Quest);
+        command.Parameters.AddWithValue("$quest", (object?)record.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", record.Repository);
         command.Parameters.AddWithValue("$adapter", record.Adapter);
         command.Parameters.AddWithValue("$state", record.State.ToString());
@@ -292,7 +377,7 @@ public sealed class SessionStore
 
     private static Session Read(SqliteDataReader reader) => new(
         reader.GetString(reader.GetOrdinal("id")),
-        reader.GetString(reader.GetOrdinal("quest")),
+        reader.IsDBNull(reader.GetOrdinal("quest")) ? null : reader.GetString(reader.GetOrdinal("quest")),
         reader.GetString(reader.GetOrdinal("repository")),
         reader.GetString(reader.GetOrdinal("adapter")),
         Enum.Parse<SessionState>(reader.GetString(reader.GetOrdinal("state"))),
@@ -301,5 +386,11 @@ public sealed class SessionStore
         reader.IsDBNull(reader.GetOrdinal("transcript")) ? null : reader.GetString(reader.GetOrdinal("transcript")),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("created"))),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
-        Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))));
+        Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))),
+        Enum.TryParse<SessionKind>(reader.GetString(reader.GetOrdinal("kind")), out var kind)
+            ? kind
+            // A row with a kind this build does not know is a DRIVEN record as far as anything here
+            // can act on it: the lifecycle is identical, and refusing to read a record would lose the
+            // trace of work that actually happened.
+            : SessionKind.Driven);
 }

@@ -315,6 +315,21 @@ The first version: doctrine that installs, is checked, and flows back.
   no HTTP route at all, so a browser over a keyed remote sees the record and never the stream. The
   window states what it dropped rather than showing two halves of a log as though they joined, and
   the transcript on the driving machine still holds everything.
+- **A conversation is a session.** A person can open a chat with an agent in any repository: the same
+  record the driver uses, the same observed lifecycle, and the same one-session-per-repository lock —
+  because two agents in one working tree corrupt it regardless of who is typing, and the refusal names
+  what holds it. A chat serves no quest by default; it may take one mid-conversation through its own
+  connector, or end by publishing the work that came up, which is how work that was not yet an ask
+  becomes one without anybody editing across. Ending it is two different verbs: finishing lets the
+  harness wind up, stopping cuts it off, and the record says which happened.
+- **The harness is the chat.** Daoris pipes the person's lines in and streams the session's out, and
+  makes no model calls at all: which model answers is that repository's own harness configuration.
+  The adapter seam grew one honest capability — an adapter that has not been wired for turn-taking
+  says so rather than spawning something that will never answer.
+- **Two doors, one conversation.** The desktop has a chat drawer over the live console; a machine with
+  no screen has `daoris-driver chat --repository <name>`, where stdin is the person and stdout is the
+  session. Same runner, same lock, same record — what stays desktop-only is the *stream*, not the
+  capability.
 - **Fixed: `refresh` re-read the repositories but never the folder.** The root's subdirectories were
   listed once at startup, so a repository created afterwards was invisible to the index while being
   fully registered and quest-addressable — and the refresh reported success either way.

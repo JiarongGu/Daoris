@@ -230,7 +230,16 @@ public sealed class Driver(
     /// thing that loses a line to an in-memory reader's problem. The console is optional because the
     /// headless driver has nobody to show it to — the buffer exists only where something reads it.
     /// </remarks>
-    private async Task CaptureAsync(Process process, string transcript, string sessionId, CancellationToken ct)
+    private Task CaptureAsync(Process process, string transcript, string sessionId, CancellationToken ct) =>
+        CaptureAsync(process, transcript, sessionId, output, ct);
+
+    /// <summary>
+    /// The same capture for a session this class did not spawn — a chat (D49 §3), whose process
+    /// belongs to <see cref="ChatRunner"/>. Shared rather than copied: one pump, one tee, one set of
+    /// rules about which destination is the durable one.
+    /// </summary>
+    internal static async Task CaptureAsync(
+        Process process, string transcript, string sessionId, SessionOutput? output, CancellationToken ct)
     {
         await using var file = new StreamWriter(transcript, append: false);
         var stdout = PumpAsync(process.StandardOutput, file, sessionId, output, ct);

@@ -53,16 +53,21 @@ public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
     string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch);
+// `Quest` is null for a chat (D49 §3) and `Kind` says which way in it was — the same record either
+// way, which is the point: a conversation is a session, not a second kind of thing.
 public sealed record SessionResponse(
-    string Id, string Quest, string Repository, string Adapter, string State,
+    string Id, string? Quest, string Repository, string Adapter, string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
-    string Workspace);
+    string Workspace, string Kind);
 public sealed record OpenSessionRequest(string Quest, string Adapter);
+public sealed record OpenChatRequest(string Repository, string? Adapter);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
+// `Quest` is null for a chat and `Kind` says which it was (D49 §3) — both travel, because a teammate
+// seeing a record deserves to know somebody was talking rather than that work was planned.
 public sealed record FeedSessionRecord(
-    string Id, string Quest, string Repository, string? Adapter, string? State,
-    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated);
+    string Id, string? Quest, string Repository, string? Adapter, string? State,
+    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated, string? Kind);
 public sealed record FeedSessionsRequest(IReadOnlyList<FeedSessionRecord>? Records);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
 // The three provenance fields are the feed's claim about WHICH point in the history it speaks for
@@ -106,6 +111,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(IEnumerable<RegistrationResponse>))]
 [JsonSerializable(typeof(IEnumerable<SessionResponse>))]
 [JsonSerializable(typeof(OpenSessionRequest))]
+[JsonSerializable(typeof(OpenChatRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
 [JsonSerializable(typeof(FeedSessionsRequest))]
