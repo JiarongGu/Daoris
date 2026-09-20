@@ -108,7 +108,7 @@ deployment its own entry names.
   reads HEAD, so the driver stamps `{ commit, committedAt, branch }` onto the feed. A refusal is
   **information, not a problem** — the sync reports it and carries on, the way a wall is named today.
 - **The last three landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
-  (WSP1), `7333f74` (WSP2) and WSP3's. All gate-green; `git log` is the reviewable record.
+  (WSP1), `7333f74` (WSP2) and `538bc03` (WSP3). All gate-green; `git log` is the reviewable record.
 - **What WSP1–WSP3 left for their successors, deliberately:** the platform's workspace *switcher*
   (Projects shows each repository's circle and manages it, the new Machine view shows the wiring, but
   no view filters by one yet); and the feed still carries no provenance — which is WSP4.
