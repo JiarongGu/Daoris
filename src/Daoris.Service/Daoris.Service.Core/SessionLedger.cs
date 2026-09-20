@@ -180,6 +180,11 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions)
     /// <summary>The public spelling, shared with every door through <see cref="Session.Spell"/>.</summary>
     private static string Spell(SessionState state) => Session.Spell(state);
 
+    /// <summary>
+    /// Shared with every other door through <see cref="Session.TryParse"/> — the strict one. A bare
+    /// Enum.TryParse also accepts numeric strings, turning "99" into an undefined state that escapes
+    /// the unknown-state branch.
+    /// </summary>
     private static SessionState? Parse(string state) =>
-        Enum.TryParse<SessionState>(state.Replace("-", ""), ignoreCase: true, out var parsed) ? parsed : null;
+        Session.TryParse(state, out var parsed) ? parsed : null;
 }

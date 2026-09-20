@@ -187,6 +187,23 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Contains("awaiting-person", outcome.Message);
     }
 
+    /// <summary>
+    /// Enum.TryParse accepts numeric strings, so a bare parse turns "99" into an undefined state that
+    /// escapes the unknown-state branch. The ledger must share Session.TryParse — the strict one — or
+    /// the two doors disagree about what a state name is.
+    /// </summary>
+    [Fact]
+    public async Task A_numeric_state_is_unknown_not_undefined()
+    {
+        var quest = await Publish();
+        var opened = await _ledger.OpenAsync(quest.Id, "stub", Now);
+
+        var outcome = await Advance(opened.Session!.Id, "99");
+
+        Assert.Equal(SessionAdvanceRefusal.UnknownState, outcome.Refusal);
+        Assert.Contains("Unknown state '99'", outcome.Message);
+    }
+
     [Fact]
     public async Task An_unknown_session_is_not_found()
     {

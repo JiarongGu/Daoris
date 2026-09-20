@@ -225,8 +225,8 @@ app.MapGet("/api/search", async (
 
     var hits = await s.Service.SearchAsync(new KnowledgeQuery(q)
     {
-        Kinds = ParseKinds(kinds),
-        Repositories = ParseSet(repositories),
+        Kinds = KnowledgeQuery.ParseKinds(kinds),
+        Repositories = KnowledgeQuery.ParseSet(repositories),
         Provenance = (localOnly ?? true) ? Provenance.Local : null,
         Limit = Math.Clamp(limit ?? 20, 1, 100),
     }, ct);
@@ -256,7 +256,7 @@ app.MapGet("/api/convergence", async (
 {
     var found = await s.Service.FindConvergenceAsync(
         new ConvergenceOptions(
-            Math.Clamp(minimumSimilarity ?? 0.82, 0, 1), ParseKinds(kinds), Math.Clamp(limit ?? 25, 1, 100)),
+            Math.Clamp(minimumSimilarity ?? 0.82, 0, 1), KnowledgeQuery.ParseKinds(kinds), Math.Clamp(limit ?? 25, 1, 100)),
         ct);
 
     return found.Select(c => new ConvergenceResponse(
@@ -337,6 +337,10 @@ app.MapPost("/api/sessions", async (
         SessionOpenRefusal.None => Results.Ok(
             new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionOpenRefusal.QuestNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        // State conflicts wear 409, the same shape the quest door teaches (D47 §5): a driver racing
+        // another machine for a repository slot got beaten, not malformed.
+        SessionOpenRefusal.QuestNotOpen or SessionOpenRefusal.RepositoryBusy =>
+            Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
@@ -352,6 +356,10 @@ app.MapPost("/api/sessions/{id}/state", async (
         SessionAdvanceRefusal.None => Results.Ok(
             new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        // Terminal and an illegal move are conflicts with the record's current state — 409 like the
+        // quest door. Only an unknown state name is a bad request.
+        SessionAdvanceRefusal.Terminal or SessionAdvanceRefusal.InvalidMove =>
+            Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
@@ -417,40 +425,28 @@ if (mode == ServiceMode.Shared)
     app.MapPost("/api/feed/sessions", async (
         ComposedService s, HttpContext http, FeedSessionsRequest body, CancellationToken ct) =>
     {
+        // Unreachable while the shared gate stamps every /api caller — kept deliberately: the origin
+        // is the record's attribution, and a gate refactor that dropped the stamp must fail HERE,
+        // loudly, not mirror records under an empty name.
         var origin = http.Items["daoris.principal"] as string;
         if (string.IsNullOrWhiteSpace(origin))
         {
             return Results.BadRequest(new ErrorResponse("the feed carries its key's identity — this door answers only keyed callers"));
         }
 
-        var records = body.Records ?? [];
-        var joined = (await s.Service.RegistryAsync(ct)).Where(r => r.Joined)
-            .Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var record in records)
+        var outcome = await new SessionFeed(s.Service, s.Sessions).FeedAsync(
+            origin,
+            (body.Records ?? []).Select(r => new FedSessionRecord(
+                r.Id, r.Quest, r.Repository, r.Adapter, r.State, r.Note, r.Evidence, r.Created, r.Updated))
+                .ToList(),
+            ct);
+
+        return outcome.Refusal switch
         {
-            if (string.IsNullOrWhiteSpace(record.Id) || string.IsNullOrWhiteSpace(record.Quest)
-                || string.IsNullOrWhiteSpace(record.Repository) || !Session.TryParse(record.State ?? "", out _))
-            {
-                return Results.BadRequest(new ErrorResponse(
-                    $"record `{record.Id}` is not a session record — id, quest, repository and a known state are required"));
-            }
-
-            if (!joined.Contains(record.Repository))
-            {
-                return Results.Conflict(new ErrorResponse(
-                    $"`{record.Repository}` has not joined this deployment — its records stay home"));
-            }
-        }
-
-        foreach (var record in records)
-        {
-            Session.TryParse(record.State!, out var state);
-            await s.Sessions.MirrorAsync(new Session(
-                $"{origin}/{record.Id}", record.Quest, record.Repository, record.Adapter ?? "unknown",
-                state, record.Note, record.Evidence, Transcript: null, record.Created, record.Updated), ct);
-        }
-
-        return Results.Ok(new FeedResponse(records.Count, $"{records.Count} session record(s) mirrored from `{origin}`."));
+            SessionFeedRefusal.None => Results.Ok(new FeedResponse(outcome.Records, outcome.Message)),
+            SessionFeedRefusal.NotJoined => Results.Conflict(new ErrorResponse(outcome.Message)),
+            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
     });
 
     // Knowledge content — never vectors (D47 §4): each deployment embeds with its own provider, and
@@ -493,12 +489,16 @@ else
         var quests = body.Quests ?? [];
         foreach (var quest in quests)
         {
+            // Every field the store binds — the DTO's non-nullable declarations do not survive
+            // deserialization, and a null reaching a SQLite parameter is a 500 where its sibling
+            // door answers 400.
             if (string.IsNullOrWhiteSpace(quest.Id)
+                || quest.From is null || quest.To is null || quest.Title is null || quest.Body is null
                 || !Enum.TryParse<QuestStatus>(quest.Status ?? "", ignoreCase: true, out var status)
                 || !Enum.IsDefined(status))
             {
                 return Results.BadRequest(new ErrorResponse(
-                    $"quest `{quest.Id}` is not mirrorable — an id and a known status are required"));
+                    $"quest `{quest.Id}` is not mirrorable — id, from, to, title, body and a known status are required"));
             }
         }
 
@@ -635,28 +635,6 @@ static bool IsOllamaRoot(string baseUrl) =>
     && uri.Port == 11434
     && !uri.AbsolutePath.TrimEnd('/').EndsWith("/v1", StringComparison.OrdinalIgnoreCase);
 
-static IReadOnlySet<EntryKind>? ParseKinds(string? value)
-{
-    var names = ParseSet(value);
-    if (names is null) return null;
-
-    var kinds = new HashSet<EntryKind>();
-    foreach (var name in names)
-    {
-        var normalized = name.Equals("task", StringComparison.OrdinalIgnoreCase) ? "TaskOutcome" : name;
-        if (Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind)) kinds.Add(kind);
-    }
-
-    return kinds.Count > 0 ? kinds : null;
-}
-
-static IReadOnlySet<string>? ParseSet(string? value)
-{
-    if (string.IsNullOrWhiteSpace(value)) return null;
-    var items = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-    return items.Length > 0 ? new HashSet<string>(items, StringComparer.OrdinalIgnoreCase) : null;
-}
-
 // Walk up from the BINARY to this workspace's manifest, exactly as the MCP host does — never from the
 // working directory: `dotnet run` sets the CWD to the project directory, so "parent of the current
 // directory" resolves to the service tree and its subprojects get scanned as though they were the
@@ -698,7 +676,7 @@ public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
 public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
 public sealed record RegisterRequest(
-    string Repository, IReadOnlyList<string>? Packs, string? CanonSource, DomainRequest? Domain, string? Root,
+    string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At);
 public sealed record RegistrationResponse(

@@ -125,7 +125,7 @@ public sealed class QuestStore
     /// Content-derived so publishing the same quest twice collides rather than multiplying — an agent
     /// that retries should not produce a second copy of the same ask.
     /// </remarks>
-    public static string MakeId(string from, string to, string title) =>
+    private static string MakeId(string from, string to, string title) =>
         Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes($"{from}->{to}:{title.Trim()}")))[..6].ToLowerInvariant();
@@ -175,7 +175,15 @@ public sealed class QuestStore
         // Taken only from Open (the atomic take), closed only from live, terminal states immovable —
         // and a mirror row never moves here at all (home IS NULL): its transitions happen at its home,
         // and only the next mirror writes the result back (D47 §5).
-        var from = string.Join(", ", AllowedFrom(status).Select(s => $"'{s}'"));
+        var allowed = AllowedFrom(status).ToList();
+        if (allowed.Count == 0)
+        {
+            // Nothing moves TO Open — refused here rather than rendered, because an empty IN () is a
+            // SQLite syntax error dressed as a safe default.
+            return new(await FindAsync(id, ct).ConfigureAwait(false), Moved: false);
+        }
+
+        var from = string.Join(", ", allowed.Select(s => $"'{s}'"));
 
         await using var command = _connection.CreateCommand();
         command.CommandText =

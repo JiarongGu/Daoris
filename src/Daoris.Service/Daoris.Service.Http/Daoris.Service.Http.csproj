@@ -2,15 +2,17 @@
   <PropertyGroup>
     <RootNamespace>Daoris.Knowledge.Http</RootNamespace>
     <AssemblyName>daoris-knowledge-http</AssemblyName>
-    <!-- Read-only by construction (D31), so there is no antiforgery surface and no auth for writes. -->
+    <!-- Doctrine stays read-only (D31); service-state writes exist and are gated by mode — loopback
+         trust in local, minted keys on every route in shared (D47 §7). No cookies, so no antiforgery
+         surface: the browser authenticates nothing, and a shared deployment serves no page at all. -->
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Daoris.Service.Core/Daoris.Service.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- The provider lives in the HOST, never in Core: the domain holds IEmbedder and nothing that
-         implements one, which is what keeps a model out of it (D22, D24). -->
+    <!-- The provider lives in the HOST, never in Core: the domain holds IVectorProvider and nothing
+         that implements one, which is what keeps a model out of it (D22, D24). -->
     <PackageReference Include="Lyntai.Providers.Basic" />
   </ItemGroup>
 </Project>

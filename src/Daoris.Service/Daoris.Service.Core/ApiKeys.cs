@@ -44,8 +44,8 @@ public sealed record KeyValidation(KeyVerdict Verdict, ApiKeyRecord? Key);
 /// the first characters after its marker — enough to name it, never enough to present it. A copied
 /// database therefore leaks who has keys and when they expire, not the keys.</para>
 ///
-/// <para><b>Comparison is fixed-time over the hashes</b>, so the lookup itself cannot say how much of a
-/// guess matched — the same judgement the single-key gate already applies.</para>
+/// <para><b>Comparison is fixed-time over the hashes</b>, so the lookup itself cannot say how much of
+/// a guess matched.</para>
 /// </remarks>
 public sealed class ApiKeyStore
 {

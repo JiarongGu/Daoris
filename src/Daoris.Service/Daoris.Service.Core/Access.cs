@@ -61,7 +61,7 @@ public static class Access
     /// and `*` wildcards, which bind everything — is NOT loopback: when in doubt, the answer that
     /// refuses to serve a network is the safe one.
     /// </summary>
-    public static bool IsLoopbackUrl(string url)
+    private static bool IsLoopbackUrl(string url)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var parsed)) return false;
         if (string.Equals(parsed.Host, "localhost", StringComparison.OrdinalIgnoreCase)) return true;

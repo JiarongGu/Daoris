@@ -40,8 +40,8 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
         var hits = await service.SearchAsync(
             new KnowledgeQuery(query)
             {
-                Kinds = ParseKinds(kinds),
-                Repositories = ParseSet(repositories),
+                Kinds = KnowledgeQuery.ParseKinds(kinds),
+                Repositories = KnowledgeQuery.ParseSet(repositories),
                 Provenance = localOnly ? Provenance.Local : null,
                 Limit = Math.Clamp(limit, 1, 50),
             }, ct).ConfigureAwait(false);
@@ -127,7 +127,7 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
         CancellationToken ct = default)
     {
         var candidates = await service.FindConvergenceAsync(
-            new ConvergenceOptions(minimumSimilarity, ParseKinds(kinds), Math.Clamp(limit, 1, 50)), ct)
+            new ConvergenceOptions(minimumSimilarity, KnowledgeQuery.ParseKinds(kinds), Math.Clamp(limit, 1, 50)), ct)
             .ConfigureAwait(false);
 
         if (candidates.Count == 0)
@@ -294,26 +294,4 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
         return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.\n{recall}";
     }
 
-    private static IReadOnlySet<EntryKind>? ParseKinds(string? value)
-    {
-        var names = ParseSet(value);
-        if (names is null) return null;
-
-        var kinds = new HashSet<EntryKind>();
-        foreach (var name in names)
-        {
-            // "task" is friendlier than "taskoutcome", and a model will reach for the short form.
-            var normalized = name.Equals("task", StringComparison.OrdinalIgnoreCase) ? "TaskOutcome" : name;
-            if (Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind)) kinds.Add(kind);
-        }
-
-        return kinds.Count > 0 ? kinds : null;
-    }
-
-    private static IReadOnlySet<string>? ParseSet(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        var items = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return items.Length > 0 ? new HashSet<string>(items, StringComparer.OrdinalIgnoreCase) : null;
-    }
 }

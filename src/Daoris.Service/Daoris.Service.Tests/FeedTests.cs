@@ -88,3 +88,72 @@ public sealed class FeedTests
         Assert.Empty(await _store.AllAsync());
     }
 }
+
+/// <summary>
+/// The session feed's judgement, in Core beside the ledger's (D47 §6): records upsert whole under
+/// their origin, only joined repositories' records are taken, and a refused feed changes nothing.
+/// </summary>
+public sealed class SessionFeedTests : IAsyncLifetime
+{
+    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-20T10:00:00Z");
+
+    private Microsoft.Data.Sqlite.SqliteConnection _connection = null!;
+    private SessionStore _sessions = null!;
+    private SessionFeed _feed = null!;
+
+    public async Task InitializeAsync()
+    {
+        _connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+        await _connection.OpenAsync();
+        _sessions = await SessionStore.OpenAsync(_connection);
+
+        var store = new InMemoryKnowledgeStore();
+        var service = new KnowledgeService(
+            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
+            DisclosurePolicy.LocalOnly,
+            registry: new Registry(Path.Combine(Path.GetTempPath(), "daoris-nowhere-" + Guid.NewGuid().ToString("N")[..8])));
+        await service.RegisterAsync(
+            new Registration("Joined", Adopted: true, null, [], [], [], Entries: 0, Joined: true), Now);
+        await service.RegisterAsync(
+            new Registration("Homebody", Adopted: true, null, [], [], [], Entries: 0, Joined: false), Now);
+        _feed = new SessionFeed(service, _sessions);
+    }
+
+    public async Task DisposeAsync() => await _connection.DisposeAsync();
+
+    private static FedSessionRecord Record(
+        string id = "ab12cd34", string repository = "Joined", string state = "completed", string? quest = "abc123") =>
+        new(id, quest, repository, "stub", state, null, null, Now, Now);
+
+    [Fact]
+    public async Task A_joined_repositorys_records_mirror_under_their_origin()
+    {
+        var outcome = await _feed.FeedAsync("alice-laptop", [Record()]);
+
+        Assert.Equal(SessionFeedRefusal.None, outcome.Refusal);
+        Assert.Equal(1, outcome.Records);
+        var mirrored = Assert.Single(await _sessions.ListAsync(includeClosed: true));
+        Assert.Equal("alice-laptop/ab12cd34", mirrored.Id);
+        Assert.Equal(SessionState.Completed, mirrored.State);
+    }
+
+    [Fact]
+    public async Task An_unjoined_repositorys_records_are_refused()
+    {
+        var outcome = await _feed.FeedAsync("alice-laptop", [Record(repository: "Homebody")]);
+
+        Assert.Equal(SessionFeedRefusal.NotJoined, outcome.Refusal);
+        Assert.Contains("remote.join", outcome.Message);
+        Assert.Empty(await _sessions.ListAsync(includeClosed: true));
+    }
+
+    /// <summary>A refused feed changes nothing — the good record beside the bad one stays unmirrored.</summary>
+    [Fact]
+    public async Task A_malformed_record_refuses_the_whole_feed_before_anything_lands()
+    {
+        var outcome = await _feed.FeedAsync("alice-laptop", [Record(), Record(id: "ef56ab78", state: "99")]);
+
+        Assert.Equal(SessionFeedRefusal.Malformed, outcome.Refusal);
+        Assert.Empty(await _sessions.ListAsync(includeClosed: true));
+    }
+}

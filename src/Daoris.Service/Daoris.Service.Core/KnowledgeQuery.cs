@@ -32,6 +32,35 @@ public sealed record KnowledgeQuery(string Text = "")
         (Kinds is null || Kinds.Contains(entry.Kind))
         && (Repositories is null || Repositories.Contains(entry.Repository))
         && (Provenance is null || Provenance == entry.Provenance);
+
+    /// <summary>
+    /// A caller's comma-separated kind filter, as every door parses it — HERE, in Core, because "what
+    /// may a caller ask for" is query judgement (D36): a kind alias landing in one host and not the
+    /// other would answer the same question differently through two doors.
+    /// </summary>
+    public static IReadOnlySet<EntryKind>? ParseKinds(string? value)
+    {
+        var names = ParseSet(value);
+        if (names is null) return null;
+
+        var kinds = new HashSet<EntryKind>();
+        foreach (var name in names)
+        {
+            // "task" is friendlier than "taskoutcome", and a model will reach for the short form.
+            var normalized = name.Equals("task", StringComparison.OrdinalIgnoreCase) ? "TaskOutcome" : name;
+            if (Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind)) kinds.Add(kind);
+        }
+
+        return kinds.Count > 0 ? kinds : null;
+    }
+
+    /// <summary>A caller's comma-separated list, case-insensitive; null when it names nothing.</summary>
+    public static IReadOnlySet<string>? ParseSet(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var items = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return items.Length > 0 ? new HashSet<string>(items, StringComparer.OrdinalIgnoreCase) : null;
+    }
 }
 
 /// <summary>One result: the entry, how well it matched, and where it matched.</summary>

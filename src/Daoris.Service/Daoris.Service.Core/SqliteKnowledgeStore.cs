@@ -10,12 +10,13 @@ namespace Daoris.Knowledge;
 /// useful with nothing installed, and a store that must be provisioned before it can be tried is one
 /// that gets tried late.
 ///
-/// <para><b>No migrations, deliberately.</b> The index is <em>derived</em> data: every entry in it can
-/// be read again from the repositories in seconds. A schema change therefore does not need migrating,
-/// it needs rebuilding — so the schema carries a version, and a mismatch drops the tables and starts
-/// over. The cognition sibling's storage uses a migration runner because its data is authored and
-/// cannot be regenerated; the same choice here would be ceremony guarding something that is not at
-/// risk.</para>
+/// <para><b>No migrations, deliberately.</b> The index is <em>derived</em> data: a local deployment
+/// re-reads it from the repositories in seconds, and a shared one — which can see no repository — is
+/// re-fed whole by each desktop's next sync tick (D47 §9). A schema change therefore does not need
+/// migrating, it needs rebuilding — so the schema carries a version, and a mismatch drops the tables
+/// and starts over. The cognition sibling's storage uses a migration runner because its data is
+/// authored and cannot be regenerated; the same choice here would be ceremony guarding something that
+/// is not at risk.</para>
 ///
 /// <para>FTS5 ships in the standard SQLite build, so full-text search costs no extra dependency and
 /// replaces a hand-rolled scorer with a ranked one.</para>

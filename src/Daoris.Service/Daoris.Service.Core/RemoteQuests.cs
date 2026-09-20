@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 
 namespace Daoris.Knowledge;
@@ -140,8 +139,9 @@ public sealed class HttpRemoteQuests(RemoteConfig config) : IRemoteQuestClient
     }
 
     // Hand-rolled for the same reason the registration store's JSON is: nothing here may quietly stop
-    // working under AOT, and the shapes are three fields deep.
-    private static RemoteQuestAnswer Parse(int status, string payload)
+    // working under AOT, and the shapes are three fields deep. Internal so the tests can drive it
+    // without a live remote — it is the only judgement in this otherwise deliberately dumb transport.
+    internal static RemoteQuestAnswer Parse(int status, string payload)
     {
         try
         {

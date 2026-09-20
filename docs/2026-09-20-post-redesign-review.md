@@ -19,7 +19,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
   mode, but `EnsureIndexedAsync` (`src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs:234`)
   scans unconditionally on the first read or feed against an empty store — a fresh shared deployment's
   first request indexes whatever sits near the binary and serves it to keyed callers.
-- [ ] **The session ledger's state parse accepts numeric strings.** `SessionLedger.Parse` omits
+- [x] **The session ledger's state parse accepts numeric strings.** `SessionLedger.Parse` omits
   `Enum.IsDefined`, so `"99"` becomes `(SessionState)99` and escapes the `UnknownState` branch; the feed
   door uses the strict `Session.TryParse`, so the two doors disagree about what a state name is. A test
   claims they share the tolerance; the claim is currently untrue.
@@ -34,7 +34,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
   `EnsureAsync`; a host that is located but unstartable faults the task, `_hostReady` never completes,
   and `MainForm.BringUpAsync` awaits it indefinitely — the exact dark-window failure the form's own
   fallback was written to prevent.
-- [ ] **`/api/feed/quests` validates two fields and lets four nulls through** to non-coalesced SQLite
+- [x] **`/api/feed/quests` validates two fields and lets four nulls through** to non-coalesced SQLite
   parameters (a 500 where its sibling door answers 400). **Conflict shapes diverge**: the quest door
   teaches clients 409 means "someone got there first"; the session doors answer 400 for the same class.
 - [ ] **A corrupt manifest escapes the CLI's exit-code contract.** `JSON.parse` is unguarded in
@@ -48,9 +48,9 @@ commits; unchecked items are deliberately deferred with the reason inline.
   `ApiContracts.cs`, the `keys` console verb to `KeysConsole.cs`, the mode-forked feed doors and the
   quest/session routes to route-group files; a shared `HostComposition` for the ~50 lines the two hosts
   copy-paste (embedder ternary, root/db defaults, `IsOllamaRoot`).
-- [ ] **`ParseKinds`/`ParseSet` duplicated verbatim across the two doors** — query judgement belongs in
+- [x] **`ParseKinds`/`ParseSet` duplicated verbatim across the two doors** — query judgement belongs in
   Core (D36) so a kind alias cannot land in one host only.
-- [ ] **The sessions feed door judges in the host; the entries door judges in Core** — move the
+- [x] **The sessions feed door judges in the host; the entries door judges in Core** — move the
   joined-repository check into Core so a future door shares it.
 - [ ] **`RemoteSync.cs` holds four types and three responsibilities** — split `RemoteTarget` and
   `RemoteSyncPayloads` into their own files; extract feed-up/mirror-down phases; give `RunOnceAsync` the
@@ -117,11 +117,14 @@ commits; unchecked items are deliberately deferred with the reason inline.
 
 - [ ] `connect --dry-run` printing `join`/`shareKnowledge` — the FIX-LOG's own named verification for
   the stale-`dist/` regression, currently manual.
-- [ ] `RemoteConfig.Load` (Core) — zero tests, while its driver twin is table-tested; the guarantee is
-  security-relevant ("never a mix of an env URL with the file's key").
-- [ ] A rootless joined registry row yields no feed-up (with the mirror-down fix); the `Entries`
-  payload asserts no machine path survives.
-- [ ] The ledger answers `UnknownState` for `"99"` (with the parse fix); a shared deployment never
+- [x] `RemoteConfig.Load` (Core) — zero tests, while its driver twin is table-tested; the guarantee is
+  security-relevant ("never a mix of an env URL with the file's key"). `HttpRemoteQuests.Parse` gained
+  its own table too — the only judgement in the relay transport, previously bypassed by the fake.
+- [x] A rootless joined registry row yields no feed-up (with the mirror-down fix). The `Entries`
+  payload's machine-path assertion was declined: the field is relative by the local door's own
+  contract, so asserting on a relative fixture would be a guard that guards nothing — the reviewer's
+  own trap.
+- [x] The ledger answers `UnknownState` for `"99"` (with the parse fix); a shared deployment never
   scans (with the back-door fix).
 - [x] Web: stop is absent in a browser (the arc's central read-only claim, unasserted in both loops);
   `SET_HOLD` reaches the IPC module; the freshest-attempt-per-quest reduction with two records.
