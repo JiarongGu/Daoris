@@ -101,6 +101,15 @@ fresh session's realistic starting points, none of them automatic:
 
 ## Backlog
 
+- [ ] **REV1 — the post-redesign review sweep: fix, dedup, and re-document the D45–D47 arc.** Five
+  parallel audits over the arc's ~94 files; the consolidated findings live in
+  `docs/2026-09-20-post-redesign-review.md`, grouped by disposition, each checked off as its commit
+  lands. Headline: the remote sync could wipe a teammate's shared knowledge (mirror-down rows feed back
+  up empty), shared mode scans the server's disk through `EnsureIndexedAsync`, `postpack --clean` was
+  never implemented (the FIX-LOG's stale-`dist/` trap is still manufacturable), and `CLAUDE.md` names a
+  `daoris request` command that does not exist. In progress this session; whatever remains unchecked
+  stays open here.
+
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
   failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken
   precondition rather than a flaky assertion. Both times it ran straight after canon files were edited
