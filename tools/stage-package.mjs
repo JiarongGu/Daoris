@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Stage the workspace-root files that must ship INSIDE the CLI package.
+ * Stage the workspace-root files that must ship INSIDE the CLI package — and clean them up again.
  *
  * Three files live at the root because they describe the project rather than the
  * CLI — the canon (data the service and its clients will read too), the licence,
@@ -14,29 +14,32 @@
  * pack time. Nothing edits them, and `upstream` writes to the root canon through
  * the same resolution the CLI uses.
  *
- * Run automatically by the CLI package's `prepack`, and REMOVED again by `postpack`.
+ * Run automatically by the CLI package's `prepack`, and with `--clean` by `postpack`.
  *
- * That cleanup is not tidiness. `resolveCanonRoot` prefers a canon beside the package, because that is
- * where the published one lives — so a staged copy left behind silently shadows the real tree, and
- * every later development command reads a stale canon. It is gitignored, so nothing shows it. This
- * project's own pathology, in its own build: two copies, one quietly winning.
+ * The cleanup is not tidiness. `resolveCanonRoot` decides by `node_modules`, so a leftover canon can
+ * no longer shadow the real tree in a dev checkout — but everything staged is gitignored build
+ * output, invisible to `git status`, and `prepack` also runs `npm run build`, whose `dist/` the bin
+ * PREFERS over the sources. A stale `dist/` outliving the pack is exactly how DRV5's remote landing
+ * ran month-old code through every bin-driven gate while `node --test` stayed green (FIX-LOG
+ * 2026-09-20) — so `postpack` removes everything a pack creates, dist/ included, and the dev loop
+ * goes back to needing no build at all.
  */
-import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { copyTree } from './fsx.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const pkgRoot = join(repoRoot, 'src', 'Daoris.Cli');
 
-/** Deliberately not fs.cpSync — it has crashed on this platform. */
-function copyTree(source, dest) {
-  mkdirSync(dest, { recursive: true });
-  for (const entry of readdirSync(source, { withFileTypes: true })) {
-    const a = join(source, entry.name);
-    const b = join(dest, entry.name);
-    if (entry.isDirectory()) copyTree(a, b);
-    else copyFileSync(a, b);
+const STAGED = ['canon', 'LICENSE', 'README.md'];
+
+if (process.argv.includes('--clean')) {
+  for (const name of [...STAGED, 'dist']) {
+    rmSync(join(pkgRoot, name), { recursive: true, force: true });
   }
+  console.error('stage-package: removed the staged files and dist/ — the dev loop needs no build');
+  process.exit(0);
 }
 
 rmSync(join(pkgRoot, 'canon'), { recursive: true, force: true });

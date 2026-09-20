@@ -23,11 +23,11 @@ commits; unchecked items are deliberately deferred with the reason inline.
   `Enum.IsDefined`, so `"99"` becomes `(SessionState)99` and escapes the `UnknownState` branch; the feed
   door uses the strict `Session.TryParse`, so the two doors disagree about what a state name is. A test
   claims they share the tolerance; the claim is currently untrue.
-- [ ] **`postpack --clean` was never implemented.** `tools/stage-package.mjs` reads no arguments, so
+- [x] **`postpack --clean` was never implemented.** `tools/stage-package.mjs` reads no arguments, so
   `postpack` re-stages instead of cleaning — the staged `canon/`, `LICENSE`, `README.md` and the built
   `dist/` outlive every pack, gitignored and invisible. This is the exact mechanism of the FIX-LOG's
   stale-`dist/` entry, still manufacturable by one local `npm run rehearse`.
-- [ ] **A hung driver freezes the family rehearsal.** *(fix lands with the tools batch)* Phase 7's `drive()` passes no timeout, so the
+- [x] **A hung driver freezes the family rehearsal.** Phase 7's `drive()` passes no timeout, so the
   kill-timeout promise `run()` documents is false for its four driver invocations; `driveA` also drops
   the `NO_REMOTE` hermeticity guard the file's own prelude declares for "every host and driver".
 - [x] **The desktop splash can wait forever.** `DriverLoop.RunAsync` has no try around
@@ -66,10 +66,10 @@ commits; unchecked items are deliberately deferred with the reason inline.
 - [x] **The watch loop exists twice** (`Driver.Host/Program.cs`, `App/DriverLoop.cs`) — a shared
   `DriverWatch` owning construction, config re-read, nudge, and delay; each host keeps its reporting
   half and its own error policy (the shell reports and keeps watching; the host exits 2).
-- [ ] **The rehearsal harness is copy-pasted across four files** (`check`/`section`/transcript/capture
-  in both rehearsals; `copyTree` five times across tools and web scripts) — extract a rehearsal kit and
-  a shared `copyTree`.
-- [ ] **Three driver helpers in the family rehearsal, diverged three ways** — one parameterized helper
+- [x] **The rehearsal harness is copy-pasted across four files** (`check`/`section`/transcript/capture
+  in both rehearsals; `copyTree` five times across tools and web scripts) — extracted to
+  `tools/rehearsal-kit.mjs` and `tools/fsx.mjs`; both rehearsals now fail the same way (`exitCode`).
+- [x] **Three driver helpers in the family rehearsal, diverged three ways** — one parameterized helper
   with the timeout and `NO_REMOTE` always applied.
 - [x] **The claude-code layout is still hardcoded in `analyze.ts`/`twins.ts`** beside the harness
   descriptor that owns it — the tier names, target, index filename and budget default now come from
@@ -95,9 +95,11 @@ commits; unchecked items are deliberately deferred with the reason inline.
   deployment refusing a browser write" example (a shared deployment serves no page); dead type
   re-exports; an unused icon; two unused i18n keys in both catalogs; four `DriverState` fields the page
   never reads.
-- [ ] Tools: ten blank-line scars where the retired `key:` lines were deleted; the two rehearsals
+- [x] Tools: ten blank-line scars where the retired `key:` lines were deleted; the two rehearsals
   disagreeing on `process.exit` vs `exitCode`; `release-prep.mjs --check` dead (the only enforcement of
-  the example-family version pins) and the argless `npm run release-prep` that can only print usage.
+  the example-family version pins — now part of `npm run verify`) and the argless `npm run
+  release-prep` that could only print usage (now `release-prep:check`). The web e2e host moved to port
+  5196 (off the family rehearsal's 5197–5199) and gained the hermetic remote-config guard.
 
 ## Documentation corrections (wrong, then stale)
 

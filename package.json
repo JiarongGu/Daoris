@@ -12,12 +12,12 @@
   },
   "scripts": {
     "test": "npm test -w daoris",
-    "verify": "npm test -w daoris && node src/Daoris.Cli/bin/daoris.mjs check",
+    "verify": "npm test -w daoris && node src/Daoris.Cli/bin/daoris.mjs check && node tools/release-prep.mjs --check",
     "rehearse": "node tools/release-rehearsal.mjs",
     "rehearse:family": "node tools/family-rehearsal.mjs",
     "test:web": "npm --prefix src/Daoris.Web run test && npm --prefix src/Daoris.Web run build && dotnet build src/Daoris.Service/Daoris.Service.Http && npm --prefix src/Daoris.Web run e2e",
     "publish:service": "node tools/service-publish.mjs",
-    "release-prep": "node tools/release-prep.mjs"
+    "release-prep:check": "node tools/release-prep.mjs --check"
   },
   "license": "MIT"
 }

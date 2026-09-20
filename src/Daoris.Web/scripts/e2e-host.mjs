@@ -4,12 +4,13 @@
 // process kills the host with it — `run` wraps the app in a child that survives its parent on
 // Windows, and an orphaned host makes every later run fail on the port bind.
 import { spawn } from 'node:child_process';
-import { copyFileSync, mkdirSync, readdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const webRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = dirname(dirname(webRoot));
+const { copyTree } = await import(`file://${join(repoRoot, 'tools', 'fsx.mjs')}`);
 const dll = join(
   repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http', 'bin', 'Debug', 'net10.0',
   'daoris-knowledge-http.dll',
@@ -21,17 +22,6 @@ if (!existsSync(dll)) {
   console.error(`e2e-host: ${dll} is not built — run \`npm run test:web\` from the workspace root,`);
   console.error('which builds the web bundle and the host before the suite.');
   process.exit(2);
-}
-
-/** Recursive copy. Deliberately not fs.cpSync — it has crashed on this platform. */
-function copyTree(from, to) {
-  mkdirSync(to, { recursive: true });
-  for (const entry of readdirSync(from, { withFileTypes: true })) {
-    const source = join(from, entry.name);
-    const target = join(to, entry.name);
-    if (entry.isDirectory()) copyTree(source, target);
-    else copyFileSync(source, target);
-  }
 }
 
 rmSync(scratch, { recursive: true, force: true });
@@ -53,7 +43,13 @@ const host = spawn('dotnet', [dll], {
     ...process.env,
     DAORIS_KNOWLEDGE_ROOT: family,
     DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
-    ASPNETCORE_URLS: 'http://localhost:5199',
+    // 5196, deliberately apart from the family rehearsal's 5197–5199: the two suites run in the same
+    // CI job, and an orphaned host on a shared port makes one gate's readiness probe answer against
+    // the other's server — a failure that reads as flakiness rather than a port clash.
+    ASPNETCORE_URLS: 'http://localhost:5196',
+    // Hermetic like the family rehearsal (its own prelude states the argument): a real
+    // ~/.daoris/remote.json on the developer's machine must never leak a deployment into a gate run.
+    DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
   },
 });
 host.on('exit', (code) => process.exit(code ?? 0));

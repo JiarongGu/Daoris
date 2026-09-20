@@ -17,11 +17,11 @@
  * Exit 0 = the release would work. Exit 1 = it would not.
  */
 import { execSync } from 'node:child_process';
-import {
-  copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { copyTree } from './fsx.mjs';
+import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const cliRoot = join(repoRoot, 'src', 'Daoris.Cli'); // the publishable package
@@ -33,63 +33,16 @@ const canonV2 = join(scratch, 'canon-v2');
 // this chases is intermittent — twice seen, always exactly the canon-upgrade phase, both times on a
 // run straight after canon files were edited and synced — and the one thing both sightings lacked was
 // the output. Capturing it by construction beats remembering to capture it before a re-run.
-const logDir = join(repoRoot, '_fixtures', 'rehearsal-logs');
-mkdirSync(logDir, { recursive: true });
-const logPath = join(logDir, `${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
-const transcript = [`release rehearsal — ${new Date().toISOString()} — node ${process.version}`];
-const emit = console.log.bind(console);
-console.log = (...args) => {
-  const line = args.join(' ');
-  transcript.push(line);
-  emit(line);
-};
-process.on('exit', (code) => {
-  transcript.push(`\nexit ${code}`);
-  writeFileSync(logPath, `${transcript.join('\n')}\n`);
-  emit(`  transcript: ${logPath}`);
-});
-
-let checks = 0;
-let failures = 0;
-
-function check(label, condition, detail = '') {
-  checks += 1;
-  if (condition) {
-    console.log(`  ok    ${label}`);
-  } else {
-    failures += 1;
-    console.log(`  FAIL  ${label}${detail ? `\n          ${detail}` : ''}`);
-  }
-}
-
-function section(title) {
-  console.log(`\n${title}`);
-}
+openTranscript(repoRoot, 'release');
+const { totals, check, section } = makeChecker();
 
 /** Run in the consumer repo through the installed bin, capturing output and exit code. */
-function daoris(args) {
-  try {
-    const stdout = execSync(`npx --no-install daoris ${args}`, {
-      cwd: consumer,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    return { code: 0, out: stdout };
-  } catch (error) {
-    return { code: error.status ?? -1, out: `${error.stdout ?? ''}${error.stderr ?? ''}` };
-  }
-}
+const daoris = (args) => capture(`npx --no-install daoris ${args}`, consumer);
 
-/** Recursive copy. Deliberately not fs.cpSync — it has crashed on this platform. */
-function copyTree(from, to) {
-  mkdirSync(to, { recursive: true });
-  for (const entry of readdirSync(from, { withFileTypes: true })) {
-    const src = join(from, entry.name);
-    const dest = join(to, entry.name);
-    if (entry.isDirectory()) copyTree(src, dest);
-    else copyFileSync(src, dest);
-  }
-}
+/** The consumer, pointed at the writable canon copy that plays "upstream" from phase 4 on. */
+const withV2 = (args) => capture(`npx --no-install daoris ${args}`, consumer, {
+  env: { DAORIS_CANON: canonV2 },
+});
 
 const read = (rel) => readFileSync(join(consumer, rel), 'utf8');
 const has = (rel) => existsSync(join(consumer, rel));
@@ -134,6 +87,16 @@ check('canon skills ship as nested directories', shipped.has('canon/core/skills/
 check('the canon changelog ships', shipped.has('canon/CHANGELOG.md'));
 check('private material does not ship', ![...shipped].some((p) => p.startsWith('local/')));
 check('test fixtures do not ship', ![...shipped].some((p) => p.startsWith('_fixtures/')));
+
+// Belt and braces beyond postpack: whatever the pack lifecycle staged is removed here too, and the
+// removal is ASSERTED — a `dist/` outliving a pack is exactly how DRV5's remote landing ran month-old
+// code through every bin-driven gate while the source-level suites stayed green (FIX-LOG 2026-09-20).
+execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'pipe' });
+check(
+  'nothing staged outlives the pack — no dist/ to shadow the sources, no canon to shadow the tree',
+  !existsSync(join(cliRoot, 'dist')) && !existsSync(join(cliRoot, 'canon')),
+  'a gitignored leftover here silently shadows the sources for every later bin-driven run',
+);
 
 // --------------------------------------------------------------- 2. install
 
@@ -219,18 +182,7 @@ check('...and points at `upstream`', /upstream/.test(refused.out), refused.out);
 // A consumer cannot upstream into a read-only install, which is correct: the
 // canon lives in the package. Point at a writable copy, as a canon developer does.
 copyTree(join(consumer, 'node_modules', 'daoris', 'canon'), canonV2);
-const upstreamed = (() => {
-  try {
-    return {
-      code: 0,
-      out: execSync('npx --no-install daoris upstream task-lifecycle.md', {
-        cwd: consumer, encoding: 'utf8', env: { ...process.env, DAORIS_CANON: canonV2 },
-      }),
-    };
-  } catch (error) {
-    return { code: error.status ?? -1, out: `${error.stdout ?? ''}${error.stderr ?? ''}` };
-  }
-})();
+const upstreamed = withV2('upstream task-lifecycle.md');
 check('`upstream` promotes the edit into the canon', upstreamed.code === 0, upstreamed.out);
 check(
   '...and the canon now carries it, without the provenance header',
@@ -244,19 +196,6 @@ check(
 
 section('5. Upgrading to a newer canon');
 
-/** The consumer, pointed at the writable canon copy that now plays "upstream". */
-const withV2 = (args) => {
-  try {
-    return {
-      code: 0,
-      out: execSync(`npx --no-install daoris ${args}`, {
-        cwd: consumer, encoding: 'utf8', env: { ...process.env, DAORIS_CANON: canonV2 },
-      }),
-    };
-  } catch (error) {
-    return { code: error.status ?? -1, out: `${error.stdout ?? ''}${error.stderr ?? ''}` };
-  }
-};
 const setCanonVersion = (v) => writeFileSync(join(canonV2, 'canon.json'), `{\n  "version": "${v}"\n}\n`);
 const setChangelog = (body) =>
   writeFileSync(join(canonV2, 'CHANGELOG.md'), `# Canon changelog\n\n${body}\n## 0.0.1\n\n- The first canon.\n`);
@@ -320,12 +259,15 @@ check('`check` is clean afterwards', withV2('check').code === 0);
 // ----------------------------------------------------------------- 6. report
 
 section('6. Result');
-console.log(`\n  ${checks - failures}/${checks} checks passed`);
-if (failures) {
-  console.log(`  ${failures} FAILED — do not tag a release until these pass.`);
+console.log(`\n  ${totals.checks - totals.failures}/${totals.checks} checks passed`);
+if (totals.failures) {
+  console.log(`  ${totals.failures} FAILED — do not tag a release until these pass.`);
   console.log(`  Scratch left at _fixtures/release-rehearsal for inspection.\n`);
-  process.exit(1);
+  // exitCode rather than exit: the transcript writer rides the exit event, and the same convention
+  // as the family rehearsal means the same failure reads the same way from either gate.
+  process.exitCode = 1;
+} else {
+  console.log('  The packaged tool installs into a clean repo and drives the full lifecycle:');
+  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, and check.\n');
+  rmSync(scratch, { recursive: true, force: true });
 }
-console.log('  The packaged tool installs into a clean repo and drives the full lifecycle:');
-console.log('  adopt, collide, sync, drift, promote, upgrade, rename, and check.\n');
-rmSync(scratch, { recursive: true, force: true });

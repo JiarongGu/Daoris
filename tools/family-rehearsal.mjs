@@ -14,11 +14,13 @@
  *
  * Exit 0 = the router works. Exit 1 = it does not; the transcript names the first thing that broke.
  */
-import { execSync, spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { copyTree } from './fsx.mjs';
+import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const examplesRoot = join(repoRoot, 'examples');
@@ -30,17 +32,6 @@ const driverDll = join(driverProject, 'bin', 'Debug', 'net10.0', 'daoris-driver.
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
 
-/** Recursive copy. Deliberately not fs.cpSync — it has crashed on this platform. */
-function copyTree(from, to) {
-  mkdirSync(to, { recursive: true });
-  for (const entry of readdirSync(from, { withFileTypes: true })) {
-    const source = join(from, entry.name);
-    const target = join(to, entry.name);
-    if (entry.isDirectory()) copyTree(source, target);
-    else copyFileSync(source, target);
-  }
-}
-
 const BASE = 'http://localhost:5199';
 const REMOTE_BASE = 'http://localhost:5198';
 const HOST_B_BASE = 'http://localhost:5197';
@@ -49,65 +40,26 @@ const EXAMPLES = ['engine', 'game'];
 // Hermetic by construction: every host and driver in this rehearsal points its remote-config lookup at
 // a file that does not exist, so a real ~/.daoris/remote.json on the developer's machine can never
 // leak a real deployment into a gate run. The remote phase then opts in per process, by env pair.
-const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(repoRoot, '_fixtures', 'family-rehearsal', 'no-remote.json') };
+const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json') };
 
-let checks = 0;
-let failures = 0;
+openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
+const { totals, check, section } = makeChecker();
 
-// Same discipline as the release rehearsal: every run leaves a transcript, outside anything a
-// passing run deletes, so a failure is evidence rather than a memory.
-const transcript = [`family rehearsal — ${new Date().toISOString()} — node ${process.version}`];
-const emit = console.log.bind(console);
-console.log = (...args) => {
-  const line = args.join(' ');
-  transcript.push(line);
-  emit(line);
-};
-process.on('exit', (code) => {
-  stopEverything();
-  transcript.push(`\nexit ${code}`);
-  const logDir = join(repoRoot, '_fixtures', 'rehearsal-logs');
-  mkdirSync(logDir, { recursive: true });
-  const logPath = join(logDir, `family-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
-  writeFileSync(logPath, `${transcript.join('\n')}\n`);
-  emit(`  transcript: ${logPath}`);
-});
+const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
 
-function check(label, condition, detail = '') {
-  checks += 1;
-  if (condition) {
-    console.log(`  ok    ${label}`);
-  } else {
-    failures += 1;
-    console.log(`  FAIL  ${label}${detail ? `\n          ${detail}` : ''}`);
-  }
-}
-
-function section(title) {
-  console.log(`\n${title}`);
-}
-
-/** Run a command, capturing output and exit code — never throwing, so a failure is a FAIL line. A
- * timeout kills the child and returns its partial output, so a hung driver is a captured FAIL rather
- * than a frozen gate. */
-function run(command, cwd, env = {}, timeout = 0) {
-  try {
-    const out = execSync(command, {
-      cwd,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, ...env },
-      ...(timeout ? { timeout, killSignal: 'SIGKILL' } : {}),
-    });
-    return { code: 0, out };
-  } catch (error) {
-    const timedOut = error.killed || error.signal === 'SIGKILL';
-    return {
-      code: error.status ?? -1,
-      out: `${error.stdout ?? ''}${error.stderr ?? ''}${timedOut ? '\n[killed: exceeded the drive timeout]' : ''}`,
-    };
-  }
-}
+// ONE helper for every driver invocation. Three copies had already diverged three ways: one dropped
+// the kill-timeout (four invocations any of which could freeze the gate), one dropped the hermetic
+// guard, one grew a parameter nothing passed. The timeout is always on — a hung driver is a captured
+// FAIL, never a frozen gate — and NO_REMOTE is always underneath: a phase that wants a remote opts in
+// by env pair, which outranks the config-file lookup by the loader's own rule.
+const DRIVE_TIMEOUT = 90_000;
+const driver = ({ serviceUrl, config, remote = {}, mode = '--once' }) =>
+  run(`dotnet "${driverDll}" ${mode}`, scratch, {
+    DAORIS_SERVICE_URL: serviceUrl,
+    DAORIS_DRIVER_CONFIG: config,
+    ...NO_REMOTE,
+    ...remote,
+  }, DRIVE_TIMEOUT);
 
 /** One HTTP call against a host. The key rides only when a step is meant to be authorized. */
 async function api(method, path, { body, key, base = BASE } = {}) {
@@ -262,7 +214,6 @@ check(
 const questId = published.json?.quest?.id ?? '';
 
 const stranger = await api('POST', '/api/quests', {
-
   body: { from: 'game', to: 'somewhere-else', title: 'x', body: 'y' },
 });
 check(
@@ -279,19 +230,16 @@ check(
 );
 
 const bareDecline = await api('POST', `/api/quests/${questId}/respond`, {
-
   body: { action: 'decline', reason: null },
 });
 check('declining without a reason is refused', bareDecline.status === 400, bareDecline.text);
 
 const taken = await api('POST', `/api/quests/${questId}/respond`, {
-
   body: { action: 'take', reason: null },
 });
 check('engine takes it', taken.status === 200 && taken.json?.quest?.status === 'Taken', taken.text);
 
 const done = await api('POST', `/api/quests/${questId}/respond`, {
-
   body: { action: 'done', reason: 'Budget landed as MaxHydrationsPerFrame.' },
 });
 check('engine finishes it', done.status === 200 && done.json?.quest?.status === 'Done', done.text);
@@ -343,7 +291,6 @@ check(
 );
 
 const firstQuest = await api('POST', '/api/quests', {
-
   body: {
     from: 'game',
     to: 'newcomer',
@@ -357,7 +304,6 @@ check(
   firstQuest.text,
 );
 const firstAnswer = await api('POST', `/api/quests/${firstQuest.json?.quest?.id ?? ''}/respond`, {
-
   body: { action: 'done', reason: 'Answered on day one.' },
 });
 check(
@@ -438,15 +384,9 @@ writeFileSync(driverConfig, `${JSON.stringify({
   commands: { stub: ['node', stubAgent] },
 }, null, 2)}\n`);
 
-const DRIVER_ENV = {
-  DAORIS_SERVICE_URL: BASE,
-  DAORIS_DRIVER_CONFIG: driverConfig,
-  ...NO_REMOTE,
-};
-const drive = (mode = '--until-idle') => run(`dotnet "${driverDll}" ${mode}`, scratch, DRIVER_ENV);
+const drive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: driverConfig, mode });
 
 const driven = await api('POST', '/api/quests', {
-
   body: {
     from: 'game',
     to: 'newcomer',
@@ -500,7 +440,6 @@ check(
 
 // Declining is a real answer, and it is the session's answer — the driver only observes it.
 const declineAsk = await api('POST', '/api/quests', {
-
   body: {
     from: 'game',
     to: 'newcomer',
@@ -522,7 +461,6 @@ check(
 // Driving is additive, never exclusive (D46 §2): a quest an outside session already took is not the
 // driver's to start — it is not even considered, and no record appears.
 const outside = await api('POST', '/api/quests', {
-
   body: {
     from: 'game',
     to: 'newcomer',
@@ -531,7 +469,6 @@ const outside = await api('POST', '/api/quests', {
   },
 });
 await api('POST', `/api/quests/${outside.json?.quest?.id ?? ''}/respond`, {
-
   body: { action: 'take', reason: null },
 });
 const sessionsBefore = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
@@ -702,23 +639,16 @@ writeFileSync(driverConfigB, `${JSON.stringify({
 }, null, 2)}\n`);
 // Default to a single tick — one --once does sync → plan → run-to-conclusion, which is all any of
 // these steps needs. (An omitted mode used to fall through to watch-forever, which a bounded gate can
-// never end — the timeout below is the backstop, but the default is what keeps a step from ever
-// reaching it.)
-const DRIVE_TIMEOUT = 90_000;
-const driveA = (mode = '--once') => run(`dotnet "${driverDll}" ${mode}`, scratch, {
-  DAORIS_SERVICE_URL: BASE,
-  DAORIS_DRIVER_CONFIG: driverConfig,
-  DAORIS_REMOTE_URL: REMOTE_BASE,
-  DAORIS_REMOTE_KEY: keyA,
-}, DRIVE_TIMEOUT);
-const driveB = (mode = '--once', extra = {}) => run(`dotnet "${driverDll}" ${mode}`, scratch, {
-  DAORIS_SERVICE_URL: HOST_B_BASE,
-  DAORIS_DRIVER_CONFIG: driverConfigB,
-  DAORIS_REMOTE_URL: REMOTE_BASE,
-  DAORIS_REMOTE_KEY: keyB,
-  ...NO_REMOTE,
-  ...extra,
-}, DRIVE_TIMEOUT);
+// never end — the shared helper's timeout is the backstop, but the default is what keeps a step from
+// ever reaching it.)
+const driveA = (mode = '--once') => driver({
+  serviceUrl: BASE, config: driverConfig, mode,
+  remote: { DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyA },
+});
+const driveB = (mode = '--once') => driver({
+  serviceUrl: HOST_B_BASE, config: driverConfigB, mode,
+  remote: { DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyB },
+});
 
 const firstTickB = driveB('--once');
 check('machine b’s tick syncs without a problem', firstTickB.code === 0 && !/sync {2}/.test(firstTickB.out), firstTickB.out);
@@ -887,8 +817,8 @@ section('10. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
-console.log(`\n  ${checks - failures}/${checks} checks passed`);
-if (failures) {
+console.log(`\n  ${totals.checks - totals.failures}/${totals.checks} checks passed`);
+if (totals.failures) {
   console.log('  The router is NOT proven — the transcript names the first thing that broke.');
   console.log(`  Scratch left at _fixtures/family-rehearsal for inspection.`);
   process.exitCode = 1;

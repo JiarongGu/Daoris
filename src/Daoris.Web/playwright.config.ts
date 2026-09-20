@@ -8,12 +8,12 @@ export default defineConfig({
   timeout: 30_000,
   fullyParallel: false,
   use: {
-    baseURL: 'http://localhost:5199',
+    baseURL: 'http://localhost:5196',
     locale: 'en-US',
   },
   webServer: {
     command: 'node scripts/e2e-host.mjs',
-    url: 'http://localhost:5199/api/status',
+    url: 'http://localhost:5196/api/status',
     reuseExistingServer: false,
     timeout: 120_000,
   },
