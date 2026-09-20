@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `keys mint` indexed the server's own disk (2026-09-20)
+
+**Symptom.** Caught by WSP3's new rehearsal phase, on its first run: a workspace's shared deployment
+answered a registry containing seventeen repositories from the developer's own machine — every
+sibling checkout in the folder above this one, this repository included — all of them in workspace
+`default`, on a host that serves `aurora` and had never been fed anything but two scratch
+repositories. The check that failed was the new "every row landed in the workspace the deployment IS".
+
+**Root cause.** `KeysConsole` opened the deployment with `ServiceFactory.CreateAsync(options)`, and
+that composition performs WSP2's once-per-store bootstrap import from the configured root (D48 §3).
+The key console runs before any mode is passed down, so it composed as a LOCAL deployment: minting a
+key on a server registered whatever sat beside the binary — **machine paths included** — into a store
+that must be fed and never scanned (D47 §4). Two guards were in place and neither could see it: the
+route refusals and the empty-source composition apply to the *serving* process, and the rehearsal's
+byte-scan of the remote store looked for the fixture path, which these rows did not contain because
+they were real.
+
+**Fix.** `ServiceFactory.OpenKeysAsync` opens the SQLite store and the key store, and nothing else —
+key administration has no business touching an index, and the narrow door is also the honest one.
+
+**Verification.** The new check `Key_administration_never_bootstraps_a_registry` was watched failing
+with the console's old call restored, then passing; the family rehearsal went 111/112 → 112/112 on the
+same change. **The trap to inherit:** a convenience composition is a *behaviour*, not a wiring detail.
+`CreateAsync` grew a side effect in WSP2 — a legitimate one — and every existing caller inherited it
+silently, including one whose whole job was to print a credential and exit. When a factory acquires a
+side effect, its callers are the change's blast radius; enumerate them in the same commit, and prefer
+a narrow door for a caller that needs one field of what it opened.
+
 ## `refresh` re-read the repositories, never the folder (2026-09-20)
 
 **Symptom.** Caught by WSP1's new rehearsal phase: two repositories born mid-run were registered,

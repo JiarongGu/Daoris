@@ -6,6 +6,7 @@
 // D8's guarantee is about the DOCTRINE operations — `check`, `sync`, `index`, `upstream` — all of
 // which are pure local hashing against the lock and stay that way.
 
+import { flagValue } from './args.ts';
 import { readManifest } from './config.ts';
 import { DaorisError } from './errors.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
@@ -58,26 +59,6 @@ export function registration(
     ...(isLocalService(serviceUrl) ? { root } : {}),
     ...(workspace ? { workspace } : {}),
   };
-}
-
-/**
- * The value after a flag, refusing a flag with nothing after it.
- *
- * @remarks
- * `--workspace` followed by nothing is a mistake with a silent wrong answer available — taking the
- * default would wire the repository somewhere the person did not ask for and say it worked. A flag
- * followed by another flag is the same mistake with a typo in it.
- */
-export function flagValue(argv: string[], flag: string): string | undefined {
-  const at = argv.indexOf(flag);
-  if (at === -1) return undefined;
-
-  const value = argv[at + 1];
-  if (!value || value.startsWith('--')) {
-    throw new DaorisError(`${flag} needs a name — e.g. \`${flag} aurora\``);
-  }
-
-  return value;
 }
 
 /** True when the domain says enough for a sibling to know what is worth asking. */

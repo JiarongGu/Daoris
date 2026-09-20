@@ -9,9 +9,12 @@ using ModelContextProtocol.Server;
 
 // The knowledge index as an MCP server over stdio.
 //
-// Local-first, and local means local: it reads repositories on this machine, writes one SQLite file
-// under the user's profile, and opens no socket. Nothing here needs a URL, a key or an account —
-// that is the shared mode, and it is the HTTP host's job, not this one's.
+// Local-first, and local means local: it reads repositories on this machine and writes one SQLite
+// file under the user's profile. Nothing here needs a URL, a key or an account — that is the shared
+// mode, and it is the HTTP host's job, not this one's. The one exception is the write-through relay
+// (D47 §5): where the person has wired a workspace to a deployment, a verb on a quest that lives
+// there goes to its home rather than being decided twice. A machine that has wired nothing — the
+// default — opens no socket at all.
 //
 // This process is spawned by its client and lives for the session; the DATABASE is what persists.
 // Every session in every repository on this machine spawns over the same file, which is how a quest
@@ -19,6 +22,10 @@ using ModelContextProtocol.Server;
 //
 //   DAORIS_KNOWLEDGE_ROOT  where the repositories are      (default: the parent of this workspace)
 //   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: ~/.daoris/knowledge.db)
+//   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: ~/.daoris/remotes.json —
+//                          D48 §5; DAORIS_REMOTE_URL/_KEY/_WORKSPACE override it whole). Read only to
+//                          relay verbs on remote-homed quests; a machine with no remote — the
+//                          default — never opens a socket at all.
 
 // JSON-RPC over stdio is UTF-8, and on Windows the console defaults to the system ANSI codepage —
 // so without this every em dash and every CJK character in the corpus arrives as mojibake. This
@@ -55,11 +62,11 @@ var serviceOptions = ServiceOptions.FromEnvironment(
 // with the HTTP host so the two cannot disagree about whether semantic recall is on.
 var embedder = HostComposition.BuildEmbedder(serviceOptions);
 
-// The write-through relay (D47 §5/§9): a verb on a remote-homed quest goes to the machine's remote,
-// when one is configured — the same seam, the same client, the same exchange the HTTP host composes,
-// so an agent's door and a browser's door cannot disagree about where a quest lives. The MCP host is
-// always a LOCAL door; a shared deployment has no stdio.
-var remoteQuests = RemoteConfig.Load() is { } remoteConfig ? new HttpRemoteQuests(remoteConfig) : null;
+// The write-through relay (D47 §5/§9): a verb on a remote-homed quest goes to the remote serving that
+// quest's WORKSPACE (D48 §5), when this machine has one — the same seam, the same map, the same
+// exchange the HTTP host composes, so an agent's door and a browser's door cannot disagree about
+// where a quest lives. The MCP host is always a LOCAL door; a shared deployment has no stdio.
+var remoteQuests = RemoteQuestRoutes.From(RemoteConfig.Load());
 
 var composed = await ServiceFactory.CreateAsync(serviceOptions, embedder, remoteQuests: remoteQuests);
 builder.Services.AddSingleton(composed.Service);

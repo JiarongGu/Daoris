@@ -13,9 +13,10 @@ using Shenora.Windows;
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: ~/.daoris/driver.json)
 //   DAORIS_HTTP_HOST       the host executable, when it lives somewhere unusual
-//   DAORIS_REMOTE_URL      the machine's remote, with its key                  (or ~/.daoris/remote.json — D47 §9)
-//   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole
-//   DAORIS_REMOTE_CONFIG   where that file is                                  (default: ~/.daoris/remote.json)
+//   DAORIS_REMOTE_URL      one workspace's remote, with its key                (or ~/.daoris/remotes.json — D48 §5)
+//   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole,
+//   DAORIS_REMOTE_WORKSPACE  for the workspace named here                      (absent: `default`)
+//   DAORIS_REMOTE_CONFIG   where the map is                                    (default: ~/.daoris/remotes.json)
 internal static class Program
 {
     [STAThread]
@@ -60,6 +61,9 @@ internal static class Program
         builder.Services.AddSingleton<Func<string?>>(sp => () =>
             sp.GetRequiredService<MainForm>().PickFolder());
         builder.Services.AddIpcModule<RegistryModule>();
+        // The machine's wiring — which deployment serves each workspace (D48 §5, D50). The same file
+        // `daoris remote` edits; the service has no door onto it, deliberately.
+        builder.Services.AddIpcModule<RemotesModule>();
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.

@@ -11,6 +11,7 @@ import { commandDoctor } from './twins.ts';
 import { commandAnalyze } from './analyze.ts';
 import { commandConnect } from './connect.ts';
 import { commandImport, commandRetire } from './manage.ts';
+import { commandRemote } from './remotes.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
@@ -26,7 +27,8 @@ const USAGE = `daoris <command> [options]
   upstream <file>      promote a locally-edited canonical file back to the canon
   index                regenerate RULES_INDEX.md from what is on disk
   status               summary of packs, drift, local files, and any pending
-                       canon update; --json for an agent to act on
+                       canon update; --machine adds this machine's wiring;
+                       --json for an agent to act on
   doctor               report local documents that look like canonical ones
                        under a different name (advisory; never fails)
   connect              register this repo with a knowledge service: what it owns
@@ -35,18 +37,28 @@ const USAGE = `daoris <command> [options]
                        registration ONLY — no file, history or doctrine is touched
   import [folder]      register a folder's subdirectories in one go; safe to
                        re-run, and it never re-points anyone's workspace
+  remote [verb]        this machine's remotes, one per workspace:
+                         list                      what is wired (keys redacted)
+                         add <workspace> --url U   wire a workspace's deployment
+                         remove <workspace>        unwire it here; the
+                                                   deployment is untouched
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
-  service, and no gate ever runs them. Every doctrine command above is offline.
+  service, and no gate ever runs them. remote is management too and speaks to
+  nothing — it edits ~/.daoris/remotes.json. Every doctrine command is offline.
 
 Options:
   --dry-run            print the plan; write nothing
   --force              overwrite locally-drifted files (sync only)
   --all                promote every drifted file (upstream only)
+  --machine            report this machine's wiring too (status only)
   --workspace <name>   which workspace this repo shares with, on THIS machine
                        (connect only). Wiring, like a git remote: it is kept in
                        the machine's registry and written into no tracked file.
                        Omit to leave the existing wiring alone
+  --url <url>          the deployment a workspace syncs with (remote add)
+  --key <key>          its key; or DAORIS_REMOTE_KEY, or typed in (remote add).
+                       Never printed back — only its audit prefix
   --help, --version`;
 
 /** Commands are registered here as they land. @returns {number} process exit code */
@@ -61,6 +73,7 @@ const commands: Record<string, (args: CommandArgs) => ExitCode | Promise<ExitCod
   connect: commandConnect,
   retire: commandRetire,
   import: commandImport,
+  remote: commandRemote,
   analyze: commandAnalyze,
 };
 

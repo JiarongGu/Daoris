@@ -20,6 +20,21 @@ public sealed class QuestRelayTests : IAsyncLifetime
     private KnowledgeService _service = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-20T10:00:00Z");
 
+    /// <summary>
+    /// The machine's remotes, one per workspace (D48 §5) — the map a real deployment builds from
+    /// `~/.daoris/remotes.json`, with fakes in place of HTTP clients.
+    /// </summary>
+    private sealed class FakeRoutes(params (string Workspace, IRemoteQuestClient Client)[] entries)
+        : IRemoteQuestRoutes
+    {
+        public IRemoteQuestClient? For(string? workspace) => entries
+            .Where(entry => Daoris.Knowledge.Workspaces.Same(entry.Workspace, workspace))
+            .Select(entry => entry.Client)
+            .FirstOrDefault();
+
+        public IReadOnlyCollection<string> Workspaces => entries.Select(entry => entry.Workspace).ToList();
+    }
+
     private sealed class FakeRemote : IRemoteQuestClient
     {
         public RemoteQuestAnswer NextAnswer { get; set; } = new(0, "unreachable", null);
@@ -56,6 +71,14 @@ public sealed class QuestRelayTests : IAsyncLifetime
               "domain": { "summary": "Stays local.", "owns": ["itself"], "accepts": ["a quest"] }
             }
             """);
+        // The asker is a member too — a sender's registry row is what names the circle a quest is
+        // published INTO (D48 §4), and therefore which remote the relay reaches (§5).
+        Repo("Asker", """
+            {
+              "source": "s", "packs": [],
+              "domain": { "summary": "Asks for things.", "owns": ["its own tree"], "accepts": [] }
+            }
+            """);
 
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
@@ -83,11 +106,22 @@ public sealed class QuestRelayTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(dir, "daoris.json"), manifest);
     }
 
+    /// <summary>The ordinary machine: one circle, one remote — the shape before workspaces existed.</summary>
     private QuestExchange Exchange(bool withRemote = true) =>
-        new(_service, _quests, withRemote ? _remote : null);
+        new(_service, _quests, withRemote ? new FakeRoutes((Workspaces.Default, _remote)) : null);
 
-    private static Quest RemoteQuest(QuestStatus status = QuestStatus.Open) => new(
-        "abc123", "Asker", "Federated", "Do it", "why", status, null, Now, Now, Home: "remote");
+    /// <summary>Re-wire a registered repository to another circle — `connect --workspace`, from here.</summary>
+    private async Task WireAsync(string repository, string workspace)
+    {
+        var row = (await _service.RegistryAsync(ct: default))
+            .First(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+        await _service.RegisterAsync(row with { Workspace = workspace }, Now);
+    }
+
+    private static Quest RemoteQuest(
+        QuestStatus status = QuestStatus.Open, string workspace = Workspaces.Default) => new(
+        "abc123", "Asker", "Federated", "Do it", "why", status, null, Now, Now, Home: "remote",
+        Workspace: workspace);
 
     [Fact]
     public async Task Publishing_to_a_joined_receiver_writes_through_and_mirrors()
@@ -177,5 +211,100 @@ public sealed class QuestRelayTests : IAsyncLifetime
 
         Assert.Equal(QuestPublishRefusal.HomeUnreachable, outcome.Refusal);
         Assert.Null(await _quests.FindAsync("abc123"));
+    }
+
+    // ——— Which remote (D48 §5). A machine holding two circles holds two deployments' keys, and the
+    // quest's own workspace is what decides which one hears a verb. Sending to the wrong one is not a
+    // failed call: it is a lock taken at a deployment that had no business holding it.
+
+    [Fact]
+    public async Task A_quest_reaches_the_remote_serving_its_own_workspace()
+    {
+        var tools = new FakeRemote();
+        await WireAsync("Asker", "aurora");
+        await WireAsync("Federated", "aurora");
+        _remote.NextAnswer = new(200, "Published quest `#abc123` to `Federated` — Open.", RemoteQuest());
+
+        var outcome = await new QuestExchange(
+                _service, _quests, new FakeRoutes(("aurora", _remote), ("tools", tools)))
+            .PublishAsync("Asker", "Federated", "Do it", "why", Now);
+
+        Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);
+        Assert.Contains("publish Federated:Do it", _remote.Calls);
+        Assert.Empty(tools.Calls);
+        Assert.Equal("aurora", outcome.Quest!.Workspace);
+    }
+
+    /// <summary>
+    /// A joined repository in a circle this machine has no remote for stays entirely local — absence
+    /// is the default and it is silent (D21). The declaration says MAY; the machine says WHERE, and
+    /// silence there is a workspace that syncs nowhere, not an error.
+    /// </summary>
+    [Fact]
+    public async Task A_joined_receiver_in_an_unwired_circle_publishes_locally()
+    {
+        await WireAsync("Asker", "tools");
+        await WireAsync("Federated", "tools");
+
+        var outcome = await new QuestExchange(_service, _quests, new FakeRoutes(("aurora", _remote)))
+            .PublishAsync("Asker", "Federated", "Do it", "why", Now);
+
+        Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);
+        Assert.Empty(_remote.Calls);
+        Assert.Null(outcome.Quest!.Home);
+        Assert.Equal("tools", outcome.Quest.Workspace);
+    }
+
+    [Fact]
+    public async Task A_verb_resolves_its_remote_by_the_quests_own_workspace()
+    {
+        var tools = new FakeRemote();
+        await _quests.MirrorAsync(RemoteQuest(workspace: "aurora"));
+        _remote.NextAnswer = new(200, "Quest `#abc123` is now Taken.", RemoteQuest(QuestStatus.Taken));
+
+        var outcome = await new QuestExchange(
+                _service, _quests, new FakeRoutes(("aurora", _remote), ("tools", tools)))
+            .RespondAsync("abc123", "take", null, Now);
+
+        Assert.Equal(QuestRespondRefusal.None, outcome.Refusal);
+        Assert.Contains("take abc123", _remote.Calls);
+        Assert.Empty(tools.Calls);
+    }
+
+    /// <summary>A circle with no remote cannot answer for its quests — plainly, and changing nothing.</summary>
+    [Fact]
+    public async Task A_mirrored_quest_whose_circle_has_no_remote_refuses_naming_the_circle()
+    {
+        await _quests.MirrorAsync(RemoteQuest(workspace: "tools"));
+
+        var outcome = await new QuestExchange(_service, _quests, new FakeRoutes(("aurora", _remote)))
+            .RespondAsync("abc123", "take", null, Now);
+
+        Assert.Equal(QuestRespondRefusal.HomeUnreachable, outcome.Refusal);
+        Assert.Contains("tools", outcome.Message);
+        Assert.Empty(_remote.Calls);
+        Assert.Equal(QuestStatus.Open, (await _quests.FindAsync("abc123"))!.Status);
+    }
+
+    /// <summary>
+    /// A quest this machine has never mirrored names no workspace. With one remote that is no
+    /// ambiguity — it is tried, as it always was, because the mirror may simply be behind. With
+    /// several, guessing would post a `take` at a deployment that never held the quest, so the answer
+    /// is a refusal that says why and names the circles.
+    /// </summary>
+    [Fact]
+    public async Task An_unmirrored_quest_is_not_guessed_at_across_several_circles()
+    {
+        var tools = new FakeRemote();
+
+        var outcome = await new QuestExchange(
+                _service, _quests, new FakeRoutes(("aurora", _remote), ("tools", tools)))
+            .RespondAsync("zzz999", "take", null, Now);
+
+        Assert.Equal(QuestRespondRefusal.HomeUnreachable, outcome.Refusal);
+        Assert.Contains("aurora", outcome.Message);
+        Assert.Contains("tools", outcome.Message);
+        Assert.Empty(_remote.Calls);
+        Assert.Empty(tools.Calls);
     }
 }

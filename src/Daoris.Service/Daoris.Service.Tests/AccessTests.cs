@@ -64,3 +64,87 @@ public sealed class AccessTests
         Assert.Null(Access.RefuseStartup(ServiceMode.Shared, "http://0.0.0.0:5177"));
     }
 }
+
+/// <summary>
+/// A shared deployment is a WORKSPACE's deployment (D48 §5): it carries one circle's identity and
+/// refuses anything that declares another. The alternative — one multi-tenant host holding many
+/// workspaces — puts the sharing boundary inside one store and one key space, which is exactly where
+/// a scoping bug becomes a disclosure.
+/// </summary>
+public sealed class HostWorkspaceTests
+{
+    /// <summary>Silence is `default`, everywhere (D48 §2) — including a host that never named itself.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void A_shared_host_that_names_no_workspace_serves_the_default_circle(string? value)
+    {
+        var (workspace, error) = Access.ParseWorkspace(ServiceMode.Shared, value);
+
+        Assert.Null(error);
+        Assert.Equal(Workspaces.Default, workspace);
+    }
+
+    [Fact]
+    public void A_shared_host_carries_the_circle_it_was_given()
+    {
+        var (workspace, error) = Access.ParseWorkspace(ServiceMode.Shared, " aurora ");
+
+        Assert.Null(error);
+        Assert.Equal("aurora", workspace);
+    }
+
+    /// <summary>
+    /// A LOCAL host holds every circle the person wired, so an identity there would be a claim it
+    /// cannot honour — and a parsed-and-unused input is a claim (`claims-need-checks`). It refuses
+    /// rather than ignoring, the same fail-safe shape as the loopback rule above.
+    /// </summary>
+    [Fact]
+    public void A_local_host_has_no_workspace_identity_and_refuses_one()
+    {
+        var (_, error) = Access.ParseWorkspace(ServiceMode.Local, "aurora");
+
+        Assert.NotNull(error);
+        Assert.Contains(Access.WorkspaceVariable, error);
+        Assert.Contains("DAORIS_MODE=shared", error);
+    }
+
+    [Fact]
+    public void A_local_host_naming_nothing_has_no_identity_at_all()
+    {
+        var (workspace, error) = Access.ParseWorkspace(ServiceMode.Local, null);
+
+        Assert.Null(error);
+        Assert.Null(workspace);
+    }
+
+    /// <summary>Silence takes the host's own circle: the receiving deployment's wiring decides (D48 §2).</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("aurora")]
+    [InlineData("AURORA")]
+    public void A_registration_in_the_host_s_own_circle_is_taken(string? stated)
+    {
+        Assert.Null(Access.RefuseForeignWorkspace("aurora", "atelier", stated));
+    }
+
+    /// <summary>The refusal names BOTH sides — a "no" that does not say which side is where is a puzzle.</summary>
+    [Fact]
+    public void A_registration_declaring_another_circle_is_refused_naming_both()
+    {
+        var refusal = Access.RefuseForeignWorkspace("aurora", "foundry", "tools");
+
+        Assert.NotNull(refusal);
+        Assert.Contains("aurora", refusal);
+        Assert.Contains("tools", refusal);
+        Assert.Contains("foundry", refusal);
+    }
+
+    /// <summary>A local host has no identity to defend, so it takes every circle on the machine.</summary>
+    [Fact]
+    public void A_local_host_refuses_nothing()
+    {
+        Assert.Null(Access.RefuseForeignWorkspace(null, "foundry", "tools"));
+    }
+}

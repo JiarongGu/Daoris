@@ -31,7 +31,7 @@ public sealed record TickReport(
 /// </remarks>
 public sealed class Driver(
     ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
-    SessionProcesses? processes = null, RemoteSync? sync = null)
+    SessionProcesses? processes = null, RemoteSyncSet? sync = null)
 {
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.

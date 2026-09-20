@@ -69,9 +69,9 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         using var service = new ServiceClient(serviceUrl, key);
 
-        // The machine's remote, when it has one (D47 §9) — the sync rides the tick, in the shell
-        // exactly as in the headless host. Absence is silent and local.
-        using var sync = RemoteSync.FromEnvironment(service.BaseUrl, key);
+        // The machine's remotes — one per workspace that has one (D47 §9, D48 §5). The syncs ride the
+        // tick, in the shell exactly as in the headless host. Absence is silent and local.
+        using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, key);
 
         _watch = new DriverWatch(service, ConfigPath, home, Processes, sync);
         await _watch.RunAsync(

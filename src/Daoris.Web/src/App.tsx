@@ -10,17 +10,23 @@ import { ConvergenceView } from './ConvergenceView';
 import { SearchView } from './SearchView';
 import { QuestsView } from './QuestsView';
 import { ProjectsView } from './ProjectsView';
+import { SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
+import { useDriver } from './shell';
 
-type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search';
+type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
-const NAV: { tab: Tab; icon: IconName }[] = [
+const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
   { tab: 'overview', icon: 'overview' },
   { tab: 'quests', icon: 'quests' },
   { tab: 'projects', icon: 'projects' },
   { tab: 'convergence', icon: 'convergence' },
   { tab: 'search', icon: 'search' },
+  // The machine's own settings, where there is a machine to have them (D50). In a browser this is
+  // not a disabled tab but an absent one: the wiring is machine-local state with a credential in it,
+  // and the service has no route onto it — an empty view would imply one exists.
+  { tab: 'settings', icon: 'settings', shellOnly: true },
 ];
 
 /**
@@ -42,6 +48,8 @@ export function App() {
   // The Reader's document rides the same cache as every other read — re-opening an entry is free.
   const reading = useEntry(readingId);
   const refresh = useRefreshIndex();
+  // The same "is a shell here" answer every control uses — one detection path, not two that drift.
+  const attached = useDriver().data !== undefined;
 
   const dismiss = useCallback((id: number) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -76,7 +84,7 @@ export function App() {
         </div>
 
         <nav aria-label={t('nav.label')} className="grid gap-0.5 max-md:flex max-md:overflow-x-auto">
-          {NAV.map(({ tab: target, icon }) => (
+          {NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ tab: target, icon }) => (
             <button
               key={target}
               onClick={() => setTab(target)}
@@ -136,6 +144,7 @@ export function App() {
             <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
           )}
           {tab === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
+          {tab === 'settings' && attached && <SettingsView notify={notify} />}
         </div>
       </main>
 

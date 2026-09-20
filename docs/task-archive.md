@@ -1226,6 +1226,43 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## WSP3 — remotes become a map (2026-09-20)
+
+> **WSP3 — remotes become a map.** `~/.daoris/remotes.json` (workspace → url/key; env pair kept
+> for one workspace via `DAORIS_REMOTE_WORKSPACE`, both twins' test tables moving together); the sync
+> loop runs per workspace; the shared host gains its `DAORIS_WORKSPACE` identity and refuses feeds/
+> registrations naming another, plainly; the quest relay resolves its remote by the quest's workspace;
+> CLI parity (D50): `daoris remote list|add|remove` over the same file, offline, key prompted or from
+> env and echoed redacted, plus `status --machine` reporting the wiring; the desktop's settings
+> surface edits the same file. Design §5/§2b.
+
+✅ done 2026-09-20 — "the machine's remote" became "the machine's remotes", one per circle. **The map**
+is `~/.daoris/remotes.json`, read by three deliberate twins — `RemoteConfig` (service), `RemoteTarget`
+(driver), `remotemap.ts` (CLI) — because the three artefacts share no code and the FILE is the
+contract; each carries the same table, and the rules are unchanged except in scope: the environment
+pair replaces the file **for the whole machine** (a merge would let a real map leak into a process
+that believed it had named its only remote, which the gate's hermetic guard rests on), a half-set pair
+is no remote anywhere, an entry missing half its pair is one unwired circle rather than a machine with
+none, and the pre-workspace flat shape is read as nothing — rebuilt, not migrated. **The sync runs per
+workspace** (`RemoteSyncSet`): one circle's wall names itself and leaves the others' pass alone, the
+joined rows are filtered to the circle while the *names* guard stays machine-wide (it is what stops a
+foreign row overwriting a local registration that shares a name in another circle, root and all), and
+mirrored-down rows are filed in the syncing workspace — the receiver's own wiring deciding, never the
+feed naming itself. **A shared host is a workspace's host**: `DAORIS_WORKSPACE` is its identity, every
+row it takes lands in that circle, a registration declaring another is refused with a sentence naming
+both sides, and a LOCAL host given the variable refuses to start rather than ignoring it. **The relay
+resolves by the quest's workspace**; a quest this machine has never mirrored names no circle, so it is
+tried only when there is exactly one it could mean and otherwise refused plainly — guessing would post
+a `take` at a deployment that never held it. **Two editors over one file** (D50): `daoris remote
+list|add|remove` — file-local, offline, the key from a flag, the environment, or typed in, and never
+printed back beyond its audit prefix — plus `status --machine`; and the desktop's new Machine view
+over a `DAORIS.REMOTES` module, shell-only because the service deliberately has no route onto machine
+wiring with a credential in it. Both say which source is live, since with the env pair set the file's
+rows are not the wiring. **The gate found a real defect in existing code**: `keys mint` composed the
+whole service and so bootstrapped a registry from the server's own disk, machine paths included
+(FIX-LOG; key administration now opens the key store alone). Tests grew 147→164 CLI, 201→225 service,
+53→65 driver, 30→35 web vitest, 94→112 family rehearsal.
+
 ## WSP2 — the registry becomes managed (2026-09-20)
 
 > **WSP2 — the registry becomes managed.** Registry-as-authority (explicit list: name, workspace,

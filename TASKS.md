@@ -16,17 +16,17 @@ rehearsal's two-machine phase. **All three parts of D45 are built.** The owner s
 2026-09-20: **workspaces as the unit of sharing, and Daoris as the working surface** — designed the
 same day as D48/D49 (each amended the same day on the owner's corrections: membership is git-style
 wiring, never tracked; coexistence with non-users is binding; harness accounts are named credential
-profiles) with two contracts and eight build items. **WSP1 is built** (2026-09-20, in the archive):
-the workspace exists, everything cross-repository carries it, and the boundary holds in the family
-rehearsal's new phase. Seven items remain.
+profiles) with two contracts and eight build items. **WSP1, WSP2 and WSP3 are built** (2026-09-20, in
+the archive): the workspace exists, the registry is the authority, and the machine's remotes are a map
+— one deployment per circle, wired from either surface. Five items remain.
 
 ## State
 
-**All five artefacts exist and are built, and all three parts of D45 with them.** Eleven commands,
-147 CLI tests, 201 service, 57 devkit, 53 driver, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **94/94 family rehearsal** including the
-driver, two-machine remote, never-scans, two-workspace and registration-lifecycle phases (2026-09-20),
-9 devkit gates. Canon: 8 core rules,
+**All five artefacts exist and are built, and all three parts of D45 with them.** Twelve commands,
+164 CLI tests, 225 service, 57 devkit, 65 driver, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **112/112 family rehearsal** including the
+driver, two-machine remote, never-scans, two-workspace, registration-lifecycle and remotes-map phases
+(2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
 **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
 an index row, and the answer is splitting, not raising (D28).
@@ -87,44 +87,48 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 **The next arc is under way: workspaces and the interactive surface (D48/D49, 2026-09-20, each amended
 the same day on the owner's corrections).** The owner set the direction in this backlog and granted
 structural redesign (nothing is deployed); the design session turned it into two contracts and eight
-build items, of which **WSP1 and WSP2 landed 2026-09-20**. **Start at WSP3** — the workspace exists
-and the registry is managed, so everything below stands on real ground: a registry row carries the
-workspace, `connect --workspace` sets it, every cross-repository entity and answer is scoped by it,
-and the family is an explicit list that `connect`, `retire` and `import` maintain.
+build items, of which **WSP1, WSP2 and WSP3 landed 2026-09-20**. **Start at WSP4** — the workspace
+exists, the registry is the authority, and the remotes are a map, so everything below stands on real
+ground: a registry row carries the workspace, every cross-repository answer is scoped by it, the family
+is an explicit list that `connect`, `retire` and `import` maintain, and each circle syncs with the one
+deployment its own entry names.
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
   direction, the argued rejections, and management parity — D50 binds every item), with D45–D47
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
-  mirror-down feed-back and shared-scan fixes — WSP4 builds directly on those lessons).
-- **The build order is stated at the top of the backlog** — WSP1 and WSP2 are in, so WSP3 is next and
-  WSP4 follows it. Schema changes rebuild rather than migrate (the store's own rule, and nothing is
+  key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
+  those lessons).
+- **The build order is stated at the top of the backlog** — WSP1–WSP3 are in, so WSP4 is next. Schema
+  changes rebuild rather than migrate (the store's own rule, and nothing is
   deployed); WSP1 bumped the entry store to schema 2 on exactly that basis.
-- **WSP3 specifically:** read workspace design **§5** (one shared deployment serves one workspace; the
-  remotes map) and **§2b** (the `daoris remote` family and `status --machine`) before touching
-  anything. The known trap is named in the item itself — `RemoteConfig` and `RemoteTarget` are twins
-  and **move together with their test tables**; the whole-pair-or-nothing env rule is unchanged, and
-  `DAORIS_REMOTE_WORKSPACE` is what names which workspace the env pair serves. The new CLI verbs are
-  file-local and offline: they edit `~/.daoris/remotes.json` and must NOT reach `service.ts` (see the
-  conventions note in `CLAUDE.md` about keeping the network in one module).
-- **The last two landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
-  (WSP1) and `7333f74` (WSP2). Both are gate-green; `git log` is the reviewable record.
-- **What WSP1/WSP2 left for their successors, deliberately:** the platform's workspace *switcher*
-  (Projects shows each repository's circle and manages it, but no view filters by one yet), and
-  per-workspace remotes — until WSP3 a shared host still serves one circle because it holds one store,
-  and a feed never names a workspace: the receiving deployment's own wiring decides where fed material
-  lands.
-- **Two things about the registry that will bite if forgotten:** being in a folder is no longer being
-  a member (a repository joins by `connect` and leaves by `retire`), and the bootstrap import runs
-  **once** per store — anything that re-ran it would resurrect every repository someone retired.
+- **WSP4 specifically:** read workspace design **§6** (provenance, monotonic replacement,
+  default-branch-only) before touching anything. The judgement belongs at the remote's door in Core,
+  where the entries door already judges, and can be unit-proven without a host; `WorkingTree` already
+  reads HEAD, so the driver stamps `{ commit, committedAt, branch }` onto the feed. A refusal is
+  **information, not a problem** — the sync reports it and carries on, the way a wall is named today.
+- **The last three landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
+  (WSP1), `7333f74` (WSP2) and WSP3's. All gate-green; `git log` is the reviewable record.
+- **What WSP1–WSP3 left for their successors, deliberately:** the platform's workspace *switcher*
+  (Projects shows each repository's circle and manages it, the new Machine view shows the wiring, but
+  no view filters by one yet); and the feed still carries no provenance — which is WSP4.
+- **Three things that will bite if forgotten:** being in a folder is no longer being a member (a
+  repository joins by `connect` and leaves by `retire`); the bootstrap import runs **once** per store,
+  and anything that re-ran it would resurrect every repository someone retired; and **a feed never
+  names its own workspace** — the receiving deployment's wiring decides where material lands, which is
+  why a shared host files every row into its own circle and refuses one that declares another.
+- **The remotes map has three twins, not two** (`RemoteConfig`, `RemoteTarget`, `remotemap.ts`): the
+  three artefacts share no code, so the FILE is the contract and the three test tables move together.
+  The environment pair replaces the file for the **whole machine**, which is what the rehearsal's
+  hermetic guard rests on.
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
 - **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
   up only when its trigger has actually arrived.
-- **Verify before claiming done, always:** `npm run verify` (CLI 147 + `check` + version agreement),
-  `dotnet test src/Daoris.Service` (201), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (53), `npm run rehearse:family` (94/94), `npm run test:web` (30 + 7). If a `bin`-driven gate is red
+- **Verify before claiming done, always:** `npm run verify` (CLI 164 + `check` + version agreement),
+  `dotnet test src/Daoris.Service` (225), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
+  (65), `npm run rehearse:family` (112/112), `npm run test:web` (35 + 7). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -136,17 +140,9 @@ item).** The owner's direction, designed under the standing redesign grant — t
 building anything below. **D50 — management parity — applies across the arc**: everything a person
 manages gets a proper surface in the desktop or the `daoris` CLI (files and doors are the truth,
 surfaces are editors; the offline-discipline test evolves to a named management class — design §2b).
-Build order: **WSP1 and WSP2 are done** (2026-09-20, in the archive) — next is WSP3, then WSP4;
+Build order: **WSP1, WSP2 and WSP3 are done** (2026-09-20, in the archive) — next is WSP4;
 SES1→SES2 may interleave; SES3 and CANON6 are independent. Each item is one
 session-sized landing, TDD, gates green, moved to the archive on completion.
-
-- [ ] **WSP3 — remotes become a map.** `~/.daoris/remotes.json` (workspace → url/key; env pair kept
-  for one workspace via `DAORIS_REMOTE_WORKSPACE`, both twins' test tables moving together); the sync
-  loop runs per workspace; the shared host gains its `DAORIS_WORKSPACE` identity and refuses feeds/
-  registrations naming another, plainly; the quest relay resolves its remote by the quest's workspace;
-  CLI parity (D50): `daoris remote list|add|remove` over the same file, offline, key prompted or from
-  env and echoed redacted, plus `status --machine` reporting the wiring; the desktop's settings
-  surface edits the same file. Design §5/§2b.
 
 - [ ] **WSP4 — knowledge sync semantics.** Feeds carry git provenance stamped by the driver (commit,
   committedAt, branch; `WorkingTree` reads HEAD); default-branch-only knowledge (records/quests travel

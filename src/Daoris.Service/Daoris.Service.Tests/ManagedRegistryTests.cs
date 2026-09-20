@@ -281,6 +281,40 @@ public sealed class FirstRunImportTests : IDisposable
     }
 
     /// <summary>
+    /// Minting a key scans nothing.
+    /// </summary>
+    /// <remarks>
+    /// The console verb used to compose the whole service, which bootstrapped a registry from the
+    /// configured root — so `keys mint` on a server registered whatever sat beside the binary, machine
+    /// paths included, into the deployment that must be FED and never scanned (D47 §4). The family
+    /// rehearsal caught it: a workspace's deployment answered a registry full of the operator's own
+    /// repositories, in a workspace it does not serve. Key administration opens the key store alone.
+    /// </remarks>
+    [Fact]
+    public async Task Key_administration_never_bootstraps_a_registry()
+    {
+        var options = Options();
+
+        await using (var administration = await ServiceFactory.OpenKeysAsync(options))
+        {
+            await administration.Keys.MintAsync("person@machine", TimeSpan.FromDays(1), DateTimeOffset.UtcNow);
+        }
+
+        // Read back as a FED deployment, which imports nothing itself — so anything registered here
+        // was registered by the mint above.
+        await using (var fed = await ServiceFactory.CreateAsync(options, source: new EmptyKnowledgeSource()))
+        {
+            Assert.Empty(await fed.Service.RegistryAsync());
+        }
+
+        // And it did not spend the once-only bootstrap either: a local deployment over the same store
+        // still imports its root. Otherwise minting a key on a laptop would silently cost the person
+        // their family, and the verb that consumed it would never be suspected.
+        await using var local = await ServiceFactory.CreateAsync(options);
+        Assert.Equal(["engine", "game"], (await local.Service.RegistryAsync()).Select(r => r.Repository).Order());
+    }
+
+    /// <summary>
     /// The index reads the REGISTERED paths (D48 §3) — so a repository that is merely present in the
     /// folder, and never registered, contributes nothing. The folder stopped being the authority.
     /// </summary>

@@ -56,8 +56,9 @@ public enum QuestRespondRefusal
     Closed,
 
     /// <summary>
-    /// The quest lives at a remote that did not answer. Nothing was changed and nothing was queued —
-    /// a transition either writes through or fails plainly (D47 §2).
+    /// The quest lives at a remote that did not answer — or at one this machine cannot resolve, which
+    /// is the same outcome for the asker. Nothing was changed and nothing was queued: a transition
+    /// either writes through or fails plainly (D47 §2).
     /// </summary>
     HomeUnreachable,
 }
@@ -80,7 +81,7 @@ public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Mes
 /// <para>The messages are composed here too, not only the verdicts. They are what an agent acts on, so
 /// two hosts phrasing them differently is two behaviours in all the ways that matter.</para>
 /// </remarks>
-public sealed class QuestExchange(KnowledgeService service, QuestStore quests, IRemoteQuestClient? remote = null)
+public sealed class QuestExchange(KnowledgeService service, QuestStore quests, IRemoteQuestRoutes? remotes = null)
 {
     /// <summary>
     /// Publish a quest to another repository. Refuses a self-addressed quest and a target that has not
@@ -143,7 +144,10 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
 
         // Home follows the receiver, decided at publish and never migrated (D47 §5): a joined
         // receiver's quests live at the remote, because other machines may be drivable for it and the
-        // one lock must sit where every taker can reach it.
+        // one lock must sit where every taker can reach it. WHICH remote is the workspace's (D48 §5)
+        // — both sides share it by now — and a circle this machine has no entry for stays local,
+        // silently: a joined repository in an unwired workspace is a declaration with nowhere to go.
+        var remote = remotes?.For(home);
         if (remote is not null && target.Joined)
         {
             var answer = await remote.PublishAsync(from, to, title, body, ct).ConfigureAwait(false);
@@ -218,14 +222,29 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
         // the mirror takes the result (D47 §5). An id we do not hold at all is also tried remotely
         // when a remote exists: the mirror may simply not have caught up to a quest that lives there.
         var local = await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false);
-        if (local is { Home: not null } || (local is null && remote is not null))
+
+        // WHICH remote is the quest's own workspace's (D48 §5). A quest this machine does not hold
+        // names no workspace — so it resolves only when there is exactly one circle it could mean; with
+        // several, guessing would post a `take` at the wrong deployment, which is a lock broken rather
+        // than a question unanswered.
+        var remote = local is not null
+            ? remotes?.For(local.Workspace)
+            : remotes is { Workspaces.Count: 1 } single ? single.For(single.Workspaces.First()) : null;
+
+        if (local is { Home: not null } || (local is null && remotes is not null))
         {
             if (remote is null)
             {
                 return new(
                     QuestRespondRefusal.HomeUnreachable,
-                    $"Quest `#{id.TrimStart('#')}` lives at a remote, and this machine has none configured — "
-                    + "nothing was changed.",
+                    local is not null
+                        ? $"Quest `#{id.TrimStart('#')}` lives at workspace `{Workspaces.Normalize(local.Workspace)}`'s "
+                          + "remote, and this machine has none wired for that circle — nothing was changed. "
+                          + $"`daoris remote add {Workspaces.Normalize(local.Workspace)} --url <url>` wires one."
+                        : $"Quest `#{id.TrimStart('#')}` is not mirrored here, so its workspace is unknown — and a "
+                          + "verb resolves its remote by the quest's workspace (D48 §5). This machine has remotes "
+                          + $"for: {string.Join(", ", remotes!.Workspaces)}. Nothing was changed; the next sync "
+                          + "mirrors the quest and names its circle.",
                     Quest: null);
             }
 

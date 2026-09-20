@@ -12,7 +12,11 @@ internal static class KeysConsole
 {
     public static async Task<int> RunAsync(string[] args, ServiceOptions options)
     {
-        await using var composed = await ServiceFactory.CreateAsync(options);
+        // The KEY STORE alone — never the composed service. Composing it bootstraps a registry from
+        // the configured root (D48 §3), which on a server would import whatever sits beside the binary
+        // into a deployment that must be fed and never scanned (D47 §4). Minting a credential has no
+        // business touching an index.
+        await using var composed = await ServiceFactory.OpenKeysAsync(options);
 
         switch (args)
         {

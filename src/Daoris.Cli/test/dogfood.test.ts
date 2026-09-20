@@ -134,18 +134,45 @@ test('nothing a doctrine command reaches can import the service client', () => {
   const doctrine = ['drift.ts', 'materialize.ts', 'indexgen.ts', 'upstream.ts', 'commands.ts', 'twins.ts', 'analyze.ts'];
 
   for (const entry of doctrine) {
-    const seen = new Set<string>();
-    const walk = (module: string): void => {
-      if (seen.has(module)) return;
-      seen.add(module);
-      const file = join(cliRoot, 'src', module);
-      if (!existsSync(file)) return;
-      // Both `from './x.ts'` and a bare `import './x.ts'` — the second was missed at first, and a
-      // side-effect import is exactly how a module acquires a dependency nobody meant to add.
-      for (const match of readText(file).matchAll(/(?:from|import)\s+'\.\/([\w.-]+\.ts)'/g)) walk(match[1]!);
-    };
+    const seen = reachableFrom(entry);
 
-    walk(entry);
+    assert.equal(
+      seen.has(SERVICE_CLIENT), false,
+      `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
+    assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
+  }
+});
+
+/** Every module an entry point pulls in, transitively — both import spellings. */
+function reachableFrom(entry: string): Set<string> {
+  const seen = new Set<string>();
+  const walk = (module: string): void => {
+    if (seen.has(module)) return;
+    seen.add(module);
+    const file = join(cliRoot, 'src', module);
+    if (!existsSync(file)) return;
+    // Both `from './x.ts'` and a bare `import './x.ts'` — the second was missed at first, and a
+    // side-effect import is exactly how a module acquires a dependency nobody meant to add.
+    for (const match of readText(file).matchAll(/(?:from|import)\s+'\.\/([\w.-]+\.ts)'/g)) walk(match[1]!);
+  };
+
+  walk(entry);
+  return seen;
+}
+
+/**
+ * Most of the management class needs no network at all (D50): `remote` edits `~/.daoris/remotes.json`
+ * and `status --machine` reads it. The usage text says so out loud, and prose is the one surface with
+ * no compiler — so the claim is held here.
+ *
+ * It is also what keeps the class from becoming a list. The offline guarantee survived management
+ * growing past `connect` because the network itself stayed in ONE file; a verb that quietly acquired a
+ * socket through a convenience import would make "the named management modules" something people
+ * append to without thinking.
+ */
+test('the file-local management verbs reach no network module either', () => {
+  for (const entry of ['remotes.ts', 'remotemap.ts']) {
+    const seen = reachableFrom(entry);
 
     assert.equal(
       seen.has(SERVICE_CLIENT), false,

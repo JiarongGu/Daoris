@@ -8,9 +8,10 @@ using Daoris.Driver;
 //   DAORIS_SERVICE_URL     where the service is                (required — the driver is its client)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices       (default: ~/.daoris/driver.json)
-//   DAORIS_REMOTE_URL      the machine's remote, with its key  (or ~/.daoris/remote.json — D47 §9;
-//   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole)
-//   DAORIS_REMOTE_CONFIG   where that file is                  (default: ~/.daoris/remote.json)
+//   DAORIS_REMOTE_URL      one workspace's remote, with its key (or ~/.daoris/remotes.json — D48 §5;
+//   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole,
+//   DAORIS_REMOTE_WORKSPACE  for the workspace named here — absent: `default`)
+//   DAORIS_REMOTE_CONFIG   where the map is                    (default: ~/.daoris/remotes.json)
 //
 //   --once        one tick, then exit
 //   --until-idle  tick until nothing starts, then exit — the deterministic mode a gate drives
@@ -34,14 +35,15 @@ try
 
     using var service = ServiceClient.FromEnvironment();
 
-    // The machine's remote, when it has one (~/.daoris/remote.json, environment overriding — D47 §9):
-    // the sync rides the tick, so a headless driver on a server machine feeds and mirrors exactly as
-    // the desktop does. Absence is silent and local.
-    using var sync = RemoteSync.FromEnvironment(
+    // The machine's remotes, one per workspace that has one (~/.daoris/remotes.json, environment
+    // overriding — D47 §9, D48 §5): the syncs ride the tick, so a headless driver on a server machine
+    // feeds and mirrors exactly as the desktop does. Absence is silent and local.
+    using var sync = RemoteSyncSet.FromEnvironment(
         service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
     if (sync is not null)
     {
-        Console.WriteLine("driver: syncing with the machine's remote each tick");
+        Console.WriteLine(
+            $"driver: syncing each tick with the remotes for {string.Join(", ", sync.Workspaces)}");
     }
 
     if (config.Drivable.Count == 0)

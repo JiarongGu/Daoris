@@ -202,6 +202,40 @@ is a reverse-proxy problem, not a store problem.
   resolves its remote by the quest's workspace. A workspace with no remote entry syncs nowhere,
   silently — absence is the default (D21).
 
+**Built 2026-09-20 (WSP3).** Six choices the building settled, each because the alternative had a
+silent failure in it:
+
+- **The environment replaces the file for the WHOLE MACHINE, not one entry of it.** Either variable
+  present means the file is not read at all, as before; a merge would let a developer's real map leak
+  into a process that believed it had named its only remote, which is precisely what the gate's
+  hermetic guard rests on. There are now **three** copies of this judgement — service, driver, CLI,
+  because the three artefacts share no code and the FILE is the contract — and each carries the same
+  table, so a rule enforced in one is enforced in all.
+- **The pre-workspace `remote.json` is not migrated and not read.** Nothing is deployed, so the file
+  is rebuilt (the store's own rule); a surface that silently re-homed an old remote into `default`
+  would be guessing which circle it had served.
+- **The sync reads the registry unscoped and filters inside.** The *joined* half is one workspace's,
+  but the *names* half must span the machine: it is what stops a foreign row overwriting a local
+  registration that shares a name in another circle — root and all. A scoped read would have made
+  that guard blind by half.
+- **Mirrored-down rows are filed in the syncing workspace.** That is not a feed naming its own circle
+  (WSP1's rule, unchanged — the remote's answer carries no workspace anyone reads); it is the
+  receiving machine's own wiring deciding, since a row from this workspace's deployment belongs to
+  this workspace by construction.
+- **A verb on a quest this machine does not hold resolves only when there is one circle it could
+  mean.** With several, it refuses plainly and names them: guessing would post a `take` at a
+  deployment that never held the quest, which is a lock broken rather than a question unanswered.
+- **A LOCAL host given `DAORIS_WORKSPACE` refuses to start.** It holds every circle the person wired,
+  so the identity is a claim it cannot honour, and a parsed-and-unused input is a claim. Same
+  fail-safe inversion as the loopback rule.
+
+**And one defect the gate found in existing code**: `keys mint` composed the whole service, which
+bootstraps a registry from the configured root (§3) — so an operator minting a key on a server
+imported whatever sat beside the binary, machine paths included, into a deployment that must be fed
+and never scanned (D47 §4). Key administration now opens the key store alone. It was invisible until
+the rehearsal asserted that *every* row at a workspace's deployment belongs to that workspace; the
+existing store scan only looked for the fixture path, and these rows were real ones.
+
 ## 6. Remote knowledge sync: add, update, delete — and who is right
 
 Today's feed is wholesale replacement per repository, last writer wins. Between two machines that is a
@@ -288,6 +322,10 @@ machine paths (D46/D47: paths never reach a browser).
    knowledge" and "does it bootstrap a registry", because those are the same sentence and two copies
    would drift.
 3. **WSP3 — remotes become a map**: per-workspace remotes, sync loop per workspace, host identity.
+   **Built 2026-09-20**, with the six settled choices in §5 above and two things its successors
+   inherit: the loader rule now has **three** twins that move together (service, driver, CLI), and a
+   surface over a machine-local credential reports **which source is live** — with the env pair set,
+   showing the file's rows would be showing wiring that is not in effect.
 4. **WSP4 — knowledge sync semantics**: provenance, monotonic replace, default-branch-only, served
    provenance. (Lands after WSP3 because the refusals belong to a workspace's host, but the Core
    judgement can be built and unit-proven independently.)

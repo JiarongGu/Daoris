@@ -9,17 +9,19 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Eleven commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Twelve commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness, index
   freshness and the always-loaded budget; `upstream` promotes a locally-improved file back into the
   canon (`--all` for every edit at once); `index` regenerates `RULES_INDEX.md` from what is on disk;
-  `status` summarizes — the remote disclosure declaration included — and reports when a newer canon is
-  available; `doctor` reports local documents that restate a canonical one under a different name; and
-  the three opt-in **management** commands (D35, D50) talk to a knowledge service — `connect` registers
-  the repository, carrying its declaration and, to a local service only, its root; `retire` takes it
-  off the machine's registry without touching a file; `import` registers a folder's subdirectories at
-  once.
+  `status` summarizes — the remote disclosure declaration included, and this machine's wiring with
+  `--machine` — and reports when a newer canon is available; `doctor` reports local documents that
+  restate a canonical one under a different name; and the **management** commands (D35, D50) are
+  opt-in and never run by a gate — `connect` registers the repository with a knowledge service,
+  carrying its declaration and, to a local service only, its root; `retire` takes it off the machine's
+  registry without touching a file; `import` registers a folder's subdirectories at once; and `remote`
+  edits the machine's map of one deployment per workspace, talking to nothing and never printing a key
+  back.
 - **`doctor` covers the one gap the lock cannot.** A repository's own rule duplicating a canonical one is
   local, and local is invisible by design — it surfaced on the first adoption only because someone read
   the generated index end to end. Advisory by construction: word overlap is crude, and a false positive

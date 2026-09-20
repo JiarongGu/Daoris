@@ -31,14 +31,19 @@ public static class RemoteSyncPayloads
     }
 
     /// <summary>
-    /// The joined repositories in a local registry answer — the only ones a remote may hear of FROM
-    /// here. Joined alone is not enough: mirrored-down teammate rows carry the flag too, and feeding
-    /// one back up would speak for a repository this machine cannot see — worse, its empty entries
-    /// feed is a replacement, wiping the teammate's shared knowledge from a machine that never had it.
-    /// The root is the checkout and the checkout is the authority (D47 §5), so a root is required —
-    /// and the local host answers roots to this loopback caller, so a rootless row IS a foreign one.
+    /// The joined repositories in a local registry answer that belong to one WORKSPACE — the only ones
+    /// that remote may hear of FROM here (D48 §5).
     /// </summary>
-    public static IReadOnlyList<JoinedRepository> Joined(string registryJson)
+    /// <remarks>
+    /// Joined alone is not enough, on three counts. Mirrored-down teammate rows carry the flag too, and
+    /// feeding one back up would speak for a repository this machine cannot see — worse, its empty
+    /// entries feed is a replacement, wiping the teammate's shared knowledge from a machine that never
+    /// had it. The root is the checkout and the checkout is the authority (D47 §5), so a root is
+    /// required — and the local host answers roots to this loopback caller, so a rootless row IS a
+    /// foreign one. And the workspace must match: a repository joined in another circle is a
+    /// declaration addressed to a different deployment, which is the whole of the boundary.
+    /// </remarks>
+    public static IReadOnlyList<JoinedRepository> Joined(string registryJson, string workspace)
     {
         using var document = JsonDocument.Parse(registryJson);
         var joined = new List<JoinedRepository>();
@@ -46,6 +51,13 @@ public static class RemoteSyncPayloads
         {
             if (!(repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True)) continue;
             if (Text(repo, "root") is not { Length: > 0 }) continue;
+            if (!string.Equals(
+                RemoteTarget.Workspace(Text(repo, "workspace")),
+                RemoteTarget.Workspace(workspace),
+                StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
 
             joined.Add(new JoinedRepository(
                 Text(repo, "repository") ?? "",
@@ -194,14 +206,22 @@ public static class RemoteSyncPayloads
     }
 
     /// <summary>
-    /// The remote's registry as this machine should hear of it: FOREIGN rows only. A repository this
-    /// machine already has keeps its own registration — and its root — because the machine that holds
-    /// the checkout is the authority on it; re-posting the remote's stripped copy would overwrite the
-    /// one field spawning needs. What arrives makes teammates' repositories addressable here (D47 §5):
-    /// their quests home at the remote, and the relay carries the verbs.
+    /// The remote's registry as this machine should hear of it: FOREIGN rows only, filed in the
+    /// workspace whose deployment answered.
     /// </summary>
+    /// <remarks>
+    /// <para>A repository this machine already has keeps its own registration — and its root — because
+    /// the machine that holds the checkout is the authority on it; re-posting the remote's stripped
+    /// copy would overwrite the one field spawning needs. What arrives makes teammates' repositories
+    /// addressable here (D47 §5): their quests home at the remote, and the relay carries the verbs.</para>
+    ///
+    /// <para>The workspace is stated rather than left silent, and that is this MACHINE's wiring
+    /// speaking, not the feed: a row that came from this workspace's deployment belongs to this
+    /// workspace by construction (D48 §5). Nothing in the remote's answer is consulted for it — a feed
+    /// that could name its own circle could file itself into one nobody joined.</para>
+    /// </remarks>
     public static IReadOnlyList<(string Repository, string Json)> ForeignRegistrations(
-        string remoteRegistryJson, IReadOnlySet<string> localNames)
+        string remoteRegistryJson, IReadOnlySet<string> localNames, string workspace)
     {
         using var document = JsonDocument.Parse(remoteRegistryJson);
         var foreign = new List<(string, string)>();
@@ -229,6 +249,7 @@ public static class RemoteSyncPayloads
                 writer.WriteBoolean("join", repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True);
                 writer.WriteBoolean("shareKnowledge",
                     repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
+                writer.WriteString("workspace", RemoteTarget.Workspace(workspace));
                 writer.WriteEndObject();
             });
             foreign.Add((name, payload));

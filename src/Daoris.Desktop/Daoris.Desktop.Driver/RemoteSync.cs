@@ -14,34 +14,88 @@ public sealed record SyncReport(string? Problem)
 }
 
 /// <summary>
-/// One pass of the local↔remote sync (D47 §9): feed the joined registrations, this machine's session
-/// records, and each sharing repository's content UP; pull the remote's registry (foreign rows only)
-/// and the quests touching this family DOWN into the local mirror. Registrations go first, so the
-/// remote knows who is joined before their records arrive. Runs on the driver's own tick — a server
-/// machine running `daoris-driver` with a key is just another machine, not a special deployment.
+/// This machine's syncs — one per workspace that has a remote (D48 §5). What the driver holds and
+/// ticks; a circle with no entry in the map syncs nowhere, silently (D21).
 /// </summary>
+/// <remarks>
+/// One circle's wall does not stop another's pass: each runs, each reports, and the tick carries
+/// whatever trouble there was with the workspace's name on it — "the sync is failing" is not a useful
+/// sentence on a machine that holds two deployments' keys.
+/// </remarks>
+public sealed class RemoteSyncSet(IReadOnlyList<RemoteSync> syncs) : IDisposable
+{
+    /// <summary>The machine's syncs, when it has any remote at all — null otherwise, silently (D21).
+    /// The local key arrives from the caller, which has already read it for its own client — a second
+    /// ambient environment read here would be a hidden input the caller cannot see or test.</summary>
+    public static RemoteSyncSet? FromEnvironment(string localUrl, string? localKey)
+    {
+        var remotes = RemoteTarget.Load();
+        return remotes.Count == 0
+            ? null
+            : new RemoteSyncSet(remotes
+                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+                .Select(entry => new RemoteSync(localUrl, localKey, entry.Key, entry.Value))
+                .ToList());
+    }
+
+    /// <summary>The circles this machine syncs — what the driver announces when it comes up.</summary>
+    public IReadOnlyList<string> Workspaces => syncs.Select(sync => sync.Workspace).ToList();
+
+    public async Task<SyncReport> RunOnceAsync(CancellationToken ct = default)
+    {
+        var problems = new List<string>();
+        foreach (var sync in syncs)
+        {
+            var report = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+            if (report.Problem is not null) problems.Add($"{sync.Workspace}: {report.Problem}");
+        }
+
+        return problems.Count == 0 ? SyncReport.Clean : new(string.Join(" · ", problems));
+    }
+
+    public void Dispose()
+    {
+        foreach (var sync in syncs) sync.Dispose();
+    }
+}
+
+/// <summary>
+/// One pass of ONE WORKSPACE's local↔remote sync (D47 §9, D48 §5): feed that circle's joined
+/// registrations, this machine's session records, and each sharing repository's content UP; pull the
+/// remote's registry (foreign rows only) and the quests touching this family DOWN into the local
+/// mirror. Registrations go first, so the remote knows who is joined before their records arrive. Runs
+/// on the driver's own tick — a server machine running `daoris-driver` with a key is just another
+/// machine, not a special deployment.
+/// </summary>
+/// <remarks>
+/// One instance per workspace, because one shared deployment serves one workspace (D48 §5) — a
+/// machine with two circles runs two of these, against two hosts, with two keys.
+/// <see cref="RemoteSyncSet"/> is what the driver holds.
+/// </remarks>
 public sealed class RemoteSync : IDisposable
 {
     private readonly HttpClient _local;
     private readonly HttpClient _remote;
     private readonly string _localBase;
     private readonly string _remoteBase;
+    private readonly string _workspace;
 
+    /// <param name="workspace">Which circle this sync serves — the only rows it may speak for.</param>
     /// <param name="handler">The test seam: a stub transport for both hosts, distinguished by URL.
     /// Production callers pass none. `ServiceClient` has the same seam for the same reason.</param>
-    public RemoteSync(string localUrl, string? localKey, RemoteTarget target, HttpMessageHandler? handler = null)
+    public RemoteSync(
+        string localUrl, string? localKey, string workspace, RemoteTarget target,
+        HttpMessageHandler? handler = null)
     {
         _localBase = localUrl.TrimEnd('/');
         _remoteBase = target.Url;
+        _workspace = RemoteTarget.Workspace(workspace);
         _local = DriverHttp.Client(localKey, handler);
         _remote = DriverHttp.Client(target.Key, handler);
     }
 
-    /// <summary>The machine's sync, when the machine has a remote — null otherwise, silently (D21).
-    /// The local key arrives from the caller, which has already read it for its own client — a second
-    /// ambient environment read here would be a hidden input the caller cannot see or test.</summary>
-    public static RemoteSync? FromEnvironment(string localUrl, string? localKey) =>
-        RemoteTarget.Load() is { } target ? new RemoteSync(localUrl, localKey, target) : null;
+    /// <summary>The circle this sync feeds and mirrors — what a report names when it has trouble.</summary>
+    public string Workspace => _workspace;
 
     public void Dispose()
     {
@@ -53,8 +107,12 @@ public sealed class RemoteSync : IDisposable
     {
         try
         {
+            // Read the registry UNSCOPED and filter here, deliberately. The joined half is this
+            // workspace's alone (§5) — but the names half must span the whole machine, because it is
+            // what stops a foreign row overwriting a local registration that happens to share a name
+            // in another circle, root and all. A scoped read would make that guard blind by half.
             var registryJson = await DriverHttp.GetAsync(_local, $"{_localBase}/api/registry", ct).ConfigureAwait(false);
-            var joined = RemoteSyncPayloads.Joined(registryJson);
+            var joined = RemoteSyncPayloads.Joined(registryJson, _workspace);
             if (joined.Count == 0) return SyncReport.Clean;
 
             await FeedUpAsync(joined, ct).ConfigureAwait(false);
@@ -110,12 +168,19 @@ public sealed class RemoteSync : IDisposable
     /// <summary>The remote's registry comes down as foreign rows only — teammates' repositories become
     /// addressable here, while everything this machine holds keeps its own registration — and then the
     /// quests touching this machine's own joined repositories.</summary>
+    /// <remarks>
+    /// The mirrored rows are filed in THIS sync's workspace. That is not a feed naming its own circle
+    /// (which WSP1 forbids, and still does — the remote's answer carries no workspace anyone reads):
+    /// it is the receiving machine's own wiring deciding, since a row arriving from this workspace's
+    /// deployment belongs to this workspace by construction (D48 §2/§5).
+    /// </remarks>
     private async Task MirrorDownAsync(
         IReadOnlySet<string> localNames, IReadOnlySet<string> joinedNames, CancellationToken ct)
     {
         foreach (var (_, payload) in RemoteSyncPayloads.ForeignRegistrations(
             await DriverHttp.GetAsync(_remote, $"{_remoteBase}/api/registry", ct).ConfigureAwait(false),
-            localNames))
+            localNames,
+            _workspace))
         {
             await DriverHttp.PostAsync(_local, $"{_localBase}/api/registry", payload, ct).ConfigureAwait(false);
         }

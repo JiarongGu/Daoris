@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowLeftRight, Check, ChevronDown, GitMerge, Inbox, Languages, LayoutGrid, Layers,
-  Plus, RotateCw, Search, X,
+  Plus, RotateCw, Search, SlidersHorizontal, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest } from './api';
@@ -23,6 +23,7 @@ const ICONS = {
   projects: Layers,
   convergence: GitMerge,
   search: Search,
+  settings: SlidersHorizontal,
   refresh: RotateCw,
   plus: Plus,
   x: X,

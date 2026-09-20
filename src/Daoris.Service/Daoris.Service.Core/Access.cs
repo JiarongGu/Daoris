@@ -25,6 +25,10 @@ public static class Access
 {
     public const string ModeVariable = "DAORIS_MODE";
 
+    /// <summary>The circle a SHARED deployment serves (D48 §5). Meaningless on a local host, which
+    /// holds every workspace the person wired — so setting it there is refused, not ignored.</summary>
+    public const string WorkspaceVariable = "DAORIS_WORKSPACE";
+
     /// <summary>Absence means local, silently (D21). An unknown value errors naming what exists (D23).</summary>
     public static (ServiceMode Mode, string? Error) ParseMode(string? value) =>
         value?.Trim().ToLowerInvariant() switch
@@ -55,6 +59,53 @@ public static class Access
 
         return null;
     }
+
+    /// <summary>
+    /// Which workspace this deployment IS — one circle for a shared host, none for a local one.
+    /// </summary>
+    /// <remarks>
+    /// <para>Silence is <see cref="Workspaces.Default"/> for a shared host, because silence is
+    /// `default` everywhere (D48 §2): a team that never named a circle runs exactly as it did before
+    /// workspaces existed.</para>
+    ///
+    /// <para>A LOCAL host naming one is refused rather than ignored. A local deployment holds every
+    /// circle the person wired, so an identity there would be a claim it cannot honour — and a
+    /// parsed-and-unused input is a claim. This is the same fail-safe inversion as the loopback rule:
+    /// the configuration that cannot mean what it says does not start.</para>
+    /// </remarks>
+    public static (string? Workspace, string? Error) ParseWorkspace(ServiceMode mode, string? value)
+    {
+        if (mode == ServiceMode.Local)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? (null, null)
+                : (null,
+                    $"{WorkspaceVariable} is a shared deployment's identity (D48 §5), and this host is local — "
+                    + "a local deployment holds every workspace this machine wired, so it cannot be one of them. "
+                    + $"Unset {WorkspaceVariable}, or set {ModeVariable}=shared to run the workspace's server.");
+        }
+
+        return (Workspaces.Normalize(value), null);
+    }
+
+    /// <summary>
+    /// Why a deployment refuses a registration that declares a workspace other than its own — or null
+    /// when it may take it.
+    /// </summary>
+    /// <remarks>
+    /// One shared deployment serves one workspace (D48 §5), so a row declaring another is not a
+    /// permission failure but a message delivered to the wrong building. The sentence names BOTH
+    /// sides: a "no" that does not say which side is where leaves the person with the question they
+    /// should be deciding. Silence is not a declaration — an ordinary registration says nothing about
+    /// wiring, and the receiving deployment's own identity decides where it lands (D48 §2).
+    /// </remarks>
+    public static string? RefuseForeignWorkspace(string? hostWorkspace, string repository, string? stated) =>
+        hostWorkspace is null || string.IsNullOrWhiteSpace(stated) || Workspaces.Same(hostWorkspace, stated)
+            ? null
+            : $"This deployment serves workspace `{hostWorkspace}`, and `{repository}` arrived declaring "
+              + $"`{Workspaces.Normalize(stated)}` — one shared deployment serves one workspace, because a "
+              + "sharing boundary inside one store is where a scoping bug becomes a disclosure. Wire it to "
+              + $"`{hostWorkspace}` on that machine, or point `{Workspaces.Normalize(stated)}` at its own deployment.";
 
     /// <summary>
     /// Whether a bind address stays on this machine. Anything unparseable — including Kestrel's `+`

@@ -35,11 +35,15 @@ const family = join(scratch, 'family');
 const BASE = 'http://localhost:5199';
 const REMOTE_BASE = 'http://localhost:5198';
 const HOST_B_BASE = 'http://localhost:5197';
+// 5200, not 5196: the platform's e2e host owns that one, the two suites run in the same CI job, and
+// an orphaned host on a shared port makes one gate's readiness probe answer against the other's.
+const AURORA_BASE = 'http://localhost:5200';
 const EXAMPLES = ['engine', 'game'];
 
 // Hermetic by construction: every host and driver in this rehearsal points its remote-config lookup at
-// a file that does not exist, so a real ~/.daoris/remote.json on the developer's machine can never
-// leak a real deployment into a gate run. The remote phase then opts in per process, by env pair.
+// a file that does not exist, so a real ~/.daoris/remotes.json on the developer's machine can never
+// leak a real deployment into a gate run. The remote phases then opt in per process — by env pair, or
+// by pointing the lookup at a map this run wrote itself.
 const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json') };
 
 openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
@@ -1022,9 +1026,214 @@ check('the remote store holds no machine path at all', !remoteBytes.includes('_f
 check('…and none of the knowledge that was kept home', !remoteBytes.includes('keeps this lesson at home'),
   'unshared knowledge reached the remote store');
 
-// -------------------------------------------------- 12. report
+// -------------------------------------------------- 12. the remotes are a map
 
-section('12. Result');
+section('12. One deployment per workspace — the remotes map (D48 §5)');
+
+// The machine's remote stopped being a single thing the moment one machine could hold two circles.
+// This phase wires ONE of them and proves the other is not merely unfed but unreachable: `foundry` is
+// joined AND sharing, so everything about it says "feed me" except the one field that decides where.
+
+const auroraDb = join(scratch, 'aurora.db');
+const auroraRoot = join(scratch, 'aurora-root');
+mkdirSync(auroraRoot, { recursive: true });
+
+// A workspace's host declares which workspace it is. A LOCAL host may not: it holds every circle the
+// person wired, so an identity there is a claim it cannot honour — and it refuses to start rather
+// than ignoring the variable, the same fail-safe inversion as the loopback rule (D47 §3).
+const localWithIdentity = run(`dotnet "${httpDll}" --urls http://localhost:5195`, repoRoot, {
+  DAORIS_WORKSPACE: 'aurora',
+  DAORIS_KNOWLEDGE_DB: join(scratch, 'never-created.db'),
+  ...NO_REMOTE,
+}, 30_000);
+check(
+  'a local host refuses a workspace identity rather than ignoring it',
+  localWithIdentity.code === 2 && /DAORIS_WORKSPACE/.test(localWithIdentity.out)
+    && /shared/.test(localWithIdentity.out),
+  localWithIdentity.out,
+);
+
+const mintC = run(`dotnet "${httpDll}" keys mint --name person@machine-a --days 2`, repoRoot, {
+  DAORIS_KNOWLEDGE_DB: auroraDb,
+});
+const keyC = (mintC.out.split('\n')[0] ?? '').trim();
+check('aurora’s deployment mints a key', mintC.code === 0 && keyC.startsWith('dk_'), mintC.out);
+
+const auroraHost = await startServer({
+  DAORIS_MODE: 'shared',
+  DAORIS_WORKSPACE: 'aurora',
+  DAORIS_KNOWLEDGE_DB: auroraDb,
+  DAORIS_KNOWLEDGE_ROOT: auroraRoot,
+  ASPNETCORE_URLS: AURORA_BASE,
+}, AURORA_BASE);
+check('aurora’s host is up, carrying its own identity', auroraHost !== null);
+
+// The map, through the real CLI — file-local, offline, and never printing a key back (D50).
+const remotesFile = join(scratch, 'remotes.json');
+const wire = run(
+  `node "${cliBin}" remote add aurora --url ${AURORA_BASE} --key ${keyC}`, scratch,
+  { DAORIS_REMOTE_CONFIG: remotesFile });
+check(
+  '`daoris remote add` wires a workspace and echoes the key redacted',
+  wire.code === 0 && wire.out.includes(`${keyC.slice(0, 11)}…`) && !wire.out.includes(keyC),
+  wire.out,
+);
+const listed = run(`node "${cliBin}" remote list`, scratch, { DAORIS_REMOTE_CONFIG: remotesFile });
+check(
+  '…and `remote list` shows the wiring without the key',
+  listed.code === 0 && /aurora/.test(listed.out) && listed.out.includes(AURORA_BASE)
+    && !listed.out.includes(keyC),
+  listed.out,
+);
+const machineStatus = run(`node "${cliBin}" status --machine`, atelier, {
+  DAORIS_REMOTE_CONFIG: remotesFile,
+});
+check(
+  '`status --machine` reports the machine’s wiring beside the repository’s declaration',
+  machineStatus.code === 0 && /aurora/.test(machineStatus.out) && machineStatus.out.includes(AURORA_BASE)
+    && !machineStatus.out.includes(keyC),
+  machineStatus.out,
+);
+
+// Both circles now DECLARE that their material may leave — the manifest says MAY (D47 §4). Only the
+// machine's map says where, and it names one circle. `lantern` joins aurora so the crossing has a
+// sender the remote knows: a quest needs both sides registered where it homes.
+const lantern = circleMember('lantern', 'A lamp in the aurora circle.', 'Light the batch before capping it.');
+const declareJoin = (directory, knowledge) => {
+  const declaration = JSON.parse(readFileSync(join(directory, 'daoris.json'), 'utf8'));
+  declaration.remote = { join: true, knowledge };
+  writeFileSync(join(directory, 'daoris.json'), `${JSON.stringify(declaration, null, 2)}\n`);
+};
+declareJoin(atelier, true);
+declareJoin(foundry, true);
+declareJoin(lantern, true);
+for (const [directory, workspace] of [[atelier, 'aurora'], [foundry, 'tools'], [lantern, 'aurora']]) {
+  run(`node "${cliBin}" connect --workspace ${workspace}`, directory, { DAORIS_SERVICE_URL: BASE });
+}
+
+// Machine A's host restarts carrying the MAP rather than an env pair — the relay resolves a quest's
+// remote by the quest's workspace (D48 §5), and it can only do that from a map.
+stopHost();
+check('machine a’s host restarts carrying the map', await startHost({ DAORIS_REMOTE_CONFIG: remotesFile }));
+await api('POST', '/api/refresh');
+
+const mapTick = driver({
+  serviceUrl: BASE, config: driverConfig, mode: '--once',
+  remote: { DAORIS_REMOTE_CONFIG: remotesFile },
+});
+check('the tick syncs the wired circle without a problem', mapTick.code === 0 && !/sync {2}/.test(mapTick.out), mapTick.out);
+
+const auroraRegistry = await api('GET', '/api/registry', { base: AURORA_BASE, key: keyC });
+const auroraRows = auroraRegistry.json ?? [];
+check(
+  'only the wired circle’s repositories reach that deployment',
+  auroraRows.some((r) => r.repository === 'atelier')
+    && auroraRows.some((r) => r.repository === 'lantern')
+    // The decoy: joined, sharing, and in another circle. If the boundary leaks, it is here.
+    && auroraRows.every((r) => r.repository !== 'foundry')
+    && auroraRows.every((r) => r.repository !== 'newcomer'),
+  auroraRegistry.text,
+);
+check(
+  '…and every row landed in the workspace the deployment IS',
+  auroraRows.length > 0 && auroraRows.every((r) => r.workspace === 'aurora'),
+  auroraRegistry.text,
+);
+
+// A deployment that serves one workspace refuses a row declaring another — plainly, naming both.
+const foreign = await api('POST', '/api/registry', {
+  base: AURORA_BASE,
+  key: keyC,
+  body: { repository: 'foundry', workspace: 'tools', join: true, shareKnowledge: true },
+});
+check(
+  'a registration declaring another workspace is refused, naming both sides',
+  foreign.status === 409 && /aurora/.test(foreign.text) && /tools/.test(foreign.text)
+    && /foundry/.test(foreign.text),
+  foreign.text,
+);
+check(
+  '…and it did not land anyway',
+  ((await api('GET', '/api/registry', { base: AURORA_BASE, key: keyC })).json ?? [])
+    .every((r) => r.repository !== 'foundry'),
+  'a refused registration reached the deployment’s registry',
+);
+
+// The same lesson sits in both circles, word for word (phase 9 put it there). Only one crossed.
+const auroraLesson = await api('GET', `/api/search?q=${encodeURIComponent('cap the batch size')}`, {
+  base: AURORA_BASE, key: keyC,
+});
+check(
+  'the wired circle’s knowledge crosses, and the other circle’s identical lesson does not',
+  auroraLesson.status === 200
+    && (auroraLesson.json ?? []).some((h) => h.repository === 'atelier')
+    && (auroraLesson.json ?? []).every((h) => h.repository !== 'foundry'),
+  auroraLesson.text.slice(0, 300),
+);
+
+// The relay resolves by the quest's workspace: an aurora quest homes at aurora's deployment.
+const auroraQuest = await api('POST', '/api/quests', {
+  body: {
+    from: 'lantern',
+    to: 'atelier',
+    title: 'A quest inside the wired circle',
+    body: 'Published on this machine, homed at the deployment its workspace names.',
+  },
+});
+check(
+  'a quest in the wired circle publishes through the local door',
+  auroraQuest.status === 200 && auroraQuest.json?.quest?.workspace === 'aurora',
+  auroraQuest.text,
+);
+const auroraQuestId = auroraQuest.json?.quest?.id ?? '';
+const atAurora = await api('GET', '/api/quests', { base: AURORA_BASE, key: keyC });
+check(
+  '…and it lives at that workspace’s deployment',
+  (atAurora.json ?? []).some((q) => q.id === auroraQuestId),
+  atAurora.text,
+);
+
+// The unwired circle publishes locally and says nothing to anyone: absence is the default (D21).
+const toolsQuest = await api('POST', '/api/quests', {
+  body: {
+    from: 'foundry',
+    to: 'foundry-nobody',
+    title: 'Never delivered',
+    body: 'There is nobody in this circle to ask.',
+  },
+});
+check(
+  'a quest in a circle with no remote is refused locally, and reaches no deployment',
+  toolsQuest.status === 400
+    && ((await api('GET', '/api/quests?includeClosed=true', { base: AURORA_BASE, key: keyC })).json ?? [])
+      .every((q) => q.from !== 'foundry'),
+  toolsQuest.text,
+);
+
+// Unwiring is a local act: the map loses a row, the deployment loses nothing.
+const unwire = run(`node "${cliBin}" remote remove aurora`, scratch, { DAORIS_REMOTE_CONFIG: remotesFile });
+const afterUnwire = run(`node "${cliBin}" remote list`, scratch, { DAORIS_REMOTE_CONFIG: remotesFile });
+const stillThere = await api('GET', '/api/registry', { base: AURORA_BASE, key: keyC });
+check(
+  '`daoris remote remove` unwires here and changes nothing at the deployment',
+  unwire.code === 0 && /revoke/.test(unwire.out)
+    && /no remote/i.test(afterUnwire.out)
+    && (stillThere.json ?? []).some((r) => r.repository === 'atelier'),
+  `${unwire.out}\n${afterUnwire.out}`,
+);
+
+if (auroraHost && !auroraHost.killed) auroraHost.kill();
+await sleep(700);
+const auroraBytes = readFileSync(auroraDb, 'latin1');
+check(
+  'aurora’s store holds nothing from the other circle, and no machine path',
+  !auroraBytes.includes('foundry') && !auroraBytes.includes('_fixtures'),
+  'material from another workspace reached a deployment that never serves it',
+);
+
+// -------------------------------------------------- 13. report
+
+section('13. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -1047,6 +1256,10 @@ if (totals.failures) {
   console.log('  (D48): two circles on one machine, wired by `connect --workspace` and written into no');
   console.log('  tracked file — a search answering from one circle while the other held the same');
   console.log('  lesson word for word, and a quest across the boundary refused in a sentence that');
-  console.log('  names both sides.');
+  console.log('  names both sides. And the MAP (D48 §5): one deployment per workspace, wired and');
+  console.log('  unwired from a terminal with the key never printed back — only the wired circle');
+  console.log('  feeding it, a joined-and-sharing repository in the other circle reaching it not at');
+  console.log('  all, a registration declaring another workspace refused naming both, a quest homing');
+  console.log('  at the deployment its workspace names, and a local host refusing to be one.');
   rmSync(scratch, { recursive: true, force: true });
 }

@@ -75,17 +75,56 @@ public sealed record ComposedService(
 /// refusing to start — a knowledge index that will not run without an embedding endpoint is not
 /// local-first, and every feature here still does its useful part with no model at all.</para>
 /// </remarks>
+/// <summary>
+/// The key store, opened alone — what `keys mint|list|revoke` needs and the whole of what it needs.
+/// </summary>
+/// <remarks>
+/// It owns the connection, so a console verb disposes one thing and is done.
+/// </remarks>
+public sealed record KeyAdministration(ApiKeyStore Keys) : IAsyncDisposable
+{
+    internal SqliteKnowledgeStore? Store { get; init; }
+
+    public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
+}
+
 public static class ServiceFactory
 {
+    /// <summary>
+    /// Open ONLY the credential store, for the deployment's key console (D47 §7).
+    /// </summary>
+    /// <remarks>
+    /// <para>Key administration has nothing to do with knowledge, and composing the whole service to
+    /// mint a key had a consequence nobody chose: the composition bootstraps a registry from the
+    /// configured root the first time a store is used (D48 §3), so <c>keys mint</c> on a server
+    /// imported whatever sat beside the binary — machine paths included — into the deployment that
+    /// must be FED, NEVER SCANNED (D47 §4). Found by the family rehearsal's own assertion that every
+    /// row at a workspace's deployment belongs to that workspace.</para>
+    ///
+    /// <para>The narrow door is also the honest one: an operator verb that quietly indexed a disk was
+    /// doing something its name did not say.</para>
+    /// </remarks>
+    public static async Task<KeyAdministration> OpenKeysAsync(
+        ServiceOptions options, CancellationToken ct = default)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
+
+        var store = await SqliteKnowledgeStore.OpenAsync(options.DatabasePath).ConfigureAwait(false);
+        var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+
+        return new KeyAdministration(keys) { Store = store };
+    }
+
     public static async Task<ComposedService> CreateAsync(
         ServiceOptions options,
         IVectorProvider? embedder = null,
         IVectorStore? vectors = null,
         IDisclosurePolicy? disclosure = null,
-        // The write-through relay (D47 §5/§9), when this machine has a remote. Passed in like the
-        // embedder: the deployment decides, the composition carries it, and both doors get the same
-        // exchange so neither can drift. A shared host passes nothing — it IS the home.
-        IRemoteQuestClient? remoteQuests = null,
+        // The write-through relay (D47 §5/§9), when this machine has a remote — one per workspace
+        // (D48 §5), resolved by the quest's own circle. Passed in like the embedder: the deployment
+        // decides, the composition carries it, and both doors get the same exchange so neither can
+        // drift. A shared host passes nothing — it IS the home.
+        IRemoteQuestRoutes? remoteQuests = null,
         // What the index reads from, when the deployment is not the usual scan-this-folder one. A
         // shared host passes EmptyKnowledgeSource, because it is fed and never scans (D47 §4) — the
         // route refusal alone would leave the index-on-first-use path free to scan the server's disk.

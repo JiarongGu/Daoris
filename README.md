@@ -57,10 +57,12 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `connect` | Registers this repo with a knowledge service — what it owns, what it accepts, and (with `--workspace`) which circle it shares within |
 | `retire` | Takes a repository off this machine's registry. **Ends the registration only** — no file, history or doctrine is ever touched |
 | `import` | Registers a folder's subdirectories in one go. Safe to re-run, and it never re-points anyone's workspace |
+| `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits a file under your profile and talks to nothing** |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
-promote every locally-edited canonical file at once. `connect` accepts `--workspace <name>`.
+promote every locally-edited canonical file at once. `connect` accepts `--workspace <name>`, and
+`status` accepts `--machine` to report this machine's wiring beside the repository's own declaration.
 
 **A workspace is the unit of sharing**: knowledge, quests and session records cross between repositories
 within one and never across one, so a machine can hold a game family and a work family without either
@@ -69,8 +71,17 @@ in this machine's registry and writes nothing into the repository, so a fork, a 
 machine may each wire the same repository differently. Omitting the flag leaves existing wiring alone;
 a repository nobody ever wired is in `default`, which is exactly how a machine with one circle behaves.
 
+**A workspace's sharing has two halves, and they live apart.** Whether a repository's material *may*
+leave the machine is its own `daoris.json` — tracked, reviewed, and silent by default. *Where* it would
+go is this machine's map, `~/.daoris/remotes.json`: one deployment per workspace, because a shared
+deployment serves exactly one circle and refuses a registration declaring another. `daoris remote`
+edits that map, `status --machine` reports it, and a workspace with no entry syncs nowhere — which is
+what every machine does until someone says otherwise. A key is never printed back; only its audit
+prefix, the same handle the deployment's own `keys list` shows.
+
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
-no gate ever runs them. Every other command above is offline by construction. **The machine's registry
+no gate ever runs them. `remote` is management too and speaks to nothing at all. Every other command
+above is offline by construction. **The machine's registry
 is the authority** on who is in the family: being in a folder is not being a member, so a repository
 joins by connecting and leaves by retiring. `import` is the old folder scan, demoted to something a
 person runs — useful for bootstrapping a machine that already has a folder of checkouts, and safe to

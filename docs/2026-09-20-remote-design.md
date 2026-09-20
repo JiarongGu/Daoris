@@ -204,7 +204,9 @@ Service design §5, built as specified; D46 held per-caller identity precisely f
   behind `QuestExchange` in Core with the remote client selected at each composition root — both
   local doors (MCP stdio, HTTP) get it identically, the same no-drift argument as D36. Sessions keep
   talking to their local host; the machine key stays in machine-local configuration
-  (`~/.daoris/remote.json`, environment overriding per §5b), never per-repository.
+  (`~/.daoris/remote.json`, environment overriding per §5b), never per-repository. *(Superseded by
+  D48 §5: that file became `~/.daoris/remotes.json`, a map of workspace → { url, key }, and the relay
+  resolves its remote by the quest's workspace. Everything else here stands.)*
 - **The CLI is nearly untouched.** `connect` already speaks to a remote and already strips the root
   (`connect.ts:62-76`); it gains only the manifest's two declarations in its payload. `check` and
   every doctrine command stay offline (D8) — the existing import-boundary tests are the proof, and

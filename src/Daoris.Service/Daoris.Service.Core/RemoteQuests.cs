@@ -25,57 +25,133 @@ public interface IRemoteQuestClient
 public sealed record RemoteQuestAnswer(int Status, string Message, Quest? Quest);
 
 /// <summary>
-/// Where the remote is and how this machine speaks to it — machine-local configuration, never
-/// per-repository (D47 §9): one file under the user profile, with the environment overriding.
+/// Where a workspace's remote is and how this machine speaks to it — machine-local configuration,
+/// never per-repository (D47 §9, D48 §5): one file under the user profile, with the environment
+/// overriding.
 /// </summary>
 /// <remarks>
-/// The file is `~/.daoris/remote.json` — `{ "url": "...", "key": "dk_..." }` — written by the person
-/// when they join a machine to a remote. It is not tracked by any repository, which is what
-/// `sensitive-info` requires of a credential; the OS secret store is held as D47's open question 3.
+/// <para>The file is `~/.daoris/remotes.json` — a MAP, `{ "aurora": { "url": "...", "key": "dk_..." } }` —
+/// because one shared deployment serves one workspace (D48 §5), and a machine may hold repositories
+/// from several circles. The workspace NAME keys the map; whether a given repository may feed at all
+/// stays its own manifest's `remote` declaration: the manifest says MAY, the machine says WHERE.</para>
+///
+/// <para>It is not tracked by any repository, which is what `sensitive-info` requires of a credential;
+/// the OS secret store is held as D47's open question 3. `daoris remote list|add|remove` is the
+/// surface over it (D50) — and hand-editing keeps working, because the file is the truth.</para>
 /// </remarks>
 public sealed record RemoteConfig(string Url, string Key)
 {
     public const string UrlVariable = "DAORIS_REMOTE_URL";
     public const string KeyVariable = "DAORIS_REMOTE_KEY";
+
+    /// <summary>Which workspace the environment pair serves. Absent is <see cref="Workspaces.Default"/>.</summary>
+    public const string WorkspaceVariable = "DAORIS_REMOTE_WORKSPACE";
+
     public const string PathVariable = "DAORIS_REMOTE_CONFIG";
 
-    /// <summary>Read the machine's remote, if it has one. Absence is the default and it is silent (D21).</summary>
-    public static RemoteConfig? Load() => Load(
+    /// <summary>The map's conventional home — what every surface reads and edits.</summary>
+    public static string DefaultPath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remotes.json");
+
+    /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
+    public static IReadOnlyDictionary<string, RemoteConfig> Load() => Load(
         Environment.GetEnvironmentVariable,
-        Environment.GetEnvironmentVariable(PathVariable)
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remote.json"));
+        Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath);
 
     /// <summary>
-    /// The testable shape: the same judgement over injected surroundings. Either environment variable
-    /// present means the environment IS the answer, whole — a half-set pair is no remote, never a mix
-    /// of an env URL with the file's key, which would quietly aim one machine's key at another's host.
+    /// The testable shape: the same judgement over injected surroundings.
     /// </summary>
-    public static RemoteConfig? Load(Func<string, string?> environment, string path)
+    /// <remarks>
+    /// Either environment variable present means the environment IS the answer — for the WHOLE
+    /// MACHINE, not one entry of it, and a half-set pair is no remote at all. Never a mix of an env
+    /// URL with the file's key, which would quietly aim one machine's key at another's host; and never
+    /// a merge, which would let a real map leak into a process that thought it had named its only
+    /// remote. <see cref="WorkspaceVariable"/> names which circle the pair serves.
+    /// </remarks>
+    public static IReadOnlyDictionary<string, RemoteConfig> Load(Func<string, string?> environment, string path)
     {
+        var map = new Dictionary<string, RemoteConfig>(StringComparer.OrdinalIgnoreCase);
         var url = environment(UrlVariable);
         var key = environment(KeyVariable);
 
-        if (string.IsNullOrWhiteSpace(url) && string.IsNullOrWhiteSpace(key) && File.Exists(path))
+        if (!string.IsNullOrWhiteSpace(url) || !string.IsNullOrWhiteSpace(key))
         {
-            try
+            if (!string.IsNullOrWhiteSpace(url) && !string.IsNullOrWhiteSpace(key))
             {
-                using var document = JsonDocument.Parse(File.ReadAllText(path));
-                var root = document.RootElement;
-                url = root.TryGetProperty("url", out var u) && u.ValueKind == JsonValueKind.String ? u.GetString() : null;
-                key = root.TryGetProperty("key", out var k) && k.ValueKind == JsonValueKind.String ? k.GetString() : null;
+                map[Workspaces.Normalize(environment(WorkspaceVariable))] = new(url.TrimEnd('/'), key);
             }
-            catch (JsonException)
-            {
-                // A file that will not parse is a file that names no remote. The sync loop, not this
-                // reader, is where "you configured a remote and it does not work" gets said out loud.
-                return null;
-            }
+
+            return map;
         }
 
-        return string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(key)
-            ? null
-            : new RemoteConfig(url.TrimEnd('/'), key);
+        if (!File.Exists(path)) return map;
+
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return map;
+
+            foreach (var entry in document.RootElement.EnumerateObject())
+            {
+                if (entry.Value.ValueKind != JsonValueKind.Object) continue;
+                var entryUrl = Text(entry.Value, "url");
+                var entryKey = Text(entry.Value, "key");
+                // An entry missing half its pair is one workspace with no remote, never a machine with
+                // none: a typo in one circle must not silently unwire the others.
+                if (string.IsNullOrWhiteSpace(entryUrl) || string.IsNullOrWhiteSpace(entryKey)) continue;
+
+                map[Workspaces.Normalize(entry.Name)] = new(entryUrl.TrimEnd('/'), entryKey);
+            }
+        }
+        catch (JsonException)
+        {
+            // A file that will not parse is a file that names no remote. The sync loop, not this
+            // reader, is where "you configured a remote and it does not work" gets said out loud.
+            return new Dictionary<string, RemoteConfig>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return map;
     }
+
+    private static string? Text(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+}
+
+/// <summary>
+/// Which remote a verb on a quest reaches: the quest's own workspace decides (D48 §5).
+/// </summary>
+/// <remarks>
+/// One shared deployment serves one workspace, so "the machine's remote" stopped being a single thing
+/// the moment a machine could hold two circles. A circle with no entry syncs nowhere, silently — the
+/// local deployment working alone is binding (design §2a), and that is the shape it takes here.
+/// </remarks>
+public interface IRemoteQuestRoutes
+{
+    /// <summary>The remote serving a workspace, or null when that circle has none.</summary>
+    IRemoteQuestClient? For(string? workspace);
+
+    /// <summary>The circles this machine has a remote for — what a refusal names when it must say which.</summary>
+    IReadOnlyCollection<string> Workspaces { get; }
+}
+
+/// <summary>The map, as the doors hold it: one HTTP client per workspace, built once at composition.</summary>
+public sealed class RemoteQuestRoutes(IReadOnlyDictionary<string, IRemoteQuestClient> byWorkspace) : IRemoteQuestRoutes
+{
+    /// <summary>Null when the machine has no remote at all — the absence every host already handles.</summary>
+    public static IRemoteQuestRoutes? From(IReadOnlyDictionary<string, RemoteConfig> remotes) =>
+        remotes.Count == 0
+            ? null
+            : new RemoteQuestRoutes(remotes.ToDictionary(
+                entry => Knowledge.Workspaces.Normalize(entry.Key),
+                entry => (IRemoteQuestClient)new HttpRemoteQuests(entry.Value),
+                StringComparer.OrdinalIgnoreCase));
+
+    public IRemoteQuestClient? For(string? workspace) =>
+        byWorkspace.TryGetValue(Knowledge.Workspaces.Normalize(workspace), out var client) ? client : null;
+
+    public IReadOnlyCollection<string> Workspaces => byWorkspace.Keys.ToList();
 }
 
 /// <summary>

@@ -43,7 +43,8 @@ the desktop **or** the CLI. The contracts are `docs/2026-09-20-workspace-design.
 |---|---|---|
 | **WSP1 · The workspace exists** | Membership as wiring (`connect --workspace`, a registry row, nothing tracked); every cross-repo entity carries it; search, convergence, registry and quests scoped by it | **Built** (2026-09-20) — the family rehearsal's two-workspace phase proves the boundary, and the refusal names both sides |
 | **WSP2 · The managed registry** | The registry becomes the authority and the folder scan becomes `import`; `retire` beside `connect`; absences named; the desktop manages add/update/remove | **Built** (2026-09-20) — the rehearsal proves a folder nobody registered stays invisible, and that retiring touches no file |
-| **WSP3–WSP4 · Remotes as a map, knowledge sync semantics** | One remote per workspace and a per-workspace sync loop; git provenance with monotonic, default-branch-only replacement | Designed; next in order |
+| **WSP3 · Remotes become a map** | One deployment per workspace (`~/.daoris/remotes.json`), a per-workspace sync loop, the shared host's own `DAORIS_WORKSPACE` identity, and both editors over the one file — `daoris remote`, `status --machine`, the desktop's Machine view | **Built** (2026-09-20) — the rehearsal proves only the wired circle feeds, and a registration declaring another workspace is refused naming both |
+| **WSP4 · Knowledge sync semantics** | Git provenance stamped by the driver, with monotonic, default-branch-only replacement, served and shown | Designed; next in order |
 | **SES1–SES3 · The working surface** | The live console, chat sessions, the managed harness toolchain with credential profiles | Designed (D49) |
 
 ---
@@ -69,8 +70,8 @@ that workflow and is never edited by hand.
 
 ## 0.0.x — doctrine that installs, is checked, and flows back — **built**
 
-Eleven commands, a canon of 8 core rules, 5 core knowledge documents, 5 core skills and 6 packs,
-147 CLI tests. Core installs everywhere;
+Twelve commands, a canon of 8 core rules, 5 core knowledge documents, 5 core skills and 6 packs,
+164 CLI tests. Core installs everywhere;
 packs are named in the manifest; the repository's own files are invisible to the tool. Drift and adoption
 collisions are distinguished by provenance and both refuse. Retirement removes a rule from every
 repository at once, and a rename is reported as one. `check` is offline by construction and gates on the

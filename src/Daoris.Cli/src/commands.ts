@@ -9,6 +9,7 @@ import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
 import { inspect } from './drift.ts';
 import { HARNESSES, DEFAULT_HARNESS } from './harness.ts';
+import { readRemotes, redactKey } from './remotemap.ts';
 import { DaorisError } from './errors.ts';
 
 const DEFAULT_TARGET = '.claude';
@@ -131,6 +132,22 @@ export function commandStatus(
     }
   }
 
+  // The machine's WIRING, when asked for (D50). The manifest says MAY this repository's material
+  // leave; the machine says WHERE it would go — two different questions with two different homes
+  // (D48 §2), and a person debugging a sync needs them side by side. Offline: it reads one more
+  // file under the profile and asks nothing.
+  const wiring = argv.includes('--machine') ? readRemotes() : null;
+  const machine = wiring === null ? null : {
+    source: wiring.source,
+    path: wiring.path,
+    remotes: [...wiring.remotes.keys()].sort().map((workspace) => ({
+      workspace,
+      url: wiring.remotes.get(workspace)!.url,
+      // The audit prefix only — `status` is the command most likely to be pasted into an issue.
+      key: redactKey(wiring.remotes.get(workspace)!.key),
+    })),
+  };
+
   // For the agent operator (D37): the same facts, in a shape it can act on rather than parse.
   if (argv.includes('--json')) {
     write(JSON.stringify({
@@ -152,6 +169,9 @@ export function commandStatus(
       local,
       canonSourceAvailable: canonAvailable,
       update: update ? { ...update, notes } : null,
+      // Absent unless asked for: the wiring is machine state, and a repository's status answer is
+      // about the repository. `--machine` is the person saying they want both.
+      ...(machine ? { machine } : {}),
     }, null, 2));
     return 0;
   }
@@ -162,6 +182,16 @@ export function commandStatus(
   write(`  canon         ${lock ? `${lock.canonVersion} (${lock.entries.length} files)` : 'never synced'}`);
   if (manifest.remote) {
     write(`  remote        join${manifest.remote.knowledge ? ' + knowledge' : ''} (declared in daoris.json)`);
+  }
+
+  if (machine) {
+    write(`  machine       ${machine.path}${machine.source === 'environment' ? ' (overridden by the environment)' : ''}`);
+    if (machine.remotes.length === 0) {
+      write('  wiring        none — every workspace on this machine stays local (D21)');
+    }
+    for (const remote of machine.remotes) {
+      write(`  wiring        ${remote.workspace} → ${remote.url}  ${remote.key}`);
+    }
   }
 
   if (inspection) {

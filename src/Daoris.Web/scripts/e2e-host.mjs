@@ -43,12 +43,12 @@ const host = spawn('dotnet', [dll], {
     ...process.env,
     DAORIS_KNOWLEDGE_ROOT: family,
     DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
-    // 5196, deliberately apart from the family rehearsal's 5197–5199: the two suites run in the same
+    // 5196, deliberately apart from the family rehearsal's 5197–5200: the two suites run in the same
     // CI job, and an orphaned host on a shared port makes one gate's readiness probe answer against
     // the other's server — a failure that reads as flakiness rather than a port clash.
     ASPNETCORE_URLS: 'http://localhost:5196',
     // Hermetic like the family rehearsal (its own prelude states the argument): a real
-    // ~/.daoris/remote.json on the developer's machine must never leak a deployment into a gate run.
+    // ~/.daoris/remotes.json on the developer's machine must never leak a deployment into a gate run.
     DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
   },
 });

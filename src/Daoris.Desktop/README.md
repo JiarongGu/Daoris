@@ -5,14 +5,17 @@ landed.** The brief was rewritten 2026-09-19 for D45; **the design is settled:
 `docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
 adapter seam, the stub, the `claude-code` adapter, and since D47 the machine's **remote sync** —
 `RemoteSync` rides the tick, feeding joined registrations, session records and opted-in knowledge up
-and mirroring the remote's quests and foreign registrations down) and `Daoris.Desktop.Driver.Host`
-(`daoris-driver`) are driven end to end by the family rehearsal's driver and two-machine remote
-phases. **`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
+and mirroring the remote's quests and foreign registrations down, once **per workspace** since D48 §5,
+because one shared deployment serves one circle) and `Daoris.Desktop.Driver.Host`
+(`daoris-driver`) are driven end to end by the family rehearsal's driver, two-machine remote and
+remotes-map phases. **`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
 shell: it brings up the local HTTP host — adopting one already running, spawning and owning one
 otherwise, a dev build run from its project so the bundle serves — carries the platform in its WebView
 (`ProductionUrl`, the same bytes a browser gets), runs the driver's shared watch loop in-process with
 `driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed
-by the page — drivable and hold per repository, stop a running session), and takes the loop and its
+by the page — drivable and hold per repository, stop a running session), edits the machine's wiring
+over `DAORIS.REMOTES` (the Machine view, over the same `~/.daoris/remotes.json` the CLI edits — a key
+goes in and only its audit prefix comes back), and takes the loop and its
 owned host down with it on close, in-flight sessions ended and recorded `stopped`. The one designed
 control not yet wired page-side is **start-now**: the host answers `NUDGE`, and no page surface calls
 it yet.

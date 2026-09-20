@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// control that needs a bounce is a control nobody trusts.
 /// </remarks>
 public sealed class DriverWatch(
-    ServiceClient service, string configPath, string home, SessionProcesses processes, RemoteSync? sync)
+    ServiceClient service, string configPath, string home, SessionProcesses processes, RemoteSyncSet? sync)
 {
     private CancellationTokenSource _pause = new();
 

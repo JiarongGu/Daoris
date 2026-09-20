@@ -27,10 +27,20 @@ vi.mock('@shenora/react', () => ({
 
 import { ProjectsView } from './ProjectsView';
 import { QuestsView } from './QuestsView';
+import { SettingsView } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from './queries';
 
 const DRIVER_STATE = { drivable: [], holds: [], running: ['s1a2b3c4'] };
+
+/** What DAORIS.REMOTES answers: the wiring, with the key already reduced to its audit prefix. */
+const WIRING = {
+  // Neutral by convention, like the driver's fixtures: a tracked file carries no machine path, not
+  // even a plausible-looking one a scanner would have to be told to forgive.
+  path: 'C:/somewhere/.daoris/remotes.json',
+  fromEnvironment: false,
+  remotes: [{ workspace: 'aurora', url: 'https://aurora.example.com', key: 'dk_abcd1234…' }],
+};
 
 const REGISTRY = [
   { repository: 'engine', adopted: true, registered: true, summary: 'the engine', owns: [], accepts: [], packs: [], entries: 1 },
@@ -203,6 +213,81 @@ describe('the shell-attached registry management', () => {
       '/api/registry/engine/workspace',
       expect.objectContaining({ method: 'POST' }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.REGISTRY', 'WRITE_DECLARATION', expect.anything());
+  });
+});
+
+/**
+ * The machine's wiring (D48 §5, D50): which deployment serves each workspace here. Shell-only and
+ * more strictly than the rest — the service has no route onto this at all, so every call must land on
+ * the bridge and none on the API.
+ */
+describe('the machine settings surface', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async () => WIRING);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('reads the wiring over the bridge and never over the service', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('aurora')).toBeTruthy();
+    expect(screen.getByText('https://aurora.example.com')).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'STATE', {});
+    // Not a single call toward the service: a keyed remote's browser must never learn, or change,
+    // where a machine syncs.
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('wiring a workspace edits the map and clears the key out of the form', async () => {
+    show(<SettingsView notify={() => {}} />);
+    await screen.findByText('aurora');
+
+    await userEvent.type(screen.getByLabelText('workspace'), 'tools');
+    await userEvent.type(screen.getByLabelText('deployment'), 'https://tools.example.com');
+    await userEvent.type(screen.getByLabelText('key'), 'dk_toolskey0000');
+    await userEvent.click(screen.getByRole('button', { name: 'wire it' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'SET', {
+      payload: { workspace: 'tools', url: 'https://tools.example.com', key: 'dk_toolskey0000' },
+    });
+    // The key does not linger in the form once it has landed in the file.
+    expect((screen.getByLabelText('key') as HTMLInputElement).value).toBe('');
+  });
+
+  /** A key goes in and never comes out: what is rendered is the prefix the module chose to answer. */
+  it('renders only the audit prefix a key was reduced to', async () => {
+    const { container } = show(<SettingsView notify={() => {}} />);
+    await screen.findByText('aurora');
+
+    expect(screen.getByText('dk_abcd1234…')).toBeTruthy();
+    expect(container.textContent).not.toContain('dk_abcd1234wxyz');
+  });
+
+  it('unwiring says what it did not do, and touches no deployment', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+    await screen.findByText('aurora');
+
+    await userEvent.click(screen.getByRole('button', { name: 'unwire' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'REMOVE', { payload: { workspace: 'aurora' } });
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing at the deployment changed'));
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  /**
+   * With the environment pair set no loader reads the file, so the surface must say which source
+   * decided — otherwise it reports its own last edit as though it were the machine's wiring.
+   */
+  it('says when the environment, not the file, is the answer', async () => {
+    invoke.mockImplementation(async () => ({ ...WIRING, fromEnvironment: true }));
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText(/environment names this machine's remote/i)).toBeTruthy();
   });
 });
 

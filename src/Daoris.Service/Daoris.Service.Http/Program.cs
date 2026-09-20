@@ -12,6 +12,8 @@ using Daoris.Knowledge.Http;
 //   DAORIS_EMBED_MODEL     naming one turns semantic on    (absent: lexical only, and it says so)
 //   DAORIS_EMBED_URL       the endpoint                    (default: http://localhost:11434)
 //   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
+//   DAORIS_WORKSPACE       which circle a SHARED host serves    (default: `default`; D48 §5)
+//                          Refused on a local host, which holds every workspace this machine wired.
 //   DAORIS_MODE            local (default) or shared (D47 §3/§7). Shared is the team deployment:
 //                          EVERY /api route needs a minted key, no page is served (the remote is an
 //                          API until person-auth exists), and no machine path is ever answered.
@@ -46,6 +48,17 @@ var (mode, modeError) = Access.ParseMode(Environment.GetEnvironmentVariable(Acce
 if (modeError is not null)
 {
     Console.Error.WriteLine(modeError);
+    return 2;
+}
+
+// A shared deployment is a WORKSPACE's deployment (D48 §5): it carries one circle's identity, takes
+// every registration into it, and refuses one that declares another. A local host has no identity —
+// it holds every circle the person wired — and naming one there is refused rather than ignored.
+var (hostWorkspace, workspaceError) = Access.ParseWorkspace(
+    mode, Environment.GetEnvironmentVariable(Access.WorkspaceVariable));
+if (workspaceError is not null)
+{
+    Console.Error.WriteLine(workspaceError);
     return 2;
 }
 
@@ -92,11 +105,10 @@ if (Access.RefuseStartup(mode, urls) is { } refusal)
 // the construction itself is HostComposition's, shared with the MCP host so the two cannot drift.
 var embedder = HostComposition.BuildEmbedder(options);
 
-// A LOCAL host relays verbs on remote-homed quests to the machine's remote, when one is configured
-// (D47 §5/§9). A shared host never relays: it is the home the others write through to.
-var remoteQuests = mode == ServiceMode.Local && RemoteConfig.Load() is { } remoteConfig
-    ? new HttpRemoteQuests(remoteConfig)
-    : null;
+// A LOCAL host relays verbs on remote-homed quests to the remote serving that quest's WORKSPACE
+// (D48 §5), when this machine has one. A shared host never relays: it is the home the others write
+// through to.
+var remoteQuests = mode == ServiceMode.Local ? RemoteQuestRoutes.From(RemoteConfig.Load()) : null;
 
 // A shared deployment is fed, not scanned (D47 §4) — and not only at the refresh route: the service
 // indexes on first use when its store is empty, so a shared host composed with the filesystem source
@@ -367,6 +379,14 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
 {
     if (string.IsNullOrWhiteSpace(body.Repository)) return Results.BadRequest(new ErrorResponse("repository is required"));
 
+    // One shared deployment serves one workspace (D48 §5). A row declaring another is not a
+    // permission failure — it is a message delivered to the wrong building, so it says so naming both
+    // sides. A conflict, not a bad request: the payload is well-formed and the deployment is wrong.
+    if (Access.RefuseForeignWorkspace(hostWorkspace, body.Repository, body.Workspace) is { } foreign)
+    {
+        return Results.Conflict(new ErrorResponse(foreign));
+    }
+
     var registered = await s.Service.RegisterAsync(new Registration(
         body.Repository,
         Adopted: true,
@@ -382,9 +402,11 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         // Knowledge feeds only from a joined repository (D47 §4) — narrowed here as well as in the
         // CLI, because this door also answers clients the CLI never saw.
         SharesKnowledge: (body.Join ?? false) && (body.ShareKnowledge ?? false),
-        // Silence PRESERVES the row (D48 §2): an ordinary re-registration runs on every sync tick and
-        // says nothing about the wiring, so a null here must not re-point the repository to `default`.
-        Workspace: body.Workspace), DateTimeOffset.UtcNow, ct);
+        // A SHARED host puts every row in its own circle — it is that workspace's deployment, and the
+        // receiving deployment's wiring is what decides where fed material lands (D48 §2/§5). On a
+        // LOCAL host silence PRESERVES the row: an ordinary re-registration runs on every sync tick
+        // and says nothing about the wiring, so a null must not re-point the repository to `default`.
+        Workspace: hostWorkspace ?? body.Workspace), DateTimeOffset.UtcNow, ct);
 
     // Answered with the workspace that TOOK, not the one that was asked for — the client learns which
     // circle it is actually wired to, including when it said nothing and the existing row held.
@@ -413,6 +435,13 @@ app.MapDelete("/api/registry/{repository}", async (
 app.MapPost("/api/registry/{repository}/workspace", async (
     ComposedService s, string repository, WireRequest body, CancellationToken ct) =>
 {
+    // Re-wiring across a shared deployment's own boundary is the same refusal the registration door
+    // gives (D48 §5) — a host that serves one circle cannot hold a row belonging to another.
+    if (Access.RefuseForeignWorkspace(hostWorkspace, repository, body.Workspace) is { } foreign)
+    {
+        return Results.Conflict(new ErrorResponse(foreign));
+    }
+
     var existing = (await s.Service.RegistryAsync(ct: ct))
         .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
     if (existing is null)
