@@ -8,6 +8,9 @@ using Daoris.Driver;
 //   DAORIS_SERVICE_URL     where the service is                (required — the driver is its client)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices       (default: ~/.daoris/driver.json)
+//   DAORIS_REMOTE_URL      the machine's remote, with its key  (or ~/.daoris/remote.json — D47 §9;
+//   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole)
+//   DAORIS_REMOTE_CONFIG   where that file is                  (default: ~/.daoris/remote.json)
 //
 //   --once        one tick, then exit
 //   --until-idle  tick until nothing starts, then exit — the deterministic mode a gate drives
@@ -34,7 +37,8 @@ try
     // The machine's remote, when it has one (~/.daoris/remote.json, environment overriding — D47 §9):
     // the sync rides the tick, so a headless driver on a server machine feeds and mirrors exactly as
     // the desktop does. Absence is silent and local.
-    using var sync = RemoteSync.FromEnvironment(service.BaseUrl);
+    using var sync = RemoteSync.FromEnvironment(
+        service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
     if (sync is not null)
     {
         Console.WriteLine("driver: syncing with the machine's remote each tick");
@@ -59,15 +63,13 @@ try
     else
     {
         Console.WriteLine($"driver: watching {service.BaseUrl} every {config.PollSeconds}s — Ctrl+C stops it");
-        while (true)
-        {
-            // The person's standing choices are re-read every tick, so a hold, an opt-in, or a new
-            // adapter command takes effect without a restart — the shell's controls are edits to this
-            // file, and a control that needs a bounce is a control nobody trusts.
-            config = DriverConfig.Load(configPath);
-            Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync).TickAsync(), quietWhenIdle: true);
-            await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds));
-        }
+        // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
+        // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
+        // below, which is this door's exit-2 contract.
+        await new DriverWatch(service, configPath, home, processes, sync).RunAsync(
+            (report, _) => { Print(report, quietWhenIdle: true); return Task.CompletedTask; },
+            onError: null,
+            CancellationToken.None);
     }
 
     return 0;

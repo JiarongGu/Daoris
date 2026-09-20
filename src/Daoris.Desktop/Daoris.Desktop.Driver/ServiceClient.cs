@@ -18,8 +18,8 @@ public sealed class ServiceClient : IDisposable
     public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
     {
         _base = baseUrl.TrimEnd('/');
-        _http = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-        if (!string.IsNullOrWhiteSpace(key))
+        _http = http ?? DriverHttp.Client(key);
+        if (http is not null && !string.IsNullOrWhiteSpace(key))
         {
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
         }
@@ -132,12 +132,10 @@ public sealed class ServiceClient : IDisposable
         return Text(document.RootElement, "message") ?? "";
     }
 
-    private async Task<string> GetAsync(string path, CancellationToken ct)
-    {
-        using var response = await _http.GetAsync($"{_base}{path}", ct).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-    }
+    // Through DriverHttp, so a refused read carries the service's own sentence — a bare
+    // EnsureSuccessStatusCode threw it away, and the driver's log said less than the service said.
+    private Task<string> GetAsync(string path, CancellationToken ct) =>
+        DriverHttp.GetAsync(_http, $"{_base}{path}", ct);
 
     private static IReadOnlyList<QuestView> ReadQuests(string json)
     {

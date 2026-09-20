@@ -62,7 +62,6 @@ public static class Planner
     public static IReadOnlyList<Consideration> Plan(Snapshot snapshot, DriverConfig config)
     {
         var considerations = new List<Consideration>();
-        var busy = new HashSet<string>(snapshot.Active.Select(s => s.Repository), StringComparer.OrdinalIgnoreCase);
         var blockedBy = snapshot.Active.ToDictionary(s => s.Repository, s => s.Id, StringComparer.OrdinalIgnoreCase);
         var startedThisTick = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var slots = config.Cap - snapshot.Active.Count;

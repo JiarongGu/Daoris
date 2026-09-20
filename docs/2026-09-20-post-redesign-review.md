@@ -27,10 +27,10 @@ commits; unchecked items are deliberately deferred with the reason inline.
   `postpack` re-stages instead of cleaning — the staged `canon/`, `LICENSE`, `README.md` and the built
   `dist/` outlive every pack, gitignored and invisible. This is the exact mechanism of the FIX-LOG's
   stale-`dist/` entry, still manufacturable by one local `npm run rehearse`.
-- [ ] **A hung driver freezes the family rehearsal.** Phase 7's `drive()` passes no timeout, so the
+- [ ] **A hung driver freezes the family rehearsal.** *(fix lands with the tools batch)* Phase 7's `drive()` passes no timeout, so the
   kill-timeout promise `run()` documents is false for its four driver invocations; `driveA` also drops
   the `NO_REMOTE` hermeticity guard the file's own prelude declares for "every host and driver".
-- [ ] **The desktop splash can wait forever.** `DriverLoop.RunAsync` has no try around
+- [x] **The desktop splash can wait forever.** `DriverLoop.RunAsync` has no try around
   `EnsureAsync`; a host that is located but unstartable faults the task, `_hostReady` never completes,
   and `MainForm.BringUpAsync` awaits it indefinitely — the exact dark-window failure the form's own
   fallback was written to prevent.
@@ -54,13 +54,18 @@ commits; unchecked items are deliberately deferred with the reason inline.
   Core (D36) so a kind alias cannot land in one host only.
 - [x] **The sessions feed door judges in the host; the entries door judges in Core** — move the
   joined-repository check into Core so a future door shares it.
-- [ ] **`RemoteSync.cs` holds four types and three responsibilities** — split `RemoteTarget` and
+- [x] **`RemoteSync.cs` holds four types and three responsibilities** — split `RemoteTarget` and
   `RemoteSyncPayloads` into their own files; extract feed-up/mirror-down phases; give `RunOnceAsync` the
-  `HttpClient` seam `ServiceClient` already has, so its ordering contract becomes testable.
-- [ ] **HTTP plumbing duplicated three ways in the driver** with three error conventions — one helper;
-  `ServiceClient.GetAsync` stops discarding the service's refusal sentence.
-- [ ] **The watch loop exists twice** (`Driver.Host/Program.cs`, `App/DriverLoop.cs`) — a shared
-  `DriverWatch` owning construction, config re-read, and delay.
+  transport seam `ServiceClient` already has, so its ordering contract becomes testable (and is tested,
+  with the wall-is-reported and nothing-joined cases). `SyncReport`'s five computed-and-discarded counts
+  are reduced to `Problem`: a healthy sync moves something almost every tick, so per-tick counts would
+  be toast noise — they return with a surface that reads them. `FromEnvironment` now takes the local key
+  from its caller instead of a hidden second environment read.
+- [x] **HTTP plumbing duplicated three ways in the driver** with three error conventions — one helper
+  (`DriverHttp`); `ServiceClient.GetAsync` stops discarding the service's refusal sentence.
+- [x] **The watch loop exists twice** (`Driver.Host/Program.cs`, `App/DriverLoop.cs`) — a shared
+  `DriverWatch` owning construction, config re-read, nudge, and delay; each host keeps its reporting
+  half and its own error policy (the shell reports and keeps watching; the host exits 2).
 - [ ] **The rehearsal harness is copy-pasted across four files** (`check`/`section`/transcript/capture
   in both rehearsals; `copyTree` five times across tools and web scripts) — extract a rehearsal kit and
   a shared `copyTree`.
@@ -74,7 +79,7 @@ commits; unchecked items are deliberately deferred with the reason inline.
 
 ## Dead code and stale claims in code
 
-- [ ] Service: the csproj's "Read-only by construction (D31) … no auth for writes" comment (8 write
+- [x] Service: the csproj's "Read-only by construction (D31) … no auth for writes" comment (8 write
   routes and a gate say otherwise); `ApiKeys.cs`'s present-tense reference to the retired single-key
   gate; `SqliteKnowledgeStore`'s "every entry can be re-read from the repositories" rationale (untrue on
   a shared deployment); `RegisterRequest.CanonSource` parsed and never read; dead `using`; `Planner.cs`'s

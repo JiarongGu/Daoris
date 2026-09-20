@@ -1,0 +1,273 @@
+using System.Text;
+using System.Text.Json;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// The pure half of the sync: what leaves this machine and what comes back, built from the doors' own
+/// JSON. Pure so the boundary is testable where it matters most — the payloads these functions build
+/// are the disclosure boundary in practice, and none of them has a field for a machine path. A root or
+/// a transcript in the input is dropped at PARSE time; there is no branch that could forward one.
+/// </summary>
+public static class RemoteSyncPayloads
+{
+    /// <param name="SharesKnowledge">Whether its knowledge content feeds too — its manifest's second
+    /// declaration (D47 §4). The registration itself travels for every joined repository.</param>
+    public sealed record JoinedRepository(
+        string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
+        IReadOnlyList<string> Packs, bool SharesKnowledge);
+
+    /// <summary>Every repository a registry answer names — joined or not, adopted or not.</summary>
+    public static IReadOnlySet<string> Names(string registryJson)
+    {
+        using var document = JsonDocument.Parse(registryJson);
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var repo in document.RootElement.EnumerateArray())
+        {
+            if (Text(repo, "repository") is { Length: > 0 } name) names.Add(name);
+        }
+
+        return names;
+    }
+
+    /// <summary>
+    /// The joined repositories in a local registry answer — the only ones a remote may hear of FROM
+    /// here. Joined alone is not enough: mirrored-down teammate rows carry the flag too, and feeding
+    /// one back up would speak for a repository this machine cannot see — worse, its empty entries
+    /// feed is a replacement, wiping the teammate's shared knowledge from a machine that never had it.
+    /// The root is the checkout and the checkout is the authority (D47 §5), so a root is required —
+    /// and the local host answers roots to this loopback caller, so a rootless row IS a foreign one.
+    /// </summary>
+    public static IReadOnlyList<JoinedRepository> Joined(string registryJson)
+    {
+        using var document = JsonDocument.Parse(registryJson);
+        var joined = new List<JoinedRepository>();
+        foreach (var repo in document.RootElement.EnumerateArray())
+        {
+            if (!(repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True)) continue;
+            if (Text(repo, "root") is not { Length: > 0 }) continue;
+
+            joined.Add(new JoinedRepository(
+                Text(repo, "repository") ?? "",
+                Text(repo, "summary"),
+                Strings(repo, "owns"),
+                Strings(repo, "accepts"),
+                Strings(repo, "packs"),
+                repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True));
+        }
+
+        return joined;
+    }
+
+    /// <summary>One joined repository's registration, as the remote hears it: the declaration, no root.</summary>
+    public static string Registration(JoinedRepository repo) => Write(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteString("repository", repo.Repository);
+        writer.WriteStartArray("packs");
+        foreach (var pack in repo.Packs) writer.WriteStringValue(pack);
+        writer.WriteEndArray();
+        writer.WriteStartObject("domain");
+        if (repo.Summary is not null) writer.WriteString("summary", repo.Summary);
+        writer.WriteStartArray("owns");
+        foreach (var owns in repo.Owns) writer.WriteStringValue(owns);
+        writer.WriteEndArray();
+        writer.WriteStartArray("accepts");
+        foreach (var accepts in repo.Accepts) writer.WriteStringValue(accepts);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+        writer.WriteBoolean("join", true);
+        writer.WriteBoolean("shareKnowledge", repo.SharesKnowledge);
+        writer.WriteEndObject();
+    });
+
+    /// <summary>
+    /// The session records worth feeding: joined repositories only, and never the transcript — the
+    /// field is dropped here, at parse, so no later step could forward it. Null when nothing qualifies.
+    /// </summary>
+    public static (string Json, int Count)? Sessions(string sessionsJson, IReadOnlySet<string> joined)
+    {
+        using var document = JsonDocument.Parse(sessionsJson);
+        var count = 0;
+        var json = Write(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("records");
+            foreach (var session in document.RootElement.EnumerateArray())
+            {
+                var repository = Text(session, "repository") ?? "";
+                var id = Text(session, "id") ?? "";
+                // A record already carrying an origin is somebody else's, mirrored here — feeding it
+                // back would launder another machine's record through this machine's identity.
+                if (!joined.Contains(repository) || id.Contains('/')) continue;
+
+                count++;
+                writer.WriteStartObject();
+                writer.WriteString("id", id);
+                writer.WriteString("quest", Text(session, "quest"));
+                writer.WriteString("repository", repository);
+                writer.WriteString("adapter", Text(session, "adapter"));
+                writer.WriteString("state", Text(session, "state"));
+                Copy(writer, session, "note");
+                Copy(writer, session, "evidence");
+                writer.WriteString("created", Text(session, "created"));
+                writer.WriteString("updated", Text(session, "updated"));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+
+        return count == 0 ? null : (json, count);
+    }
+
+    /// <summary>
+    /// One sharing repository's content for the remote's ingest. An empty list still feeds: the
+    /// remote's copy is a replacement, and a repository that deleted its knowledge means the deletion.
+    /// </summary>
+    public static (string Json, int Count) Entries(string repository, string entriesJson)
+    {
+        using var document = JsonDocument.Parse(entriesJson);
+        var count = 0;
+        var json = Write(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("repository", repository);
+            writer.WriteStartArray("entries");
+            foreach (var entry in document.RootElement.EnumerateArray())
+            {
+                count++;
+                writer.WriteStartObject();
+                writer.WriteString("kind", Text(entry, "kind"));
+                writer.WriteString("title", Text(entry, "title"));
+                writer.WriteString("body", Text(entry, "body"));
+                writer.WriteString("relativePath", Text(entry, "path"));
+                Copy(writer, entry, "anchor");
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+
+        return (json, count);
+    }
+
+    /// <summary>
+    /// The remote quests this machine mirrors: those touching its joined repositories, as sender or
+    /// receiver. Everything else on the remote is other people's business. Null when nothing qualifies.
+    /// </summary>
+    public static (string Json, int Count)? Quests(string remoteQuestsJson, IReadOnlySet<string> joined)
+    {
+        using var document = JsonDocument.Parse(remoteQuestsJson);
+        var count = 0;
+        var json = Write(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("quests");
+            foreach (var quest in document.RootElement.EnumerateArray())
+            {
+                var from = Text(quest, "from") ?? "";
+                var to = Text(quest, "to") ?? "";
+                if (!joined.Contains(from) && !joined.Contains(to)) continue;
+
+                count++;
+                writer.WriteStartObject();
+                writer.WriteString("id", Text(quest, "id"));
+                writer.WriteString("from", from);
+                writer.WriteString("to", to);
+                writer.WriteString("title", Text(quest, "title"));
+                writer.WriteString("body", Text(quest, "body"));
+                writer.WriteString("status", Text(quest, "status"));
+                Copy(writer, quest, "note");
+                writer.WriteString("filed", Text(quest, "filed"));
+                writer.WriteString("updated", Text(quest, "updated"));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+
+        return count == 0 ? null : (json, count);
+    }
+
+    /// <summary>
+    /// The remote's registry as this machine should hear of it: FOREIGN rows only. A repository this
+    /// machine already has keeps its own registration — and its root — because the machine that holds
+    /// the checkout is the authority on it; re-posting the remote's stripped copy would overwrite the
+    /// one field spawning needs. What arrives makes teammates' repositories addressable here (D47 §5):
+    /// their quests home at the remote, and the relay carries the verbs.
+    /// </summary>
+    public static IReadOnlyList<(string Repository, string Json)> ForeignRegistrations(
+        string remoteRegistryJson, IReadOnlySet<string> localNames)
+    {
+        using var document = JsonDocument.Parse(remoteRegistryJson);
+        var foreign = new List<(string, string)>();
+        foreach (var repo in document.RootElement.EnumerateArray())
+        {
+            var name = Text(repo, "repository") ?? "";
+            if (name.Length == 0 || localNames.Contains(name)) continue;
+
+            var payload = Write(writer =>
+            {
+                writer.WriteStartObject();
+                writer.WriteString("repository", name);
+                writer.WriteStartArray("packs");
+                foreach (var pack in Strings(repo, "packs")) writer.WriteStringValue(pack);
+                writer.WriteEndArray();
+                writer.WriteStartObject("domain");
+                if (Text(repo, "summary") is { } summary) writer.WriteString("summary", summary);
+                writer.WriteStartArray("owns");
+                foreach (var owns in Strings(repo, "owns")) writer.WriteStringValue(owns);
+                writer.WriteEndArray();
+                writer.WriteStartArray("accepts");
+                foreach (var accepts in Strings(repo, "accepts")) writer.WriteStringValue(accepts);
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+                writer.WriteBoolean("join", repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True);
+                writer.WriteBoolean("shareKnowledge",
+                    repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
+                writer.WriteEndObject();
+            });
+            foreign.Add((name, payload));
+        }
+
+        return foreign;
+    }
+
+    private static void Copy(Utf8JsonWriter writer, JsonElement element, string name)
+    {
+        if (Text(element, name) is { } value) writer.WriteString(name, value);
+    }
+
+    private static string? Text(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private static IReadOnlyList<string> Strings(JsonElement element, string name)
+    {
+        if (!element.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Array) return [];
+
+        var items = new List<string>();
+        foreach (var item in value.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } text) items.Add(text);
+        }
+
+        return items;
+    }
+
+    private static string Write(Action<Utf8JsonWriter> write)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            write(writer);
+        }
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+}

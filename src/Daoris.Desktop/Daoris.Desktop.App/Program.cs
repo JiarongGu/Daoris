@@ -13,6 +13,9 @@ using Shenora.Windows;
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: ~/.daoris/driver.json)
 //   DAORIS_HTTP_HOST       the host executable, when it lives somewhere unusual
+//   DAORIS_REMOTE_URL      the machine's remote, with its key                  (or ~/.daoris/remote.json — D47 §9)
+//   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole
+//   DAORIS_REMOTE_CONFIG   where that file is                                  (default: ~/.daoris/remote.json)
 internal static class Program
 {
     [STAThread]

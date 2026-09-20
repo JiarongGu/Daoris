@@ -194,6 +194,113 @@ public sealed class RemoteSyncTests
 }
 
 /// <summary>
+/// The orchestration half, over a stub transport: the ORDER is a contract (registrations go first, so
+/// the remote knows who is joined before their records arrive — D47 §9), and a wall is reported and
+/// never thrown (records sync eventually; a dead tick would take the driver's whole look with it).
+/// </summary>
+public sealed class RemoteSyncRunTests
+{
+    private const string Local = "http://localhost:5177";
+    private const string Remote = "https://remote.example.com";
+
+    /// <summary>Canned answers by (method, path prefix); records every call in order.</summary>
+    private sealed class StubTransport : HttpMessageHandler
+    {
+        public List<string> Calls { get; } = [];
+        public Func<HttpRequestMessage, HttpResponseMessage>? Answer { get; init; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Calls.Add($"{request.Method} {request.RequestUri}");
+            return Task.FromResult(Answer!(request));
+        }
+    }
+
+    private static HttpResponseMessage Json(string payload) => new(System.Net.HttpStatusCode.OK)
+    {
+        Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json"),
+    };
+
+    private static HttpResponseMessage AnswerHealthy(HttpRequestMessage request)
+    {
+        var url = request.RequestUri!.ToString();
+        return url switch
+        {
+            _ when url.StartsWith($"{Local}/api/registry") && request.Method == HttpMethod.Get => Json("""
+                [{ "repository": "Shared", "adopted": true, "registered": true, "owns": [], "accepts": [],
+                   "packs": [], "entries": 1, "root": "C:/somewhere/Shared", "joined": true, "sharesKnowledge": true }]
+                """),
+            _ when url.StartsWith($"{Local}/api/sessions") => Json("""
+                [{ "id": "ab12cd34", "quest": "abc123", "repository": "Shared", "adapter": "stub",
+                   "state": "completed", "created": "2026-09-20T10:00:00+00:00", "updated": "2026-09-20T10:01:00+00:00" }]
+                """),
+            _ when url.StartsWith($"{Local}/api/entries") => Json("[]"),
+            _ when url.StartsWith($"{Remote}/api/registry") && request.Method == HttpMethod.Get => Json("[]"),
+            _ when url.StartsWith($"{Remote}/api/quests") => Json("[]"),
+            _ => Json("{}"),
+        };
+    }
+
+    [Fact]
+    public async Task Registrations_go_up_before_records_and_content_and_the_mirror_comes_last()
+    {
+        using var transport = new StubTransport { Answer = AnswerHealthy };
+        using var sync = new RemoteSync(Local, null, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Null(report.Problem);
+        var order = transport.Calls;
+        int At(string fragment) => order.FindIndex(call => call.Contains(fragment));
+        Assert.True(At($"POST {Remote}/api/registry") >= 0, string.Join("\n", order));
+        Assert.True(At($"POST {Remote}/api/registry") < At($"POST {Remote}/api/feed/sessions"));
+        Assert.True(At($"POST {Remote}/api/feed/sessions") < At($"POST {Remote}/api/feed/entries"));
+        Assert.True(At($"POST {Remote}/api/feed/entries") < At($"GET {Remote}/api/registry"));
+        Assert.True(At($"GET {Remote}/api/registry") < At($"GET {Remote}/api/quests"));
+    }
+
+    [Fact]
+    public async Task A_wall_is_reported_and_named_never_thrown()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = request => request.RequestUri!.ToString().StartsWith(Remote)
+                ? new(System.Net.HttpStatusCode.Unauthorized)
+                {
+                    Content = new StringContent(
+                        """{ "error": "key `dk_abcd1234` expired 2026-09-01 — ask an operator to mint a fresh one" }""",
+                        System.Text.Encoding.UTF8, "application/json"),
+                }
+                : AnswerHealthy(request),
+        };
+        using var sync = new RemoteSync(Local, null, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.NotNull(report.Problem);
+        Assert.Contains("expired", report.Problem);
+    }
+
+    [Fact]
+    public async Task A_family_with_nothing_joined_syncs_nothing()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = request => Json("""
+                [{ "repository": "Homebody", "adopted": true, "registered": true, "owns": [], "accepts": [],
+                   "packs": [], "entries": 0, "root": "C:/somewhere/Homebody", "joined": false, "sharesKnowledge": false }]
+                """),
+        };
+        using var sync = new RemoteSync(Local, null, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Null(report.Problem);
+        Assert.Single(transport.Calls); // the local registry read, and nothing toward the remote
+    }
+}
+
+/// <summary>
 /// The machine's remote is one file under the profile, environment overriding (D47 §9) — and absence
 /// is the default, silently (D21): a machine with no remote must never have to opt out of one.
 /// </summary>

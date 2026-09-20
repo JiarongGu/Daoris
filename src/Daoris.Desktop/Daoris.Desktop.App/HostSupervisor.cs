@@ -37,13 +37,23 @@ public sealed class HostSupervisor(string serviceUrl) : IDisposable
 
         // The working directory is the location's, not the binary's — a dev host must run from its
         // project so the platform bundle in its wwwroot is what gets served (see HostLocation).
-        _owned = Process.Start(new ProcessStartInfo
+        try
         {
-            FileName = location.Executable,
-            WorkingDirectory = location.WorkingDirectory,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        });
+            _owned = Process.Start(new ProcessStartInfo
+            {
+                FileName = location.Executable,
+                WorkingDirectory = location.WorkingDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            });
+        }
+        catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            // Located but unstartable — corrupt, blocked, or permissions. An unhandled throw here used
+            // to fault the loop's task before HostReady completed, leaving the splash waiting forever.
+            Trouble = $"the service host at {location.Executable} could not be started: {error.Message}";
+            return false;
+        }
 
         for (var attempt = 0; attempt < 100; attempt += 1)
         {

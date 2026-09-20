@@ -6,19 +6,15 @@ namespace Daoris.Desktop;
 /// <summary>
 /// The driver's watch loop, in the shell's process — the same library the headless host runs, one
 /// driver with two doors (D46 §7). In-process because the shell is where the tick reports become
-/// something a person sees, and where session process control will live.
+/// something a person sees, and where session process control lives. The loop mechanics are
+/// <see cref="DriverWatch"/>'s; this class owns only what the shell adds — bringing the host up, and
+/// turning reports into event-bus notifications.
 /// </summary>
-/// <remarks>
-/// The person's standing choices are re-read every tick, so an edit to `driver.json` — by hand today,
-/// by the platform's controls next — takes effect without a restart. Tick reports go out on the app's
-/// event bus as `DAORIS` / `DRIVER_TICK` notifications; a page that never subscribes costs nothing,
-/// which is what keeps the browser and the shell one bundle.
-/// </remarks>
 public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, string serviceUrl) : IDisposable
 {
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
-    private CancellationTokenSource _pause = new();
+    private DriverWatch? _watch;
     private Task? _loop;
 
     /// <summary>Completes when the HTTP host answers (or provably will not) — what navigation waits on.</summary>
@@ -32,12 +28,7 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
-    public void Nudge()
-    {
-        var paused = _pause;
-        _pause = new CancellationTokenSource();
-        paused.Cancel();
-    }
+    public void Nudge() => _watch?.Nudge();
 
     public void Start()
     {
@@ -48,30 +39,44 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
     {
         var ct = _stopping.Token;
 
-        var up = await supervisor.EnsureAsync(ct).ConfigureAwait(false);
-        _hostReady.TrySetResult(up);
+        // Whatever happens in here, HostReady must complete — the splash awaits it, and a supervisor
+        // fault that skipped the TrySetResult would leave a permanently dark window, the exact failure
+        // the form's own fallback was written to prevent.
+        var up = false;
+        string? trouble = null;
+        try
+        {
+            up = await supervisor.EnsureAsync(ct).ConfigureAwait(false);
+            trouble = supervisor.Trouble;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            trouble = error.Message;
+        }
+        finally
+        {
+            _hostReady.TrySetResult(up);
+        }
+
         if (!up)
         {
-            await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = supervisor.Trouble })
+            await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = trouble })
                 .ConfigureAwait(false);
             return;
         }
 
         var home = Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
-        using var service = new ServiceClient(serviceUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
+        var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
+        using var service = new ServiceClient(serviceUrl, key);
 
         // The machine's remote, when it has one (D47 §9) — the sync rides the tick, in the shell
         // exactly as in the headless host. Absence is silent and local.
-        using var sync = RemoteSync.FromEnvironment(service.BaseUrl);
+        using var sync = RemoteSync.FromEnvironment(service.BaseUrl, key);
 
-        while (!ct.IsCancellationRequested)
-        {
-            var config = DriverConfig.Load(ConfigPath);
-            try
+        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync);
+        await _watch.RunAsync(
+            async (report, _) =>
             {
-                var report = await new Daoris.Driver.Driver(service, config, AdapterSet.Built(), home, Processes, sync)
-                    .TickAsync(ct).ConfigureAwait(false);
-
                 if (report.PlannedAnything || report.Events.Count > 0)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
@@ -86,28 +91,10 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
                         }).ToArray(),
                     }).ConfigureAwait(false);
                 }
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
-            }
-            catch (Exception error)
-            {
-                // An unattended loop outlives its service's restarts — say so, wait, look again.
-                await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { error.Message }).ConfigureAwait(false);
-            }
-
-            try
-            {
-                // Interruptible two ways: stopping ends the loop; a nudge only ends the wait.
-                using var wait = CancellationTokenSource.CreateLinkedTokenSource(ct, _pause.Token);
-                await Task.Delay(TimeSpan.FromSeconds(config.PollSeconds), wait.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                if (ct.IsCancellationRequested) return;
-            }
-        }
+            },
+            // An unattended loop outlives its service's restarts — say so, wait, look again.
+            onError: error => eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { error.Message }),
+            ct).ConfigureAwait(false);
     }
 
     /// <summary>Stop, bounded: an in-flight session is ended and recorded `stopped` by the driver itself.</summary>

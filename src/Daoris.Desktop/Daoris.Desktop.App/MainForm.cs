@@ -49,8 +49,9 @@ public sealed class MainForm : Form
             Dispatcher = dispatcher,
             EventBus = eventBus,
             // Capabilities are promises the page may render buttons for, so only what is actually
-            // mapped is advertised — today, nothing beyond existing (the driver's controls arrive
-            // with their routes, together).
+            // mapped is advertised. The driver's controls deliberately do NOT ride this list: the page
+            // gates them on the bridge being present and DAORIS.DRIVER answering STATE, which is the
+            // stronger test — a capability string could outlive the module it promises.
             Shell = new ShellInfo { Name = "daoris-desktop", Capabilities = [] },
         });
 
