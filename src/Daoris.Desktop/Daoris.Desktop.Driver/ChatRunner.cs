@@ -85,7 +85,9 @@ public sealed class ChatRunner(
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
         var (sessionId, message) = await service
-            .OpenChatAsync(repository, resolved.Name, selection.Version, selection.Profile, ct)
+            // The tree the conversation runs in (D51) — the checkout found above, which is the same
+            // resolution the ledger would make, stated by the side that is about to spawn into it.
+            .OpenChatAsync(repository, resolved.Name, selection.Version, selection.Profile, root, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
 

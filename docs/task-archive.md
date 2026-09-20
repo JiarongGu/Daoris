@@ -1790,3 +1790,57 @@ twelve molecules is not.
 atoms (`Dot`, `MonoWell`, `MetaLine`), two pure helpers, seven molecules, six organisms, one page. The
 helper worth naming is **`SESSION_TONE`**: `QUEST_TONE` exists because a fifth quest status must not
 ship half-toned, and a session pill today is `live ? taken : neutral` — eight states wearing two tones.
+
+## SURF2 — the lock keys on the tree (2026-09-21)
+
+> The session record names the **tree** it runs in; `SessionStore.ActiveForAsync` and `SessionLedger`'s
+> two refusals key on that instead of the repository name, and both sentences name the tree that holds
+> it. **Nothing creates a tree yet** — every session's tree is the registered root, so behaviour is
+> identical and the family rehearsal proves it, which is the whole point of landing this separately.
+> The session store **adds a column** and preserves its rows. The tree path is **machine-local
+> material and inherits the transcript's three guards** — stripped for a non-loopback caller, absent
+> from the feed's shape, a literal NULL in the store's mirror — and the rehearsal's byte-level scan of
+> the remote store grows a third string to look for, beside the root and the profile name.
+
+✅ done 2026-09-21 — D51 in code. Service 248 → 258, family rehearsal 154 → 156, everything else
+unchanged and green.
+
+**What moved.** `Session` gains `Tree`; the store gains a `tree` column (ALTER, rows preserved, and
+the D49 rebuild path carries it); `ActiveForAsync` takes the tree; the ledger resolves and keys on it;
+`ServiceClient`, `Driver` and `ChatRunner` state the root they are about to spawn into; the HTTP
+request and response carry it, guarded. **The planner is untouched** — one *driven* session per
+repository, oldest quest first — because pacing a domain and preventing corruption are different jobs
+(D51), and the whole point of SURF2 is that it changes no behaviour at all.
+
+**Three choices the building settled.**
+
+- **Unknown means "possibly yours", on either side.** A row with no tree — anything from before D51,
+  or a record mirrored from a machine that rightly sent no path — holds *every* tree in its
+  repository, and an ask that names no tree is answered by any active session there. The lock errs
+  toward refusing, because a wrong refusal is a sentence naming what holds the tree and the other way
+  round is two agents in one working tree. It is one SQL clause (`$tree IS NULL OR tree IS NULL OR
+  tree = $tree`) and it is the reason the upgrade needs no backfill the store could not honestly make.
+- **Convergence comes from one source, not from clever comparison.** Both doors resolve an unstated
+  tree through the registration's root, so a caller that names the root and one that says nothing land
+  on the same key by construction. `Trees.Normalize` (trim, drop a trailing separator, keep a bare
+  root path whole) is the safety net, not the mechanism — and it deliberately does **not** fold case,
+  because a deployment may run where paths are case-sensitive and two real trees must not collapse.
+- **The refusal names the holder, never the holder's PATH.** A message is the one surface with no
+  strip on it: composed in Core and rendered verbatim wherever it lands, including a browser over a
+  keyed remote. So the sentence became "`x`'s working tree already has an active session — `<id>`
+  (working, quest `#…`). One session per working tree: two agents in one tree corrupt each other's git
+  state." Tested both ways — the wording, and the absence of the path.
+
+**Proven, not asserted.** Ten new tests in the service suite (two trees in one repository running at
+once; a stated root and an unstated one colliding; a trailing separator not being a second tree; a
+chat opening beside a driven session in a tree of its own; the conservative rule; the mirror dropping
+the tree; a pre-D51 record reading with none). The rehearsal gained two checks over the real host —
+**a second tree of the same repository is not blocked and the record names it**, and the remote store
+scanned specifically for a tree path — and its existing chat/driven lock checks passed unchanged,
+which is the claim that behaviour did not move.
+
+**Two things found by doing it.** `tools/desktop.mjs` was orphaning a service host on every restart
+(`docs/FIX-LOG.md`) — found because the orphans locked the assemblies this very build had to
+overwrite. And the Playwright suite aborted one worker with `0xC0000409` on the first run and passed
+clean on the next, which is a known family shape rather than anything this change touched; it is now
+**TEST1** in the backlog, held, rather than folklore.

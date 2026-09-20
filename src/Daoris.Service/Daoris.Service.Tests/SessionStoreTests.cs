@@ -75,7 +75,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Equal("logs/s1.txt", moved!.Transcript);
     }
 
-    /// <summary>The one-session-per-repository rule needs one question answered fast: who is active where.</summary>
+    /// <summary>The one-session-per-tree rule needs one question answered fast: who is active where.</summary>
     [Fact]
     public async Task The_active_session_for_a_repository_is_findable()
     {
@@ -86,6 +86,39 @@ public sealed class SessionStoreTests : IAsyncLifetime
 
         Assert.Equal(session.Id, active!.Id);
         Assert.Null(await _sessions.ActiveForAsync("Nobody"));
+    }
+
+    /// <summary>
+    /// Since D51 the question is per TREE: a repository may hold more than one, and a session in one
+    /// of them is not a session in another. The store answers; the ledger judges.
+    /// </summary>
+    [Fact]
+    public async Task The_active_session_is_asked_per_tree()
+    {
+        var main = await _sessions.CreateAsync("abc123", "Owner", "stub", Now, tree: "/trees/owner");
+
+        Assert.Equal(main.Id, (await _sessions.ActiveForAsync("Owner", "/trees/owner"))!.Id);
+        Assert.Null(await _sessions.ActiveForAsync("Owner", "/trees/owner-2"));
+        Assert.Equal("/trees/owner", (await _sessions.FindAsync(main.Id))!.Tree);
+    }
+
+    /// <summary>
+    /// Unknown means "possibly yours", on either side. A record that never said which tree it was in
+    /// — anything from before D51, or a record mirrored from a machine that rightly sent no path —
+    /// holds every tree in its repository, and an ASK that names no tree is answered by any of them.
+    /// The lock errs toward refusing, because the other way round is two agents in one working tree.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_nobody_named_is_answered_conservatively()
+    {
+        var unstated = await Create();
+
+        Assert.Equal(unstated.Id, (await _sessions.ActiveForAsync("Owner", "/trees/anywhere"))!.Id);
+        Assert.Equal(unstated.Id, (await _sessions.ActiveForAsync("Owner"))!.Id);
+
+        await _sessions.SetStateAsync(unstated.Id, SessionState.Completed, null, null, null, Now);
+        var stated = await _sessions.CreateAsync("def456", "Owner", "stub", Now, tree: "/trees/owner");
+        Assert.Equal(stated.Id, (await _sessions.ActiveForAsync("Owner"))!.Id);
     }
 
     /// <summary>A parked session still holds its repository: the person clearing it is the flow control.</summary>
@@ -203,18 +236,23 @@ public sealed class SessionStoreTests : IAsyncLifetime
     /// field for it, and the store would refuse it anyway. Two guards, one rule.
     /// </summary>
     [Fact]
-    public async Task A_mirrored_record_keeps_the_tool_version_and_never_the_account()
+    public async Task A_mirrored_record_keeps_the_tool_version_and_never_the_account_or_the_tree()
     {
         var fed = new Session(
             "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code",
             SessionState.Working, null, null, null, Now, Now,
-            HarnessVersion: "2.1.220 (Claude Code)", Profile: "alice-personal");
+            HarnessVersion: "2.1.220 (Claude Code)", Profile: "alice-personal",
+            // A tree is a PATH on somebody else's machine (D51) — the newest thing on the list the
+            // transcript started. The feed has no field for it, and this is the guard that holds even
+            // when a caller fills one in anyway.
+            Tree: "/home/alice/work/Owner");
 
         await _sessions.MirrorAsync(fed);
 
         var read = await _sessions.FindAsync("alice-laptop/ab12cd34");
         Assert.Equal("2.1.220 (Claude Code)", read!.HarnessVersion);
         Assert.Null(read.Profile);
+        Assert.Null(read.Tree);
     }
 
     /// <summary>A chat is the same row with no quest in it (D49 §3).</summary>
@@ -288,6 +326,9 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Equal("aurora", elder.Workspace);
         // Everything that predates kinds is driven — which is what it was.
         Assert.Equal(SessionKind.Driven, elder.Kind);
+        // …and everything that predates D51 names no tree, which the lock reads as "possibly any of
+        // them". A record of work that happened survives every column that arrives after it.
+        Assert.Null(elder.Tree);
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);

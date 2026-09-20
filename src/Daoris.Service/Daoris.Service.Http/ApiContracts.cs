@@ -55,15 +55,20 @@ public sealed record RegistrationResponse(
     string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch);
 // `Quest` is null for a chat (D49 §3) and `Kind` says which way in it was — the same record either
 // way, which is the point: a conversation is a session, not a second kind of thing.
-// `HarnessVersion` and `Profile` say which tool and which account produced this (D49 §4). The profile
-// is machine-local and guarded like the transcript beside it: it answers to the machine that ran the
-// session and travels no further.
+// `HarnessVersion` and `Profile` say which tool and which account produced this (D49 §4), and `Tree`
+// which working tree it held (D51). The profile and the tree are machine-local and guarded like the
+// transcript beside them: they answer to the machine that ran the session and travel no further — and
+// the tree is a filesystem path, which is the sharpest reason of the three.
 public sealed record SessionResponse(
     string Id, string? Quest, string Repository, string Adapter, string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
-    string Workspace, string Kind, string? HarnessVersion, string? Profile);
-public sealed record OpenSessionRequest(string Quest, string Adapter, string? HarnessVersion, string? Profile);
-public sealed record OpenChatRequest(string Repository, string? Adapter, string? HarnessVersion, string? Profile);
+    string Workspace, string Kind, string? HarnessVersion, string? Profile, string? Tree);
+// The tree comes IN from the driver, which is the half that knows: the service has no checkout to
+// look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
+public sealed record OpenSessionRequest(
+    string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree);
+public sealed record OpenChatRequest(
+    string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 // `Quest` is null for a chat and `Kind` says which it was (D49 §3) — both travel, because a teammate

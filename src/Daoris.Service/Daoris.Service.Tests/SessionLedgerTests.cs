@@ -20,6 +20,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     private SessionLedger _ledger = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-19T10:00:00Z");
 
+    /// <summary>The registered root — `Owner`'s main tree, and what an unstated open resolves to.</summary>
+    private const string MainTree = "/trees/owner";
+
     public async Task InitializeAsync()
     {
         _connection = new SqliteConnection("Data Source=:memory:");
@@ -33,8 +36,11 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, registry: new Registry());
+        // With a ROOT, because since D51 the lock keys on the tree a session runs in and an open that
+        // names none resolves the registration's — so the fixture has to have one for that path to be
+        // exercised at all.
         await service.RegisterAsync(
-            new Registration("Owner", Adopted: true, "A repo.", [], [], [], Entries: 0), Now);
+            new Registration("Owner", Adopted: true, "A repo.", [], [], [], Entries: 0, Root: MainTree), Now);
 
         _ledger = new SessionLedger(_quests, _sessions, service);
     }
@@ -104,9 +110,9 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, outcome.Refusal);
     }
 
-    /// <summary>One session per repository: the working tree is the unit of exclusion (D46).</summary>
+    /// <summary>One session per working tree — the unit of exclusion (D51, D46 before it).</summary>
     [Fact]
-    public async Task A_busy_repository_refuses_a_second_session_and_names_the_first()
+    public async Task A_busy_tree_refuses_a_second_session_and_names_the_first()
     {
         var first = await Publish(title: "First ask");
         var second = await Publish(title: "Second ask");
@@ -116,6 +122,134 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         Assert.Equal(SessionOpenRefusal.RepositoryBusy, outcome.Refusal);
         Assert.Contains(opened.Session!.Id, outcome.Message);
+    }
+
+    // ——— The tree is the unit of exclusion (D51). What was two claims welded together — "two agents
+    // in one working tree corrupt it" and "a repository has one working tree" — is now one claim and
+    // a fact about the registry. Nothing here creates a tree; that is SURF3.
+
+    /// <summary>
+    /// The refusal names the SESSION holding the tree, never the tree's PATH. A path is machine-local
+    /// material (D47 §4), and a message is the one surface with no strip on it: it is composed here
+    /// and rendered verbatim wherever it lands, including a browser over a keyed remote.
+    /// </summary>
+    [Fact]
+    public async Task A_busy_refusal_names_the_holder_and_never_a_path()
+    {
+        var first = await Publish(title: "First ask");
+        var second = await Publish(title: "Second ask");
+        var opened = await _ledger.OpenAsync(first.Id, "stub", Now);
+
+        var driven = await _ledger.OpenAsync(second.Id, "stub", Now);
+        var chat = await _ledger.OpenChatAsync("Owner", "stub", Now);
+
+        Assert.Contains(opened.Session!.Id, driven.Message);
+        Assert.DoesNotContain(MainTree, driven.Message);
+        Assert.DoesNotContain(MainTree, chat.Message);
+    }
+
+    /// <summary>
+    /// The record says which tree it ran in, because that is what the lock is keyed on and what a
+    /// person reviewing it wants to know. Unstated resolves to the registration's root.
+    /// </summary>
+    [Fact]
+    public async Task A_session_that_names_no_tree_runs_in_the_registered_root()
+    {
+        var quest = await Publish();
+
+        var outcome = await _ledger.OpenAsync(quest.Id, "stub", Now);
+
+        Assert.Equal(MainTree, outcome.Session!.Tree);
+    }
+
+    [Fact]
+    public async Task A_chat_that_names_no_tree_runs_in_the_registered_root_too()
+    {
+        var outcome = await _ledger.OpenChatAsync("Owner", "stub", Now);
+
+        Assert.Equal(MainTree, outcome.Session!.Tree);
+    }
+
+    /// <summary>
+    /// The point of D51, testable before a tree is ever created: two sessions in ONE repository, in
+    /// two trees, is not the corruption the lock exists to prevent.
+    /// </summary>
+    [Fact]
+    public async Task Two_trees_in_one_repository_run_at_once()
+    {
+        var first = await Publish(title: "First ask");
+        var second = await Publish(title: "Second ask");
+        await _ledger.OpenAsync(first.Id, "stub", Now, tree: MainTree);
+
+        var outcome = await _ledger.OpenAsync(second.Id, "stub", Now, tree: "/trees/owner-session-2");
+
+        Assert.Equal(SessionOpenRefusal.None, outcome.Refusal);
+    }
+
+    /// <summary>
+    /// …and the half that keeps it safe: an open that STATES the root and one that leaves it unsaid
+    /// are the same tree, so the second is refused. They converge because the ledger resolves both
+    /// through the registry rather than comparing what it was handed.
+    /// </summary>
+    [Fact]
+    public async Task A_stated_root_and_an_unstated_one_are_the_same_tree()
+    {
+        var first = await Publish(title: "First ask");
+        var second = await Publish(title: "Second ask");
+        await _ledger.OpenAsync(first.Id, "stub", Now);
+
+        var outcome = await _ledger.OpenAsync(second.Id, "stub", Now, tree: MainTree);
+
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, outcome.Refusal);
+    }
+
+    /// <summary>A trailing separator is not a different tree, and a comparison that said so would
+    /// hand two agents one working tree on a technicality.</summary>
+    [Fact]
+    public async Task A_trailing_separator_is_the_same_tree()
+    {
+        var first = await Publish(title: "First ask");
+        var second = await Publish(title: "Second ask");
+        await _ledger.OpenAsync(first.Id, "stub", Now, tree: MainTree);
+
+        var outcome = await _ledger.OpenAsync(second.Id, "stub", Now, tree: $"{MainTree}/");
+
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, outcome.Refusal);
+    }
+
+    /// <summary>
+    /// A chat holds a tree exactly as driven work does — and a chat in a SECOND tree is the thing
+    /// D51 was decided for: the person and the driver working in one repository at once.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_opens_beside_a_driven_session_when_it_has_a_tree_of_its_own()
+    {
+        var quest = await Publish();
+        await _ledger.OpenAsync(quest.Id, "stub", Now);
+
+        var beside = await _ledger.OpenChatAsync("Owner", "stub", Now, tree: "/trees/owner-chat");
+        var sameTree = await _ledger.OpenChatAsync("Owner", "stub", Now);
+
+        Assert.Equal(SessionOpenRefusal.None, beside.Refusal);
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, sameTree.Refusal);
+    }
+
+    /// <summary>
+    /// The conservative half: a record that never said which tree it was in holds the WHOLE
+    /// repository. Unknown means "possibly yours", and the lock errs toward refusing — the cost of
+    /// being wrong the other way is two agents in one tree.
+    /// </summary>
+    [Fact]
+    public async Task A_session_with_no_tree_recorded_holds_every_tree()
+    {
+        // Straight to the store, because the ledger always resolves one: this is the pre-D51 record,
+        // or one mirrored from a machine that knew better than to send a path.
+        await _sessions.CreateAsync("abc123", "Owner", "stub", Now);
+        var quest = await Publish();
+
+        var outcome = await _ledger.OpenAsync(quest.Id, "stub", Now, tree: "/trees/somewhere-else");
+
+        Assert.Equal(SessionOpenRefusal.RepositoryBusy, outcome.Refusal);
     }
 
     [Fact]
@@ -315,7 +449,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         var outcome = await _ledger.OpenChatAsync("Owner", "stub", Now);
 
         Assert.Equal(SessionOpenRefusal.RepositoryBusy, outcome.Refusal);
-        Assert.Contains("one session per repository", outcome.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("one session per working tree", outcome.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>…and the same in reverse: a conversation holds the tree exactly as driven work does.</summary>

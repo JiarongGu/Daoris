@@ -94,11 +94,11 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                     ? kind
                     : SessionKind.Driven,
                 record.HarnessVersion,
-                // No profile, structurally: the fed record has no field for one, and the store's
-                // mirror writes a literal NULL. Two guards for one rule, the same doubling the
-                // transcript gets — because a name a person chose for themselves is the kind of thing
-                // that leaks through whichever half somebody forgot.
-                Profile: null), ct)
+                // No profile and no tree, structurally: the fed record has no field for either, and
+                // the store's mirror writes literal NULLs. Two guards for one rule, the same doubling
+                // the transcript gets — because a name a person chose for themselves, or a path on
+                // their disk, is the kind of thing that leaks through whichever half somebody forgot.
+                Profile: null, Tree: null), ct)
                 .ConfigureAwait(false);
         }
 

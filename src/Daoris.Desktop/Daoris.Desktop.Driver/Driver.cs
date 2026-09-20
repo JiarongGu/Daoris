@@ -129,7 +129,11 @@ public sealed class Driver(
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
         var (sessionId, message) = await service
-            .OpenSessionAsync(quest.Id, config.Adapter, selection.Version, selection.Profile, ct)
+            // The tree this spawn will hold (D51) — the registered root today, which is what the
+            // planner resolved and what the clean-tree check above was asked of. Stated rather than
+            // left to the service to infer, because this side is the one that knows where it is
+            // about to run a process.
+            .OpenSessionAsync(quest.Id, config.Adapter, selection.Version, selection.Profile, root, ct)
             .ConfigureAwait(false);
         if (sessionId is null)
         {

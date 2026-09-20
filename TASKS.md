@@ -41,8 +41,8 @@ CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANO
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-203 CLI tests, 248 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **154/154 family rehearsal** including the
+203 CLI tests, 258 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **156/156 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
@@ -119,9 +119,11 @@ contributor without Daoris cannot do.
 **The arc is closed and reviewed (REV2), the owner set the next direction — the desktop becomes a
 working surface — and SURF1 has designed it (2026-09-21).** The contract is
 `docs/2026-09-21-working-surface-design.md`; the decisions are **D51** (the isolation model, settled
-first because everything follows from it) and **D52** (the surface). **The next work is SURF2** — the
-lock keys on the tree, with behaviour deliberately unchanged — and then SURF3–SURF6 in order. Read the
-contract and both decisions before picking any of them up; each item cites its sections.
+first because everything follows from it) and **D52** (the surface). **SURF2 has landed** (2026-09-21):
+the lock keys on the tree, the record names it, and nothing creates one — behaviour is identical and
+the rehearsal proves it. **The next work is SURF3** — session trees — and then SURF4a–d, SURF5, SURF6
+in order. Read the contract and both decisions before picking any of them up; each item cites its
+sections.
 
 Smaller and independent of them: **CANON7** (a decision to bring the owner rather than work to do — it
 takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only) or
@@ -213,7 +215,7 @@ its trigger has arrived. Nothing is pushed or published, and a release is still 
 - **Verify before claiming done, always:** `npm run verify` (CLI 203 + `check` + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (130), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (39), `npm run rehearse:family` (154/154), `npm run test:web` (55 + 9). If a `bin`-driven gate is red
+  (130), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (39), `npm run rehearse:family` (156/156), `npm run test:web` (55 + 9). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -228,24 +230,15 @@ session-sized landing, TDD, gates green, moved to the archive on completion.
 ### The working surface — the build order (D51/D52, designed 2026-09-21)
 
 The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
-them in order**: SURF2 moves the lock without changing behaviour, which is what makes SURF3 safe.
+them in order.** SURF2 is done (2026-09-21, in the archive): the lock keys on the tree, with no
+behaviour changed — which is what makes SURF3 safe.
 Everything with a screen in it also follows `docs/2026-09-21-working-surface-components.md` — the
 surface is built **component by component**, each with its story and its own test, because a rail, a
 head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
 thing that renders is the last thing.
 
-- [ ] **SURF2 — the lock keys on the tree** (design §2, D51). The session record names the **tree** it
-  runs in; `SessionStore.ActiveForAsync` and `SessionLedger`'s two refusals key on that instead of the
-  repository name, and both sentences name the tree that holds it. **Nothing creates a tree yet** —
-  every session's tree is the registered root, so behaviour is identical and the family rehearsal
-  proves it, which is the whole point of landing this separately. The session store **adds a column**
-  and preserves its rows (a record is the reviewable trace of work that happened; nothing can
-  re-derive it). The tree path is **machine-local material and inherits the transcript's three
-  guards** — stripped for a non-loopback caller, absent from the feed's shape, a literal NULL in the
-  store's mirror — and the rehearsal's byte-level scan of the remote store grows a third string to
-  look for, beside the root and the profile name.
-
-- [ ] **SURF3 — session trees** (design §2, D51). `git worktree` under
+- [ ] **SURF3 — session trees** (design §2, D51). **SURF2 has landed** — the lock keys on the tree,
+  the record names it, and nothing creates one yet, which is what this item is for. `git worktree` under
   `~/.daoris/trees/<workspace>/<repository>/`, created **only on request** and opt-in per repository,
   with both editors (D50: the desktop, and a `daoris driver` verb). Branch named for the session,
   never reused, based on the canonical line as WSP4 already resolves it — falling back to the root's
@@ -373,6 +366,18 @@ passing props — and a test asserts it, so it cannot quietly stop being true.
   larger — so canonizing still waits on a D28-shaped split of principle from detail, or lands as pack
   knowledge for web repositories, which is where it most likely belongs anyway. **Its trigger is
   CANON7**: the budget question is the reason this is held, so settle that first.
+
+- [ ] **TEST1 — the Playwright suite aborted a worker once with `0xC0000409`.** Seen once
+  (2026-09-21, during SURF2): the run died mid-suite with `worker process exited unexpectedly
+  (code=3221226505)` — Windows `__fastfail`, which produces no output, no stack and no WER entry — and
+  the identical run passed 9/9 immediately after. The test it died on touches session records, which
+  is why it was not dismissed on sight; the assertion it would have made passed on the re-run and the
+  change it was suspected of is covered by 258 service tests and 156 rehearsal checks. **A family
+  sibling has the same abort documented at ~1.5% of e2e runs with a standing reproducer** (spawn a
+  server, poll it, kill it — it fires about 1 in 300 rounds, 4-way concurrent), so the shape is known
+  and is not this repository's to diagnose from one occurrence. **Its trigger is a second sighting**:
+  if it recurs, capture the Playwright HTML report and compare against the sibling's notes before
+  changing anything. Do not tune timeouts on one data point.
 
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until

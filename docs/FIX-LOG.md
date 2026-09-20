@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The desktop dev loop orphaned a service host on every restart (2026-09-21)
+
+**Symptom.** `dotnet build src/Daoris.Service/Daoris.Service.Http` failed on a file copy: MSB3027,
+"the file is locked by: daoris-knowledge-http (22216), daoris-knowledge-http (20600)". Two hosts from
+this workspace's build were running with no window anywhere — and nobody had started them by hand.
+
+**Root cause.** `tools/desktop.mjs kill|restart` stopped the shell with `Stop-Process -Force`. The
+shell **owns** the host it spawns (`OnStopping`: end the driver loop, then `HostSupervisor.Stop()`),
+and a forced kill skips that path entirely, so each restart left a host behind holding its port, its
+store and a file lock on the assemblies the next build must overwrite. Every run of the day's tooling
+added one. Nothing reported it, because an orphaned host answers `/api/status` perfectly well.
+
+**Fix.** Close the main window first — the same path a person's × takes — and wait; force only as the
+backstop after eight seconds. The tool still **never touches a host directly**: a host it did not
+start belongs to whoever did, which is the distinction the supervisor itself draws (adopt, never
+double-start). `doctor` now names a host running with no shell of this checkout, and says whose it
+might be, rather than killing it.
+
+**The trap to inherit:** a forced kill is not "the same thing, faster" for any process that owns
+another. The teardown *is* the feature. And the damage here was invisible until an unrelated build
+failed, which is how orphan bugs are usually found — count what is running before assuming a stop
+stopped something.
+
 ## Every desktop refusal reached the person as a generic failure (2026-09-20)
 
 **Symptom.** Found by the first tests the shell's IPC modules had ever had. A module refuses by

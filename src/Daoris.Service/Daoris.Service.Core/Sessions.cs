@@ -82,12 +82,17 @@ public enum SessionKind
 /// Which named credential profile the session ran as (D49 §4) — a NAME, never a path and never
 /// anything from inside the profile.
 /// </param>
+/// <param name="Tree">
+/// The working tree this session holds (D51) — <b>the unit of exclusion</b>, and what the ledger keys
+/// the lock on. Null means the repository's main tree, whose path this deployment may not know: a
+/// record from before D51, or one mirrored from another machine.
+/// </param>
 /// <remarks>
-/// <b>The profile name is machine-local, and is guarded exactly as the transcript is</b> (D47 §4): it
-/// answers "which account did this run as" to the machine that ran it, and travels no further. It is
-/// wiring in the sense D48 §2 draws — WHERE and WHO are the machine's and the account's — and it is
-/// the one field here a person might well name after themselves. The version is a fact about a tool
-/// and travels; this is not.
+/// <b>The profile name and the tree are machine-local, and are guarded exactly as the transcript
+/// is</b> (D47 §4). The profile answers "which account did this run as" to the machine that ran it;
+/// the tree is a filesystem path, which is the sharpest reason of the three. Both are wiring in the
+/// sense D48 §2 draws — WHERE and WHO are the machine's and the account's. The version is a fact
+/// about a tool and travels; these do not.
 /// </remarks>
 public sealed record Session(
     string Id,
@@ -103,7 +108,8 @@ public sealed record Session(
     string Workspace = Workspaces.Default,
     SessionKind Kind = SessionKind.Driven,
     string? HarnessVersion = null,
-    string? Profile = null)
+    string? Profile = null,
+    string? Tree = null)
 {
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
@@ -173,7 +179,10 @@ public sealed class SessionStore
                   -- D49 §4: which tool, and which account. Written once at spawn and never moved —
                   -- a record of what ran, not a field a later state change may revise.
                   harness_version TEXT NULL,
-                  profile         TEXT NULL
+                  profile         TEXT NULL,
+                  -- D51: which working tree it holds. Null means the repository's main tree, whose
+                  -- path this deployment may not know — and the lock reads that conservatively.
+                  tree            TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
                 """;
@@ -182,13 +191,15 @@ public sealed class SessionStore
 
         // Records made before a column existed must survive its arrival: a session record is the
         // reviewable trace of work that actually happened, and a store that dropped them on an upgrade
-        // would lose exactly the history the person reviews. Workspaces came with D48, kinds with D49.
+        // would lose exactly the history the person reviews. Workspaces came with D48, kinds with D49,
+        // the tree with D51.
         foreach (var (column, definition) in new[]
         {
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
             ("kind", $"kind TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'"),
             ("harness_version", "harness_version TEXT NULL"),
             ("profile", "profile TEXT NULL"),
+            ("tree", "tree TEXT NULL"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -241,11 +252,12 @@ public sealed class SessionStore
               workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
               kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}',
               harness_version TEXT NULL,
-              profile         TEXT NULL
+              profile         TEXT NULL,
+              tree            TEXT NULL
             );
             INSERT INTO sessions_relaxed
               SELECT id, quest, repository, adapter, state, note, evidence, transcript, created,
-                     updated, workspace, kind, harness_version, profile
+                     updated, workspace, kind, harness_version, profile, tree
               FROM sessions;
             DROP TABLE sessions;
             ALTER TABLE sessions_relaxed RENAME TO sessions;
@@ -261,24 +273,26 @@ public sealed class SessionStore
     public async Task<Session> CreateAsync(
         string? quest, string repository, string adapter, DateTimeOffset now,
         string? workspace = null, SessionKind kind = SessionKind.Driven,
-        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
+        string? harnessVersion = null, string? profile = null, string? tree = null,
+        CancellationToken ct = default)
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
             SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
-            // Written at creation and never again: these say what the spawn ran ON and AS, and a
+            // Written at creation and never again: these say what the spawn ran ON, AS and IN, and a
             // later state change is about how it ended, not about what it was.
-            Blank(harnessVersion), Blank(profile));
+            Blank(harnessVersion), Blank(profile), Trees.Normalize(tree));
 
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree)
             """;
         command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$kind", session.Kind.ToString());
         command.Parameters.AddWithValue("$harnessVersion", (object?)session.HarnessVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$profile", (object?)session.Profile ?? DBNull.Value);
+        command.Parameters.AddWithValue("$tree", (object?)session.Tree ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", session.Id);
         command.Parameters.AddWithValue("$quest", (object?)session.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", session.Repository);
@@ -337,17 +351,17 @@ public sealed class SessionStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL)
             ON CONFLICT (id) DO UPDATE SET
               state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace,
               kind = $kind, harness_version = $harnessVersion
             """;
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(record.Workspace));
         command.Parameters.AddWithValue("$kind", record.Kind.ToString());
-        // The version crosses; the PROFILE NAME never does — machine-local, like the transcript beside
-        // it (D47 §4). Written as a literal NULL rather than from the record, so a caller that filled
-        // the field cannot make it travel by accident.
+        // The version crosses; the PROFILE NAME and the TREE never do — machine-local, like the
+        // transcript beside them (D47 §4, D51). Written as literal NULLs rather than from the record,
+        // so a caller that filled either field cannot make it travel by accident.
         command.Parameters.AddWithValue("$harnessVersion", (object?)record.HarnessVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", record.Id);
         command.Parameters.AddWithValue("$quest", (object?)record.Quest ?? DBNull.Value);
@@ -370,15 +384,31 @@ public sealed class SessionStore
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }
 
-    /// <summary>The session holding a repository, if any — the one-session-per-repository question.</summary>
-    public async Task<Session?> ActiveForAsync(string repository, CancellationToken ct = default)
+    /// <summary>
+    /// The session holding a working tree, if any — the one-session-per-TREE question (D51).
+    /// </summary>
+    /// <param name="tree">
+    /// Which tree is being asked about. Null is the repository's main tree, path unknown.
+    /// </param>
+    /// <remarks>
+    /// <b>Unknown means "possibly yours", on either side.</b> A stored row with no tree — anything
+    /// from before D51, or a record mirrored from a machine that rightly sent no path — holds every
+    /// tree in its repository; and an ask that names no tree is answered by any active session there.
+    /// The lock errs toward refusing, because a refusal is a sentence naming what holds the tree and
+    /// the other way round is two agents in one working tree.
+    /// </remarks>
+    public async Task<Session?> ActiveForAsync(
+        string repository, string? tree = null, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             SELECT * FROM sessions
-            WHERE repository = $repository AND state IN ({ActiveStates}) LIMIT 1
+            WHERE repository = $repository AND state IN ({ActiveStates})
+              AND ($tree IS NULL OR tree IS NULL OR tree = $tree)
+            LIMIT 1
             """;
         command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$tree", (object?)Trees.Normalize(tree) ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }
@@ -431,7 +461,8 @@ public sealed class SessionStore
             : SessionKind.Driven,
         reader.IsDBNull(reader.GetOrdinal("harness_version"))
             ? null : reader.GetString(reader.GetOrdinal("harness_version")),
-        reader.IsDBNull(reader.GetOrdinal("profile")) ? null : reader.GetString(reader.GetOrdinal("profile")));
+        reader.IsDBNull(reader.GetOrdinal("profile")) ? null : reader.GetString(reader.GetOrdinal("profile")),
+        reader.IsDBNull(reader.GetOrdinal("tree")) ? null : reader.GetString(reader.GetOrdinal("tree")));
 
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
     private static string? Blank(string? value) =>

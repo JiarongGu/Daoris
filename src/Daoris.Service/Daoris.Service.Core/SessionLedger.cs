@@ -61,9 +61,15 @@ public sealed record SessionAdvanceOutcome(SessionAdvanceRefusal Refusal, string
 /// indistinguishable at the quest layer, and what keeps outside development first-class. The ledger
 /// only reads the quest, to refuse starting work someone else already has.</para>
 ///
-/// <para><b>One active session per repository.</b> Two agents in one working tree corrupt each other's
-/// git state, so the tree is the unit of exclusion. A parked session still holds its repository: the
-/// person clearing it is the flow control, not an inconvenience to route around.</para>
+/// <para><b>One active session per working TREE</b> (D51). Two agents in one working tree corrupt each
+/// other's git state — that is the reason, and it does not move. What moved is the other half: a
+/// repository has as many trees as it has, so the lock keys on the tree rather than on the name of the
+/// repository that owns it. A parked session still holds its tree: the person clearing it is the flow
+/// control, not an inconvenience to route around.</para>
+///
+/// <para><b>An unstated tree resolves through the registry</b>, at both doors — which is what makes two
+/// sessions in one tree collide by construction rather than by string comparison, and what keeps
+/// behaviour identical for every caller that has not learned about trees yet.</para>
 /// </remarks>
 public sealed class SessionLedger(QuestStore quests, SessionStore sessions, KnowledgeService? registry = null)
 {
@@ -84,7 +90,8 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
     /// </remarks>
     public async Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
+        string? harnessVersion = null, string? profile = null, string? tree = null,
+        CancellationToken ct = default)
     {
         var known = registry is null
             ? null
@@ -100,22 +107,25 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
                 Session: null);
         }
 
-        var active = await sessions.ActiveForAsync(known.Repository, ct).ConfigureAwait(false);
+        // Unstated means the registered root — this repository's main tree (D51). Resolved here rather
+        // than taken on trust, so a caller that names the root and one that says nothing land on the
+        // same key instead of holding one tree twice.
+        var holding = Trees.Normalize(tree) ?? Trees.Normalize(known.Root);
+
+        var active = await sessions.ActiveForAsync(known.Repository, holding, ct).ConfigureAwait(false);
         if (active is not null)
         {
             return new(
                 SessionOpenRefusal.RepositoryBusy,
-                $"`{known.Repository}` already has an active session — `{active.Id}` "
-                + $"({Spell(active.State)}{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). "
-                + "One session per repository: the working tree is the unit of exclusion, and that is "
-                + "true of a conversation exactly as it is of driven work.",
+                Busy(known.Repository, active) + " That is true of a conversation exactly as it is of "
+                + "driven work.",
                 Session: null);
         }
 
         var session = await sessions
             .CreateAsync(
                 null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
-                harnessVersion, profile, ct)
+                harnessVersion, profile, holding, ct)
             .ConfigureAwait(false);
 
         return new(
@@ -130,7 +140,8 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
     /// </summary>
     public async Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
-        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
+        string? harnessVersion = null, string? profile = null, string? tree = null,
+        CancellationToken ct = default)
     {
         var quest = await quests.FindAsync(questId.TrimStart('#'), ct).ConfigureAwait(false);
         if (quest is null)
@@ -151,15 +162,14 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
                 Session: null);
         }
 
-        var active = await sessions.ActiveForAsync(quest.To, ct).ConfigureAwait(false);
+        // The same resolution as a chat's, through the same registry, for the same reason: two doors
+        // onto one tree must agree about which tree that is.
+        var holding = Trees.Normalize(tree) ?? Trees.Normalize(await RootOfAsync(quest.To, ct).ConfigureAwait(false));
+
+        var active = await sessions.ActiveForAsync(quest.To, holding, ct).ConfigureAwait(false);
         if (active is not null)
         {
-            return new(
-                SessionOpenRefusal.RepositoryBusy,
-                $"`{quest.To}` already has an active session — `{active.Id}` ({Spell(active.State)}"
-                + $"{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). One session "
-                + "per repository: the working tree is the unit of exclusion.",
-                Session: null);
+            return new(SessionOpenRefusal.RepositoryBusy, Busy(quest.To, active), Session: null);
         }
 
         // The record's circle is the quest's circle — derived, never passed beside it, so a record can
@@ -167,7 +177,7 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
         var session = await sessions
             .CreateAsync(
                 quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
-                harnessVersion, profile, ct)
+                harnessVersion, profile, holding, ct)
             .ConfigureAwait(false);
 
         return new(
@@ -225,6 +235,33 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
             SessionAdvanceRefusal.None,
             $"Session `{moved!.Id}` is now {Spell(moved.State)}.",
             moved);
+    }
+
+    /// <summary>
+    /// The busy sentence, phrased once for both doors (D51).
+    /// </summary>
+    /// <remarks>
+    /// <b>It names the SESSION holding the tree, never the tree's PATH.</b> A path is machine-local
+    /// material (D47 §4) and a refusal is the one surface with no strip on it: it is composed here and
+    /// rendered verbatim wherever it lands. The session id is the actionable half anyway — it is what
+    /// a person stops, and what the record they should read is filed under.
+    /// </remarks>
+    private static string Busy(string repository, Session active) =>
+        $"`{repository}`'s working tree already has an active session — `{active.Id}` "
+        + $"({Spell(active.State)}{(active.Quest is null ? ", a chat" : $", quest `#{active.Quest}`")}). "
+        + "One session per working tree: two agents in one tree corrupt each other's git state.";
+
+    /// <summary>
+    /// Where this repository's main tree is, as this machine's registry knows it — null when nothing
+    /// is registered, which the lock reads conservatively rather than as "any tree is free".
+    /// </summary>
+    private async Task<string?> RootOfAsync(string repository, CancellationToken ct)
+    {
+        if (registry is null) return null;
+
+        return (await registry.RegistryAsync(ct: ct).ConfigureAwait(false))
+            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            ?.Root;
     }
 
     /// <summary>

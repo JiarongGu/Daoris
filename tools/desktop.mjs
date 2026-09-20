@@ -209,8 +209,23 @@ const running = (exe) => {
   return out.split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
 };
 
-const stopAll = (exe) => powershell(
-  `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${exe}' } | Stop-Process -Force`);
+/**
+ * Stop the shells from this checkout — by ASKING first.
+ *
+ * ⚠ A forced kill skips the app's own teardown, and the teardown is what stops the service host the
+ * shell spawned (`OnStopping`: the driver loop, then the host it owns). Orphaned, that host keeps the
+ * port and holds a file lock on the very assemblies the next `build` has to overwrite — which is how
+ * this was found: two hosts left over from earlier runs made `dotnet build` fail on a copy.
+ *
+ * Closing the main window runs the same path a person's × does. The force is the backstop, not the
+ * method — and nothing here ever touches a host directly, because a host this tool did not start
+ * belongs to whoever did (the shell's own supervisor makes exactly that distinction).
+ */
+const stopAll = (exe) => powershell(`
+  Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${exe}' } | ForEach-Object {
+    $_.CloseMainWindow() | Out-Null
+    if (-not $_.WaitForExit(8000)) { $_ | Stop-Process -Force }
+  }`);
 
 const readRun = () => (existsSync(RUN_FILE) ? JSON.parse(readFileSync(RUN_FILE, 'utf8')) : null);
 
@@ -361,6 +376,14 @@ function doctor() {
   console.log('\nrunning');
   const live = process.platform === 'win32' ? running(shell) : [];
   console.log(`  this checkout    ${live.length ? `pid ${live.join(', ')}` : 'nothing'}`);
+  // A host with no shell is usually an orphan — a shell that died without its teardown. It is NOT
+  // killed here: this tool did not start it, and it may be a gate's. Named, so the person can act.
+  const hosts = process.platform === 'win32' ? running(host) : [];
+  if (hosts.length && !live.length) {
+    console.log(`  ⚠ service host   pid ${hosts.join(', ')} — running with no shell of this checkout.`);
+    console.log('    It holds the port and a lock on the assemblies `build` overwrites. Stop it if it');
+    console.log('    is yours: Get-Process daoris-knowledge-http | Stop-Process');
+  }
   if (state) {
     console.log(`  last run         ${state.started} · ${state.serviceUrl} · debug ${state.cdpPort}`
       + `${state.real ? ' · --real' : ''}`);

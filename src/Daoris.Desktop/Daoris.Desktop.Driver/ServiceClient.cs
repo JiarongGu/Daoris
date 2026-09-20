@@ -75,7 +75,7 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? harnessVersion = null, string? profile = null,
-        CancellationToken ct = default)
+        string? tree = null, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
@@ -86,6 +86,9 @@ public sealed class ServiceClient : IDisposable
             // at. Omitted when unknown rather than sent blank, as every optional field here is.
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
             if (profile is not null) writer.WriteString("profile", profile);
+            // Which working tree this spawn will hold (D51). The same split: the service has no
+            // checkout to look at, and this side is about to run a process in one.
+            if (tree is not null) writer.WriteString("tree", tree);
             writer.WriteEndObject();
         });
 
@@ -111,7 +114,7 @@ public sealed class ServiceClient : IDisposable
     /// </summary>
     public async Task<(string? SessionId, string Message)> OpenChatAsync(
         string repository, string adapter, string? harnessVersion = null, string? profile = null,
-        CancellationToken ct = default)
+        string? tree = null, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
@@ -120,6 +123,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteString("adapter", adapter);
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
             if (profile is not null) writer.WriteString("profile", profile);
+            if (tree is not null) writer.WriteString("tree", tree);
             writer.WriteEndObject();
         });
 

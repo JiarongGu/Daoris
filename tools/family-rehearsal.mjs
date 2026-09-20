@@ -1073,15 +1073,18 @@ check(
 const ownRecords = await api('GET', '/api/sessions?repository=borealis&includeClosed=true',
   { base: HOST_B_BASE });
 check(
-  'machine b’s own record names the account it ran as, and the tool that ran it',
+  'machine b’s own record names the account it ran as, the tool that ran it, and the TREE it held',
   (ownRecords.json ?? []).some((s) => s.profile === 'mach-b-account'
-    && s.harnessVersion === 'stub-harness 1.0.0'),
+    && s.harnessVersion === 'stub-harness 1.0.0'
+    // The tree is the unit of exclusion since D51, and the record says which one it was — answered
+    // to the machine that ran the session, like the profile and the transcript beside it.
+    && s.tree === borealis),
   ownRecords.text,
 );
 check(
-  '…and the fed record carries the tool version but never the account name',
+  '…and the fed record carries the tool version but never the account name or the tree',
   fedRecords.some((s) => s.harnessVersion === 'stub-harness 1.0.0')
-    && fedRecords.every((s) => !s.profile),
+    && fedRecords.every((s) => !s.profile && !s.tree),
   remoteSessions.text,
 );
 
@@ -1101,8 +1104,16 @@ check(
 if (remoteHost && !remoteHost.killed) remoteHost.kill();
 await sleep(700);
 const remoteBytes = readFileSync(remoteDb, 'latin1');
-check('the remote store holds no machine path at all', !remoteBytes.includes('_fixtures'),
+// Every machine path at once: the registration's root, a session's transcript, and — since D51 — the
+// working TREE a session held. All three live under the scratch root, so one scan answers for all of
+// them; the tree gets its own check below because a new field is exactly the kind of thing that
+// starts travelling without anyone noticing.
+check('the remote store holds no machine path at all — root, transcript or tree',
+  !remoteBytes.includes('_fixtures'),
   'a path fragment reached the remote store');
+check('…and specifically not the working tree a session held',
+  !remoteBytes.includes(borealis),
+  'a session tree path reached the remote store');
 check('…and none of the knowledge that was kept home', !remoteBytes.includes('keeps this lesson at home'),
   'unshared knowledge reached the remote store');
 // The account a session ran as is the newest thing on this list, and the one most likely to be a
@@ -1555,9 +1566,13 @@ const firstChat = await api('POST', '/api/sessions/chat', { body: { repository: 
 const secondChat = await api('POST', '/api/sessions/chat', { body: { repository: 'newcomer', adapter: 'stub' } });
 check('a chat opens through the ordinary door', firstChat.status === 200, firstChat.text);
 check(
-  'a second conversation in the same repository is refused, naming what holds it',
+  'a second conversation in the same TREE is refused, naming what holds it',
   secondChat.status === 409 && /newcomer/.test(secondChat.text)
-    && /one session per repository/i.test(secondChat.text),
+    // The sentence moved with the lock (D51): the repository was never the reason, the tree was.
+    && /one session per working tree/i.test(secondChat.text)
+    // …and it names the holder, never the holder's PATH — a refusal is the one surface with no
+    // strip on it, so a machine path in it would travel wherever the sentence travels (D47 §4).
+    && !secondChat.text.includes('_fixtures'),
   secondChat.text,
 );
 // A fresh, OPEN quest for the same repository — the driven door refuses on quest state before it
@@ -1578,6 +1593,20 @@ check(
   chatBlocksDriven.status === 409 && /a chat/.test(chatBlocksDriven.text),
   chatBlocksDriven.text,
 );
+
+// …and the other half of D51, over the real door: the lock is the TREE, not the repository, so a
+// session in a second tree of the same repository is not the collision the rule exists to prevent.
+// Nothing creates a tree yet (that is SURF3) — this states one, which is what a driver will do.
+const besideIt = await api('POST', '/api/sessions/chat', {
+  body: { repository: 'newcomer', adapter: 'stub', tree: join(scratch, 'trees', 'newcomer-2') },
+});
+check(
+  'a second tree of the same repository is not blocked, and the record names it',
+  besideIt.status === 200
+    && besideIt.json?.session?.tree === join(scratch, 'trees', 'newcomer-2'),
+  besideIt.text,
+);
+await api('POST', `/api/sessions/${besideIt.json?.session?.id}/state`, { body: { state: 'stopped' } });
 
 // Put the tree back: a queued record with no process would hold the repository forever.
 await api('POST', `/api/sessions/${firstChat.json?.session?.id}/state`, { body: { state: 'stopped' } });
@@ -1820,5 +1849,9 @@ if (totals.failures) {
   console.log('  the sentence that says how to fix it, and recording nothing; a harness that is not');
   console.log('  installed held the same way; and all of it set from a terminal, where a profile');
   console.log('  removed left its directory untouched and a hold took effect on the very next tick.');
+  console.log('  And the TREE (D51): the lock keys on the working tree rather than on the repository');
+  console.log('  that owns it — a second tree of one repository opened beside the first, the record');
+  console.log('  named the tree it held, and that path reached the remote store no more than a');
+  console.log('  transcript or an account name does.');
   rmSync(scratch, { recursive: true, force: true });
 }
