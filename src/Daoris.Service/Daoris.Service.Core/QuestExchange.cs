@@ -12,6 +12,13 @@ public enum QuestPublishRefusal
     NotAddressable,
 
     /// <summary>
+    /// The two repositories are in different workspaces, and the workspace is the unit of sharing
+    /// (D48 §4). Cross-workspace asking is deliberately out of scope — a person carries it, or a
+    /// later, explicit door does, with its own disclosure argument (design §10).
+    /// </summary>
+    CrossWorkspace,
+
+    /// <summary>
     /// The receiver is joined to a remote that did not answer, so the quest could not be given its one
     /// home (D47 §5). Nothing was published anywhere — a half-published quest would be two opinions.
     /// </summary>
@@ -91,8 +98,20 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
                 Quest: null, Addressable: []);
         }
 
-        var registered = await service.RegistryAsync(ct).ConfigureAwait(false);
-        var addressable = registered.Where(r => r.Adopted).Select(r => r.Repository).ToList();
+        // Unscoped deliberately: the clause below needs BOTH sides' workspaces, and a registry already
+        // narrowed to one would answer the cross-workspace case as "no such repository" — a refusal
+        // that sends the asker looking for a name they can see perfectly well.
+        var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
+        var sender = registered.FirstOrDefault(r =>
+            string.Equals(r.Repository, from, StringComparison.OrdinalIgnoreCase));
+        var home = sender?.InWorkspace ?? Workspaces.Default;
+
+        // Who can be asked is who shares the asker's circle. A refusal that listed the whole machine
+        // would be offering repositories this one may not address.
+        var addressable = registered
+            .Where(r => r.Adopted && Workspaces.Same(r.InWorkspace, home))
+            .Select(r => r.Repository)
+            .ToList();
         var target = registered.FirstOrDefault(r =>
             string.Equals(r.Repository, to, StringComparison.OrdinalIgnoreCase));
 
@@ -104,6 +123,21 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
                 QuestPublishRefusal.NotAddressable,
                 $"`{to}` has not adopted Daoris, so it has no way to see a quest. Addressable: "
                 + $"{string.Join(", ", addressable)}.",
+                Quest: null, addressable);
+        }
+
+        if (!Workspaces.Same(target.InWorkspace, home))
+        {
+            // The workspace is the unit of sharing (D48), so this is not a permission failure — it is
+            // two circles that were never joined. The sentence names BOTH sides, because "no" that
+            // does not say which side is where leaves the asker with the question it should settle:
+            // the answer is either to re-wire one of them, or to carry the request by hand.
+            return new(
+                QuestPublishRefusal.CrossWorkspace,
+                $"`{from}` is in workspace `{home}` and `{target.Repository}` is in `{target.InWorkspace}` — "
+                + "a quest does not cross workspaces, because the workspace is the unit of sharing. "
+                + $"Either wire one of them to the other's workspace on this machine, or carry the request "
+                + $"across yourself. Addressable from `{home}`: {string.Join(", ", addressable)}.",
                 Quest: null, addressable);
         }
 
@@ -129,12 +163,12 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
                 return new(QuestPublishRefusal.NotAddressable, answer.Message, Quest: null, addressable);
             }
 
-            var homed = answer.Quest with { Home = "remote" };
+            var homed = answer.Quest with { Home = "remote", Workspace = home };
             await quests.MirrorAsync(homed, ct).ConfigureAwait(false);
             return new(QuestPublishRefusal.None, answer.Message, homed, addressable);
         }
 
-        var quest = await quests.PublishAsync(from, to, title, body, now, ct).ConfigureAwait(false);
+        var quest = await quests.PublishAsync(from, to, title, body, now, home, ct).ConfigureAwait(false);
 
         var caution = target.Registered
             ? ""

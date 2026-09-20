@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `refresh` re-read the repositories, never the folder (2026-09-20)
+
+**Symptom.** Caught by WSP1's new rehearsal phase: two repositories born mid-run were registered,
+scoped and addressable — and their knowledge answered no search at all. `POST /api/refresh` reported
+success and a plausible entry count; nothing said a word about the two it had not looked at.
+
+**Root cause.** `FileSystemKnowledgeSource.UnderFolder` enumerated the root's subdirectories **once,
+when the source was constructed** — at host startup — and `ReadAsync` then re-scanned exactly that
+list. So `knowledge_refresh`, whose stated promise is "re-read every repository from disk and rebuild
+the index", re-read only the repositories that existed when the process launched. A project created
+today was invisible until someone restarted the host. The registry never had the bug (it enumerates
+per read), which is what made the failure so confusing: the repository was listed, declared and
+quest-addressable while contributing nothing to the index.
+
+**Fix.** The source holds the *folder*, not a snapshot of it: the constructor takes a
+`Func<IReadOnlyList<string>>` and `UnderFolder` enumerates inside it, so every read lists the
+directory afresh. The explicit-list constructor stays for a fixed set of roots.
+
+**Verification.** Red first (`A_repository_that_appeared_after_startup_is_read_by_the_next_refresh` —
+`["elder"]` where `["elder", "newborn"]` was expected), then green; the family rehearsal went 86/87 →
+87/87 on the same change. **The trap to inherit:** this is the ghost rule's mirror image, and it fails
+the same way — by looking fine. A ghost is data that outlived its source; this was a source that never
+learned the world had grown. Anything that promises to "re-read from disk" must re-read *what is on
+disk*, including what directory entries exist — a list captured at construction is a cache with no
+invalidation and no name.
+
 ## The mirror-down fed itself back up, and an empty entries feed is a delete (2026-09-20)
 
 **Symptom.** None yet — found by the post-redesign review (REV1), before any two-machine deployment

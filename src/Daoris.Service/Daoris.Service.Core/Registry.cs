@@ -24,6 +24,12 @@ namespace Daoris.Knowledge;
 /// Its indexed knowledge content may feed a remote too. Never true without <paramref name="Joined"/> —
 /// the CLI refuses that manifest, and every reader here narrows it the same way.
 /// </param>
+/// <param name="Workspace">
+/// Which circle this repository shares with ON THIS MACHINE (D48) — wiring, like a git remote, never a
+/// tracked declaration. <b>Null means unstated</b>, which is what makes "preserved on upsert" possible:
+/// an ordinary re-registration says nothing about the workspace and must not re-point the row. Every
+/// reader gets a concrete name through <see cref="Workspaces.Normalize"/>; only a writer sees the null.
+/// </param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -34,8 +40,12 @@ public sealed record Registration(
     int Entries,
     string? Root = null,
     bool Joined = false,
-    bool SharesKnowledge = false)
+    bool SharesKnowledge = false,
+    string? Workspace = null)
 {
+    /// <summary>The workspace this repository is wired to, with silence resolved to the default.</summary>
+    public string InWorkspace => Workspaces.Normalize(Workspace);
+
     /// <summary>Whether this repository has said anything useful about what it can be asked for.</summary>
     public bool Registered => Adopted && (!string.IsNullOrWhiteSpace(Summary) || Owns.Count > 0 || Accepts.Count > 0);
 }
@@ -90,10 +100,16 @@ public sealed class Registry(string repositoryRoot)
         registrations.AddRange(_pushed.Values.Where(r => !scanned.Contains(r.Repository)));
 
         return registrations
-            .Select(r => _pushed.TryGetValue(r.Repository, out var sent) && sent.Registered
-                // The push wins on what the repository SAID; the scanned root survives a push that
-                // carried none, because a declaration should not cost the driver a path it already knew.
-                ? sent with { Entries = r.Entries, Root = sent.Root ?? r.Root }
+            .Select(r => _pushed.TryGetValue(r.Repository, out var sent)
+                ? sent.Registered
+                    // The push wins on what the repository SAID; the scanned root survives a push that
+                    // carried none, because a declaration should not cost the driver a path it already knew.
+                    ? sent with { Entries = r.Entries, Root = sent.Root ?? r.Root }
+                    // A push that declared nothing still carries the WIRING. The workspace is not
+                    // something a scan can know — it is a row on this machine (D48 §2) — so a scanned
+                    // repository must never silently fall back into `default` just because its
+                    // declaration was thin.
+                    : r with { Workspace = sent.Workspace ?? r.Workspace }
                 : r)
             .OrderBy(r => r.Repository, StringComparer.Ordinal)
             .ToList();

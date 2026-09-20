@@ -36,6 +36,10 @@ Options:
   --dry-run            print the plan; write nothing
   --force              overwrite locally-drifted files (sync only)
   --all                promote every drifted file (upstream only)
+  --workspace <name>   which workspace this repo shares with, on THIS machine
+                       (connect only). Wiring, like a git remote: it is kept in
+                       the machine's registry and written into no tracked file.
+                       Omit to leave the existing wiring alone
   --help, --version`;
 
 /** Commands are registered here as they land. @returns {number} process exit code */

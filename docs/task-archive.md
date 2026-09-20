@@ -1226,6 +1226,49 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## WSP1 — the workspace exists (2026-09-20)
+
+> **WSP1 — the workspace exists.** Membership is wiring, never tracked (D48 as amended — the git
+> shape): the registry row carries the workspace, `connect --workspace <name>` sets it (preserved on
+> upsert, defaulting to the existing row then `default`), **the manifest is untouched**; every
+> cross-repo entity (registration, entry, quest, session) carries its workspace; search/convergence/
+> registry/quest scoping with the same-workspace clause in `QuestExchange` (refusal names both sides);
+> MCP tools gain `workspace` with the ambient default resolved from the registry by path; the family
+> rehearsal grows the two-workspace phase (a search and a quest refused across the boundary, with the
+> sentence). Design §2/§2a/§4.
+
+✅ done 2026-09-20 — the first landing of the D48 arc, and the foundation the rest stands on. **The
+name** is one place: `Workspaces` holds `Default`, `Normalize` (silence is `default`) and `Same`
+(trimmed, case-insensitive) — a boundary nobody can see is worse than none, because it produces a
+refusal with no explanation in it. **The wiring** is a registry column whose preservation is decided
+in SQL: `COALESCE($workspace, workspace, 'default')` in the upsert, so a statement wins, an existing
+row survives silence, and `default` closes it — one atomic statement rather than a read-modify-write
+two doors would race on. `UpsertAsync` returns the row as it now stands and `RegisterAsync` serves
+*that*, because serving the incoming record would re-point every repository to `default` in memory on
+the next ordinary sync tick while the store kept saying otherwise. **Every cross-repo entity carries
+it**: entries (stamped at ingest from the wiring, never from a file — schema bumped to 2, which
+rebuilds rather than migrates), quests (decided by the exchange, so both sides share it by
+construction), sessions (derived from the quest, never passed beside it, so the two can never
+disagree). Both feed doors stamp from the **receiving** deployment's wiring: a feed that could name
+its own workspace could write itself into someone else's. **Scoping** reaches search (a SQL clause,
+browse included), convergence (two circles stating the same lesson have not converged), the registry,
+the repository summary, and the quest and session lists. **The quest clause** refuses across the
+boundary naming both sides, both workspaces and what to do about it, offers only the asker's own
+circle as addressable, and wears 409 at the HTTP door — a state conflict, not a malformed ask.
+**The ambient scope** (`AmbientWorkspace`) resolves a session's own circle from the registry by
+working directory — segment-wise, innermost-first, separator- and case-insensitive — so an agent never
+has to know wiring it has no business knowing; no match answers null and every MCP tool *says* it
+spanned everything, the D24 shape. **The CLI** gained `connect --workspace <name>`, omitted entirely
+when unstated (an absent field preserves; `""` would reset), refused with a name when the flag is
+bare, and reporting back the workspace that actually took. **The platform** shows each project's
+circle rather than presenting two as one family. Along the way the rehearsal caught a real defect:
+`refresh` re-read the repositories but never the folder, so a repository born after startup was
+invisible to the index while being fully registered and addressable — `docs/FIX-LOG.md` has it.
+Tests grew 135→139 CLI, 170→193 service, 75→87 family rehearsal; release rehearsal 53/53, driver
+53/53, web 27+7 unchanged. Deferred by scope, not by omission: the platform's workspace *switcher*
+(WSP2/WSP3's surfaces), and per-workspace remotes (WSP3) — until then a shared host still serves one
+circle because it holds one store.
+
 ## REV1 — the post-redesign review sweep: fix, dedup, and re-document the D45–D47 arc (2026-09-20)
 
 > Five parallel audits over the arc's ~94 files; the consolidated findings live in

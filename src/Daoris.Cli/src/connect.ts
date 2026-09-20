@@ -61,14 +61,23 @@ export function isLocalService(url: string): boolean {
  * The manifest's remote declaration travels too (D47 §4): a sync loop feeds only what the repository
  * itself, under review, said may leave. Sent as explicit booleans — silence in the manifest becomes
  * `false` on the wire, so a service never guesses what an absent field meant.
+ *
+ * The workspace is the opposite shape, deliberately (D48 as amended). It is **wiring**, like a git
+ * remote: it lives in the machine's registry, comes from `--workspace` rather than from any tracked
+ * file, and is **omitted entirely** when unstated — because an absent field PRESERVES the existing
+ * row, while an explicit `null` or `""` would re-point every repository to the default on the next
+ * ordinary sync tick. Silence here means "I am not saying", not "I say default".
  */
-export function registration(root: string, manifest: Manifest, name: string, serviceUrl: string): {
+export function registration(
+  root: string, manifest: Manifest, name: string, serviceUrl: string, workspace?: string,
+): {
   repository: string;
   packs: string[];
   domain: Domain | null;
   join: boolean;
   shareKnowledge: boolean;
   root?: string;
+  workspace?: string;
 } {
   return {
     repository: name,
@@ -77,7 +86,28 @@ export function registration(root: string, manifest: Manifest, name: string, ser
     join: manifest.remote?.join ?? false,
     shareKnowledge: manifest.remote?.knowledge ?? false,
     ...(isLocalService(serviceUrl) ? { root } : {}),
+    ...(workspace ? { workspace } : {}),
   };
+}
+
+/**
+ * The value after a flag, refusing a flag with nothing after it.
+ *
+ * @remarks
+ * `--workspace` followed by nothing is a mistake with a silent wrong answer available — taking the
+ * default would wire the repository somewhere the person did not ask for and say it worked. A flag
+ * followed by another flag is the same mistake with a typo in it.
+ */
+export function flagValue(argv: string[], flag: string): string | undefined {
+  const at = argv.indexOf(flag);
+  if (at === -1) return undefined;
+
+  const value = argv[at + 1];
+  if (!value || value.startsWith('--')) {
+    throw new DaorisError(`${flag} needs a name — e.g. \`${flag} aurora\``);
+  }
+
+  return value;
 }
 
 /** True when the domain says enough for a sibling to know what is worth asking. */
@@ -103,7 +133,7 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
   }
 
   const { url, key } = endpoint();
-  const body = registration(root, manifest, name, url);
+  const body = registration(root, manifest, name, url, flagValue(argv, '--workspace'));
   if (argv.includes('--dry-run')) {
     write(JSON.stringify(body, null, 2));
     write(`daoris: would register with ${url}${REGISTRY_PATH}`);
@@ -126,8 +156,14 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
     throw new DaorisError(`the service refused the registration: ${response.status} ${response.statusText}`);
   }
 
+  // The workspace the service says TOOK, not the one that was asked for — silence preserves whatever
+  // the row already held, so the only honest way to report the wiring is to read it back. A service
+  // too old to answer with one simply goes unmentioned rather than being guessed at.
+  const landed = await response.json().catch(() => null) as { workspace?: string } | null;
+
   write(`daoris: registered ${name} with ${url}`);
   write(`  owns ${manifest.domain!.owns.length} area(s); accepts ${manifest.domain!.accepts.length} kind(s)`);
+  if (landed?.workspace) write(`  workspace: ${landed.workspace} — this machine's wiring; nothing was written here`);
   write('  siblings can now address quests here, and see what is worth asking.');
   return 0;
 }

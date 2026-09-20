@@ -58,4 +58,41 @@ public sealed class RefreshTests
 
         Assert.Single(await store.AllAsync());
     }
+
+    /// <summary>
+    /// The ghost rule's mirror image: a repository that appeared AFTER the host started must be
+    /// readable by the next refresh, without a restart.
+    /// </summary>
+    /// <remarks>
+    /// The folder list was enumerated once, when the source was constructed — so `knowledge_refresh`,
+    /// whose whole promise is "re-read every repository from disk", re-read only the repositories that
+    /// existed when the process launched. A project born today was invisible until someone restarted
+    /// the host, and nothing said so: the refresh reported success and a count that looked right.
+    /// Found by the workspace rehearsal (D48), where two repositories are born mid-run.
+    /// </remarks>
+    [Fact]
+    public async Task A_repository_that_appeared_after_startup_is_read_by_the_next_refresh()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"daoris-born-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(root, "elder", ".claude", "knowledge"));
+        File.WriteAllText(
+            Path.Combine(root, "elder", ".claude", "knowledge", "old.md"), "# old\n\nWas here first.\n");
+
+        var source = FileSystemKnowledgeSource.UnderFolder(root);
+        var store = new InMemoryKnowledgeStore();
+        var index = new KnowledgeIndex(store);
+        await index.RefreshAsync(source);
+
+        // Born after the host came up — exactly what the rehearsal and every real family do.
+        Directory.CreateDirectory(Path.Combine(root, "newborn", ".claude", "knowledge"));
+        File.WriteAllText(
+            Path.Combine(root, "newborn", ".claude", "knowledge", "new.md"), "# new\n\nBorn later.\n");
+        await index.RefreshAsync(source);
+
+        var repositories = (await store.AllAsync())
+            .Select(e => e.Repository).Distinct().Order(StringComparer.Ordinal).ToList();
+        Assert.Equal(["elder", "newborn"], repositories);
+
+        Directory.Delete(root, recursive: true);
+    }
 }

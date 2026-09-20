@@ -8,12 +8,13 @@ namespace Daoris.Knowledge.Http;
 // would be the one thing stopping it). Program.cs keeps the routes; the shapes live here.
 
 public sealed record StatusResponse(bool Semantic, string Tier, string? Note);
-public sealed record RepositoryResponse(string Name, int Total, int Local, int Canonical);
+public sealed record RepositoryResponse(string Name, int Total, int Local, int Canonical, string Workspace);
 public sealed record HitResponse(
-    string Id, string Repository, string Kind, string Title, string Path, string? Excerpt, double Score);
+    string Id, string Repository, string Kind, string Title, string Path, string? Excerpt, double Score,
+    string Workspace);
 public sealed record EntryResponse(
     string Id, string Repository, string Kind, string Provenance, string Title, string Path, string Body,
-    string? Anchor);
+    string? Anchor, string Workspace);
 public sealed record ConvergenceEntryResponse(
     string Id, string Repository, string Kind, string Title, string Path);
 public sealed record ConvergenceResponse(
@@ -21,23 +22,26 @@ public sealed record ConvergenceResponse(
     IReadOnlyList<ConvergenceEntryResponse> Entries, string Suggestion);
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
-    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated);
+    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace);
 public sealed record PublishQuestRequest(string From, string To, string Title, string Body);
 public sealed record RespondQuestRequest(string? Action, string? Reason);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
 public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
+// `Workspace` is null on the way IN when the client said nothing — which is what preserves the row
+// (D48 §2). It is never null on the way out: a reader is told which circle it is looking at.
 public sealed record RegisterRequest(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
-    bool? Join, bool? ShareKnowledge);
-public sealed record RegisteredResponse(string Repository, DateTimeOffset At);
+    bool? Join, bool? ShareKnowledge, string? Workspace);
+public sealed record RegisteredResponse(string Repository, DateTimeOffset At, string Workspace);
 public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
-    string? Root, bool Joined, bool SharesKnowledge);
+    string? Root, bool Joined, bool SharesKnowledge, string Workspace);
 public sealed record SessionResponse(
     string Id, string Quest, string Repository, string Adapter, string State,
-    string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated);
+    string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
+    string Workspace);
 public sealed record OpenSessionRequest(string Quest, string Adapter);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);

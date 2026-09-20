@@ -16,14 +16,16 @@ rehearsal's two-machine phase. **All three parts of D45 are built.** The owner s
 2026-09-20: **workspaces as the unit of sharing, and Daoris as the working surface** — designed the
 same day as D48/D49 (each amended the same day on the owner's corrections: membership is git-style
 wiring, never tracked; coexistence with non-users is binding; harness accounts are named credential
-profiles) with two contracts and eight build items in the backlog below.
+profiles) with two contracts and eight build items. **WSP1 is built** (2026-09-20, in the archive):
+the workspace exists, everything cross-repository carries it, and the boundary holds in the family
+rehearsal's new phase. Seven items remain.
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Nine commands,
-135 CLI tests, 170 service, 57 devkit, 53 driver, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **75/75 family rehearsal** including the
-driver, two-machine remote, and never-scans phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
+139 CLI tests, 193 service, 57 devkit, 53 driver, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **87/87 family rehearsal** including the
+driver, two-machine remote, never-scans and two-workspace phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
 **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
 an index row, and the answer is splitting, not raising (D28).
@@ -81,27 +83,33 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-**The next arc is designed and build-ready: workspaces and the interactive surface (D48/D49,
-2026-09-20, each amended the same day on the owner's corrections).** The owner set the direction in
-this backlog and granted structural redesign (nothing is deployed); the design session turned it into
-two contracts and eight build items. **Start at WSP1.**
+**The next arc is under way: workspaces and the interactive surface (D48/D49, 2026-09-20, each amended
+the same day on the owner's corrections).** The owner set the direction in this backlog and granted
+structural redesign (nothing is deployed); the design session turned it into two contracts and eight
+build items, of which **WSP1 landed 2026-09-20**. **Start at WSP2** — the workspace now exists, so
+everything below stands on real ground: a registry row carries it, `connect --workspace` sets it,
+every cross-repository entity and answer is scoped by it, and the rehearsal proves the boundary.
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
   direction, the argued rejections, and management parity — D50 binds every item), with D45–D47
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   mirror-down feed-back and shared-scan fixes — WSP4 builds directly on those lessons).
-- **The build order is stated at the top of the backlog** — WSP1 is the foundation; do not start WSP3/
-  WSP4 before it. Schema changes rebuild rather than migrate (the store's own rule, and nothing is
-  deployed).
+- **The build order is stated at the top of the backlog** — WSP1's foundation is in, so WSP2 is next
+  and WSP3/WSP4 follow it. Schema changes rebuild rather than migrate (the store's own rule, and
+  nothing is deployed); WSP1 bumped the entry store to schema 2 on exactly that basis.
+- **What WSP1 left for its successors, deliberately:** the platform's workspace *switcher* (Projects
+  shows each repository's circle, but no view filters by one yet), and per-workspace remotes — until
+  WSP3 a shared host still serves one circle because it holds one store, and a feed never names a
+  workspace: the receiving deployment's own wiring decides where fed material lands.
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
 - **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
   up only when its trigger has actually arrived.
-- **Verify before claiming done, always:** `npm run verify` (CLI 135 + `check` + version agreement),
-  `dotnet test src/Daoris.Service` (170), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (53), `npm run rehearse:family` (75/75), `npm run test:web` (27 + 7). If a `bin`-driven gate is red
+- **Verify before claiming done, always:** `npm run verify` (CLI 139 + `check` + version agreement),
+  `dotnet test src/Daoris.Service` (193), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
+  (53), `npm run rehearse:family` (87/87), `npm run test:web` (27 + 7). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -112,18 +120,10 @@ item).** The owner's direction, designed under the standing redesign grant — t
 `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`; read them before
 building anything below. **D50 — management parity — applies across the arc**: everything a person
 manages gets a proper surface in the desktop or the `daoris` CLI (files and doors are the truth,
-surfaces are editors; the offline-discipline test evolves to a named management class — design §2b). Build order: WSP1 first (everything else stands on it), then WSP2–WSP4 in
-order; SES1→SES2 can interleave after WSP1; SES3 and CANON6 are independent. Each item is one
+surfaces are editors; the offline-discipline test evolves to a named management class — design §2b).
+Build order: **WSP1 is done** (2026-09-20, in the archive) — next is WSP2, then WSP3 and WSP4 in
+order; SES1→SES2 may interleave; SES3 and CANON6 are independent. Each item is one
 session-sized landing, TDD, gates green, moved to the archive on completion.
-
-- [ ] **WSP1 — the workspace exists.** Membership is wiring, never tracked (D48 as amended — the git
-  shape): the registry row carries the workspace, `connect --workspace <name>` sets it (preserved on
-  upsert, defaulting to the existing row then `default`), **the manifest is untouched**; every
-  cross-repo entity (registration, entry, quest, session) carries its workspace; search/convergence/
-  registry/quest scoping with the same-workspace clause in `QuestExchange` (refusal names both sides);
-  MCP tools gain `workspace` with the ambient default resolved from the registry by path; the family
-  rehearsal grows the two-workspace phase (a search and a quest refused across the boundary, with the
-  sentence). Design §2/§2a/§4.
 
 - [ ] **WSP2 — the registry becomes managed.** Registry-as-authority (explicit list: name, workspace,
   declaration, machine-local path); the folder scan becomes `import` (first run imports the old root,

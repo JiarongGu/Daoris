@@ -37,8 +37,8 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Nine commands, 135 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 170, `Daoris.Devkit` 57, and the
+**Built and proven; nothing published.** Nine commands, 139 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 193, `Daoris.Devkit` 57, and the
 driver 53. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
@@ -53,7 +53,10 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode — with
 the quest lock hardened into code (an atomic guarded `Taken`, closed quests immovable) and the
 desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
-gates the whole thing with no model: driver loop **and** a two-machine remote crossing (75/75).
+gates the whole thing with no model: driver loop, a two-machine remote crossing, **and the workspace
+boundary** (87/87). The D48 arc is under way: **the workspace exists** (WSP1) — it is the unit of
+sharing, it is **wiring rather than a tracked declaration** (`connect --workspace`, a registry row, no
+manifest field), and every cross-repository entity and answer carries or is scoped by it.
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
@@ -73,8 +76,8 @@ risk, **authorship** was.
 - `README.md` — the consuming story: install, the nine commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
 - `docs/DECISIONS.md` — the numbered decision log (D1–D50) and why each was made. **D45 is the
-  direction: Daoris drives** — read it before planning anything; **D48–D50 are the next arc**
-  (workspaces; the interactive surface; management parity), designed and build-ready.
+  direction: Daoris drives** — read it before planning anything; **D48–D50 are the current arc**
+  (workspaces; the interactive surface; management parity) — WSP1 has landed, WSP2 is next.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -125,9 +128,13 @@ Run every command from the **workspace root**, not from a package directory.
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
-  driver drive?" gate, and since D47 the "does the remote cross?" gate too. Both examples current and
+  driver drive?" gate, since D47 the "does the remote cross?" gate, and since D48 the "does the
+  boundary hold?" gate. Both examples current and
   clean, the HTTP host up over them, `connect`, a quest through its whole life, a search crossing
-  projects, restart persistence, a quest driven to done by a stub session — then a shared host with
+  projects, restart persistence, a quest driven to done by a stub session — then two workspaces on one
+  machine, wired by `connect --workspace` with no tracked file touched, a search answering from one
+  circle while the other holds the same lesson word for word, and a quest across the boundary refused
+  naming both sides — then a shared host with
   minted keys, two simulated machines, a quest crossing them, a raced take standing down, and the
   remote's store scanned for anything machine-local. No model anywhere in the gate. Run when touching
   the service, `connect`, the driver, the remote, or the canon's shape —

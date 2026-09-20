@@ -3,15 +3,20 @@
 // quests and refresh (D36, D38). Doctrine has no write here, by design (D31): where a rule should
 // change, the UI proposes the command to run in the repository that owns it.
 
+// `workspace` rides every cross-repository shape (D48): it is the unit of sharing, so a view that
+// shows material from more than one must be able to say which is which. Optional on the way in —
+// a host older than workspaces simply does not send it, and nothing here should crash over that.
 export type Status = { semantic: boolean; tier: string; note?: string };
-export type Repository = { name: string; total: number; local: number; canonical: number };
+export type Repository = {
+  name: string; total: number; local: number; canonical: number; workspace?: string;
+};
 export type Hit = {
   id: string; repository: string; kind: string; title: string;
-  path: string; excerpt?: string; score: number;
+  path: string; excerpt?: string; score: number; workspace?: string;
 };
 export type Entry = {
   id: string; repository: string; kind: string; provenance: string;
-  title: string; path: string; body: string;
+  title: string; path: string; body: string; workspace?: string;
 };
 export type ConvergenceEntry = {
   id: string; repository: string; kind: string; title: string; path: string;
@@ -26,12 +31,12 @@ export type Convergence = {
 export type Quest = {
   id: string; from: string; to: string; title: string; body: string;
   status: 'Open' | 'Taken' | 'Done' | 'Declined';
-  note?: string; filed: string; updated: string;
+  note?: string; filed: string; updated: string; workspace?: string;
 };
 export type QuestAction = { quest: Quest; message: string };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
-  owns: string[]; accepts: string[]; packs: string[]; entries: number;
+  owns: string[]; accepts: string[]; packs: string[]; entries: number; workspace?: string;
 };
 export type SessionState =
   | 'queued' | 'starting' | 'working' | 'awaiting-person'
@@ -39,7 +44,7 @@ export type SessionState =
 /** A driver-started session's RECORD (D46) — the process lives on the driving machine, never here. */
 export type Session = {
   id: string; quest: string; repository: string; adapter: string; state: SessionState;
-  note?: string; evidence?: string; created: string; updated: string;
+  note?: string; evidence?: string; created: string; updated: string; workspace?: string;
 };
 
 /** What one re-scan changed — and, when the semantic half failed, the service's own sentence. */

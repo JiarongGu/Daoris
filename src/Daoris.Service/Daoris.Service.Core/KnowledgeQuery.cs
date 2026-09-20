@@ -18,6 +18,13 @@ public sealed record KnowledgeQuery(string Text = "")
     public IReadOnlySet<string>? Repositories { get; init; }
 
     /// <summary>
+    /// The circle to answer from (D48). Null spans every workspace the store holds — which a caller
+    /// must then SAY, rather than present as one family's answer (design §4, the D24 shape: report the
+    /// scope that ran). Every door resolves an ambient default before it gets here.
+    /// </summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>
     /// Restrict to canonical or local. Null means both — but <see cref="Provenance.Local"/> is the
     /// interesting one across repositories, since canonical content is identical wherever it is
     /// installed.
@@ -31,7 +38,8 @@ public sealed record KnowledgeQuery(string Text = "")
     public bool Admits(KnowledgeEntry entry) =>
         (Kinds is null || Kinds.Contains(entry.Kind))
         && (Repositories is null || Repositories.Contains(entry.Repository))
-        && (Provenance is null || Provenance == entry.Provenance);
+        && (Provenance is null || Provenance == entry.Provenance)
+        && (Workspace is null || Workspaces.Same(Workspace, entry.Workspace));
 
     /// <summary>
     /// A caller's comma-separated kind filter, as every door parses it — HERE, in Core, because "what

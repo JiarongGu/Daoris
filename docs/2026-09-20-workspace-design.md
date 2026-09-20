@@ -50,6 +50,20 @@ Daoris does the same:
   git repository pushes to two remotes. Each server's registry is its own truth; nothing needs
   reconciling because nothing claims to be global.
 
+**Silence preserves; a statement re-points** — the rule every wiring field obeys, and the one WSP2's
+paths and WSP3's remotes will obey too. An ordinary `connect` runs on every sync tick and says nothing
+about the wiring, so an absent workspace must leave the row alone; only a `--workspace` re-points it,
+the way `git remote set-url` does. Three consequences learned in WSP1, all load-bearing:
+
+- **Unstated must be distinguishable from `default`** — so the field is nullable on the way in (and
+  omitted from the wire entirely, never sent as `""`), and concrete on every read.
+- **The resolution belongs in the write, not around it.** `COALESCE($stated, existing, 'default')`
+  inside the upsert is one atomic statement; a read-then-write in the door is two, in two doors, racing.
+- **What is served is what the store decided, never what arrived.** Registering the incoming record
+  would re-point every repository to `default` in memory on the next ordinary tick while the store on
+  disk kept saying otherwise — and the two would disagree until a restart. The upsert therefore answers
+  with the row as it now stands, and the client is told which workspace actually took.
+
 Rejected — **a `workspace` field in the manifest** (this design's own first draft): it writes one
 deployment's grouping into every clone, which breaks the fork/mirror case git solves by tracking
 nothing; it forces the coexistence cost of §2a onto people who never run Daoris; and the consistency
@@ -262,7 +276,11 @@ machine paths (D46/D47: paths never reach a browser).
 
 1. **WSP1 — the workspace exists**: the registry row carries it (wiring, §2), `connect --workspace`
    sets it, every entity carries it, scoping of search/registry/quests, the rehearsal's two-workspace
-   assertions. Everything else stands on this.
+   assertions. Everything else stands on this. **Built 2026-09-20** — with two things its successors
+   inherit: the *silence preserves* rule above, and the fact that no feed names its own workspace (the
+   receiving deployment's wiring decides where fed entries and records land, because a feed that could
+   name a circle could write itself into someone else's). Still owed from §8's Web row: the workspace
+   switcher — Projects shows each repository's circle, but no view filters by one yet.
 2. **WSP2 — the managed registry**: registry-as-authority, `import`, the desktop's add/update/remove.
 3. **WSP3 — remotes become a map**: per-workspace remotes, sync loop per workspace, host identity.
 4. **WSP4 — knowledge sync semantics**: provenance, monotonic replace, default-branch-only, served

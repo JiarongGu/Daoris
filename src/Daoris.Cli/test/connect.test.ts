@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { commandConnect, registration, isLocalService } from '../src/connect.ts';
 import { readManifest } from '../src/config.ts';
 import { DaorisError } from '../src/errors.ts';
@@ -104,6 +106,77 @@ test('connect --dry-run prints the exact payload, remote declaration and root in
   assert.equal(payload.shareKnowledge, true);
   assert.equal(payload.root, fx.root);
   assert.match(out.at(-1)!, /would register/);
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
+});
+
+/**
+ * Membership is WIRING, like a git remote (D48 as amended) — a statement to this machine's registry,
+ * carried by no tracked file. A repository's workspace therefore travels on the registration and
+ * nowhere else; the manifest keeps only what it always kept.
+ */
+test('--workspace is a wiring statement, and silence says nothing at all', () => {
+  const wired = registration('/home/dev/Repo', manifest, 'Repo', 'http://localhost:5177', 'aurora');
+  assert.equal(wired.workspace, 'aurora');
+
+  // Silence must be ABSENT, not empty: an absent field preserves the existing row, and `""` would be
+  // a statement that re-points every repository to the default on the next ordinary sync tick.
+  const silent = registration('/home/dev/Repo', manifest, 'Repo', 'http://localhost:5177');
+  assert.equal('workspace' in silent, false);
+});
+
+test('a remote service is told the workspace too — the wiring is what it registers under', () => {
+  const body = registration('/home/dev/Repo', manifest, 'Repo', 'https://daoris.example.com', 'aurora');
+  assert.equal(body.workspace, 'aurora');
+  assert.equal('root' in body, false);
+});
+
+/**
+ * The whole point of the git shape: no tracked file changes. A workspace written into the manifest
+ * would travel to every clone, which breaks the fork and taxes contributors who never run Daoris.
+ */
+test('connect --workspace writes nothing into the repository', async () => {
+  const fx = makeFixture('connect-workspace');
+  const written = JSON.stringify({
+    source: 's',
+    domain: { summary: 'A test repo.', owns: ['itself'], accepts: ['a quest'] },
+  });
+  fx.write('daoris.json', written);
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  const out: string[] = [];
+  const code = await commandConnect({
+    root: fx.root, argv: ['--workspace', 'aurora', '--dry-run'],
+    write: (s: string) => out.push(s), packageRoot: '',
+  });
+
+  assert.equal(code, 0);
+  assert.equal(JSON.parse(out.slice(0, -1).join('\n')).workspace, 'aurora');
+  assert.equal(readFileSync(join(fx.root, 'daoris.json'), 'utf8'), written);
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
+});
+
+/** `--workspace` with nothing after it is a mistake worth naming, not a silent default. */
+test('connect --workspace with no name is refused', async () => {
+  const fx = makeFixture('connect-workspace-bare');
+  fx.write('daoris.json', JSON.stringify({
+    source: 's',
+    domain: { summary: 'A test repo.', owns: ['itself'], accepts: ['a quest'] },
+  }));
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  try {
+    await commandConnect({
+      root: fx.root, argv: ['--workspace'], write: () => {}, packageRoot: '',
+    });
+    assert.fail('expected a refusal');
+  } catch (error) {
+    assert.ok(error instanceof DaorisError);
+    assert.match(error.message, /--workspace/);
+  }
 
   delete process.env.DAORIS_SERVICE_URL;
   fx.cleanup();

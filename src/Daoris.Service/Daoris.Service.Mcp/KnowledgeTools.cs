@@ -17,8 +17,45 @@ namespace Daoris.Knowledge.Mcp;
 /// can read beats a structure it has to re-serialise into prose.
 /// </remarks>
 [McpServerToolType]
-public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, QuestExchange exchange)
+public sealed class KnowledgeTools(
+    KnowledgeService service, QuestStore quests, QuestExchange exchange, AmbientWorkspace ambient)
 {
+    /// <summary>
+    /// Which circle this call answers from: what the caller named, or the workspace of the repository
+    /// this session is running in (D48 §4).
+    /// </summary>
+    /// <remarks>
+    /// An agent asking "has anyone solved this" means its own family, not every family the machine can
+    /// see — and it has no reason to know the wiring, because the wiring is a registry row and not
+    /// anything in its tree. So the ambient answer is resolved here rather than asked for; naming one
+    /// explicitly is how a person looks across.
+    /// </remarks>
+    private async Task<string?> ScopeAsync(string? named, CancellationToken ct)
+    {
+        if (!string.IsNullOrWhiteSpace(named))
+        {
+            // "all" is the deliberate way out of the scope — spelled, so it can never be reached by
+            // an empty string or a typo.
+            return named.Equals("all", StringComparison.OrdinalIgnoreCase) ? null : named.Trim();
+        }
+
+        return await ambient.ResolveAsync(service, ct).ConfigureAwait(false);
+    }
+
+    private const string WorkspaceArgument =
+        "Which workspace to answer from. Omit for the one this session's repository belongs to, which "
+        + "is almost always right; `all` deliberately spans every workspace on this machine.";
+
+    /// <summary>
+    /// The scope that ran, said on every answer — including when it was every workspace.
+    /// </summary>
+    /// <remarks>
+    /// An unscoped answer looks exactly like one family's answer, and a caller cannot tell the
+    /// difference from the results. Naming it is the same discipline as reporting which recall tier
+    /// answered (D24): the shape of the answer is part of the answer.
+    /// </remarks>
+    private static string Scoped(string? scope) =>
+        scope is null ? " across every workspace on this machine" : $" in workspace `{scope}`";
 
     [McpServerTool(Name = "knowledge_search")]
     [Description(
@@ -35,8 +72,10 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
         [Description("Only this repository's own knowledge, excluding canonical doctrine installed everywhere. Default true, because canonical content is identical in every repository and rarely what a cross-repository search is for.")]
         bool localOnly = true,
         [Description("Maximum results. Default 10.")] int limit = 10,
+        [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
+        var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
         var hits = await service.SearchAsync(
             new KnowledgeQuery(query)
             {
@@ -44,18 +83,19 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
                 Repositories = KnowledgeQuery.ParseSet(repositories),
                 Provenance = localOnly ? Provenance.Local : null,
                 Limit = Math.Clamp(limit, 1, 50),
+                Workspace = scope,
             }, ct).ConfigureAwait(false);
 
         if (hits.Count == 0)
         {
-            return $"No matches for \"{query}\".\n\n"
+            return $"No matches for \"{query}\"{Scoped(scope)}.\n\n"
                  + "Note this searches by WORD OVERLAP, so a repository that reached the same "
                  + "conclusion in different vocabulary will not match. Try the vocabulary that "
                  + "repository would have used.";
         }
 
         var text = new StringBuilder();
-        text.AppendLine($"{hits.Count} result(s) for \"{query}\":\n");
+        text.AppendLine($"{hits.Count} result(s) for \"{query}\"{Scoped(scope)}:\n");
         foreach (var hit in hits)
         {
             text.AppendLine($"### {hit.Entry.Title}");
@@ -98,15 +138,25 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
 
     [McpServerTool(Name = "knowledge_repositories")]
     [Description("List the repositories in the index and how much each contributes. Use it to see what is searchable before searching.")]
-    public async Task<string> RepositoriesAsync(CancellationToken ct = default)
+    public async Task<string> RepositoriesAsync(
+        [Description(WorkspaceArgument)] string? workspace = null,
+        CancellationToken ct = default)
     {
-        var summary = await service.SummarizeAsync(ct).ConfigureAwait(false);
-        if (summary.Count == 0) return "The index is empty. Call `knowledge_refresh` first.";
+        var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
+        var summary = await service.SummarizeAsync(scope, ct).ConfigureAwait(false);
+        if (summary.Count == 0)
+        {
+            return scope is null
+                ? "The index is empty. Call `knowledge_refresh` first."
+                : $"Nothing indexed in workspace `{scope}`. Pass `all` to see every workspace on this machine.";
+        }
 
-        var text = new StringBuilder("| Repository | Entries | Local | Canonical |\n|---|---:|---:|---:|\n");
+        var text = new StringBuilder($"What is searchable{Scoped(scope)}:\n\n");
+        text.Append("| Repository | Workspace | Entries | Local | Canonical |\n|---|---|---:|---:|---:|\n");
         foreach (var row in summary)
         {
-            text.AppendLine($"| {row.Repository} | {row.Total} | {row.Local} | {row.Canonical} |");
+            text.AppendLine(
+                $"| {row.Repository} | {row.Workspace} | {row.Total} | {row.Local} | {row.Canonical} |");
         }
 
         return text.ToString();
@@ -124,22 +174,25 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
         [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task. Comma-separated; omit for all.")]
         string? kinds = null,
         [Description("Maximum groups to return. Default 15.")] int limit = 15,
+        [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
+        var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
         var candidates = await service.FindConvergenceAsync(
-            new ConvergenceOptions(minimumSimilarity, KnowledgeQuery.ParseKinds(kinds), Math.Clamp(limit, 1, 50)), ct)
+            new ConvergenceOptions(
+                minimumSimilarity, KnowledgeQuery.ParseKinds(kinds), Math.Clamp(limit, 1, 50), scope), ct)
             .ConfigureAwait(false);
 
         if (candidates.Count == 0)
         {
-            return $"Nothing converges above {minimumSimilarity:0.00}. Lower the threshold to see "
+            return $"Nothing converges above {minimumSimilarity:0.00}{Scoped(scope)}. Lower the threshold to see "
                  + "weaker overlaps — the right value depends on the comparison in use, so it is worth "
                  + "sweeping rather than trusting a default.";
         }
 
         // Hardest finding first: a convergence is the one nobody could have made by reading file
         // names, and ordering by score alone would bury it under the copies.
-        var text = new StringBuilder("A prompt to look, not a merge.\n\n");
+        var text = new StringBuilder($"A prompt to look, not a merge —{Scoped(scope)}.\n\n");
         foreach (var group in candidates.GroupBy(c => c.Method).OrderByDescending(g => g.Key))
         {
             text.AppendLine($"## {Heading(group.Key)} ({group.Count()})");
@@ -181,12 +234,20 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
         "Who is in this family, what each repository owns, and what kind of quest is worth addressing "
         + "to it. Use it BEFORE publishing a quest, and whenever a problem might belong to someone "
         + "else — search answers 'has anyone solved this', this answers 'whose problem is this'.")]
-    public async Task<string> RegistryAsync(CancellationToken ct = default)
+    public async Task<string> RegistryAsync(
+        [Description(WorkspaceArgument)] string? workspace = null,
+        CancellationToken ct = default)
     {
-        var registered = await service.RegistryAsync(ct).ConfigureAwait(false);
-        if (registered.Count == 0) return "Nothing under the knowledge root. Call `knowledge_refresh` first.";
+        var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
+        var registered = await service.RegistryAsync(scope, ct).ConfigureAwait(false);
+        if (registered.Count == 0)
+        {
+            return scope is null
+                ? "Nothing under the knowledge root. Call `knowledge_refresh` first."
+                : $"No repositories in workspace `{scope}`. Pass `all` to see every workspace on this machine.";
+        }
 
-        var text = new StringBuilder();
+        var text = new StringBuilder($"The family{Scoped(scope)}:\n\n");
         foreach (var entry in registered.Where(r => r.Adopted))
         {
             text.AppendLine($"## `{entry.Repository}`{(entry.Registered ? "" : "  ⚠ has not declared a domain")}");
@@ -241,12 +302,19 @@ public sealed class KnowledgeTools(KnowledgeService service, QuestStore quests, 
         string? repository = null,
         [Description("Include finished and declined ones. Default false — outstanding work is the question.")]
         bool includeClosed = false,
+        [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
-        var found = await quests.ListAsync(repository, includeClosed, ct).ConfigureAwait(false);
-        if (found.Count == 0) return repository is null ? "No open quests anywhere." : $"Nothing asked of `{repository}`.";
+        var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
+        var found = await quests.ListAsync(repository, includeClosed, scope, ct).ConfigureAwait(false);
+        if (found.Count == 0)
+        {
+            return repository is null
+                ? $"No open quests{Scoped(scope)}."
+                : $"Nothing asked of `{repository}`{Scoped(scope)}.";
+        }
 
-        var text = new StringBuilder($"{found.Count} quest(s):\n\n");
+        var text = new StringBuilder($"{found.Count} quest(s){Scoped(scope)}:\n\n");
         foreach (var group in found.GroupBy(q => q.To).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
             text.AppendLine($"## `{group.Key}` — {group.Count()}");

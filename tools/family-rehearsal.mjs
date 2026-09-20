@@ -505,9 +505,148 @@ check(
   sessionsAfterRestart.text,
 );
 
-// -------------------------------------------------- 9. the remote
+// -------------------------------------------------- 9. the workspace boundary
 
-section('9. The remote: two machines, one lock (D47)');
+section('9. Two workspaces on one machine — the unit of sharing (D48)');
+
+// One machine, two circles. Both are born here rather than borrowed from the existing members,
+// because the point being proven is a BOUNDARY: it has to hold between repositories that sit in the
+// same folder, are indexed by the same host, and would have matched each other's searches word for
+// word an hour ago.
+const circleMember = (name, summary, lesson) => {
+  const directory = join(family, name);
+  mkdirSync(join(directory, '.claude', 'knowledge'), { recursive: true });
+  writeFileSync(join(directory, 'README.md'), `# ${name}\n\n${summary}\n`);
+  run(`node "${cliBin}" init`, directory);
+  const declaration = JSON.parse(readFileSync(join(directory, 'daoris.json'), 'utf8'));
+  declaration.domain = { summary, owns: [`the ${name} side`], accepts: ['a scoped quest'] };
+  writeFileSync(join(directory, 'daoris.json'), `${JSON.stringify(declaration, null, 2)}\n`);
+  run(`node "${cliBin}" sync`, directory);
+  // The SAME lesson in both circles, deliberately: if the boundary leaks, this is what crosses.
+  writeFileSync(
+    join(directory, '.claude', 'knowledge', 'shared-lesson.md'),
+    `# shared lesson\n\n${lesson}\n`,
+  );
+  return directory;
+};
+
+const atelier = circleMember('atelier', 'A studio in the aurora circle.', 'Cap the batch size per tick.');
+const foundry = circleMember('foundry', 'A workshop in the tools circle.', 'Cap the batch size per tick.');
+
+// `--workspace` is the wiring statement (D48 §2). The repository's own files are untouched by it,
+// which the next check proves by hashing the manifest across the call.
+const manifestBefore = readFileSync(join(atelier, 'daoris.json'), 'utf8');
+const wireAtelier = run(`node "${cliBin}" connect --workspace aurora`, atelier, { DAORIS_SERVICE_URL: BASE });
+check(
+  'a repository is wired to a workspace, and its manifest is not touched',
+  wireAtelier.code === 0
+    && /workspace: aurora/.test(wireAtelier.out)
+    && readFileSync(join(atelier, 'daoris.json'), 'utf8') === manifestBefore,
+  wireAtelier.out,
+);
+const wireFoundry = run(`node "${cliBin}" connect --workspace tools`, foundry, { DAORIS_SERVICE_URL: BASE });
+check('a second repository is wired to a different workspace', wireFoundry.code === 0, wireFoundry.out);
+
+// engine joins the aurora circle, so that circle has someone to ask.
+const wireEngine = run(`node "${cliBin}" connect --workspace aurora`, join(examplesRoot, 'engine'), {
+  DAORIS_SERVICE_URL: BASE,
+});
+check('an existing member is re-wired without re-adopting anything', wireEngine.code === 0, wireEngine.out);
+
+// The ordinary re-registration — what every sync tick runs — says nothing about the workspace, and
+// must therefore leave it alone. Silence that reset the wiring would quietly collapse every circle
+// back into one, and nothing would report it.
+const silentReconnect = run(`node "${cliBin}" connect`, atelier, { DAORIS_SERVICE_URL: BASE });
+const wiringAfter = await api('GET', '/api/registry');
+check(
+  'a connect that names no workspace preserves the wiring',
+  silentReconnect.code === 0
+    && (wiringAfter.json ?? []).find((r) => r.repository === 'atelier')?.workspace === 'aurora',
+  `${silentReconnect.out}\n${wiringAfter.text}`,
+);
+check(
+  'a repository nobody wired stays in the default workspace',
+  (wiringAfter.json ?? []).find((r) => r.repository === 'newcomer')?.workspace === 'default',
+  wiringAfter.text,
+);
+
+const scopedRegistry = await api('GET', '/api/registry?workspace=aurora');
+check(
+  'the registry scoped to a workspace answers that circle and no other',
+  (scopedRegistry.json ?? []).some((r) => r.repository === 'atelier')
+    && (scopedRegistry.json ?? []).every((r) => r.repository !== 'foundry'),
+  scopedRegistry.text,
+);
+
+await api('POST', '/api/refresh');
+const auroraSearch = await api('GET', `/api/search?q=${encodeURIComponent('cap the batch size')}&workspace=aurora`);
+const toolsSearch = await api('GET', `/api/search?q=${encodeURIComponent('cap the batch size')}&workspace=tools`);
+check(
+  'a search answers from one circle, though the other holds the same lesson word for word',
+  auroraSearch.status === 200
+    && (auroraSearch.json ?? []).some((h) => h.repository === 'atelier')
+    && (auroraSearch.json ?? []).every((h) => h.repository !== 'foundry')
+    && (toolsSearch.json ?? []).some((h) => h.repository === 'foundry')
+    && (toolsSearch.json ?? []).every((h) => h.repository !== 'atelier'),
+  `${auroraSearch.text.slice(0, 300)}\n${toolsSearch.text.slice(0, 300)}`,
+);
+
+const scopedConvergence = await api('GET', '/api/convergence?minimumSimilarity=0.8&workspace=aurora');
+check(
+  'convergence does not pair two circles that never had to agree',
+  scopedConvergence.status === 200
+    && (scopedConvergence.json ?? []).every((c) => !c.repositories.includes('foundry')),
+  scopedConvergence.text.slice(0, 300),
+);
+
+const withinCircle = await api('POST', '/api/quests', {
+  body: {
+    from: 'atelier',
+    to: 'engine',
+    title: 'A quest inside the circle',
+    body: 'Same workspace, so this is an ordinary ask.',
+  },
+});
+check(
+  'a quest inside one workspace is published, carrying it',
+  withinCircle.status === 200 && withinCircle.json?.quest?.workspace === 'aurora',
+  withinCircle.text,
+);
+
+const acrossCircles = await api('POST', '/api/quests', {
+  body: {
+    from: 'atelier',
+    to: 'foundry',
+    title: 'A quest across the boundary',
+    body: 'Different workspaces, so there is nothing to deliver.',
+  },
+});
+const acrossMessage = acrossCircles.json?.error ?? '';
+check(
+  'a quest across workspaces is refused, and the sentence names both sides',
+  acrossCircles.status === 409
+    && /atelier/.test(acrossMessage) && /aurora/.test(acrossMessage)
+    && /foundry/.test(acrossMessage) && /tools/.test(acrossMessage),
+  acrossCircles.text,
+);
+check(
+  '…and nothing was published anywhere',
+  ((await api('GET', '/api/quests?repository=foundry&includeClosed=true')).json ?? []).length === 0,
+  'a refused cross-workspace quest left a row behind',
+);
+
+const auroraQuests = await api('GET', '/api/quests?workspace=aurora');
+const toolsQuests = await api('GET', '/api/quests?workspace=tools');
+check(
+  'the quest list is scoped to its circle',
+  (auroraQuests.json ?? []).some((q) => q.id === withinCircle.json?.quest?.id)
+    && (toolsQuests.json ?? []).every((q) => q.id !== withinCircle.json?.quest?.id),
+  `${auroraQuests.text}\n${toolsQuests.text}`,
+);
+
+// -------------------------------------------------- 10. the remote
+
+section('10. The remote: two machines, one lock (D47)');
 
 const remoteDb = join(scratch, 'remote.db');
 const remoteRoot = join(scratch, 'remote-root');
@@ -811,9 +950,9 @@ check('the remote store holds no machine path at all', !remoteBytes.includes('_f
 check('…and none of the knowledge that was kept home', !remoteBytes.includes('keeps this lesson at home'),
   'unshared knowledge reached the remote store');
 
-// -------------------------------------------------- 10. report
+// -------------------------------------------------- 11. report
 
-section('10. Result');
+section('11. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -832,6 +971,10 @@ if (totals.failures) {
   console.log('  two machines and a shared host with minted keys — a quest published on one machine,');
   console.log('  driven to done on the other, the closure crossing back; a raced take standing down;');
   console.log('  knowledge crossing only where declared; and the remote store scanned to hold no');
-  console.log('  machine path, no transcript, and nothing a repository kept home.');
+  console.log('  machine path, no transcript, and nothing a repository kept home. And WORKSPACES');
+  console.log('  (D48): two circles on one machine, wired by `connect --workspace` and written into no');
+  console.log('  tracked file — a search answering from one circle while the other held the same');
+  console.log('  lesson word for word, and a quest across the boundary refused in a sentence that');
+  console.log('  names both sides.');
   rmSync(scratch, { recursive: true, force: true });
 }

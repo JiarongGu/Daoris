@@ -24,7 +24,8 @@ namespace Daoris.Knowledge;
 public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 {
     /// <summary>Bump when the schema changes. A mismatch rebuilds rather than migrates.</summary>
-    private const int SchemaVersion = 1;
+    /// <remarks>2 — entries carry their workspace (D48).</remarks>
+    private const int SchemaVersion = 2;
 
     private readonly SqliteConnection _connection;
 
@@ -58,7 +59,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         }
 
         await ExecuteAsync(
-            """
+            $"""
             CREATE TABLE IF NOT EXISTS entries (
                 id            TEXT PRIMARY KEY,
                 repository    TEXT NOT NULL,
@@ -67,9 +68,12 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
                 title         TEXT NOT NULL,
                 body          TEXT NOT NULL,
                 relative_path TEXT NOT NULL,
-                anchor        TEXT
+                anchor        TEXT,
+                workspace     TEXT NOT NULL DEFAULT '{Workspaces.Default}'
             );
             CREATE INDEX IF NOT EXISTS ix_entries_repository ON entries(repository);
+            -- The scoped search is the common read, and it filters on this before anything else.
+            CREATE INDEX IF NOT EXISTS ix_entries_workspace ON entries(workspace);
 
             -- id is stored but not indexed: it is how a hit gets back to its row, never a search term.
             CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts
@@ -104,8 +108,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             insert.Transaction = (SqliteTransaction)transaction;
             insert.CommandText =
                 """
-                INSERT INTO entries (id, repository, kind, provenance, title, body, relative_path, anchor)
-                VALUES ($id, $repo, $kind, $prov, $title, $body, $path, $anchor);
+                INSERT INTO entries (id, repository, kind, provenance, title, body, relative_path, anchor, workspace)
+                VALUES ($id, $repo, $kind, $prov, $title, $body, $path, $anchor, $workspace);
                 INSERT INTO entries_fts (id, title, body) VALUES ($id, $title, $body);
                 """;
             insert.Parameters.AddWithValue("$id", entry.Id);
@@ -116,6 +120,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             insert.Parameters.AddWithValue("$body", entry.Body);
             insert.Parameters.AddWithValue("$path", entry.RelativePath);
             insert.Parameters.AddWithValue("$anchor", (object?)entry.Anchor ?? DBNull.Value);
+            insert.Parameters.AddWithValue("$workspace", Workspaces.Normalize(entry.Workspace));
             await insert.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
@@ -137,11 +142,19 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         return (await ReadAllAsync(command, ct).ConfigureAwait(false)).FirstOrDefault();
     }
 
-    internal const string Columns = "id, repository, kind, provenance, title, body, relative_path, anchor";
+    internal const string Columns =
+        "id, repository, kind, provenance, title, body, relative_path, anchor, workspace";
 
     /// <summary>The same columns, in the same order, qualified for a join. <see cref="Read"/> reads by ordinal.</summary>
     internal const string QualifiedColumns =
-        "e.id, e.repository, e.kind, e.provenance, e.title, e.body, e.relative_path, e.anchor";
+        "e.id, e.repository, e.kind, e.provenance, e.title, e.body, e.relative_path, e.anchor, e.workspace";
+
+    /// <summary>
+    /// How many columns <see cref="Columns"/> selects — so anything reading PAST them (a computed rank)
+    /// moves when they do. Counted rather than written down: the one that was written down was wrong
+    /// the moment a column was added.
+    /// </summary>
+    internal static readonly int ColumnCount = Columns.Split(',').Length;
 
     /// <summary>
     /// The open connection — quests share this database rather than opening a second one, because two
@@ -156,7 +169,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         reader.GetString(4),
         reader.GetString(5),
         reader.GetString(6),
-        reader.IsDBNull(7) ? null : reader.GetString(7));
+        reader.IsDBNull(7) ? null : reader.GetString(7),
+        reader.GetString(8));
 
     private static async Task<IReadOnlyList<KnowledgeEntry>> ReadAllAsync(SqliteCommand command, CancellationToken ct)
     {

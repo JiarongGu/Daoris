@@ -34,8 +34,14 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
     public async Task<SessionFeedOutcome> FeedAsync(
         string origin, IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default)
     {
-        var joined = (await service.RegistryAsync(ct).ConfigureAwait(false))
+        var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
+        var joined = registered
             .Where(r => r.Joined).Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // The receiving deployment's wiring decides the circle, exactly as it does for a knowledge feed
+        // (D48): a record cannot name the workspace it lands in, or it could name someone else's.
+        var workspaces = registered.ToDictionary(
+            r => r.Repository, r => r.InWorkspace, StringComparer.OrdinalIgnoreCase);
 
         // Judge everything before mirroring anything, so a refused feed changes nothing at all.
         foreach (var record in records)
@@ -64,7 +70,10 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
             Session.TryParse(record.State!, out var state);
             await sessions.MirrorAsync(new Session(
                 $"{origin}/{record.Id}", record.Quest!, record.Repository!, record.Adapter ?? "unknown",
-                state, record.Note, record.Evidence, Transcript: null, record.Created, record.Updated), ct)
+                state, record.Note, record.Evidence, Transcript: null, record.Created, record.Updated,
+                workspaces.TryGetValue(record.Repository!, out var workspace)
+                    ? workspace
+                    : Workspaces.Default), ct)
                 .ConfigureAwait(false);
         }
 

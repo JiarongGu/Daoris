@@ -30,6 +30,23 @@ Three parts, in build order:
 
 ---
 
+## The current arc: workspaces and the working surface (D48–D50, set 2026-09-20)
+
+The sharing boundary was an accident of folder layout — right for one person with one folder of
+checkouts, wrong the first time one machine holds two circles' repositories. So: **the workspace is the
+unit of sharing**, a server serves one, the registry becomes managed, a person works *inside* Daoris
+(live console, chat sessions, managed harnesses), and everything a person manages has a real surface in
+the desktop **or** the CLI. The contracts are `docs/2026-09-20-workspace-design.md` and
+`docs/2026-09-20-interactive-design.md`; the build items are in `TASKS.md`.
+
+| Item | What | Where it stands |
+|---|---|---|
+| **WSP1 · The workspace exists** | Membership as wiring (`connect --workspace`, a registry row, nothing tracked); every cross-repo entity carries it; search, convergence, registry and quests scoped by it | **Built** (2026-09-20) — the family rehearsal's two-workspace phase proves the boundary, and the refusal names both sides |
+| **WSP2–WSP4 · Managed registry, remotes as a map, knowledge sync semantics** | The registry becomes the authority and the scan becomes `import`; one remote per workspace; git provenance with monotonic, default-branch-only replacement | Designed; next in order |
+| **SES1–SES3 · The working surface** | The live console, chat sessions, the managed harness toolchain with credential profiles | Designed (D49) |
+
+---
+
 ## Five artefacts
 
 Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All five exist:

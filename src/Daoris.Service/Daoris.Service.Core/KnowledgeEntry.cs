@@ -60,6 +60,13 @@ public enum Provenance
 /// <param name="Body">The entry's text, without its heading.</param>
 /// <param name="RelativePath">Path within the repository, always '/'-separated.</param>
 /// <param name="Anchor">The heading this section was split at, when it was split from a larger file.</param>
+/// <param name="Workspace">
+/// Which circle this entry is searchable within (D48). Denormalized from the repository's registry row
+/// and stamped at ingest, not carried by the file — the index is derived data, so re-wiring a
+/// repository to another workspace re-stamps its entries on the next refresh rather than migrating
+/// anything. Not part of <see cref="Id"/>: moving a repository between circles does not make its
+/// decisions different decisions.
+/// </param>
 public sealed record KnowledgeEntry(
     string Repository,
     EntryKind Kind,
@@ -67,7 +74,8 @@ public sealed record KnowledgeEntry(
     string Title,
     string Body,
     string RelativePath,
-    string? Anchor = null)
+    string? Anchor = null,
+    string Workspace = Workspaces.Default)
 {
     /// <summary>
     /// A stable identity for the entry, so re-ingesting the same repository updates rather than

@@ -46,6 +46,11 @@ public enum SessionState
 /// <param name="Transcript">A machine-local path to the captured run. Diagnostic, never the record.</param>
 /// <param name="Created">When the driver queued it.</param>
 /// <param name="Updated">When its state last moved.</param>
+/// <param name="Workspace">
+/// The circle this record travels within (D48) — taken from its quest, never passed alongside it, so
+/// the two can never disagree. The driver itself is per machine and crosses workspaces (design §4):
+/// the workspace decides where a record travels, not which machine may work it.
+/// </param>
 public sealed record Session(
     string Id,
     string Quest,
@@ -56,7 +61,8 @@ public sealed record Session(
     string? Evidence,
     string? Transcript,
     DateTimeOffset Created,
-    DateTimeOffset Updated)
+    DateTimeOffset Updated,
+    string Workspace = Workspaces.Default)
 {
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
@@ -106,38 +112,58 @@ public sealed class SessionStore
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
-        command.CommandText = """
-            CREATE TABLE IF NOT EXISTS sessions (
-              id         TEXT PRIMARY KEY,
-              quest      TEXT NOT NULL,
-              repository TEXT NOT NULL,
-              adapter    TEXT NOT NULL,
-              state      TEXT NOT NULL,
-              note       TEXT NULL,
-              evidence   TEXT NULL,
-              transcript TEXT NULL,
-              created    TEXT NOT NULL,
-              updated    TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
-            """;
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await using (var command = _connection.CreateCommand())
+        {
+            command.CommandText = $"""
+                CREATE TABLE IF NOT EXISTS sessions (
+                  id         TEXT PRIMARY KEY,
+                  quest      TEXT NOT NULL,
+                  repository TEXT NOT NULL,
+                  adapter    TEXT NOT NULL,
+                  state      TEXT NOT NULL,
+                  note       TEXT NULL,
+                  evidence   TEXT NULL,
+                  transcript TEXT NULL,
+                  created    TEXT NOT NULL,
+                  updated    TEXT NOT NULL,
+                  workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}'
+                );
+                CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
+                """;
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // Records made before workspaces existed belong to the one circle there was. They must survive
+        // the upgrade: a session record is the reviewable trace of work that actually happened.
+        await using (var probe = _connection.CreateCommand())
+        {
+            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = 'workspace'";
+            var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
+            if (present == 0)
+            {
+                await using var alter = _connection.CreateCommand();
+                alter.CommandText =
+                    $"ALTER TABLE sessions ADD COLUMN workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'";
+                await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+        }
     }
 
     /// <summary>Record a new attempt, queued. Random id: two attempts at one quest are two records.</summary>
     public async Task<Session> CreateAsync(
-        string quest, string repository, string adapter, DateTimeOffset now, CancellationToken ct = default)
+        string quest, string repository, string adapter, DateTimeOffset now,
+        string? workspace = null, CancellationToken ct = default)
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
-            SessionState.Queued, null, null, null, now, now);
+            SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace));
 
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace)
             """;
+        command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$id", session.Id);
         command.Parameters.AddWithValue("$quest", session.Quest);
         command.Parameters.AddWithValue("$repository", session.Repository);
@@ -196,11 +222,12 @@ public sealed class SessionStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace)
             ON CONFLICT (id) DO UPDATE SET
-              state = $state, note = $note, evidence = $evidence, updated = $updated
+              state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace
             """;
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(record.Workspace));
         command.Parameters.AddWithValue("$id", record.Id);
         command.Parameters.AddWithValue("$quest", record.Quest);
         command.Parameters.AddWithValue("$repository", record.Repository);
@@ -240,16 +267,20 @@ public sealed class SessionStore
     /// the same shape as the quest list, for the same reason.
     /// </summary>
     public async Task<IReadOnlyList<Session>> ListAsync(
-        string? repository = null, bool includeClosed = false, CancellationToken ct = default)
+        string? repository = null, bool includeClosed = false, string? workspace = null,
+        CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             SELECT * FROM sessions
             WHERE ($repository IS NULL OR repository = $repository)
+              AND ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
               {(includeClosed ? "" : $"AND state IN ({ActiveStates})")}
             ORDER BY CASE WHEN state IN ({ActiveStates}) THEN 0 ELSE 1 END, created
             """;
         command.Parameters.AddWithValue("$repository", (object?)repository ?? DBNull.Value);
+        command.Parameters.AddWithValue(
+            "$workspace", workspace is null ? DBNull.Value : Workspaces.Normalize(workspace));
 
         var sessions = new List<Session>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -269,5 +300,6 @@ public sealed class SessionStore
         reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : reader.GetString(reader.GetOrdinal("evidence")),
         reader.IsDBNull(reader.GetOrdinal("transcript")) ? null : reader.GetString(reader.GetOrdinal("transcript")),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("created"))),
-        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))));
+        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
+        Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))));
 }

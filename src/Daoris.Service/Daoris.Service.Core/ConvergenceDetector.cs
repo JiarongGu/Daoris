@@ -36,10 +36,16 @@ public sealed record ConvergenceCandidate(
 /// </param>
 /// <param name="Kinds">Restrict to these kinds. Null means every kind.</param>
 /// <param name="MaxCandidates">How many groups to return.</param>
+/// <param name="Workspace">
+/// The circle to look within (D48). Null spans every workspace — which is rarely what is wanted here:
+/// two unrelated circles stating the same lesson have not converged, they have simply never had to
+/// agree, and reporting it invites promoting doctrine neither of them shares.
+/// </param>
 public sealed record ConvergenceOptions(
     double MinimumSimilarity = 0.82,
     IReadOnlySet<EntryKind>? Kinds = null,
-    int MaxCandidates = 25);
+    int MaxCandidates = 25,
+    string? Workspace = null);
 
 /// <summary>
 /// Finds the same lesson learned twice in different repositories.
@@ -76,6 +82,7 @@ public sealed class ConvergenceDetector(
         var considered = (await store.AllAsync(ct).ConfigureAwait(false))
             .Where(e => e.Provenance == Provenance.Local)
             .Where(e => options.Kinds is null || options.Kinds.Contains(e.Kind))
+            .Where(e => options.Workspace is null || Workspaces.Same(options.Workspace, e.Workspace))
             .ToList();
 
         if (considered.Count < 2) return [];

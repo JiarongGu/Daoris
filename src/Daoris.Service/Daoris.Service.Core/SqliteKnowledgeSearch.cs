@@ -33,6 +33,9 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     private static string Weight(double value) =>
         value.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+    /// <summary>Where bm25's rank lands: immediately after the entry's own columns.</summary>
+    private static int RankOrdinal => SqliteKnowledgeStore.ColumnCount;
+
     public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
         var (filter, parameters) = BuildFilter(query);
@@ -72,7 +75,9 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
         {
             var entry = SqliteKnowledgeStore.Read(reader);
-            var score = match is null ? 0 : -reader.GetDouble(8);
+            // The rank rides one past the entry's own columns — so it moves whenever they do. It moved
+            // once already, when entries gained their workspace.
+            var score = match is null ? 0 : -reader.GetDouble(RankOrdinal);
             hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, Text.Tokenize(query.Text))));
         }
 
@@ -130,6 +135,14 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
             var names = repositories.Select((r, i) => (Name: $"$repo{i}", Value: (object)r)).ToList();
             filter.Append($" AND e.repository IN ({string.Join(", ", names.Select(n => n.Name))})");
             parameters.AddRange(names);
+        }
+
+        if (query.Workspace is { } workspace)
+        {
+            // NOCASE, because a workspace name is a person's name for a circle and they will type it
+            // the way it reads — the same comparison Workspaces.Same makes in memory.
+            filter.Append(" AND e.workspace = $workspace COLLATE NOCASE");
+            parameters.Add(("$workspace", Workspaces.Normalize(workspace)));
         }
 
         return (filter.ToString(), parameters);

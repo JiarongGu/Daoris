@@ -1,7 +1,8 @@
 namespace Daoris.Knowledge;
 
 /// <summary>How much one repository contributes to the index.</summary>
-public sealed record RepositorySummary(string Repository, int Total, int Local, int Canonical);
+public sealed record RepositorySummary(
+    string Repository, int Total, int Local, int Canonical, string Workspace = Workspaces.Default);
 
 /// <param name="Accepted">Whether the feed was taken. A refusal names the missing declaration.</param>
 /// <param name="Message">The full answer, phrased once here so no two doors can drift on it.</param>
@@ -63,17 +64,21 @@ public sealed class KnowledgeService(
         return await store.FindAsync(id, ct).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<RepositorySummary>> SummarizeAsync(CancellationToken ct = default)
+    /// <param name="workspace">The circle to summarize (D48). Null is every one this machine holds.</param>
+    public async Task<IReadOnlyList<RepositorySummary>> SummarizeAsync(
+        string? workspace = null, CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var all = await store.AllAsync(ct).ConfigureAwait(false);
         return all
+            .Where(e => workspace is null || Workspaces.Same(workspace, e.Workspace))
             .GroupBy(e => e.Repository, StringComparer.Ordinal)
             .Select(g => new RepositorySummary(
                 g.Key,
                 g.Count(),
                 g.Count(e => e.Provenance == Provenance.Local),
-                g.Count(e => e.Provenance == Provenance.Canonical)))
+                g.Count(e => e.Provenance == Provenance.Canonical),
+                g.Select(e => e.Workspace).First()))
             .OrderByDescending(r => r.Total)
             .ToList();
     }
@@ -102,31 +107,62 @@ public sealed class KnowledgeService(
     /// on addressing a quest: a repository with no manifest has no client to see one, and a quest
     /// nobody can read looks exactly like a quest that was read and ignored.
     /// </remarks>
-    public async Task<IReadOnlyList<Registration>> RegistryAsync(CancellationToken ct = default)
+    /// <param name="workspace">
+    /// The circle to answer for (D48). Null is every workspace this machine holds — right for the
+    /// judgement that needs both sides (<see cref="QuestExchange"/>), and something a door showing a
+    /// person must narrow or say it did not.
+    /// </param>
+    public async Task<IReadOnlyList<Registration>> RegistryAsync(
+        string? workspace = null, CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var counts = (await store.AllAsync(ct).ConfigureAwait(false))
             .GroupBy(entry => entry.Repository, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-        return registry?.Read(counts) ?? [];
+        var all = registry?.Read(counts) ?? [];
+        return workspace is null
+            ? all
+            : all.Where(r => Workspaces.Same(r.InWorkspace, workspace)).ToList();
     }
+
+    /// <summary>
+    /// The workspace a repository is wired to on this machine, or the default when nobody has said.
+    /// </summary>
+    /// <remarks>
+    /// The ambient scope every door resolves before it asks anything: a session asking "has anyone
+    /// solved this" means its own circle (design §4), and its own circle is a registry row — not
+    /// anything in its tree.
+    /// </remarks>
+    public async Task<string> WorkspaceOfAsync(string repository, CancellationToken ct = default) =>
+        (await RegistryAsync(ct: ct).ConfigureAwait(false))
+            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            ?.InWorkspace
+        ?? Workspaces.Default;
 
     /// <summary>
     /// Record what a repository said about itself, when it told us rather than we found it.
     /// </summary>
     /// <remarks>
-    /// Persisted before it is served: a pushed registration is the only registration a remote service
-    /// has, and one that evaporates on restart looks exactly like a repository that never connected.
+    /// <para>Persisted before it is served: a pushed registration is the only registration a remote
+    /// service has, and one that evaporates on restart looks exactly like a repository that never
+    /// connected.</para>
+    ///
+    /// <para>What is served is what the store DECIDED, not what arrived — because the workspace is
+    /// preserved rather than overwritten when a registration says nothing about it (D48 §2). Serving
+    /// the incoming record instead would re-point every repository to `default` in memory the moment
+    /// an ordinary sync tick re-registered it, and the store on disk would keep saying otherwise.</para>
     /// </remarks>
-    public async Task RegisterAsync(Registration registration, DateTimeOffset now, CancellationToken ct = default)
+    /// <returns>The registration as it now stands, workspace resolved.</returns>
+    public async Task<Registration> RegisterAsync(
+        Registration registration, DateTimeOffset now, CancellationToken ct = default)
     {
-        if (registrations is not null)
-        {
-            await registrations.UpsertAsync(registration, now, ct).ConfigureAwait(false);
-        }
+        var effective = registrations is not null
+            ? await registrations.UpsertAsync(registration, now, ct).ConfigureAwait(false)
+            : registration with { Workspace = registration.InWorkspace };
 
-        registry?.Register(registration);
+        registry?.Register(effective);
+        return effective;
     }
 
     /// <summary>
@@ -155,7 +191,7 @@ public sealed class KnowledgeService(
     public async Task<FeedOutcome> FeedAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default)
     {
-        var registration = (await RegistryAsync(ct).ConfigureAwait(false))
+        var registration = (await RegistryAsync(ct: ct).ConfigureAwait(false))
             .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
 
         if (registration is null || !registration.Joined)
@@ -177,7 +213,15 @@ public sealed class KnowledgeService(
         }
 
         var normalized = entries
-            .Select(entry => entry with { Repository = registration.Repository, Provenance = Provenance.Local })
+            .Select(entry => entry with
+            {
+                Repository = registration.Repository,
+                Provenance = Provenance.Local,
+                // The RECEIVING deployment's wiring decides the circle, never the feed's claim about it
+                // (D48): a feed that could name its own workspace could write itself into someone
+                // else's, which is the scoping bug that becomes a disclosure.
+                Workspace = registration.InWorkspace,
+            })
             .ToList();
         await store.ReplaceRepositoryAsync(registration.Repository, normalized, ct).ConfigureAwait(false);
 
@@ -190,7 +234,17 @@ public sealed class KnowledgeService(
         await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            var report = await _index.RefreshAsync(source, ct).ConfigureAwait(false);
+            // The wiring, read once per refresh rather than once per entry: it is a small table and the
+            // corpus is not. Read BEFORE the scan so every entry of one repository is stamped alike.
+            var wiring = (registry?.Read(new Dictionary<string, int>()) ?? [])
+                .ToDictionary(r => r.Repository, r => r.InWorkspace, StringComparer.OrdinalIgnoreCase);
+
+            var report = await _index.RefreshAsync(
+                source,
+                repository => wiring.TryGetValue(repository, out var workspace)
+                    ? workspace
+                    : Workspaces.Default,
+                ct).ConfigureAwait(false);
 
             // Embedding happens here rather than inside the index, because it is the expensive,
             // optional half: the store is usable the moment the refresh returns, and semantic recall

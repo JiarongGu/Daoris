@@ -127,6 +127,8 @@
   "projects.accepts": "accepts",
   "projects.packs": "packs",
   "projects.adoptedDot": "adopted",
+  "projects.workspace": "workspace",
+  "projects.workspaceTip": "Which circle this repository shares with on THIS machine — knowledge, quests and records cross within a workspace and never across one. It is wiring, like a git remote: it lives in this machine's registry and is written into no tracked file, so another machine may wire the same repository differently.",
   "projects.outside.title": "Not adopted, so not addressable yet",
   "projects.outside.body": "Membership is a repository's own act — Daoris never writes into a sibling, so nothing joins by being seen. These appear because the index can still read their tracked knowledge from this machine, which is why they carry entry counts: readable is not joined. Until one joins, nothing can be asked of it — a quest addressed there would sit in a queue nobody reads. Listed rather than hidden, because \"who cannot be asked yet\" is the same question as \"who can\".",
   "projects.outside.readable": "{{count}} entries indexed read-only",

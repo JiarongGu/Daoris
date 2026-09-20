@@ -38,7 +38,7 @@ public sealed class RegistrationStore
     {
         await using (var command = _connection.CreateCommand())
         {
-            command.CommandText = """
+            command.CommandText = $"""
                 CREATE TABLE IF NOT EXISTS registrations (
                   repository TEXT PRIMARY KEY,
                   summary    TEXT NULL,
@@ -46,7 +46,8 @@ public sealed class RegistrationStore
                   accepts    TEXT NOT NULL,
                   packs      TEXT NOT NULL,
                   updated    TEXT NOT NULL,
-                  root       TEXT NULL
+                  root       TEXT NULL,
+                  workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}'
                 );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -61,6 +62,9 @@ public sealed class RegistrationStore
             ("root", "root TEXT NULL"),
             ("joined", "joined INTEGER NOT NULL DEFAULT 0"),
             ("shares_knowledge", "shares_knowledge INTEGER NOT NULL DEFAULT 0"),
+            // Workspaces arrived last (D48), and every registration that predates them belongs to the
+            // one group there was — which is what the default spells.
+            ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -76,17 +80,35 @@ public sealed class RegistrationStore
         }
     }
 
-    /// <summary>Record what a repository declared. Re-registering replaces: the repository is the identity.</summary>
-    public async Task UpsertAsync(Registration registration, DateTimeOffset now, CancellationToken ct = default)
+    /// <summary>
+    /// Record what a repository declared. Re-registering replaces: the repository is the identity.
+    /// </summary>
+    /// <remarks>
+    /// The workspace is the one field a re-registration may leave alone. It is WIRING — set once when
+    /// the person adds the repository to a circle, and carried by no manifest (D48 §2) — while an
+    /// ordinary `connect` runs on every sync tick and says nothing about it. So the statement wins when
+    /// there is one, the existing row wins when there is not, and `default` closes it: exactly the
+    /// COALESCE below, decided here in one statement rather than as a read-modify-write two callers
+    /// would race on.
+    /// </remarks>
+    /// <returns>The row as it now stands, so the caller never has to guess which workspace took.</returns>
+    public async Task<Registration> UpsertAsync(
+        Registration registration, DateTimeOffset now, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
-        command.CommandText = """
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge)
-            VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares)
+        command.CommandText = $"""
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace)
+            VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
+                    COALESCE($workspace, '{Workspaces.Default}'))
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated,
-              root = $root, joined = $joined, shares_knowledge = $shares
+              root = $root, joined = $joined, shares_knowledge = $shares,
+              workspace = COALESCE($workspace, workspace, '{Workspaces.Default}')
+            RETURNING workspace
             """;
+        command.Parameters.AddWithValue(
+            "$workspace",
+            registration.Workspace is null ? DBNull.Value : Workspaces.Normalize(registration.Workspace));
         command.Parameters.AddWithValue("$repository", registration.Repository);
         command.Parameters.AddWithValue("$summary", (object?)registration.Summary ?? DBNull.Value);
         command.Parameters.AddWithValue("$owns", ToJson(registration.Owns));
@@ -96,7 +118,9 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$root", (object?)registration.Root ?? DBNull.Value);
         command.Parameters.AddWithValue("$joined", registration.Joined ? 1 : 0);
         command.Parameters.AddWithValue("$shares", registration.SharesKnowledge ? 1 : 0);
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        var effective = await command.ExecuteScalarAsync(ct).ConfigureAwait(false) as string;
+
+        return registration with { Workspace = Workspaces.Normalize(effective) };
     }
 
     /// <summary>Every declaration ever pushed. Entry counts are the index's to add, not ours to store.</summary>
@@ -104,7 +128,7 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText =
-            "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge FROM registrations";
+            "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -120,7 +144,8 @@ public sealed class RegistrationStore
                 Entries: 0,
                 Root: reader.IsDBNull(5) ? null : reader.GetString(5),
                 Joined: reader.GetInt32(6) != 0,
-                SharesKnowledge: reader.GetInt32(7) != 0));
+                SharesKnowledge: reader.GetInt32(7) != 0,
+                Workspace: Workspaces.Normalize(reader.IsDBNull(8) ? null : reader.GetString(8))));
         }
 
         return registrations;

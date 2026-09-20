@@ -254,6 +254,34 @@ The first version: doctrine that installs, is checked, and flows back.
   and two simulated machines: a quest published on one is driven to done on the other, the closure
   crosses back, a raced take stands down, knowledge crosses only where declared, keys are refused
   without being echoed, and the remote store is scanned to hold no machine path — no model in the gate.
+  A two-workspace phase joins it: two circles on one machine, a search answering from one while the
+  other holds the same lesson word for word, and a quest across the boundary refused with both sides
+  named.
+
+### Workspaces
+
+- **The workspace is the unit of sharing.** Knowledge search, convergence, the registry, quests and
+  session records all answer within one workspace and never across one — so a machine can hold a game
+  family and a work family without either seeing the other. A machine that never names one runs exactly
+  as before: everything lands in `default`, silently.
+- **Membership is wiring, like a git remote — never a tracked declaration.** `daoris connect
+  --workspace <name>` records it in this machine's registry and **writes nothing into the repository**,
+  so a fork, a mirror and a second machine may each wire the same repository differently. Omitting the
+  flag preserves whatever wiring already existed, because an ordinary `connect` runs on every sync tick
+  and must not re-point anything; the command reports back the workspace that actually took.
+- **A quest does not cross workspaces**, and the refusal names both sides, both circles, and the two
+  things a person can do about it — re-wire one of them, or carry the request across by hand.
+  Addressability offers only the asker's own circle.
+- **A session's answers default to its own circle.** The MCP tools take an optional `workspace`; with
+  none, the scope is the workspace of the repository the session is running in, resolved from the
+  registry by path — an agent never has to know wiring that is not in its tree. Every answer says which
+  scope ran, including when it spanned every workspace, and `all` is the spelled way to ask for that.
+- **Nothing a feed claims decides where it lands.** Fed entries and fed session records take the
+  *receiving* deployment's wiring, because a feed that could name its own workspace could write itself
+  into someone else's.
+- **Fixed: `refresh` re-read the repositories but never the folder.** The root's subdirectories were
+  listed once at startup, so a repository created afterwards was invisible to the index while being
+  fully registered and quest-addressable — and the refresh reported success either way.
 
 ### Proven
 

@@ -195,11 +195,17 @@ app.MapGet("/api/status", (ComposedService s) => new StatusResponse(
         : $"Set {ServiceOptions.ModelVariable} to enable semantic recall — it is what finds two "
           + "repositories that reached the same conclusion in different words."));
 
-app.MapGet("/api/repositories", async (ComposedService s, CancellationToken ct) =>
-    (await s.Service.SummarizeAsync(ct)).Select(r => new RepositoryResponse(r.Repository, r.Total, r.Local, r.Canonical)));
+// Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
+// every circle this deployment holds, which for a shared host is one by construction and for a local
+// one is the person's own machine (D21). The DOOR never invents a default: a caller that wants its
+// own circle says so, because only the caller knows which repository it is speaking for.
+app.MapGet("/api/repositories", async (ComposedService s, string? workspace, CancellationToken ct) =>
+    (await s.Service.SummarizeAsync(workspace, ct))
+        .Select(r => new RepositoryResponse(r.Repository, r.Total, r.Local, r.Canonical, r.Workspace)));
 
 app.MapGet("/api/search", async (
-    ComposedService s, string q, string? kinds, string? repositories, bool? localOnly, int? limit, CancellationToken ct) =>
+    ComposedService s, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
+    string? workspace, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(q)) return Results.BadRequest(new ErrorResponse("q is required"));
 
@@ -209,11 +215,12 @@ app.MapGet("/api/search", async (
         Repositories = KnowledgeQuery.ParseSet(repositories),
         Provenance = (localOnly ?? true) ? Provenance.Local : null,
         Limit = Math.Clamp(limit ?? 20, 1, 100),
+        Workspace = workspace,
     }, ct);
 
     return Results.Ok(hits.Select(h => new HitResponse(
         h.Entry.Id, h.Entry.Repository, h.Entry.Kind.ToString(), h.Entry.Title,
-        h.Entry.RelativePath, h.Excerpt, h.Score)));
+        h.Entry.RelativePath, h.Excerpt, h.Score, h.Entry.Workspace)));
 });
 
 app.MapGet("/api/entry", async (ComposedService s, string id, CancellationToken ct) =>
@@ -232,11 +239,13 @@ app.MapGet("/api/entries", async (ComposedService s, string repository, Cancella
 // The landing view's endpoint (D30). Convergence is the centre of this UI, not a feature on a menu:
 // search answers a question you have, and comparison tells you which question to ask.
 app.MapGet("/api/convergence", async (
-    ComposedService s, double? minimumSimilarity, string? kinds, int? limit, CancellationToken ct) =>
+    ComposedService s, double? minimumSimilarity, string? kinds, int? limit, string? workspace,
+    CancellationToken ct) =>
 {
     var found = await s.Service.FindConvergenceAsync(
         new ConvergenceOptions(
-            Math.Clamp(minimumSimilarity ?? 0.82, 0, 1), KnowledgeQuery.ParseKinds(kinds), Math.Clamp(limit ?? 25, 1, 100)),
+            Math.Clamp(minimumSimilarity ?? 0.82, 0, 1), KnowledgeQuery.ParseKinds(kinds),
+            Math.Clamp(limit ?? 25, 1, 100), workspace),
         ct);
 
     return found.Select(c => new ConvergenceResponse(
@@ -254,8 +263,8 @@ app.MapGet("/api/convergence", async (
 // into anyone's files: repositories here are not developed across, so a quest is published and pulled,
 // never pushed into a sibling's tree.
 app.MapGet("/api/quests", async (
-    ComposedService s, string? repository, bool? includeClosed, CancellationToken ct) =>
-    (await s.Quests.ListAsync(repository, includeClosed ?? false, ct)).Select(ToQuest));
+    ComposedService s, string? repository, bool? includeClosed, string? workspace, CancellationToken ct) =>
+    (await s.Quests.ListAsync(repository, includeClosed ?? false, workspace, ct)).Select(ToQuest));
 
 // Publish and respond go through the same exchange the MCP host uses, so the two doors cannot drift
 // on who may be addressed or what declining requires. This pair is what makes a REMOTE deployment a
@@ -271,9 +280,14 @@ app.MapPost("/api/quests", async (ComposedService s, PublishQuestRequest body, C
     var outcome = await s.Exchange.PublishAsync(
         body.From, body.To, body.Title, body.Body, DateTimeOffset.UtcNow, ct);
 
-    return outcome.Refusal == QuestPublishRefusal.None
-        ? Results.Ok(new QuestActionResponse(ToQuest(outcome.Quest!), outcome.Message))
-        : Results.BadRequest(new ErrorResponse(outcome.Message));
+    return outcome.Refusal switch
+    {
+        QuestPublishRefusal.None => Results.Ok(new QuestActionResponse(ToQuest(outcome.Quest!), outcome.Message)),
+        // Two circles that were never joined is a state conflict, not a malformed ask — the same 409
+        // shape the quest lock teaches. The sentence names both sides (D48 §4).
+        QuestPublishRefusal.CrossWorkspace => Results.Conflict(new ErrorResponse(outcome.Message)),
+        _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+    };
 });
 
 app.MapPost("/api/quests/{id}/respond", async (
@@ -298,8 +312,9 @@ app.MapPost("/api/quests/{id}/respond", async (
 // what the platform renders and what survives a driver restart; the process handle stays with the
 // driver that owns it. Judgement is the shared ledger's, so this door and any other cannot drift.
 app.MapGet("/api/sessions", async (
-    ComposedService s, HttpContext http, string? repository, bool? includeClosed, CancellationToken ct) =>
-    (await s.Sessions.ListAsync(repository, includeClosed ?? false, ct))
+    ComposedService s, HttpContext http, string? repository, bool? includeClosed, string? workspace,
+    CancellationToken ct) =>
+    (await s.Sessions.ListAsync(repository, includeClosed ?? false, workspace, ct))
         .Select(session => ToSession(session, MachineLocal(http))));
 
 app.MapPost("/api/sessions", async (
@@ -352,7 +367,7 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
 {
     if (string.IsNullOrWhiteSpace(body.Repository)) return Results.BadRequest(new ErrorResponse("repository is required"));
 
-    await s.Service.RegisterAsync(new Registration(
+    var registered = await s.Service.RegisterAsync(new Registration(
         body.Repository,
         Adopted: true,
         body.Domain?.Summary,
@@ -366,18 +381,24 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         Joined: body.Join ?? false,
         // Knowledge feeds only from a joined repository (D47 §4) — narrowed here as well as in the
         // CLI, because this door also answers clients the CLI never saw.
-        SharesKnowledge: (body.Join ?? false) && (body.ShareKnowledge ?? false)), DateTimeOffset.UtcNow, ct);
+        SharesKnowledge: (body.Join ?? false) && (body.ShareKnowledge ?? false),
+        // Silence PRESERVES the row (D48 §2): an ordinary re-registration runs on every sync tick and
+        // says nothing about the wiring, so a null here must not re-point the repository to `default`.
+        Workspace: body.Workspace), DateTimeOffset.UtcNow, ct);
 
-    return Results.Ok(new RegisteredResponse(body.Repository, DateTimeOffset.UtcNow));
+    // Answered with the workspace that TOOK, not the one that was asked for — the client learns which
+    // circle it is actually wired to, including when it said nothing and the existing row held.
+    return Results.Ok(new RegisteredResponse(body.Repository, DateTimeOffset.UtcNow, registered.InWorkspace));
 });
 
-app.MapGet("/api/registry", async (ComposedService s, HttpContext http, CancellationToken ct) =>
-    (await s.Service.RegistryAsync(ct)).Select(r => new RegistrationResponse(
+app.MapGet("/api/registry", async (
+    ComposedService s, HttpContext http, string? workspace, CancellationToken ct) =>
+    (await s.Service.RegistryAsync(workspace, ct)).Select(r => new RegistrationResponse(
         r.Repository, r.Adopted, r.Registered, r.Summary, r.Owns, r.Accepts, r.Packs, r.Entries,
         // Machine-local by design (D46): a filesystem path is answered only to a caller on this
         // machine, so a remote deployment never serves anyone's disk layout to the network.
         Root: MachineLocal(http) ? r.Root : null,
-        r.Joined, r.SharesKnowledge)));
+        r.Joined, r.SharesKnowledge, r.InWorkspace)));
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
@@ -487,7 +508,11 @@ else
             Enum.TryParse<QuestStatus>(quest.Status!, ignoreCase: true, out var status);
             await s.Quests.MirrorAsync(new Quest(
                 quest.Id.TrimStart('#'), quest.From, quest.To, quest.Title, quest.Body,
-                status, quest.Note, quest.Filed, quest.Updated, Home: "remote"), ct);
+                status, quest.Note, quest.Filed, quest.Updated, Home: "remote",
+                // THIS machine's wiring decides which circle a mirrored quest is filed under (D48) —
+                // the receiver's registry row, not anything the feed claimed. A mirror that could name
+                // its own workspace could file itself into one this machine never joined.
+                Workspace: await s.Service.WorkspaceOfAsync(quest.To, ct)), ct);
         }
 
         return Results.Ok(new FeedResponse(quests.Count, $"{quests.Count} quest(s) mirrored."));
@@ -519,11 +544,11 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
 };
 
 static QuestResponse ToQuest(Quest q) => new(
-    q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated);
+    q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated, q.Workspace);
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(
     entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),
-    entry.Title, entry.RelativePath, entry.Body, entry.Anchor);
+    entry.Title, entry.RelativePath, entry.Body, entry.Anchor, entry.Workspace);
 
 // The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
 // answered only to a caller on this machine. The evidence stays — commits are the reviewable record
@@ -531,7 +556,7 @@ static EntryResponse ToEntry(KnowledgeEntry entry) => new(
 static SessionResponse ToSession(Session s, bool loopback) => new(
     s.Id, s.Quest, s.Repository, s.Adapter, s.StateName, s.Note, s.Evidence,
     Transcript: loopback ? s.Transcript : null,
-    s.Created, s.Updated);
+    s.Created, s.Updated, s.Workspace);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

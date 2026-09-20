@@ -97,7 +97,11 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions)
                 Session: null);
         }
 
-        var session = await sessions.CreateAsync(quest.Id, quest.To, adapter, now, ct).ConfigureAwait(false);
+        // The record's circle is the quest's circle — derived, never passed beside it, so a record can
+        // never be filed under a workspace its quest does not belong to (D48 §4).
+        var session = await sessions
+            .CreateAsync(quest.Id, quest.To, adapter, now, quest.Workspace, ct)
+            .ConfigureAwait(false);
 
         return new(
             SessionOpenRefusal.None,

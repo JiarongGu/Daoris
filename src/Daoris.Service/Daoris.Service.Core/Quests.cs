@@ -33,6 +33,10 @@ public enum QuestStatus
 /// and planning — and a mirror never moves locally: transitions happen at the home, and the next
 /// mirror carries the result back. One home per quest is what makes reconciliation a non-problem.
 /// </param>
+/// <param name="Workspace">
+/// The circle this quest belongs to (D48). Both sides share it by construction — the exchange refuses
+/// a publish that would cross — so one field, not two, and a scoped list can trust it.
+/// </param>
 public sealed record Quest(
     string Id,
     string From,
@@ -43,7 +47,8 @@ public sealed record Quest(
     string? Note,
     DateTimeOffset Filed,
     DateTimeOffset Updated,
-    string? Home = null);
+    string? Home = null,
+    string Workspace = Workspaces.Default);
 
 /// <param name="Quest">The quest as it now stands — null when no such id exists.</param>
 /// <param name="Moved">Whether THIS call moved it. False with a non-null quest is a refused move.</param>
@@ -85,34 +90,42 @@ public sealed class QuestStore
     {
         await using (var command = _connection.CreateCommand())
         {
-            command.CommandText = """
+            command.CommandText = $"""
                 CREATE TABLE IF NOT EXISTS quests (
-                  id       TEXT PRIMARY KEY,
-                  sender   TEXT NOT NULL,
-                  receiver TEXT NOT NULL,
-                  title    TEXT NOT NULL,
-                  body     TEXT NOT NULL,
-                  status   TEXT NOT NULL,
-                  note     TEXT NULL,
-                  filed    TEXT NOT NULL,
-                  updated  TEXT NOT NULL,
-                  home     TEXT NULL
+                  id        TEXT PRIMARY KEY,
+                  sender    TEXT NOT NULL,
+                  receiver  TEXT NOT NULL,
+                  title     TEXT NOT NULL,
+                  body      TEXT NOT NULL,
+                  status    TEXT NOT NULL,
+                  note      TEXT NULL,
+                  filed     TEXT NOT NULL,
+                  updated   TEXT NOT NULL,
+                  home      TEXT NULL,
+                  workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // A store created before the remote existed has no home column; its quests must survive the
-        // upgrade with home NULL — which is exactly right, because everything in it was its own.
-        await using (var probe = _connection.CreateCommand())
+        // A store created before the remote existed has no home column; one from before workspaces has
+        // no workspace. Their quests must survive the upgrade — home NULL and the one workspace there
+        // was, which is exactly right, because everything in them was its own.
+        foreach (var (column, definition) in new[]
         {
-            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('quests') WHERE name = 'home'";
+            ("home", "home TEXT NULL"),
+            ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
+        })
+        {
+            await using var probe = _connection.CreateCommand();
+            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('quests') WHERE name = $name";
+            probe.Parameters.AddWithValue("$name", column);
             var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
             if (present == 0)
             {
                 await using var alter = _connection.CreateCommand();
-                alter.CommandText = "ALTER TABLE quests ADD COLUMN home TEXT NULL";
+                alter.CommandText = $"ALTER TABLE quests ADD COLUMN {definition}";
                 await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
         }
@@ -131,20 +144,28 @@ public sealed class QuestStore
                 System.Text.Encoding.UTF8.GetBytes($"{from}->{to}:{title.Trim()}")))[..6].ToLowerInvariant();
 
     /// <summary>Publish a quest. Returns the existing one unchanged if it was already asked.</summary>
+    /// <param name="workspace">
+    /// The circle both sides share — decided by <see cref="QuestExchange"/>, which is where the
+    /// same-workspace clause lives. The store holds state; it does not judge who may ask whom.
+    /// </param>
     public async Task<Quest> PublishAsync(
-        string from, string to, string title, string body, DateTimeOffset now, CancellationToken ct = default)
+        string from, string to, string title, string body, DateTimeOffset now,
+        string? workspace = null, CancellationToken ct = default)
     {
         var id = MakeId(from, to, title);
         var existing = await FindAsync(id, ct).ConfigureAwait(false);
         if (existing is not null) return existing;
 
-        var quest = new Quest(id, from, to, title, body, QuestStatus.Open, null, now, now);
+        var quest = new Quest(
+            id, from, to, title, body, QuestStatus.Open, null, now, now,
+            Workspace: Workspaces.Normalize(workspace));
 
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, NULL, $filed, $updated)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, NULL, $filed, $updated, $workspace)
             """;
+        command.Parameters.AddWithValue("$workspace", quest.Workspace);
         command.Parameters.AddWithValue("$id", quest.Id);
         command.Parameters.AddWithValue("$sender", quest.From);
         command.Parameters.AddWithValue("$receiver", quest.To);
@@ -214,11 +235,12 @@ public sealed class QuestStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $home)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $home, $workspace)
             ON CONFLICT (id) DO UPDATE SET
-              status = $status, note = $note, updated = $updated, home = $home
+              status = $status, note = $note, updated = $updated, home = $home, workspace = $workspace
             """;
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(quest.Workspace));
         command.Parameters.AddWithValue("$id", quest.Id);
         command.Parameters.AddWithValue("$sender", quest.From);
         command.Parameters.AddWithValue("$receiver", quest.To);
@@ -249,16 +271,20 @@ public sealed class QuestStore
     /// pushing live work off the end is how a list stops being read.
     /// </remarks>
     public async Task<IReadOnlyList<Quest>> ListAsync(
-        string? receiver = null, bool includeClosed = false, CancellationToken ct = default)
+        string? receiver = null, bool includeClosed = false, string? workspace = null,
+        CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             SELECT * FROM quests
             WHERE ($receiver IS NULL OR receiver = $receiver)
+              AND ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
               {(includeClosed ? "" : "AND status IN ('Open', 'Taken')")}
             ORDER BY CASE status WHEN 'Open' THEN 0 WHEN 'Taken' THEN 1 ELSE 2 END, filed
             """;
         command.Parameters.AddWithValue("$receiver", (object?)receiver ?? DBNull.Value);
+        command.Parameters.AddWithValue(
+            "$workspace", workspace is null ? DBNull.Value : Workspaces.Normalize(workspace));
 
         var quests = new List<Quest>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -276,5 +302,6 @@ public sealed class QuestStore
         reader.IsDBNull(reader.GetOrdinal("note")) ? null : reader.GetString(reader.GetOrdinal("note")),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("filed"))),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
-        reader.IsDBNull(reader.GetOrdinal("home")) ? null : reader.GetString(reader.GetOrdinal("home")));
+        reader.IsDBNull(reader.GetOrdinal("home")) ? null : reader.GetString(reader.GetOrdinal("home")),
+        Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))));
 }

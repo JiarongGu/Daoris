@@ -81,6 +81,15 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                   {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
                 </p>
               )}
+              {project.workspace && (
+                /* Which circle this one shares with (D48). Shown rather than assumed: a machine
+                   holding two workspaces would otherwise present them as one family, and the
+                   person would have no way to tell from the list that it was two. */
+                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
+                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.workspace')}</span>
+                  <Tip content={t('projects.workspaceTip')}><Chip>{project.workspace}</Chip></Tip>
+                </p>
+              )}
               {driver.data && (
                 /* The person's standing choices for THIS machine's driver (D46 §6) — rendered only
                    where a shell answers; a browser has no driver to control, and shows nothing. */

@@ -66,6 +66,12 @@ builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);
 
+// The ambient scope (D48 §4): this process is spawned BY a repository's session, so its working
+// directory is that repository — which is the one thing that makes "my own circle" answerable without
+// asking the agent to know wiring it has no business knowing. Captured at startup, because the
+// directory a client launched this from is the fact; anything later is drift.
+builder.Services.AddSingleton(AmbientWorkspace.Here());
+
 builder.Services
     .AddMcpServer(options => options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" })
     .WithStdioServerTransport()

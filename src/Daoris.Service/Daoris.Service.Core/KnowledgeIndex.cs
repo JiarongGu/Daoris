@@ -12,10 +12,20 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
 {
     private readonly IDisclosurePolicy _disclosure = disclosure ?? DisclosurePolicy.LocalOnly;
 
-    public async Task<IndexReport> RefreshAsync(IKnowledgeSource source, CancellationToken ct = default)
+    /// <param name="workspaceOf">
+    /// Which circle a repository is wired to (D48). Stamped HERE, on the way in, because a source reads
+    /// files and the wiring is a registry row — no scanner can know it, and asking one to would put
+    /// machine configuration inside a filesystem walk. Absent, everything lands in the default, which
+    /// is what a machine that never named a workspace should see.
+    /// </param>
+    public async Task<IndexReport> RefreshAsync(
+        IKnowledgeSource source, Func<string, string>? workspaceOf = null, CancellationToken ct = default)
     {
         var read = await source.ReadAsync(ct).ConfigureAwait(false);
-        var permitted = read.Where(_disclosure.MayLeaveMachine).ToList();
+        var permitted = read
+            .Where(_disclosure.MayLeaveMachine)
+            .Select(entry => entry with { Workspace = workspaceOf?.Invoke(entry.Repository) ?? entry.Workspace })
+            .ToList();
 
         var byRepository = permitted.GroupBy(e => e.Repository, StringComparer.Ordinal).ToList();
         foreach (var group in byRepository)

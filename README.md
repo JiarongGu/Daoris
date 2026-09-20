@@ -54,11 +54,18 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
 | `status` | Packs, versions, drift, local files, and what a pending update would change; `--json` for an agent |
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
-| `connect` | Registers this repo with a knowledge service — what it owns, what it accepts. **The only command that uses the network**, and it is opt-in |
+| `connect` | Registers this repo with a knowledge service — what it owns, what it accepts, and (with `--workspace`) which circle it shares within. **The only command that uses the network**, and it is opt-in |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
-promote every locally-edited canonical file at once.
+promote every locally-edited canonical file at once. `connect` accepts `--workspace <name>`.
+
+**A workspace is the unit of sharing**: knowledge, quests and session records cross between repositories
+within one and never across one, so a machine can hold a game family and a work family without either
+seeing the other. Membership is **wiring, like a git remote** — `connect --workspace aurora` records it
+in this machine's registry and writes nothing into the repository, so a fork, a mirror and a second
+machine may each wire the same repository differently. Omitting the flag leaves existing wiring alone;
+a repository nobody ever wired is in `default`, which is exactly how a machine with one circle behaves.
 
 **`--force` is the only way to lose work here**, so it names every file it overwrites or discards. Daoris
 otherwise refuses in all three destructive cases: a file you edited, a file you wrote before adopting,
