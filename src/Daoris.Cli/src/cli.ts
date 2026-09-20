@@ -57,6 +57,9 @@ const USAGE = `daoris <command> [options]
                          list                      adapter, cap, what is opted in
                          drive|undrive <repo>      opt a repository in, or out
                          hold|resume <repo>        pause one, or release it
+                         trees <repo> on|off       sessions there open their own
+                                                   worktree (D51) — your dirty
+                                                   root stops holding the driver
                          cap <n> · adapter <name>
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a

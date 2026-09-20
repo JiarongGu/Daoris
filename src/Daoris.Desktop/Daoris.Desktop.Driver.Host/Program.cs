@@ -17,9 +17,14 @@ using Daoris.Driver;
 //   --until-idle  tick until nothing starts, then exit — the deterministic mode a gate drives
 //   (default)     watch: tick forever, pollSeconds apart
 //
-//   chat --repository <name> [--adapter <name>]
+//   chat --repository <name> [--adapter <name>] [--own-tree]
 //                 hold a conversation in a repository (D49 §3): stdin is the person, stdout is the
-//                 session, end of input ends it. One session per repository, as ever.
+//                 session, end of input ends it. One session per working tree (D51) — and --own-tree
+//                 opens the conversation in a worktree of its own, beside your work in the checkout.
+//
+//   trees [list | remove <path> [--force]]
+//                 the session worktrees this machine has grown (D51): list them, or remove one —
+//                 refusing while it holds uncommitted changes or unmerged commits, unless forced.
 //
 // Exit codes keep the family contract: 0 clean · 2 tool error.
 if (OperatingSystem.IsWindows())
@@ -32,6 +37,13 @@ if (OperatingSystem.IsWindows())
 if (args is ["chat", .. var chatArgs])
 {
     return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
+}
+
+// The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —
+// the CLI's `daoris driver trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
+if (args is ["trees", .. var treesArgs])
+{
+    return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs);
 }
 
 var once = args.Contains("--once");

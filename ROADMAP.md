@@ -78,7 +78,7 @@ stdout), `AwaitingPerson` given a surface at last, review as a real diff, and no
 | Item | What | Where it stands |
 |---|---|---|
 | **SURF2 · The lock keys on the tree** | The record names its tree; the ledger's refusals move with it; the planner's rule does not. Nothing creates a tree yet, so behaviour is identical | **Built** (2026-09-21) — two trees in one repository run at once over the real host, and an unknown tree holds every tree, because the lock errs toward refusing |
-| **SURF3 · Session trees** | `git worktree` under `~/.daoris/trees/`, on request and opt-in; `connect` refused from a linked worktree; removal that refuses to destroy work; only the registered root ever feeds | **Next** |
+| **SURF3 · Session trees** | `git worktree` under `~/.daoris/trees/`, on request and opt-in; `connect` refused from a linked worktree; removal that refuses to destroy work; only the registered root ever feeds | **Built** (2026-09-21) — a deliberately dirty root no longer holds the driver: the session ran in its own tree, the person's file untouched, and removal refused while the work sat unmerged |
 | **SURF4a–d · The Work view** | Built component by component (D52 as amended, `docs/2026-09-21-working-surface-components.md`): the atoms and the two helpers, then the rail, then the attended session, then the view. A story before each component, its own test, and no hook inside a molecule | Planned |
 | **SURF5 · Attention** | Overview's *what needs you*, `AwaitingPerson`'s surface, the sidebar counts, OS notification on park and end | Planned |
 | **SURF6 · Review** | The diff over the bridge, bounded; merge and discard as the person's acts | Planned |

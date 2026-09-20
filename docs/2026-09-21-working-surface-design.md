@@ -117,6 +117,14 @@ prevent, and inverting the shell around sessions would produce one within a week
 this surface is for *watching*. A sessions rail on the left (~18rem, the sidebar's sibling rather than
 a second sidebar), and the attended session filling everything else.
 
+*Amended 2026-09-21 (owner): the layout takes deepseek-harness's structure* (MIT; components doc §3a
+carries the whole adoption). The frame is **three columns** — the rail, the attended session with a
+protected 400px floor, and a **right dock keyed to the attended session** where the timeline and the
+diff live, opening at 45% and conceding before the center does, closing deterministically rather than
+reopening on resize. The stream keeps their tail rule: follow until the person scrolls up. The rail
+keeps its ~18rem width and gains their collapse-to-rail behaviour. Nothing about D41's language moves
+with it — structure and geometry transfer, pixels do not.
+
 **The rail: sessions, grouped by repository.** Session identity is the highest-leverage detail in the
 research and tab overload is the named anti-pattern, so identity is carried by **what a session is
 for**, derived and never invented: `repository · kind · the quest's title or the conversation's first

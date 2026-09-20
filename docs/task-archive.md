@@ -1844,3 +1844,46 @@ which is the claim that behaviour did not move.
 overwrite. And the Playwright suite aborted one worker with `0xC0000409` on the first run and passed
 clean on the next, which is a known family shape rather than anything this change touched; it is now
 **TEST1** in the backlog, held, rather than folklore.
+
+## SURF3 — session trees (2026-09-21)
+
+> `git worktree` under the trees home, created **only on request** and opt-in per repository, with
+> both editors (D50). Branch named per session, never reused, based on the canonical line as WSP4
+> resolves it. Four rules carry the risk: the creating sentence states that a fresh tree holds
+> nothing git does not track; `connect` from a linked worktree is refused naming the main one;
+> removal refuses to destroy work; and the feed still reads only the registered root. The clean-tree
+> rule stays on the root and is vacuous in a fresh tree.
+
+✅ done 2026-09-21 — D51's worktree half, in code. CLI 203 → 209, driver 130 → 141, modules 39 → 40,
+family rehearsal 156 → 166; service, devkit and web unchanged and green.
+
+**What landed.** `SessionTrees` (open/list/remove over real git — `WorkingTree.GitAsync` went internal
+so there is one process-spawning implementation); `DriverConfig.Trees` + `OpensOwnTree`, round-tripping
+through the same file both editors share; the driver growing a tree **before the record exists** (the
+same place every other refusal is asked) and skipping the root's clean check for opted-in repositories
+— which is the whole point; `ChatRunner`'s `ownTree` and `daoris-driver chat --own-tree`;
+`daoris-driver trees list|remove [--force]`; `daoris driver trees <repo> on|off` in the CLI, stating
+the price where the choice is made; `SET_TREES` + the Projects checkbox + both catalogues (245 keys);
+and `connect` refusing from a linked worktree **without a spawn** — git marks one itself (`.git` is a
+FILE naming `.git/worktrees/<name>`), so reading one file answers it and a submodule's
+`.git/modules/<name>` marker correctly does not match.
+
+**The split that placed the verbs.** The standing opt-in is a file edit, so it lives in the `daoris`
+CLI; the tree lifecycle is git spawned against real checkouts, so it lives on `daoris-driver`, which
+already owns git — D50's parity is between *surfaces*, not between packages, and the CLI's no-spawn
+discipline (only `toolchain.ts` spawns) stays intact.
+
+**The incident that became a guard.** The first run of the new test suite created worktrees and
+branches **on the Daoris repository itself**: git resolves a repository by walking UP, so a fixture
+folder that merely sat inside this checkout grew `daoris/s-*` branches on it. `OpenAsync` now proves
+the root IS the top of its own working tree (`rev-parse --show-toplevel`, compared normalized) and
+refuses a root that is inside some other repository — naming both paths — and the test that found the
+bug now pins it. The strays were pruned the same minute; nothing reached the index.
+
+**Proven over the real loop** (rehearsal §16): the root deliberately DIRTY — the very state that held
+the driver in §7 — and the session ran anyway in its own tree, `completed`, with the person's file
+untouched, no commit on the root's HEAD, and the record naming a tree under the driver's home;
+`trees list` named it; removal **refused** while the stub's commit sat unmerged, quoting the commit,
+and `--force` was the person meaning it — tree and branch both gone; `connect` from inside the tree
+refused naming the main one; and the tree fed nothing — no registry row, no search hit — because a
+session tree is a place to work, not a repository (D51 rule 1).

@@ -6,6 +6,8 @@
 // D8's guarantee is about the DOCTRINE operations — `check`, `sync`, `index`, `upstream` — all of
 // which are pure local hashing against the lock and stay that way.
 
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { dirname, isAbsolute, resolve } from 'node:path';
 import { flagValue } from './args.ts';
 import { readManifest } from './config.ts';
 import { DaorisError } from './errors.ts';
@@ -67,7 +69,53 @@ export function isDeclared(domain: Domain | undefined | null): boolean {
   return Boolean(domain.summary?.trim()) || domain.owns.length > 0 || domain.accepts.length > 0;
 }
 
+/**
+ * The main tree this checkout is a linked worktree OF — or null when it is a main tree, a submodule,
+ * or not a git repository at all.
+ *
+ * @remarks
+ * Git marks a linked worktree itself: its `.git` is a **file** naming the main repository's
+ * `.git/worktrees/<name>` directory. Reading that file is the whole check — no spawn, which is what
+ * keeps the CLI's discipline intact (only `toolchain.ts` spawns anything). A **submodule** wears a
+ * `.git` file too, pointing at `.git/modules/<name>` — and a submodule is a repository of its own,
+ * entirely registrable, so only the worktree marker counts.
+ */
+export function linkedWorktreeMain(root: string): string | null {
+  const marker = resolve(root, '.git');
+  try {
+    if (!existsSync(marker) || statSync(marker).isDirectory()) return null;
+
+    const pointed = /^gitdir:\s*(.+)\s*$/m.exec(readFileSync(marker, 'utf8'))?.[1]?.trim();
+    if (!pointed) return null;
+
+    const gitdir = isAbsolute(pointed) ? pointed : resolve(root, pointed);
+    // <main>/.git/worktrees/<name> — three levels up is the main tree. Normalized separators, because
+    // git writes forward slashes on every platform and a person may have hand-edited either kind in.
+    const parts = gitdir.replaceAll('\\', '/').split('/');
+    const at = parts.lastIndexOf('worktrees');
+    if (at < 2 || parts[at - 1] !== '.git') return null;
+
+    return parts.slice(0, at - 1).join('/');
+  } catch {
+    // An unreadable marker is not this command's to diagnose: git itself will refuse next, with a
+    // better sentence than a guess here would be.
+    return null;
+  }
+}
+
 export async function commandConnect({ root, argv, write }: CommandArgs): Promise<ExitCode> {
+  // Before anything else, including --dry-run: a registration re-pointed at an ephemeral tree keeps
+  // working right up until that tree is removed, and then the repository's root is a path that does
+  // not exist (D51). The refusal names where to run this instead.
+  const main = linkedWorktreeMain(root);
+  if (main !== null) {
+    throw new DaorisError(
+      'this is a linked worktree — a session\'s scratch checkout, not the repository\'s home. '
+      + 'Registering it would point the machine\'s registry at a tree that is removed when its '
+      + `session's work is merged. Run \`daoris connect\` from the main tree instead:\n  ${main}`,
+      1);
+  }
+
   const manifest = readManifest(root);
   const name = root.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? 'unknown';
 

@@ -74,6 +74,16 @@ public sealed class DriverModule : ModuleBase
                 return State();
             }
 
+            // Session trees (D51): the desktop's half of the standing opt-in, over the same file
+            // `daoris driver trees <repo> on|off` edits — two editors, one truth (D50).
+            case "SET_TREES":
+            {
+                var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+                var ownTree = PayloadHelper.GetRequiredValue<bool>(request.Payload, "ownTree");
+                Change(config => config.WithTrees(repository, ownTree));
+                return State();
+            }
+
             // The console's backlog (D49 §2): what this session has said, or what it has said since
             // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
             // that just opened catches up, and how one that missed a batch closes the gap — the
@@ -128,7 +138,12 @@ public sealed class DriverModule : ModuleBase
                     // The per-session picker (D49 §4). Absent takes the workspace's default, then the
                     // machine's, then the harness's own configuration home.
                     profile: Optional(request, "profile"),
-                    cancellationToken);
+                    // The per-conversation tree choice (D51). Absent falls back to the repository's
+                    // standing opt-in, which the runner reads from the same config.
+                    ownTree: request.Payload is { } chosen
+                        && chosen.TryGetProperty("ownTree", out var tree)
+                        && tree.ValueKind == JsonValueKind.True,
+                    ct: cancellationToken);
 
                 _loop.Nudge();
                 return new { start.SessionId, start.Message };
@@ -291,6 +306,7 @@ public sealed class DriverModule : ModuleBase
             _loop.ConfigPath,
             config.Drivable,
             config.Holds,
+            config.Trees,
             config.Cap,
             config.Adapter,
             config.PollSeconds,

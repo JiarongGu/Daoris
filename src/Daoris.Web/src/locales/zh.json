@@ -238,6 +238,7 @@
   "projects.driver.label": "驱动",
   "projects.driver.drive": "在本机驱动",
   "projects.driver.hold": "暂停",
+  "projects.driver.trees": "每个会话独立工作树",
 
   "convergence.title": "同归",
   "convergence.description": "两个仓库各自独立得出同一结论的地方——读过再定。知识这一半的主视图。",

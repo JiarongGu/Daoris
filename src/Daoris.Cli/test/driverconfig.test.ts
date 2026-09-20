@@ -154,6 +154,52 @@ test('adapter sets the name and notes when no toolchain is managed for it', () =
 });
 
 /**
+ * Session trees (D51/SURF3): whether a repository's sessions open their own worktree instead of
+ * running in the registered root. One standing flag, per repository — `on|off` rather than a verb
+ * pair, because unlike drive/hold the two directions do not mean different things.
+ */
+test('trees opts a repository into session worktrees, and off takes it back out', () => {
+  const fx = makeFixture('driver-trees');
+
+  const on = run(['trees', 'engine', 'on'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).trees, ['engine']);
+  // The price is stated where the choice is made: a fresh tree holds nothing git does not track,
+  // so a repository whose gates need installed dependencies pays that per tree.
+  assert.match(on.out, /nothing git does not track/);
+
+  run(['trees', 'engine', 'off'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).trees, []);
+  fx.cleanup();
+});
+
+test('trees needs on or off, and says so', () => {
+  const fx = makeFixture('driver-trees-arg');
+  assert.match(captureError(() => run(['trees', 'engine'], at(fx))).message, /on\|off/);
+  assert.match(captureError(() => run(['trees', 'engine', 'maybe'], at(fx))).message, /on\|off/);
+  fx.cleanup();
+});
+
+test('the trees list survives edits made by verbs that do not know it', () => {
+  const fx = makeFixture('driver-trees-preserve');
+  run(['trees', 'engine', 'on'], at(fx));
+
+  run(['drive', 'engine'], at(fx));
+  run(['cap', '3'], at(fx));
+
+  assert.deepEqual(readDriverChoices(at(fx)).trees, ['engine']);
+  fx.cleanup();
+});
+
+test('list names the repositories whose sessions get their own tree', () => {
+  const fx = makeFixture('driver-trees-list');
+  run(['drive', 'engine'], at(fx));
+  run(['trees', 'engine', 'on'], at(fx));
+
+  assert.match(run(['list'], at(fx)).out, /own tree/);
+  fx.cleanup();
+});
+
+/**
  * A file the command cannot parse is reported, never silently replaced: the driver reads the same
  * file, and rewriting it would destroy whatever the person was in the middle of typing.
  */
@@ -179,6 +225,6 @@ test('an unknown verb names the ones that exist', () => {
   const error = captureError(() => run(['frobnicate'], at(fx)));
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
-  assert.match(error.message, /list, drive, undrive, hold, resume, cap, adapter/);
+  assert.match(error.message, /list, drive, undrive, hold, resume, trees, cap, adapter/);
   fx.cleanup();
 });

@@ -32,13 +32,17 @@ export function driverConfigPath(env: Record<string, string | undefined> = proce
 export interface DriverChoices {
   drivable: string[];
   holds: string[];
+  /** Repositories whose sessions open their own worktree instead of the registered root (D51). */
+  trees: string[];
   cap: number;
   adapter: string;
   rest: Record<string, unknown>;
 }
 
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
-const EMPTY: DriverChoices = { drivable: [], holds: [], cap: 2, adapter: 'claude-code', rest: {} };
+const EMPTY: DriverChoices = {
+  drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', rest: {},
+};
 
 /**
  * The choices as they stand.
@@ -55,10 +59,11 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ...EMPTY, rest: {} };
 
-    const { drivable, holds, cap, adapter, ...rest } = parsed;
+    const { drivable, holds, trees, cap, adapter, ...rest } = parsed;
     return {
       drivable: names(drivable),
       holds: names(holds),
+      trees: names(trees),
       cap: typeof cap === 'number' && cap >= 1 ? Math.floor(cap) : EMPTY.cap,
       adapter: typeof adapter === 'string' && adapter.length > 0 ? adapter : EMPTY.adapter,
       rest,
@@ -78,6 +83,7 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     ...choices.rest,
     drivable: choices.drivable,
     holds: choices.holds,
+    trees: choices.trees,
     cap: choices.cap,
     adapter: choices.adapter,
   }, null, 2)}\n`);
@@ -113,6 +119,34 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     case 'resume':
       return toggle('holds', named(argv, 'resume'), false);
 
+    // One flag with two directions rather than a verb pair, unlike drive/undrive and hold/resume:
+    // those pairs mean different things (a standing decision vs a pause on one), where this is a
+    // single standing switch and inventing two words for it would imply a difference that is not there.
+    case 'trees': {
+      const repository = named(argv, 'trees');
+      const direction = argv.slice(1).find((token) => token === 'on' || token === 'off');
+      if (!direction) {
+        throw new DaorisError(
+          '`driver trees` needs on|off — e.g. `daoris driver trees aurora-engine on`.');
+      }
+
+      const on = direction === 'on';
+      const kept = choices.trees.filter((name) => name.toLowerCase() !== repository.toLowerCase());
+      writeDriverChoices(path, { ...choices, trees: on ? [...kept, repository] : kept });
+
+      write(on
+        ? `daoris: sessions in \`${repository}\` open their own worktree (D51).`
+        : `daoris: sessions in \`${repository}\` run in its registered root again.`);
+      if (on) {
+        write('  A fresh tree holds nothing git does not track — no installed dependencies, no build');
+        write('  outputs — so a session pays that repository\'s own setup cost per tree. In exchange,');
+        write('  your uncommitted work in the root no longer holds the driver.');
+      }
+
+      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+      return 0;
+    }
+
     case 'cap': {
       const value = Number(named(argv, 'cap'));
       if (!Number.isInteger(value) || value < 1) {
@@ -141,7 +175,7 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     default:
       throw new DaorisError(
-        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, cap, adapter`);
+        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, cap, adapter`);
   }
 
   function list(): ExitCode {
@@ -156,7 +190,18 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     for (const repository of choices.drivable) {
       const held = choices.holds.some((name) => name.toLowerCase() === repository.toLowerCase());
-      write(`  drivable   ${repository}${held ? '  (held by you — `daoris driver resume` releases it)' : ''}`);
+      const trees = choices.trees.some((name) => name.toLowerCase() === repository.toLowerCase());
+      write(`  drivable   ${repository}`
+        + `${held ? '  (held by you — `daoris driver resume` releases it)' : ''}`
+        + `${trees ? '  (sessions open their own tree — D51)' : ''}`);
+    }
+
+    // Trees on something not drivable is standing configuration, not an error — the desktop's chat
+    // door reads it too — but naming it keeps the list the whole truth.
+    for (const repository of choices.trees) {
+      if (!choices.drivable.some((name) => name.toLowerCase() === repository.toLowerCase())) {
+        write(`  trees      ${repository}  (sessions there open their own tree when anything spawns one)`);
+      }
     }
 
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection

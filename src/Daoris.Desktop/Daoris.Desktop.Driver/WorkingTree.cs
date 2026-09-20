@@ -122,7 +122,9 @@ public static class WorkingTree
         return commits.Length == 0 ? "no commits landed" : $"commits landed:\n{commits}";
     }
 
-    private static async Task<(int Code, string Stdout, string Stderr)> GitAsync(
+    // Internal rather than private since D51: SessionTrees asks git the same way for the same reason —
+    // one process-spawning implementation, not two that differ in encoding or error shape.
+    internal static async Task<(int Code, string Stdout, string Stderr)> GitAsync(
         string root, IReadOnlyList<string> arguments, CancellationToken ct)
     {
         var info = new ProcessStartInfo

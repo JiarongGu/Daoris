@@ -42,6 +42,9 @@ public sealed class Driver(
     // one tick or every quest would re-detect every harness. Per-instance when nobody passes one.
     private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
 
+    // The worktree half of D51, beside the transcripts under the same home.
+    private readonly SessionTrees _trees = new(home);
+
     /// <summary>One decision-and-execution round. Returns what happened, for whoever is watching.</summary>
     public async Task<TickReport> TickAsync(CancellationToken ct = default)
     {
@@ -104,13 +107,20 @@ public sealed class Driver(
     {
         var quest = start.Quest;
         var root = start.Root!;
+        var isolated = config.OpensOwnTree(quest.To);
 
         // Clean tree, or nothing: uncommitted changes are somebody's work in flight (D46 §3). No
-        // session record exists yet, so a hold here costs nothing and destroys nothing.
-        var (clean, detail) = await WorkingTree.CleanAsync(root, ct).ConfigureAwait(false);
-        if (!clean)
+        // session record exists yet, so a hold here costs nothing and destroys nothing. VACUOUS for a
+        // repository opted into session trees (D51 rule 5) — a fresh tree is clean by construction,
+        // and the person's work in flight in the root no longer holding the driver is the point of
+        // the whole decision.
+        if (!isolated)
         {
-            return ($"held  #{quest.Id} → {quest.To}: {detail}", false);
+            var (clean, detail) = await WorkingTree.CleanAsync(root, ct).ConfigureAwait(false);
+            if (!clean)
+            {
+                return ($"held  #{quest.Id} → {quest.To}: {detail}", false);
+            }
         }
 
         // The harness, and which account it runs as (D49 §4) — asked BEFORE the record is opened, in
@@ -126,17 +136,42 @@ public sealed class Driver(
             return ($"held  #{quest.Id} → {quest.To}: {selection.Refusal}", false);
         }
 
+        // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
+        // the same reason every refusal above is asked before it: a failure here holds the quest
+        // open and records nothing. The branch grows from the canonical line as WSP4 resolves it.
+        TreeOpened? opened = null;
+        if (isolated)
+        {
+            try
+            {
+                opened = await _trees.OpenAsync(root, quest.To, start.Workspace ?? "default", ct)
+                    .ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                return ($"held  #{quest.Id} → {quest.To}: {error.Message}", false);
+            }
+        }
+
+        var workTree = opened?.Path ?? root;
+
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
         var (sessionId, message) = await service
-            // The tree this spawn will hold (D51) — the registered root today, which is what the
-            // planner resolved and what the clean-tree check above was asked of. Stated rather than
-            // left to the service to infer, because this side is the one that knows where it is
-            // about to run a process.
-            .OpenSessionAsync(quest.Id, config.Adapter, selection.Version, selection.Profile, root, ct)
+            // The tree this spawn will hold (D51) — its own where the repository opted in, the
+            // registered root otherwise. Stated rather than left to the service to infer, because
+            // this side is the one that knows where it is about to run a process.
+            .OpenSessionAsync(quest.Id, config.Adapter, selection.Version, selection.Profile, workTree, ct)
             .ConfigureAwait(false);
         if (sessionId is null)
         {
+            // A fresh tree for a session that never opened has no work in it, so the clean removal
+            // path takes it — and if anything landed there in the meantime, the refusal keeps it.
+            if (opened is not null)
+            {
+                await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            }
+
             return ($"refused  #{quest.Id} → {quest.To}: {message}", false);
         }
 
@@ -144,7 +179,7 @@ public sealed class Driver(
         {
             var adapter = adapters.Resolve(config.Adapter);
             var target = new SessionTarget(
-                quest.Id, quest.Title, quest.Body, quest.From, quest.To, root, service.BaseUrl);
+                quest.Id, quest.Title, quest.Body, quest.From, quest.To, workTree, service.BaseUrl);
             var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
 
             // The environment seam every harness already carries for exactly this (D49 §4). Applied
@@ -155,9 +190,14 @@ public sealed class Driver(
                 HarnessProbe.Apply(info, toolchain, selection.ProfileHome);
             }
 
-            await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
+            await service.AdvanceAsync(
+                sessionId, "starting",
+                // The creating sentence, on the record while the session runs (D51 rule 4): where it
+                // grew from and what a fresh tree does not hold. The conclusion's note replaces it —
+                // by then the record's Tree field and the evidence say the rest.
+                note: opened?.Sentence, ct: ct).ConfigureAwait(false);
 
-            var before = await WorkingTree.HeadAsync(root, ct).ConfigureAwait(false);
+            var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
@@ -180,11 +220,15 @@ public sealed class Driver(
                     ? Observation.Conclude(code, status)
                     : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
-            var evidence = await WorkingTree.CommitsSinceAsync(root, before, ct).ConfigureAwait(false);
+            var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
             await service.AdvanceAsync(
                 sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct).ConfigureAwait(false);
 
-            return ($"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}): {conclusion.Note}", true);
+            // The tree stays, whole — nothing merges itself and nothing deletes itself (D51 rules
+            // 6–7): the person merges from the root and discards from a surface that refuses to
+            // destroy work. The line names it so a terminal watcher knows where the work is sitting.
+            var where = opened is null ? "" : $" [own tree: {opened.Path}]";
+            return ($"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}", true);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

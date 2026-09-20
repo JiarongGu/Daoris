@@ -1539,6 +1539,18 @@ and a surface that learns from a trained reviewer learns the wrong thing), D24 (
 D41's tokens, status palette and accessibility rules. The build order is five session-sized items,
 SURF2–SURF6.
 
+**Amended again 2026-09-21 (owner, mid-arc): the working surface takes deepseek-harness's UI/UX
+structure.** [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) is DeepSeek's MIT
+agent console — a shipped answer to exactly this product — and its *structure* is adopted whole:
+the three-column frame with its field-tested geometry, **one docking surface per attended session**
+(where the timeline and SURF6's diff live), trajectory-beside-conversation with the follow-the-tail
+rule, and approvals as in-flow cards. The full adoption, with the geometry numbers, is
+`2026-09-21-working-surface-components.md` §3a. **Deliberately not taken:** its plugin runtime
+(Cordis) — their plugins show which surfaces matter, and those surfaces are built natively against
+claude/codex through the adapter seam (D23) rather than generically against a provider registry; its
+visual identity (D41 does not move); its model settings (D24) and workspace picker (D48). Structure
+carries no licence obligation; any ported code brings the MIT notice with it in the same commit.
+
 **Amended 2026-09-21, the same day, on the owner's direction — the surface is built component by
 component.** "This is a large UI/UX as a whole, so develop it component by component — more of an
 atomic design pattern — so each part can be tested one by one." The method is

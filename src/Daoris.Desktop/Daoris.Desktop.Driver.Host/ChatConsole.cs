@@ -27,11 +27,13 @@ internal static class ChatConsole
         if (string.IsNullOrWhiteSpace(repository))
         {
             Console.Error.WriteLine(
-                "usage: daoris-driver chat --repository <name> [--adapter <name>] [--profile <name>]\n"
+                "usage: daoris-driver chat --repository <name> [--adapter <name>] [--profile <name>] [--own-tree]\n"
                 + "  Messages are read from stdin, one per line; the session's output goes to stdout.\n"
                 + "  End of input ends the conversation, and the record says how it finished.\n"
                 + "  --profile picks which credential profile to run as; omitted takes the workspace's\n"
-                + "  default, then the machine's (`daoris harness profile ...`).");
+                + "  default, then the machine's (`daoris harness profile ...`).\n"
+                + "  --own-tree opens the conversation in a session worktree of its own (D51), so your\n"
+                + "  uncommitted work in the checkout stays yours alone.");
             return 2;
         }
 
@@ -59,7 +61,9 @@ internal static class ChatConsole
                 return Task.CompletedTask;
             },
             // The per-session picker, on the surface a machine with no screen has (D49 §4, D50).
-            profile: Flag(args, "--profile")).ConfigureAwait(false);
+            profile: Flag(args, "--profile"),
+            // The per-conversation tree choice (D51) — beside the repository's standing opt-in.
+            ownTree: args.Contains("--own-tree")).ConfigureAwait(false);
 
         if (start.SessionId is null)
         {

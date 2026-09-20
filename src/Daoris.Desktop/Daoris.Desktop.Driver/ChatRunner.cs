@@ -49,9 +49,15 @@ public sealed class ChatRunner(
     /// The per-session picker (D49 §4): which credential profile this conversation runs as. Null takes
     /// the workspace's default, then the machine's, then the harness's own configuration home.
     /// </param>
+    /// <param name="ownTree">
+    /// Open the conversation in a session tree of its own (D51) — the per-conversation choice, beside
+    /// the repository's standing opt-in in the config. Either says yes; a chat is exactly the case the
+    /// decision was made for, since the person is usually IN the root it would otherwise hold.
+    /// </param>
     public async Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
-        Func<string, string, Task>? onEnded = null, string? profile = null, CancellationToken ct = default)
+        Func<string, string, Task>? onEnded = null, string? profile = null, bool ownTree = false,
+        CancellationToken ct = default)
     {
         var resolved = adapters.Resolve(adapter);
         if (!resolved.Interactive)
@@ -84,12 +90,35 @@ public sealed class ChatRunner(
             .ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
+        // A tree of the conversation's own, when asked for — per conversation, or as the repository's
+        // standing choice (D51). Grown before the record, like every refusal above this line.
+        TreeOpened? opened = null;
+        if (ownTree || config.OpensOwnTree(repository))
+        {
+            try
+            {
+                opened = await new SessionTrees(home)
+                    .OpenAsync(root!, known.Repository, known.Workspace, ct).ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                return new(null, error.Message);
+            }
+        }
+
+        var workTree = opened?.Path ?? root!;
+
         var (sessionId, message) = await service
-            // The tree the conversation runs in (D51) — the checkout found above, which is the same
-            // resolution the ledger would make, stated by the side that is about to spawn into it.
-            .OpenChatAsync(repository, resolved.Name, selection.Version, selection.Profile, root, ct)
+            // The tree the conversation runs in (D51) — its own where one was grown, the checkout
+            // found above otherwise, stated by the side that is about to spawn into it.
+            .OpenChatAsync(repository, resolved.Name, selection.Version, selection.Profile, workTree, ct)
             .ConfigureAwait(false);
-        if (sessionId is null) return new(null, message);
+        if (sessionId is null)
+        {
+            // Fresh and workless, so the clean path removes it; anything already in it is kept.
+            if (opened is not null) await new SessionTrees(home).RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            return new(null, message);
+        }
 
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
@@ -100,7 +129,7 @@ public sealed class ChatRunner(
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             var info = resolved.PrepareChat(
-                new ChatTarget(repository, root, service.BaseUrl),
+                new ChatTarget(repository, workTree, service.BaseUrl),
                 config.Commands.GetValueOrDefault(resolved.Name));
             if (resolved.Toolchain is { } toolchain)
             {

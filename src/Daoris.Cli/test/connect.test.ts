@@ -200,3 +200,59 @@ test('connect refuses a repository that has not said what it is', async () => {
   delete process.env.DAORIS_SERVICE_URL;
   fx.cleanup();
 });
+
+/**
+ * `connect` from a LINKED WORKTREE is refused, naming the main tree (D51/SURF3).
+ *
+ * A registration re-pointed at an ephemeral tree is the worst failure available here: everything
+ * keeps working until the tree is removed, and then the repository's root is a path that does not
+ * exist. Git itself marks a linked worktree — its `.git` is a FILE naming the main repository's
+ * `.git/worktrees/<name>` — so the check reads one file and spawns nothing, which is what keeps the
+ * CLI's no-spawn discipline intact (only `toolchain.ts` spawns).
+ */
+test('connect from a linked worktree is refused, naming the main tree', async () => {
+  const fx = makeFixture('connect-linked');
+  fx.write('daoris.json', JSON.stringify({
+    source: 's',
+    domain: { summary: 'A test repo.', owns: ['itself'], accepts: ['a quest'] },
+  }));
+  fx.write('.git', 'gitdir: /home/dev/Repo/.git/worktrees/session-ab12cd34\n');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  try {
+    await commandConnect({ root: fx.root, argv: ['--dry-run'], write: () => {}, packageRoot: '' });
+    assert.fail('expected a refusal');
+  } catch (error) {
+    assert.ok(error instanceof DaorisError);
+    assert.equal((error as DaorisError).exitCode, 1);
+    assert.match((error as DaorisError).message, /linked worktree/);
+    // The actionable half: WHERE to run connect instead.
+    assert.match((error as DaorisError).message, /[/\\]home[/\\]dev[/\\]Repo/);
+  }
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
+});
+
+/**
+ * A SUBMODULE also wears a `.git` file — `gitdir: ../.git/modules/<name>` — and a submodule is a
+ * repository of its own, entirely registrable. Only the worktree marker refuses.
+ */
+test('a submodule checkout is not mistaken for a linked worktree', async () => {
+  const fx = makeFixture('connect-submodule');
+  fx.write('daoris.json', JSON.stringify({
+    source: 's',
+    domain: { summary: 'A submodule.', owns: ['itself'], accepts: ['a quest'] },
+  }));
+  fx.write('.git', 'gitdir: ../.git/modules/sub\n');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  const lines: string[] = [];
+  const code = await commandConnect({
+    root: fx.root, argv: ['--dry-run'], write: (line) => lines.push(line), packageRoot: '',
+  });
+  assert.equal(code, 0);
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
+});

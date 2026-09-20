@@ -5,7 +5,7 @@ import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
 import { ChatDrawer } from './ChatDrawer';
 import { ago, sentence } from './format';
 import { useRegistry, useRepositories, useSessions } from './queries';
-import { useDriver, useHarnesses, useSetDrivable, useSetHold, useStartChat } from './shell';
+import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees, useStartChat } from './shell';
 import {
   Button, Card, CheckField, Chip, type Notify, PageHeader, SkeletonRows, Tip, useErrorNotify,
 } from './ui';
@@ -23,6 +23,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   const driver = useDriver();
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
+  const setTrees = useSetTrees();
   // The driver bridge included: a STATE that fails silently reads as a machine with no driver.
   useErrorNotify(registry.error ?? repositories.error ?? driver.error, notify);
 
@@ -215,6 +216,14 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                       label={t('projects.driver.hold')}
                     />
                   )}
+                  {/* Session trees (D51): this repository's sessions open their own worktree, so the
+                      person's uncommitted work in the checkout stops holding the driver. */}
+                  <CheckField
+                    checked={named(driver.data.trees ?? [], project.repository)}
+                    onChange={(next) => setTrees.mutate(
+                      { repository: project.repository, ownTree: next }, { onError: onDriverError })}
+                    label={t('projects.driver.trees')}
+                  />
                   {/* A conversation in this repository (D49 §3) — where a driver is attached, because
                       a chat is a process on this machine. Already talking? The same button opens it. */}
                   <Button

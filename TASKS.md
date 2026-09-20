@@ -41,8 +41,8 @@ CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANO
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-203 CLI tests, 258 service, 57 devkit, 130 driver, 39 desktop modules, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **156/156 family rehearsal** including the
+209 CLI tests, 258 service, 57 devkit, 141 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **166/166 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
@@ -119,11 +119,13 @@ contributor without Daoris cannot do.
 **The arc is closed and reviewed (REV2), the owner set the next direction — the desktop becomes a
 working surface — and SURF1 has designed it (2026-09-21).** The contract is
 `docs/2026-09-21-working-surface-design.md`; the decisions are **D51** (the isolation model, settled
-first because everything follows from it) and **D52** (the surface). **SURF2 has landed** (2026-09-21):
-the lock keys on the tree, the record names it, and nothing creates one — behaviour is identical and
-the rehearsal proves it. **The next work is SURF3** — session trees — and then SURF4a–d, SURF5, SURF6
-in order. Read the contract and both decisions before picking any of them up; each item cites its
-sections.
+first because everything follows from it) and **D52** (the surface, twice amended the same day: the
+layout structure is deepseek-harness's, and the build is component by component). **SURF2 and SURF3
+have landed** (2026-09-21): the lock keys on the tree; the trees exist, opt-in per repository, grown
+per session before the record, refusing to die holding work — and a dirty root no longer holds the
+driver, which was the point. **The next work is SURF4a** — the atoms and helpers — then SURF4b–d,
+SURF5, SURF6 in order. Read the contract, the components doc and both decisions before picking any of
+them up.
 
 Smaller and independent of them: **CANON7** (a decision to bring the owner rather than work to do — it
 takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only) or
@@ -212,10 +214,10 @@ its trigger has arrived. Nothing is pushed or published, and a release is still 
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (CLI 203 + `check` + version agreement),
+- **Verify before claiming done, always:** `npm run verify` (CLI 209 + `check` + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (130), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (39), `npm run rehearse:family` (156/156), `npm run test:web` (55 + 9). If a `bin`-driven gate is red
+  (141), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (166/166), `npm run test:web` (55 + 9). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -230,34 +232,24 @@ session-sized landing, TDD, gates green, moved to the archive on completion.
 ### The working surface — the build order (D51/D52, designed 2026-09-21)
 
 The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
-them in order.** SURF2 is done (2026-09-21, in the archive): the lock keys on the tree, with no
-behaviour changed — which is what makes SURF3 safe.
+them in order.** SURF2 and SURF3 are done (2026-09-21, in the archive): the lock keys on the tree,
+and the trees exist — opt-in per repository, grown per session, refusing to die holding work. **The
+next work is SURF4a.**
 Everything with a screen in it also follows `docs/2026-09-21-working-surface-components.md` — the
 surface is built **component by component**, each with its story and its own test, because a rail, a
 head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
 thing that renders is the last thing.
-
-- [ ] **SURF3 — session trees** (design §2, D51). **SURF2 has landed** — the lock keys on the tree,
-  the record names it, and nothing creates one yet, which is what this item is for. `git worktree` under
-  `~/.daoris/trees/<workspace>/<repository>/`, created **only on request** and opt-in per repository,
-  with both editors (D50: the desktop, and a `daoris driver` verb). Branch named for the session,
-  never reused, based on the canonical line as WSP4 already resolves it — falling back to the root's
-  `HEAD` where none is declared, **saying which it used**. Four rules carry the risk: **the creating
-  sentence states that a fresh tree holds nothing git does not track** (no dependencies, no build
-  outputs — the price of D51, paid per repository); **`connect` from a linked worktree is refused
-  naming the main one** (`--git-common-dir` against `--git-dir`; a re-pointed registration keeps
-  working right up until the tree is removed, which is the worst failure available here); **removal
-  refuses to destroy work**, naming what would be lost; and **the feed still reads only the registered
-  root**, so WSP4's provenance model is untouched — assert it rather than assume it. The clean-tree
-  rule stays on the root and is vacuous in a fresh tree, which is how a person's work in flight stops
-  holding the driver.
 
 **SURF4 is four items, cut along the layers** (owner, 2026-09-21: *"this is a large UI/UX as a whole,
 so develop it component by component — more of an atomic design pattern — so each part can be tested
 one by one"*). The method, the inventory and the dependency rule are
 `docs/2026-09-21-working-surface-components.md`; read it before starting any of the four. Its one
 load-bearing rule: **a molecule imports no hook**, which is what makes every state reachable by
-passing props — and a test asserts it, so it cannot quietly stop being true.
+passing props — and a test asserts it, so it cannot quietly stop being true. **The layout structure
+is deepseek-harness's** (owner, 2026-09-21; components doc §3a, D52 as amended): the three-column
+frame with its geometry, the right dock keyed to the attended session (timeline + diff), the
+follow-the-tail stream rule — structure and geometry, never its pixels (D41) and never its plugin
+runtime (its surfaces are built natively against claude/codex through the adapter seam, D23).
 
 - [ ] **SURF4a — the parts everything else is made of** (components §4). Three atoms in `ui.tsx` with
   a story per state — `Dot` (live/attention, always beside a label, never hue alone), `MonoWell` (the
@@ -334,6 +326,23 @@ passing props — and a test asserts it, so it cannot quietly stop being true.
   switcher is a global chrome control (one circle at a time, like a git branch) or a per-view filter;
   §4's "scoped to one workspace per query" argues for the first, and the second is what a filter
   usually becomes. Web-only; no service change.
+
+- [ ] **DOCS1 — study deepseek-harness's documentation system, and take what converges** (owner,
+  2026-09-21: it is itself code-generated, so "take its design for code-gen skill/structure
+  instructions as an example to improve our docs system too"). Its `docs/AGENTS.md` is a documentation
+  *standard with gates*: a one-home-per-fact tier taxonomy (standing orders / architecture map /
+  subsystem references / decision notes / postmortems / cookbooks / package contracts), **per-document
+  word budgets in a manifest enforced by `verify-doc-budgets`** with a relocate → condense → raise
+  discipline, **fenced `ts` blocks that must compile** (`doc-typecheck`, with `type-equiv` manifests so
+  a pasted declaration cannot drift from its source), generated reference regions that are
+  freshness-gated, a notes lifecycle (`proposed/implemented/rejected/archived`, 447 architecture notes),
+  and a per-package "Model Experience" section saying what a package contributes to the model's
+  context. **Half of this converges with what Daoris already holds** — tier-is-the-directory (D7), the
+  always-loaded byte budget (D28), claims-need-checks, the decision log — which is two ecosystems
+  arriving at the same doctrine independently: D17-grade evidence when canonizing any of it. Study
+  first, one session; the deliverable is a comparison note naming what is adopted (most likely: the
+  doc-budget manifest as a devkit gate, the compile-checked doc examples, the notes lifecycle) and
+  what is already covered. MIT; a ported script carries its notice.
 
 - [ ] **HARNESS2 — a `codex` session adapter.** **Not HARNESS1** (that is a second harness *layout*,
   a doctrine question; this is a second harness the driver can spawn). SES3 already made codex

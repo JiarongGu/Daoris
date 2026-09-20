@@ -238,6 +238,7 @@
   "projects.driver.label": "driver",
   "projects.driver.drive": "drive on this machine",
   "projects.driver.hold": "hold",
+  "projects.driver.trees": "own tree per session",
 
   "convergence.title": "Convergence",
   "convergence.description": "Where two repositories reached the same conclusion independently — read them and decide. The knowledge half's lead view.",

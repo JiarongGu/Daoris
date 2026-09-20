@@ -60,6 +60,23 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains("engine", config.Holds);
     }
 
+    /// <summary>
+    /// Session trees (D51): the desktop half of the standing opt-in, over the same file the CLI's
+    /// `daoris driver trees <repo> on|off` edits — two editors, one truth (D50).
+    /// </summary>
+    [Fact]
+    public async Task Opting_a_repository_into_session_trees_writes_the_same_file()
+    {
+        var module = Module();
+        var state = await AnswerAsync(module, "SET_TREES", new { repository = "engine", ownTree = true });
+
+        Assert.Equal("engine", state.GetProperty("trees")[0].GetString());
+        Assert.True(DriverConfig.Load(DriverConfigPath).OpensOwnTree("engine"));
+
+        var off = await AnswerAsync(module, "SET_TREES", new { repository = "engine", ownTree = false });
+        Assert.Equal(0, off.GetProperty("trees").GetArrayLength());
+    }
+
     [Fact]
     public async Task Taking_a_repository_back_out_leaves_the_others_standing()
     {

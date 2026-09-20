@@ -90,6 +90,25 @@ public sealed class ConfigTests
         Assert.Empty(removed.WithDrivable("Game", false).Drivable);
     }
 
+    /// <summary>
+    /// Session trees (D51): whose sessions open their own worktree. The same standing-flag shape as
+    /// drivable, round-tripping through the same file both editors share.
+    /// </summary>
+    [Fact]
+    public void The_trees_opt_in_round_trips_and_toggles_like_the_others()
+    {
+        var config = DriverConfig.Empty.WithTrees("Game", true).WithTrees("game", true);
+        Assert.Single(config.Trees);
+
+        var read = DriverConfig.Parse(config.ToJson());
+        Assert.Equal(["game"], read.Trees);
+        Assert.True(read.OpensOwnTree("GAME"));
+        Assert.False(read.OpensOwnTree("Tools"));
+
+        Assert.Empty(config.WithTrees("GAME", false).Trees);
+        Assert.Empty(DriverConfig.Parse("{}").Trees);
+    }
+
     [Fact]
     public void Save_writes_atomically_and_load_reads_it_back()
     {

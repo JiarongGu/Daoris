@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fourteen commands, 203 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fourteen commands, 209 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 258, `Daoris.Devkit` 57, and the
-driver 130. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
+driver 141. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
 off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the

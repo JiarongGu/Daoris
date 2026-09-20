@@ -14,6 +14,8 @@ import { keys } from './queries';
 export type DriverState = {
   drivable: string[];
   holds: string[];
+  /** Repositories whose sessions open their own worktree instead of the registered root (D51). */
+  trees: string[];
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
 };
@@ -43,6 +45,8 @@ function useDriverChange<TVariables extends Record<string, unknown>>(type: strin
 
 export const useSetDrivable = () => useDriverChange<{ repository: string; drivable: boolean }>('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
+/** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */
+export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: boolean }>('SET_TREES');
 
 /**
  * What the shell can say about a folder on this machine (D48 §7) — the one thing a page cannot find

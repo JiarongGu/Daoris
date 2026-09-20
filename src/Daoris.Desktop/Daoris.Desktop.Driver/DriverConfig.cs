@@ -13,6 +13,10 @@ namespace Daoris.Driver;
 /// <param name="TimeoutMinutes">How long a session may run before the driver concludes it failed.</param>
 /// <param name="PollSeconds">How often the watch loop ticks.</param>
 /// <param name="Commands">Per-adapter command configuration — what the stub runs.</param>
+/// <param name="Trees">
+/// Repositories whose sessions open their OWN worktree instead of the registered root (D51). Empty —
+/// the default — is today's behaviour byte for byte: an additive feature, like the profiles (D49 §4).
+/// </param>
 public sealed record DriverConfig(
     IReadOnlyList<string> Drivable,
     IReadOnlyList<string> Holds,
@@ -20,13 +24,15 @@ public sealed record DriverConfig(
     string Adapter,
     int TimeoutMinutes,
     int PollSeconds,
-    IReadOnlyDictionary<string, IReadOnlyList<string>> Commands)
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
+    IReadOnlyList<string> Trees)
 {
     /// <summary>Drives nothing, holds nothing — the safe shape silence takes.</summary>
     public static DriverConfig Empty { get; } = new(
         Drivable: [], Holds: [], Cap: 2, Adapter: "claude-code",
         TimeoutMinutes: 30, PollSeconds: 15,
-        Commands: new Dictionary<string, IReadOnlyList<string>>());
+        Commands: new Dictionary<string, IReadOnlyList<string>>(),
+        Trees: []);
 
     public const string PathVariable = "DAORIS_DRIVER_CONFIG";
 
@@ -67,6 +73,9 @@ public sealed record DriverConfig(
             writer.WriteStartArray("holds");
             foreach (var name in Holds) writer.WriteStringValue(name);
             writer.WriteEndArray();
+            writer.WriteStartArray("trees");
+            foreach (var name in Trees) writer.WriteStringValue(name);
+            writer.WriteEndArray();
             writer.WriteNumber("cap", Cap);
             writer.WriteString("adapter", Adapter);
             writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
@@ -97,6 +106,16 @@ public sealed record DriverConfig(
         Holds = Toggle(Holds, repository, held),
     };
 
+    /// <summary>Whether this repository's sessions open their own worktree (D51).</summary>
+    public DriverConfig WithTrees(string repository, bool ownTree) => this with
+    {
+        Trees = Toggle(Trees, repository, ownTree),
+    };
+
+    /// <summary>The read side of <see cref="WithTrees"/> — one comparison rule for both.</summary>
+    public bool OpensOwnTree(string repository) =>
+        Trees.Contains(repository, StringComparer.OrdinalIgnoreCase);
+
     private static IReadOnlyList<string> Toggle(IReadOnlyList<string> names, string repository, bool present)
     {
         var kept = names.Where(n => !string.Equals(n, repository, StringComparison.OrdinalIgnoreCase));
@@ -117,7 +136,8 @@ public sealed record DriverConfig(
             Adapter: String(root, "adapter") ?? Empty.Adapter,
             TimeoutMinutes: Math.Max(1, Int(root, "timeoutMinutes") ?? Empty.TimeoutMinutes),
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? Empty.PollSeconds),
-            Commands: CommandMap(root));
+            Commands: CommandMap(root),
+            Trees: Strings(root, "trees"));
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> CommandMap(JsonElement root)

@@ -63,6 +63,64 @@ inside the existing vitest run, so a story that throws fails `npm run test:web` 
 a repository where the declared gates are a list two places must agree on. (`@storybook/react` is
 already in the tree as the framework's own dependency; SURF4a makes it explicit.)
 
+## 3a. The reference console: deepseek-harness (owner, 2026-09-21)
+
+Set by the owner mid-arc: **take the UI/UX structure and design of
+[deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) (MIT) for the working surface;
+our base stays claude/codex.** Read before SURF4b–d: it is the one field console whose *structure* we
+adopt rather than merely survey, because it is a working, shipped answer to exactly this product — a
+local web console holding live agent sessions — and its licence permits taking it whole.
+
+**What is adopted — structure and geometry, not code and not identity:**
+
+- **The three-column frame.** Left rail (sessions) · center (the attended session, with a protected
+  minimum width) · **right dock** (per-session surfaces). Their field-tested geometry becomes our
+  defaults: sidebar 264–420px (280 default) collapsing to a 56px rail, auto-collapse under 1024px;
+  center floor 400px; the right panel opens at 45% of the viewport, keeps the person's pixel
+  preference, caps at 70%, compresses to a 300px floor and then **asks its occupant to close rather
+  than squeezing the center further**. Deterministic close: widening the window never auto-reopens a
+  panel the person closed.
+- **One docking surface per session.** The right dock belongs to the *attended* session and its tabs
+  are keyed per session — which is where our **Diff** (SURF6) and **Timeline** (SURF4c) live, leaving
+  the center to the stream and composer. Fullscreen presentation shares the content tree (switching
+  never remounts a tab), and below 768px the dock opens fullscreen automatically.
+- **Trajectory beside conversation, never inside it.** Their `ui-trajectory`/`ui-chat` split is our
+  timeline-beside-stream decision, independently arrived at — adopted with two of its rules: the view
+  **follows the tail until the person scrolls up**, and an in-flight record **shows a start marker
+  without inventing elapsed time**.
+- **Approvals and questions as first-class cards** (`ui-approval`, `ui-user-questions`) — the shape
+  SURF5's `AwaitingPerson` surface takes: the analysis renders as a card with the person's moves on
+  it, in the flow, not in a modal.
+- **The package boundaries validate the component cut.** Their `ui-session`, `ui-conversation`,
+  `ui-trajectory`, `ui-approval`, `ui-sidebar-*` map one-to-one onto our rail / attended session /
+  timeline / attention / dock organisms — independent confirmation that §4's inventory is cut along
+  real seams.
+- **The session row's anatomy, and its one priority rule.** Their row is 34px: status dot, title,
+  relative time, actions menu — ours adds the kind, per D52's derived identity — and the dot obeys
+  **"pending user interaction outranks own activity"**: a session that needs the person wears the
+  attention state even while its process is busy. That is SURF5's rule stated as a pixel, and
+  `SessionRow` adopts it outright.
+
+A checkout is available locally for the SURF4 build sessions — read-only, like any repository that is
+not this one; its location is machine wiring and lives in the untracked `local/` notes, not here.
+
+**What is deliberately not adopted:**
+
+- **The plugin runtime (Cordis).** Their everything-is-a-plugin architecture is what makes their UI a
+  set of slot-registered packages; our components plan is the *static* equivalent of that
+  modularity, and a runtime plugin system is an architecture Daoris has not chosen and does not need
+  for one surface. The owner's framing holds here: their predefined plugins show which surfaces
+  matter, and **we build those surfaces natively against claude/codex through the adapter seam**
+  (D23) instead of generically against a provider registry.
+- **Their visual identity.** D41's language — the paper character, the tokens, the validated status
+  palette — does not move. Structure and geometry transfer; pixels do not.
+- **Model-provider settings** (D24: no model named — the harness owns the model) and their workspace
+  picker (the registry and workspaces already exist here, D48).
+
+**Licence.** Structure and geometry are design learning and carry no notice obligation; **if any of
+their code is ever ported, the MIT notice lands in the same commit** (a third-party-notices file,
+which this repository does not yet have and gains at that moment, not before).
+
 ## 4. The inventory
 
 Everything the design (§3–§5) needs, with the states its story must carry. Nothing here is speculative

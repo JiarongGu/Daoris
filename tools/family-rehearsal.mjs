@@ -1803,9 +1803,120 @@ check(
   resumedRun.out,
 );
 
-// -------------------------------------------------- 16. report
+// -------------------------------------------------- 16. the tree is the unit of exclusion
 
-section('16. Result');
+section('16. The tree is the unit of exclusion (D51/SURF3)');
+
+// The standing opt-in, from a terminal — and the price stated where the choice is made: a fresh tree
+// holds nothing git does not track. The verb is an EDITOR over the same file the loop reads, so the
+// adapter command that makes the stub run must survive the edit.
+const treesOn = cliDriver('trees newcomer on');
+check(
+  '`daoris driver trees on` opts the repository in and states the price',
+  treesOn.code === 0 && /nothing git does not track/.test(treesOn.out),
+  treesOn.out,
+);
+const editedConfig = JSON.parse(readFileSync(driverConfig, 'utf8'));
+check(
+  '…and the edit preserved the adapter command the loop needs',
+  editedConfig.trees?.includes('newcomer') && editedConfig.commands?.stub?.[0] === 'node',
+  JSON.stringify(editedConfig),
+);
+
+// The point of the whole decision, over the real loop: the ROOT IS DIRTY — the person's work in
+// flight, exactly what held the driver in section 7 — and the session runs anyway, in a tree of its
+// own, touching neither the file nor the root's history.
+writeFileSync(join(newcomer, 'work-in-flight.txt'), 'the person is mid-edit\n');
+const rootHeadBefore = run('git rev-parse HEAD', newcomer).out.trim();
+const isolatedQuest = await api('POST', '/api/quests', {
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'Run beside the person, not instead of them',
+    body: 'The root is dirty; the session gets a tree of its own (D51).',
+  },
+});
+const isolatedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
+check(
+  'a dirty root no longer holds the driver — the session ran in its own tree',
+  isolatedRun.code === 0 && /completed/.test(isolatedRun.out) && /own tree:/.test(isolatedRun.out),
+  isolatedRun.out,
+);
+check(
+  '…and the root was not touched: the person’s file stands, and no commit landed there',
+  readFileSync(join(newcomer, 'work-in-flight.txt'), 'utf8') === 'the person is mid-edit\n'
+    && run('git rev-parse HEAD', newcomer).out.trim() === rootHeadBefore
+    && !existsSync(join(newcomer, `answered-${isolatedQuest.json?.quest?.id}.md`)),
+  run('git status --porcelain', newcomer).out,
+);
+
+const isolatedRecord = ((await api(
+  'GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => s.quest === isolatedQuest.json?.quest?.id);
+const treePath = isolatedRecord?.tree ?? '';
+check(
+  'the record names the session tree, under the driver’s own trees home',
+  treePath.includes('trees') && !treePath.includes(newcomer)
+    && /commits landed/.test(isolatedRecord?.evidence ?? ''),
+  JSON.stringify(isolatedRecord),
+);
+
+// The lifecycle from a terminal (D50): the tree is listed, refuses to die holding unmerged work —
+// the stub's commit is real work the canonical line has not taken — and goes when the person means it.
+const treesListed = run(`dotnet "${driverDll}" trees list`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+check(
+  '`daoris-driver trees list` names the tree, its circle and its branch',
+  treesListed.code === 0 && /newcomer/.test(treesListed.out) && /daoris\//.test(treesListed.out),
+  treesListed.out,
+);
+const refusedRemove = run(
+  `dotnet "${driverDll}" trees remove "${treePath}"`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+check(
+  'removal refuses while the tree holds commits the canonical line has not taken, naming them',
+  refusedRemove.code === 1 && /stub: answer quest/.test(refusedRemove.out) && existsSync(treePath),
+  refusedRemove.out,
+);
+
+// `connect` from inside the linked worktree is refused NAMING the main tree — a registration
+// re-pointed at an ephemeral tree keeps working right up until the tree is removed.
+const fromTree = run(`node "${cliBin}" connect --dry-run`, treePath, { DAORIS_SERVICE_URL: BASE });
+check(
+  '`daoris connect` from a linked worktree is refused, naming the main tree',
+  fromTree.code === 1 && /linked worktree/.test(fromTree.out)
+    && fromTree.out.replaceAll('\\', '/').includes(newcomer.replaceAll('\\', '/')),
+  fromTree.out,
+);
+
+// The feed still reads only the registered root (D51 rule 1): the tree is not a repository, so the
+// registry has no row for it and its content answers no search. The phrase searched for exists ONLY
+// in the tree — the root's earlier stub answers share a body, so the body would match the wrong copy.
+const rowsAfterTree = (await api('GET', '/api/registry')).json ?? [];
+const treeOnly = await api(
+  'GET', `/api/search?q=${encodeURIComponent('Run beside the person, not instead of them')}`);
+check(
+  'the session tree is not a repository — no registry row, and its work answers no search',
+  rowsAfterTree.every((r) => !(r.root ?? '').replaceAll('\\', '/').includes('/trees/'))
+    && !(treeOnly.json ?? []).some((entry) => (entry.relativePath ?? '').includes('answered-')),
+  treeOnly.text,
+);
+
+const forcedRemove = run(
+  `dotnet "${driverDll}" trees remove "${treePath}" --force`, scratch,
+  { DAORIS_DRIVER_CONFIG: driverConfig });
+check(
+  '…and --force is the person meaning it: the tree and its branch are gone',
+  forcedRemove.code === 0 && !existsSync(treePath)
+    && !new RegExp('daoris/').test(run('git branch --list "daoris/*"', newcomer).out),
+  forcedRemove.out,
+);
+
+// Leave the root as section 7 left it — later phases assume the dirty file is theirs to manage.
+rmSync(join(newcomer, 'work-in-flight.txt'), { force: true });
+cliDriver('trees newcomer off');
+
+// -------------------------------------------------- 17. report
+
+section('17. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
