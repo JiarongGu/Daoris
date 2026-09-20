@@ -44,10 +44,12 @@ commits; unchecked items are deliberately deferred with the reason inline.
 
 ## Dedup and refactor
 
-- [ ] **`Daoris.Service.Http/Program.cs` (745 lines, 18 routes, four jobs)** — split: wire contracts to
-  `ApiContracts.cs`, the `keys` console verb to `KeysConsole.cs`, the mode-forked feed doors and the
-  quest/session routes to route-group files; a shared `HostComposition` for the ~50 lines the two hosts
-  copy-paste (embedder ternary, root/db defaults, `IsOllamaRoot`).
+- [x] **`Daoris.Service.Http/Program.cs` (745 lines, 18 routes, four jobs)** — split: wire contracts to
+  `ApiContracts.cs`, the `keys` console verb to `KeysConsole.cs`, and a shared `HostComposition`
+  (linked source, since it builds providers and cannot live in Core) for the ~50 lines the two hosts
+  copy-pasted (embedder ternary, db default, the binary walk-up; each host keeps its own honest
+  fallback). Route-group extraction was **declined**: with the shapes and the console verb out, the
+  route table is the file's one remaining job and reads better whole than behind indirection.
 - [x] **`ParseKinds`/`ParseSet` duplicated verbatim across the two doors** — query judgement belongs in
   Core (D36) so a kind alias cannot land in one host only.
 - [x] **The sessions feed door judges in the host; the entries door judges in Core** — move the

@@ -1,10 +1,7 @@
 using System.Text;
 using Daoris.Knowledge;
+using Daoris.Knowledge.Hosting;
 using Daoris.Knowledge.Mcp;
-using Lyntai;
-using Lyntai.Inference;
-using Lyntai.Providers.Http;
-using Lyntai.Providers.Ollama;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -49,31 +46,14 @@ builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogL
 // logs bury the one line that matters when something is actually wrong.
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
-var serviceOptions = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), DefaultDatabasePath());
+var serviceOptions = ServiceOptions.FromEnvironment(
+    DefaultRepositoryRoot(), HostComposition.DefaultDatabasePath());
 
-// The provider is built HERE, not in Core: the domain holds `IVectorProvider` and nothing that
+// The provider is built HOST-SIDE, not in Core: the domain holds `IVectorProvider` and nothing that
 // implements one, which is what keeps a model out of it (D22, D24). Everything downstream of that
 // choice — which tier is active, what hybrid fuses, what gets reported — is ServiceFactory's, shared
 // with the HTTP host so the two cannot disagree about whether semantic recall is on.
-// An Ollama ROOT speaks Ollama's own wire — the same judgement the sibling's DI door applies (its
-// D160), replicated because this composition root builds by hand; `Produces` must say Vector, or the
-// default is a chat backend posting /chat/completions (its D130).
-IVectorProvider? embedder = null;
-if (!string.IsNullOrWhiteSpace(serviceOptions.EmbedModel))
-{
-    var embedUrl = serviceOptions.EmbedUrl ?? "http://localhost:11434";
-    embedder = IsOllamaRoot(embedUrl)
-        ? new OllamaProvider(
-            "daoris-embed",
-            new OllamaOptions { BaseUrl = embedUrl, Model = serviceOptions.EmbedModel, Produces = ProviderKinds.Vector },
-            () => new HttpClient(),
-            new LyntaiOptions())
-        : new HttpModelProvider(
-            "daoris-embed",
-            new HttpModelOptions { BaseUrl = embedUrl, Model = serviceOptions.EmbedModel, Produces = ProviderKinds.Vector },
-            () => new HttpClient(),
-            new LyntaiOptions());
-}
+var embedder = HostComposition.BuildEmbedder(serviceOptions);
 
 // The write-through relay (D47 §5/§9): a verb on a remote-homed quest goes to the machine's remote,
 // when one is configured — the same seam, the same client, the same exchange the HTTP host composes,
@@ -96,25 +76,15 @@ await composed.DisposeAsync().ConfigureAwait(false);
 
 return;
 
-/// <summary>
-/// The folder holding the repositories — by default the one containing this workspace, which is how
-/// the family is actually laid out. Walks up to the workspace root rather than assuming a working
-/// directory, because an MCP server is started by its client from wherever that client happens to be.
-/// </summary>
+// The folder holding the repositories — the shared walk-up from the binary (HostComposition), with
+// THIS host's fallback: a published binary has no workspace above it, and the working directory here
+// is whatever repository the client spawned this from — whose subdirectories are not repositories.
+// Falling back silently would index the wrong tree without a word (the ghost shape, again), so the
+// fallback says its name. stderr, because stdout is the protocol.
 static string DefaultRepositoryRoot()
 {
-    var directory = new DirectoryInfo(AppContext.BaseDirectory);
-    while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
-    {
-        directory = directory.Parent;
-    }
+    if (HostComposition.AboveWorkspace() is { } aboveWorkspace) return aboveWorkspace;
 
-    if (directory?.Parent?.FullName is { } aboveWorkspace) return aboveWorkspace;
-
-    // A PUBLISHED binary has no workspace above it, and the working directory here is whatever
-    // repository the client spawned this from — whose subdirectories are not repositories. Falling
-    // back silently would index the wrong tree without a word (the ghost shape, again), so the
-    // fallback says its name. stderr, because stdout is the protocol.
     var fallback = Directory.GetCurrentDirectory();
     // This default is computed eagerly even when the environment decides; only warn when it will be used.
     if (Environment.GetEnvironmentVariable(ServiceOptions.RootVariable) is not null) return fallback;
@@ -124,13 +94,3 @@ static string DefaultRepositoryRoot()
         + "in the MCP server entry (the install script prints a ready snippet).");
     return fallback;
 }
-
-// The sibling's own root test (internal there): Ollama's well-known port with no /v1 suffix — a /v1
-// base targets its OpenAI-shaped surface, where the native wire would 404 on every call.
-static bool IsOllamaRoot(string baseUrl) =>
-    Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
-    && uri.Port == 11434
-    && !uri.AbsolutePath.TrimEnd('/').EndsWith("/v1", StringComparison.OrdinalIgnoreCase);
-
-static string DefaultDatabasePath() => Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "knowledge.db");

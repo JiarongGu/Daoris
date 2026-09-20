@@ -9,6 +9,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Daoris.Service.Core/Daoris.Service.Core.csproj" />
+    <!-- Host-side composition both hosts share as SOURCE: it builds providers, so it cannot live in
+         Core (D22, D24) — and it must not be written twice. -->
+    <Compile Include="../Daoris.Service.Shared/HostComposition.cs" Link="HostComposition.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- The provider lives in the HOST, never in Core: the domain holds IVectorProvider and nothing

@@ -1,11 +1,8 @@
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Daoris.Knowledge;
-using Lyntai;
-using Lyntai.Inference;
-using Lyntai.Providers.Http;
-using Lyntai.Providers.Ollama;
+using Daoris.Knowledge.Hosting;
+using Daoris.Knowledge.Http;
 
 // The browser's half of the service. The MCP host serves an agent over stdio; a browser cannot speak
 // that, so this exists — the same composed service behind a read-only JSON surface.
@@ -52,13 +49,13 @@ if (modeError is not null)
     return 2;
 }
 
-var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), DefaultDatabasePath());
+var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), HostComposition.DefaultDatabasePath());
 
 // Key administration is a console verb on the serving binary — same store, no second tool, and it
 // exits without binding. Console minting is the whole story until person-auth exists (D47 §7).
 if (args is ["keys", .. var keyArgs])
 {
-    return await KeysVerbAsync(keyArgs, options);
+    return await KeysConsole.RunAsync(keyArgs, options);
 }
 
 // The bundle travels beside the executable. In development the SDK serves wwwroot from the project
@@ -90,27 +87,10 @@ if (Access.RefuseStartup(mode, urls) is { } refusal)
     return 2;
 }
 
-// The provider is built HERE, not in Core: the domain holds `IVectorProvider` and nothing that
-// implements one, so a model never reaches it (D22, D24). What tier that produces is Core's business.
-// An Ollama ROOT speaks Ollama's own wire — the same judgement the sibling's DI door applies (its
-// D160), replicated because this composition root builds by hand; `Produces` must say Vector, or the
-// default is a chat backend posting /chat/completions (its D130).
-IVectorProvider? embedder = null;
-if (!string.IsNullOrWhiteSpace(options.EmbedModel))
-{
-    var embedUrl = options.EmbedUrl ?? "http://localhost:11434";
-    embedder = IsOllamaRoot(embedUrl)
-        ? new OllamaProvider(
-            "daoris-embed",
-            new OllamaOptions { BaseUrl = embedUrl, Model = options.EmbedModel, Produces = ProviderKinds.Vector },
-            () => new HttpClient(),
-            new LyntaiOptions())
-        : new HttpModelProvider(
-            "daoris-embed",
-            new HttpModelOptions { BaseUrl = embedUrl, Model = options.EmbedModel, Produces = ProviderKinds.Vector },
-            () => new HttpClient(),
-            new LyntaiOptions());
-}
+// The provider is built HOST-SIDE, not in Core: the domain holds `IVectorProvider` and nothing that
+// implements one, so a model never reaches it (D22, D24). What tier that produces is Core's business;
+// the construction itself is HostComposition's, shared with the MCP host so the two cannot drift.
+var embedder = HostComposition.BuildEmbedder(options);
 
 // A LOCAL host relays verbs on remote-homed quests to the machine's remote, when one is configured
 // (D47 §5/§9). A shared host never relays: it is the home the others write through to.
@@ -522,76 +502,6 @@ return 0;
 // callers are the network has no branch that serves a path.
 bool MachineLocal(HttpContext http) => mode == ServiceMode.Local && IsLoopback(http);
 
-// `keys mint|list|revoke` — the deployment's own console is where machine credentials come from
-// until person-auth exists (D47 §7). Exit codes are the contract: 0 clean, 1 the prefix named
-// nothing, 2 bad usage.
-static async Task<int> KeysVerbAsync(string[] args, ServiceOptions options)
-{
-    await using var composed = await ServiceFactory.CreateAsync(options);
-
-    switch (args)
-    {
-        case ["mint", ..]:
-        {
-            string? name = null;
-            var days = 90;
-            for (var i = 1; i < args.Length - 1; i++)
-            {
-                if (args[i] == "--name") name = args[i + 1];
-                if (args[i] == "--days" && int.TryParse(args[i + 1], out var parsed)) days = parsed;
-            }
-
-            if (string.IsNullOrWhiteSpace(name) || days <= 0)
-            {
-                Console.Error.WriteLine("usage: keys mint --name <person@machine> [--days N]");
-                return 2;
-            }
-
-            var minted = await composed.Keys.MintAsync(name, TimeSpan.FromDays(days), DateTimeOffset.UtcNow);
-            Console.WriteLine(minted.Key);
-            Console.WriteLine($"  name {name} · prefix {minted.Record.Prefix} · expires {minted.Record.Expires:yyyy-MM-dd}");
-            Console.WriteLine("  Shown once and stored hashed — copy it now. Revoke by the prefix.");
-            return 0;
-        }
-
-        case ["list"]:
-        {
-            var keys = await composed.Keys.ListAsync();
-            if (keys.Count == 0)
-            {
-                Console.WriteLine("No keys minted. `keys mint --name <person@machine>` creates one.");
-                return 0;
-            }
-
-            foreach (var key in keys)
-            {
-                var state = key.Revoked is not null ? $"revoked {key.Revoked:yyyy-MM-dd}"
-                    : key.Expires <= DateTimeOffset.UtcNow ? $"expired {key.Expires:yyyy-MM-dd}"
-                    : $"expires {key.Expires:yyyy-MM-dd}";
-                Console.WriteLine($"  {key.Prefix}  {key.Name}  {state}");
-            }
-
-            return 0;
-        }
-
-        case ["revoke", var prefix]:
-        {
-            if (await composed.Keys.RevokeAsync(prefix, DateTimeOffset.UtcNow))
-            {
-                Console.WriteLine($"Key `{prefix}` is revoked.");
-                return 0;
-            }
-
-            Console.Error.WriteLine($"No key with prefix `{prefix}`. `keys list` names them.");
-            return 1;
-        }
-
-        default:
-            Console.Error.WriteLine("usage: keys mint --name <person@machine> [--days N] | keys list | keys revoke <prefix>");
-            return 2;
-    }
-}
-
 // A convergence is a prompt to look, so the suggestion says what to read and where the change goes —
 // never "apply this". Doctrine that appeared without anyone choosing it is the failure this project
 // exists to prevent (D21).
@@ -628,101 +538,12 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
 static bool IsLoopback(HttpContext http) =>
     http.Connection.RemoteIpAddress is null || System.Net.IPAddress.IsLoopback(http.Connection.RemoteIpAddress);
 
-// The sibling's own root test (internal there): Ollama's well-known port with no /v1 suffix — a /v1
-// base targets its OpenAI-shaped surface, where the native wire would 404 on every call.
-static bool IsOllamaRoot(string baseUrl) =>
-    Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
-    && uri.Port == 11434
-    && !uri.AbsolutePath.TrimEnd('/').EndsWith("/v1", StringComparison.OrdinalIgnoreCase);
-
-// Walk up from the BINARY to this workspace's manifest, exactly as the MCP host does — never from the
-// working directory: `dotnet run` sets the CWD to the project directory, so "parent of the current
-// directory" resolves to the service tree and its subprojects get scanned as though they were the
-// family. Found by launching the host the documented way and reading what it indexed.
-static string DefaultRepositoryRoot()
-{
-    var directory = new DirectoryInfo(AppContext.BaseDirectory);
-    while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
-    {
-        directory = directory.Parent;
-    }
-
-    return directory?.Parent?.FullName
-        ?? Directory.GetParent(Directory.GetCurrentDirectory())?.FullName
-        ?? Directory.GetCurrentDirectory();
-}
-
-static string DefaultDatabasePath() => Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "knowledge.db");
-
-public sealed record StatusResponse(bool Semantic, string Tier, string? Note);
-public sealed record RepositoryResponse(string Name, int Total, int Local, int Canonical);
-public sealed record HitResponse(
-    string Id, string Repository, string Kind, string Title, string Path, string? Excerpt, double Score);
-public sealed record EntryResponse(
-    string Id, string Repository, string Kind, string Provenance, string Title, string Path, string Body,
-    string? Anchor);
-public sealed record ConvergenceEntryResponse(
-    string Id, string Repository, string Kind, string Title, string Path);
-public sealed record ConvergenceResponse(
-    string Method, double Similarity, IReadOnlyList<string> Repositories,
-    IReadOnlyList<ConvergenceEntryResponse> Entries, string Suggestion);
-public sealed record QuestResponse(
-    string Id, string From, string To, string Title, string Body,
-    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated);
-public sealed record PublishQuestRequest(string From, string To, string Title, string Body);
-public sealed record RespondQuestRequest(string? Action, string? Reason);
-public sealed record QuestActionResponse(QuestResponse Quest, string Message);
-public sealed record RefreshResponse(int Entries, int Repositories, int Withheld, string? SemanticError);
-public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
-public sealed record RegisterRequest(
-    string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
-    bool? Join, bool? ShareKnowledge);
-public sealed record RegisteredResponse(string Repository, DateTimeOffset At);
-public sealed record RegistrationResponse(
-    string Repository, bool Adopted, bool Registered, string? Summary,
-    IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
-    string? Root, bool Joined, bool SharesKnowledge);
-public sealed record SessionResponse(
-    string Id, string Quest, string Repository, string Adapter, string State,
-    string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated);
-public sealed record OpenSessionRequest(string Quest, string Adapter);
-public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
-public sealed record SessionActionResponse(SessionResponse Session, string Message);
-public sealed record FeedSessionRecord(
-    string Id, string Quest, string Repository, string? Adapter, string? State,
-    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated);
-public sealed record FeedSessionsRequest(IReadOnlyList<FeedSessionRecord>? Records);
-public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
-public sealed record FeedEntriesRequest(string Repository, IReadOnlyList<FeedEntryRecord>? Entries);
-public sealed record FeedQuestRecord(
-    string Id, string From, string To, string Title, string Body, string? Status, string? Note,
-    DateTimeOffset Filed, DateTimeOffset Updated);
-public sealed record FeedQuestsRequest(IReadOnlyList<FeedQuestRecord>? Quests);
-public sealed record FeedResponse(int Accepted, string Message);
-public sealed record ErrorResponse(string Error);
-
-[JsonSerializable(typeof(StatusResponse))]
-[JsonSerializable(typeof(IEnumerable<RepositoryResponse>))]
-[JsonSerializable(typeof(IEnumerable<HitResponse>))]
-[JsonSerializable(typeof(EntryResponse))]
-[JsonSerializable(typeof(IEnumerable<EntryResponse>))]
-[JsonSerializable(typeof(IEnumerable<ConvergenceResponse>))]
-[JsonSerializable(typeof(IEnumerable<QuestResponse>))]
-[JsonSerializable(typeof(PublishQuestRequest))]
-[JsonSerializable(typeof(RespondQuestRequest))]
-[JsonSerializable(typeof(QuestActionResponse))]
-[JsonSerializable(typeof(RefreshResponse))]
-[JsonSerializable(typeof(RegisterRequest))]
-[JsonSerializable(typeof(RegisteredResponse))]
-[JsonSerializable(typeof(IEnumerable<RegistrationResponse>))]
-[JsonSerializable(typeof(IEnumerable<SessionResponse>))]
-[JsonSerializable(typeof(OpenSessionRequest))]
-[JsonSerializable(typeof(AdvanceSessionRequest))]
-[JsonSerializable(typeof(SessionActionResponse))]
-[JsonSerializable(typeof(FeedSessionsRequest))]
-[JsonSerializable(typeof(FeedEntriesRequest))]
-[JsonSerializable(typeof(FeedQuestsRequest))]
-[JsonSerializable(typeof(FeedResponse))]
-[JsonSerializable(typeof(ErrorResponse))]
-internal sealed partial class ApiJson : JsonSerializerContext;
+// Walk up from the BINARY to this workspace's manifest — the shared walk-up (HostComposition) — with
+// THIS host's last resort: the parent-of-CWD heuristic. Never from the working directory first:
+// `dotnet run` sets the CWD to the project directory, so "parent of the current directory" resolves
+// to the service tree and its subprojects get scanned as though they were the family. Found by
+// launching the host the documented way and reading what it indexed.
+static string DefaultRepositoryRoot() =>
+    HostComposition.AboveWorkspace()
+    ?? Directory.GetParent(Directory.GetCurrentDirectory())?.FullName
+    ?? Directory.GetCurrentDirectory();
