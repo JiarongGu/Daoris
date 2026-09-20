@@ -1,13 +1,79 @@
 namespace Daoris.Knowledge;
 
-/// <summary>How much one repository contributes to the index.</summary>
-public sealed record RepositorySummary(
-    string Repository, int Total, int Local, int Canonical, string Workspace = Workspaces.Default);
+/// <summary>
+/// Which point in a repository's history its fed knowledge came from (D48 §6).
+/// </summary>
+/// <remarks>
+/// <para>Two checkouts of one repository are two points in its history, and the remote must decide
+/// which one speaks. This is what lets it: the driver stamps it from git, and the deployment keeps it
+/// beside the entries so the next feed can be compared rather than simply believed.</para>
+///
+/// <para>It is also `claims-need-checks` applied to the index itself. The remote's copy of a
+/// repository's knowledge is a <i>claim about a commit</i>; served provenance names the commit, so
+/// staleness is something a person can see instead of something they must assume.</para>
+/// </remarks>
+/// <param name="Commit">The full SHA — short forms collide, and this is an identity.</param>
+/// <param name="CommittedAt">Commit time, not feed time: the ordering must be the history's.</param>
+/// <param name="Branch">Which line it came from — judged against the repository's declared default.</param>
+/// <param name="Origin">Which machine fed it, from the key that carried it. Null where nobody said.</param>
+public sealed record FeedProvenance(
+    string Commit, DateTimeOffset CommittedAt, string Branch, string? Origin = null)
+{
+    /// <summary>The form a person reads, in a sentence or a table cell.</summary>
+    public string ShortCommit => Commit.Length <= 8 ? Commit : Commit[..8];
+}
 
-/// <param name="Accepted">Whether the feed was taken. A refusal names the missing declaration.</param>
+/// <summary>How much one repository contributes to the index, and what it was fed from.</summary>
+public sealed record RepositorySummary(
+    string Repository, int Total, int Local, int Canonical, string Workspace = Workspaces.Default,
+    FeedProvenance? Fed = null);
+
+/// <summary>Why a knowledge feed was not taken — or <see cref="None"/> when it was.</summary>
+public enum FeedRefusal
+{
+    None,
+
+    /// <summary>The repository has not declared `remote.join`, so nothing of it may leave its machine.</summary>
+    NotJoined,
+
+    /// <summary>Joined, but knowledge is a second declaration — its records travel and its lessons stay home.</summary>
+    NotSharing,
+
+    /// <summary>The feed named no commit, so nothing could be compared to what is already held.</summary>
+    NoProvenance,
+
+    /// <summary>
+    /// Fed from a line that is not the repository's canonical one. A feature-branch checkout is work
+    /// in flight: unmerged lessons are not yet the family's (D48 §6).
+    /// </summary>
+    NotDefaultBranch,
+
+    /// <summary>
+    /// Fed from a commit older than the one the deployment already holds. Not a problem — information:
+    /// the index keeps the newer view, and the machine that is behind is simply behind.
+    /// </summary>
+    Stale,
+}
+
+/// <param name="Refusal"><see cref="FeedRefusal.None"/> when the feed was taken.</param>
 /// <param name="Message">The full answer, phrased once here so no two doors can drift on it.</param>
 /// <param name="Entries">How many entries now stand for that repository, when accepted.</param>
-public sealed record FeedOutcome(bool Accepted, string Message, int Entries);
+public sealed record FeedOutcome(FeedRefusal Refusal, string Message, int Entries)
+{
+    /// <summary>Whether the feed was taken. Derived, never stored twice: two fields that can disagree
+    /// about the same fact eventually do.</summary>
+    public bool Accepted => Refusal == FeedRefusal.None;
+
+    /// <summary>
+    /// Whether this refusal is something to REPORT rather than to fix (D48 §6).
+    /// </summary>
+    /// <remarks>
+    /// A stale or branch feed is the system working: two machines hold two points in one history, and
+    /// the deployment kept the canonical newer one. A sync that logged those as failures would teach
+    /// the person to ignore its failures, which is the one thing a report must never do.
+    /// </remarks>
+    public bool Information => Refusal is FeedRefusal.Stale or FeedRefusal.NotDefaultBranch;
+}
 
 /// <summary>
 /// The service, as a client sees it: search, read, list, refresh.
@@ -65,11 +131,22 @@ public sealed class KnowledgeService(
     }
 
     /// <param name="workspace">The circle to summarize (D48). Null is every one this machine holds.</param>
+    /// <remarks>
+    /// Carries each repository's fed provenance where there is one (D48 §6) — served, never implied.
+    /// A deployment that scans its own checkouts has none, and says so by absence: what it shows is
+    /// the machine's own state, which is the one thing it cannot be stale about.
+    /// </remarks>
     public async Task<IReadOnlyList<RepositorySummary>> SummarizeAsync(
         string? workspace = null, CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var all = await store.AllAsync(ct).ConfigureAwait(false);
+        // One read for the whole table rather than one per repository: it is a small table, and the
+        // alternative is a query inside a projection.
+        var fed = registrations is null
+            ? new Dictionary<string, FeedProvenance>(StringComparer.OrdinalIgnoreCase)
+            : await registrations.AllProvenanceAsync(ct).ConfigureAwait(false);
+
         return all
             .Where(e => workspace is null || Workspaces.Same(workspace, e.Workspace))
             .GroupBy(e => e.Repository, StringComparer.Ordinal)
@@ -78,7 +155,8 @@ public sealed class KnowledgeService(
                 g.Count(),
                 g.Count(e => e.Provenance == Provenance.Local),
                 g.Count(e => e.Provenance == Provenance.Canonical),
-                g.Select(e => e.Workspace).First()))
+                g.Select(e => e.Workspace).First(),
+                fed.TryGetValue(g.Key, out var provenance) ? provenance : null))
             .OrderByDescending(r => r.Total)
             .ToList();
     }
@@ -228,7 +306,8 @@ public sealed class KnowledgeService(
     /// idempotent.
     /// </summary>
     public async Task<FeedOutcome> FeedAsync(
-        string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default)
+        string repository, IReadOnlyList<KnowledgeEntry> entries, FeedProvenance? provenance = null,
+        CancellationToken ct = default)
     {
         var registration = (await RegistryAsync(ct: ct).ConfigureAwait(false))
             .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
@@ -236,7 +315,7 @@ public sealed class KnowledgeService(
         if (registration is null || !registration.Joined)
         {
             return new(
-                Accepted: false,
+                FeedRefusal.NotJoined,
                 $"`{repository}` has not joined this deployment — the manifest's `remote.join` is the "
                 + "declaration that admits it, and silence means local.",
                 Entries: 0);
@@ -245,9 +324,57 @@ public sealed class KnowledgeService(
         if (!registration.SharesKnowledge)
         {
             return new(
-                Accepted: false,
+                FeedRefusal.NotSharing,
                 $"`{registration.Repository}` joined without sharing knowledge — its records travel, its "
                 + "knowledge stays home. `remote.knowledge` is the declaration that changes that.",
+                Entries: 0);
+        }
+
+        // ——— Which point in the history is speaking (D48 §6). Wholesale replacement is the right
+        // shape — the index is derived data, and merging two machines' derivations invents a second
+        // truth beside git — but it is only safe once the deployment can tell a newer view from an
+        // older one. Unguarded, two machines feeding one repository are a flapping generator.
+        if (provenance is null)
+        {
+            return new(
+                FeedRefusal.NoProvenance,
+                $"`{registration.Repository}` fed knowledge without naming a commit. This deployment "
+                + "replaces a repository's knowledge wholesale, so it takes a feed only from a point in "
+                + "the history it can compare with what it already holds.",
+                Entries: 0);
+        }
+
+        if (registration.DefaultBranch is { Length: > 0 } canonical
+            && !string.Equals(provenance.Branch, canonical, StringComparison.Ordinal))
+        {
+            // The branch, the PR and the review already display work in flight better than an index
+            // would. Records and quests still travel from any checkout: they are records of activity,
+            // not claims of truth.
+            return new(
+                FeedRefusal.NotDefaultBranch,
+                $"`{registration.Repository}` fed knowledge from `{provenance.Branch}`, and its canonical "
+                + $"line is `{canonical}` — unmerged lessons are not yet the family's. Its session records "
+                + "and quests still travel from this checkout.",
+                Entries: 0);
+        }
+
+        var held = registrations is null
+            ? null
+            : await registrations.ProvenanceAsync(registration.Repository, ct).ConfigureAwait(false);
+
+        // Same commit re-feeds are idempotent, as they always were. Equal times with different commits
+        // are unorderable, so the arriving one takes: a tie is not evidence of staleness.
+        if (held is not null
+            && !string.Equals(held.Commit, provenance.Commit, StringComparison.OrdinalIgnoreCase)
+            && provenance.CommittedAt < held.CommittedAt)
+        {
+            return new(
+                FeedRefusal.Stale,
+                $"`{registration.Repository}` is already fed from a newer commit "
+                + $"(`{held.ShortCommit}`, {held.CommittedAt:yyyy-MM-dd HH:mm}Z"
+                + $"{(held.Origin is null ? "" : $", from {held.Origin}")}) — this feed is from "
+                + $"`{provenance.ShortCommit}`, {provenance.CommittedAt:yyyy-MM-dd HH:mm}Z, so the index "
+                + "keeps what it has. Nothing is wrong: this checkout is simply behind.",
                 Entries: 0);
         }
 
@@ -264,7 +391,19 @@ public sealed class KnowledgeService(
             .ToList();
         await store.ReplaceRepositoryAsync(registration.Repository, normalized, ct).ConfigureAwait(false);
 
-        return new(Accepted: true, $"Indexed {normalized.Count} entries from `{registration.Repository}`.", normalized.Count);
+        // Recorded AFTER the entries land, so a store that fails mid-replace never claims a commit it
+        // does not hold — the next feed from that commit would then be refused as a duplicate of work
+        // that never happened.
+        if (registrations is not null)
+        {
+            await registrations.RecordProvenanceAsync(registration.Repository, provenance, ct)
+                .ConfigureAwait(false);
+        }
+
+        return new(
+            FeedRefusal.None,
+            $"Indexed {normalized.Count} entries from `{registration.Repository}` at `{provenance.ShortCommit}`.",
+            normalized.Count);
     }
 
     /// <summary>Re-read every repository and rebuild the index.</summary>

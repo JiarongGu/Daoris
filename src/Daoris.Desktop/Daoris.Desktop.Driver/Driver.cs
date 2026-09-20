@@ -52,6 +52,11 @@ public sealed class Driver(
             {
                 events.Add($"sync  {synced.Problem}");
             }
+
+            // What the remote understood and deliberately did not take (D48 §6) — a stale or
+            // branch feed. Reported as its own kind of line, because "the deployment kept a newer
+            // view" is news about the family, not a fault in this machine.
+            foreach (var note in synced.Notes) events.Add($"held  {note}");
         }
 
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);

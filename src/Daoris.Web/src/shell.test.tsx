@@ -55,11 +55,21 @@ const SESSIONS = [{
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 }];
 
+/** What a SHARED deployment answers: counts, plus the commit its copy came from (D48 §6). */
+const REPOSITORIES = [{
+  name: 'engine', total: 1, local: 1, canonical: 0, workspace: 'default',
+  fed: {
+    commit: 'c0ffee1234567890', shortCommit: 'c0ffee12',
+    committedAt: new Date(Date.now() - 3 * 3600_000).toISOString(),
+    branch: 'main', origin: 'person@machine-a',
+  },
+}];
+
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
-  if (url.startsWith('/api/repositories')) return Response.json([]);
+  if (url.startsWith('/api/repositories')) return Response.json(REPOSITORIES);
   throw new Error(`unstubbed request: ${url}`);
 }
 
@@ -197,6 +207,19 @@ describe('the shell-attached registry management', () => {
 
     expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/registry/engine', { method: 'DELETE' });
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing was deleted'));
+  });
+
+  /**
+   * Provenance is served, not implied (D48 §6). A person looking at a repository's knowledge must be
+   * able to see which commit it came from — freshness they have to assume is exactly what the rule
+   * exists to replace.
+   */
+  it('projects name the commit a deployment was fed from', async () => {
+    show(<ProjectsView notify={() => {}} />);
+
+    expect(await screen.findByText(/c0ffee12/)).toBeTruthy();
+    // Relative time beside it: "how stale is this" is the question being answered.
+    expect(screen.getByText(/c0ffee12 · /)).toBeTruthy();
   });
 
   /** Re-wiring is a row on this machine; it must not touch the repository's tracked file. */

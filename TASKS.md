@@ -16,17 +16,18 @@ rehearsal's two-machine phase. **All three parts of D45 are built.** The owner s
 2026-09-20: **workspaces as the unit of sharing, and Daoris as the working surface** — designed the
 same day as D48/D49 (each amended the same day on the owner's corrections: membership is git-style
 wiring, never tracked; coexistence with non-users is binding; harness accounts are named credential
-profiles) with two contracts and eight build items. **WSP1, WSP2 and WSP3 are built** (2026-09-20, in
-the archive): the workspace exists, the registry is the authority, and the machine's remotes are a map
-— one deployment per circle, wired from either surface. Five items remain.
+profiles) with two contracts and eight build items. **All four WSP items are built** (2026-09-20, in
+the archive): the workspace exists, the registry is the authority, the machine's remotes are a map —
+one deployment per circle — and a feed carries the commit it speaks for, so the newest canonical view
+is the one that stands. Four items remain, none of them a workspace item.
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Twelve commands,
-164 CLI tests, 225 service, 57 devkit, 65 driver, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **112/112 family rehearsal** including the
-driver, two-machine remote, never-scans, two-workspace, registration-lifecycle and remotes-map phases
-(2026-09-20), 9 devkit gates. Canon: 8 core rules,
+164 CLI tests, 235 service, 57 devkit, 74 driver, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **123/123 family rehearsal** including the
+driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map and
+which-commit-speaks phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
 **23,988 of 24,000 bytes** — 12 bytes of headroom, so the next canon addition fails the gate even as
 an index row, and the answer is splitting, not raising (D28).
@@ -87,11 +88,12 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 **The next arc is under way: workspaces and the interactive surface (D48/D49, 2026-09-20, each amended
 the same day on the owner's corrections).** The owner set the direction in this backlog and granted
 structural redesign (nothing is deployed); the design session turned it into two contracts and eight
-build items, of which **WSP1, WSP2 and WSP3 landed 2026-09-20**. **Start at WSP4** — the workspace
-exists, the registry is the authority, and the remotes are a map, so everything below stands on real
-ground: a registry row carries the workspace, every cross-repository answer is scoped by it, the family
-is an explicit list that `connect`, `retire` and `import` maintain, and each circle syncs with the one
-deployment its own entry names.
+build items, of which **all four WSP items landed 2026-09-20**. **The workspace arc is complete**: a
+registry row carries the workspace, every cross-repository answer is scoped by it, the family is an
+explicit list that `connect`, `retire` and `import` maintain, each circle syncs with the one deployment
+its own entry names, and a feed carries the commit it speaks for so the newest canonical view is the
+one that stands. **Start at SES1** (the console) or **CANON6** (coexistence) — both are independent,
+and SES3 is the large one.
 
 - **Read first:** `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -99,36 +101,38 @@ deployment its own entry names.
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
-- **The build order is stated at the top of the backlog** — WSP1–WSP3 are in, so WSP4 is next. Schema
-  changes rebuild rather than migrate (the store's own rule, and nothing is
-  deployed); WSP1 bumped the entry store to schema 2 on exactly that basis.
-- **WSP4 specifically:** read workspace design **§6** (provenance, monotonic replacement,
-  default-branch-only) before touching anything. The judgement belongs at the remote's door in Core,
-  where the entries door already judges, and can be unit-proven without a host; `WorkingTree` already
-  reads HEAD, so the driver stamps `{ commit, committedAt, branch }` onto the feed. A refusal is
-  **information, not a problem** — the sync reports it and carries on, the way a wall is named today.
-- **The last three landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
-  (WSP1), `7333f74` (WSP2) and `538bc03` (WSP3). All gate-green; `git log` is the reviewable record.
-- **What WSP1–WSP3 left for their successors, deliberately:** the platform's workspace *switcher*
-  (Projects shows each repository's circle and manages it, the new Machine view shows the wiring, but
-  no view filters by one yet); and the feed still carries no provenance — which is WSP4.
-- **Three things that will bite if forgotten:** being in a folder is no longer being a member (a
+- **The build order is stated at the top of the backlog** — the WSP items are all in, so the next
+  landing is an SES item or CANON6, whichever the owner wants first. Schema changes rebuild rather
+  than migrate (the store's own rule, and nothing is deployed); WSP1 bumped the entry store to schema
+  2 on exactly that basis, while the registration store adds columns, because a registration that
+  vanished on an upgrade is the failure that store exists to prevent.
+- **The last four landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
+  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3) and WSP4's. All gate-green; `git log` is the record.
+- **What the WSP arc left for its successors, deliberately:** the platform's workspace *switcher*
+  (Projects shows each repository's circle, its fed commit and manages it, and the Machine view shows
+  the wiring, but no view filters by one yet).
+- **Four things that will bite if forgotten:** being in a folder is no longer being a member (a
   repository joins by `connect` and leaves by `retire`); the bootstrap import runs **once** per store,
-  and anything that re-ran it would resurrect every repository someone retired; and **a feed never
-  names its own workspace** — the receiving deployment's wiring decides where material lands, which is
-  why a shared host files every row into its own circle and refuses one that declares another.
+  and anything that re-ran it would resurrect every repository someone retired; **a feed never names
+  its own workspace** — the receiving deployment's wiring decides where material lands; and **a
+  checkout with no git history feeds no knowledge**, because a wholesale replacement the receiver
+  cannot order against what it holds is not safe (the driver says so itself rather than sending it).
 - **The remotes map has three twins, not two** (`RemoteConfig`, `RemoteTarget`, `remotemap.ts`): the
   three artefacts share no code, so the FILE is the contract and the three test tables move together.
   The environment pair replaces the file for the **whole machine**, which is what the rehearsal's
   hermetic guard rests on.
+- **A refusal can be INFORMATION** (D48 §6) — the first of its kind here. The flag rides the wire
+  (`{"error": …, "information": true}`); a client that classified by matching the sentence would turn
+  every rewording into a silent behaviour change. Anything that grows a new "not taken, and that is
+  fine" answer belongs in that class rather than in the failure one.
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
 - **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
   up only when its trigger has actually arrived.
 - **Verify before claiming done, always:** `npm run verify` (CLI 164 + `check` + version agreement),
-  `dotnet test src/Daoris.Service` (225), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (65), `npm run rehearse:family` (112/112), `npm run test:web` (35 + 7). If a `bin`-driven gate is red
+  `dotnet test src/Daoris.Service` (235), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
+  (74), `npm run rehearse:family` (123/123), `npm run test:web` (36 + 7). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -140,15 +144,9 @@ item).** The owner's direction, designed under the standing redesign grant — t
 building anything below. **D50 — management parity — applies across the arc**: everything a person
 manages gets a proper surface in the desktop or the `daoris` CLI (files and doors are the truth,
 surfaces are editors; the offline-discipline test evolves to a named management class — design §2b).
-Build order: **WSP1, WSP2 and WSP3 are done** (2026-09-20, in the archive) — next is WSP4;
-SES1→SES2 may interleave; SES3 and CANON6 are independent. Each item is one
-session-sized landing, TDD, gates green, moved to the archive on completion.
-
-- [ ] **WSP4 — knowledge sync semantics.** Feeds carry git provenance stamped by the driver (commit,
-  committedAt, branch; `WorkingTree` reads HEAD); default-branch-only knowledge (records/quests travel
-  from any checkout); monotonic replacement by commit time, refused plainly and reported as
-  information; provenance served on `/api/repositories` and shown on Projects. Rehearsal: a stale feed
-  refused, a branch feed refused, a newer feed replacing. Design §6.
+Build order: **every WSP item is done** (2026-09-20, in the archive) — what remains is the
+interactive surface and coexistence: SES1→SES2 may interleave, SES3 and CANON6 are independent. Each
+item is one session-sized landing, TDD, gates green, moved to the archive on completion.
 
 - [ ] **SES1 — the console.** The capture pump tees to a bounded per-session ring buffer; the shell's
   IPC gains `TAIL_SESSION` + `SESSION_OUTPUT`; the session drawer renders the stream verbatim,

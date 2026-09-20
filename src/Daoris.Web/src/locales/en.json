@@ -7,6 +7,10 @@
   "nav.search": "Search",
   "nav.settings": "Machine",
 
+  "projects.fed": "fed from",
+  "projects.fedTip": "this deployment's copy came from commit {{commit}} on {{branch}}, fed by {{origin}}. Only the canonical line feeds knowledge, and a newer commit replaces an older one.",
+  "projects.fedUnknownOrigin": "an unnamed machine",
+
   "settings.title": "This machine",
   "settings.description": "What is true about this computer rather than about the family — held in files under your profile, which the CLI edits too.",
   "settings.wiring.title": "Wiring",

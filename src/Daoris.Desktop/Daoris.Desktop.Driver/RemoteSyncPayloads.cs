@@ -13,9 +13,15 @@ public static class RemoteSyncPayloads
 {
     /// <param name="SharesKnowledge">Whether its knowledge content feeds too — its manifest's second
     /// declaration (D47 §4). The registration itself travels for every joined repository.</param>
+    /// <param name="Root">
+    /// The checkout on THIS machine — kept so the driver can ask git where the tree stands (D48 §6),
+    /// and never written into any payload. The disclosure guarantee lives in the payload builders
+    /// below, each of which has no field for a machine path; the tests assert on what goes on the
+    /// wire, which is the only place the guarantee can be broken.
+    /// </param>
     public sealed record JoinedRepository(
         string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
-        IReadOnlyList<string> Packs, bool SharesKnowledge);
+        IReadOnlyList<string> Packs, bool SharesKnowledge, string Root);
 
     /// <summary>Every repository a registry answer names — joined or not, adopted or not.</summary>
     public static IReadOnlySet<string> Names(string registryJson)
@@ -50,7 +56,7 @@ public static class RemoteSyncPayloads
         foreach (var repo in document.RootElement.EnumerateArray())
         {
             if (!(repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True)) continue;
-            if (Text(repo, "root") is not { Length: > 0 }) continue;
+            if (Text(repo, "root") is not { Length: > 0 } root) continue;
             if (!string.Equals(
                 RemoteTarget.Workspace(Text(repo, "workspace")),
                 RemoteTarget.Workspace(workspace),
@@ -65,17 +71,26 @@ public static class RemoteSyncPayloads
                 Strings(repo, "owns"),
                 Strings(repo, "accepts"),
                 Strings(repo, "packs"),
-                repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True));
+                repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True,
+                root));
         }
 
         return joined;
     }
 
-    /// <summary>One joined repository's registration, as the remote hears it: the declaration, no root.</summary>
-    public static string Registration(JoinedRepository repo) => Write(writer =>
+    /// <summary>
+    /// One joined repository's registration, as the remote hears it: the declaration, no root.
+    /// </summary>
+    /// <param name="defaultBranch">
+    /// The repository's canonical line, read from this checkout (D48 §6) — the deployment cannot ask
+    /// git, so the machine holding the tree tells it. Omitted when git could not say, and omission
+    /// PRESERVES whatever was declared before: an unstated field must never erase one.
+    /// </param>
+    public static string Registration(JoinedRepository repo, string? defaultBranch = null) => Write(writer =>
     {
         writer.WriteStartObject();
         writer.WriteString("repository", repo.Repository);
+        if (!string.IsNullOrWhiteSpace(defaultBranch)) writer.WriteString("defaultBranch", defaultBranch);
         writer.WriteStartArray("packs");
         foreach (var pack in repo.Packs) writer.WriteStringValue(pack);
         writer.WriteEndArray();
@@ -135,10 +150,16 @@ public static class RemoteSyncPayloads
     }
 
     /// <summary>
-    /// One sharing repository's content for the remote's ingest. An empty list still feeds: the
-    /// remote's copy is a replacement, and a repository that deleted its knowledge means the deletion.
+    /// One sharing repository's content for the remote's ingest, stamped with the point in its history
+    /// that it came from (D48 §6).
     /// </summary>
-    public static (string Json, int Count) Entries(string repository, string entriesJson)
+    /// <remarks>
+    /// An empty list still feeds: the remote's copy is a replacement, and a repository that deleted its
+    /// knowledge means the deletion. That is only safe because the provenance travels with it — a
+    /// replacement the receiver cannot order against what it holds is how two machines flap.
+    /// </remarks>
+    public static (string Json, int Count) Entries(
+        string repository, string entriesJson, TreeProvenance? provenance)
     {
         using var document = JsonDocument.Parse(entriesJson);
         var count = 0;
@@ -146,6 +167,13 @@ public static class RemoteSyncPayloads
         {
             writer.WriteStartObject();
             writer.WriteString("repository", repository);
+            if (provenance is not null)
+            {
+                writer.WriteString("commit", provenance.Commit);
+                writer.WriteString("committedAt", provenance.CommittedAt.ToString("O"));
+                writer.WriteString("branch", provenance.Branch);
+            }
+
             writer.WriteStartArray("entries");
             foreach (var entry in document.RootElement.EnumerateArray())
             {

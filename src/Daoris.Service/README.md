@@ -140,6 +140,14 @@ sentence naming both. A machine names its remotes in `~/.daoris/remotes.json` �
 `{ "<workspace>": { "url": ..., "key": ... } }`, with the environment pair overriding it whole — and
 the desktop's sync loop, which runs once per wired circle, does the rest.
 
+**A shared deployment takes knowledge from a named commit on the canonical line** (D48 §6). Each feed
+carries `{ commit, committedAt, branch }` stamped from git by the machine that holds the checkout; the
+deployment refuses one from a branch that is not the repository's declared default, and one older than
+what it already holds — both as *information*, because the machine behind is simply behind. Wholesale
+replacement then keeps deletion correct for free, and `/api/repositories` answers the commit each copy
+stands on, so staleness is visible rather than assumed. A checkout git cannot answer for feeds no
+knowledge; its session records and quests still travel.
+
 `ConvergenceDetector` answers a different question: **which repositories learned the same thing
 independently?** It automates the survey that produced this project's own canon — reading twelve
 repositories by hand to notice which documents said the same thing in different words. It proposes

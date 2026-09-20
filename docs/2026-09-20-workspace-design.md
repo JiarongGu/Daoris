@@ -271,6 +271,31 @@ that git already is. Rejected: **wall-clock last-writer-wins** — the failure m
 being fixed. Rejected: **feeding branch knowledge under a branch label** — it doubles the store's
 shape for material whose home (the branch, the PR) already displays it better.
 
+**Built 2026-09-20 (WSP4).** Five choices the building settled:
+
+- **A feed that names no commit is refused outright**, rather than taken on trust. A wholesale
+  replacement the receiver cannot order against what it holds is exactly the flapping this section
+  exists to end, so "no provenance" is a 400 and not a special case of acceptance. The consequence is
+  worth stating plainly: **a checkout with no git history feeds no knowledge.** The driver names that
+  itself rather than sending a doomed feed — only the machine with the tree knows *why* git could not
+  answer, and "that checkout has no history" is the actionable sentence, not "the deployment refused".
+- **An undeclared canonical line is permissive.** A repository that never told the deployment which
+  branch is the family's has not asked for its branches to be judged; refusing every feed from it
+  would silence a real repository over a missing `origin/HEAD` ref. The branch that fed is recorded
+  and served either way, so nothing is hidden — it is judged only once someone says what to judge it
+  against. The driver reads that line from `origin/HEAD`, then `main`, then `master`, then gives up.
+- **The refusal is a flag on the wire, not a sentence to match.** `{ "error": …, "information": true }`
+  is what lets the sync report a stale or branch feed as news; a client that classified by matching
+  the message would turn every improvement to that message into a silent behaviour change.
+- **Provenance is its own table, keyed by repository** — not columns on the registration. An ordinary
+  re-registration runs on every tick and says nothing about provenance, so a column would have to be
+  preserved by care on every write; a row that only the feed writes cannot be erased by a write that
+  was not about it. Retiring drops it, because a repository off the map holds no position in anyone's
+  history here — a leftover row would refuse the first feed after it re-joined.
+- **The declared default branch, by contrast, IS a registration field** — and follows the workspace's
+  rule exactly: null preserves. `daoris connect` says nothing about branches and runs on every tick,
+  and a null that overwrote would quietly reopen every branch to feeding.
+
 Local mode is untouched: a local index still scans its own checkouts, whatever branch they sit on —
 the person's machine shows the person's state.
 
@@ -328,7 +353,10 @@ machine paths (D46/D47: paths never reach a browser).
    showing the file's rows would be showing wiring that is not in effect.
 4. **WSP4 — knowledge sync semantics**: provenance, monotonic replace, default-branch-only, served
    provenance. (Lands after WSP3 because the refusals belong to a workspace's host, but the Core
-   judgement can be built and unit-proven independently.)
+   judgement can be built and unit-proven independently.) **Built 2026-09-20**, with the five settled
+   choices in §6 above and one thing its successors inherit: a refusal can be INFORMATION, and the
+   flag that says so is on the wire — the first refusal class in this system that a client is meant
+   to report rather than fix.
 
 ## 10. Open questions, deliberately held
 

@@ -8,7 +8,14 @@ namespace Daoris.Knowledge.Http;
 // would be the one thing stopping it). Program.cs keeps the routes; the shapes live here.
 
 public sealed record StatusResponse(bool Semantic, string Tier, string? Note);
-public sealed record RepositoryResponse(string Name, int Total, int Local, int Canonical, string Workspace);
+// Provenance is SERVED, never implied (D48 §6): the deployment's copy of a repository's knowledge is
+// a claim about a commit, so the answer names the commit, when it was made, which line it came from
+// and which machine fed it. Absent on a deployment that reads its own checkouts — it has no feed, and
+// what it shows is its own state.
+public sealed record ProvenanceResponse(
+    string Commit, string ShortCommit, DateTimeOffset CommittedAt, string Branch, string? Origin);
+public sealed record RepositoryResponse(
+    string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed);
 public sealed record HitResponse(
     string Id, string Repository, string Kind, string Title, string Path, string? Excerpt, double Score,
     string Workspace);
@@ -31,9 +38,12 @@ public sealed record RefreshResponse(
 public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
 // `Workspace` is null on the way IN when the client said nothing — which is what preserves the row
 // (D48 §2). It is never null on the way out: a reader is told which circle it is looking at.
+// `DefaultBranch` is the same shape for the same reason (D48 §6): the checkout that registers knows
+// its canonical line and the deployment cannot ask git, but an ordinary registration says nothing
+// about it — so null preserves what was declared rather than erasing it.
 public sealed record RegisterRequest(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
-    bool? Join, bool? ShareKnowledge, string? Workspace);
+    bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At, string Workspace);
 public sealed record RetiredResponse(string Repository, bool Retired, string Message);
 public sealed record WireRequest(string? Workspace);
@@ -42,7 +52,7 @@ public sealed record ImportedResponse(string Folder, int Imported, IReadOnlyList
 public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
-    string? Root, bool Joined, bool SharesKnowledge, string Workspace);
+    string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch);
 public sealed record SessionResponse(
     string Id, string Quest, string Repository, string Adapter, string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
@@ -55,13 +65,26 @@ public sealed record FeedSessionRecord(
     string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated);
 public sealed record FeedSessionsRequest(IReadOnlyList<FeedSessionRecord>? Records);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
-public sealed record FeedEntriesRequest(string Repository, IReadOnlyList<FeedEntryRecord>? Entries);
+// The three provenance fields are the feed's claim about WHICH point in the history it speaks for
+// (D48 §6). Nullable on the wire and judged at the door: a feed that names no commit cannot be
+// compared with what is held, and a wholesale replacement that cannot be compared is the flapping
+// this exists to end.
+public sealed record FeedEntriesRequest(
+    string Repository, IReadOnlyList<FeedEntryRecord>? Entries,
+    string? Commit, DateTimeOffset? CommittedAt, string? Branch);
 public sealed record FeedQuestRecord(
     string Id, string From, string To, string Title, string Body, string? Status, string? Note,
     DateTimeOffset Filed, DateTimeOffset Updated);
 public sealed record FeedQuestsRequest(IReadOnlyList<FeedQuestRecord>? Quests);
 public sealed record FeedResponse(int Accepted, string Message);
 public sealed record ErrorResponse(string Error);
+/// <summary>
+/// A refusal the CLIENT should report rather than fix (D48 §6) — a stale or branch feed is the system
+/// working, and the machine that is behind is simply behind. The flag is what lets a sync loop tell
+/// "this is news" from "this is broken" without matching on the sentence: `error` stays the field
+/// every reader already knows, so the message still travels verbatim.
+/// </summary>
+public sealed record FeedRefusalResponse(string Error, bool Information);
 
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(IEnumerable<RepositoryResponse>))]
@@ -89,5 +112,6 @@ public sealed record ErrorResponse(string Error);
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedQuestsRequest))]
 [JsonSerializable(typeof(FeedResponse))]
+[JsonSerializable(typeof(FeedRefusalResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;

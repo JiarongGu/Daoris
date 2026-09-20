@@ -213,7 +213,13 @@ app.MapGet("/api/status", (ComposedService s) => new StatusResponse(
 // own circle says so, because only the caller knows which repository it is speaking for.
 app.MapGet("/api/repositories", async (ComposedService s, string? workspace, CancellationToken ct) =>
     (await s.Service.SummarizeAsync(workspace, ct))
-        .Select(r => new RepositoryResponse(r.Repository, r.Total, r.Local, r.Canonical, r.Workspace)));
+        .Select(r => new RepositoryResponse(
+            r.Repository, r.Total, r.Local, r.Canonical, r.Workspace,
+            // Staleness a person can SEE beats freshness they must assume (D48 §6).
+            r.Fed is null
+                ? null
+                : new ProvenanceResponse(
+                    r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin))));
 
 app.MapGet("/api/search", async (
     ComposedService s, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
@@ -406,7 +412,9 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         // receiving deployment's wiring is what decides where fed material lands (D48 §2/§5). On a
         // LOCAL host silence PRESERVES the row: an ordinary re-registration runs on every sync tick
         // and says nothing about the wiring, so a null must not re-point the repository to `default`.
-        Workspace: hostWorkspace ?? body.Workspace), DateTimeOffset.UtcNow, ct);
+        Workspace: hostWorkspace ?? body.Workspace,
+        // The canonical line, as the checkout that registered knows it (D48 §6) — unstated preserves.
+        DefaultBranch: body.DefaultBranch), DateTimeOffset.UtcNow, ct);
 
     // Answered with the workspace that TOOK, not the one that was asked for — the client learns which
     // circle it is actually wired to, including when it said nothing and the existing row held.
@@ -490,7 +498,7 @@ app.MapGet("/api/registry", async (
         // Machine-local by design (D46): a filesystem path is answered only to a caller on this
         // machine, so a remote deployment never serves anyone's disk layout to the network.
         Root: MachineLocal(http) ? r.Root : null,
-        r.Joined, r.SharesKnowledge, r.InWorkspace)));
+        r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch)));
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
@@ -544,9 +552,10 @@ if (mode == ServiceMode.Shared)
     });
 
     // Knowledge content — never vectors (D47 §4): each deployment embeds with its own provider, and
-    // this one still serves lexical search with none. The disclosure judgement is the service's own
-    // (FeedAsync), so any future door shares it.
-    app.MapPost("/api/feed/entries", async (ComposedService s, FeedEntriesRequest body, CancellationToken ct) =>
+    // this one still serves lexical search with none. The disclosure judgement and the provenance
+    // judgement are both the service's own (FeedAsync), so any future door shares them.
+    app.MapPost("/api/feed/entries", async (
+        ComposedService s, HttpContext http, FeedEntriesRequest body, CancellationToken ct) =>
     {
         if (string.IsNullOrWhiteSpace(body.Repository))
         {
@@ -567,10 +576,26 @@ if (mode == ServiceMode.Shared)
                 entry.RelativePath ?? "", entry.Anchor));
         }
 
-        var outcome = await s.Service.FeedAsync(body.Repository, entries, ct);
-        return outcome.Accepted
-            ? Results.Ok(new FeedResponse(outcome.Entries, outcome.Message))
-            : Results.Conflict(new ErrorResponse(outcome.Message));
+        // The commit this feed speaks for (D48 §6). Whole or nothing, like every pair in this system:
+        // half a provenance cannot be compared with what is held, and the door must not assemble a
+        // plausible one out of the half it got.
+        var provenance = body.Commit is { Length: > 0 } commit
+            && body.CommittedAt is { } committedAt
+            && body.Branch is { Length: > 0 } branch
+                // The origin is the key's own identity — recorded because the write carried it, not
+                // because a second identity model was invented (D47 §7).
+                ? new FeedProvenance(commit, committedAt, branch, http.Items["daoris.principal"] as string)
+                : null;
+
+        var outcome = await s.Service.FeedAsync(body.Repository, entries, provenance, ct);
+        if (outcome.Accepted) return Results.Ok(new FeedResponse(outcome.Entries, outcome.Message));
+
+        // A feed with no commit is a malformed request; everything else is a state conflict — this
+        // deployment holds something the feed cannot replace. The `information` flag is what lets a
+        // sync report a stale or branch feed as news rather than as a wall (§6).
+        return outcome.Refusal == FeedRefusal.NoProvenance
+            ? Results.BadRequest(new FeedRefusalResponse(outcome.Message, outcome.Information))
+            : Results.Conflict(new FeedRefusalResponse(outcome.Message, outcome.Information));
     });
 }
 else

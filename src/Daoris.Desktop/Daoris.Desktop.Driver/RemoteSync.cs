@@ -8,9 +8,17 @@ namespace Daoris.Driver;
 /// per-tick counts would be noise on every surface that renders events — they return with a surface
 /// that reads them.
 /// </param>
-public sealed record SyncReport(string? Problem)
+/// <param name="Notes">
+/// What the remote understood and deliberately did not take (D48 §6) — a feed from a stale checkout,
+/// or from a line that is not the repository's canonical one. Reported, never treated as a failure:
+/// those are the rules working, and a loop that logged them as problems would teach the person to
+/// ignore its problems.
+/// </param>
+public sealed record SyncReport(string? Problem, IReadOnlyList<string> Notes)
 {
-    public static readonly SyncReport Clean = new((string?)null);
+    public SyncReport(string? problem) : this(problem, []) { }
+
+    public static readonly SyncReport Clean = new((string?)null, []);
 }
 
 /// <summary>
@@ -44,13 +52,15 @@ public sealed class RemoteSyncSet(IReadOnlyList<RemoteSync> syncs) : IDisposable
     public async Task<SyncReport> RunOnceAsync(CancellationToken ct = default)
     {
         var problems = new List<string>();
+        var notes = new List<string>();
         foreach (var sync in syncs)
         {
             var report = await sync.RunOnceAsync(ct).ConfigureAwait(false);
             if (report.Problem is not null) problems.Add($"{sync.Workspace}: {report.Problem}");
+            foreach (var note in report.Notes) notes.Add($"{sync.Workspace}: {note}");
         }
 
-        return problems.Count == 0 ? SyncReport.Clean : new(string.Join(" · ", problems));
+        return new(problems.Count == 0 ? null : string.Join(" · ", problems), notes);
     }
 
     public void Dispose()
@@ -115,13 +125,13 @@ public sealed class RemoteSync : IDisposable
             var joined = RemoteSyncPayloads.Joined(registryJson, _workspace);
             if (joined.Count == 0) return SyncReport.Clean;
 
-            await FeedUpAsync(joined, ct).ConfigureAwait(false);
+            var notes = await FeedUpAsync(joined, ct).ConfigureAwait(false);
             await MirrorDownAsync(
                 RemoteSyncPayloads.Names(registryJson),
                 joined.Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase),
                 ct).ConfigureAwait(false);
 
-            return SyncReport.Clean;
+            return notes.Count == 0 ? SyncReport.Clean : new(null, notes);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -137,13 +147,21 @@ public sealed class RemoteSync : IDisposable
 
     /// <summary>Registrations, then records, then content — the remote must know who is joined before
     /// their records arrive (D47 §9).</summary>
-    private async Task FeedUpAsync(
+    /// <returns>What the remote deliberately did not take, in its own words.</returns>
+    private async Task<IReadOnlyList<string>> FeedUpAsync(
         IReadOnlyList<RemoteSyncPayloads.JoinedRepository> joined, CancellationToken ct)
     {
+        var notes = new List<string>();
+
         foreach (var repo in joined)
         {
+            // The canonical line rides the registration, because the deployment cannot ask git and
+            // this machine can (D48 §6). Read per tick rather than cached: a repository's default
+            // branch changes about once in its life, and the tick that follows should know.
+            var defaultBranch = await WorkingTree.DefaultBranchAsync(repo.Root, ct).ConfigureAwait(false);
             await DriverHttp.PostAsync(
-                _remote, $"{_remoteBase}/api/registry", RemoteSyncPayloads.Registration(repo), ct)
+                _remote, $"{_remoteBase}/api/registry",
+                RemoteSyncPayloads.Registration(repo, defaultBranch), ct)
                 .ConfigureAwait(false);
         }
 
@@ -158,11 +176,35 @@ public sealed class RemoteSync : IDisposable
 
         foreach (var repo in joined.Where(r => r.SharesKnowledge))
         {
+            // Where this checkout stands, asked of git at the moment of feeding — the claim the
+            // deployment will compare against what it holds (D48 §6). A tree git cannot answer for
+            // feeds nothing: the door refuses a feed that names no commit, and that refusal arrives
+            // here as a note rather than as a wall.
+            var provenance = await WorkingTree.ProvenanceAsync(repo.Root, ct).ConfigureAwait(false);
+            if (provenance is null)
+            {
+                // The door would refuse this feed, and rightly — but only THIS side knows why, because
+                // only this side has the tree. Saying it here turns "the deployment refused something"
+                // into "that checkout has no history to speak from", which is the actionable sentence.
+                notes.Add(
+                    $"`{repo.Repository}` fed no knowledge: git could not say where this checkout stands, "
+                    + "and a deployment takes knowledge only from a named commit. Its records still travel.");
+                continue;
+            }
+
             var content = RemoteSyncPayloads.Entries(repo.Repository, await DriverHttp.GetAsync(
                 _local, $"{_localBase}/api/entries?repository={Uri.EscapeDataString(repo.Repository)}", ct)
-                .ConfigureAwait(false));
-            await DriverHttp.PostAsync(_remote, $"{_remoteBase}/api/feed/entries", content.Json, ct).ConfigureAwait(false);
+                .ConfigureAwait(false), provenance);
+
+            if (await DriverHttp.PostInformableAsync(
+                    _remote, $"{_remoteBase}/api/feed/entries", content.Json, ct).ConfigureAwait(false)
+                is { } note)
+            {
+                notes.Add(note);
+            }
         }
+
+        return notes;
     }
 
     /// <summary>The remote's registry comes down as foreign rows only — teammates' repositories become

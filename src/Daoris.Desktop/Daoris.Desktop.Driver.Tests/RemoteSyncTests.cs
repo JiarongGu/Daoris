@@ -246,16 +246,92 @@ public sealed class RemoteSyncTests
             ]
             """;
 
-        var (json, count) = RemoteSyncPayloads.Entries("Shared", entriesJson);
+        var (json, count) = RemoteSyncPayloads.Entries("Shared", entriesJson, Head);
         Assert.Equal(1, count);
         using var document = JsonDocument.Parse(json);
         var entry = Assert.Single(document.RootElement.GetProperty("entries").EnumerateArray().ToList());
         Assert.Equal("docs/DECISIONS.md", entry.GetProperty("relativePath").GetString());
         Assert.Equal("D1", entry.GetProperty("anchor").GetString());
 
-        var (emptyJson, emptyCount) = RemoteSyncPayloads.Entries("Shared", "[]");
+        var (emptyJson, emptyCount) = RemoteSyncPayloads.Entries("Shared", "[]", Head);
         Assert.Equal(0, emptyCount);
         Assert.Contains("\"entries\"", emptyJson);
+    }
+
+    /// <summary>Where this checkout stands, as git answered it.</summary>
+    private static readonly TreeProvenance Head = new(
+        "aaaa1111bbbb2222", DateTimeOffset.Parse("2026-09-20T09:00:00Z"), "main");
+
+    /// <summary>
+    /// The feed carries the point in the history it speaks for (D48 §6) — without it the receiving
+    /// deployment cannot order a wholesale replacement against what it already holds, which is how two
+    /// machines feeding one repository become a flapping generator.
+    /// </summary>
+    [Fact]
+    public void An_entries_feed_names_the_commit_it_speaks_for()
+    {
+        var (json, _) = RemoteSyncPayloads.Entries("Shared", "[]", Head);
+
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        Assert.Equal("aaaa1111bbbb2222", root.GetProperty("commit").GetString());
+        Assert.Equal("main", root.GetProperty("branch").GetString());
+        Assert.Equal(
+            DateTimeOffset.Parse("2026-09-20T09:00:00Z"),
+            DateTimeOffset.Parse(root.GetProperty("committedAt").GetString()!));
+    }
+
+    /// <summary>
+    /// A tree git could not answer for names no commit, and the fields are OMITTED rather than sent
+    /// empty: the door refuses a feed it cannot compare, and a blank commit would be a claim about a
+    /// point in the history that does not exist.
+    /// </summary>
+    [Fact]
+    public void A_tree_git_cannot_answer_for_claims_no_commit_at_all()
+    {
+        var (json, _) = RemoteSyncPayloads.Entries("Shared", "[]", provenance: null);
+
+        using var document = JsonDocument.Parse(json);
+        Assert.False(document.RootElement.TryGetProperty("commit", out _));
+        Assert.False(document.RootElement.TryGetProperty("branch", out _));
+    }
+
+    /// <summary>
+    /// The canonical line rides the registration, because the deployment cannot ask git (D48 §6) — and
+    /// omission preserves what was declared, so a checkout that cannot answer never erases it.
+    /// </summary>
+    [Fact]
+    public void A_registration_carries_the_canonical_line_when_the_checkout_knows_it()
+    {
+        var repo = RemoteSyncPayloads.Joined(RegistryJson, RemoteTarget.DefaultWorkspace)[0];
+
+        using var declared = JsonDocument.Parse(RemoteSyncPayloads.Registration(repo, "main"));
+        Assert.Equal("main", declared.RootElement.GetProperty("defaultBranch").GetString());
+
+        using var unknown = JsonDocument.Parse(RemoteSyncPayloads.Registration(repo, null));
+        Assert.False(unknown.RootElement.TryGetProperty("defaultBranch", out _));
+    }
+
+    /// <summary>
+    /// The checkout path is kept for the driver's own use — it is how git is asked anything — and
+    /// still reaches NO payload. The guarantee lives where it can actually be broken: what goes on
+    /// the wire.
+    /// </summary>
+    [Fact]
+    public void The_root_is_known_to_the_driver_and_absent_from_every_payload()
+    {
+        var repo = RemoteSyncPayloads.Joined(RegistryJson, RemoteTarget.DefaultWorkspace)[0];
+        Assert.Equal("C:/somewhere/private/Shared", repo.Root);
+
+        foreach (var payload in new[]
+        {
+            RemoteSyncPayloads.Registration(repo, "main"),
+            RemoteSyncPayloads.Entries(repo.Repository, "[]", Head).Json,
+        })
+        {
+            Assert.DoesNotContain("private", payload);
+            Assert.DoesNotContain("root", payload);
+        }
     }
 }
 
@@ -264,10 +340,20 @@ public sealed class RemoteSyncTests
 /// the remote knows who is joined before their records arrive — D47 §9), and a wall is reported and
 /// never thrown (records sync eventually; a dead tick would take the driver's whole look with it).
 /// </summary>
-public sealed class RemoteSyncRunTests
+public sealed class RemoteSyncRunTests : IDisposable
 {
     private const string Local = "http://localhost:5177";
     private const string Remote = "https://remote.example.com";
+
+    /// <summary>
+    /// A REAL checkout, because knowledge feeds only from a named commit (D48 §6): a fixture root git
+    /// cannot answer for feeds nothing at all, and the order this class exists to assert would then be
+    /// an order over a step that never happened. The first version of this test kept its invented path
+    /// and quietly stopped covering the entries feed the moment provenance landed.
+    /// </summary>
+    private readonly GitTree _tree = new("remotesync-run");
+
+    public void Dispose() => _tree.Dispose();
 
     /// <summary>Canned answers by (method, path prefix); records every call in order.</summary>
     private sealed class StubTransport : HttpMessageHandler
@@ -287,14 +373,15 @@ public sealed class RemoteSyncRunTests
         Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json"),
     };
 
-    private static HttpResponseMessage AnswerHealthy(HttpRequestMessage request)
+    private HttpResponseMessage AnswerHealthy(HttpRequestMessage request)
     {
         var url = request.RequestUri!.ToString();
         return url switch
         {
-            _ when url.StartsWith($"{Local}/api/registry") && request.Method == HttpMethod.Get => Json("""
+            _ when url.StartsWith($"{Local}/api/registry") && request.Method == HttpMethod.Get => Json($$"""
                 [{ "repository": "Shared", "adopted": true, "registered": true, "owns": [], "accepts": [],
-                   "packs": [], "entries": 1, "root": "C:/somewhere/Shared", "joined": true, "sharesKnowledge": true }]
+                   "packs": [], "entries": 1, "root": {{System.Text.Json.JsonSerializer.Serialize(_tree.Root)}},
+                   "joined": true, "sharesKnowledge": true }]
                 """),
             _ when url.StartsWith($"{Local}/api/sessions") => Json("""
                 [{ "id": "ab12cd34", "quest": "abc123", "repository": "Shared", "adapter": "stub",
@@ -652,5 +739,141 @@ public sealed class RemoteTargetTests : IDisposable
         Assert.Equal("dk_abcd1234…", RemoteTarget.Redact("dk_abcd1234wxyzsecret"));
         Assert.Equal("…", RemoteTarget.Redact("dk_short"));
         Assert.Equal("…", RemoteTarget.Redact(""));
+    }
+}
+
+/// <summary>
+/// A throwaway git checkout on a named branch, for the questions only git can answer.
+/// </summary>
+/// <remarks>
+/// The branch is set explicitly because `git init` picks `master` or `main` depending on the version
+/// and the person's config — a fixture whose behaviour changed with the developer's git would make
+/// these tests prove different things on different machines. The identity is passed per command, so
+/// the suite runs on a machine with no git config at all.
+/// </remarks>
+internal sealed class GitTree : IDisposable
+{
+    private const string Identity =
+        "-c user.name=\"Driver Tests\" -c user.email=\"tests@example.invalid\"";
+
+    public string Root { get; }
+
+    public GitTree(string name, string branch = "main")
+    {
+        Root = Path.Combine(Path.GetTempPath(), $"daoris-{name}-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(Root);
+        Git("init -q");
+        Git($"symbolic-ref HEAD refs/heads/{branch}");
+        File.WriteAllText(Path.Combine(Root, "README.md"), "# fixture\n");
+        Git($"{Identity} add -A");
+        Git($"{Identity} commit -q -m \"the fixture is born\"");
+    }
+
+    public void Git(string arguments)
+    {
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "git",
+            Arguments = arguments,
+            WorkingDirectory = Root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        })!;
+        process.WaitForExit();
+    }
+
+    public void Dispose()
+    {
+        // Git leaves read-only objects on Windows; a failed cleanup is not a failed test.
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+            }
+
+            Directory.Delete(Root, recursive: true);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+}
+
+/// <summary>
+/// What the driver asks git before it feeds (D48 §6). Over a real checkout, because the whole point
+/// of this half is that git's answer is the one that matters — a stubbed one would prove nothing
+/// about the arguments, the format, or the parse.
+/// </summary>
+public sealed class WorkingTreeProvenanceTests : IDisposable
+{
+    private readonly GitTree _tree = new("worktree");
+
+    public void Dispose() => _tree.Dispose();
+
+    [Fact]
+    public async Task Provenance_names_the_commit_its_time_and_the_line()
+    {
+        var provenance = await WorkingTree.ProvenanceAsync(_tree.Root);
+
+        Assert.NotNull(provenance);
+        Assert.Equal(40, provenance!.Commit.Length);
+        Assert.Equal("main", provenance.Branch);
+        // A real commit time, not a default: the ordering the deployment does is on this field.
+        Assert.True(provenance.CommittedAt > DateTimeOffset.UtcNow.AddMinutes(-10));
+        Assert.True(provenance.CommittedAt < DateTimeOffset.UtcNow.AddMinutes(10));
+    }
+
+    /// <summary>The canonical line, with no `origin/HEAD` to ask: the conventional names, in turn.</summary>
+    [Fact]
+    public async Task The_canonical_line_falls_back_to_the_conventional_names()
+    {
+        Assert.Equal("main", await WorkingTree.DefaultBranchAsync(_tree.Root));
+    }
+
+    /// <summary>
+    /// A branch is work in flight, and the provenance says which — this is the field the deployment
+    /// refuses on, so it has to be the checked-out branch and not the canonical one.
+    /// </summary>
+    [Fact]
+    public async Task A_checkout_on_another_line_says_so_while_the_canonical_line_stays_put()
+    {
+        _tree.Git("checkout -q -b feature/streaming");
+
+        Assert.Equal("feature/streaming", (await WorkingTree.ProvenanceAsync(_tree.Root))!.Branch);
+        Assert.Equal("main", await WorkingTree.DefaultBranchAsync(_tree.Root));
+    }
+
+    /// <summary>A detached HEAD is on no line at all, and is NAMED — a blank quotes back as nonsense.</summary>
+    [Fact]
+    public async Task A_detached_head_is_named_rather_than_blank()
+    {
+        _tree.Git("checkout -q --detach HEAD");
+
+        Assert.Equal("(detached)", (await WorkingTree.ProvenanceAsync(_tree.Root))!.Branch);
+    }
+
+    /// <summary>
+    /// A tree git cannot answer for feeds nothing — null rather than an invented commit, because an
+    /// invented one is a claim about a point in the history that does not exist.
+    /// </summary>
+    [Fact]
+    public async Task A_folder_that_is_not_a_repository_answers_nothing()
+    {
+        var plain = Path.Combine(Path.GetTempPath(), "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(plain);
+        try
+        {
+            Assert.Null(await WorkingTree.ProvenanceAsync(plain));
+            Assert.Null(await WorkingTree.DefaultBranchAsync(plain));
+        }
+        finally
+        {
+            Directory.Delete(plain, recursive: true);
+        }
     }
 }

@@ -58,6 +58,19 @@ public sealed class RegistrationStore
                   key   TEXT PRIMARY KEY,
                   value TEXT NOT NULL
                 );
+
+                -- Which commit each repository's fed knowledge came from (D48 §6). A table of its own
+                -- rather than columns on `registrations`, and structurally so: an ordinary
+                -- re-registration runs on every sync tick and says nothing about provenance, so a
+                -- column would have to be preserved by care on every write. A row nothing but the feed
+                -- writes cannot be erased by a write that was not about it.
+                CREATE TABLE IF NOT EXISTS feed_provenance (
+                  repository   TEXT PRIMARY KEY,
+                  commit_id    TEXT NOT NULL,
+                  committed_at TEXT NOT NULL,
+                  branch       TEXT NOT NULL,
+                  origin       TEXT NULL
+                );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -78,6 +91,10 @@ public sealed class RegistrationStore
             // that it was derived from a scan, and every row here arrived by being pushed — which is
             // what adoption looks like from a service. Hence the default.
             ("adopted", "adopted INTEGER NOT NULL DEFAULT 1"),
+            // The canonical line, told by the checkout that registered (D48 §6). NULL for every row
+            // that predates it, which is exactly what "nobody said" means — and what makes any branch
+            // feedable for a repository that never declared one.
+            ("default_branch", "default_branch TEXT NULL"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -110,14 +127,18 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch)
             VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
-                    COALESCE($workspace, '{Workspaces.Default}'), $adopted)
+                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch)
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated,
               root = $root, joined = $joined, shares_knowledge = $shares, adopted = $adopted,
-              workspace = COALESCE($workspace, workspace, '{Workspaces.Default}')
-            RETURNING workspace
+              workspace = COALESCE($workspace, workspace, '{Workspaces.Default}'),
+              -- Unstated preserves, for the same reason the workspace does: `daoris connect` says
+              -- nothing about branches and runs on every tick, and a null that overwrote would erase
+              -- what the driver declared — after which every feed would be taken from any branch.
+              default_branch = COALESCE($default_branch, default_branch)
+            RETURNING workspace, default_branch
             """;
         command.Parameters.AddWithValue("$adopted", registration.Adopted ? 1 : 0);
         command.Parameters.AddWithValue(
@@ -132,10 +153,85 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$root", (object?)registration.Root ?? DBNull.Value);
         command.Parameters.AddWithValue("$joined", registration.Joined ? 1 : 0);
         command.Parameters.AddWithValue("$shares", registration.SharesKnowledge ? 1 : 0);
-        var effective = await command.ExecuteScalarAsync(ct).ConfigureAwait(false) as string;
+        command.Parameters.AddWithValue(
+            "$default_branch",
+            string.IsNullOrWhiteSpace(registration.DefaultBranch)
+                ? DBNull.Value
+                : registration.DefaultBranch.Trim());
 
-        return registration with { Workspace = Workspaces.Normalize(effective) };
+        // Both preserved fields come back, for the same reason: what is SERVED is what the store
+        // decided, never what arrived (D48 §2) — otherwise the row in memory and the row on disk
+        // disagree until a restart.
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            return registration with { Workspace = registration.InWorkspace };
+        }
+
+        return registration with
+        {
+            Workspace = Workspaces.Normalize(reader.IsDBNull(0) ? null : reader.GetString(0)),
+            DefaultBranch = reader.IsDBNull(1) ? null : reader.GetString(1),
+        };
     }
+
+    /// <summary>What commit a repository's knowledge was last fed from, or null where nothing has fed.</summary>
+    public async Task<FeedProvenance?> ProvenanceAsync(string repository, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "SELECT commit_id, committed_at, branch, origin FROM feed_provenance "
+            + "WHERE repository = $repository COLLATE NOCASE";
+        command.Parameters.AddWithValue("$repository", repository);
+
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>Every repository's fed provenance, for the one read a summary needs.</summary>
+    public async Task<IReadOnlyDictionary<string, FeedProvenance>> AllProvenanceAsync(CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT repository, commit_id, committed_at, branch, origin FROM feed_provenance";
+
+        var all = new Dictionary<string, FeedProvenance>(StringComparer.OrdinalIgnoreCase);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            all[reader.GetString(0)] = new(
+                reader.GetString(1),
+                DateTimeOffset.Parse(reader.GetString(2), null, System.Globalization.DateTimeStyles.RoundtripKind),
+                reader.GetString(3),
+                reader.IsDBNull(4) ? null : reader.GetString(4));
+        }
+
+        return all;
+    }
+
+    /// <summary>Record which commit this deployment's copy of a repository's knowledge now stands on.</summary>
+    public async Task RecordProvenanceAsync(
+        string repository, FeedProvenance provenance, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO feed_provenance (repository, commit_id, committed_at, branch, origin)
+            VALUES ($repository, $commit, $committed_at, $branch, $origin)
+            ON CONFLICT (repository) DO UPDATE SET
+              commit_id = $commit, committed_at = $committed_at, branch = $branch, origin = $origin
+            """;
+        command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$commit", provenance.Commit);
+        command.Parameters.AddWithValue("$committed_at", provenance.CommittedAt.ToString("O"));
+        command.Parameters.AddWithValue("$branch", provenance.Branch);
+        command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    private static FeedProvenance Read(SqliteDataReader reader) => new(
+        reader.GetString(0),
+        DateTimeOffset.Parse(reader.GetString(1), null, System.Globalization.DateTimeStyles.RoundtripKind),
+        reader.GetString(2),
+        reader.IsDBNull(3) ? null : reader.GetString(3));
 
     /// <summary>
     /// Take a repository off the map. <b>Nothing on disk is touched</b>: this ends a registration, and
@@ -145,7 +241,13 @@ public sealed class RegistrationStore
     public async Task<bool> DeleteAsync(string repository, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
-        command.CommandText = "DELETE FROM registrations WHERE repository = $repository COLLATE NOCASE";
+        // The provenance goes with the registration: a repository off the map holds no position in
+        // anyone's history here, and a leftover row would refuse the first feed after it re-joined as
+        // though this deployment still held a newer commit — which it would not.
+        command.CommandText = """
+            DELETE FROM feed_provenance WHERE repository = $repository COLLATE NOCASE;
+            DELETE FROM registrations WHERE repository = $repository COLLATE NOCASE;
+            """;
         command.Parameters.AddWithValue("$repository", repository);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }
@@ -181,8 +283,8 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText =
-            "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted "
-            + "FROM registrations";
+            "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted, "
+            + "default_branch FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -199,7 +301,8 @@ public sealed class RegistrationStore
                 Root: reader.IsDBNull(5) ? null : reader.GetString(5),
                 Joined: reader.GetInt32(6) != 0,
                 SharesKnowledge: reader.GetInt32(7) != 0,
-                Workspace: Workspaces.Normalize(reader.IsDBNull(8) ? null : reader.GetString(8))));
+                Workspace: Workspaces.Normalize(reader.IsDBNull(8) ? null : reader.GetString(8)),
+                DefaultBranch: reader.IsDBNull(10) ? null : reader.GetString(10)));
         }
 
         return registrations;

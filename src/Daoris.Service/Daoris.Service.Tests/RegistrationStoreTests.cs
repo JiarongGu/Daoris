@@ -58,6 +58,51 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// The canonical line survives a restart, and an ordinary re-registration does not erase it
+    /// (D48 §6) — the same shape the workspace has, for the same reason: `connect` says nothing about
+    /// branches and runs on every tick. A restart is exactly when this matters, because that is when
+    /// the in-memory registry is rebuilt from these rows.
+    /// </summary>
+    [Fact]
+    public async Task The_declared_canonical_line_round_trips_and_silence_preserves_it()
+    {
+        await _store.UpsertAsync(Declared() with { DefaultBranch = "main" }, Now);
+        Assert.Equal("main", Assert.Single(await _store.AllAsync()).DefaultBranch);
+
+        await _store.UpsertAsync(Declared() with { DefaultBranch = null }, Now.AddDays(1));
+        Assert.Equal("main", Assert.Single(await _store.AllAsync()).DefaultBranch);
+
+        await _store.UpsertAsync(Declared() with { DefaultBranch = "trunk" }, Now.AddDays(2));
+        Assert.Equal("trunk", Assert.Single(await _store.AllAsync()).DefaultBranch);
+    }
+
+    /// <summary>
+    /// What commit this deployment's copy stands on, kept beside the registrations and gone with them.
+    /// A leftover row would refuse the first feed after a repository re-joined, as though a commit it
+    /// had dropped were still held.
+    /// </summary>
+    [Fact]
+    public async Task Fed_provenance_round_trips_and_retires_with_its_registration()
+    {
+        await _store.UpsertAsync(Declared(), Now);
+        await _store.RecordProvenanceAsync(
+            "Yumeora", new("abc123def456", Now, "main", "person@machine-a"));
+
+        var held = await _store.ProvenanceAsync("yumeora");
+        Assert.Equal("abc123def456", held!.Commit);
+        Assert.Equal("abc123de", held.ShortCommit);
+        Assert.Equal("main", held.Branch);
+        Assert.Equal("person@machine-a", held.Origin);
+        Assert.Equal(Now, held.CommittedAt);
+        Assert.Single(await _store.AllProvenanceAsync());
+
+        await _store.DeleteAsync("Yumeora");
+
+        Assert.Null(await _store.ProvenanceAsync("Yumeora"));
+        Assert.Empty(await _store.AllProvenanceAsync());
+    }
+
+    /// <summary>
     /// The root is the one field spawning needs (D46): `connect` runs in the repository and knows it.
     /// Stored machine-locally — this store never leaves the machine it serves.
     /// </summary>

@@ -38,8 +38,8 @@ about a neighbour could only either ignore it or trespass.
 ## Current state
 
 **Built and proven; nothing published.** Twelve commands, 164 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 225, `Daoris.Devkit` 57, and the
-driver 65. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 235, `Daoris.Devkit` 57, and the
+driver 74. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
 off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
@@ -54,7 +54,7 @@ minted keys, no page and no machine path served, refusing to bind beyond loopbac
 the quest lock hardened into code (an atomic guarded `Taken`, closed quests immovable) and the
 desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
 gates the whole thing with no model: driver loop, a two-machine remote crossing, **the workspace
-boundary, the registration lifecycle and the remotes map** (112/112). The D48 arc is under way. **The
+boundary, the registration lifecycle, the remotes map and which commit speaks** (123/123). The D48 arc is under way. **The
 workspace exists** (WSP1) — it is the unit of sharing, it is **wiring rather than a tracked
 declaration** (`connect --workspace`, a registry row, no manifest field), and every cross-repository
 entity and answer carries or is scoped by it. **The registry is the authority** (WSP2) — an explicit
@@ -65,7 +65,10 @@ map** (WSP3) — `~/.daoris/remotes.json`, one deployment per workspace: a share
 `DAORIS_WORKSPACE` identity and refuses a registration declaring another, the sync runs per circle, the
 quest relay resolves by the quest's workspace, and `daoris remote list|add|remove`, `status --machine`
 and the desktop's Machine view are editors over the one file — a key never printed back beyond its
-audit prefix.
+audit prefix. **A feed carries the commit it speaks for** (WSP4) — the driver stamps git provenance,
+knowledge feeds only from the declared canonical line, a replacement must be newer than what is held
+(a stale one is refused as *information*, not a failure), and every deployment serves the commit its
+copy stands on, so staleness is seen rather than assumed.
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
@@ -86,7 +89,7 @@ risk, **authorship** was.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
 - `docs/DECISIONS.md` — the numbered decision log (D1–D50) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are the current arc**
-  (workspaces; the interactive surface; management parity) — WSP1–WSP3 have landed, WSP4 is next.
+  (workspaces; the interactive surface; management parity) — the WSP arc has landed; SES/CANON6 remain.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -150,7 +153,9 @@ Run every command from the **workspace root**, not from a package directory.
   remote's store scanned for anything machine-local — then the remotes map: a workspace's own
   deployment wired and unwired from a terminal, only its circle feeding it while a joined-and-sharing
   repository in another circle reaches it not at all, and a registration declaring another workspace
-  refused naming both. No model anywhere in the gate. Run when touching
+  refused naming both — then which commit speaks: a newer feed replacing wholesale and carrying a
+  deletion with it, a stale one refused as information, an unmerged branch refused though newer, and
+  the fed commit served back. No model anywhere in the gate. Run when touching
   the service, `connect`, the driver, the remote, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped

@@ -1226,6 +1226,37 @@ to watch-forever (the rehearsal's drive helpers default `--once` with a kill-tim
 Final: CLI 128, service 158, driver 49, family rehearsal 74/74, verify clean. All three parts of D45
 are built.
 
+## WSP4 — knowledge sync semantics (2026-09-20)
+
+> **WSP4 — knowledge sync semantics.** Feeds carry git provenance stamped by the driver (commit,
+> committedAt, branch; `WorkingTree` reads HEAD); default-branch-only knowledge (records/quests travel
+> from any checkout); monotonic replacement by commit time, refused plainly and reported as
+> information; provenance served on `/api/repositories` and shown on Projects. Rehearsal: a stale feed
+> refused, a branch feed refused, a newer feed replacing. Design §6.
+
+✅ done 2026-09-20 — two checkouts of one repository are two points in its history, and the deployment
+now decides which one speaks. **The feed carries its position**: `WorkingTree.ProvenanceAsync` asks git
+for HEAD's commit and committer date in one call (so the two can never come from different commits)
+plus the branch, naming a detached HEAD rather than sending a blank; `DefaultBranchAsync` reads the
+canonical line from `origin/HEAD`, then `main`, then `master`. **The judgement is Core's**, at the door
+the disclosure judgement already lives at, in three parts: a feed naming no commit is refused (a
+replacement that cannot be compared is not safe), a feed from a line that is not the declared canonical
+one is refused naming both, and a feed older than what is held is refused naming the commit it is
+behind — same-commit re-feeds stay idempotent, equal times are unorderable and take. Wholesale
+replacement then keeps *delete* correct for free, and the rehearsal proves it: the driver's own entry
+is gone after a newer view arrives without it. **A refusal can be INFORMATION** — the first in this
+system — carried as a flag on the wire rather than a sentence to match, so the sync reports "the
+deployment kept a newer view" as a `held` line and a wall still fails loudly. **Provenance is served**
+on `/api/repositories` and rendered on Projects (commit, relative time, and a tip naming the branch and
+the machine that fed it), because the index is a claim about a commit and staleness someone can see
+beats freshness they must assume. **A checkout with no git history feeds no knowledge**, and the driver
+says so itself rather than sending a doomed feed — only the side with the tree knows why git could not
+answer. Two storage choices are structural rather than careful: provenance is its own table (nothing
+but the feed writes it, so no unrelated write can erase it) and the declared default branch is a
+registration field that null PRESERVES (like the workspace, for the same reason). The rehearsal's
+circle members became real git checkouts on a deterministic `main`, which is what the rules presume.
+Tests grew 225→235 service, 65→74 driver, 35→36 web vitest, 112→123 family rehearsal.
+
 ## WSP3 — remotes become a map (2026-09-20)
 
 > **WSP3 — remotes become a map.** `~/.daoris/remotes.json` (workspace → url/key; env pair kept

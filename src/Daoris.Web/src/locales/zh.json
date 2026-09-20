@@ -7,6 +7,10 @@
   "nav.search": "搜索",
   "nav.settings": "本机",
 
+  "projects.fed": "来源提交",
+  "projects.fedTip": "本部署所存的这份副本来自 {{branch}} 上的提交 {{commit}}，由 {{origin}} 送来。只有主干那条线才送出知识，更新的提交会替换更旧的。",
+  "projects.fedUnknownOrigin": "一台未具名的机器",
+
   "settings.title": "本机",
   "settings.description": "只关乎这台电脑、而非整个家族的设置——存放在你个人目录下的文件里，命令行改的也是同样的文件。",
   "settings.wiring.title": "接线",

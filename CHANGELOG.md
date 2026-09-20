@@ -283,6 +283,29 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Nothing a feed claims decides where it lands.** Fed entries and fed session records take the
   *receiving* deployment's wiring, because a feed that could name its own workspace could write itself
   into someone else's.
+- **One shared deployment serves one workspace**, and says which (`DAORIS_WORKSPACE`): every row it
+  takes lands in that circle, and a registration declaring another is refused in a sentence naming
+  both sides. A local host, which holds every circle the machine wired, refuses the variable outright
+  rather than ignoring it. The machine's remotes became a **map** — `~/.daoris/remotes.json`, one
+  deployment per workspace — with the sync running once per circle and the quest relay resolving by
+  the quest's own workspace. A circle with no entry syncs nowhere, silently, which is what every
+  machine does until someone says otherwise.
+- **`daoris remote list|add|remove` and `status --machine`,** plus the desktop's new **Machine** view
+  over the same file. Both are editors; the file is the truth, so hand-editing keeps working. A key is
+  never printed back — only the audit prefix the deployment's own `keys list` shows — and the
+  `remote` verbs are management commands that speak to nothing at all.
+- **A feed carries the commit it speaks for.** Two checkouts of one repository are two points in its
+  history, and wholesale replacement between them was a flapping generator: each tick, whichever fed
+  last overwrote the other. Now the driver stamps `{ commit, committedAt, branch }` from git, a
+  deployment takes knowledge **only from the repository's declared canonical line**, and a feed older
+  than what it holds is refused. Deletion stays correct for free — an entry absent from the newest
+  canonical view is one the repository deleted — and `/api/repositories` answers the commit each copy
+  stands on, shown on Projects, because an index is a claim about a commit and staleness someone can
+  see beats freshness they must assume.
+- **A refusal can be information.** A stale or branch feed is the rules working, not a fault, so it is
+  flagged as such on the wire and the sync reports it as news rather than as a wall. Records and
+  quests still travel from any checkout; only knowledge waits for the canonical line. A checkout git
+  cannot answer for feeds no knowledge, and the machine that holds it says so itself.
 - **Fixed: `refresh` re-read the repositories but never the folder.** The root's subdirectories were
   listed once at startup, so a repository created afterwards was invisible to the index while being
   fully registered and quest-addressable — and the refresh reported success either way.
@@ -317,7 +340,9 @@ The first version: doctrine that installs, is checked, and flows back.
 - **The CLI's offline guarantee is now stated over a class, not a command.** `check`, `sync`,
   `upstream` and the rest are offline by construction; `connect`, `retire` and `import` are the opt-in
   management commands, and all three speak through one module — so the test still reads "exactly one
-  file may touch the network, and nothing a doctrine command reaches may import it".
+  file may touch the network, and nothing a doctrine command reaches may import it". `remote` joined
+  the class and touches nothing at all: it edits a file under the profile, and a test walks its
+  imports to keep it that way.
 
 ### Proven
 

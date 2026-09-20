@@ -50,6 +50,47 @@ internal static class DriverHttp
         }
     }
 
+    /// <summary>
+    /// POST that tells a deliberate refusal from a wall (D48 §6).
+    /// </summary>
+    /// <returns>
+    /// Null when the remote took it; the remote's own sentence when it understood the request and
+    /// deliberately did not — a stale feed, or one from a branch that is not the canonical line. Those
+    /// are news, not failures: the deployment kept the newer view and this machine is simply behind.
+    /// Anything else still throws, because a feed dying quietly looks exactly like a family with
+    /// nothing to say.
+    /// </returns>
+    /// <remarks>
+    /// The distinction rides a flag the service sets (`information`), never a match on the sentence:
+    /// the message is meant for a person and will be reworded, and a classifier that depended on its
+    /// wording would turn every improvement to it into a silent behaviour change here.
+    /// </remarks>
+    public static async Task<string?> PostInformableAsync(
+        HttpClient http, string url, string json, CancellationToken ct)
+    {
+        using var response = await http.PostAsync(
+            url, new StringContent(json, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (response.IsSuccessStatusCode) return null;
+        if (IsInformation(payload)) return ErrorOf(payload);
+
+        throw new DriverException($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
+    }
+
+    private static bool IsInformation(string payload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            return document.RootElement.TryGetProperty("information", out var flag)
+                && flag.ValueKind == JsonValueKind.True;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>The service's own sentence out of an error payload — verbatim, truncated only when it
     /// is not JSON at all (a proxy's HTML page must become a sentence, not a wall).</summary>
     public static string ErrorOf(string payload)

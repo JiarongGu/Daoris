@@ -7,8 +7,19 @@
 // shows material from more than one must be able to say which is which. Optional on the way in —
 // a host older than workspaces simply does not send it, and nothing here should crash over that.
 export type Status = { semantic: boolean; tier: string; note?: string };
+/**
+ * Which point in a repository's history a deployment's copy of its knowledge came from (D48 §6).
+ *
+ * Absent on a deployment that reads its own checkouts — it has no feed, and what it shows is the
+ * machine's own state. Present on a shared one, where the index is a *claim about a commit*: naming
+ * the commit is what makes staleness something a person can see rather than must assume.
+ */
+export type Provenance = {
+  commit: string; shortCommit: string; committedAt: string; branch: string; origin?: string;
+};
 export type Repository = {
   name: string; total: number; local: number; canonical: number; workspace?: string;
+  fed?: Provenance;
 };
 export type Hit = {
   id: string; repository: string; kind: string; title: string;

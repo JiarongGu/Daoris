@@ -196,6 +196,9 @@ Service design §5, built as specified; D46 held per-caller identity precisely f
   driver/desktop layer so `daoris-driver` headless feeds identically: a server machine with checkouts
   and a key is just another machine, not a special deployment. The loop pushes the feed (idempotent
   upserts, resumed after restart) and pulls the quest mirror on the same cadence as the driver tick.
+  *(Narrowed by D48 §6: a knowledge feed now carries the commit it speaks for, and the deployment
+  takes it only from the canonical line and only when it is newer than what it holds. The loop runs
+  once per wired workspace, per D48 §5.)*
   **Amended 2026-09-20, during the build:** the loop also mirrors the remote's **registry** down —
   foreign rows only, because the machine holding a checkout is the authority on its own registration
   and its root must survive the sync untouched. Without it, publishing across machines had no

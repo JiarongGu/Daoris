@@ -29,6 +29,14 @@ namespace Daoris.Knowledge;
 /// an ordinary re-registration says nothing about the workspace and must not re-point the row. Every
 /// reader gets a concrete name through <see cref="Workspaces.Normalize"/>; only a writer sees the null.
 /// </param>
+/// <param name="DefaultBranch">
+/// The repository's canonical line, as the checkout that registered knows it (D48 §6) — the remote
+/// cannot ask git, so the machine holding the tree tells it. <b>Null means unstated</b> and is
+/// preserved on upsert, exactly as the workspace is: `daoris connect` says nothing about branches,
+/// and a re-registration must not erase what the driver declared. Where it is unstated, any branch may
+/// feed — the deployment has not been told which line is canonical, and guessing one would refuse
+/// every feed from a repository that simply never said.
+/// </param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -40,7 +48,8 @@ public sealed record Registration(
     string? Root = null,
     bool Joined = false,
     bool SharesKnowledge = false,
-    string? Workspace = null)
+    string? Workspace = null,
+    string? DefaultBranch = null)
 {
     /// <summary>The workspace this repository is wired to, with silence resolved to the default.</summary>
     public string InWorkspace => Workspaces.Normalize(Workspace);

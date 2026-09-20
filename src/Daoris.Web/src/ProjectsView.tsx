@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration } from './api';
 import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
+import { ago } from './format';
 import { useRegistry, useRepositories } from './queries';
 import { useDriver, useSetDrivable, useSetHold } from './shell';
 import {
@@ -101,6 +102,24 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                 <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
                   <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.packs')}</span>
                   {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
+                </p>
+              )}
+              {counts?.fed && (
+                /* Where this deployment's copy came from (D48 §6). Shown rather than implied: the
+                   index is a claim about a commit, and a person who cannot see which commit has no
+                   way to tell a current view from one a machine stopped feeding a month ago. */
+                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
+                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.fed')}</span>
+                  <Tip content={t('projects.fedTip', {
+                    commit: counts.fed.commit,
+                    branch: counts.fed.branch,
+                    origin: counts.fed.origin ?? t('projects.fedUnknownOrigin'),
+                  })}
+                  >
+                    <span className="font-mono text-[0.78rem] text-ink-soft">
+                      {counts.fed.shortCommit} · {ago(counts.fed.committedAt)}
+                    </span>
+                  </Tip>
                 </p>
               )}
               {project.workspace && (

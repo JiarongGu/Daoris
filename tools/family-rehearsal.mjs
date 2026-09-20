@@ -531,6 +531,15 @@ const circleMember = (name, summary, lesson) => {
     join(directory, '.claude', 'knowledge', 'shared-lesson.md'),
     `# shared lesson\n\n${lesson}\n`,
   );
+  // A real history, because since D48 §6 knowledge feeds from a named commit on the canonical line —
+  // a checkout git cannot answer for feeds nothing, which is a property worth having the gate live
+  // with rather than arrange around. The branch is named explicitly: `git init` picks `master` or
+  // `main` depending on the version, and a gate that changed behaviour with the developer's git is
+  // not a gate.
+  run('git init -q', directory);
+  run('git symbolic-ref HEAD refs/heads/main', directory);
+  run(`git ${GIT_ID} add -A`, directory);
+  run(`git ${GIT_ID} commit -q -m "${name} is born"`, directory);
   return directory;
 };
 
@@ -1222,6 +1231,121 @@ check(
   `${unwire.out}\n${afterUnwire.out}`,
 );
 
+// -------------------------------------------------- 13. which commit speaks
+
+section('13. Two checkouts, one history — which one speaks (D48 §6)');
+
+// Wholesale replacement is right — the index is derived data, and merging two machines' derivations
+// would invent a second truth beside git — but only once the deployment can order what arrives
+// against what it holds. These are the three rules that make it safe, driven at the door itself.
+const feed = (body) => api('POST', '/api/feed/entries', { base: AURORA_BASE, key: keyC, body });
+const fedEntry = (title) => ({
+  kind: 'knowledge', title, body: `${title} — the body.`, relativePath: '.claude/knowledge/fed.md',
+});
+
+const fedProvenance = async (name) => ((await api('GET', '/api/repositories', {
+  base: AURORA_BASE, key: keyC,
+})).json ?? []).find((r) => r.name === name)?.fed;
+
+// What the deployment actually holds for a repository, by title. Asserted through the entries door
+// rather than through a search: lexical search matches on any shared word, so "no hit for X" is a
+// weaker claim than it reads as — the first draft of these checks passed and failed for the wrong
+// reasons because `lesson` appears in every title here.
+const heldTitles = async (name) => ((await api(
+  'GET', `/api/entries?repository=${encodeURIComponent(name)}`, { base: AURORA_BASE, key: keyC },
+)).json ?? []).map((e) => e.title).sort();
+
+const drivenProvenance = await fedProvenance('atelier');
+check(
+  'the driver’s feed named the commit it spoke for, and the deployment serves it',
+  Boolean(drivenProvenance?.commit) && drivenProvenance.branch === 'main'
+    && drivenProvenance.origin === 'person@machine-a',
+  JSON.stringify(drivenProvenance),
+);
+
+// A newer commit replaces wholesale — which is what makes DELETE work for free: an entry absent from
+// the newest canonical view is an entry the repository deleted.
+const newer = await feed({
+  repository: 'atelier',
+  entries: [fedEntry('The newest lesson')],
+  commit: 'ffff9999eeee8888',
+  committedAt: '2026-09-21T10:00:00+00:00',
+  branch: 'main',
+});
+const afterNewer = await heldTitles('atelier');
+check(
+  'a feed from a newer commit replaces what is held',
+  newer.status === 200 && afterNewer.includes('The newest lesson'),
+  `${newer.text}\n${afterNewer.join(', ')}`,
+);
+check(
+  '…and what the newer view no longer carries is gone — a deletion travels',
+  // The driver's own feed put `shared lesson` here a phase ago; the newest canonical view does not
+  // carry it, so it is deleted. That is the whole of "delete for free" (D48 §6).
+  afterNewer.length === 1 && !afterNewer.includes('shared lesson'),
+  afterNewer.join(', '),
+);
+
+// The flapping this exists to end: a stale checkout must not clobber a fresher one.
+const stale = await feed({
+  repository: 'atelier',
+  entries: [fedEntry('A lesson from last week')],
+  commit: '1111222233334444',
+  committedAt: '2026-09-19T10:00:00+00:00',
+  branch: 'main',
+});
+check(
+  'a feed from an older commit is refused, and says which commit it is behind',
+  stale.status === 409 && /newer commit/.test(stale.text) && /ffff9999/.test(stale.text),
+  stale.text,
+);
+check(
+  '…and it is INFORMATION, not a failure — the machine behind is simply behind',
+  stale.json?.information === true,
+  stale.text,
+);
+check(
+  '…and the index kept what it had',
+  (await heldTitles('atelier')).join() === 'The newest lesson',
+  (await heldTitles('atelier')).join(', '),
+);
+
+// Only the canonical line feeds knowledge. Records and quests still travel from any checkout —
+// they are records of activity, not claims of truth.
+const branchFeed = await feed({
+  repository: 'atelier',
+  entries: [fedEntry('An unmerged lesson')],
+  commit: '5555666677778888',
+  committedAt: '2026-09-22T10:00:00+00:00',
+  branch: 'feature/streaming',
+});
+check(
+  'a feed from a branch that is not the canonical line is refused, naming both',
+  branchFeed.status === 409 && /feature\/streaming/.test(branchFeed.text) && /main/.test(branchFeed.text)
+    && branchFeed.json?.information === true,
+  branchFeed.text,
+);
+check(
+  '…even though it is NEWER than what is held — the line matters, not only the time',
+  (await heldTitles('atelier')).join() === 'The newest lesson',
+  (await heldTitles('atelier')).join(', '),
+);
+
+const unnamed = await feed({ repository: 'atelier', entries: [fedEntry('From nowhere in particular')] });
+check(
+  'a feed that names no commit is refused — a replacement that cannot be compared is not safe',
+  unnamed.status === 400 && /commit/.test(unnamed.text),
+  unnamed.text,
+);
+
+const served = await fedProvenance('atelier');
+check(
+  'the deployment serves the commit its copy stands on — staleness a person can see',
+  served?.commit === 'ffff9999eeee8888' && served?.shortCommit === 'ffff9999'
+    && served?.branch === 'main' && served?.origin === 'person@machine-a',
+  JSON.stringify(served),
+);
+
 if (auroraHost && !auroraHost.killed) auroraHost.kill();
 await sleep(700);
 const auroraBytes = readFileSync(auroraDb, 'latin1');
@@ -1230,10 +1354,15 @@ check(
   !auroraBytes.includes('foundry') && !auroraBytes.includes('_fixtures'),
   'material from another workspace reached a deployment that never serves it',
 );
+check(
+  '…and nothing a refused feed carried',
+  !auroraBytes.includes('last week') && !auroraBytes.includes('unmerged lesson'),
+  'a refused feed left its entries in the store',
+);
 
-// -------------------------------------------------- 13. report
+// -------------------------------------------------- 14. report
 
-section('13. Result');
+section('14. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -1261,5 +1390,10 @@ if (totals.failures) {
   console.log('  feeding it, a joined-and-sharing repository in the other circle reaching it not at');
   console.log('  all, a registration declaring another workspace refused naming both, a quest homing');
   console.log('  at the deployment its workspace names, and a local host refusing to be one.');
+  console.log('  And WHICH COMMIT SPEAKS (D48 §6): a feed carrying the point in the history it came');
+  console.log('  from — a newer commit replacing wholesale and carrying a deletion with it, a stale');
+  console.log('  one refused as information rather than as a failure, an unmerged branch refused');
+  console.log('  though it was newer, a feed naming no commit refused outright, and the commit each');
+  console.log('  copy stands on served back so staleness is seen rather than assumed.');
   rmSync(scratch, { recursive: true, force: true });
 }
