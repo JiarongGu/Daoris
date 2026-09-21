@@ -46,7 +46,7 @@ built.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-209 CLI tests, 258 service, 57 devkit, 141 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
+210 CLI tests, 258 service, 57 devkit, 141 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
 2026-09-18, plus a no-staged-leftovers check since REV1), **166/166 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
