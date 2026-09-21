@@ -1933,3 +1933,17 @@ from exactly those and still under-described the problem: it named the empty col
 form, and it did not have the 365px, the 42%, the doubled verbs or the unremembered selection. A
 capture shows what is wrong; `eval` says by how much, and the number is what turns "it feels like a
 web page" into a decision someone can disagree with.
+
+**Amended 2026-09-22, building SURF7: the WINDOW paints the caption buttons, not the page.** D56
+reserved room in the strip "for the caption buttons SURF7 will draw", which assumed the page draws
+them and reports their rectangles for the hit-test. Reading the framework before building showed what
+that costs: **claiming the hit-test makes Windows treat those rectangles as non-client**, so the page
+stops receiving every mouse event in them — CSS `:hover` never fires, clicks never reach React, and
+hover state has to come back over a separate channel, which is a channel that exists for no other
+reason. `OptimizedFormOptions.NativeCaptionButtons` inverts it: the window cuts the reported
+rectangles out of the WebView2 and paints there itself, the page's whole job becomes reserving the
+space, and Snap Layouts is the same either way. **The reservation D56 already built is exactly what
+that needs**, so nothing about the strip changed — only who fills the gap. The colours stay Daoris's
+(`CaptionButtonColors` from D41's tokens, re-sent on every theme change), which keeps the rule that
+structure may come from a reference and identity may not. Recorded as an amendment rather than folded
+in silently, because the original sentence is what a reader would otherwise build against.

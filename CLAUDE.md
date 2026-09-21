@@ -123,9 +123,10 @@ risk, **authorship** was.
   identical in both frames, the rail's `＋`, one owner for the verbs, and **D41 §3 amended to one
   denser scale** — seven named type tokens, held by `tokens.test.ts`, because the literal form had
   drifted to fifteen values. The diagnosis was **measured** (`run` → `shot` → `eval`), which is how
-  a design complaint became a decision: navigation 42% → 23%, the session ~28% → ~72%. **SURF7 is
-  next** and the strip reserves its caption room; until it lands the window wears **two bars**, which
-  is recorded, not a regression. **SURF5b, SURF6, SURF7–9 remain.**
+  a design complaint became a decision: navigation 42% → 23%, the session ~28% → ~72%. **SURF7
+  landed 2026-09-22**: frameless, the strip IS the title bar, and the **window** paints the caption
+  buttons into the reserved room (**D56 as amended**, which has the reason).
+  `npm run desktop -- shot --theme <light|dark>` is the only instrument that sees native chrome. **SURF5b, SURF6, SURF8, SURF9 remain.**
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

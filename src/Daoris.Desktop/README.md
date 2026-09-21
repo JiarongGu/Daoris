@@ -27,7 +27,14 @@ this half had no test project — which is how five written refusals reached peo
 for as long as they existed (`docs/FIX-LOG.md`). It now carries 39 tests and its own gate.
 
 **`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
-window, and now only the window: it brings up the local HTTP host — adopting one already running, spawning and owning one
+window, and now only the window. **It is frameless since SURF7** (`OptimizedForm` +
+`FramelessChrome`): there is no OS title bar, the platform's own app strip is the title bar — it
+drags, double-click maximizes, a sliver above it resizes from the top — and the room that strip
+reserves is handed to the OS as real caption buttons, which the **window** paints
+(`NativeCaptionButtons`, D56 as amended) from `ChromePalette`'s copy of D41's tokens. 🔴
+`AppPlacement` is the truth about maximized, never `Form.WindowState`, which lies about a window that
+maximizes by hand. `WindowCommandModule` is mapped **late**, from the form's constructor, because it
+needs a live form. Beyond the frame it brings up the local HTTP host — adopting one already running, spawning and owning one
 otherwise, a dev build run from its project so the bundle serves — carries the platform in its WebView
 (`ProductionUrl`, the same bytes a browser gets), runs the driver's shared watch loop in-process with
 `driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed
@@ -67,7 +74,7 @@ person or an agent starts the shell and sees what it actually rendered.
 | `build [--release]` | the platform bundle into the host's `wwwroot`, then the host, then the shell. That order is the dependency order: a host built before the bundle serves the previous one |
 | `run [--real] [--fresh]` | start the shell **on a machine of its own**, with the debug port attached |
 | `restart` · `kill` | stop the shell **this checkout built** — matched by executable path, never by process name |
-| `shot [name]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it) |
+| `shot [name] [--theme light\|dark]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it). `--theme` photographs the OTHER theme without touching the machine's setting — the only way to see the **native** chrome (DWM border, caption buttons) in both, since the page cannot observe what it does not paint |
 | `eval "<js>"` | evaluate inside the running shell's page — **the only instrument that sees the bridge-attached half** (the Machine view, the driver controls, the console, chat) |
 | `click "<css>"` | click exactly one element, and say what it clicked; a selector matching none or several is a refusal, not a first match |
 

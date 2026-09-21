@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Dot, Icon, type IconName, Tip } from '../ui';
+import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
 import { SessionConsole } from '../SessionConsole';
 import { cn } from '../lib/cn';
 
@@ -20,15 +21,18 @@ export type Mode = 'manage' | 'work';
  * was built: 42% of the window's width was navigation and a form, and the session that is the
  * application's organising object (D55) got about 28%.
  *
- * **`captionRoom` reserves the right edge for SURF7.** The caption buttons are drawn by the page
- * only once the window is frameless, and reserving their space now means the strip's contents do
- * not shift sideways when they arrive. A layout that moves on the next landing is a layout nobody
- * trusts.
+ * **`captionRoom` reserves the right edge, and the WINDOW paints there** (SURF7; D56 as amended has
+ * the reason). The three slots are empty by design — the window cuts their rectangles out of the
+ * WebView2 and draws the buttons itself.
  *
- * Until SURF7 lands, this strip and the OS title bar are both on screen. That is a known interim
- * recorded in D56, not a regression.
+ * **It is presentational, and the window wiring arrives as props** — `useWindowChrome` holds the
+ * bridge, so every state of this strip is still reachable by passing props, including in a browser
+ * where there is no window to command and none of them are passed at all.
  */
-export function AppStrip({ mode, modeAvailable, attention = 0, onMode, scope, captionRoom }: {
+export function AppStrip({
+  mode, modeAvailable, attention = 0, onMode, scope, captionRoom,
+  stripRef, onDragStart, onToggleMaximize, onResizeTop,
+}: {
   mode: Mode;
   modeAvailable: boolean;
   attention?: number;
@@ -36,10 +40,41 @@ export function AppStrip({ mode, modeAvailable, attention = 0, onMode, scope, ca
   /** The workspace switcher, or nothing while the deployment holds one circle (WSP5). */
   scope?: ReactNode;
   captionRoom?: boolean;
+  stripRef?: (element: HTMLElement | null) => void;
+  /** Absent in a browser: there is no window to move, so the strip is simply a strip. */
+  onDragStart?: () => void;
+  onToggleMaximize?: () => void;
+  onResizeTop?: () => void;
 }) {
   return (
-    <header className="flex h-9 shrink-0 items-center gap-3 border-b border-line bg-raised pl-3 pr-2">
-      <div className="flex items-baseline gap-1.5">
+    <header
+      ref={stripRef}
+      // The title bar's own gesture. `onPointerDown` rather than a click: the OS move loop has to
+      // start while the button is still down, which is also why the host dispatches it inline.
+      onPointerDown={(event) => {
+        // Only the strip itself drags. A press that began on the mode switch or the scope is that
+        // control's, and handing it to the OS would make every button a drag handle.
+        if (event.button !== 0 || event.target !== event.currentTarget) return;
+        onDragStart?.();
+      }}
+      onDoubleClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        onToggleMaximize?.();
+      }}
+      className="relative flex h-9 shrink-0 items-center gap-3 border-b border-line bg-raised pl-3"
+    >
+      {/* The frameless technique hands the top edge to the client, so the top resize border is
+          re-added by a sliver that asks the OS for a size loop. Above the strip's own contents in
+          z-order, and 4px tall — enough to hit, small enough not to steal the wordmark's clicks. */}
+      {onResizeTop && (
+        <div
+          aria-hidden
+          onPointerDown={(event) => { if (event.button === 0) onResizeTop(); }}
+          className="absolute inset-x-0 top-0 z-10 h-1 cursor-ns-resize"
+        />
+      )}
+
+      <div className="pointer-events-none flex items-baseline gap-1.5">
         {/* The serif's one appearance, and the one brand gesture beside it (D41 §1). */}
         <strong className="font-serif text-wordmark font-semibold tracking-[-0.01em]">Daoris</strong>
         <span className="text-small text-ink-faint">道衍</span>
@@ -49,9 +84,15 @@ export function AppStrip({ mode, modeAvailable, attention = 0, onMode, scope, ca
 
       <div className="ml-auto flex items-center gap-2">{scope}</div>
 
-      {/* SURF7 draws minimize/maximize/close here, and reports their rectangles so Windows 11
-          offers Snap Layouts on the maximize button (D55 §a). */}
-      {captionRoom && <div aria-hidden className="h-full w-[8.25rem] shrink-0" />}
+      {/* Reserved, never drawn: the window owns these pixels. Three slots of 44px — the width the
+          strip has always held open, so nothing shifted when they became real. */}
+      {captionRoom && (
+        <div aria-hidden className="flex h-full shrink-0">
+          {CAPTION_SLOTS.map((kind) => (
+            <div key={kind} {...{ [CAPTION_ATTRIBUTE]: kind }} className="h-full w-11" />
+          ))}
+        </div>
+      )}
     </header>
   );
 }

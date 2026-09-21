@@ -17,6 +17,15 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
   { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+queries'/ },
   { what: "the shell bridge ('./shell')", pattern: /\bfrom\s+'(?:\.\.?\/)+shell'/ },
   { what: 'react-query directly', pattern: /\bfrom\s+'@tanstack\/react-query'/ },
+  // The bridge ITSELF, not just this repository's wrapper around it (SURF7). Without this row the
+  // rule is trivially side-stepped by importing the library `./shell` is built on.
+  { what: "the bridge library ('@shenora/react')", pattern: /\bfrom\s+'@shenora\/react'/ },
+  // The window's chrome hook — the other shell-layer module, and the one that caught this gap out.
+  // The app strip briefly imported it for two constants and every check here stayed green, because
+  // **this check is per-file, not transitive**: it reads each source for a forbidden import and
+  // knows nothing about what that import's own module reaches. So the list has to name every
+  // shell-layer module by hand, and adding one is part of writing one.
+  { what: "the window chrome ('./windowChrome')", pattern: /\bfrom\s+'(?:\.\.?\/)+windowChrome'/ },
 ];
 
 /**
@@ -48,6 +57,9 @@ describe('the presentational boundary', () => {
       .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
     expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../shell';\n"]]))
       .toHaveLength(1);
+    // The road around the wrapper: the library `./shell` is itself built on.
+    expect(offenders([['./work/SessionRow.tsx', "import { useShenora } from '@shenora/react';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports the bridge library ('@shenora/react')"]);
     expect(offenders([['./work/SessionRow.tsx', "import type { Session } from '../api';\n"]]))
       .toEqual([]);
   });

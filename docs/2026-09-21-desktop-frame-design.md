@@ -80,15 +80,17 @@ applications do with the **window** itself. Five rules recur, and Daoris breaks 
 ### a. The app strip — one global row, 36px
 
 Wordmark (`Daoris` 道衍 — the serif's one appearance, D41 §1), the **Manage ⇄ Work** mode switch, and
-the **workspace scope**, right-aligned with room reserved at its right edge for the caption buttons
-SURF7 will draw. It is present in both frames because everything in it is true in both.
+the **workspace scope**, right-aligned with three reserved slots at its right edge. It is present in
+both frames because everything in it is true in both.
 
 The mode switch leaves the sidebar, which is the move D55 §a already named and the brief called a
 piece of the answer. The workspace scope leaves the sidebar foot for the same reason: it decides what
 every number on every screen means, so it belongs to the application.
 
-**This landing builds the strip as a region only** — no drag, no caption buttons, no `SET_THEME`.
-Those are SURF7, and the strip is the thing SURF7 needs to already exist.
+**Since SURF7 this strip is the title bar** (§5): it drags the window, double-click maximizes it, a
+sliver above it resizes from the top, and the three reserved slots are the rectangles the **window**
+paints its caption buttons into. SURF10 built the strip as a region with the room already held open,
+which is why nothing in it shifted when the window claimed those pixels.
 
 ### b. The activity bar — 48px, identical in both frames
 
@@ -183,14 +185,21 @@ the drawer; the attended column's fixed head, pinned composer and single verb ow
 selection. Verified by the vitest inner loop over the mocked bridge, the story per component, and the
 real-window loop.
 
-**SURF7 (next):** `MainForm` → `OptimizedForm` + `FramelessChrome`; the drag region and the caption
-buttons in the strip this landing built; `SET_CAPTION_BUTTONS` for Snap Layouts; `SET_THEME`;
-`WindowCommandModule` mapped **late**, from where the window is created; `IAppMaximizable` read and
-**never `Form.WindowState`**.
+**SURF7 — landed 2026-09-22.** `MainForm` is an `OptimizedForm` with `FramelessChrome`, so there is
+no OS title bar and this strip **is** the title bar: it drags the window, double-click maximizes,
+a 4px sliver above it resizes from the top, and the reserved room is handed to the OS as real caption
+buttons. `WindowCommandModule` is mapped **late**, from the form's own constructor; `SET_THEME`
+repaints the native chrome; `AppPlacement` is read and `Form.WindowState` never is.
 
-**The interim to accept, stated so it is not reported as a regression:** until SURF7 lands, the window
-shows the OS title bar **and** the app strip — two bars. That is the cost of splitting the landing,
-and it was the owner's call with the cost stated.
+**One thing changed while building it, and D56 carries the amendment: the WINDOW paints the caption
+buttons.** The page drawing them would cost it every mouse event in those rectangles, because
+claiming the hit-test makes Windows call them non-client — no CSS `:hover`, no clicks, and a separate
+channel needed to render hover state. `NativeCaptionButtons` cuts the rectangles out of the WebView2
+and paints there instead, so the reservation this landing already built is the whole page-side job.
+
+**The two-bar interim is closed**, and it bought 29px of height: the window went from 1267×765 to
+1268×794, which is exactly the title bar that is gone — and the attended column, which SURF10 left
+scrolling in a 341px box, now fits its content without scrolling at all.
 
 ### What it measured afterwards
 

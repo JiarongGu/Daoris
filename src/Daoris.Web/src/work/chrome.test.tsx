@@ -57,13 +57,18 @@ describe('AppStrip', () => {
     expect(screen.getByText('every circle')).toBeTruthy();
   });
 
-  it('reserves the caption room only when asked, so nothing shifts when SURF7 fills it', () => {
+  /**
+   * The room is reserved only where a window will claim it. SURF7 filled it: those slots are now the
+   * rectangles the window paints its caption buttons into, which is why they are empty and why there
+   * are exactly three. What is DONE with them belongs to `windowChrome.test.tsx`.
+   */
+  it('reserves the caption room only when asked, so nothing shifts when a window claims it', () => {
     const { container, rerender } = render(
       <AppStrip mode="manage" modeAvailable onMode={() => {}} />,
     );
-    expect(container.querySelector('[aria-hidden].w-\\[8\\.25rem\\]')).toBeNull();
+    expect(container.querySelectorAll('[data-caption]')).toHaveLength(0);
     rerender(<AppStrip mode="manage" modeAvailable onMode={() => {}} captionRoom />);
-    expect(container.querySelector('[aria-hidden].w-\\[8\\.25rem\\]')).toBeTruthy();
+    expect(container.querySelectorAll('[data-caption]')).toHaveLength(3);
   });
 });
 

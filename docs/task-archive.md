@@ -2548,3 +2548,64 @@ assembled window, which is exactly what Playwright over the real bundle is for.
 
 **Known interim, recorded so it is not read as a regression:** until SURF7 lands the window shows the
 OS title bar **and** the app strip — two bars. That was the owner's call with the cost stated.
+
+## SURF7 — the window is part of the frame (2026-09-22)
+
+> 🔴 **SURF7 — the window is part of the frame. Next.** (D55 §a has the traps and the reasons; **D56
+> and `docs/2026-09-21-desktop-frame-design.md` §5 have the design**, and SURF10 built everything
+> page-side.) `MainForm` becomes an `OptimizedForm` with `FramelessChrome`. **The strip already
+> exists** … this item fills that room and makes the strip draggable. Map `WindowCommandModule`
+> **late, from where the window is created**, and wire `SET_THEME` and `SET_CAPTION_BUTTONS`.
+> 🔴 Read `IAppMaximizable`, never `Form.WindowState` — verify the existing `WindowStateHostOptions`
+> stack does, rather than assume it. **Until this lands the window wears two bars.**
+
+✅ done 2026-09-22 — the OS title bar is gone and the app strip **is** the title bar. `MainForm` is an
+`OptimizedForm` with `FramelessChrome`; `WindowCommandModule` is mapped late from the form's own
+constructor; the strip drags the window, double-click maximizes, a 4px sliver above it resizes from
+the top, and the room SURF10 reserved is handed to the OS as real caption buttons.
+
+**The design changed once while building, and D56 carries the amendment: the WINDOW paints the
+caption buttons.** D56 had said the page would draw them and report their rectangles. Reading the
+framework first showed the cost: **claiming the hit-test makes Windows treat those rectangles as
+non-client**, so the page stops receiving every mouse event in them — CSS `:hover` never fires,
+clicks never reach React, and hover state has to arrive over a channel that exists for no other
+reason. `NativeCaptionButtons` inverts it — the window cuts the rectangles out of the WebView2 and
+paints there — and **the reservation SURF10 already built is exactly what that needs**, so nothing in
+the strip moved. The colours stay Daoris's (`CaptionButtonColors` from D41's tokens), which keeps
+"structure may come from a reference, identity may not".
+
+**The red trap was verified, not assumed.** D55 §a said to check that the existing
+`WindowStateHostOptions` stack reads `IAppMaximizable`; the shipped 0.16.0 XML says
+`WindowStateManager` prefers it over the WinForms properties, so `Program.cs` needed no change. Then
+the failure mode itself was driven end to end on the real window: maximize → **1920×1152** (the work
+area, no edge gap), restore → **1268×794 exactly**; the persisted state after closing maximized is
+`Placement: 1` with the **windowed** geometry `1280×800` — not the work-area rect, which is what would
+have made restore a permanent no-op; and after a relaunch the window came back maximized and restore
+still returned 1268×794.
+
+**Two colour values now live in two places, and a test holds them together.** The DWM border, the form
+fill and the caption buttons are painted natively and cannot read a stylesheet, so `ChromePalette`
+copies five of D41's tokens. That is the duplicated-theme shape this family refuses elsewhere
+(frontend architecture §2), so it is **not** left to a "keep in sync" comment: the palette lives in
+`Daoris.Desktop.Modules` — plain `net10.0`, so it is testable at all, unlike the window — and
+`ChromePaletteTests` parses `tokens.css` and fails when either side moves. Watched failing on a
+one-digit change, and it asserts its own parser is still reading rather than silently matching
+nothing.
+
+**What the two-bar interim bought back:** the window went from 1267×765 to **1268×794** — exactly the
+29px title bar that is gone — and the attended column that SURF10 left scrolling in a 341px box now
+fits its content with no scrollbar at all. That was the one number SURF10 measured and deliberately
+did not fix.
+
+**The dev loop grew the only instrument that can see this.** The native chrome is invisible to every
+existing check: the page cannot observe what it does not paint, and a CSS assertion says nothing about
+a DWM border. `npm run desktop -- shot --theme <light|dark>` emulates the media query, lets the page
+push `SET_THEME`, and photographs the result. 🔴 **The emulation is scoped to the CDP session and
+reverts when it closes** — the first probe set it, disconnected, then captured, and reported dark
+while photographing a light window. The capture now happens with the connection still open, and the
+tool says why.
+
+**Proven.** 312 web unit tests (the caption geometry, the drag-target guard sabotaged and watched
+failing, the browser case), 11 Playwright, 51 desktop modules (up from 46), 152 driver, `npm run
+verify` green — and the real window in both themes, with maximize, restore, persistence and relaunch
+all driven rather than reasoned about.

@@ -351,19 +351,10 @@ and a 48px activity bar replace the labelled sidebar in **both** frames, the rai
 went behind a `＋`, the verbs got one owner at a time, the attended selection is remembered, and
 D41 §3 is amended to one denser scale carried by **seven named type tokens** rather than 203
 literals. Measured before and after on the real window: navigation 42% → 23% of the width, the
-attended session ~28% → ~72% of it. **SURF5b, SURF6 and SURF7–9 are what remain of the arc**, and
-**SURF7 is next** — the strip it needs is built and reserves the room for its caption buttons.
-
-- [ ] 🔴 **SURF7 — the window is part of the frame. Next.** (D55 §a has the traps and the
-  reasons; **D56 and `docs/2026-09-21-desktop-frame-design.md` §5 have the design**, and SURF10 built
-  everything page-side.) `MainForm` becomes an `OptimizedForm` with `FramelessChrome`. **The strip
-  already exists** — `AppStrip` in `src/work/frame.tsx`, with `captionRoom` reserving 8.25rem at its
-  right edge so nothing shifts when the buttons arrive; this item fills that room and makes the strip
-  draggable. Map `WindowCommandModule` **late, from where the window is created**, and wire
-  `SET_THEME` and `SET_CAPTION_BUTTONS`. 🔴 Read `IAppMaximizable`, never `Form.WindowState` —
-  verify the existing `WindowStateHostOptions` stack does, rather than assume it. **Until this lands
-  the window wears two bars**, the OS title bar and the app strip: a known interim recorded in D56,
-  not a regression. `npm run desktop -- shot` is the only gate that can see any of this.
+attended session ~28% → ~72% of it. **SURF7 landed 2026-09-22**: the OS title bar is gone, the app strip IS the title bar, and the
+window paints the caption buttons into the room SURF10 reserved — which bought back the 29px the
+title bar held and closed the two-bar interim. **SURF5b, SURF6, SURF8 and SURF9 are what remain of
+the arc.**
 
 - [ ] **SURF8 — the monitor window** (D55 §b). `SecondaryWindows`: `monitor` (rail plus live streams,
   read-only, for a second screen) and `session:<id>` (one attended session, detached) — routes into

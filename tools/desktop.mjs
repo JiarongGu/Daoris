@@ -445,13 +445,50 @@ async function main(command, args) {
       const exe = assemblyExe(DESKTOP_PROJECT);
       if (!exe) fail('the shell is not built — nothing to photograph.');
 
+      /* `--theme light|dark` photographs the OTHER theme without touching the machine's setting.
+       *
+       * It exists because the window's own chrome — the DWM border and the caption buttons — is
+       * painted NATIVELY from whatever the page last pushed over SET_THEME (SURF7), so it is
+       * invisible to every other instrument: the page cannot see it, and a CSS-level check cannot
+       * either. Emulating the media query makes the page push the other theme, and the window
+       * repaints for real.
+       *
+       * 🔴 The emulation is scoped to the CDP SESSION and is reverted the moment it closes. A probe
+       * that set it, closed, and then captured reported dark and photographed a light window — so
+       * the capture happens HERE, while the connection is still open. */
+      const themeFlag = args.indexOf('--theme');
+      const theme = themeFlag === -1 ? null : args[themeFlag + 1];
+      if (themeFlag !== -1) {
+        if (!['light', 'dark'].includes(theme)) fail('usage: shot [name] --theme <light|dark>');
+        args.splice(themeFlag, 2);
+      }
+
       const name = (args[0] ?? `shell-${new Date().toISOString().slice(11, 19).replaceAll(':', '')}`)
         .replace(/[^\w.-]/g, '-');
-      run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass',
+
+      const capture = () => run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
         '-ProcessName', 'daoris-desktop',
         '-ExePath', exe,
         '-OutFile', join(SHOTS, `${name}.png`)]);
+
+      if (theme) {
+        const cdp = await attach();
+        try {
+          await cdp.send('Emulation.setEmulatedMedia', {
+            features: [{ name: 'prefers-color-scheme', value: theme }],
+          });
+          // The page's own listener has to fire and the SET_THEME round trip has to land before the
+          // window has repainted. Nothing reports when that finished, so this waits.
+          await new Promise((resolve) => setTimeout(resolve, 700));
+          capture();
+        } finally {
+          cdp.close();
+        }
+      } else {
+        capture();
+      }
+
       pruneShots();
       break;
     }

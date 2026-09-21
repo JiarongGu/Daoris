@@ -24,6 +24,7 @@ import { WorkFrame } from './work/WorkFrame';
 import type { Attention } from './work/AttentionRow';
 import { needsAPerson } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, type Mode, StatusBar } from './work/frame';
+import { useWindowChrome } from './windowChrome';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
@@ -90,6 +91,10 @@ export function App() {
   const [readingId, setReadingId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToast = useRef(1);
+
+  // The window this page is the chrome of (SURF7). In a browser `present` is false and the strip is
+  // simply a strip: no caption room, no drag, nothing to command.
+  const chrome = useWindowChrome();
 
   const status = useStatus();
   const repositories = useRepositories();
@@ -199,6 +204,11 @@ export function App() {
         modeAvailable={attached}
         attention={waiting}
         onMode={chooseMode}
+        captionRoom={chrome.present}
+        stripRef={chrome.stripRef}
+        onDragStart={chrome.present ? chrome.onDragStart : undefined}
+        onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
+        onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
         scope={(
           <WorkspaceSwitcher
             workspaces={workspaces.data ?? []}
