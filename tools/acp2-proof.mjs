@@ -48,6 +48,16 @@ const PACKAGE = '@agentclientprotocol/claude-agent-acp';
 
 const drive = process.argv.includes('--drive');
 
+/**
+ * The scratch host this run's records live in.
+ *
+ * 🔴 Declared HERE, above every statement that can reach it. `let` is hoisted but not initialised,
+ * so a declaration further down the file leaves `stopHost` and `drivenRun` in its temporal dead
+ * zone — which fails as "Cannot access 'host' before initialization" at the moment of use, long
+ * after the line that actually caused it.
+ */
+let host = null;
+
 openTranscript(repoRoot, 'acp2', { beforeExit: () => stopHost() });
 const { totals, check, section } = makeChecker();
 
@@ -247,10 +257,15 @@ async function acpHandshake(configDir) {
 
   const request = (method, params) => new Promise((resolve) => {
     const id = nextId++;
-    pending.set(id, resolve);
+    // Bounded: an adapter that stops answering must not hang the gate. 🔴 `unref` matters as much as
+    // the bound — an outstanding timer keeps Node's event loop alive, so without it the script sat
+    // there for a further minute after its last check with nothing on screen, which reads exactly
+    // like a hang.
+    const bell = setTimeout(
+      () => { if (pending.delete(id)) resolve({ error: { message: 'timed out' } }); }, 60_000);
+    bell.unref();
+    pending.set(id, (frame) => { clearTimeout(bell); resolve(frame); });
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
-    // Bounded: an adapter that stops answering must not hang the gate.
-    setTimeout(() => { if (pending.delete(id)) resolve({ error: { message: 'timed out' } }); }, 60_000);
   });
 
   try {
@@ -278,12 +293,58 @@ async function acpHandshake(configDir) {
   return result;
 }
 
-/** The scratch host this run's records live in. */
-let host = null;
-
 function stopHost() {
   try { host?.kill(); } catch { /* already gone */ }
   host = null;
+}
+
+/**
+ * One GET against the scratch host, bounded.
+ *
+ * @remarks
+ * Bare `fetch` has no timeout, so a host that accepts a connection and never answers hangs the whole
+ * run with nothing on screen — which is exactly what happened before this existed.
+ */
+async function ask(path) {
+  try {
+    const answered = await fetch(`${BASE}${path}`, { signal: AbortSignal.timeout(30_000) });
+    return await answered.json();
+  } catch {
+    return null;
+  }
+}
+
+/** A fresh git repository with one commit in it — the starting point a session is measured from. */
+function born(name, summary) {
+  const where = join(scratch, name);
+  mkdirSync(where, { recursive: true });
+  const git = (command) => execFileSync('git', command, { cwd: where, encoding: 'utf8' });
+  git(['init', '-q', '-b', 'main']);
+  git(['config', 'user.email', 'proof@example.com']);
+  git(['config', 'user.name', 'ACP2 proof']);
+  writeFileSync(join(where, 'README.md'), `# ${name}\n\n${summary}\n`);
+  git(['add', '-A']);
+  git(['commit', '-qm', 'the starting point']);
+  return where;
+}
+
+/**
+ * Say what a repository is, which `connect` requires before it will register one.
+ *
+ * @remarks
+ * 🔴 Not a formality, and the refusal says so: *"that declaration is how siblings know whether a
+ * quest is yours"*. A fixture that skipped it was refused by name — the system defending its own
+ * premise against a script that had not read it.
+ */
+function declare(where, name) {
+  const manifest = join(where, 'daoris.json');
+  const held = JSON.parse(readFileSync(manifest, 'utf8'));
+  held.domain = {
+    summary: `A scratch repository, born for ACP2's proof run. Not real work.`,
+    owns: [`everything inside \`${name}\`, which is nothing anybody depends on`],
+    accepts: ['a small, reversible change to its own files'],
+  };
+  writeFileSync(manifest, `${JSON.stringify(held, null, 2)}\n`);
 }
 
 /**
@@ -295,50 +356,91 @@ async function drivenRun() {
   rmSync(scratch, { recursive: true, force: true });
   mkdirSync(scratch, { recursive: true });
 
-  const repo = join(scratch, 'proof-repo');
-  mkdirSync(repo, { recursive: true });
-  const git = (command) => execFileSync('git', command, { cwd: repo, encoding: 'utf8' });
-  git(['init', '-q', '-b', 'main']);
-  git(['config', 'user.email', 'proof@example.com']);
-  git(['config', 'user.name', 'ACP2 proof']);
-  writeFileSync(join(repo, 'README.md'), '# proof-repo\n\nA scratch repository for ACP2\'s proof.\n');
-  git(['add', '-A']);
-  git(['commit', '-qm', 'the starting point']);
+  // 🔴 TWO repositories, because a quest is work for SOMEBODY ELSE — the service refuses one
+  // addressed to the repository it came from, by name, which is the whole premise of the thing
+  // ("repositories are not developed across"). A one-repo fixture cannot express a real quest.
+  const asker = born('proof-asker', 'The asker: it needs something from the receiver.');
+  const repo = born('proof-repo', 'The receiver: the repository this proof drives.');
 
-  const store = join(scratch, 'store');
+  // 🔴 CONFINE THE HOST TO THIS SCRATCH FAMILY. Without `DAORIS_KNOWLEDGE_ROOT` the host falls back
+  // to a parent-of-CWD heuristic and indexes every repository beside this one — measured: a run
+  // without it read the developer's neighbouring projects into its registry. Nothing was written to
+  // them, and nothing should have been read either. `DAORIS_KNOWLEDGE_DB` keeps the index here too,
+  // so a scratch run never touches the machine's real one.
   const env = {
     DAORIS_SERVICE_URL: BASE,
     ASPNETCORE_URLS: BASE,
-    DAORIS_STORE: store,
+    DAORIS_KNOWLEDGE_ROOT: scratch,
+    DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
     DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
   };
 
   host = spawn('dotnet', [httpDll], { cwd: scratch, env: { ...process.env, ...env }, stdio: 'ignore' });
+  // 🔴 A live child keeps Node's event loop alive, and the only thing that kills this one runs on
+  // `beforeExit` — which therefore never fires. Every early `return` below then sat forever with its
+  // last check printed and nothing following it, which is indistinguishable from a hung driver.
+  host.unref();
   let up = false;
   for (let attempt = 0; attempt < 40 && !up; attempt++) {
     await sleep(500);
-    up = await fetch(`${BASE}/api/status`).then((r) => r.ok).catch(() => false);
+    up = await fetch(`${BASE}/api/status`, { signal: AbortSignal.timeout(5_000) })
+      .then((r) => r.ok).catch(() => false);
   }
   check('the scratch host answers', up);
   if (!up) return;
 
-  const adopt = capture(`node "${cliBin}" init --name proof-repo`, repo);
-  check('the scratch repository adopts', adopt.code === 0, adopt.out);
-  capture(`node "${cliBin}" sync`, repo);
-  const connect = capture(`node "${cliBin}" connect --service ${BASE}`, repo);
-  check('it registers with the scratch host', connect.code === 0, connect.out);
+  // 🔴 The guard that would have caught the scan escaping. A scratch host that can see a repository
+  // this run did not create is pointed at the wrong world, and everything after it is meaningless —
+  // so this refuses BEFORE a quest is published or a model is spent.
+  const seen = await ask('/api/registry');
+  const strangers = (seen ?? []).map((r) => r.repository).filter((n) => !n.startsWith('proof-'));
+  check('the host sees this scratch family and nothing else', strangers.length === 0,
+    strangers.length ? `it also indexed: ${strangers.join(', ')}` : '');
+  if (strangers.length > 0) {
+    console.log('        Refusing to go further: DAORIS_KNOWLEDGE_ROOT is not confining the scan.');
+    return;
+  }
+
+  let joined = true;
+  for (const [name, where] of [['proof-asker', asker], ['proof-repo', repo]]) {
+    const adopt = capture(`node "${cliBin}" init --name ${name}`, where, { env });
+    declare(where, name);
+    capture(`node "${cliBin}" sync`, where, { env });
+    // 🔴 `connect` has NO `--service` flag — the address is `DAORIS_SERVICE_URL`, and an unknown flag
+    // is ignored in silence. Passing `env` here is what points it at the scratch host; without it the
+    // command answered "no DAORIS_SERVICE_URL" while the script had every appearance of having told it.
+    const connect = capture(`node "${cliBin}" connect`, where, { env });
+    // 🔴 COMMIT THE ADOPTION. `init` and `sync` leave `daoris.json`, `daoris.lock` and `.claude/`
+    // uncommitted, and the driver refuses a tree with work in flight — *"somebody's work in flight;
+    // the driver holds rather than entangling a session with it"*. It was right and the fixture was
+    // wrong: a repository is adopted in a commit, not left dirty.
+    execFileSync('git', ['add', '-A'], { cwd: where, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-qm', 'adopt daoris'], { cwd: where, encoding: 'utf8' });
+    const ok = adopt.code === 0 && connect.code === 0;
+    check(`\`${name}\` adopts and registers`, ok, `${adopt.out}\n${connect.out}`);
+    joined &&= ok;
+  }
+
+  if (!joined) return;
 
   const quest = await fetch(`${BASE}/api/quests`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
+    signal: AbortSignal.timeout(30_000),
     body: JSON.stringify({
-      from: 'proof-repo',
+      from: 'proof-asker',
       to: 'proof-repo',
-      title: 'Add a LICENSE note to the README',
-      body: 'Append a line to README.md saying the repository is a scratch one, then commit it.',
+      title: 'Note in the README that this is a scratch repository',
+      body: 'Append one line to README.md saying this repository exists only for a proof run, '
+        + 'then commit it. Nothing else.',
     }),
-  }).then((r) => r.json());
-  check('a real quest is open', Boolean(quest.id), JSON.stringify(quest));
+  }).then((r) => r.json()).catch(() => ({}));
+  // The POST answers `{ quest, message }` — the record AND the sentence a person is meant to read
+  // ("It is held by the service, not written into that repository"). Reading `.id` off the envelope
+  // finds nothing while the quest is perfectly real, which is what happened.
+  const questId = quest.quest?.id ?? quest.id;
+  check('a real quest is open', Boolean(questId), JSON.stringify(quest));
+  if (!questId) return;
 
   const configPath = join(scratch, 'driver.json');
   writeFileSync(configPath, `${JSON.stringify({
@@ -353,7 +455,7 @@ async function drivenRun() {
   });
   console.log(run.out.split('\n').map((line) => `        ${line}`).join('\n'));
 
-  const sessions = await fetch(`${BASE}/api/sessions?includeClosed=true`).then((r) => r.json());
+  const sessions = (await ask('/api/sessions?includeClosed=true')) ?? [];
   const session = sessions.find((s) => s.adapter === ADAPTER);
   check('a session ran on the protocol door', Boolean(session),
     session ? `${session.id} — ${session.state}` : 'no session with that adapter');
@@ -367,8 +469,8 @@ async function drivenRun() {
       session.evidence ?? 'no evidence');
   }
 
-  const closed = await fetch(`${BASE}/api/quests?includeClosed=true`).then((r) => r.json());
-  const answered = closed.find((q) => q.id === quest.id);
+  const closed = (await ask('/api/quests?includeClosed=true')) ?? [];
+  const answered = closed.find((q) => q.id === questId);
   check('the session closed its own quest through its connector', answered?.status === 'Done',
     `${answered?.status}`);
 

@@ -5,6 +5,75 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The presence probe asked about a different binary than the spawn would run (2026-09-22)
+
+**Symptom.** ACP2's driven run refused: *"`claude-code-acp` is not installed on this machine, so there
+is nothing to spawn"* — about a harness whose pin `daoris harness list` printed on the very next line,
+and which answered `--version` when run by hand. The same roster reported `codex` absent on a machine
+with `@openai/codex` installed globally.
+
+**Root cause.** Twin rule 4 — *the binary is the explicit command, then the managed pin, then `PATH`*
+(TOOL2/D57) — was implemented where a session **spawns** and not where presence is **decided**. Both
+twins probed `toolchain.binary` against `PATH` while resolving the pin separately, so the driver
+resolved a binary correctly and then vetoed it on an answer about a different program. The CLI twin
+failed the other way round and worse: with a pin set it reported the machine's own `claude` **as the
+pinned one** — the silent substitution the pin exists to prevent, arriving through the presence
+question instead of through the spawn.
+
+Underneath it, on the Node side only, the second half of the Windows trap from the entry below: `ask()`
+still called `spawnSync` directly, so a managed pin's `.cmd` shim could not be probed at all. That is
+what hid `codex`. .NET's `Process.Start` runs a `.cmd` with `UseShellExecute = false`, measured — so
+the driver never had this half.
+
+**Fix.** Both probes resolve the pin before asking, and both refuse a pin with nothing installed at it
+by name rather than falling back to `PATH`. The CLI's `ask()` goes through `spawnable()`, and the login
+question is asked of **the same binary the version came from** — asking the pin whether it runs and
+then asking `PATH` whether it is logged in answers about two different installs.
+
+**Verify.** Four tests, watched failing first: a pinned harness probes as present *on the pin* and a pin
+with nothing behind it probes as absent, in `toolchain.test.ts` and `HarnessTests.cs`. By hand,
+`daoris harness list` now reports `claude-code-acp 0.79.0` and `codex codex-cli 0.155.1` where both
+said "absent".
+
+**The trap to inherit.** 🔴 **A rule implemented at one of its two call sites is not implemented.**
+Resolution and presence are the same question asked twice, and the driver's own code computed both
+and compared them without noticing they disagreed. Where a rule decides *which* thing, every predicate
+about *that* thing has to be asked of the resolved one — and the fixture has to be honest about it:
+this fix broke two selection tests whose managed shim was an empty file, which was true enough while
+nothing executed it.
+
+## A scratch host with no root of its own adopts the machine's whole family (2026-09-22)
+
+**Symptom.** ACP2's proof run hung with nothing on screen. Asked directly, the scratch host at
+`localhost:5201` answered a registry containing the developer's **neighbouring repositories** — real
+sibling projects the run had never heard of, beside a fixture family of two.
+
+**Root cause.** Two defaults, both correct on their own. The host's knowledge root defaults to *the
+parent of its workspace* and its index to `~/.daoris/knowledge.db` — which is exactly right for the
+machine's own service, whose job is to index the family. The proof script set neither (it passed
+`DAORIS_STORE`, which is not a variable anything reads), so a **scratch** host came up pointed at the
+**real** family root and the **real** index, read every sibling's `.claude/` documents and decision
+logs, and refreshed the machine's shared database with them. Nothing was written into any sibling
+repository and nothing left the machine — but a fixture run had reached well outside its fixture.
+
+The hang was separate and made it invisible: every read in the script was a bare `fetch`, which has no
+timeout, so a host that accepts a connection and answers slowly stalls the run with no output at all.
+
+**Fix.** `tools/acp2-proof.mjs` now passes `DAORIS_KNOWLEDGE_ROOT`, `DAORIS_KNOWLEDGE_DB` and
+`DAORIS_REMOTE_CONFIG` into its scratch directory — the same confinement `tools/family-rehearsal.mjs`
+has always applied. Every read goes through a bounded `ask()`. And a **guard** reads the registry back
+before a quest is published or a model is spent: a scratch host that can see a repository this run did
+not create is pointed at the wrong world, so the run refuses and says which names it found.
+
+**Verify.** `node tools/acp2-proof.mjs --drive` reports *"the host sees this scratch family and
+nothing else"*, and its registry holds only `proof-asker` and `proof-repo`.
+
+**The trap to inherit.** **A default that is right for the product is wrong for a fixture**, and it
+fails silently in the one direction nobody checks — outwards. Anything that spawns the service for a
+test names its root and its store, and then *asserts what it can see*: confinement you set and never
+read back is confinement you are hoping for. The guard is the half that matters, because the env
+variable was misspelled and a misspelled variable looks exactly like a correct one.
+
 ## `daoris harness install` has never worked on Windows (2026-09-22)
 
 **Symptom.** `daoris harness pin claude-code-acp 0.79.0` — TOOL2's new verb, on its first real use —

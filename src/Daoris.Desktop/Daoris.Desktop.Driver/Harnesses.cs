@@ -528,7 +528,36 @@ public static class HarnessProbe
         string home,
         CancellationToken ct = default)
     {
+        // 🔴 Rule 4, applied HERE and not only where a session spawns: the explicit command, then the
+        // managed pin, then PATH. A presence answer computed from PATH while a pin is set is an answer
+        // about a different program — measured both ways: the selector vetoed a working pin as "not
+        // installed", and the CLI twin reported the machine's own binary as the pinned one.
         var resolved = toolchain.Command(command);
+        string? pinned = null;
+        if (command is not { Count: > 0 }
+            && settings.ResolveVersion(adapter, workspace: null, chosen: null) is { } version_)
+        {
+            pinned = version_;
+            if (HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Binary) is { } managed)
+            {
+                resolved = [managed, .. toolchain.Binary.Skip(1)];
+            }
+            else
+            {
+                // Pinned with nothing installed at it: absent, naming the version. Never a fall back
+                // to PATH — running a different version than the one asked for and reporting success
+                // is the failure the pin exists to prevent.
+                return new HarnessReport(
+                    adapter, false, null,
+                    $"pinned to {pinned} on this machine, and nothing is installed at that version — "
+                    + $"`daoris harness pin {adapter} {pinned}` installs it, and "
+                    + $"`daoris harness unpin {adapter}` goes back to PATH",
+                    toolchain.ProfileVariable,
+                    settings.Defaults.TryGetValue(adapter, out var pinnedDefault) ? pinnedDefault : null,
+                    []);
+            }
+        }
+
         var version = await AskAsync(resolved, toolchain.VersionArguments, profileHome: null, toolchain, ct)
             .ConfigureAwait(false);
 

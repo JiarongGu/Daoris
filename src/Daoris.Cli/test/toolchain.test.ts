@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   TOOLCHAINS, commandHarness, harnessesPath, managedBinary, managedHome, profileHome, profiles,
-  readHarnessSettings, resolveProfile, resolveVersion, writeHarnessSettings,
+  probe, readHarnessSettings, resolveProfile, resolveVersion, writeHarnessSettings,
 } from '../src/toolchain.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
@@ -395,4 +395,56 @@ test('the login questions read the answers the real harnesses give', () => {
   // And a warning line before the answer must not shift the verdict either.
   assert.ok(!codex.in.test('WARNING: something\nNot logged in'));
   assert.ok(codex.in.test('WARNING: something\nLogged in using ChatGPT'));
+});
+
+/**
+ * 🔴 **The probe must ask about the binary a spawn would actually run.**
+ *
+ * Rule 4 (the binary: explicit command → managed pin → `PATH`) was implemented where a session is
+ * spawned and *not* where presence is decided, so `harness list` answered "absent — not on this
+ * machine's PATH" about a harness whose pin was installed, working, and printed on the very next
+ * line. The driver then refused to spawn on that answer, and ACP2's driven run died on it.
+ *
+ * The test installs a working shim under the managed layout and puts nothing on `PATH`. A probe that
+ * resolves the pin finds it; a probe that asks `PATH` cannot.
+ */
+test('a pinned harness probes as present, on the pin rather than on PATH', () => {
+  const fx = makeFixture('harness-probe-pin');
+  const home = join(fx.root, 'home');
+  const bin = join(managedHome(home, 'claude-code', '1.2.3'), 'node_modules', '.bin');
+  mkdirSync(bin, { recursive: true });
+
+  // A shim that really runs: this is also the `.cmd` case, which Node will not spawn without a shell
+  // (CVE-2024-27980) — the second half of the same Windows trap that broke `harness install`.
+  const windows = process.platform === 'win32';
+  const shim = join(bin, windows ? 'claude.cmd' : 'claude');
+  writeFileSync(shim, windows ? '@echo 9.9.9-pinned\r\n' : '#!/bin/sh\necho 9.9.9-pinned\n', 'utf8');
+  if (!windows) chmodSync(shim, 0o755);
+
+  const settings = {
+    defaults: {}, workspaces: {}, versions: { 'claude-code': '1.2.3' }, workspaceVersions: {}, rest: {},
+  };
+  const report = probe('claude-code', TOOLCHAINS['claude-code']!, home, settings);
+
+  assert.equal(report.present, true, report.problem ?? 'probed as absent');
+  assert.match(report.version ?? '', /9\.9\.9-pinned/);
+  fx.cleanup();
+});
+
+/**
+ * The other side of the same rule: a pin that names a version nothing is installed at must NOT quietly
+ * fall back to `PATH`. The driver already refuses this by name; the probe has to agree, or the roster
+ * would show the machine's own `claude` and call it the pinned one.
+ */
+test('a pin with nothing installed at it probes as absent rather than as PATH', () => {
+  const fx = makeFixture('harness-probe-pin-missing');
+  const settings = {
+    defaults: {}, workspaces: {}, versions: { 'claude-code': '9.9.9' }, workspaceVersions: {}, rest: {},
+  };
+
+  const report = probe('claude-code', TOOLCHAINS['claude-code']!, join(fx.root, 'home'), settings);
+
+  assert.equal(report.present, false);
+  assert.match(report.problem ?? '', /9\.9\.9/);
+  fx.cleanup();
 });

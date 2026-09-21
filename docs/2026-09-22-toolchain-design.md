@@ -53,7 +53,12 @@ seam. Building them together would mean one change that cannot be reviewed.
   declared, aimed somewhere Daoris owns. No vendoring, no bundling: **a harness's own packaging stays
   its own problem** (D53's note on dsh's 561 MB), and the version installed is asserted rather than
   assumed.
-- **Selection at spawn is: the explicit command, then the managed pin, then `PATH`.** An explicit
+- **Selection is: the explicit command, then the managed pin, then `PATH` — and it decides every
+  question about that binary, not only which one to spawn.** *Is it installed? Which version? Is this
+  profile logged in?* are all asked of the **resolved** binary. Stated because it was got wrong: the
+  rule was implemented at the spawn and not at the presence check, so a working pin reported absent
+  and refused to run, while the other twin reported the machine's own binary as the pinned one
+  (FIX-LOG, 2026-09-22). An explicit
   `commands` entry in `driver.json` is a person saying exactly what to run and outranks everything.
   The managed pin is the standing choice. `PATH` is what happens when nobody has asked for any of
   this — which is **today's behaviour byte for byte**, and is the point: this is additive, like

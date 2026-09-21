@@ -416,6 +416,58 @@ public sealed class HarnessProbeTests : IDisposable
         Assert.True(report.Present);
         Assert.Equal("fake-harness 9.9.9", report.Version);
     }
+
+    /// <summary>
+    /// 🔴 <b>The probe asks about the binary a spawn would actually run</b> — rule 4 of the twin
+    /// contract, at the presence question rather than only at the spawn.
+    /// </summary>
+    /// <remarks>
+    /// Measured: the selector resolved a pin correctly and then vetoed it on a presence answer
+    /// computed from <c>PATH</c>, so a working pinned harness refused to spawn as "not installed on
+    /// this machine". The CLI twin had the same defect and reported the machine's own binary as the
+    /// pinned one. Both halves of a substitution the pin exists to prevent.
+    /// </remarks>
+    [Fact]
+    public async Task A_pinned_harness_is_probed_on_its_pin_rather_than_on_PATH()
+    {
+        var script = FakeBinary();
+        var bin = Path.Combine(HarnessSettings.ManagedHome(_home, "fake", "1.2.3"), "node_modules", ".bin");
+        Directory.CreateDirectory(bin);
+        // npm's layout, and a shim that really runs: the managed install stands in for the pin.
+        var windows = OperatingSystem.IsWindows();
+        var shim = Path.Combine(bin, windows ? "pinned.cmd" : "pinned");
+        File.WriteAllText(shim, windows
+            ? $"@node \"{script}\" %*\r\n"
+            : $"#!/bin/sh\nexec node \"{script}\" \"$@\"\n");
+        if (!windows) File.SetUnixFileMode(shim, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+
+        var toolchain = new HarnessToolchain(
+            Binary: ["pinned"], VersionArguments: ["--version"], ProfileVariable: "FAKE_HARNESS_HOME");
+        var settings = new HarnessSettings(Versions: new Dictionary<string, string> { ["fake"] = "1.2.3" });
+
+        var report = await HarnessProbe.ProbeAsync("fake", toolchain, command: null, settings, _home);
+
+        Assert.True(report.Present, report.Problem);
+        Assert.Equal("fake-harness 9.9.9", report.Version);
+    }
+
+    /// <summary>
+    /// The other side of rule 4: a pin with nothing installed at it is ABSENT, naming the version —
+    /// never a silent fall back to whatever <c>PATH</c> happens to hold.
+    /// </summary>
+    [Fact]
+    public async Task A_pin_with_nothing_installed_at_it_is_absent_rather_than_PATH()
+    {
+        var script = FakeBinary();
+        var toolchain = new HarnessToolchain(Binary: ["node", script], VersionArguments: ["--version"]);
+        var settings = new HarnessSettings(Versions: new Dictionary<string, string> { ["fake"] = "9.9.9" });
+
+        var report = await HarnessProbe.ProbeAsync("fake", toolchain, command: null, settings, _home);
+
+        Assert.False(report.Present);
+        Assert.Null(report.Version);
+        Assert.Contains("9.9.9", report.Problem);
+    }
 }
 
 /// <summary>
@@ -636,13 +688,24 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>A managed install, as npm would leave it.</summary>
+    /// <summary>
+    /// A managed install of the fake harness at one version.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 The shim has to RUN. It used to be an empty file, which was enough while only the spawn
+    /// resolved a pin — but the probe now asks the pinned binary its version (rule 4 at the presence
+    /// question), and a file that cannot execute makes a pinned harness report absent. An empty
+    /// fixture standing in for "an install exists" stopped being true the moment anything ran it.
+    /// </remarks>
     private string Install(string version)
     {
         var bin = Path.Combine(
             HarnessSettings.ManagedHome(_home, "fake", version), "node_modules", ".bin");
         Directory.CreateDirectory(bin);
-        var shim = Path.Combine(bin, OperatingSystem.IsWindows() ? "node.cmd" : "node");
-        File.WriteAllText(shim, "");
+        var windows = OperatingSystem.IsWindows();
+        var shim = Path.Combine(bin, windows ? "node.cmd" : "node");
+        File.WriteAllText(shim, windows ? "@node %*\r\n" : "#!/bin/sh\nexec node \"$@\"\n");
+        if (!windows) File.SetUnixFileMode(shim, UnixFileMode.UserRead | UnixFileMode.UserExecute);
         return shim;
     }
 

@@ -390,3 +390,66 @@ owner's login and is the first build item's closing step.
 | **SURF4c gains its structured source** | The timeline renders ACP tool lifecycle, turn boundaries, thoughts and usage — the protocol D52 said stdout parsing was not | Existing component loops |
 | **SURF4a–d resume** | On `Daoris.Web`, as designed; C is closed | As designed |
 | **DOCS2** — built 2026-09-21 | §3's take-aways as gates | The gates watched failing first — and one of them caught a bug in its own test before it caught anything else |
+
+## 6. The plugin survey — what dsh already has, and what Daoris must ship to meet it
+
+Read from the installed tree (`@deepseek-ai/dsh` 0.1.6-alpha.2, 245 packages), its four presets, and the
+package references. The question is not "which plugins are popular" for its own sake — it is **which of
+them a Daoris-adopted repository already satisfies, and where doctrine falls on the floor.** The answer
+is uncomfortable and cheap to fix.
+
+### 6.1 What the `standard` preset actually mounts
+
+One composition, and it is the whole product for most people: `persona` and `agent-instructions`;
+`tool-bash`/`tool-pwsh` by platform; `tool-fs` and `tool-fs-search`; `tool-jobs`; `skill-filesystem` and
+`tool-skill`; `command-goal` and `tool-goal`; `plan-mode` in its own realm; `compaction-basic` with
+`command-compact` and the tool-result pruner; `tool-subagent` (spawn and fork) with `tool-workflow` and
+`workflow-ptc`; `tool-ask-user`, `tool-todo`, `tool-web`, `tool-present`. Two subagent providers ship
+**disabled** — `provider: claude-code` and `provider: codex` — and `tool-ralph` with them.
+
+The shape to notice: **every row is a capability, not a policy.** dsh ships no opinion about what a
+repository knows. That is the space Daoris occupies, and it is why the two are complements rather than
+competitors — which §4 concluded from the other direction.
+
+### 6.2 The finding: the always-loaded tier does not reach dsh at all
+
+`dsh-agent-instructions` loads `AGENTS.md` and `CLAUDE.md` — so a Daoris repository's `CLAUDE.md` arrives
+intact, byte budget and all. But its own limitations section says it outright:
+
+> Candidate semantics stay intentionally small — lowercase names, **`.claude/rules/`**, and `@path`
+> imports **are not interpreted**.
+
+So **`sync` writes an always-loaded tier that exactly one harness auto-loads.** A repository that adopted
+Daoris and is then driven through dsh — or codex, which reads `AGENTS.md` — gets its `CLAUDE.md` and
+**none of its rules**. `repository-owns-its-work`, `file-tool-discipline`, `sensitive-info`: all present
+on disk, all invisible. The tier's whole premise is that it is loaded without being asked for, and that
+premise is a property of one agent harness rather than of the canon.
+
+This is a **canon-shaped defect, not a dsh one**, and D53 is what exposed it: the moment Daoris drives
+more than one harness, "always loaded" has to mean something the canon itself guarantees.
+
+### 6.3 The four helpers, in the order they pay
+
+Each is a backlog item under the same name; the reasoning lives here and the task there.
+
+| # | The gap | The helper | Cost |
+|---|---|---|---|
+| **HELP1** | The rules tier reaches only Claude Code (§6.2) | `sync` also renders the core rules into the instruction file every harness reads — an `AGENTS.md` that the rules generate, not a second hand-maintained copy. The index already exists; this is the same generation with a different target | Small. `RULES_INDEX.md` proves the generator |
+| **HELP2** | Skills reach only Claude Code | `dsh-skill-filesystem` scans `<project>/.dsh/skills` and `<project>/.agents/skills`, never `.claude/skills` — but its bundle format is `<name>/SKILL.md`, **exactly Daoris's layout**. So the helper is a root, not a conversion: `customSkillDirs` naming `.claude/skills`, written into the profile Daoris owns | Very small |
+| **ACP4** | A driven session cannot reach the family's knowledge | `dsh-acp`'s summary says it can **attach MCP servers**, and ACP carries `mcpServers` on `session/new`. `Acp.cs:113` sends `Array.Empty<object>()`. Filling that one field hands `quest_publish` and `knowledge_search` to **any** ACP agent, with no per-harness configuration anywhere | One field, plus what to name |
+| **HELP3** | Guards are per-harness | `dsh-hooks-claude-code` runs an existing `hooks.json` in Claude Code's dialect, and `dsh-hook-protocol` makes the Codex bridge behave identically. So a guard written **once**, in that dialect — refuse a write outside the session's tree, refuse a push — runs on all three | Moderate; Probe 4 already found the Windows trap |
+
+ACP4 is the one to do first: it is a single field, it needs no file on any adopter's disk, and it is the
+only one of the four that makes `reaching-in`'s alternative — *publish the request* — actually available
+to a driven session on a harness that is not Claude Code.
+
+### 6.4 What is deliberately **not** a helper
+
+**Daoris does not write dsh plugins.** §4 settled that and nothing here reopens it: a plugin means living
+inside Cordis, inside a preview that moved 1,687 commits in a week, and the cost was never the dozen
+lines of `apply(ctx)`. Every helper above is a **file Daoris already writes** or a **field the protocol
+already carries** — which is what D53's "a protocol, not a product" buys, and the test for whether a
+fifth helper belongs on this list.
+
+**Measured since**: ACP4 is not an improvement but a blocker — ACP2’s real driven run reached the model,
+was told to take its quest, found no such tool and ended its turn (TASKS.md, 2026-09-22).

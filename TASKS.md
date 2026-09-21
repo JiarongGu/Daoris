@@ -262,25 +262,18 @@ is the one that needs the owner: its closing step spends a real login.
   the owner supplies the login. **This is D23's "on proof".** The pipe door stays supported until it
   passes.
 
-  ⏸ **Built and keyless-proven 2026-09-22** (in the archive) — everything but the login. The adapter,
-  the mode, both seams, and `tools/acp2-proof.mjs`: readiness, then six keyless checks against the
-  **real** adapter at 0.79.0 (initialize, `session/new`, `acceptEdits` offered as a mode, the scratch
-  config home receiving its own `.claude.json`, the machine's account not spent). Three findings came
-  out of running it: `harness install` had **never worked on Windows** (FIX-LOG), the binary is
-  `claude-agent-acp` rather than the adapter's Daoris name, and a harness with no login check must
-  **declare whose account it borrows** or its silence reads as permissive (SES3).
+  ⏸ **Driven for real 2026-09-22, and it got as far as the model.** `node tools/acp2-proof.mjs
+  --drive` now spawns the pinned adapter, reaches Claude, sets `acceptEdits` as a mode, discovers the
+  repository's synced skills and streams a real answer — **11 of 13 checks**. It stops at one thing,
+  and it is a missing feature rather than a fault in the door: **ACP4**. The session is told to take
+  its quest and the door hands it no MCP server, so it ends the turn having touched nothing.
+  **ACP2 closes when ACP4 lands** and the same command passes 13/13.
 
-  🔴 **WHAT IS LEFT IS ONE COMMAND, AND IT IS THE OWNER'S:**
-
-  ```
-  daoris harness pin claude-code-acp 0.79.0     # if not pinned on this machine
-  daoris harness login claude-code              # if the profile is logged out
-  node tools/acp2-proof.mjs --drive             # spends one login; this is D23's proof
-  ```
-
-  It builds a scratch repository, publishes a real quest, drives one tick over the protocol door and
-  asserts DRV4's shape. Until it passes, `claude-code` over the pipe door remains what a machine
-  drives with, and this item stays open.
+  Four defects were found by running it, all fixed: the presence probe asked about a different binary
+  than the spawn would run, so a working pin reported absent (FIX-LOG — it hid `codex` too); a scratch
+  host with no root of its own indexed the machine's whole family (FIX-LOG); `connect` has no
+  `--service` flag and an unknown flag is ignored in silence; and a driver that refuses a dirty tree
+  was right while the fixture, which left the adoption uncommitted, was wrong.
 
 - [ ] **ACP3 — dsh and codex as configurations.** `dsh --profile acp` with `DSH_HOME` as the profile
   seam (it isolates credentials, settings and sessions as one directory), the model in the profile's
@@ -290,6 +283,50 @@ is the one that needs the owner: its closing step spends a real login.
   closes into this.** dsh pinned exact and vendored nowhere: 561 MB per machine, and the
   `subagent-claude-code` bundle on npm was six weeks stale when measured — a harness's own packaging is
   its own problem, but the version the toolchain installs is asserted, not assumed.
+
+- [ ] 🔴 **ACP4 — the MCP servers the door hands over. This BLOCKS ACP2, and the driven run measured
+  it** (2026-09-22). `Acp.cs:113` sends `mcpServers = Array.Empty<object>()`, and the composed target
+  instructs the session to *"respond to `#<id>` with `take`"* — a `quest_respond` call. So the session
+  came up, set `acceptEdits`, streamed *"I'll start by taking the quest"*, called `take`, had no such
+  tool, and ended its turn having touched nothing. **The pipe door only works because the repository
+  happens to declare the server in its own `.mcp.json`** — an adopted repository does not, and the
+  protocol door has no such crutch. Filling the field hands the service to *any* ACP agent with no
+  per-harness configuration anywhere; `dsh-acp` advertises honouring it. Local mode names the machine's
+  own MCP host (mirror `ServiceHostLocator`, which finds the HTTP one); a workspace wired to a remote
+  names that (D48 §5). Proof: the stub agent asserts it was offered the server, and the family rehearsal
+  drives a quest published **by** a driven session.
+
+- [ ] 🔴 **DRV6 — a driven quest has no strike limit, and each attempt spends a login.** Measured in the
+  same run: the session ended without touching its quest, the driver picked the same quest on the next
+  tick, and **18 sessions ran on one quest** before it was stopped by hand. `Driver.cs` and `Planner.cs`
+  contain no notion of an attempt, a strike or a backoff. For an unattended loop holding a real account
+  that is not a rough edge — it is the failure mode that costs money while nobody is watching, and
+  SURF5b's notification tells the person only after the loop has already run. A quest that has failed
+  *n* times is parked with what each attempt did, and the person restarts it deliberately. Decide *n*
+  and whether a **held** tick counts (it must not: a dirty tree is a wait, not a failure).
+
+- [ ] **HELP1 — the always-loaded tier reaches one harness only.** Measured 2026-09-22
+  (`docs/2026-09-21-dsh-evaluation.md` §6.2): `dsh-agent-instructions` loads `AGENTS.md` and
+  `CLAUDE.md` and says in its own limitations that **`.claude/rules/` is not interpreted**. Codex reads
+  `AGENTS.md`. So `sync` writes a tier that exactly one harness auto-loads, and a Daoris repository
+  driven through dsh or codex has its rules **on disk and invisible** — `repository-owns-its-work`
+  included. 🔴 **A canon-shaped defect, not a dsh one:** "always loaded" is currently a property of one
+  agent harness rather than a guarantee the canon makes. `sync` renders the core rules into the
+  instruction file every harness reads, generated the way `RULES_INDEX.md` already is — never a second
+  hand-maintained copy. Needs a decision first: one `AGENTS.md` or an inclusion inside `CLAUDE.md`, and
+  what it does to the 30000-byte budget an adopter starts at.
+
+- [ ] **HELP2 — skills reach one harness only.** `dsh-skill-filesystem` scans `<project>/.dsh/skills`
+  and `<project>/.agents/skills`, never `.claude/skills` — but its bundle format is `<name>/SKILL.md`,
+  **exactly Daoris's layout**, so this is a root rather than a conversion: `customSkillDirs` naming
+  `.claude/skills`, written into the profile Daoris owns the location of (SES3). Nothing on an
+  adopter's disk changes. Do it with ACP3, which is where the dsh profile is first written.
+
+- [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
+  Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
+  written **once** in that dialect — refuse a write outside the session's tree (D51), refuse a push
+  (D37) — runs on all three. Probe 4 already found the Windows trap. Held until ACP4 and HELP1 land:
+  a guard is worth less than the doctrine it enforces arriving at all.
 
 ### The working surface — the build order (D51/D52, designed 2026-09-21)
 
@@ -324,43 +361,11 @@ frame with its geometry, the right dock keyed to the attended session (timeline 
 follow-the-tail stream rule — structure and geometry, never its pixels (D41) and never its plugin
 runtime (its surfaces are built natively against claude/codex through the adapter seam, D23).
 
-**All four SURF4 items have landed** (2026-09-21). The atoms and `sessionTitle`, with the
-presentational-import check sabotage-tested against a real file in `src/work/`; the rail, with
-D55's two extra facts on the row; the attended session, with the timeline **derived** because the
-record has no event log; and the **frame** — `WorkFrame`, `ModeSwitch`, `StatusBar`, `OutputPanel`,
-`Composer`, `StartSession`, the remembered mode, and one home for the stream (the chat drawer is
-gone, Quests keeps the record and gains a door, Projects keeps the registry's controls). **The
-surface is reachable and usable**: `npm run desktop -- run`, switch to Work. The right dock is
-deliberately not built — it arrives with its second occupant, the diff (SURF6).
-
-**SURF5's attention half has landed too** (2026-09-21): `AwaitingPerson` finally has a surface —
-the analysis at the top of the head and **exactly the three moves** the ledger allows, landing on
-the driver so the process and the record move together — plus Overview's *what needs you* band and
-the count on the Work switch. **SURF5b closed it 2026-09-22** — the notification, and with it driver
-design open question 5.
-
-**SURF10 answered the owner's dissatisfaction with the application itself** (2026-09-21, D56 +
-`docs/2026-09-21-desktop-frame-design.md`, confirmed with the owner before any code): an app strip
-and a 48px activity bar replace the labelled sidebar in **both** frames, the rail's permanent form
-went behind a `＋`, the verbs got one owner at a time, the attended selection is remembered, and
-D41 §3 is amended to one denser scale carried by **seven named type tokens** rather than 203
-literals. Measured before and after on the real window: navigation 42% → 23% of the width, the
-attended session ~28% → ~72% of it. **SURF7 landed 2026-09-22**: the OS title bar is gone, the app strip IS the title bar, and the
-window paints the caption buttons into the room SURF10 reserved — which bought back the 29px the
-title bar held and closed the two-bar interim. **SURF6a landed the same day**: a session's landed
-work is a diff, docked beside it — which is also what finally gave the attended column its height,
-because the dock's second occupant let the timeline move out of it. **SURF6b closed it the same day** — accept,
-discard and send-it-back, with every `reaching-in` guard on the merge and a discard that asks twice.
-**SURF9 landed 2026-09-22** — every action
-addressable by name, absent in a browser by omission, paying back the discoverability SURF10 spent.
-**SURF8 landed 2026-09-22** — the monitor and a detached session, routes into the same bundle on
-their own STA pumps, read-only in both because D56's one-owner rule holds across windows too; the
-second reader on the console pump turned out already true (`Tail` keeps no cursor) and is now held by
-tests, and the real window found three defects the source could not show. **SURF5b landed 2026-09-22
-and closed the arc** — a park is *seen* by diffing the tick's sessions and an end is *known* from the
-driver's own conclusion, which is what makes "never for an ending the person caused" structural rather
-than bookkeeping; the judgement lives in the library so a machine with no screen answers the same
-question, and `daoris driver notify on|off` is its second door. **Every SURF item is built.**
+🔴 **Every SURF item is built** — SURF2, SURF3, SURF4a–d, SURF5, SURF5b, SURF6a, SURF6b, SURF7,
+SURF8, SURF9 and SURF10, all landed by 2026-09-22. `docs/task-archive.md` carries each one's outcome,
+and `docs/2026-09-19-platform-ux.md` §4 what each look-at-it pass settled. **The surface is reachable
+and usable**: `npm run desktop -- run`, switch to *Work*. Nothing in this section is open; it is kept
+only because the paragraphs above are the contract a *new* surface item would be built against.
 
 ### The next direction — the toolchain and its accounts (owner, 2026-09-22)
 

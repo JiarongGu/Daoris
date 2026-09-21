@@ -354,8 +354,13 @@ function ask(
     env[toolchain.profileVariable] = profile;
   }
 
-  const result = spawnSync(command[0]!, [...command.slice(1), ...args], {
+  // 🔴 Through `spawnable`, for the same reason `install` needs it: a managed pin's shim is a `.cmd`
+  // on Windows, and a bare `spawnSync` answers ENOENT/EINVAL for one — which reads as "not installed"
+  // about a binary that is installed and works.
+  const [file, argv, verbatim] = spawnable([...command, ...args]);
+  const result = spawnSync(file, argv, {
     env, encoding: 'utf8', shell: false, timeout: 20_000, windowsHide: true,
+    ...(verbatim ? { windowsVerbatimArguments: true } : {}),
   });
 
   if (result.error) {
@@ -367,12 +372,34 @@ function ask(
   return { ran: true, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}`, problem: null };
 }
 
-/** Probe one harness: present, version, and every profile's login state. */
+/**
+ * Probe one harness: present, version, and every profile's login state.
+ *
+ * @remarks
+ * 🔴 **It asks about the binary a spawn would actually run** — rule 4 of the twin contract, applied
+ * here and not only where a session starts. A probe that asks `PATH` while a pin is set answers about
+ * a different program: it reported the machine's own `claude` as the pinned one, and reported a
+ * working pin as "not on this machine's PATH". Both are the silent substitution the pin exists to
+ * prevent, arriving through the presence question instead of through the spawn.
+ */
 export function probe(
   harness: string, toolchain: Toolchain,
   home = harnessHome(), settings = readHarnessSettings(),
 ): HarnessReport {
-  const version = ask(toolchain.binary, toolchain.version, null, toolchain);
+  const pinned = resolveVersion(settings, harness, null, null);
+  const managed = managedBinary(home, harness, pinned, toolchain.binary);
+
+  // Pinned and nothing installed at it: absent, saying which version — never a fall back to `PATH`.
+  const command = pinned ? managed : toolchain.binary[0] ?? null;
+  const version = command === null
+    ? {
+      ran: false,
+      output: '',
+      problem: `pinned to ${pinned} on this machine, and nothing is installed at that version — `
+        + `\`daoris harness pin ${harness} ${pinned}\` installs it, and \`daoris harness unpin `
+        + `${harness}\` goes back to PATH`,
+    }
+    : ask([command, ...toolchain.binary.slice(1)], toolchain.version, null, toolchain);
 
   return {
     harness,
@@ -384,7 +411,10 @@ export function probe(
       const where = profileHome(home, harness, name);
       if (!version.ran || !toolchain.loginCheck) return { name, home: where, login: 'unknown' as const };
 
-      const answer = ask(toolchain.binary, toolchain.loginCheck.args, where, toolchain);
+      // The SAME binary the version came from. Asking the pin whether it runs and then asking PATH
+      // whether it is logged in would answer about two different installs.
+      const answer = ask(
+        [command!, ...toolchain.binary.slice(1)], toolchain.loginCheck.args, where, toolchain);
       if (!answer.ran) return { name, home: where, login: 'unknown' as const };
       if (toolchain.loginCheck.in.test(answer.output)) return { name, home: where, login: 'in' as const };
       return {
