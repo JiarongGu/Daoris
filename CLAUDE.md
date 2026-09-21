@@ -39,12 +39,11 @@ about a neighbour could only either ignore it or trespass.
 
 **Built and proven; nothing published.** Fourteen commands, 211 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 259, `Daoris.Devkit` 57, and the
-driver 152. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
-first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
-green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
-off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
-proof stands and the live consumer count is zero — adoption has to be near-free for the family to come
-back, which is what the automation-first direction is for.
+driver 165. Daoris carries its own manifest and syncs core into its own `.claude/`. It was **adopted
+into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
+first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
+stands and the **live consumer count is zero**. Adoption has to be near-free for the family to come
+back, which is what the automation-first direction is for; the archive has the account.
 
 **All five artefacts exist and are built, and all three parts of D45 with them** — including
 `Daoris.Desktop`, the local driver (D45/D46): the shell brings up the local host, carries the
@@ -77,12 +76,11 @@ the person sets the target and verifies the final diff; agents execute and gates
 see canon knowledge `autonomous-development`.
 
 **Three things to know before changing anything.** The always-loaded core sits at **23,862 of 26,000
-bytes** — about 2,100 of headroom, roughly one substantial rule (CANON7, D28 as amended: this
-repository's number caps *the canon's core*, a different question from the 30000 an adopter starts
-at). **The budget reports and never fails** (D54): a fact gates, a judgement reports, so drift stops
-a run and size does not. The answer to a full budget is still to split principle from detail rather
-than raise the number — CANON6 did exactly that and paid for its own carve-out. And **never write into
-another
+bytes** — roughly one substantial rule of headroom (CANON7, D28 as amended: this repository's number
+caps *the canon's core*, a different question from the 30000 an adopter starts at). **The budget
+reports and never fails** (D54): a fact gates, a judgement reports. The answer to a full budget is to
+split principle from detail rather than raise the number — CANON6 did exactly that. And **never write
+into another
 repository**: that constraint is absolute (D32), it was broken here and cost a sibling an uncommitted
 edit, and `.claude/knowledge/reaching-in.md` is the account. And **doctrine must not hard-require
 Daoris** (D48 §2a): the canon instructs exactly one thing that needs a service running — publishing a
@@ -126,7 +124,9 @@ risk, **authorship** was.
   values. The diagnosis was **measured**, which is how a design complaint became a decision.
   `npm run desktop -- shot --theme <light|dark>` is the only instrument that sees native chrome, and
   🔴 **git walks UP** — a diff of a path that is not a repository answers for the one above it
-  (FIX-LOG). **SURF5b, SURF6b, SURF8, SURF9 remain**; the archive carries how each landed.
+  (FIX-LOG). **SURF6 closed it**: the landed work is a bounded diff in the dock, and its acts —
+  accept, discard, send it back — carry every `reaching-in` guard; the merge refuses into a checkout
+  anyone is working in, and the discard asks twice. **SURF5b, SURF8, SURF9 remain.**
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

@@ -60,7 +60,7 @@ function remember(key: string, value: string): void {
  * pane with extra chrome — so the timeline stays in the attended column and moves when it has
  * company.
  */
-export function WorkFrame({ selected, onSelect, notify }: {
+export function WorkFrame({ selected, onSelect, notify, onSendBack }: {
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -69,6 +69,12 @@ export function WorkFrame({ selected, onSelect, notify }: {
   selected: string | null;
   onSelect: (id: string | null) => void;
   notify: Notify;
+  /**
+   * Send the reviewed work back as a quest (SURF6b) — a door into the platform's own composer, not
+   * a second publish path. It is the one review move Daoris has that an editor does not, and it
+   * goes through the channel `repository-owns-its-work` sanctions rather than around it.
+   */
+  onSendBack?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -261,7 +267,15 @@ export function WorkFrame({ selected, onSelect, notify }: {
           panel. */}
       <RightDock tab={dock} onTab={setDock}>
         {dock === 'review'
-          ? <DiffPane session={attended?.id ?? null} />
+          ? (
+            <DiffPane
+              session={attended?.id ?? null}
+              hasTree={Boolean(attended?.tree)}
+              onSendBack={onSendBack && attended
+                ? () => onSendBack(attended.repository)
+                : undefined}
+            />
+          )
           : attended
             ? (
               <div className="p-3">

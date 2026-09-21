@@ -355,8 +355,9 @@ attended session ~28% → ~72% of it. **SURF7 landed 2026-09-22**: the OS title 
 window paints the caption buttons into the room SURF10 reserved — which bought back the 29px the
 title bar held and closed the two-bar interim. **SURF6a landed the same day**: a session's landed
 work is a diff, docked beside it — which is also what finally gave the attended column its height,
-because the dock's second occupant let the timeline move out of it. **SURF5b, SURF6b, SURF8 and
-SURF9 are what remain of the arc**, and SURF6b is the half that writes.
+because the dock's second occupant let the timeline move out of it. **SURF6b closed it the same day** — accept,
+discard and send-it-back, with every `reaching-in` guard on the merge and a discard that asks twice.
+**SURF5b, SURF8 and SURF9 are what remain of the arc.**
 
 - [ ] **SURF8 — the monitor window** (D55 §b). `SecondaryWindows`: `monitor` (rail plus live streams,
   read-only, for a second screen) and `session:<id>` (one attended session, detached) — routes into
@@ -371,23 +372,6 @@ SURF9 are what remain of the arc**, and SURF6b is the half that writes.
   sessions (the `daoris` CLI's offline shape does not change), because a headless machine has no
   screen to notify and still needs the answer (D50). The setting is machine-local like every other
   one the Machine view holds, and the same file a terminal can edit (D50's two doors).
-
-- [ ] 🔴 **SURF6b — review: the two acts.** SURF6a landed the read-only half 2026-09-22 (in the
-  archive): the diff is computed where the tree is, bounded, docked beside the session, and a person
-  can see what a session did. **What remains is the half that WRITES**, and it is deliberately its own
-  landing. **Accept** — merge the session's tree into the canonical line: local and reversible, and a
-  press because that is where D37's verification lands. **Discard the tree** — destructive: it
-  confirms, names what would be lost, and refuses where work would vanish unasked (design §5, D51
-  rule 7). **Send it back as a quest** — the one move Daoris has that an editor does not, and the
-  reason the verbs are never keep/reject per hunk (IDE study §2): the session already committed, and
-  reaching in to fix what you are reviewing is what D32 forbids.
-  🔴 **Read `.claude/knowledge/reaching-in.md` before writing a line of it.** It governs all three:
-  *never revert a file you do not own*; *treat "it was clean when I looked" as expired* — re-check the
-  target immediately before acting and prefer not acting; *assume concurrency*, because another
-  session is probably working in that repository right now; and *a tool that enforces a rule is the
-  most likely thing to break it*, which is exactly what a merge button is. The diff route is
-  read-only by construction and must stay that way — these are their own routes, so a surface built
-  to show the work cannot change it.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

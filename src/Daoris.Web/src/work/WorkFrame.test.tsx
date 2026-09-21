@@ -597,3 +597,176 @@ describe('reviewing what a session landed', () => {
     expect(await screen.findByText('Nothing landed')).toBeTruthy();
   });
 });
+
+/**
+ * The two acts on a reviewed session (SURF6b, D51 rules 6–7). The guards themselves live in the tree
+ * layer and are tested against real git; what is asserted here is that the surface carries the
+ * person's intent faithfully — and, above all, that it never sends `force` on a first press.
+ */
+describe('acting on what a session landed', () => {
+  const DIFF = {
+    session: 's1a2b3c4',
+    base: 'abc1234567890',
+    truncated: null as string | null,
+    files: [{ path: 'src/chunk.ts', status: 'modified', added: 4, removed: 1, patch: '@@ -1 +1 @@\n-a\n+b' }],
+  };
+
+  // The acts act on a session TREE (D51), so the session under test holds one. A record that names
+  // no tree here is the other case, asserted at the end.
+  const IN_A_TREE = { ...DRIVEN, tree: 'C:/somewhere/.daoris/trees/default/engine-abc' };
+
+  beforeEach(() => {
+    SESSIONS = [IN_A_TREE];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+  });
+
+  const review = async () => {
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await screen.findByText('src/chunk.ts');
+  };
+
+  it('accepts by asking the driver to merge, and renders whatever it says back', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'MERGE_SESSION_TREE') {
+        return { session: 's1a2b3c4', done: true, message: 'merged `daoris/x` into `main` — 2 commit(s).' };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+    await userEvent.click(screen.getByRole('button', { name: 'accept' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'MERGE_SESSION_TREE', {
+      payload: { id: 's1a2b3c4' },
+    });
+    expect(await screen.findByText(/merged `daoris\/x` into `main`/)).toBeTruthy();
+  });
+
+  /**
+   * A refusal is an ANSWER and its sentence is the contract — "the checkout is not clean" is the
+   * `reaching-in` guard speaking, and rewording it here would be a second copy of the reason.
+   */
+  it('renders a refused merge verbatim and changes nothing', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'MERGE_SESSION_TREE') {
+        return {
+          session: 's1a2b3c4', done: false,
+          message: "the repository's own checkout is not clean (2 paths), and merging into somebody's work in flight is exactly what Daoris does not do.",
+        };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+    await userEvent.click(screen.getByRole('button', { name: 'accept' }));
+
+    expect(await screen.findByText(/not clean \(2 paths\)/)).toBeTruthy();
+  });
+
+  /**
+   * 🔴 The one that matters most: a first press NEVER forces. The unforced call is what produces the
+   * sentence naming what would be lost, and only then is a destructive confirm offered.
+   */
+  it('never forces a discard on the first press, and arms the confirm with the host’s own warning', async () => {
+    let forced: unknown = 'never called';
+    invoke.mockImplementation(async (_module: string, type: string, body?: { payload?: unknown }) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'DISCARD_SESSION_TREE') {
+        forced = body?.payload;
+        const payload = body?.payload as { force?: boolean } | undefined;
+        return payload?.force
+          ? { session: 's1a2b3c4', done: true, message: 'removed the session tree.' }
+          : {
+            session: 's1a2b3c4', done: false,
+            message: 'the tree holds commits `main` has not taken:\nabc1234 cap hydration\nMerge them from the root, or say it again with --force to discard them.',
+          };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+    await userEvent.click(screen.getByRole('button', { name: 'discard the tree' }));
+
+    // No `force` anywhere in the first call.
+    expect(forced).toEqual({ id: 's1a2b3c4' });
+    // The host's warning is what the person now reads, naming what would go.
+    expect(await screen.findByText(/has not taken/)).toBeTruthy();
+    // And only now is the destructive press available.
+    const again = screen.getByRole('button', { name: 'discard it anyway' });
+
+    await userEvent.click(again);
+    expect(forced).toEqual({ id: 's1a2b3c4', force: true });
+    expect(await screen.findByText(/removed the session tree/)).toBeTruthy();
+  });
+
+  it('lets the person back out of a discard they have been warned about', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'DISCARD_SESSION_TREE') {
+        return { session: 's1a2b3c4', done: false, message: 'the tree holds commits `main` has not taken.' };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+    await userEvent.click(screen.getByRole('button', { name: 'discard the tree' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'never mind' }));
+
+    expect(screen.queryByRole('button', { name: 'discard it anyway' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'discard the tree' })).toBeTruthy();
+  });
+
+  /** Sending it back is a door into the platform's own composer, never a second publish path. */
+  it('hands the repository to whoever opens the quest composer', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
+    const onSendBack = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onSendBack={onSendBack} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'send it back…' }));
+
+    expect(onSendBack).toHaveBeenCalledWith('engine');
+  });
+
+  it('offers no send-back door where none was given', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
+
+    await review();
+    expect(screen.queryByRole('button', { name: 'send it back…' })).toBeNull();
+  });
+
+  /**
+   * A record that travelled here from the machine that did the work names no tree on THIS one, so
+   * there is nothing to merge and nothing to discard. Offering either would be offering something
+   * that can only ever refuse — and one of them is destructive.
+   */
+  it('offers no acts at all on a session that holds no tree here', async () => {
+    SESSIONS = [DRIVEN];
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
+
+    await review();
+
+    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'discard the tree' })).toBeNull();
+    // The diff itself is still readable — seeing the work never depended on holding the tree.
+    expect(screen.getByText('src/chunk.ts')).toBeTruthy();
+  });
+});

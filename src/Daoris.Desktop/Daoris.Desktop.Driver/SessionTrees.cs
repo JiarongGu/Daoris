@@ -10,6 +10,13 @@ public sealed record TreeOpened(string Path, string Branch, string BasedOn, stri
 /// <param name="Message">What happened, or what would have been lost and how to mean it.</param>
 public sealed record TreeRemoval(bool Removed, string Message);
 
+/// <summary>
+/// What came of asking to merge a session tree into the canonical line (D51 rule 6). A refusal is an
+/// ANSWER — the checkout is busy, there is nothing to merge, the branches conflict — and each names
+/// what the person would do about it.
+/// </summary>
+public sealed record TreeMerge(bool Merged, string Message);
+
 /// <param name="Path">Where it is.</param>
 /// <param name="Workspace">Whose circle, read from the layout Daoris itself chose.</param>
 /// <param name="Repository">Whose repository, same.</param>
@@ -97,6 +104,125 @@ public sealed class SessionTrees(string home)
             + "nothing git does not track: no installed dependencies, no build outputs. The "
             + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
             + "holds nothing.");
+    }
+
+    /// <summary>
+    /// Merge a session tree's commits into the canonical line, in the repository's own root (D51
+    /// rule 6, design §5).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Nothing merges itself.</b> This is only ever the person pressing it — D37 would permit
+    /// automating a local, reversible act, and it stays a press because it is <i>where their
+    /// verification lands</i>.</para>
+    ///
+    /// <para>🔴 <b>This is the one place Daoris writes into a checkout it did not create</b>, so every
+    /// guard `reaching-in` names is here and each refuses rather than repairing. The tree must be
+    /// under the trees home (a checkout is never ours to merge FROM); the root must be <b>clean</b>,
+    /// because somebody's work in flight is exactly what that document was written from; the root must
+    /// already be <b>on</b> the canonical line, because switching a branch in a checkout we do not own
+    /// is the same trespass in a smaller form; and every check is made <b>immediately before</b> the
+    /// merge in this one call, because "it was clean when I looked" expires the moment you look away.
+    /// Assume another session is working in that repository right now — it very often is.</para>
+    ///
+    /// <para><b>A conflict aborts and reports</b>, leaving the root exactly as it was. Nothing here
+    /// resolves anything, forces anything or removes anything: the tree survives a merge whether it
+    /// succeeded or not, and discarding it stays a separate act the person asks for.</para>
+    /// </remarks>
+    public async Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default)
+    {
+        var full = Path.GetFullPath(path);
+        if (!full.StartsWith(Path.GetFullPath(TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            return new(false, $"{path} is not a session tree — this merges only trees Daoris opened, "
+                + $"under {TreesRoot}.");
+        }
+
+        if (!Directory.Exists(full))
+        {
+            return new(false, $"there is no tree at {path}.");
+        }
+
+        var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
+            full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
+        if (rootCode != 0)
+        {
+            return new(false, $"{path} is not a working tree git recognises: {FirstLine(rootErr)}");
+        }
+
+        var root = Path.GetDirectoryName(commonDir.Trim())!;
+        var (_, branchOut, _) = await WorkingTree.GitAsync(
+            full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        var branch = branchOut.Trim();
+        if (branch is "" or "HEAD")
+        {
+            return new(false, $"the tree at {path} is not on a branch, so there is nothing to merge.");
+        }
+
+        // Uncommitted work in the SESSION tree would silently not travel. Saying "merged" while
+        // leaving it behind is the worst answer available: the person believes the work moved.
+        var (_, treeDirty, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain"], ct)
+            .ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(treeDirty))
+        {
+            var count = treeDirty.Trim().Split('\n').Length;
+            return new(false,
+                $"the session's tree has uncommitted work — {count} path(s) — which a merge would "
+                + "leave behind. Commit it in the tree first, or decide it is not wanted.");
+        }
+
+        var canonical = await WorkingTree.DefaultBranchAsync(root, ct).ConfigureAwait(false);
+        if (canonical is null)
+        {
+            return new(false, "this repository has no canonical line git can name, so there is "
+                + "nowhere to merge to.");
+        }
+
+        var (_, ahead, _) = await WorkingTree.GitAsync(
+            root, ["log", "--oneline", $"{canonical}..{branch}"], ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(ahead))
+        {
+            // An empty merge commit would say work moved when none did.
+            return new(false, $"`{canonical}` already holds everything on `{branch}` — nothing to merge.");
+        }
+
+        // 🔴 The root's state, read as late as possible. A tree-state observation is a fact about a
+        // moment, and the whole premise here is that somebody else may be working in this repository.
+        var (clean, detail) = await WorkingTree.CleanAsync(root, ct).ConfigureAwait(false);
+        if (!clean)
+        {
+            return new(false,
+                $"the repository's own checkout is not clean ({detail}), and merging into somebody's "
+                + "work in flight is exactly what Daoris does not do. Deal with it there, then merge.");
+        }
+
+        var (_, onOut, _) = await WorkingTree.GitAsync(
+            root, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        var on = onOut.Trim();
+        if (!string.Equals(on, canonical, StringComparison.Ordinal))
+        {
+            return new(false,
+                $"the repository's checkout is on `{on}`, not `{canonical}`. Daoris does not switch a "
+                + "branch in a checkout it did not create — put it on the canonical line, then merge.");
+        }
+
+        // `--no-ff` so the merge is one commit a person can read and revert as a unit, and `--no-edit`
+        // so nothing opens an editor on a machine nobody is sitting at.
+        var (mergeCode, _, mergeErr) = await WorkingTree.GitAsync(
+            root, ["merge", "--no-ff", "--no-edit", branch], ct).ConfigureAwait(false);
+        if (mergeCode != 0)
+        {
+            // Leave the root as it was found. Nothing here resolves a conflict: the person does that
+            // where the context is, and a half-merged checkout is worse than an honest refusal.
+            await WorkingTree.GitAsync(root, ["merge", "--abort"], ct).ConfigureAwait(false);
+            return new(false,
+                $"git would not merge `{branch}` into `{canonical}`: {FirstLine(mergeErr)} "
+                + "The merge was aborted and the checkout is as it was.");
+        }
+
+        var landed = ahead.Trim().Split('\n').Length;
+        return new(true,
+            $"merged `{branch}` into `{canonical}` — {landed} commit(s). The tree is still there; "
+            + "discard it when you are done with it.");
     }
 
     /// <summary>

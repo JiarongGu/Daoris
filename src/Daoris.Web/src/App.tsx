@@ -89,6 +89,9 @@ export function App() {
   const [mode, setMode] = useState<Mode>(rememberedMode);
   const [attending, setAttendingState] = useState<string | null>(() => remembered(ATTENDING));
   const [readingId, setReadingId] = useState<string | null>(null);
+  // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
+  // to the composer as an opening draft. Held here because the door crosses the two frames.
+  const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToast = useRef(1);
 
@@ -265,7 +268,20 @@ export function App() {
             reading cap, because that is what the cap is for. Neither carries the other's navigator
             any more — the bar above is shared and belongs to the application (D56). */}
         {frame === 'work'
-          ? <WorkFrame selected={attending} onSelect={setAttending} notify={notify} />
+          ? (
+            <WorkFrame
+              selected={attending}
+              onSelect={setAttending}
+              notify={notify}
+              // Sending work back is publishing a request, which is the platform's own door — so
+              // this switches frames onto the composer rather than growing a second one here.
+              onSendBack={(repository) => {
+                setOpening({ from: repository });
+                setTab('quests');
+                chooseMode('manage');
+              }}
+            />
+          )
           : (
             <main className="min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
               <div className="max-w-6xl">
@@ -276,7 +292,14 @@ export function App() {
                     notify={notify}
                   />
                 )}
-                {tab === 'quests' && <QuestsView notify={notify} onAttend={attached ? openInWork : undefined} />}
+                {tab === 'quests' && (
+                  <QuestsView
+                    notify={notify}
+                    onAttend={attached ? openInWork : undefined}
+                    opening={opening}
+                    onOpened={() => setOpening(null)}
+                  />
+                )}
                 {tab === 'projects' && <ProjectsView notify={notify} />}
                 {tab === 'convergence' && (
                   <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />

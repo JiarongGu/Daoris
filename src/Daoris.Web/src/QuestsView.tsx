@@ -25,8 +25,16 @@ const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '' };
  * other door, refusals surfaced verbatim — the service's sentence is the contract, so it is never
  * translated or rephrased here.
  */
-export function QuestsView({ notify, onAttend }: {
+export function QuestsView({ notify, onAttend, opening, onOpened }: {
   notify: Notify;
+  /**
+   * A draft handed in by a door — SURF6b's "send it back as a quest" arrives with the repository the
+   * work came from already named. The composer opens on it; the person writes the rest, because the
+   * ask and its reason are the part that has to travel (`repository-owns-its-work`).
+   */
+  opening?: { from?: string; to?: string } | null;
+  /** Consumed — so re-rendering, or closing and reopening the view, does not reopen the composer. */
+  onOpened?: () => void;
   /**
    * The door into Work (design §3): this view keeps the record summary and hands the session over
    * rather than growing a second console. Absent where Work is — a browser has no frame to open.
@@ -41,6 +49,14 @@ export function QuestsView({ notify, onAttend }: {
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState('');
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+
+  // A door asked for the composer, pre-filled. Consumed on arrival: this is an event, not a state,
+  // and leaving it set would reopen the drawer every time anything else here re-rendered.
+  if (opening) {
+    setDraft({ ...EMPTY_DRAFT, from: opening.from ?? '', to: opening.to ?? '' });
+    setComposing(true);
+    onOpened?.();
+  }
 
   const quests = useQuests(repository === EVERYONE ? null : repository, includeClosed);
   const registry = useRegistry();

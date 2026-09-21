@@ -355,5 +355,10 @@
   "work.review.status.renamed": "重命名",
   "work.review.status.copied": "复制",
   "work.review.files_other": "{{count}} 个文件有改动",
-  "work.dock.label": "会话面板"
+  "work.dock.label": "会话面板",
+  "work.review.accept": "采纳",
+  "work.review.accepting": "合并中…",
+  "work.review.sendBack": "退回…",
+  "work.review.discard": "丢弃工作树",
+  "work.review.discardMeanIt": "仍然丢弃"
 }

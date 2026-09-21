@@ -2684,3 +2684,48 @@ service, **157 driver** (up from 152 — five against real git, because a mock a
 about `--name-status` proves only that the guess is self-consistent), 53 desktop modules, `npm run
 verify` green, and **173/173 family rehearsal** — which matters here because the schema moved.
 Seen in the real window: the dock, the tabs, and the information refusal rendering verbatim.
+
+## SURF6b — review: the two acts (2026-09-22)
+
+> 🔴 **SURF6b — review: the two acts.** … **Accept** — merge the session's tree into the canonical
+> line: local and reversible, and a press because that is where D37's verification lands. **Discard
+> the tree** — destructive: it confirms, names what would be lost, and refuses where work would
+> vanish unasked. **Send it back as a quest** — the one move Daoris has that an editor does not.
+> 🔴 **Read `.claude/knowledge/reaching-in.md` before writing a line of it.**
+
+✅ done 2026-09-22. The review can now be acted on, and SURF6 is closed.
+
+**`SessionTrees.MergeAsync` is the one place Daoris writes into a checkout it did not create**, so
+every guard `reaching-in` names is in it and each refuses rather than repairing: the tree must be
+under the trees home (a checkout is never ours to merge *from*); the **root must be clean**, because
+somebody's work in flight is exactly what that document was written from; the root must already be
+**on** the canonical line, because switching a branch in a checkout we do not own is the same trespass
+smaller; the session tree itself must be clean, or a merge would say work moved while leaving it
+behind; and every check runs **immediately before** the merge in one call, because "it was clean when
+I looked" expires the moment you look away. `--no-ff --no-edit`, so what lands is one commit a person
+can read and revert as a unit. **A conflict aborts and reports**, leaving the checkout exactly as it
+was — nothing here resolves anything.
+
+**Eight tests against real git, and most of them are about the merge NOT happening.** Each asserts the
+refusal left the checkout untouched, because a guard that refuses after doing half the work is not a
+guard. The dirty-root one was sabotaged and watched fail.
+
+**Discard reuses `RemoveAsync`, which already implemented D51 rule 7** — its refusal even named
+SURF6's surface as where merging happens, written before this existed. The surface's contribution is
+asking **twice**: the first press is unforced, which is what *produces* the sentence naming what would
+be lost, and only then is the destructive press offered. **A test asserts no `force` on a first
+press**, sabotaged and watched fail — it is the one guarding against real destruction.
+
+**Send it back is a door, not a second publish path.** It switches to the platform's own quest
+composer with the repository pre-filled; the person writes the ask and the reason, because that is the
+part that has to travel (`repository-owns-its-work`). Never keep/reject per hunk: the session already
+committed, and reaching in to fix what you are reviewing is what D32 forbids.
+
+**Two things the real window changed.** A session that landed **nothing** still has a tree holding a
+slot, so the acts had to survive the empty state rather than returning before it. And the acts are
+gated on the **tree the record names**, not on the diff succeeding — a record that travelled from
+another machine names no tree here, so offering to merge or discard one would be offering something
+that can only ever refuse, and one of those is destructive.
+
+**Proven.** 341 web unit (up from 334), 12 Playwright, 259 service, **165 driver** (up from 157 —
+eight against real git), 53 modules, `npm run verify` green, 173/173 family rehearsal.

@@ -429,3 +429,46 @@ export const useSessionDiff = (session: string | null) => {
     retry: false,
   });
 };
+
+/**
+ * The two acts on a reviewed session (SURF6b, D51 rules 6–7).
+ *
+ * @remarks
+ * **A refusal is an answer**, not an error: the repository's checkout is busy, the tree holds work
+ * nobody merged, there is nothing to merge. Each comes back as `{ done: false, message }` with the
+ * tree layer's own sentence, because the person's next move differs for each — so these resolve
+ * rather than throw, and the surface renders `message` whichever way it went.
+ *
+ * **Discard asks twice on purpose.** The unforced call is what produces the sentence naming what
+ * would be lost; `force` is the person saying it again, meaning it. Nothing destroys work as a side
+ * effect of tidying.
+ */
+export type TreeAct = { session: string; done: boolean; message: string };
+
+export const useMergeSessionTree = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call<TreeAct>('MERGE_SESSION_TREE', { id }),
+    onSuccess: (result) => {
+      // Only a merge that happened changes what a diff or a removal would say.
+      if (result.done) {
+        void client.invalidateQueries({ queryKey: keys.diff(result.session) });
+        void client.invalidateQueries({ queryKey: keys.allSessions });
+      }
+    },
+  });
+};
+
+export const useDiscardSessionTree = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (act: { id: string; force?: boolean }) =>
+      call<TreeAct>('DISCARD_SESSION_TREE', { id: act.id, ...(act.force ? { force: true } : {}) }),
+    onSuccess: (result) => {
+      if (result.done) {
+        void client.invalidateQueries({ queryKey: keys.diff(result.session) });
+        void client.invalidateQueries({ queryKey: keys.allSessions });
+      }
+    },
+  });
+};

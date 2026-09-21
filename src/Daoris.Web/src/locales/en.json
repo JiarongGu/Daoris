@@ -355,5 +355,10 @@
   "work.review.status.renamed": "renamed",
   "work.review.status.copied": "copied",
   "work.review.files_other": "{{count}} files changed",
-  "work.dock.label": "Session surfaces"
+  "work.dock.label": "Session surfaces",
+  "work.review.accept": "accept",
+  "work.review.accepting": "merging…",
+  "work.review.sendBack": "send it back…",
+  "work.review.discard": "discard the tree",
+  "work.review.discardMeanIt": "discard it anyway"
 }

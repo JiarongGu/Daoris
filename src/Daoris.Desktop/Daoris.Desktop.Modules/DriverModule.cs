@@ -187,6 +187,13 @@ public sealed class DriverModule : ModuleBase
             case "SESSION_DIFF":
                 return await DiffAsync(request, cancellationToken);
 
+            // The two acts on a reviewed session (SURF6b, D51 rules 6–7). Both are the PERSON's —
+            // nothing merges itself and nothing deletes itself — so both are their own route rather
+            // than anything the diff route could do as a side effect.
+            case "MERGE_SESSION_TREE":
+            case "DISCARD_SESSION_TREE":
+                return await ActOnTreeAsync(request, cancellationToken);
+
             // This machine's harnesses, and the accounts they run as (D49 §4). Detection is free and
             // read-only — it asks each tool its own version and each profile's own login state — so
             // the page may ask whenever it likes; `refresh` is the person pressing "look again".
@@ -374,6 +381,61 @@ public sealed class DriverModule : ModuleBase
                 file.Patch,
             }).ToArray(),
         };
+    }
+
+    /// <summary>
+    /// Merge a session's tree into the canonical line, or discard it (SURF6b, D51 rules 6–7).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>A refusal here is an ANSWER, not an error</b> — the checkout is busy, the tree holds
+    /// work nobody merged, there is nothing to merge. Each comes back as `{ done: false, message }`
+    /// with the sentence the tree layer wrote, exactly as `START_CHAT` does, because the person's next
+    /// move is different for each and a code would flatten them into one.</para>
+    ///
+    /// <para><b>Discard needs `force` said out loud.</b> The unforced call is what produces the
+    /// refusal that names what would be lost, so the page asks, shows that sentence, and only then
+    /// sends `force`. Destroying work is never a side effect of tidying (D51 rule 7).</para>
+    /// </remarks>
+    private async Task<object?> ActOnTreeAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var merging = request.Type == "MERGE_SESSION_TREE";
+        var force = request.Payload is { } payload
+            && payload.TryGetProperty("force", out var meant)
+            && meant.ValueKind == JsonValueKind.True;
+
+        if (_loop.Service is not { } service)
+        {
+            throw Refusals.Because(
+                Refusals.DriverNotReady,
+                "the driver is still coming up — its service is not answering yet. A moment.");
+        }
+
+        var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
+        if (string.IsNullOrWhiteSpace(tree))
+        {
+            throw Refusals.Because(
+                Refusals.SessionNotReviewable,
+                "this session's record names no working tree on this machine, so there is nothing "
+                + "here to merge or discard.",
+                ("session", id));
+        }
+
+        // The same home the loop derives for the chat runner and the watch: the directory holding
+        // `driver.json`. Derived rather than stored twice, so one answer cannot drift from the other.
+        var trees = new SessionTrees(Path.GetDirectoryName(Path.GetFullPath(_loop.ConfigPath))!);
+        if (merging)
+        {
+            var merged = await trees.MergeAsync(tree, cancellationToken);
+            // The rail's states do not change, but the tree's mergeability does — and the review the
+            // person is looking at was computed before this.
+            _loop.Nudge();
+            return new { Session = id, Done = merged.Merged, merged.Message };
+        }
+
+        var removal = await trees.RemoveAsync(tree, force, cancellationToken);
+        _loop.Nudge();
+        return new { Session = id, Done = removal.Removed, removal.Message };
     }
 
     private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
