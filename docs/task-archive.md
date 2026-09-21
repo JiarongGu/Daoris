@@ -2274,7 +2274,8 @@ have no earlier count to fall from.
 
 **Proven.** 168 web unit tests, up from 99 — twelve props-only for the row, nine for the group,
 eleven for the rail over a mocked bridge, fourteen for the new pure helpers, three for the two new
-maps, and twenty more stories rendering as smoke tests (36, up from 16). `SessionRail` was added to
+maps, and twenty more stories rendering as smoke tests (that suite: 36 tests, up from 16).
+`SessionRail` was added to
 the presentational boundary's organism list and the boundary was watched to fail without it, naming
 both imports. The web gate is green end to end: i18n parity at 272 keys, `tsc --noEmit`, the vitest
 suite, the production build, and the ten Playwright specs over the example family. The canon change
@@ -2284,3 +2285,61 @@ re-synced both examples in the same commit, as D39 requires, and the family rehe
 rail is reachable only from the inner loop and the molecules only from Storybook. No real-window
 pass either — the plan puts the first `npm run desktop -- shot` at SURF4c, where a region is
 assembled enough to look at.
+
+## SURF4c — the attended session (2026-09-21)
+
+**What it was.** The third cut of SURF4: `SessionHead`, `TimelineEntry`, `SessionTimeline`, and the
+console promoted out of the quest drawer into `AttendedSession`. The region a person actually looks
+at while a session runs.
+
+**`AwaitingPerson` has a surface at last.** It has meant "only the person can clear this" since D46
+and had never been rendered anywhere. Its analysis sits **above** the record, because it is the
+reason the person is looking, and it renders verbatim —`autonomous-development` asks it for options,
+a recommendation and a reason, and none of those survive rewording. The three moves the ledger
+allows are SURF5's and attach here.
+
+**The timeline had to be invented as a derivation, because the record has no event log.** What the
+design asks for — state transitions, quest transitions, commits as they land — is not stored as
+events anywhere; the session record carries `created`, `updated`, `state`, `note` and `evidence`,
+and the quest carries its own. So `sessionTimeline(session, quest)` derives what those fields can
+*honestly* say: it opened, the quest moved, it reached a state, and this is what came out. A session
+that has only just been queued has exactly **one** entry, and that is correct rather than
+incomplete — the alternative is inventing the steps nobody observed, which is the thing D52 rejected
+by name. When the record grows a history, one function changes.
+
+**A quest's move is shown only when it happened after the session opened.** Before that it is the
+quest's own history, which the quest view already holds, and every timeline would otherwise open
+with news that predates the thing it describes.
+
+**`readEvidence` reads the bundle's shape, never its words.** The evidence string is built on the
+driving machine (`WorkingTree.CommitsSinceAsync`) and arrives here as data. Matching `commits
+landed:` would have made a C# literal and two catalogues into three things that must agree, and a
+reworded header would have emptied the list silently. Instead: anything shaped like a `git log
+--oneline` line is a commit and everything else is the driver's sentence, rendered verbatim like
+every other system sentence. The accepted cost — a sentence opening with seven hex characters reads
+as a commit — is stated in a test rather than hidden.
+
+**Two components turned out not to be organisms, and the rule decided it rather than the plan.**
+`SessionTimeline` needs only the record and its quest; `AttendedSession` is handed its session and
+reaches no data at all — the one hook in the region belongs to `SessionConsole`, which already held
+it so that `MonoWell` holds none. Both therefore stay inside the presentational boundary and every
+state of both is reachable in a story. The components plan is corrected rather than quietly
+satisfied, which is now the second time that table has been wrong in the useful direction.
+
+**One shared atom changed:** `SectionTitle` gained a heading `level`. Inside the attended session the
+head is already an `h2`, and a second `h2` under it would flatten the region's outline for anyone
+navigating by headings. Default unchanged, so no other view moved.
+
+**The console moved and was not rewritten**, which is what the plan asked for and what SURF4a's
+extraction bought. In Storybook it renders nothing — there is no bridge — and that absence is the
+disclosure guarantee working rather than a hole in the story, so the stories say so out loud.
+
+**Proven.** 216 web unit tests, up from 168: ten for the derivation, eight for the head, ten for the
+timeline and its entry, three for the assembled region over a mocked bridge, and seventeen more
+stories (that suite: 53 tests, up from 36). The test that would fail first if anyone started
+step-parsing is in `SessionTimeline.test.tsx` by name.
+
+**Not done here, and it is a move rather than a cut.** The real-window pass the plan put at the end
+of this item cannot happen yet: nothing mounts `AttendedSession` until the Work frame exists, so
+`npm run desktop -- shot` would photograph the console it already had. The pass moved to SURF4d,
+where the frame makes it possible, and both the backlog and the plan say so.

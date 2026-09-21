@@ -1,0 +1,99 @@
+import { useTranslation } from 'react-i18next';
+import type { Quest, Session } from '../api';
+import { ago } from '../format';
+import { SectionTitle } from '../ui';
+import { type TimelineEvent, sessionTimeline } from './timeline';
+
+/** The mark's hue per kind — an arrangement of existing tokens (D41), never a new colour. */
+const MARK: Record<TimelineEvent['kind'], string> = {
+  opened: 'border-line bg-raised',
+  state: 'border-accent bg-accent-soft',
+  quest: 'border-st-taken bg-st-taken/20',
+  evidence: 'border-st-done bg-st-done/20',
+};
+
+/**
+ * One observed event, beside the stream and never inside it (design §3).
+ *
+ * @remarks
+ * A molecule: it is handed an event and renders it, so every kind — including the ones a real
+ * session produces once a week — is reachable in a story.
+ *
+ * **What the driver said renders verbatim.** A note is an observation and an evidence bundle is a
+ * sentence the driving machine wrote; the chrome around them speaks the active language and they
+ * do not, which is where the platform's i18n boundary sits.
+ */
+export function TimelineEntry({ event }: { event: TimelineEvent }) {
+  const { t } = useTranslation();
+
+  const label = event.kind === 'opened' ? t('work.timeline.opened')
+    : event.kind === 'state' ? t('work.timeline.state', { state: t(`sessionState.${event.state}`) })
+      : event.kind === 'quest' ? t('work.timeline.quest', { status: t(`status.${event.status}`) })
+        : t('work.timeline.evidence');
+
+  const note = event.kind === 'state' || event.kind === 'quest' ? event.note : null;
+
+  return (
+    <li className="relative pb-3 pl-5 last:pb-0">
+      {/* The rail behind the marks, stopping at the last one rather than trailing into nothing. */}
+      <span aria-hidden className="absolute bottom-0 left-[3px] top-3 w-px bg-line last:hidden" />
+      <span aria-hidden className={`absolute left-0 top-1.5 size-[7px] rounded-full border ${MARK[event.kind]}`} />
+
+      <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-[0.8rem]">
+        <span className="text-ink">{label}</span>
+        <span className="font-mono text-[0.72rem] text-ink-faint">{ago(event.at)}</span>
+      </p>
+
+      {note && (
+        <p className="m-0 mt-0.5 whitespace-pre-wrap text-[0.8rem] italic text-ink-soft">{note}</p>
+      )}
+
+      {event.kind === 'evidence' && (
+        <>
+          {event.text && (
+            <p className="m-0 mt-0.5 whitespace-pre-wrap text-[0.8rem] text-ink-soft">{event.text}</p>
+          )}
+          {event.commits.length > 0 && (
+            <ul className="m-0 mt-1 list-none p-0">
+              {event.commits.map((commit) => (
+                <li key={commit.sha} className="flex gap-2 text-[0.78rem]">
+                  <code className="shrink-0 font-mono text-[0.72rem] text-accent">{commit.sha}</code>
+                  <span className="min-w-0 break-words text-ink-soft">{commit.subject}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </li>
+  );
+}
+
+/**
+ * The observed audit layer for one session.
+ *
+ * @remarks
+ * **A molecule, not the organism the plan filed it as.** The components plan put this under
+ * organisms before the derivation was known; `sessionTimeline` turned out to need only the record
+ * and its quest, both of which the attended session already holds. The dependency rule decides the
+ * layer, not the table — so this takes props, stays inside the presentational boundary, and every
+ * shape of timeline is reachable in a story. The plan is corrected rather than quietly satisfied.
+ */
+export function SessionTimeline({ session, quest }: { session: Session; quest?: Quest | null }) {
+  const { t } = useTranslation();
+  const events = sessionTimeline(session, quest);
+
+  return (
+    <section>
+      {/* Level 3: the attended session's head is the region's h2, and this sits under it. */}
+      <SectionTitle level={3}>
+        <span title={t('work.timeline.hint')}>{t('work.timeline.title')}</span>
+      </SectionTitle>
+      <ol className="m-0 list-none p-0">
+        {events.map((event, index) => (
+          <TimelineEntry key={`${event.kind}-${index}`} event={event} />
+        ))}
+      </ol>
+    </section>
+  );
+}

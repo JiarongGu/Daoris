@@ -147,6 +147,8 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `sessionOrigin(session)` | which machine holds it, or null for this deployment's own (SURF4b) | D55 asks a row for *where it runs* and says it is already in the record: the feed keys a mirrored record by `origin/id` (D47 §6). Reading that is a derivation, not a component's business |
 | `treeName(tree)` | a session tree's last segment (SURF4b) | Daoris owns where trees live (D51 §2), so the last segment is the branch — meaningful rather than a guess. The rail has no room for the path, and the path is machine-local besides |
 | `elapsed(from, to?)` | a span, where `ago` is a point (SURF4b) | D55's second added fact. A start in this machine's future reads as brand new: records travel between machines and clocks do not |
+| `sessionTimeline(session, quest?)` | the observed events, oldest first (SURF4c) | the record carries no event log, so what a timeline may honestly say is a derivation — and one place to change when the record grows one |
+| `readEvidence(evidence)` | the driver's sentence, and the commits inside it (SURF4c) | reads the bundle's **shape**, never its words: no English literal is matched, so a reworded header is harmless rather than a silently empty list |
 
 `ago`, `sittingDays` and `sessionTool` already exist and are reused.
 
@@ -158,6 +160,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `RepositoryGroup` | the rail's group header | drivable, held, busy, not adopted, no root |
 | `SessionHead` | the attended session's record: state, repo, tree, quest, tool + account, age | driven, chat, parked-with-analysis, ended, `--real` tree vs session tree |
 | `TimelineEntry` | one observed event: state change, quest transition, commit landed | each kind · a long commit subject · an entry with no note |
+| `SessionTimeline` | the observed layer over `sessionTimeline()` — props-only (SURF4c) | just queued · parked · whole · nothing landed |
 | `Composer` | the chat input with its two endings | idle, sending, session ended mid-typing, refused |
 | `AttentionRow` | one row of Overview's *what needs you* band | parked, finished-unreviewed, quest nobody can take |
 | `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
@@ -168,10 +171,17 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 |---|---|---|
 | `SessionRail` | sessions grouped by repository, selection, empty state | mocked-bridge vitest |
 | `AttendedSession` | head + stream + timeline + composer, for one session | mocked-bridge vitest |
-| `SessionTimeline` | the observed audit layer beside the stream | mocked-bridge vitest |
+| ~~`SessionTimeline`~~ → **a molecule** (SURF4c) | the observed audit layer beside the stream | props-only vitest · a story per kind |
 | `SessionConsole` | **exists** — promoted out of the drawer, otherwise unchanged | its current tests |
 | `AttentionBand` | Overview's *what needs you* | mocked-bridge vitest |
 | `DiffPane` | the review surface, bounded and stating what it truncated | mocked-bridge vitest |
+
+**Two of these turned out not to be organisms** (SURF4c), and the dependency rule decided it rather
+than this table. `sessionTimeline(session, quest)` needs only the record and its quest, both of
+which the attended session already holds — so `SessionTimeline` takes props and stays inside the
+presentational boundary. `AttendedSession` reaches no data either: it is handed its session, and
+the one hook in the region belongs to `SessionConsole`, which already held it. A component's layer
+is what it imports, not what the plan guessed before the derivation existed.
 
 ### Page and shell — **revised by D55**
 
@@ -198,7 +208,7 @@ the same method. Each item is TDD, gates green, archived on completion.
 |---|---|---|
 | **SURF4a** ✔ | the three atoms, `SESSION_TONE`, `sessionTitle`, the presentational-import check, stories-as-smoke-tests | stories + `ui.test.tsx`; the import check sabotage-tested |
 | **SURF4b** ✔ | `SessionRow`, `RepositoryGroup`, and `SessionRail` over them | props-only vitest for the two molecules; mocked bridge for the rail |
-| **SURF4c** | `SessionHead`, `TimelineEntry`, `SessionTimeline`, and the stream promoted into `AttendedSession` | mocked-bridge vitest; the first `npm run desktop -- shot` of the assembled region |
+| **SURF4c** ✔ | `SessionHead`, `TimelineEntry`, `SessionTimeline`, and the stream promoted into `AttendedSession` | props-only vitest + the bridge for the promoted stream; ~~the first `npm run desktop -- shot`~~ — **moved to 4d**: nothing mounts a region until the frame exists |
 | **SURF4d** | `Composer`, then the **frame** (D55): `WorkFrame`, `ModeSwitch`, `StatusBar`, `OutputPanel`, remembered mode | the page suite; Playwright asserting Work's **absence** in a browser; a real-window pass |
 
 **Why this order.** Each item renders something a person can look at: 4a puts every state in

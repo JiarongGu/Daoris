@@ -342,8 +342,14 @@ export function PageHeader({ title, description, action }: {
   );
 }
 
-export function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-2.5 mt-6 text-[0.8rem] font-semibold text-ink-faint">{children}</h2>;
+/**
+ * A section's label. One style, and the heading LEVEL is a prop — because inside the attended
+ * session the head is already an `h2`, and a second `h2` under it would flatten the region's
+ * outline for the readers who navigate by headings. Everywhere else the default is unchanged.
+ */
+export function SectionTitle({ level = 2, children }: { level?: 2 | 3; children: ReactNode }) {
+  const Heading = level === 3 ? 'h3' : 'h2';
+  return <Heading className="mb-2.5 mt-6 text-[0.8rem] font-semibold text-ink-faint">{children}</Heading>;
 }
 
 /* ---------------------------------------------------------------- drawer */

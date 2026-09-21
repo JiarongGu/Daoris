@@ -331,20 +331,12 @@ frame with its geometry, the right dock keyed to the attended session (timeline 
 follow-the-tail stream rule — structure and geometry, never its pixels (D41) and never its plugin
 runtime (its surfaces are built natively against claude/codex through the adapter seam, D23).
 
-**SURF4a and SURF4b have landed** (2026-09-21): the three atoms, `SESSION_TONE` moved rather than
-written, `sessionTitle` in the new `src/work/identity.ts`, the presentational-import check
-sabotage-tested against a real file in `src/work/` — then `SessionRow`, `RepositoryGroup` and
-`SessionRail` over them, with D55's two extra facts on the row and the per-session tree beside them.
-Both of §7's questions are settled in the archive — `composeStories` cost no dependency, and the
-check needs no gate row. **The rail is real; SURF4c is next.**
-
-- [ ] **SURF4c — the attended session** (design §3, components §4). `SessionHead` (state, repository,
-  tree, quest, tool + account, age; parked sessions show their analysis at the top), `TimelineEntry`
-  and `SessionTimeline` — the **observed** audit layer: state changes, quest transitions, commits
-  landing. **No step-parsing of the stream**: it was rejected by name (D52), and re-proposing it means
-  answering the D23/D24 argument first. The stream is promoted out of the drawer into
-  `AttendedSession` — `SessionConsole` moves, it does not get rewritten. First real-window pass
-  (`npm run desktop -- shot`).
+**SURF4a, SURF4b and SURF4c have landed** (2026-09-21): the three atoms and `sessionTitle`, with the
+presentational-import check sabotage-tested against a real file in `src/work/` — then `SessionRow`,
+`RepositoryGroup` and `SessionRail`, with D55's two extra facts on the row — then `SessionHead`,
+`TimelineEntry`, `SessionTimeline` and `AttendedSession`, with the stream promoted out of the drawer
+unchanged. Both of §7's questions are settled in the archive. **Every region exists; SURF4d is what
+mounts them, and it owes the arc's first real-window pass.**
 
 - [ ] **SURF4d — the frame** (design §3, §3b; **reshaped by D55** — it was "the view and a sixth nav
   item"). `Composer` with its two distinct endings, then the **Work frame**: `WorkFrame` (rail +
@@ -358,7 +350,8 @@ check needs no gate row. **The rail is real; SURF4c is next.**
   §2) and a running session cannot be moved into one, so the *choice* belongs to the surface that
   starts sessions and nowhere else. Both locale catalogues throughout; the page suite in
   the vitest shape `shell.test.tsx` already uses, Playwright asserting Work's **absence** in a
-  browser, and a real-window pass to close it.
+  browser, and a real-window pass to close it — **the arc's first**, inherited from SURF4c, because
+  nothing mounts a region until this item exists.
 
 - [ ] **SURF7 — the window is part of the frame** (D55 §a has the traps and the reasons; this is the
   work). `MainForm` becomes an `OptimizedForm` with `FramelessChrome`; the top strip becomes app
