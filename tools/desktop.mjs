@@ -221,10 +221,26 @@ const running = (exe) => {
  * method — and nothing here ever touches a host directly, because a host this tool did not start
  * belongs to whoever did (the shell's own supervisor makes exactly that distinction).
  */
+/* Stop the shell this checkout built — by CLOSING it, so its own shutdown path runs.
+ *
+ * 🔴 That path is what stops the HTTP host the shell spawned and owns, so a forced kill orphans a
+ * `daoris-knowledge-http` that then holds the build's own DLLs. Measured: seven of them, after a
+ * session of restarts, failing the next `build` with MSB3027.
+ *
+ * 🔴 `CloseMainWindow` closes whichever window WINDOWS calls main, and since SURF8 that may be the
+ * monitor rather than the application — closing it leaves the app running, the wait expires, and the
+ * force kill lands. So this closes REPEATEDLY, re-reading the handle each time: the secondary
+ * windows go first, the main window last, and the app exits on its own terms. Same trap as the one
+ * `shot --window` exists for, in its third disguise. */
 const stopAll = (exe) => powershell(`
   Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${exe}' } | ForEach-Object {
-    $_.CloseMainWindow() | Out-Null
-    if (-not $_.WaitForExit(8000)) { $_ | Stop-Process -Force }
+    $process = $_
+    for ($attempt = 0; $attempt -lt 6 -and -not $process.HasExited; $attempt++) {
+      $process.Refresh()
+      if ($process.MainWindowHandle -ne 0) { $process.CloseMainWindow() | Out-Null }
+      $process.WaitForExit(2500) | Out-Null
+    }
+    if (-not $process.HasExited) { $process | Stop-Process -Force }
   }`);
 
 const readRun = () => (existsSync(RUN_FILE) ? JSON.parse(readFileSync(RUN_FILE, 'utf8')) : null);

@@ -210,7 +210,10 @@ tier, and says which tier ran.
    working near this?" before publishing a near-duplicate quest? Held until an agent actually wants it.
 4. **Recurring targets** — the content-derived id makes one title one quest forever (§3); if real use
    wants standing or scheduled targets, that is a new entity feeding quests, not a change to quest ids.
-5. **OS-level notification** — the desktop runtime ships no toast API (its "notification path" is
-   host→page IPC), so a session parking while the window is closed reaches nobody. If real driven use
-   shows that mattering, the shell grows its own toast — the runtime deliberately never learns what an
-   operation is, so this is the app's code by design.
+5. ~~**OS-level notification**~~ — **closed 2026-09-22 (SURF5b).** It resolved as this note
+   predicted: the shell grew its own toast over a `NotifyIcon`, because the runtime ships no toast API
+   and its `TrayIcon` carries a menu and no balloon. What the note did not anticipate is where the
+   *judgement* belongs — `AttentionWatch` lives in the driver library, so a machine with no screen
+   reaches the same answer and prints it instead (D50), and the decision is testable where a balloon
+   is not. A park is seen by diffing the tick's active sessions; an end is known from the driver's own
+   conclusion, which already carries whose decision it was.

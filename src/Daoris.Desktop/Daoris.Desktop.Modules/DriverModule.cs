@@ -84,6 +84,15 @@ public sealed class DriverModule : ModuleBase
                 return State();
             }
 
+            // Whether this machine interrupts the person at all (SURF5b). The same file
+            // `daoris driver notify on|off` edits — one truth, two doors (D50).
+            case "SET_NOTIFY":
+            {
+                var notify = PayloadHelper.GetRequiredValue<bool>(request.Payload, "notify");
+                Change(config => config.WithNotify(notify));
+                return State();
+            }
+
             // The console's backlog (D49 §2): what this session has said, or what it has said since
             // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
             // that just opened catches up, and how one that missed a batch closes the gap — the
@@ -532,6 +541,7 @@ public sealed class DriverModule : ModuleBase
             config.Cap,
             config.Adapter,
             config.PollSeconds,
+            config.Notify,
             Running = _loop.Processes.Running,
         };
     }

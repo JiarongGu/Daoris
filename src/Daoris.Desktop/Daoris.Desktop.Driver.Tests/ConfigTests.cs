@@ -19,6 +19,37 @@ public sealed class ConfigTests
         Assert.True(config.Cap >= 1);
     }
 
+    /// <summary>
+    /// 🔴 Silence means ON (SURF5b). Every machine that already has a `driver.json` predates this
+    /// field, so reading its absence as "off" would ship the feature switched off on exactly the
+    /// machines that have been driving longest — where a parked session sitting unnoticed costs most.
+    /// </summary>
+    [Fact]
+    public void A_config_that_says_nothing_about_notifying_notifies()
+    {
+        Assert.True(DriverConfig.Parse("{}").Notify);
+        Assert.True(DriverConfig.Parse("""{"drivable":["engine"],"cap":3}""").Notify);
+        Assert.True(DriverConfig.Empty.Notify);
+    }
+
+    [Fact]
+    public void Turning_notifications_off_survives_the_file()
+    {
+        var off = DriverConfig.Empty.WithNotify(false);
+
+        Assert.False(DriverConfig.Parse(off.ToJson()).Notify);
+        // And back on, because a switch that only goes one way is not a switch.
+        Assert.True(DriverConfig.Parse(off.WithNotify(true).ToJson()).Notify);
+    }
+
+    /// <summary>A value that is not a boolean is not an answer, so the default stands.</summary>
+    [Fact]
+    public void A_notify_field_of_the_wrong_shape_falls_back_rather_than_throwing()
+    {
+        Assert.True(DriverConfig.Parse("""{"notify":"no"}""").Notify);
+        Assert.True(DriverConfig.Parse("""{"notify":0}""").Notify);
+    }
+
     [Fact]
     public void A_full_config_round_trips()
     {

@@ -98,6 +98,42 @@ public sealed class DriverModuleTests : Bridge
         Assert.Equal(0, off.GetProperty("trees").GetArrayLength());
     }
 
+    /// <summary>
+    /// Notifications (SURF5b): the desktop half of a machine-local switch whose other door is
+    /// `daoris driver notify on|off`. One file, two editors (D50) — and it is ON until somebody
+    /// says otherwise, because a driver nobody has to watch is the whole point of one.
+    /// </summary>
+    [Fact]
+    public async Task Turning_notifications_off_writes_the_same_file_the_terminal_edits()
+    {
+        var module = Module();
+
+        Assert.True((await AnswerAsync(module, "STATE")).GetProperty("notify").GetBoolean());
+
+        var off = await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
+        Assert.False(off.GetProperty("notify").GetBoolean());
+        Assert.False(DriverConfig.Load(DriverConfigPath).Notify);
+
+        var on = await AnswerAsync(module, "SET_NOTIFY", new { notify = true });
+        Assert.True(on.GetProperty("notify").GetBoolean());
+    }
+
+    /// <summary>Every other standing choice survives it — this is an editor, not the file's owner.</summary>
+    [Fact]
+    public async Task The_notify_switch_leaves_the_rest_of_the_file_standing()
+    {
+        var module = Module();
+        await AnswerAsync(module, "SET_DRIVABLE", new { repository = "engine", drivable = true });
+        await AnswerAsync(module, "SET_TREES", new { repository = "engine", ownTree = true });
+
+        await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
+
+        var config = DriverConfig.Load(DriverConfigPath);
+        Assert.Contains("engine", config.Drivable);
+        Assert.True(config.OpensOwnTree("engine"));
+        Assert.False(config.Notify);
+    }
+
     [Fact]
     public async Task Taking_a_repository_back_out_leaves_the_others_standing()
     {

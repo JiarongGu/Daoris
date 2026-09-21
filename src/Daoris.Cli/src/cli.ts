@@ -61,6 +61,8 @@ const USAGE = `daoris <command> [options]
                          trees <repo> on|off       sessions there open their own
                                                    worktree (D51) — your dirty
                                                    root stops holding the driver
+                         notify on|off             say so when a session parks,
+                                                   or ends without you asking
                          cap <n> · adapter <name>
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a

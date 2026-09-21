@@ -2904,3 +2904,98 @@ else, which is most of what a second screen is for.
 seven for the route parser, eight stories), 14 Playwright, 169 driver (three new on the pump), 66
 modules (thirteen new), `npm run verify` green — and the real window, where the monitor opens from the
 palette, the tile detaches a session into its own window, and both were photographed in light and dark.
+
+## SURF5b — the notification, and the terminal's half (2026-09-22)
+
+> **SURF5b — the notification, and the terminal's half** (design §4). **An OS notification on park and
+> on end**, never for an ending the person caused, per machine and off in one click — the shell's own
+> code over WinForms, which **closes driver design open question 5**. The terminal's half is
+> `daoris-driver` on the machine that holds the sessions, because a headless machine has no screen to
+> notify and still needs the answer (D50). The setting is machine-local and the same file a terminal
+> can edit.
+
+✅ done 2026-09-22. **This closes driver design open question 5** and finishes the SURF arc.
+
+**A park is SEEN and an end is KNOWN, and that asymmetry is the design.** A park is a state change
+nothing local performs — the session asks, through its own connector — so it is found by diffing the
+tick's active sessions, which is why `SessionView` finally carries `State`: the planner had never
+needed it, because "is this repository busy" is the only question it asks. An end is different: the
+driver concludes every session it ran and already knows **whose decision it was**
+(`_processes.WasStopRequested`, whose own comment says only that flag knows).
+
+**That is what makes "never for an ending the person caused" structural rather than bookkeeping.** An
+end the driver did not conclude is one the person performed *here* — a resolve, an ended chat, a stop
+— so it never reaches the watch at all and there is nothing to suppress. The first design had a
+`Ignore(id)` list for this; it was deleted once the asymmetry was noticed, because a suppression list
+is a thing to keep in step and this is a thing that cannot go wrong.
+
+**The judgement is in the driver library, and only the delivery is per-door.** `AttentionWatch` is
+pure and tested; the shell turns an event into a balloon and `daoris-driver` prints it as a line
+marked `!`. That is what lets a headless machine answer the same question (D50) — and it is also the
+only reason any of this is testable, since a balloon is not.
+
+**Two rules the watch holds that a person would otherwise learn to hate it for.** It says a thing
+**once** — a parked session is parked on every tick until somebody answers it, and saying so every
+fifteen seconds is how notifications get turned off. And **the first look is a baseline, never a
+backlog**: a machine that has just started has no previous view, so a session already parked then is
+one the person was told about on an earlier run.
+
+**The sentence is composed once, in the library.** It is the driver's own, rendered verbatim rather
+than translated — the boundary D24 already set and the reason `errors.DRIVER_REFUSED` is `{{message}}`.
+Re-authoring it in two languages would mean two that drift, and a native balloon has no catalogue to
+read from anyway.
+
+**Silence means ON, on both sides.** Every machine that already has a `driver.json` predates this
+field, so reading its absence as "off" would ship the feature switched off on exactly the machines
+that have been driving longest — where a parked session sitting unnoticed costs most. Asserted in the
+driver's parser and in the CLI's reader, which are two artefacts that must agree about one file.
+
+**Two doors, as D50 requires** — `daoris driver notify on|off` and a checkbox in the Machine view,
+over the same `driver.json` field. The surface names the other door, so somebody who finds this on a
+machine they reach over ssh does not go looking for a second setting.
+
+**The balloon stays quiet while the person is looking**, because the same event reaches the page and
+becomes the platform's own toast — two notices for one thing is how the feature earns a reputation.
+🔴 **Focused is not enough for that test; it must also not be minimized** — a minimized window can
+still report as the foreground window for a moment (measured), and minimized is the most obvious case
+of nobody looking, so a foreground test alone would have swallowed the balloon in exactly the
+situation the feature exists for.
+
+**A notification is a door** (design §4: every attention row is one). Clicking the balloon brings the
+window forward *on that session* rather than on whatever was last open — the shell asks over the
+bridge, because which session is attended is the page's state to hold. The activation sequence is
+written out rather than reached for: `WindowActivation` is internal to the framework, and its
+documentation names the order everyone gets wrong (un-minimize **before** activating, then
+`SetForegroundWindow`).
+
+**Daoris now has a tray icon**, because `ShowBalloonTip` needs a visible `NotifyIcon` and the
+framework's `TrayIcon` carries a menu and no balloon. It is **not** close-to-tray: this window still
+closes when it is closed, and changing that would be a lifecycle change nobody asked for. D55 §b
+sanctioned exactly this — it rejected a tray-*only* monitor while noting the icon was "worth keeping
+for SURF5's notifications, where the question really is the first one".
+
+**It found a regression from the previous landing** (in `docs/FIX-LOG.md`): `desktop kill` closed
+whichever window Windows called main, which since SURF8 could be the monitor — so the shell was
+force-killed before it could stop the HTTP host it owns, and seven orphaned hosts eventually failed a
+build. Third disguise of one fact, and the first one that reported success while failing.
+
+**A conversation's end is deliberately not reported, and a conversation that PARKS is.** Parks come
+from the tick and are blind to how a session was started; endings come from the driver's own
+conclusion, and `ChatRunner` concludes outside the tick. The intent matches the mechanism rather than
+merely permitting it: this exists because nobody should have to watch an *unattended* session, and a
+conversation is something the person is in, whose ending appears in the stream they are looking at.
+Written down on `AttentionWatch` so the next reader can tell the decision from the accident — and if
+real use shows a chat left running and crashing silently, feeding its `onEnded` in is the fix, since
+the repository is already remembered there.
+
+**What was not visually confirmed, and why.** The balloon's own rendering. Verifying it needs a
+capture of the whole screen rather than of a window, and the one I took showed the owner's unrelated
+work — so it was deleted and not retaken. What *is* proven: the driver emits the event with the right
+kind, session and sentence (read off the live bridge on the real machine), the page raises its toast
+from it, and the suppression rule is the code above. The balloon call itself is five lines and is
+stated here as unverified rather than claimed.
+
+**Proven.** 216 CLI (five new on the notify verb), 184 driver (fifteen new: twelve for the watch,
+three for the setting), 68 modules (two new), 404 web unit (six new), 14 Playwright, 259 service,
+`npm run verify`, `npm run test:web` and `rehearse:family` (173/173) all green — and the real window,
+where a park driven through the service reached the page as a toast within one tick.

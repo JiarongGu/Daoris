@@ -13,7 +13,14 @@ public sealed record RepoView(
     string Repository, bool Adopted, string? Root, string Workspace = RemoteTarget.DefaultWorkspace);
 
 /// <summary>An ACTIVE session as the service answered it — closed ones never reach the planner.</summary>
-public sealed record SessionView(string Id, string Repository);
+/// <param name="State">
+/// Where the record stands. The planner has never needed it — "is this repository busy" is the only
+/// question it asks — but <see cref="AttentionWatch"/> does, because a park is a state change nothing
+/// local performs and is therefore only visible by looking (SURF5b).
+/// </param>
+/// <param name="Note">What the session said about that state, where it said anything.</param>
+public sealed record SessionView(
+    string Id, string Repository, string State = "", string? Note = null);
 
 /// <summary>Everything a tick's decisions are made from, fetched once so the plan is coherent.</summary>
 public sealed record Snapshot(

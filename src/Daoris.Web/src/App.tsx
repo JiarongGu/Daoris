@@ -400,7 +400,9 @@ export function App() {
 
       {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}
       <Toasts items={toasts} onClose={dismiss} />
-      <ShellSignals notify={notify} />
+      {/* A notification is a door (design §4): clicking the OS balloon lands on that session
+          rather than on whatever was last open. */}
+      <ShellSignals notify={notify} onAttend={openInWork} />
     </div>
   );
 }

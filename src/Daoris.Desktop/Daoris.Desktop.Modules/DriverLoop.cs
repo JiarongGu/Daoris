@@ -128,10 +128,33 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         Chat = new ChatRunner(service, AdapterSet.Built(), home, Processes, Output, Harnesses);
         Service = service;
 
+        // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
+        // headless host reaches the same answer; the shell's half is only what an event BECOMES.
+        var attention = new AttentionWatch();
+
         _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output, Harnesses);
         await _watch.RunAsync(
-            async (report, _) =>
+            async (report, ticked) =>
             {
+                // Observed either way, so turning notifications back on does not then announce
+                // everything that happened while they were off — the switch is about being TOLD.
+                var attend = attention.Observe(report);
+                if (ticked.Notify)
+                {
+                    foreach (var item in attend)
+                    {
+                        await eventBus.EmitAsync("DAORIS", "SESSION_ATTENTION", new
+                        {
+                            Kind = item.Kind.ToString(),
+                            item.Session,
+                            item.Repository,
+                            item.State,
+                            item.Headline,
+                            item.Detail,
+                        }).ConfigureAwait(false);
+                    }
+                }
+
                 if (report.PlannedAnything || report.Events.Count > 0)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new

@@ -338,7 +338,8 @@ deliberately not built — it arrives with its second occupant, the diff (SURF6)
 **SURF5's attention half has landed too** (2026-09-21): `AwaitingPerson` finally has a surface —
 the analysis at the top of the head and **exactly the three moves** the ledger allows, landing on
 the driver so the process and the record move together — plus Overview's *what needs you* band and
-the count on the Work switch. What remains of SURF5 is the **notification** (SURF5b).
+the count on the Work switch. **SURF5b closed it 2026-09-22** — the notification, and with it driver
+design open question 5.
 
 **SURF10 answered the owner's dissatisfaction with the application itself** (2026-09-21, D56 +
 `docs/2026-09-21-desktop-frame-design.md`, confirmed with the owner before any code): an app strip
@@ -357,16 +358,11 @@ addressable by name, absent in a browser by omission, paying back the discoverab
 **SURF8 landed 2026-09-22** — the monitor and a detached session, routes into the same bundle on
 their own STA pumps, read-only in both because D56's one-owner rule holds across windows too; the
 second reader on the console pump turned out already true (`Tail` keeps no cursor) and is now held by
-tests, and the real window found three defects the source could not show. **SURF5b is what remains of
-the arc.**
-
-- [ ] **SURF5b — the notification, and the terminal's half** (design §4; the rest of SURF5 landed
-  2026-09-21). **An OS notification on park and on end**, never for an ending the person caused,
-  per machine and off in one click — the shell's own code over WinForms, which **closes driver
-  design open question 5**. The terminal's half is `daoris-driver` on the machine that holds the
-  sessions (the `daoris` CLI's offline shape does not change), because a headless machine has no
-  screen to notify and still needs the answer (D50). The setting is machine-local like every other
-  one the Machine view holds, and the same file a terminal can edit (D50's two doors).
+tests, and the real window found three defects the source could not show. **SURF5b landed 2026-09-22
+and closed the arc** — a park is *seen* by diffing the tick's sessions and an end is *known* from the
+driver's own conclusion, which is what makes "never for an ending the person caused" structural rather
+than bookkeeping; the judgement lives in the library so a machine with no screen answers the same
+question, and `daoris driver notify on|off` is its second door. **Every SURF item is built.**
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

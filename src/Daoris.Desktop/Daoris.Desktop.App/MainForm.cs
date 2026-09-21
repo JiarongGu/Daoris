@@ -32,6 +32,7 @@ public sealed class MainForm : OptimizedForm
     private readonly SplashPanel _splash;
     private readonly DriverLoop _driver;
     private readonly HostSupervisor _supervisor;
+    private readonly SessionNotifier _notifier;
     private ChromePalette _palette;
     private Label? _trouble;
 
@@ -100,7 +101,15 @@ public sealed class MainForm : OptimizedForm
             CoordinateSpace = _webView,
         }));
 
+        // The OS notification (SURF5b), which closes driver design open question 5: a session that
+        // parks while nobody is looking at this window now reaches the person. It decides nothing —
+        // `AttentionWatch` in the driver does, so a machine with no screen answers the same question.
+        _notifier = new SessionNotifier(this, eventBus);
+        _notifier.Attend += session => eventBus.Emit(
+            new EventMessage { Module = "DAORIS", Type = "ATTEND_SESSION", Payload = new { Session = session } });
+
         Load += async (_, _) => await BringUpAsync();
+        FormClosed += (_, _) => _notifier.Dispose();
     }
 
     /// <summary>What the OS is set to, for the first paint — the page corrects it a round trip later.</summary>

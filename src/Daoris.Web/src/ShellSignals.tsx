@@ -12,7 +12,14 @@ type Tick = { events?: string[] };
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
-export function ShellSignals({ notify }: { notify: Notify }) {
+export function ShellSignals({ notify, onAttend }: {
+  notify: Notify;
+  /**
+   * A session the shell is asking the page to attend (SURF5b) — the person clicked an OS
+   * notification. Absent where nothing can act on it, which is every window but the application's.
+   */
+  onAttend?: (session: string) => void;
+}) {
   const { isAvailable, bridge } = useShenora();
   const client = useQueryClient();
 
@@ -34,6 +41,31 @@ export function ShellSignals({ notify }: { notify: Notify }) {
 
   useShenoraEvent<{ message?: string }>('DAORIS', 'DRIVER_ERROR', (error) => {
     notify(error?.message ?? 'driver error', 'error');
+  });
+
+  /**
+   * What is worth interrupting the person for (SURF5b): a session that parked, or one that ended
+   * without them asking. The same event the shell turns into an OS balloon while nobody is looking
+   * at the window — so this is the half for when somebody IS, and the two never both fire because
+   * the shell tests the foreground before raising one.
+   *
+   * The sentence is the driver's own and is rendered verbatim, like every other sentence it
+   * writes (D24): it is composed once in `AttentionWatch` so a toast here and a line on a headless
+   * machine cannot drift.
+   */
+  useShenoraEvent<{ headline?: string; detail?: string; kind?: string }>(
+    'DAORIS', 'SESSION_ATTENTION', (item) => {
+      if (!item?.headline) return;
+      notify(
+        item.detail ? `${item.headline}: ${item.detail}` : item.headline,
+        // A park is the one that is WAITING on somebody; an ending is news.
+        item.kind === 'Parked' ? 'error' : 'ok');
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    });
+
+  /** The person clicked an OS notification, so the window comes forward on that session. */
+  useShenoraEvent<{ session?: string }>('DAORIS', 'ATTEND_SESSION', (asked) => {
+    if (asked?.session) onAttend?.(asked.session);
   });
 
   return null;

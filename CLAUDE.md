@@ -110,26 +110,27 @@ risk, **authorship** was.
   agents in one tree corrupt it" survives; only the incidental cap does not), **D52** the surface, and
   **D55** the frame: Manage ⇄ Work are two **frames** of one application rather than a sixth nav item,
   with a status bar, a growable output panel, a frameless window whose top strip is application chrome
-  (SURF7) and a monitor window (SURF8). **All of SURF4 and SURF5's attention half have landed** —
-  atoms, rail, attended session (its timeline **derived**: the record has no event log), the frame,
-  and a parked session's three moves. Work is usable today (`npm run desktop -- run`, then *Work*);
-  **the stream has one home**, the output panel, so `ChatDrawer` is gone and Quests keeps the record
-  plus a door. The archive carries the rest.
+  (SURF7) and a monitor window (SURF8). **Every SURF item is built**, and Work is usable today
+  (`npm run desktop -- run`, then *Work*). Two rules the building settled that still bind: a
+  timeline is **derived** (the record has no event log), and **the stream has one home**, the output
+  panel. The archive carries the rest.
 - **The application has a frame of its own** (SURF10/SURF7 → **D56**,
   `docs/2026-09-21-desktop-frame-design.md`): a frameless window whose **app strip is the title
   bar**, a 48px **activity bar** identical in both frames, the rail's `＋`, one owner for the verbs,
   a **right dock** beside the attended session, and **D41 §3 amended to one denser scale** — seven
   named type tokens held by `tokens.test.ts`, because the literal form had drifted to fifteen
   values. The diagnosis was **measured**, which is how a design complaint became a decision.
-  `npm run desktop -- shot --theme <light|dark>` is the only instrument that sees native chrome, and
   🔴 **git walks UP** — a diff of a path that is not a repository answers for the one above it
-  (FIX-LOG). **SURF6 closed it**: the landed work is a bounded diff in the dock, and its acts —
-  accept, discard, send it back — carry every `reaching-in` guard; the merge refuses into a checkout
-  anyone is working in, and the discard asks twice. **SURF9** made every action addressable by name — a pure registry, absent in a browser by
-  omission. **SURF8 landed 2026-09-22**: monitor and detached session are **routes into the same
-  bundle** on their own STA pumps, read-only, the second reader on the pump now asserted. 🔴 A
-  secondary window needs its **own** WebView2 environment and follows the OS theme itself, and
-  `shot`/`eval`/`click` need **`--window <monitor|session:ID>`** (FIX-LOG). **SURF5b remains.**
+  (FIX-LOG). **SURF6** put the landed work in the dock as a bounded diff whose acts carry every
+  `reaching-in` guard, and **SURF9** made every action addressable by name.
+- **The last two, and what they bind** (2026-09-22). **SURF8**: the monitor and a detached session
+  are **routes into the same bundle** on their own STA pumps, read-only — 🔴 a secondary window needs
+  its **own** WebView2 environment, follows the OS theme itself, and `shot`/`eval`/`click` need
+  **`--window <monitor|session:ID>`** or they address whichever window Windows calls main (FIX-LOG,
+  three times over). **SURF5b** closed the arc and driver open question 5: a park is *seen* (the
+  tick's sessions, diffed), an end is *known* (the driver concluded it and knows whose decision it
+  was), so **"never for an ending the person caused" is structural**. The judgement is the library's,
+  so a headless machine answers it too, and `daoris driver notify on|off` is its second door.
 - 🔴 **Polishing the UI/UX is standing work, and it is done by LOOKING** (owner, 2026-09-22:
   *"we also need to keep polish the ui/ux you can use screenshot tool to confirm"*). Take
   `npm run desktop -- shot [--theme dark]` to any surface you change. The defects that matter are

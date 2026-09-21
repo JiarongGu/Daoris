@@ -36,12 +36,14 @@ export interface DriverChoices {
   trees: string[];
   cap: number;
   adapter: string;
+  /** Whether this machine says so when a session parks or ends unasked (SURF5b). */
+  notify: boolean;
   rest: Record<string, unknown>;
 }
 
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
-  drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', rest: {},
+  drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true, rest: {},
 };
 
 /**
@@ -59,13 +61,17 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ...EMPTY, rest: {} };
 
-    const { drivable, holds, trees, cap, adapter, ...rest } = parsed;
+    const { drivable, holds, trees, cap, adapter, notify, ...rest } = parsed;
     return {
       drivable: names(drivable),
       holds: names(holds),
       trees: names(trees),
       cap: typeof cap === 'number' && cap >= 1 ? Math.floor(cap) : EMPTY.cap,
       adapter: typeof adapter === 'string' && adapter.length > 0 ? adapter : EMPTY.adapter,
+      // 🔴 Absent means ON, the same reading the driver makes (SURF5b): every machine that already
+      // has this file predates the field, and taking silence for "off" would ship the feature
+      // switched off on exactly the machines that have been driving longest.
+      notify: typeof notify === 'boolean' ? notify : EMPTY.notify,
       rest,
     };
   } catch {
@@ -86,6 +92,7 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     trees: choices.trees,
     cap: choices.cap,
     adapter: choices.adapter,
+    notify: choices.notify,
   }, null, 2)}\n`);
 }
 
@@ -147,6 +154,29 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // One flag with two directions, like `trees` and for the same reason. The desktop has a
+    // checkbox for this; a machine with no screen has this verb (D50's two doors, SURF5b).
+    case 'notify': {
+      const direction = argv.slice(1).find((token) => token === 'on' || token === 'off');
+      if (!direction) {
+        throw new DaorisError('`driver notify` needs on|off — e.g. `daoris driver notify off`.');
+      }
+
+      const on = direction === 'on';
+      writeDriverChoices(path, { ...choices, notify: on });
+
+      write(on
+        ? 'daoris: this machine says so when a session parks or ends without you asking.'
+        : 'daoris: this machine will not interrupt you about sessions.');
+      if (!on) {
+        write('  The records still say everything they said — this is about being TOLD, not about');
+        write('  what is recorded. A parked session waits for you either way.');
+      }
+
+      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+      return 0;
+    }
+
     case 'cap': {
       const value = Number(named(argv, 'cap'));
       if (!Number.isInteger(value) || value < 1) {
@@ -175,13 +205,15 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     default:
       throw new DaorisError(
-        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, cap, adapter`);
+        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, notify, cap, adapter`);
   }
 
   function list(): ExitCode {
     write(`daoris: ${path}`);
     write(`  adapter    ${choices.adapter}`);
     write(`  cap        ${choices.cap} concurrent session(s)`);
+    write(`  notify     ${choices.notify ? 'on' : 'off'}`
+      + `  (a session parking, or ending without you asking${choices.notify ? '' : ' — not said'})`);
 
     if (choices.drivable.length === 0) {
       write('  drivable   nothing — this machine drives no repository, which is the default (D46 §2).');

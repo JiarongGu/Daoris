@@ -23,6 +23,8 @@ export type DriverState = {
   trees: string[];
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
+  /** Whether this machine interrupts the person when a session parks or ends unasked (SURF5b). */
+  notify: boolean;
 };
 
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>
@@ -77,6 +79,16 @@ export const useResolveSession = () => {
     },
   });
 };
+
+/**
+ * Whether this machine says so when a session parks or ends unasked (SURF5b).
+ *
+ * @remarks
+ * The same `driver.json` field `daoris driver notify on|off` edits — D50's two doors onto one
+ * truth, like every other control here. It governs the JUDGEMENT rather than the toast, which is
+ * why a headless machine honours it too.
+ */
+export const useSetNotify = () => useDriverChange<{ notify: boolean }>('SET_NOTIFY');
 
 export const useSetDrivable = () => useDriverChange<{ repository: string; drivable: boolean }>('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');

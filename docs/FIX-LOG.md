@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `desktop kill` orphaned the host it was supposed to stop (2026-09-22)
+
+**Symptom.** A `npm run desktop -- build` failed with MSB3027 — seven `daoris-knowledge-http`
+processes from this checkout's Debug build were holding `Daoris.Service.Core.dll`. They had
+accumulated silently over a session of `run`/`kill` cycles.
+
+**Root cause.** `stopAll` closes the shell rather than killing it precisely so the app's own shutdown
+path runs — that path is what stops the HTTP host the shell spawned and owns. It used
+`Process.CloseMainWindow()`, which closes whichever window **Windows** calls main. **SURF8 made that
+not necessarily the application's**: with the monitor open, `CloseMainWindow` closed the *monitor*,
+the app kept running, the 8-second wait expired, and `Stop-Process -Force` landed — killing the shell
+before it could stop its host. A regression from the commit that introduced secondary windows, found
+two commits later by its second-order symptom rather than by the kill itself, which reported success
+every time.
+
+**Fix.** Close repeatedly, re-reading `MainWindowHandle` each time: the secondary windows go first,
+the main window last, and the app exits on its own terms. Six attempts at 2.5s, then the force kill
+as a genuine last resort. `tools/desktop.mjs`.
+
+**Verify.** `run`, open the monitor, `kill`, then `Get-CimInstance Win32_Process` for
+`daoris-knowledge-http` — none left from this checkout, and the next `build` succeeds.
+
+**The trap to inherit.** This is the **third** disguise of one fact: `MainWindowHandle` answers for
+one window and Windows chooses which. The other two are in the SURF8 entries below. When a change
+makes a process multi-window, every caller of that property is a caller that has silently changed
+meaning — and the ones that *report success anyway* are the expensive ones.
+
 ## A second window opened, and then failed its bring-up on a thread-affine environment (2026-09-22)
 
 **Symptom.** The monitor window (SURF8) opened with its native frame, and its content was one

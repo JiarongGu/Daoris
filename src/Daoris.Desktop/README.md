@@ -36,6 +36,13 @@ reserves is handed to the OS as real caption buttons, which the **window** paint
 maximizes by hand. `WindowCommandModule` is mapped **late**, from the form's constructor, because it
 needs a live form.
 
+**It notifies** (SURF5b/D55 §4), which closes driver design open question 5: a session that parks, or
+ends without the person asking, raises an OS balloon from the shell's own `NotifyIcon` — and stays
+quiet while the window is on screen and focused, because the page's own toast has it. It decides
+nothing: `AttentionWatch` in the driver library does, so `daoris-driver` on a machine with no screen
+prints the same judgement as a line. `daoris driver notify on|off` and the Machine view's checkbox
+are two doors onto one `driver.json` field (D50).
+
 **It is no longer the only window** (SURF8/D55 §b). `SecondaryWindows` opens named ones on their own
 STA pumps — `monitor` and `session:<id>`, asked for over `DAORIS.WINDOWS` — each a `SecondaryForm`
 carrying the **same bundle at its own route** (`?window=<name>`), so they are the platform's own

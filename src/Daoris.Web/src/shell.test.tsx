@@ -296,6 +296,36 @@ describe('the machine settings surface', () => {
     expect(container.textContent).not.toContain('dk_abcd1234wxyz');
   });
 
+  /**
+   * Notifications (SURF5b): the desktop's door onto the same `driver.json` field
+   * `daoris driver notify on|off` edits. It is ON until somebody says otherwise — a driver nobody
+   * has to watch is the point of one — and the surface names the other door so a person on a
+   * machine they reach over ssh does not go looking for a second setting.
+   */
+  it('the notification switch reads the machine and writes the same file a terminal does', async () => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: true } : WIRING));
+
+    show(<SettingsView notify={() => {}} />);
+
+    // Found by its loaded STATE rather than by its label, because the switch renders before the
+    // machine has answered and its default is on — a bare label query would pass either way.
+    const check = await screen.findByRole('checkbox', { checked: true });
+    expect(screen.getByText(/daoris driver notify on\|off/)).toBeTruthy();
+
+    await userEvent.click(check);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_NOTIFY', { payload: { notify: false } });
+  });
+
+  it('a machine that has turned notifications off says so', async () => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: false } : WIRING));
+
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByRole('checkbox', { checked: false })).toBeTruthy();
+  });
+
   it('unwiring says what it did not do, and touches no deployment', async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} />);
@@ -459,5 +489,65 @@ describe('the shell push channel (ShellSignals)', () => {
     eventHandlers.get('DAORIS.DRIVER_ERROR')!({ message: 'the loop hit a wall' });
 
     expect(notify).toHaveBeenCalledWith('the loop hit a wall', 'error');
+  });
+
+  /**
+   * The in-window half of the notification (SURF5b). The shell raises an OS balloon only while
+   * nobody is looking at the window, so these two never both fire — this is the one for when
+   * somebody is, and it carries the driver's own sentence exactly as the tick's lines do.
+   */
+  it('a session that needs somebody becomes a toast, and the sessions refetch', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />, client);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'Parked',
+      session: 's1a2b3c4',
+      repository: 'engine',
+      headline: 'engine — a session needs you',
+      detail: 'Two ways forward; I recommend capping.',
+    });
+
+    // A park wears the status tone, because it is the one that is WAITING on somebody.
+    expect(notify).toHaveBeenCalledWith(
+      'engine — a session needs you: Two ways forward; I recommend capping.', 'error');
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
+  });
+
+  it('an ending is news rather than a demand, and a session that said nothing still says something', () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'Ended', session: 's1', repository: 'tools', headline: 'tools — a session failed',
+    });
+
+    expect(notify).toHaveBeenCalledWith('tools — a session failed', 'ok');
+  });
+
+  /** An older shell, or a reworded payload: the console must tolerate any shape (SES1's rule). */
+  it('an attention event with nothing to say is not a blank toast', () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Parked' });
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!(undefined);
+
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  /** A notification is a door (design §4): clicking it names the session to attend. */
+  it('the shell can ask the page to attend a session', () => {
+    const onAttend = vi.fn();
+    show(<ShellSignals notify={() => {}} onAttend={onAttend} />);
+
+    eventHandlers.get('DAORIS.ATTEND_SESSION')!({ session: 's1a2b3c4' });
+    expect(onAttend).toHaveBeenCalledWith('s1a2b3c4');
+
+    // Nothing named is nothing to open, not a door onto whatever was last selected.
+    eventHandlers.get('DAORIS.ATTEND_SESSION')!({});
+    expect(onAttend).toHaveBeenCalledTimes(1);
   });
 });

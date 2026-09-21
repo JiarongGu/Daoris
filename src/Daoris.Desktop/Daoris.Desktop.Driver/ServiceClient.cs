@@ -254,7 +254,12 @@ public sealed class ServiceClient : IDisposable
         {
             sessions.Add(new SessionView(
                 Text(session, "id") ?? "",
-                Text(session, "repository") ?? ""));
+                Text(session, "repository") ?? "",
+                // Read since SURF5b: a park is a state change nothing here performs, so the only way
+                // to see one is to look. Defaulted rather than required, because a service older
+                // than this field answers without it and the planner never needed it either way.
+                Text(session, "state") ?? "",
+                Text(session, "note")));
         }
 
         return sessions;

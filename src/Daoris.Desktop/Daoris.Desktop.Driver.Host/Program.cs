@@ -26,6 +26,10 @@ using Daoris.Driver;
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced.
 //
+// While watching, a line marked `!` is what would have been a toast on a machine with a screen
+// (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`
+// turns it off here exactly as the desktop's checkbox does — one file, two doors (D50).
+//
 // Exit codes keep the family contract: 0 clean · 2 tool error.
 if (OperatingSystem.IsWindows())
 {
@@ -88,11 +92,25 @@ try
     else
     {
         Console.WriteLine($"driver: watching {service.BaseUrl} every {config.PollSeconds}s — Ctrl+C stops it");
+
+        // What is worth interrupting a person for (SURF5b). A machine with no screen cannot toast
+        // and still has to answer the question (D50), so the judgement is the library's and this
+        // door's delivery is a line — the same shape as everything else this host prints.
+        var attention = new AttentionWatch();
+
         // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
         // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
         // below, which is this door's exit-2 contract.
         await new DriverWatch(service, configPath, home, processes, sync).RunAsync(
-            (report, _) => { Print(report, quietWhenIdle: true); return Task.CompletedTask; },
+            (report, ticked) =>
+            {
+                Print(report, quietWhenIdle: true);
+                // Observed either way, so turning notifications back on does not then announce
+                // everything that happened while they were off — the switch is about being TOLD.
+                var events = attention.Observe(report);
+                if (ticked.Notify) foreach (var item in events) Console.WriteLine($"  !  {item.Line}");
+                return Task.CompletedTask;
+            },
             onError: null,
             CancellationToken.None);
     }

@@ -2,6 +2,17 @@ using System.Diagnostics;
 
 namespace Daoris.Driver;
 
+/// <summary>
+/// A session this driver brought to an end, and whose decision that was (SURF5b).
+/// </summary>
+/// <param name="ByPerson">
+/// 🔴 True when the person asked for this ending — they pressed stop, or they closed the driver.
+/// The one fact that separates an interruption worth making from a toast telling somebody what they
+/// just pressed (design §4), and the driver is the only place that knows it.
+/// </param>
+public sealed record SessionEnded(
+    string Session, string Repository, string State, bool ByPerson, string? Note = null);
+
 /// <param name="Considerations">Every open quest, with its verdict and reason — the plan, printable.</param>
 /// <param name="Events">What actually happened this tick: sessions concluded, held, or refused.</param>
 /// <param name="Progressed">
@@ -9,10 +20,29 @@ namespace Daoris.Driver;
 /// refused (raced) is not progress — and treating it as progress is an infinite loop: the same quest
 /// would plan, hold, and plan again forever.
 /// </param>
+/// <param name="Active">
+/// The sessions the snapshot found running. Carried so a watcher can see a state change the driver
+/// did not cause (SURF5b) — a park is the session asking, through its own connector, and this tick's
+/// view is the only place it shows up.
+/// </param>
+/// <param name="Concluded">
+/// What this tick ended, structurally. <paramref name="Events"/> already says so in English and
+/// nothing can parse that — deliberately, since those sentences are written for a person (D24).
+/// </param>
 public sealed record TickReport(
-    IReadOnlyList<Consideration> Considerations, IReadOnlyList<string> Events, bool Progressed)
+    IReadOnlyList<Consideration> Considerations,
+    IReadOnlyList<string> Events,
+    bool Progressed,
+    IReadOnlyList<SessionView>? Active = null,
+    IReadOnlyList<SessionEnded>? Concluded = null)
 {
     public bool PlannedAnything => Considerations.Any(c => c.Verdict == StartVerdict.Start);
+
+    /// <inheritdoc cref="Active"/>
+    public IReadOnlyList<SessionView> Active { get; init; } = Active ?? [];
+
+    /// <inheritdoc cref="Concluded"/>
+    public IReadOnlyList<SessionEnded> Concluded { get; init; } = Concluded ?? [];
 }
 
 /// <summary>
@@ -71,19 +101,23 @@ public sealed class Driver(
         var plan = Planner.Plan(snapshot, config);
         var progressed = false;
 
+        // What this tick ended, structurally — the half of the report a watcher can act on (SURF5b).
+        var concluded = new List<SessionEnded>();
+
         var starts = plan.Where(c => c.Verdict == StartVerdict.Start).ToList();
         var runs = starts.Select(async start =>
         {
-            var (line, opened) = await RunAsync(start, ct).ConfigureAwait(false);
+            var (line, opened, ended) = await RunAsync(start, ct).ConfigureAwait(false);
             lock (events)
             {
                 events.Add(line);
                 progressed |= opened;
+                if (ended is not null) concluded.Add(ended);
             }
         });
         await Task.WhenAll(runs).ConfigureAwait(false);
 
-        return new TickReport(plan, events, progressed);
+        return new TickReport(plan, events, progressed, snapshot.Active, concluded);
     }
 
     /// <summary>
@@ -103,7 +137,13 @@ public sealed class Driver(
         }
     }
 
-    private async Task<(string Line, bool Opened)> RunAsync(Consideration start, CancellationToken ct)
+    /// <returns>
+    /// The console line, whether a session actually opened, and — when one ended here — what it
+    /// ended as and whose decision that was (SURF5b). A hold or a refusal ends nothing, so its
+    /// third value is null: there is no session to have ended.
+    /// </returns>
+    private async Task<(string Line, bool Opened, SessionEnded? Ended)> RunAsync(
+        Consideration start, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -119,7 +159,7 @@ public sealed class Driver(
             var (clean, detail) = await WorkingTree.CleanAsync(root, ct).ConfigureAwait(false);
             if (!clean)
             {
-                return ($"held  #{quest.Id} → {quest.To}: {detail}", false);
+                return ($"held  #{quest.Id} → {quest.To}: {detail}", false, null);
             }
         }
 
@@ -133,7 +173,7 @@ public sealed class Driver(
             .ConfigureAwait(false);
         if (!selection.Allowed)
         {
-            return ($"held  #{quest.Id} → {quest.To}: {selection.Refusal}", false);
+            return ($"held  #{quest.Id} → {quest.To}: {selection.Refusal}", false, null);
         }
 
         // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
@@ -149,7 +189,7 @@ public sealed class Driver(
             }
             catch (DriverException error)
             {
-                return ($"held  #{quest.Id} → {quest.To}: {error.Message}", false);
+                return ($"held  #{quest.Id} → {quest.To}: {error.Message}", false, null);
             }
         }
 
@@ -180,7 +220,7 @@ public sealed class Driver(
                 await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             }
 
-            return ($"refused  #{quest.Id} → {quest.To}: {message}", false);
+            return ($"refused  #{quest.Id} → {quest.To}: {message}", false, null);
         }
 
         try
@@ -242,7 +282,14 @@ public sealed class Driver(
             // 6–7): the person merges from the root and discards from a surface that refuses to
             // destroy work. The line names it so a terminal watcher knows where the work is sitting.
             var where = opened is null ? "" : $" [own tree: {opened.Path}]";
-            return ($"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}", true);
+            return (
+                $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
+                true,
+                // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same one
+                // that outranks the observation two lines above. Read once, used for both.
+                new SessionEnded(
+                    sessionId, quest.To, conclusion.State,
+                    ByPerson: _processes.WasStopRequested(sessionId), conclusion.Note));
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -261,7 +308,12 @@ public sealed class Driver(
                 // Best-effort by construction: the host may already be gone on the same shutdown.
             }
 
-            return ($"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.", true);
+            // The person is closing the driver, so this ending is theirs — no interruption is owed
+            // for something they are in the middle of doing (design §4).
+            return (
+                $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
+                true,
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true));
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
@@ -276,7 +328,10 @@ public sealed class Driver(
                 // The terminal write is best-effort by construction: the first failure is the report.
             }
 
-            return ($"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}", true);
+            return (
+                $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
+                true,
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message));
         }
         finally
         {

@@ -225,6 +225,66 @@ test('an unknown verb names the ones that exist', () => {
   const error = captureError(() => run(['frobnicate'], at(fx)));
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
-  assert.match(error.message, /list, drive, undrive, hold, resume, trees, cap, adapter/);
+  assert.match(error.message, /list, drive, undrive, hold, resume, trees, notify, cap, adapter/);
+  fx.cleanup();
+});
+
+/**
+ * Notifications (SURF5b, design §4). The desktop has a checkbox and a machine with no screen has
+ * this — D50's two doors onto one file. The setting governs the JUDGEMENT ("is this worth
+ * interrupting somebody for"), not the toast, which is why a headless driver honours it too.
+ */
+test('notify off stops this machine saying so, and on starts it again', () => {
+  const fx = makeFixture('driver-notify');
+
+  const off = run(['notify', 'off'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).notify, false);
+  assert.match(off.out, /will not/);
+
+  const on = run(['notify', 'on'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).notify, true);
+  assert.match(on.out, /parks|ends/);
+  fx.cleanup();
+});
+
+/**
+ * 🔴 Silence means ON, on both sides. Every machine that already has a driver.json predates this
+ * field, and a reader that took absence for "off" would ship the feature switched off on exactly
+ * the machines that have been driving longest.
+ */
+test('a file that never mentioned notifying still notifies', () => {
+  const fx = makeFixture('driver-notify-absent');
+  run(['drive', 'engine'], at(fx));
+
+  assert.equal(readDriverChoices(at(fx)).notify, true);
+  assert.match(run(['list'], at(fx)).out, /notify {5}on/);
+  fx.cleanup();
+});
+
+test('notify needs on or off, and says so', () => {
+  const fx = makeFixture('driver-notify-arg');
+  assert.match(captureError(() => run(['notify'], at(fx))).message, /on\|off/);
+  assert.match(captureError(() => run(['notify', 'maybe'], at(fx))).message, /on\|off/);
+  fx.cleanup();
+});
+
+test('the notify choice survives edits made by verbs that do not know it', () => {
+  const fx = makeFixture('driver-notify-preserve');
+  run(['notify', 'off'], at(fx));
+
+  run(['drive', 'engine'], at(fx));
+  run(['cap', '3'], at(fx));
+  run(['trees', 'engine', 'on'], at(fx));
+
+  assert.equal(readDriverChoices(at(fx)).notify, false);
+  fx.cleanup();
+});
+
+/** The field the driver actually reads — the two artefacts must spell it the same way. */
+test('notify is written as the driver spells it', () => {
+  const fx = makeFixture('driver-notify-shape');
+  run(['notify', 'off'], at(fx));
+
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).notify, false);
   fx.cleanup();
 });

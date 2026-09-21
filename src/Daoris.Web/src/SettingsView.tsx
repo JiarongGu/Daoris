@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import {
-  useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useUnwireRemote, useWireRemote,
+  useDriver, useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useSetNotify,
+  useUnwireRemote, useWireRemote,
 } from './shell';
 import { SessionConsole } from './SessionConsole';
 import {
-  Button, Card, Chip, type Notify, PageHeader, Pill, Prose, SectionTitle, Tip, useErrorNotify,
+  Button, Card, CheckField, Chip, type Notify, PageHeader, Pill, Prose, SectionTitle, Tip,
+  useErrorNotify,
 } from './ui';
 
 /**
@@ -28,6 +30,11 @@ export function SettingsView({ notify }: { notify: Notify }) {
   const wire = useWireRemote();
   const unwire = useUnwireRemote();
   useErrorNotify(wiring.error, notify);
+
+  // Whether this machine interrupts the person (SURF5b) — the same `driver.json` field
+  // `daoris driver notify on|off` edits, which is what makes this a door rather than the door.
+  const driver = useDriver();
+  const setNotify = useSetNotify();
 
   const [workspace, setWorkspace] = useState('');
   const [url, setUrl] = useState('');
@@ -59,6 +66,28 @@ export function SettingsView({ notify }: { notify: Notify }) {
   return (
     <section>
       <PageHeader title={t('settings.title')} description={t('settings.description')} />
+
+      {/* Off in one click, which is what design §4 asks for — and the reason it sits above the
+          wiring is that it is the setting a person is most likely to have come here to change. */}
+      <Card>
+        <SectionTitle>{t('settings.notify.title')}</SectionTitle>
+        <Prose className="mt-1.5">{t('settings.notify.body')}</Prose>
+
+        <div className="mt-3">
+          <CheckField
+            checked={driver.data?.notify ?? true}
+            onChange={(on) => setNotify.mutate({ notify: on }, {
+              onSuccess: () => notify(t(on ? 'settings.notify.on' : 'settings.notify.off')),
+              onError,
+            })}
+            label={t('settings.notify.label')}
+          />
+        </div>
+
+        {/* The other door, named where the switch is. A person who finds this on a machine they
+            reach over ssh should learn it is the same file, not go looking for a second one. */}
+        <p className="mt-2.5 text-small text-ink-faint">{t('settings.notify.terminal')}</p>
+      </Card>
 
       <Card>
         <SectionTitle>{t('settings.wiring.title')}</SectionTitle>

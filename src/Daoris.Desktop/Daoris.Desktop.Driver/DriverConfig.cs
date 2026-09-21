@@ -17,6 +17,12 @@ namespace Daoris.Driver;
 /// Repositories whose sessions open their OWN worktree instead of the registered root (D51). Empty —
 /// the default — is today's behaviour byte for byte: an additive feature, like the profiles (D49 §4).
 /// </param>
+/// <param name="Notify">
+/// Whether this machine interrupts the person when a session parks or ends unasked (SURF5b).
+/// <b>On by default</b>: the whole point of a driver is that nobody has to watch it, and a driver
+/// that ran silently by default would be one whose parked sessions sit until somebody thinks to look.
+/// Off in one click, and machine-local like every other choice in this file.
+/// </param>
 public sealed record DriverConfig(
     IReadOnlyList<string> Drivable,
     IReadOnlyList<string> Holds,
@@ -25,7 +31,8 @@ public sealed record DriverConfig(
     int TimeoutMinutes,
     int PollSeconds,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
-    IReadOnlyList<string> Trees)
+    IReadOnlyList<string> Trees,
+    bool Notify = true)
 {
     /// <summary>Drives nothing, holds nothing — the safe shape silence takes.</summary>
     public static DriverConfig Empty { get; } = new(
@@ -78,6 +85,7 @@ public sealed record DriverConfig(
             writer.WriteEndArray();
             writer.WriteNumber("cap", Cap);
             writer.WriteString("adapter", Adapter);
+            writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
             writer.WriteNumber("pollSeconds", PollSeconds);
             writer.WriteStartObject("commands");
@@ -137,8 +145,15 @@ public sealed record DriverConfig(
             TimeoutMinutes: Math.Max(1, Int(root, "timeoutMinutes") ?? Empty.TimeoutMinutes),
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? Empty.PollSeconds),
             Commands: CommandMap(root),
-            Trees: Strings(root, "trees"));
+            Trees: Strings(root, "trees"),
+            // Absent means ON (SURF5b): every machine that already has a driver.json predates this
+            // field, and reading silence as "off" would ship the feature switched off everywhere it
+            // matters most — a machine that has been driving for a while.
+            Notify: Bool(root, "notify") ?? Empty.Notify);
     }
+
+    /// <summary>Whether this machine says so when a session parks or ends unasked (SURF5b).</summary>
+    public DriverConfig WithNotify(bool notify) => this with { Notify = notify };
 
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> CommandMap(JsonElement root)
     {
@@ -169,6 +184,12 @@ public sealed record DriverConfig(
     private static string? String(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() is { Length: > 0 } text ? text : null
+            : null;
+
+    private static bool? Bool(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value)
+            && value.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? value.GetBoolean()
             : null;
 
     private static int? Int(JsonElement element, string name) =>
