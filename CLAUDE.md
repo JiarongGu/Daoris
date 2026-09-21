@@ -97,30 +97,34 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D53) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D55) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are the closed arc**
   (workspaces; the interactive surface; management parity) — WSP1–4, SES1–3 and CANON6 have all landed.
-- **The current arc is the desktop as a working surface** (owner, 2026-09-20; designed 2026-09-21):
-  code sessions the way a terminal agent CLI holds them, across agents, repositories and concurrent
-  sessions, designed with real UI/UX. The contract is
-  **`docs/2026-09-21-working-surface-design.md`** (research behind it:
-  `docs/2026-09-20-working-surface-research.md`), carried by **D51** — *the tree is the unit of
-  exclusion, and a repository may have more than one*, which keeps "two agents in one tree corrupt it"
-  intact and drops only the incidental cap that a repository has one tree — and **D52**, the surface
-  itself. SURF2 and SURF3 have landed — the lock keys on the tree, and the trees exist. **Anything
-  with a screen in it is built component by component** —
-  `docs/2026-09-21-working-surface-components.md` (D52 as amended): a story before the component, its
-  own test, and **a molecule imports no hook**, which is what makes every state reachable by passing
-  props. **The dsh evaluation has run** (DSH1, 2026-09-21): `docs/2026-09-21-dsh-direction.md` was
-  the plan, **`docs/2026-09-21-dsh-evaluation.md`** is the evidence — eight probes against an installed
-  `dsh` over a scratch repository, on a scripted provider because no key was supplied — and **D53 is
-  the decision, accepted 2026-09-21**: *dsh is adopted as a protocol, not a product*. The adapter seam
-  grows an **ACP door**; dsh and codex arrive as configurations of it; the working surface stays
-  `Daoris.Web` (C and D rejected, D on D1's terms). **ACP1 has landed** (2026-09-21): the seam carries
-  a `Wire`, `AcpSession` speaks JSON-RPC over a spawned process's stdio, a permission request is
-  refused by construction (D52), and the record still moves on the exit code and the quest — the wire
-  flattens an aborted turn to `end_turn`, so it enriches and never decides. **ACP2 is next** and its
-  closing step spends a real login. The probe instruments are tracked under `tools/dsh-probes/`.
+- **The current arc is the desktop as a working surface** (owner, 2026-09-20), and **D55 re-positions
+  it** (owner, 2026-09-21): *the desktop is a **code-gen-driven IDE*** — the organising object is a
+  **session, not a file**, and there is no editor in the plan at any point. Read in this order:
+  **`docs/2026-09-21-working-surface-design.md`** is the contract,
+  **`docs/2026-09-21-ide-reference-study.md`** is what changed it (IDEs rather than session managers;
+  five patterns recur across its references and the platform had none of them), and
+  **`docs/2026-09-21-working-surface-components.md`** is the method — **anything with a screen in it
+  is built component by component**: a story before the component, its own test, and **a molecule
+  imports no hook**, which is what makes every state reachable by passing props. **D51** settles
+  isolation (*the tree is the unit of exclusion, and a repository may have more than one* — "two
+  agents in one tree corrupt it" survives; only the incidental cap does not), **D52** the surface, and
+  **D55** the frame: Manage ⇄ Work are two **frames** of one application rather than a sixth nav item,
+  with a status bar, a growable output panel, a frameless window whose top strip is application chrome
+  (SURF7) and a monitor window (SURF8). **Landed:** SURF2, SURF3, and **SURF4a** — the atoms,
+  `SESSION_TONE`, `sessionTitle`, a sabotage-tested presentational boundary, every story a smoke test.
+  **SURF4b, the rail, is next.**
+- **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
+  `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
+  seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface
+  stays `Daoris.Web`. **ACP1 has landed**: the seam carries a `Wire`, `AcpSession` speaks JSON-RPC
+  over a spawned process's stdio, a permission request is **refused by construction** (D52), and the
+  record still moves on the exit code and the quest — the wire flattens an aborted turn to `end_turn`,
+  so it enriches and never decides. Zed's agent panel speaks the same protocol, which is the reference
+  study's strongest validation of D53. **ACP2 is next** and its closing step spends a real login. The
+  probe instruments are tracked under `tools/dsh-probes/`.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
