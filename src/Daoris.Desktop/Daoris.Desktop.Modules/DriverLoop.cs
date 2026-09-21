@@ -31,6 +31,14 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
     public SessionOutput Output { get; } = new();
 
     /// <summary>
+    /// What sessions consumed (TOOL3/D57 §4) — machine-local by the same rule as the console and the
+    /// profile name it records, and reachable only over this bridge. Its home is the machine's own
+    /// `.daoris`, which is the directory `driver.json` sits in.
+    /// </summary>
+    public SessionUsage Usage { get; } = new(
+        Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!);
+
+    /// <summary>
     /// Conversations, once the loop is up (D49 §3) — null before the host answers, because a chat
     /// needs the service that holds its record. The control surface says so rather than failing
     /// obscurely: "not yet" is a state a person can wait out.
@@ -132,7 +140,7 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.
         var attention = new AttentionWatch();
 
-        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output, Harnesses);
+        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output, Harnesses, Usage);
         await _watch.RunAsync(
             async (report, ticked) =>
             {

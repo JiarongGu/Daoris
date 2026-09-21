@@ -3113,3 +3113,61 @@ pin that is not installed), 195 driver (ten new, including the round trip that w
 deleted pin), 68 modules, 410 web unit (six new), 14 Playwright, 259 service, `npm run verify`,
 `test:web` and `rehearse:family` (173/173) green — and the real window, in both themes, where
 `claude-code` offers the control and the harness that cannot be pinned does not.
+
+## TOOL3 — measurement (2026-09-22)
+
+> **TOOL3 — measurement** (design §4). Parse ACP's `usage_update` structurally instead of rendering
+> it to a line; record per session and aggregate per account. 🔴 **Machine-local, inheriting an
+> existing boundary rather than inventing one.** A pipe-door session records nothing and **says so
+> rather than showing a zero**. No model named, no price claimed.
+
+✅ done 2026-09-22. The owner's "measurement first" is built: what each account has carried, from
+numbers the harness itself reported.
+
+**The source was already arriving and being thrown away.** `Acp.Render` turned `usage_update` into
+`context 1200/200000` and dropped the structure. That line was the whole reason "measurement first"
+was cheap enough to offer, and finding it is what made the ordering honest rather than a delay.
+
+🔴 **The high-water mark, not the last reading.** Context drops when a session compacts, so the final
+number would report a session that nearly filled its window as having used very little — exactly
+backwards for the person deciding whether to split work. Held within a turn by the wire and across
+turns by the store, with the same rule stated in both.
+
+**Absent is not zero, in three places.** An agent that reports nothing leaves `Usage` null; a
+pipe-door session is recorded not at all; a machine that has measured nothing renders no card
+whatsoever. "Nothing was measured" and "it used nothing" are different claims, and only one of them
+is ever true here — SES1's rule about a stated bound, applied to a different number.
+
+🔴 **Machine-local by an inherited rule, which is the point.** Per-account usage names a credential
+profile, and `ToSession` already serves a profile name only over loopback. So usage joined the
+transcript, the tree path and the profile name behind the shell's bridge without a new disclosure
+argument — re-deciding that boundary per field is how a boundary erodes, so it was not re-decided.
+
+**No price, and the test says so.** Daoris does not know what a token costs (D24), so the surface
+counts what the harness reported and stops. A vitest case asserts no currency symbol renders, because
+"we will never add a price table" is the kind of intention that quietly stops being true.
+
+**A bug the wiring exposed.** `CaptureAcpAsync` returns `Task<AcpOutcome?>` and was being assigned to
+a bare `Task` — which compiles and **silently discards the outcome**. It had cost nothing until now
+because nothing downstream read it; the moment measurement needed it, the same line would have
+returned null forever with every test green. Held as its own type now, with the reason beside it.
+
+**A trap worth inheriting, found in a test.** A lambda parameter named `_` is **in scope**, so
+`out _` inside that lambda binds to the parameter rather than to a discard — and the error surfaces
+twenty lines away as a type mismatch on an unrelated call. Renamed, with the reason written down.
+
+**One thing found by looking.** The per-account figure rendered as a bare `169,500` in a column,
+which says nothing on its own. It names its unit now — and the unit is **context**, not tokens,
+because the number is in the harness's own units and calling them tokens would be a claim Daoris
+cannot make.
+
+**What this unblocks, and what it does not.** TOOL4 (rotation) can now be written against observed
+behaviour rather than a guess — which was the whole reason for this ordering. It stays held: nothing
+here yet answers what a harness's exhaustion looks like in its own output, how long a cool-off should
+be, or whether a rotated session stays reproducible.
+
+**Proven.** 205 driver (ten new: three on the wire's parse, seven on the store's bounds, high-water
+rule and unreadable-file reading), 70 modules (two new on the route), 412 web unit (two new), 227
+CLI, 14 Playwright, 259 service, `npm run verify`, `test:web` and `rehearse:family` (173/173) green —
+and the real window in dark, where a seeded machine totals two accounts correctly and a machine with
+none shows no card at all.

@@ -118,6 +118,39 @@ public sealed class DriverModuleTests : Bridge
         Assert.True(on.GetProperty("notify").GetBoolean());
     }
 
+    /// <summary>
+    /// What sessions consumed (TOOL3/D57 §4), over the bridge and nowhere else. A machine that has
+    /// measured nothing answers empty lists — <b>never a zero</b>, because "nothing was measured" and
+    /// "it used nothing" are different claims and only one of them is true.
+    /// </summary>
+    [Fact]
+    public async Task A_machine_that_has_measured_nothing_answers_empty_rather_than_zero()
+    {
+        var usage = await AnswerAsync(Module(), "USAGE");
+
+        Assert.Empty(usage.GetProperty("sessions").EnumerateArray());
+        Assert.Empty(usage.GetProperty("accounts").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Usage_reaches_the_page_per_session_and_per_account()
+    {
+        var store = new SessionUsage(Home);
+        store.Record(new UsageEntry(
+            "s1", "engine", "claude-code", "work", 48_000, 200_000, DateTimeOffset.UtcNow.AddMinutes(-5)));
+        store.Record(new UsageEntry(
+            "s2", "tools", "claude-code", "work", 12_000, 200_000, DateTimeOffset.UtcNow));
+
+        var usage = await AnswerAsync(Module(), "USAGE");
+
+        // Newest first: somebody looking at this is asking about recent work.
+        Assert.Equal("s2", usage.GetProperty("sessions")[0].GetProperty("session").GetString());
+        var account = usage.GetProperty("accounts")[0];
+        Assert.Equal("work", account.GetProperty("profile").GetString());
+        Assert.Equal(60_000, account.GetProperty("used").GetInt64());
+        Assert.Equal(2, account.GetProperty("sessions").GetInt32());
+    }
+
     /// <summary>Every other standing choice survives it — this is an editor, not the file's owner.</summary>
     [Fact]
     public async Task The_notify_switch_leaves_the_rest_of_the_file_standing()

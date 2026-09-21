@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import {
   useDriver, useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useSetNotify,
-  useUnwireRemote, useWireRemote,
+  useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { SessionConsole } from './SessionConsole';
 import {
@@ -206,6 +206,8 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   const roster = useHarnesses();
   const refresh = useRefreshHarnesses();
   const act = useHarnessAction();
+  // What each account has carried (TOOL3). Beside the roster because it is about the same accounts.
+  const usage = useUsage();
   useErrorNotify(roster.error, notify);
 
   // Which action is running, so its console can be shown under the harness that is doing it. One at
@@ -239,6 +241,8 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // settings page must not go blank because one card asked a question the host cannot answer.
   const answered = roster.data;
   const harnesses = Array.isArray(answered?.harnesses) ? answered.harnesses : null;
+  // Same defensiveness, and the same reason: an older shell has never heard of this question.
+  const accounts = Array.isArray(usage.data?.accounts) ? usage.data.accounts : [];
   if (!answered || !harnesses) return null;
 
   return (
@@ -367,6 +371,41 @@ function HarnessRoster({ notify }: { notify: Notify }) {
           {running?.startsWith(`${harness.harness}:`) && <SessionConsole id={running} />}
         </div>
       ))}
+
+      {/* What each account has carried (TOOL3/D57 §4) — the question "multiple accounts with usage
+          management" actually asks. Derived from the sessions, so the two can never disagree, and
+          absent entirely on a machine that has measured nothing rather than a row of zeroes. */}
+      {accounts.length > 0 && (
+        <div className="mt-4 border-t border-line pt-3.5">
+          <SectionTitle>{t('usage.title')}</SectionTitle>
+          <Prose className="mt-1.5">{t('usage.body')}</Prose>
+          <ul className="m-0 mt-2 list-none p-0">
+            {accounts.map((account) => (
+              <li
+                key={`${account.harness}:${account.profile ?? ''}`}
+                className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0"
+              >
+                <span className="font-mono text-small">{account.harness}</span>
+                <Chip accent={Boolean(account.profile)}>
+                  {account.profile ?? t('usage.ownHome')}
+                </Chip>
+                <span className="text-small text-ink-soft">
+                  {t('usage.sessions', { count: account.sessions })}
+                </span>
+                {/* The unit is named, and it is "context" rather than "tokens": the number is in
+                    the harness's own units, and calling them tokens would be a claim Daoris cannot
+                    make. A bare figure in a column is unreadable without it (measured by looking). */}
+                <Tip content={t('usage.contextTip')}>
+                  <span className="ml-auto font-mono text-small text-ink-faint">
+                    {t('usage.context', { used: account.used.toLocaleString() })}
+                  </span>
+                </Tip>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
+        </div>
+      )}
 
       <p className="mt-4 text-small text-ink-soft">{t('harness.secrets')}</p>
       <Button className="mt-3" disabled={refresh.isPending} onClick={() => refresh.mutate()}>

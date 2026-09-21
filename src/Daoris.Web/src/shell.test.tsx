@@ -451,6 +451,45 @@ describe('the harness roster', () => {
   });
 
   /**
+   * What each account has carried (TOOL3/D57 §4). Absent entirely on a machine that has measured
+   * nothing — a row of zeroes would claim sessions used nothing, when what is true is that nothing
+   * was measured.
+   */
+  it('says nothing about usage on a machine that has measured none', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    await screen.findByText('claude 9.9.9');
+    expect(screen.queryByText('What each account has carried')).toBeNull();
+  });
+
+  it('totals what each account carried, and names the one with no profile', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'USAGE') {
+        return {
+          sessions: [],
+          accounts: [
+            { harness: 'claude-code', profile: 'work', sessions: 2, used: 60000 },
+            { harness: 'claude-code', profile: null, sessions: 1, used: 9000 },
+          ],
+        };
+      }
+      return WIRING;
+    });
+
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('What each account has carried')).toBeTruthy();
+    // The unit is named beside the figure: a bare number in a column says nothing, and "context"
+    // is the honest word — calling them tokens would be a claim Daoris cannot make.
+    expect(screen.getByText('60,000 context')).toBeTruthy();
+    // A session on the harness's own configuration home is still somebody's usage.
+    expect(screen.getByText('its own home')).toBeTruthy();
+    // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
+    expect(screen.queryByText(/[$£€]/)).toBeNull();
+  });
+
+  /**
    * The managed toolchain (TOOL2/D57), desktop half. **Absent means PATH**, and the surface says so
    * rather than leaving a blank — "Daoris manages this" and "the machine happens to have one" are
    * different facts about the same working session.

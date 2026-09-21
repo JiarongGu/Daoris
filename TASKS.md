@@ -381,13 +381,13 @@ still means `PATH`, byte for byte**. A pin nobody installed **refuses** rather t
 because running a different tool than the one that was pinned and recording the pinned version beside
 it is worse than not supporting pins.
 
-- [ ] **TOOL3 — measurement** (design §4). Parse ACP's `usage_update` structurally instead of
-  rendering it to a line; record per session (context used against the window, at high-water) and
-  aggregate per account. 🔴 **Machine-local, inheriting an existing boundary rather than inventing
-  one**: per-account usage names a profile, and a profile name is already served only over loopback —
-  so `~/.daoris/usage/`, over the shell's bridge, with no HTTP route. A pipe-door session records
-  nothing and **says so rather than showing a zero** (SES1's rule, on a different number). No model
-  named, no price claimed (D24).
+**TOOL3 landed 2026-09-22** (in the archive): ACP's `usage_update` is parsed structurally instead of
+rendered away, recorded per session at its **high-water mark** (context drops when a session
+compacts, so the last reading would report a nearly-full window as nearly empty) and totalled per
+account. 🔴 **Absent is never zero** — an agent that reports nothing, a pipe-door session, and a
+machine that has measured nothing are three different absences and none of them renders a 0. Machine-
+local by the profile's own rule, no price claimed, and a test asserts no currency symbol renders.
+**TOOL4 can now be written against observed behaviour**, which was the point of the ordering.
 
 - [ ] **TOOL4 — rotation.** ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
   questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off

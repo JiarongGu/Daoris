@@ -383,6 +383,48 @@ export type HarnessRoster = {
   harnesses: HarnessReport[];
 };
 
+/**
+ * What sessions on this machine consumed (TOOL3/D57 §4) — measured before it is managed.
+ *
+ * @remarks
+ * 🔴 **Machine-local, by an inherited rule.** Per-account usage names a credential profile, and a
+ * profile name is already served only over loopback — so this rides the bridge like the console and
+ * the diff, and has no HTTP route at all.
+ *
+ * **The source is the protocol door.** ACP reports context pressure per turn; the pipe door gives
+ * text. So a pipe-door session appears here not at all, and a surface says *not measured* rather
+ * than showing a zero.
+ *
+ * **No price is claimed.** Daoris does not know what a token costs (D24); these are counts somebody
+ * else's tool volunteered.
+ */
+export type UsedSession = {
+  session: string;
+  repository: string;
+  harness: string;
+  /** The account it ran as, or null for the harness's own configuration home. */
+  profile: string | null;
+  /** Context held at its high-water mark, and the window it was held against. */
+  used: number;
+  size: number;
+  when: string;
+};
+export type UsedAccount = {
+  harness: string;
+  profile: string | null;
+  sessions: number;
+  used: number;
+};
+
+export const useUsage = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.usage,
+    queryFn: () => call<{ sessions: UsedSession[]; accounts: UsedAccount[] }>('USAGE'),
+    enabled: isAvailable,
+  });
+};
+
 export const useHarnesses = () => {
   const { isAvailable } = useShenora();
   return useQuery({

@@ -14,7 +14,28 @@ namespace Daoris.Driver;
 /// self-report that cannot be told apart from an ordinary ending. What this carries ENRICHES the
 /// console and the transcript; it never replaces an observation.
 /// </remarks>
-public sealed record AcpOutcome(string StopReason, string SessionId, int Updates);
+/// <summary>
+/// What a session consumed, as its harness reported it (TOOL3/D57 §4).
+/// </summary>
+/// <param name="Used">Context the session was holding, in the harness's own units.</param>
+/// <param name="Size">The window it was holding it against.</param>
+/// <remarks>
+/// <para><b>Reported, never computed.</b> Daoris makes no model calls and knows nothing about
+/// tokenization — this is a number somebody else's tool volunteered, carried as it was given. No
+/// price is attached to it either: what a token costs is the deployment's business (D24), and a
+/// price table per model per provider maintained here would be wrong within a month.</para>
+///
+/// <para><b>The high-water mark, not the last reading.</b> Context drops when a session compacts, so
+/// the final number would say a session that nearly filled its window used very little.</para>
+/// </remarks>
+public sealed record AcpUsage(long Used, long Size);
+
+/// <param name="Usage">
+/// The context pressure the agent reported, or <b>null when it reported none</b> — absent, never
+/// zero. "Nothing was measured" and "it used nothing" are different claims (TOOL3).
+/// </param>
+public sealed record AcpOutcome(
+    string StopReason, string SessionId, int Updates, AcpUsage? Usage = null);
 
 /// <summary>
 /// One session held over the Agent Client Protocol (D53): JSON-RPC 2.0 in newline-delimited frames,
@@ -51,6 +72,10 @@ public sealed class AcpSession(
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private int _nextId;
     private int _updates;
+
+    /// <summary>The largest context reading seen (TOOL3), and the lock that guards it.</summary>
+    private readonly object _measured = new();
+    private AcpUsage? _usage;
     private string? _sessionId;
 
     /// <summary>
@@ -125,7 +150,7 @@ public sealed class AcpSession(
                 // Best-effort by construction: the turn is over either way.
             }
 
-            return new AcpOutcome(stopReason, _sessionId!, _updates);
+            lock (_measured) return new AcpOutcome(stopReason, _sessionId!, _updates, _usage);
         }
         finally
         {
@@ -203,6 +228,7 @@ public sealed class AcpSession(
             && p.TryGetProperty("update", out var update))
         {
             Interlocked.Increment(ref _updates);
+            Measure(update);
             if (Render(update) is { } rendered) onLine(rendered);
         }
     }
@@ -298,6 +324,41 @@ public sealed class AcpSession(
     /// belongs to somebody else and it grows; a console that silently omitted the one update type it
     /// did not recognise would be a transcript with a hole in it that nothing reports.
     /// </remarks>
+    /// <summary>
+    /// Keep the largest context reading this session reported (TOOL3/D57 §4).
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>The high-water mark, not the last reading.</b> Context drops when a session
+    /// compacts, so the final number would report a session that nearly filled its window as having
+    /// used very little — which is exactly backwards for the person deciding whether to split work.</para>
+    ///
+    /// <para><b>A frame that is not a measurement is ignored, never believed.</b> Somebody else's
+    /// protocol version is free to change its shape, and a malformed update must become an absence
+    /// rather than a zero on a person's screen — nor may it take the turn down.</para>
+    /// </remarks>
+    private void Measure(JsonElement update)
+    {
+        if (!update.TryGetProperty("sessionUpdate", out var kind)
+            || kind.GetString() != "usage_update"
+            || Number(update, "used") is not { } used
+            || Number(update, "size") is not { } size)
+        {
+            return;
+        }
+
+        lock (_measured)
+        {
+            if (_usage is null || used > _usage.Used) _usage = new AcpUsage(used, size);
+        }
+    }
+
+    private static long? Number(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value)
+            && value.ValueKind == JsonValueKind.Number
+            && value.TryGetInt64(out var number)
+            ? number
+            : null;
+
     internal static string? Render(JsonElement update)
     {
         var kind = update.TryGetProperty("sessionUpdate", out var k) ? k.GetString() : null;

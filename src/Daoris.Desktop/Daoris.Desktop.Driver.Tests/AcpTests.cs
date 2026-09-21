@@ -322,4 +322,99 @@ public sealed class AcpTests
 
         Assert.Contains("ACP", error.Message);
     }
+
+    /// <summary>
+    /// 🔴 <b>The measurement source</b> (TOOL3/D57 §4). ACP reports context pressure per turn, and
+    /// until now it was rendered into a transcript line and structurally discarded. It is the ONLY
+    /// structured usage any door delivers, which is why measurement is an argument for the protocol
+    /// door rather than a reason to parse the pipe door's text.
+    /// </summary>
+    [Fact]
+    public async Task Context_pressure_is_read_as_a_number_rather_than_rendered_and_lost()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            if (method != "session/prompt")
+            {
+                return frame.TryGetProperty("id", out _)
+                    ? Ok(frame, method == "session/new" ? """{"sessionId":"s-1"}""" : "{}")
+                    : null;
+            }
+
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":1200,"size":200000}}}""");
+            // The high-water mark is what a person wants, so a later, larger reading wins…
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":48000,"size":200000}}}""");
+            // …and a later, SMALLER one does not: a compaction drops the number, and reporting the
+            // last reading would say a session that nearly filled its window used very little.
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":900,"size":200000}}}""");
+            return Ok(frame, """{"stopReason":"end_turn"}""");
+        });
+
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "measure me", CancellationToken.None);
+
+        Assert.Equal(48000, outcome.Usage?.Used);
+        Assert.Equal(200000, outcome.Usage?.Size);
+    }
+
+    /// <summary>
+    /// An agent that reports nothing leaves usage <b>absent</b>, never zero. "Nothing was measured"
+    /// and "it used nothing" are different claims, and only one of them is true here (SES1's rule
+    /// about a bound, applied to a different number).
+    /// </summary>
+    [Fact]
+    public async Task An_agent_that_reports_no_usage_leaves_it_absent_rather_than_zero()
+    {
+        // Named rather than `_`: a lambda parameter called `_` is in scope, so `out _` binds to IT
+        // rather than to a discard — which reads as a type error twenty lines away.
+        var agent = new FakeAgent((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return frame.TryGetProperty("id", out _)
+                ? Ok(frame, method switch
+                {
+                    "session/new" => """{"sessionId":"s-1"}""",
+                    "session/prompt" => """{"stopReason":"end_turn"}""",
+                    _ => "{}",
+                })
+                : null;
+        });
+
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "say nothing about usage", CancellationToken.None);
+
+        Assert.Null(outcome.Usage);
+    }
+
+    /// <summary>
+    /// A usage update whose numbers are missing or the wrong shape is not a measurement. Somebody
+    /// else's protocol version is free to change, and a malformed frame must not become a zero on a
+    /// person's screen — nor take the turn down.
+    /// </summary>
+    [Fact]
+    public async Task A_usage_update_that_is_not_a_measurement_is_ignored_rather_than_believed()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            if (method != "session/prompt")
+            {
+                return frame.TryGetProperty("id", out _)
+                    ? Ok(frame, method == "session/new" ? """{"sessionId":"s-1"}""" : "{}")
+                    : null;
+            }
+
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update"}}}""");
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":"lots","size":null}}}""");
+            return Ok(frame, """{"stopReason":"end_turn"}""");
+        });
+
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "report nonsense", CancellationToken.None);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Null(outcome.Usage);
+    }
 }

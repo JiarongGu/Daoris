@@ -142,14 +142,14 @@ risk, **authorship** was.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - **The current direction is the toolchain** (owner, 2026-09-22 → **D57**,
-  `docs/2026-09-22-toolchain-design.md`): Daoris owns where a harness's binary lives and which
-  version runs (**absent means `PATH`** — additive, so a machine that installed `claude` itself keeps
-  working), **usage is measured before it is managed** (ACP's `usage_update`, machine-local because
-  it names a profile), and breadth is **more native adapters plus the ACP door, never a registry**.
-  Nothing was reopened: measurement needs no credential and native adapters need no catalogue, so
-  D49 §4 and D24 both stand. **TOOL2 landed** — `daoris harness pin|unpin`, a fourth twin rule
-  (*explicit command → managed pin → `PATH`*), and a pin nobody installed **refuses**. TOOL3–TOOL5
-  in `TASKS.md`; TOOL4 is held.
+  `docs/2026-09-22-toolchain-design.md`): Daoris owns which binary runs, **usage is measured before
+  it is managed**, and breadth is **more native adapters plus the ACP door, never a registry**.
+  Nothing was reopened — measurement needs no credential and native adapters need no catalogue, so
+  D49 §4 and D24 both stand. **TOOL2**: `daoris harness pin|unpin`, a fourth twin rule (*explicit
+  command → managed pin → `PATH`*), and a pin nobody installed **refuses**. **TOOL3**: ACP's
+  `usage_update` parsed rather than rendered away, per session at its **high-water mark** and
+  totalled per account, machine-local by the profile's own rule. 🔴 **Absent is never zero**, and no
+  price is claimed. TOOL4 is held.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

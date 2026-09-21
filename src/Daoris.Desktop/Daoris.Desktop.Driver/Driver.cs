@@ -62,7 +62,10 @@ public sealed record TickReport(
 public sealed class Driver(
     ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
     SessionProcesses? processes = null, RemoteSyncSet? sync = null, SessionOutput? output = null,
-    HarnessRoster? harnesses = null)
+    HarnessRoster? harnesses = null,
+    // What sessions consumed (TOOL3). Null where nobody is keeping the record — the family
+    // rehearsal's headless driver, and every test that does not care.
+    SessionUsage? usage = null)
 {
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.
@@ -256,14 +259,26 @@ public sealed class Driver(
             // the same process; the pipe door reads its text. Both end the same way — the record is
             // concluded below from the exit code and the quest's state, never from what the session
             // said about itself (D46 §4).
-            Task capture = adapter.Wire == SessionWire.Acp
+            // 🔴 The ACP task is held AS ITS OWN TYPE. Assigning it to a bare `Task` compiles and
+            // silently discards the outcome — which is where the usage measurement lives (TOOL3).
+            var acp = adapter.Wire == SessionWire.Acp
                 ? CaptureAcpAsync(process, transcript, sessionId, workTree, TargetPrompt.Compose(target), ct)
-                : CaptureAsync(process, transcript, sessionId, ct);
+                : null;
+            Task capture = acp ?? CaptureAsync(process, transcript, sessionId, ct);
 
             await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
 
             var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
             await capture.ConfigureAwait(false);
+
+            // What it consumed, where the door reported it (TOOL3/D57 §4). The pipe door reports
+            // nothing and records nothing — a surface then says "not measured" rather than zero.
+            if (acp is not null && (await acp.ConfigureAwait(false))?.Usage is { } used)
+            {
+                usage?.Record(new UsageEntry(
+                    sessionId, quest.To, adapter.Name, selection.Profile,
+                    used.Used, used.Size, DateTimeOffset.UtcNow));
+            }
 
             // The person's stop outranks the observation: a killed session leaves the same signals as
             // a crashed one, and only this flag knows whose decision the end was.

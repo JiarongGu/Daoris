@@ -18,7 +18,10 @@ public sealed class DriverWatch(
     SessionOutput? output = null,
     // The harness cache (D49 §4), shared across ticks for the same reason the process registry is:
     // a probe spawns a process, and re-detecting every harness every tick would be absurd.
-    HarnessRoster? harnesses = null)
+    HarnessRoster? harnesses = null,
+    // What sessions consumed (TOOL3). Null in the headless host for the same reason the console
+    // buffer is: a record nobody reads is a file written for an audience that does not exist.
+    SessionUsage? usage = null)
 {
     private CancellationTokenSource _pause = new();
 
@@ -56,7 +59,7 @@ public sealed class DriverWatch(
             try
             {
                 var report = await new Driver(
-                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses)
+                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage)
                     .TickAsync(ct).ConfigureAwait(false);
                 await onReport(report, config).ConfigureAwait(false);
             }

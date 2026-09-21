@@ -23,6 +23,8 @@ export const keys = {
   remotes: ['remotes'] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */
   harnesses: ['harnesses'] as const,
+  /** What sessions consumed — shell-only, because per-account usage names a profile (TOOL3). */
+  usage: ['usage'] as const,
   /** One session's landed work, read off the checkout — shell-only for the console's reason (SURF6). */
   diff: (session: string) => ['diff', session] as const,
   entry: (id: string) => ['entry', id] as const,

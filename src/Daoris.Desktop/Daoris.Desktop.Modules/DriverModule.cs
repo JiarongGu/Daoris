@@ -298,6 +298,41 @@ public sealed class DriverModule : ModuleBase
                 return new { Harness = harness, Action = action, ExitCode = code };
             }
 
+            // What sessions consumed (TOOL3/D57 §4) — measured before it is managed.
+            //
+            // 🔴 Over this bridge and nowhere else. Per-account usage names a credential profile, and
+            // a profile name is already served only over loopback (`ToSession`), so this inherits
+            // that boundary rather than arguing for its own. There is no HTTP route onto it.
+            case "USAGE":
+            {
+                await Task.CompletedTask;
+                var sessions = _loop.Usage.Sessions;
+                return new
+                {
+                    // Newest first: a person looking at this is asking about recent work.
+                    Sessions = sessions
+                        .OrderByDescending(entry => entry.When)
+                        .Select(entry => new
+                        {
+                            entry.Session,
+                            entry.Repository,
+                            entry.Harness,
+                            entry.Profile,
+                            entry.Used,
+                            entry.Size,
+                            entry.When,
+                        })
+                        .ToArray(),
+                    Accounts = _loop.Usage.ByAccount().Select(account => new
+                    {
+                        account.Harness,
+                        account.Profile,
+                        account.Sessions,
+                        account.Used,
+                    }).ToArray(),
+                };
+            }
+
             // "Look now": a person who just published a quest should not watch a poll countdown.
             case "NUDGE":
                 _loop.Nudge();
