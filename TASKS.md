@@ -143,9 +143,11 @@ order under D53 is **ACP1 → ACP2 → ACP3** (below), and the docs strand produ
 
 Smaller and independent of them: **ARCH1** (the owner's mid-session direction of 2026-09-21 — dsh's
 domain separation and plugin design as the example for Daoris's own structure; a study, read as
-*pattern* not runtime until the owner says otherwise), **DOCS2** (the docs strand's take-aways as
-gates), and **CANON7** (a decision to bring the owner rather than work to do — it takes minutes, and
-**CANON5 is parked behind it**). **WSP5 landed 2026-09-21** — the workspace switcher is global chrome,
+*pattern* not runtime until the owner says otherwise), **DEVKIT3** (the devkit is not run over its own
+repository — found by DOCS2), and **CANON7** (a decision to bring the owner rather than work to do —
+it takes minutes, and **CANON5 is parked behind it**). **DOCS2 landed 2026-09-21** — the doc-budget
+manifest, the rejected-alternatives assertion, and the prose pass in `post-feature`; in the archive.
+**WSP5 landed 2026-09-21** — the workspace switcher is global chrome,
 absent while the family is one circle, and every cross-repository query carries the scope; in the
 archive. **HARNESS2** now waits on D53 (it becomes ACP3's codex configuration if confirmed). Four
 **held** items sit below those; do not pick one up until its trigger has arrived. Nothing is pushed or
@@ -201,8 +203,8 @@ published, and a release is still blocked on REH1.
   (SES2), `49da224` (SES3, with `aa24ea7` closing its outer loops) and `2487ec8` (CANON6), then the
   review: `6f45276` (the gate list) and `beaab13` (the shell's head). All
   gate-green; `git log` is the reviewable record.
-- **What the arc left behind is now backlog items, not prose** — CANON7 and HARNESS2 (WSP5 landed
-  2026-09-21 and is in the archive; DOCS2 and ARCH1 joined them the same day). They
+- **What the arc left behind is now backlog items, not prose** — CANON7 and HARNESS2 (WSP5 and DOCS2
+  both landed 2026-09-21 and are in the archive; ARCH1 and DEVKIT3 joined the list the same day). They
   were carried as handover sentences for a while, which is how work quietly stops being work; the
   backlog is where something is still to do.
 - **Every capability has TWO doors, and anything new inherits both.** The desktop's IPC and
@@ -242,7 +244,8 @@ published, and a release is still blocked on REH1.
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (CLI 209 + `check` + version agreement),
+- **Verify before claiming done, always:** `npm run verify` (CLI 210 + `check` + doc budgets + version
+  agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
   (141), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (166/166), `npm run test:web` (65 + 10). If a `bin`-driven gate is red
@@ -373,16 +376,17 @@ runtime (its surfaces are built natively against claude/codex through the adapte
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
-- [ ] **DOCS2 — what the docs strand takes from dsh** (`docs/2026-09-21-dsh-evaluation.md` §3;
-  independent of D53). A doc-budget manifest with ceilings for this repository's always-read prose
-  (`CLAUDE.md` first, then the backlog's handover and the design contracts) as a declared gate with the
-  *relocate → condense → raise* discipline — D28's principle extended from the canon to the
-  repository's own standing orders; a markdown link check beside it; the "Rejected" line asserted on
-  every new decision entry; and dsh's slop checklist folded into `post-feature` as a documentation
-  pass. A new gate is added to **both** lists (`daoris.gates.json` and the release workflow) — the CLI
-  test that asserts they agree will say so. Nothing ported, so no notice owed.
-
-- [ ] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own structure**
+- [ ] **DEVKIT3 — the devkit is not run over its own repository, and its scan has six findings
+  waiting.** Found by DOCS2 while looking for somewhere to put a gate
+  (`docs/2026-09-21-dsh-evaluation.md` §3a). The release workflow runs the devkit's *test suite* and
+  then each declared gate by name; nothing runs `daoris-devkit verify` here, there is no `.githooks/`,
+  and so the universal gates this repository configures in `daoris.gates.json` — sensitive, version,
+  docs, links, doctrine — are configuration nothing reads. Run by hand it exits 1 on **six sensitive
+  findings, all in test fixtures**: Unix home paths and private-range addresses, the same shape as the
+  one object already acknowledged by sha. The work is to read and judge each — acknowledge it by sha
+  or neutralise the fixture, never a path ignore (the devkit's own asymmetry argument) — then wire
+  `daoris-devkit verify` into the gate list and the release workflow **as one row in both**, and
+  correct the devkit README's "it runs this repository's own gates", which today it does not.- [ ] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own structure**
   (owner, 2026-09-21, mid-session: *"the dsh is really a good example to take for design/develop and
   its domain separation and its plugin design also helps we develop our structure too"*). A design
   study, one session, in the shape DOCS1 took: read dsh's `packages/<group>/<pkg>` cut (the groups are

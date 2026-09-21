@@ -61,7 +61,7 @@ were clean and everything wrong was recent.
 ### How a check passes without checking
 
 Watching a check fail is the discipline. The trap is that **the sabotage can fail silently too**, and
-then a green run is read as proof. These four shapes account for most of it, and each has been hit for
+then a green run is read as proof. These five shapes account for most of it, and each has been hit for
 real:
 
 - **The sabotage did not apply.** A scripted edit whose pattern no longer matched changed nothing, the
@@ -77,6 +77,12 @@ real:
 - **The runner quietly saw fewer inputs.** A file-matching pattern behaved differently on one platform
   and dropped a test file; the suite stayed green and the count fell by one. Watch the *count*, not just
   the colour — a suite that shrinks is a suite that stopped asking something.
+- **Nothing runs the check.** A configuration file declared gates that no build step, hook or workflow
+  ever invoked, so the declaration read as coverage for months while nothing executed it — and when it
+  was finally run by hand it failed immediately. A check is only worth what invokes it, so before
+  believing a new one, follow the path from the command people actually run to the code you just wrote.
+  **Where you put a check matters as much as what it asserts**; a correct check in a tool nobody calls
+  is indistinguishable from no check at all, and it is worse, because the declaration looks like one.
 
 The common thread: **every one of them was green first.** Treat a green that arrives faster or more
 easily than expected as a question rather than an answer.

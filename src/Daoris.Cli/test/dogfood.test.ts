@@ -151,6 +151,45 @@ test('every declared gate is actually run by the release workflow', () => {
   }
 });
 
+/**
+ * A decision recorded without what it beat invites re-litigation — which is the failure the decisions
+ * record exists to prevent, so a decision that names no alternative has not finished being made.
+ *
+ * Adopted from deepseek-harness, where every active note carries a mandatory `## Alternatives
+ * considered` (`docs/2026-09-21-dsh-evaluation.md` §3): two ecosystems keeping the same record for the
+ * same reason, which is the D17 bar. Their rule comes with the discipline that makes it honest —
+ * **alternatives are recorded, never invented** — and so does this one: the 41 entries written before
+ * it are grandfathered rather than backfilled, because writing a plausible rejected alternative into
+ * a decision nobody actually weighed would make the record worse while making the gate green.
+ *
+ * The line is the number, because the numbers only increase: every entry from D51 — the working-surface
+ * arc onward — must say what it turned down. `Rejected` in any of its shapes, or a `Why not X?`
+ * heading; both are already the house style, which is the evidence that the rule is describing
+ * practice rather than imposing it.
+ */
+test('every decision entry from D51 on says what it rejected', () => {
+  const text = readText(join(repoRoot, 'docs', 'DECISIONS.md'));
+  const GRANDFATHERED_THROUGH = 50;
+  // Split rather than a lazy match with a terminating lookahead: the obvious regex for "this heading
+  // to the next" needs an end-of-input anchor, JavaScript has none (`\Z` is a literal Z), and the
+  // version written that way silently dropped the NEWEST entry — the one the rule most exists for.
+  // The guard below caught it; without the guard it would have been a green test checking nothing.
+  const entries = text.split(/^## (?=D\d)/m).slice(1)
+    .map((section) => ({ number: Number(/^D(\d+)/.exec(section)?.[1]), body: section }))
+    .filter((entry) => entry.number > GRANDFATHERED_THROUGH);
+
+  // Without this the test passes loudest exactly when the pattern stops matching headings at all.
+  assert.ok(entries.length >= 3, `the walk found ${entries.length} entries after D${GRANDFATHERED_THROUGH}, so it proved nothing`);
+
+  for (const entry of entries) {
+    assert.match(
+      entry.body,
+      /Rejected\b|Why not\b/i,
+      `D${entry.number} names no rejected alternative. A decision recorded without what it beat gets `
+      + 're-litigated — say what was turned down and why, in the entry itself.');
+  }
+});
+
 test('daoris holds its own doctrine and checks clean', () => {
   assert.equal(existsSync(join(repoRoot, 'daoris.json')), true, 'run: node bin/daoris.mjs init');
   const lock = readLock(repoRoot);

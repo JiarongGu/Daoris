@@ -1637,6 +1637,8 @@ ACP agent in the family rehearsal with no model — D46 §8's shape), **ACP2** (
 adapter pinned exact as a managed toolchain entry, the executable and config-dir seams, the permission
 answerer, and the real driven run), **ACP3** (dsh and codex as configurations — HARNESS2 closes into it).
 SURF4a–d resume on `Daoris.Web` as designed once the owner confirms, with SURF4c's timeline reading the
-protocol. DOCS1's strand produced one item, **DOCS2**: dsh's doc-budget manifest and link check as
-devkit gates, the "Rejected" line asserted on new decision entries, and its slop checklist folded into
-`post-feature`.
+protocol. DOCS1's strand produced one item, **DOCS2** — built 2026-09-21, and it corrected two claims
+this entry made from dsh's list rather than from Daoris's own code: the **link check already existed**
+as a devkit gate with eight tests, and the doc budget landed in `tools/` rather than the devkit,
+because nothing runs the devkit binary over this repository and a gate that does not run is worth
+nothing.

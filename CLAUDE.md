@@ -172,8 +172,10 @@ directory, and D11 makes shipping the canon *inside* the package load-bearing.
 Run every command from the **workspace root**, not from a package directory.
 
 - **`npm run verify`** — the "am I done?" gate: every CLI test, `daoris check` against Daoris's own
-  doctrine, then `release-prep --check` (every shipped version reference agrees, example pins
-  included). Run before claiming a change is complete.
+  doctrine, `doc-budgets` (word ceilings for the prose a session reads whole — D28's discipline applied
+  to this repository's own standing orders; the append-only records deliberately have none), then
+  `release-prep --check` (every shipped version reference agrees, example pins included). Run before
+  claiming a change is complete.
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the

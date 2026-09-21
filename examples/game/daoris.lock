@@ -15,7 +15,7 @@
       "source": "core/knowledge/claims-need-checks.md",
       "target": "knowledge/claims-need-checks.md",
       "canonVersion": "0.0.1",
-      "sha256": "1672192d710d6b5f47303486f631145318d8cc6fbf1939f6ea96dbd1a6551682"
+      "sha256": "5050aba0889575558a4b234d4b1bc6dca169fcd75e3d3904c76deb5b2f567fec"
     },
     {
       "pack": "core",
@@ -127,7 +127,7 @@
       "source": "core/skills/post-feature/SKILL.md",
       "target": "skills/post-feature/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "708130ef9a9eb41c85c2fc06640517e5164976a18b41f1431105923e14db0e80"
+      "sha256": "01448f36ee483076aacd064d063e8b45174726cf39ae3d3d8f087375c4c764b5"
     }
   ]
 }

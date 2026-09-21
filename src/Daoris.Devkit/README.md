@@ -1,7 +1,14 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built.** One self-contained 2.7 MB binary, 57 tests, and it runs this repository's own gates.
-The two questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
+**Status: built.** One self-contained 2.7 MB binary and 57 tests. The two questions this document was
+written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
+
+**Not yet run over this repository, and that is worth knowing before trusting the declaration below.**
+Daoris declares its gates in `daoris.gates.json` and the binary runs them on demand, but no workflow
+step, hook or npm script invokes `daoris-devkit verify` here — so the universal gates configured in
+that file are, today, configuration nothing reads. Run by hand it exits 1 on six sensitive findings,
+all in test fixtures, each needing its own judgement. **DEVKIT3** in `TASKS.md` carries the work of
+adjudicating them and wiring the binary in.
 
 ## The problem, measured
 

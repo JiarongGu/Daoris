@@ -1956,6 +1956,61 @@ compile-checked doc fences (few fences here yet — the shape is noted for the d
 pastes a declaration), one-line paragraphs (Daoris hard-wraps on purpose), and bilingual doctrine (the
 platform already holds the rule where it matters). No code ported, so no notice owed.
 
+## DOCS2 — what the docs strand takes from dsh (2026-09-21)
+
+> A doc-budget manifest with ceilings for this repository's always-read prose as a declared gate with
+> the *relocate → condense → raise* discipline — D28's principle extended from the canon to the
+> repository's own standing orders; a markdown link check beside it; the "Rejected" line asserted on
+> every new decision entry; and dsh's slop checklist folded into `post-feature` as a documentation
+> pass. Nothing ported, so no notice owed.
+
+✅ done 2026-09-21 — three of the four landed, the fourth was struck on contact with the code, and the
+search for somewhere to put a gate turned up a finding that became its own item. CLI 209 → 210.
+
+**The link check was already built.** `LinksGate.cs`, eight tests, relative targets only because no
+gate may touch the network. The evaluation note had proposed building one, because that half of the
+study was written from dsh's inventory rather than from Daoris's own source — `claims-need-checks`
+catching its author. The note's §3 row now carries the correction rather than the proposal.
+
+**The budget gate went to `tools/`, not the devkit, and the reason is the finding.** Nothing runs the
+devkit *binary* over this repository: the workflow runs its test suite and then each declared gate by
+name, and there is no `.githooks/`. So the universal gates this repository configures in
+`daoris.gates.json` are configuration nothing reads, and a budget gate added there would have been an
+unchecked claim. Run by hand the devkit exits 1 on six sensitive findings, all in test fixtures, each
+needing its own judgement — **DEVKIT3** now carries that. The mechanism is universal and the ceilings
+are not, so the graduation rule is stated where it will be read: the day a second repository wants
+one, it moves into the devkit as a declared option, which is CANON2's two-repository bar applied to
+tooling.
+
+**What the budget is, and what it refuses to cover.** Five documents, the ones a session reads
+*whole*: the standing orders, the backlog, the consuming story, the forward sequence, the contract.
+The append-only records — the decision log, this archive, the fix log, both changelogs — deliberately
+have none, because they are read by lookup, they grow by design, and a ceiling on one is a rule that
+eventually says to delete history. That distinction is most of the tool's content; the counting is
+fifty lines. Ceilings are set with headroom over today, and the run reports the *tightest* document
+rather than a total, because "which one is about to go red" is the only question the report can
+usefully answer. Watched failing in both shapes: a document over its ceiling, and a ceiling naming a
+document that moved — the second because a stale ceiling silently stops applying and looks exactly
+like a document comfortably under budget.
+
+**The rejected-alternatives assertion binds new entries only, and that is the honest version.** 41 of
+53 entries carry no such line. Backfilling them would mean inventing alternatives nobody weighed —
+dsh's own rule is *alternatives are recorded, never invented*, and it grandfathers its pre-rule notes
+for exactly this reason. So the line is the number: every entry from D51 on, which is where the
+practice already is. **The guard caught a bug in the test before the test caught anything**: the
+obvious regex for "this heading to the next" needs an end-of-input anchor, JavaScript has none —
+`\Z` is a literal `Z` — and the first version silently dropped the *newest* entry, the one the rule
+most exists for. The `found N, so it proved nothing` assertion is what turned that from a green test
+into a red one, which is the fourth shape in `claims-need-checks` catching itself in the act.
+
+**The prose pass is a skill, which is why it was free.** Nine shapes from dsh's slop checklist,
+rewritten project-agnostic for a canon skill: the same rule in two places, history outside the record
+that holds it, status annotations that rot, a hand-restated catalogue, the path taken to the answer
+rather than the answer, rationale repeated beside each sibling, the paragraph carrying four rules,
+emphasis everywhere, intent where the record should state fact. A skill's body costs nothing unasked —
+only its `description` is loaded — so the always-loaded core did not move, and the `description` was
+left untouched on purpose. Canon change, so the examples re-synced in the same commit.
+
 ## WSP5 — the platform's workspace switcher (2026-09-21)
 
 > The one thing §8's Web row promised that the WSP arc did not land, and it was left deliberately:

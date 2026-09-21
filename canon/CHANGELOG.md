@@ -11,6 +11,28 @@ network.
 
 ## Unreleased
 
+- **`claims-need-checks`** (core knowledge, extended) — a **fifth** way a check passes without
+  checking: *nothing runs it*. A configuration file declared gates that no build step, hook or
+  workflow ever invoked, so the declaration read as coverage while nothing executed it — and the
+  first hand-run failed immediately. Where a check lives matters as much as what it asserts: a
+  correct check in a tool nobody calls is indistinguishable from no check, and worse, because the
+  declaration looks like one. Found in this repository, by going to add a gate and discovering the
+  gate runner was not wired to anything.
+  **Adopting repositories:** before believing a new check, follow the path from the command people
+  actually run to the code you just wrote.
+- **`post-feature`** (skill, extended) — the audit gains a **prose pass**: after refreshing what the
+  change made stale, read the writing it added against nine named shapes — the same rule in two
+  places, history outside the record that holds it, status annotations that rot, a hand-restated
+  catalogue, the path taken to the answer rather than the answer, rationale repeated beside each
+  sibling, the paragraph carrying four rules, emphasis everywhere, and intent where the record should
+  state fact. Documentation is the one surface with no compiler, so a wrong sentence outlives the
+  behaviour it describes with every gate green — and is believed for exactly that long, because a
+  confident sentence is what tells a reader not to go and look. A checklist rather than a principle
+  because by the end of a long session the writing all looks necessary to whoever wrote it.
+  Converged independently with another agent harness's documentation standard, which is the
+  two-source bar for believing a rule rather than one project's taste.
+  **Adopting repositories:** nothing to do — the skill's `description` is unchanged, so what is loaded
+  unasked costs exactly what it did before, and the new section is read only when the skill is invoked.
 - **`autonomous-development`** (new core knowledge) — development is automation-first: a person
   states the target and verifies the outcome; the steps between are executed by agents and verified
   by gates, not by per-step approval. Per-step interaction does not scale past a small system, and
