@@ -42,7 +42,13 @@ export function inspect(
   const expected = buildIndex({ root, target: manifest.target, lock });
   const indexStale = !existsSync(indexFile) || readText(indexFile) !== expected;
 
-  const ok = !drifted.length && !missing.length && !stalePacks.length && !overBudget && !indexStale;
+  // The budget REPORTS; it does not fail (D54, the owner's call). Everything else here is a FACT the
+  // tool established — a file drifted, one is missing, a pack was never synced, the index is behind.
+  // Size is a JUDGEMENT: one byte over a number somebody chose is not wrong, and a gate that stops a
+  // build over a judgement gets its number raised rather than read — which is the failure D28
+  // predicted in its own words about noise. The number stays and is stated on every run, because a
+  // signal nobody can see is not a signal.
+  const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale;
   return { drifted, missing, stalePacks, coreBytes, overBudget, indexStale, ok };
 }
 
@@ -57,14 +63,20 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   }
   if (report.overBudget) {
     write(
-      `  budget    ${manifest.target} always-loaded is ${report.coreBytes} bytes ` +
-        `(limit ${manifest.coreBudgetBytes})`,
+      `  budget    ${manifest.target} always-loaded is ${report.coreBytes} of ` +
+        `${manifest.coreBudgetBytes} declared bytes — advisory, not a gate: split principle from ` +
+        'detail into the on-demand tier, or raise it deliberately in daoris.json',
     );
   }
   if (report.indexStale) write(`  index     ${INDEX_PATH} is out of date — run 'daoris index'`);
 
   if (report.ok) {
-    write(`daoris: clean — ${report.coreBytes} bytes of always-loaded core`);
+    // "clean" would be the wrong word while the core is over its own declared budget, even though
+    // nothing here failed — so the over case says what is true instead of reusing the happy sentence.
+    write(report.overBudget
+      ? `daoris: no drift — always-loaded core is ${report.coreBytes} of `
+        + `${manifest.coreBudgetBytes} declared bytes, over by ${report.coreBytes - manifest.coreBudgetBytes}`
+      : `daoris: clean — ${report.coreBytes} of ${manifest.coreBudgetBytes} bytes of always-loaded core`);
     return 0;
   }
   write("daoris: run 'daoris sync' to reconcile, or 'daoris upstream <file>' to keep a local edit");

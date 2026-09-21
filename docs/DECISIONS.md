@@ -679,6 +679,84 @@ so a repository that already declared one keeps it. This only moves the starting
 later in the same file, so nobody could read the manifest and know what the limit was — and a budget
 whose value you have to compute is one nobody argues with.
 
+**Amended 2026-09-21 (CANON7, the owner's call): Daoris's own number moves to 26000, and it is a
+different number answering a different question.** For an adopter, `coreBudgetBytes` asks *how much
+always-loaded doctrine is this repository willing to carry* — core, its packs, and its own rules —
+and 30000 is the right starting point for that. Daoris declares no packs and owns no always-loaded
+rule of its own, so here the field measures **exactly the canon's core**, and the question it answers
+is *how big may the doctrine itself be*. Those are two questions, and inheriting the adopter default
+for the second one would be answering the wrong one by accident.
+
+**Why it moved at all.** By this entry's own argument the pre-D28 24000 was wrong here from the day
+D28 was written: it fires on the canon rather than on a repository's own material, and this is the one
+repository whose always-loaded material *is* the canon. The counter-argument kept it for six weeks and
+was a good one — every adopter pays for core on every session, so a tight self-imposed limit is a
+forcing function, and CANON6 proved it working by finding 126 bytes of genuine duplication rather than
+spending any. What ended it is that **138 bytes is not a forcing function, it is a wall**: a forcing
+function needs room to push against, and at that margin every candidate rule fails on arithmetic
+before anyone weighs whether it is good. CANON5 had been parked behind exactly that.
+
+**Why 26000 and not 30000.** 26000 leaves about 2,100 bytes — room for roughly one substantial rule.
+30000 would have handed over 6,138 at once. The number is a stated intention about how big the
+doctrine should get, and a smaller one states it more usefully. **What that intention is worth is
+settled by D54, taken the same day: the budget reports and never gates**, so this number persuades
+rather than blocks.
+
+**A measurement worth recording, found while deciding.** The generated rules index is 5,246 bytes —
+22% of the core — and it grows with the *count* of documents, local knowledge and skills included,
+neither of which is itself always-loaded. So part of the pressure on this budget is the index of the
+doctrine rather than the doctrine, and a repository that adds many local documents pays for them here.
+Not acted on: the index is what makes the on-demand tiers discoverable, and an index nobody loads is a
+tier nobody reads (D7).
+
+**Unchanged: the 30000 default, and every adopter.** This amendment moves one number in one manifest.
+
+## D54 — A budget reports; only a fact gates (2026-09-21)
+
+**Decision.** Set by the owner, 2026-09-21, while CANON7's number was being moved: *"I don't really
+think the budget should be a hard cap."* Both budgets in this repository now **report and never
+fail**. `daoris check` prints the always-loaded core against the declared `coreBudgetBytes` on every
+run, says loudly and by how much when it is over, and exits 0; `npm run verify`'s doc-budget step
+does the same for the prose ceilings.
+
+**The line it draws, which is the part worth keeping.** Everything else `check` reports is a **fact
+the tool established**: a file drifted from its hash, one is missing, a pack was declared and never
+synced, the index no longer matches what is on disk. Each is unambiguously wrong and the tool can
+prove it. A budget is a **judgement**: 26,001 bytes is not wrong, it is one byte past a number
+somebody chose. A gate that stops a build over a judgement gets its number raised rather than read —
+which is precisely the failure D28 described in its own words about noise, arriving from the other
+direction. So: **a fact gates, a judgement reports.**
+
+**What still fails.** Drift, missing files, stale packs, a stale index — and, in the doc budgets, a
+ceiling naming a document that no longer exists. That last one is not an opinion about length; it is
+a ceiling that has silently stopped applying, which looks from the outside exactly like a document
+comfortably under budget. A defect in the manifest, so it gates.
+
+**Why this does not throw away CANON6's evidence.** The tight budget did real work: under pressure it
+found 126 bytes of genuine duplication rather than spending any. But what did that work was a number
+*in front of the author at the moment of writing*, and that survives — it is printed on every run,
+with the overage quantified, and raising it is a reviewable one-line diff. What does not survive is
+the build failure, and the build failure is what turned a design question into arithmetic: at 138
+bytes of headroom, every candidate rule failed before anyone weighed whether it was good.
+
+**Rejected: deleting the budget.** The number is what makes the size legible. Without it there is
+nothing to compare against and no line in the report, and "the core is getting big" becomes something
+only a person who happened to measure it can say.
+
+**Rejected: hard for the canon, advisory for this repository's own prose.** The tempting split, on
+the argument that a budget should block whoever can fix it and inform whoever cannot. It is a real
+distinction, but two budgets behaving differently is an inconsistency somebody re-litigates later,
+and the fact-versus-judgement line above is the better rule because it also explains why *drift*
+still gates.
+
+**Rejected: a high-water ratchet** — fail only when the size grows without the manifest acknowledging
+it. It keeps a build failure in the loop while making it harder to explain, and it answers a question
+nobody asked: growth is visible in the diff already.
+
+**Consequence.** CANON5 is now a judgement about *tiering* — does an i18n parity rule belong in the
+always-loaded core or in a pack for web repositories — rather than about arithmetic, which is what
+the budget was making it. `check`'s exit codes narrow accordingly, and the usage text says so.
+
 ## D29 — The `doc-*` maintenance family is not canonized; its useful half became gates
 
 **Decided 2026-08-05, closing CANON4.** The six-skill `doc-*` family — update-technical, update-guide,

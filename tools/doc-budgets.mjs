@@ -25,7 +25,16 @@
  * eventually says to delete history. Saying which is which is most of this tool's content; the counting
  * is the easy half.
  *
- * ## The discipline, when it goes red
+ * ## It reports; it does not fail
+ *
+ * Over a ceiling prints loudly and exits 0 (D54, the owner's call, applied here for consistency with
+ * the canon's own budget). A word count is a judgement, not a fact this tool established: 3,601 words
+ * against a ceiling of 3,600 is not *wrong*, and a build that stops over a judgement gets its number
+ * raised rather than read. A stale entry — a ceiling naming a document that moved — is the one thing
+ * here that IS a fact, and it still fails, because a ceiling pointing at nothing has silently stopped
+ * applying and that is a defect in the manifest rather than an opinion about length.
+ *
+ * ## The discipline, when it goes over
  *
  * 1. **Relocate** what belongs in another tier — the on-demand knowledge document, the decisions
  *    record, the archive — leaving a one-line link if the reader needs the pointer.
@@ -52,7 +61,8 @@ const MANIFEST = 'tools/doc-budgets.json';
 const words = (text) => text.split(/\s+/).filter(Boolean).length;
 
 const budgets = JSON.parse(readFileSync(join(repoRoot, MANIFEST), 'utf8'));
-const problems = [];
+const stale = [];
+const over = [];
 const measured = [];
 
 for (const [document, ceiling] of Object.entries(budgets)) {
@@ -61,30 +71,37 @@ for (const [document, ceiling] of Object.entries(budgets)) {
   const file = join(repoRoot, document);
   if (!existsSync(file)) {
     // A ceiling naming a document that moved is a ceiling that silently stopped applying — which is
-    // indistinguishable, from the outside, from a document that is comfortably under budget.
-    problems.push(`${document}: budgeted at ${ceiling} but the file does not exist — the ceiling is stale`);
+    // indistinguishable, from the outside, from a document comfortably under budget. A fact, so it fails.
+    stale.push(`${document}: budgeted at ${ceiling} but the file does not exist — the ceiling is stale`);
     continue;
   }
 
   const count = words(readFileSync(file, 'utf8'));
   measured.push({ document, count, ceiling, spare: ceiling - count });
-  if (count > ceiling) {
-    problems.push(
-      `${document}: ${count} words, ceiling ${ceiling} — over by ${count - ceiling}`);
-  }
+  if (count > ceiling) over.push(`${document}: ${count} words of ${ceiling} — over by ${count - ceiling}`);
 }
 
-if (problems.length > 0) {
-  console.error(`doc-budgets: ${problems.length} over or stale\n  ${problems.join('\n  ')}`);
-  console.error(
-    `\n  Relocate what belongs in another tier, then condense what belongs here. Raise a ceiling in\n`
+if (over.length > 0) {
+  // Advisory: loud, quantified, and exits 0. An unquantified warning is one nobody acts on.
+  console.warn(`doc-budgets: ${over.length} over budget (advisory)\n  ${over.join('\n  ')}`);
+  console.warn(
+    '\n  Relocate what belongs in another tier, then condense what belongs here. Raise a ceiling in\n'
     + `  ${MANIFEST} only when the words need the space — and say why in the commit.`);
+}
+
+if (stale.length > 0) {
+  console.error(`doc-budgets: ${stale.length} stale ceiling(s)\n  ${stale.join('\n  ')}`);
   process.exit(1);
 }
 
-// The tightest document is the useful number on a green run — a total says nothing about which one is
-// about to go red, and "which is closest" is the only question this report can answer usefully.
-const tightest = measured.reduce((a, b) => (a.spare <= b.spare ? a : b));
-console.log(
-  `doc-budgets: ${measured.length} documents within budget — tightest is ${tightest.document} at `
-  + `${tightest.count}/${tightest.ceiling} (${tightest.spare} to spare)`);
+// The tightest document is the useful number on a clean run — a total says nothing about which one is
+// closest to its ceiling, and that is the only question this report can answer usefully.
+if (measured.length === 0) {
+  console.log('doc-budgets: nothing measured');
+} else {
+  const tightest = measured.reduce((a, b) => (a.spare <= b.spare ? a : b));
+  console.log(over.length === 0
+    ? `doc-budgets: ${measured.length} documents within budget — tightest is ${tightest.document} at `
+      + `${tightest.count}/${tightest.ceiling} (${tightest.spare} to spare)`
+    : `doc-budgets: ${measured.length} documents measured, ${over.length} over — see above`);
+}

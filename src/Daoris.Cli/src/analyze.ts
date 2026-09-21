@@ -302,7 +302,11 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
 
   write('');
   const { current, projected, limit } = report.budget;
-  const verdict = projected > limit ? `OVER by ${projected - limit}` : `${limit - projected} to spare`;
+  // "OVER" used to imply the first `check` would fail; since D54 it does not, and a projection that
+  // over-promises a failure is the same misleading sentence in the other direction.
+  const verdict = projected > limit
+    ? `OVER by ${projected - limit} — advisory, not a gate`
+    : `${limit - projected} to spare`;
   write(`  always-loaded   ${current} bytes now -> ~${projected} after (limit ${limit}; ${verdict})`);
   write('');
   write(packs.length ? `  then: daoris init && daoris sync` : `  then: daoris init  (choose packs first)`);

@@ -7,7 +7,7 @@
 // which are pure local hashing against the lock and stay that way.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { isAbsolute, resolve } from 'node:path';
 import { flagValue } from './args.ts';
 import { readManifest } from './config.ts';
 import { DaorisError } from './errors.ts';

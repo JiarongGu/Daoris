@@ -46,13 +46,14 @@ puts the protocol door in front of it.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-210 CLI tests, 258 service, 57 devkit, 141 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
+211 CLI tests, 258 service, 57 devkit, 141 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
 2026-09-18, plus a no-staged-leftovers check since REV1), **166/166 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
-**23,862 of 24,000 bytes** — 138 bytes of headroom after CANON6's split, still far less than any new
-rule, so the next canon addition fails the gate and the answer is splitting, not raising (D28).
+**23,862 of 26,000 bytes** — about 2,100 of headroom after CANON7 moved the number, and **advisory
+rather than enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still
+splitting principle from detail, not raising it (D28).
 
 **The remote exists** (D47/DRV5, built 2026-09-20): the same HTTP host in shared mode gates every
 route with per-person per-machine minted keys (`keys mint|list|revoke`, hashed with an audit prefix,
@@ -243,8 +244,8 @@ published, and a release is still blocked on REH1.
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (CLI 210 + `check` + doc budgets + version
-  agreement),
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 211 + `check` + doc
+  budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
   (141), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (166/166), `npm run test:web` (65 + 10). If a `bin`-driven gate is red
@@ -405,19 +406,15 @@ runtime (its surfaces are built natively against claude/codex through the adapte
   owner's sentence as pattern, not runtime, until the owner says otherwise**; the reading is recorded
   in the handover for confirmation.
 
-- [ ] **CANON7 — decide whether this repository's own `coreBudgetBytes` moves to the D28 default.**
-  **An owner decision first, then a one-line change and the prose that cites it.** Daoris's manifest
-  carries `24000`, written before D28 moved the default to **30000**; the always-loaded core now sits
-  at **23,862**, so 138 bytes remain and the next canon addition fails the gate. The tension is not
-  subtle: D28 raised the default *precisely because* 24000 "fired on the **canon** rather than on a
-  repository's own material… That is backwards: the budget exists to constrain what a repository
-  chooses to carry, not to cap what the doctrine may contain" — and this is the one repository whose
-  always-loaded material IS the doctrine. The counter-argument is real too, and is why the number has
-  not moved: every adopter pays for the core on every session, so a tight self-imposed limit here is a
-  forcing function, and CANON6 shows it working (it found 126 bytes of genuine duplication rather than
-  spending any). **Do not decide this by building it.** Bring the owner the two readings; if the answer
-  is to move, it is `daoris.json` plus every place that quotes the number (`CLAUDE.md`, this file,
-  `docs/DECISIONS.md` gets an amendment saying which way and why). **CANON5 is parked behind this.**
+- [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met, and the budget no longer
+  blocks it** (unparked by CANON7, 2026-09-21). The bilingual sibling carries the rule and the gate;
+  Daoris carries the same gate (`scripts/i18n-check.mjs`, adopted from it deliberately — D42). Two
+  repositories, one lesson: a missing translation "works" in English and is discovered by the first
+  reader it fails. There is now room for roughly one substantial rule, **which is exactly the budget
+  this would spend** — so the question it must answer first is the one the room does not settle:
+  whether this belongs in the always-loaded core at all, or as **pack knowledge for web
+  repositories**, which is where it most likely belongs. A rule every repository loads on every task
+  to govern a concern only some of them have is what the pack tier exists to prevent.
 
 - [ ] **HARNESS2 — a `codex` session adapter. Absorbed into ACP3 by D53**, and kept here only so the
   name resolves: it is `@agentclientprotocol/codex-acp` on the protocol door, not a hand-built
@@ -438,16 +435,9 @@ runtime (its surfaces are built natively against claude/codex through the adapte
   several straight after canon edits and syncs, the suspected trigger — all passed 52/52, and a ninth
   ran clean 2026-09-20 after the whole DRV5 arc (no canon edits that session, which is the case that
   has always passed). Stays open until a captured failure explains it. Do not tag a release while this
-  is open.
-
-- [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met.** The bilingual sibling
-  carries the rule and the gate; Daoris now carries the same gate (`scripts/i18n-check.mjs`, adopted
-  from it deliberately — D42). Two repositories, one lesson: a missing translation "works" in English
-  and is discovered by the first reader it fails. Held rather than written because the always-loaded
-  core has **138 bytes** of room (CANON6 freed 126 of them) and any new rule is an order of magnitude
-  larger — so canonizing still waits on a D28-shaped split of principle from detail, or lands as pack
-  knowledge for web repositories, which is where it most likely belongs anyway. **Its trigger is
-  CANON7**: the budget question is the reason this is held, so settle that first.
+  is open. **Not this**: on 2026-09-21 the rehearsal failed at `npm pack` before any check ran — a
+  deterministic broken publish build, fixed and gated (FIX-LOG). REH1 is 45/52 with the canon-upgrade
+  phase's 7 checks failing; a run that never reaches a check is a different animal.
 
 - [ ] **TEST1 — the Playwright suite aborted a worker once with `0xC0000409`.** Seen once
   (2026-09-21, during SURF2): the run died mid-suite with `worker process exited unexpectedly

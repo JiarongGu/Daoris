@@ -49,7 +49,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `analyze` | **What adopting would do here** — collisions, duplicates, projected budget. Writes nothing |
 | `init` | Detects what the repository already has, writes `daoris.json`, reports available packs |
 | `sync` | Materializes the manifest's packs into `.claude/`, writes `daoris.lock`, regenerates the index |
-| `check` | Drift, staleness, index freshness, core budget. **Offline.** Exit 1 on any failure |
+| `check` | Drift, staleness, index freshness. **Offline.** Exit 1 on any failure; the core budget is reported, never enforced |
 | `upstream <file>` | Promotes a locally-improved canonical file back into the canon |
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
 | `status` | Packs, versions, drift, local files, and what a pending update would change; `--json` for an agent |
@@ -178,7 +178,9 @@ a silent overwrite.
 **The tier is the directory.** Files in `rules/` are always-loaded context; files in `knowledge/` are read
 on demand; `skills/<name>/SKILL.md` is invoked by name. The agent harness decides that by path, so Daoris
 does not carry a redundant `tier` field — and because the tier is measurable, `check` reports the
-always-loaded footprint and fails over a budget.
+always-loaded footprint against the budget the manifest declares. It reports and never fails on it
+(D54): drift is a fact, size is a judgement, and a build stopped by a judgement teaches people to
+raise the number rather than read it.
 
 **Canonical skills are parameter-free.** A skill states only the procedure that holds in every
 repository and sends the reader to the generated index for anything local — there is no substitution map

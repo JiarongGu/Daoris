@@ -178,8 +178,8 @@ enforces: no machine paths, no private sibling names, no tokens; a leak is a his
 is listed with a `⚠ needs frontmatter` marker rather than silently skipped — the failure mode to avoid is an
 index that looks complete while omitting a rule.
 
-`daoris check` additionally reports the byte footprint of the always-loaded `.claude/rules/` directory and
-fails above `coreBudgetBytes`.
+`daoris check` additionally reports the byte footprint of the always-loaded `.claude/rules/` directory
+against `coreBudgetBytes` — reported on every run, and never a failure (D54).
 
 ## 8. Error handling
 
@@ -188,7 +188,7 @@ fails above `coreBudgetBytes`.
 - **Atomic writes**, BOM-less UTF-8, LF endings, written by node directly — never through a shell, because a
   GBK console mangles CJK and em-dashes on the way through. No `fs.cpSync` (a documented crash on the Node
   version in use); explicit read/write instead.
-- **Exit codes:** `0` clean · `1` policy failure (drift, stale, over budget, index out of date) · `2` tool
+- **Exit codes:** `0` clean · `1` policy failure (drift, stale, index out of date) · `2` tool
   error. Only `1` should appear in normal use.
 
 ## 9. Testing

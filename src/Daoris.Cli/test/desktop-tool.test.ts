@@ -5,9 +5,17 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText, listFiles } from '../src/fsx.ts';
+// The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
+// by construction. Suppressed at the one site rather than given a hand-written `.d.mts`, which would
+// be a second description of the tool to keep in step with it — and the thing this suite asserts is
+// the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
   CLEARED, REDIRECTED, assemblyExe, prune, scratchEnvironment,
+  // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
+
+/** What `prune` takes: one capture on disk. Declared here because the tool itself is untyped. */
+type Capture = { path: string; at: number; size: number };
 
 /**
  * The desktop dev loop (`tools/desktop.mjs`) is not part of this package — it is the workspace's own
@@ -153,15 +161,15 @@ test('the capture script and the tool agree with the project on the process name
 
 test('a prune keeps the newest captures and drops the rest', () => {
   const entries = Array.from({ length: 30 }, (_, index) => ({ path: `${index}.png`, at: index, size: 10 }));
-  const dropped = prune(entries, { keep: 25 }).map((entry) => entry.path);
+  const dropped = prune(entries, { keep: 25 }).map((entry: Capture) => entry.path);
   assert.equal(dropped.length, 5);
   assert.deepEqual(dropped.sort(), ['0.png', '1.png', '2.png', '3.png', '4.png']);
 });
 
 test('a prune also enforces the size cap, oldest first', () => {
   const entries = Array.from({ length: 10 }, (_, index) => ({ path: `${index}.png`, at: index, size: 10 }));
-  const dropped = prune(entries, { keep: 25, maxBytes: 35 }).map((entry) => entry.path);
+  const dropped = prune(entries, { keep: 25, maxBytes: 35 }).map((entry: Capture) => entry.path);
   // Newest first until the cap is spent: 9, 8, 7 fit in 35 bytes; everything older goes.
-  assert.deepEqual(dropped.sort((a, b) => Number(a.split('.')[0]) - Number(b.split('.')[0])),
+  assert.deepEqual(dropped.sort((a: string, b: string) => Number(a.split('.')[0]) - Number(b.split('.')[0])),
     ['0.png', '1.png', '2.png', '3.png', '4.png', '5.png', '6.png']);
 });

@@ -2,7 +2,8 @@
  * An expected failure, carrying the process exit code it should produce.
  *
  * Exit codes are part of the contract, because `check` runs inside build gates:
- * 0 clean, 1 policy failure (drift, stale, over budget), 2 tool error.
+ * 0 clean, 1 policy failure (drift, stale, missing), 2 tool error. The core budget is deliberately
+ * NOT in that list: it reports and never fails (D54).
  */
 export type ExitCode = 0 | 1 | 2;
 

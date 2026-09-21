@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fourteen commands, 210 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fourteen commands, 211 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 258, `Daoris.Devkit` 57, and the
 driver 141. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
@@ -86,10 +86,12 @@ and `daoris driver` do all of it from a terminal (D50).
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
 
-**Three things to know before changing anything.** The always-loaded core sits at **23,862 of 24,000
-bytes** — 138 bytes of headroom, still far less than any new rule, so the next canon addition fails the
-budget gate. That is the gate working, and the answer is to split principle from detail rather than
-raise the limit (D28) — CANON6 did exactly that and paid for its own carve-out. And **never write into
+**Three things to know before changing anything.** The always-loaded core sits at **23,862 of 26,000
+bytes** — about 2,100 of headroom, roughly one substantial rule (CANON7, D28 as amended: this
+repository's number caps *the canon's core*, a different question from the 30000 an adopter starts
+at). **The budget reports and never fails** (D54): a fact gates, a judgement reports, so drift stops
+a run and size does not. The answer to a full budget is still to split principle from detail rather
+than raise the number — CANON6 did exactly that and paid for its own carve-out. And **never write into
 another
 repository**: that constraint is absolute (D32), it was broken here and cost a sibling an uncommitted
 edit, and `.claude/knowledge/reaching-in.md` is the account. And **doctrine must not hard-require
@@ -170,11 +172,12 @@ directory, and D11 makes shipping the canon *inside* the package load-bearing.
 
 Run every command from the **workspace root**, not from a package directory.
 
-- **`npm run verify`** — the "am I done?" gate: every CLI test, `daoris check` against Daoris's own
-  doctrine, `doc-budgets` (word ceilings for the prose a session reads whole — D28's discipline applied
-  to this repository's own standing orders; the append-only records deliberately have none), then
-  `release-prep --check` (every shipped version reference agrees, example pins included). Run before
-  claiming a change is complete.
+- **`npm run verify`** — the "am I done?" gate: **`typecheck` first** (the dev loop strips types
+  rather than compiling them, so without this a type error reaches `npm pack` and nothing sooner —
+  FIX-LOG 2026-09-21), then every CLI test, `daoris check` against Daoris's own doctrine,
+  `doc-budgets` (word ceilings for the prose a session reads whole; reported, never enforced — D54),
+  then `release-prep --check` (every shipped version reference agrees, example pins included). Run
+  before claiming a change is complete.
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the

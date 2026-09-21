@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The publish build had been broken for two commits, and every gate was green (2026-09-21)
+
+**Symptom.** `npm run rehearse` — the "would a release work?" gate — died at its first step, `npm pack`,
+with `src/connect.ts(10,10): error TS6133: 'dirname' is declared but its value is never read.` Found
+only because the budget work changed `check`'s exit semantics and the rehearsals were re-run to prove
+nothing else moved.
+
+**Root cause, in two halves.** The import went unused in SURF3 (`476a8a0`), two commits earlier. And
+**nothing in the loop typechecks**: Node 24 strips types, so `node --test` runs the sources without
+compiling them, and `npm run verify` ran the suite, `check`, the budgets and the version agreement —
+none of which invoke `tsc`. The compiler only runs inside `prepack`, which only runs when packing, so
+a type error reaches a release and nothing before it. `npm run typecheck` existed in the package all
+along and was wired to nothing — and had itself never been green, failing on five test-tier errors
+from importing an untyped workspace tool.
+
+**Fix.** Remove the unused import; make the test-tier errors go away at their one site (an
+`@ts-expect-error` on the untyped `.mjs` import and three annotated callbacks, rather than a
+hand-written declaration that would be a second description of the tool to keep in step); and wire
+`npm run typecheck -w daoris` into `verify` as its **first** step, so the cheapest and most
+fundamental check fails first. Watched failing by re-introducing the exact import: the gate names the
+file, the line and the symbol.
+
+**The trap to inherit.** This is the fifth shape in `claims-need-checks` — *nothing runs the check* —
+found the day it was written into the canon, in the same repository, about a different tool. A
+compiler in the dependency tree is not a gate; a script in `package.json` is not a gate; **only what
+the command people actually run invokes is a gate.** The tell was available and unread: a `typecheck`
+script that no other script named.
+
 ## The desktop dev loop orphaned a service host on every restart (2026-09-21)
 
 **Symptom.** `dotnet build src/Daoris.Service/Daoris.Service.Http` failed on a file copy: MSB3027,

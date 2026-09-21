@@ -77,11 +77,35 @@ test('a pack added to the manifest but not yet synced is stale', () => {
   repoFx.cleanup();
 });
 
-test('an over-budget core fails the check', () => {
+/**
+ * The budget reports and does not fail (D54). Size is a judgement, not a fact the tool established:
+ * one byte over a number somebody chose is not wrong, and a gate that stops a build over a judgement
+ * gets its number raised rather than read. Everything else `check` reports IS a fact, and those still
+ * fail — which is the distinction worth pinning, because the tempting simplification is to make the
+ * whole report advisory.
+ */
+test('an over-budget core is reported but does not fail the check', () => {
   const { canonFx, repoFx } = synced([], 10);
   const report = look(repoFx);
   assert.equal(report.overBudget, true);
   assert.ok(report.coreBytes > 10);
+  assert.equal(report.ok, true, 'over budget must not fail the check — it is advisory');
+
+  const out: string[] = [];
+  assert.equal(commandCheck({ root: repoFx.root, write: (s: string) => out.push(s) }), 0);
+  const text = out.join('\n');
+  assert.match(text, /advisory/, 'the run must SAY it is advisory rather than staying silent');
+  assert.match(text, /over by/, 'and say by how much — an unquantified warning is one nobody acts on');
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+/** The other half of the same rule: a fact the tool established still stops the run. */
+test('drift still fails the check — only the budget is advisory', () => {
+  const { canonFx, repoFx } = synced();
+  repoFx.write('.claude/rules/sensitive-info.md', '# locally edited\n');
+  const report = look(repoFx);
+  assert.equal(report.ok, false);
   canonFx.cleanup();
   repoFx.cleanup();
 });

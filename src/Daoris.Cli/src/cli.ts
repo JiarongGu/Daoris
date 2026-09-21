@@ -25,7 +25,8 @@ const USAGE = `daoris <command> [options]
                        Writes nothing; --json for an agent to act on
   init                 detect what this repo has, write daoris.json
   sync                 materialize the manifest's packs; write daoris.lock
-  check                drift, staleness, index freshness, core budget (offline)
+  check                drift, staleness, index freshness (offline); the core budget is reported,
+                       never enforced
   upstream <file>      promote a locally-edited canonical file back to the canon
   index                regenerate RULES_INDEX.md from what is on disk
   status               summary of packs, drift, local files, and any pending

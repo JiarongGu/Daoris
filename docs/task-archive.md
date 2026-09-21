@@ -1956,6 +1956,50 @@ compile-checked doc fences (few fences here yet — the shape is noted for the d
 pastes a declaration), one-line paragraphs (Daoris hard-wraps on purpose), and bilingual doctrine (the
 platform already holds the rule where it matters). No code ported, so no notice owed.
 
+## CANON7 — the core budget's number, and what a budget is for (2026-09-21)
+
+> Decide whether this repository's own `coreBudgetBytes` moves to the D28 default. An owner decision
+> first, then a one-line change and the prose that cites it. Daoris's manifest carries `24000`,
+> written before D28 moved the default to 30000; the always-loaded core now sits at 23,862, so 138
+> bytes remain and the next canon addition fails the gate. Do not decide this by building it. Bring
+> the owner the two readings. **CANON5 is parked behind this.**
+
+✅ done 2026-09-21 — the owner took the recommendation (**26000**, not the 30000 default) and then
+changed the question, which turned a one-line edit into **D54**.
+
+**The briefing, and why 26000.** The pre-D28 number was wrong here by D28's own argument: it fires on
+the canon rather than on a repository's own material, and this is the one repository whose
+always-loaded material *is* the canon — it declares no packs and owns no always-loaded rule, so the
+field measures the core exactly. The counter-argument had kept it for six weeks and was good: a tight
+self-imposed limit is a forcing function, and CANON6 proved it working. What ended it is that **138
+bytes is not a forcing function, it is a wall** — at that margin every candidate rule fails on
+arithmetic before anyone weighs whether it is good. 26000 leaves room for about one substantial rule;
+30000 would have handed over 6,138 bytes and retired a constraint that had just worked.
+
+**Then the owner moved the real question: "I don't really think the budget should be a hard cap."**
+That is D54, and it is the more interesting half. Both budgets now report and never fail. The line it
+draws is the keeper: everything else `check` reports is a **fact the tool established** — a hash that
+no longer matches, a missing file, a pack never synced, a stale index — while a budget is a
+**judgement**, and one byte past a number somebody chose is not wrong. A gate that stops a build over
+a judgement gets its number raised rather than read, which is D28's own warning about noise arriving
+from the other direction. **A fact gates; a judgement reports.** A stale ceiling — one naming a
+document that moved — still fails, because that is a defect in the manifest rather than an opinion
+about length, and it looks from the outside exactly like a document comfortably under budget.
+
+**What it cost to be consistent.** The doc-budget gate built hours earlier as a hard gate was softened
+the same day, rather than leaving one budget blocking and the other not — an inconsistency somebody
+re-litigates later. Watched in both directions afterwards: over a ceiling warns loudly, quantified,
+and exits 0; a stale ceiling exits 1.
+
+**A measurement worth keeping, found while deciding.** The generated rules index is 5,246 bytes — 22%
+of the core — and grows with the *count* of documents, local knowledge and skills included, neither
+of which is itself always-loaded. Part of the pressure on this budget is the index of the doctrine
+rather than the doctrine. Not acted on: an index nobody loads is a tier nobody reads (D7).
+
+**CANON5 is unparked**, and it is now the question it always should have been: whether an i18n parity
+rule belongs in the always-loaded core at all, or as pack knowledge for web repositories. The budget
+is no longer answering that on its behalf. CLI 210 → 211.
+
 ## DOCS2 — what the docs strand takes from dsh (2026-09-21)
 
 > A doc-budget manifest with ceilings for this repository's always-read prose as a declared gate with
