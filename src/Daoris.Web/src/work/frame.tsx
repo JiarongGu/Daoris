@@ -192,7 +192,7 @@ export function ModeSwitch({ mode, available, attention = 0, onChange }: {
     <div
       role="group"
       aria-label={t('work.mode.label')}
-      className="inline-flex rounded-control border border-line bg-raised p-0.5"
+      className="inline-flex rounded-control border border-line-strong bg-raised p-0.5"
     >
       {(['manage', 'work'] as const).map((target) => (
         <button

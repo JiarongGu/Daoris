@@ -73,6 +73,24 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 
 ## 4. Components
 
+> **Amended 2026-09-22, from a polish pass driven by screenshots** (owner: *"keep polish the ui/ux
+> — you can use screenshot tool to confirm"*). Four rules the original language did not state, each
+> found by looking at the real window rather than by reasoning about it:
+>
+> - **Prose has a measure of its own.** §2's 72rem caps the CONTENT COLUMN, which is right for cards,
+>   tiles and rows — and a paragraph inheriting it ran to about **190 characters a line** at the D56
+>   scale, roughly triple what the eye tracks. Explanatory text goes in `Prose` (65ch, font-relative).
+>   This is for the console EXPLAINING itself; a quest's body, a knowledge entry and a session's note
+>   are **content** and are shown as they are.
+> - **A field is outlined with `--line-strong`; a container with `--line`.** Inputs were `--line` on
+>   `--raised` inside a `--raised` card, which in the dark theme is very nearly invisible — a form
+>   whose fields you cannot find. Light mode hid the problem completely.
+> - **A form is sized to what it holds**, never to the column it sits in: three equal thirds of a
+>   72rem card gave a 570px box to the word "default".
+> - **Status leads.** §5 already specifies `pill · title · route · how long` for Overview's rows, and
+>   Quests had pushed the pill to the far edge — about a thousand pixels from the title it described.
+>   The secondary marks stay right; identity goes first.
+
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), `danger` reserved for decline confirmation.
 - **Pills** carry quest state: status text on its soft field with its hue — label always present.

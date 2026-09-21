@@ -50,7 +50,7 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
   }
 
   const chosen = repository || repositories[0];
-  const field = 'rounded-control border border-line bg-raised px-2 py-1 text-small text-ink';
+  const field = 'rounded-control border border-line-strong bg-raised px-2 py-1 text-small text-ink';
 
   return (
     <form

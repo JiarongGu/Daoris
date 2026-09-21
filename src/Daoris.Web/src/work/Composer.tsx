@@ -68,7 +68,7 @@ export function Composer({ live, sending = false, refusal, endings = true, onSen
             if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); say(); }
           }}
           placeholder={t('work.composer.placeholder')}
-          className="min-h-14 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink disabled:opacity-55"
+          className="min-h-14 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink disabled:opacity-55"
         />
       </label>
 

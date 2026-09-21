@@ -1,7 +1,7 @@
 {
   "_why": "Word ceilings for the prose a session reads WHOLE. tools/doc-budgets.mjs owns the rule, the discipline when one goes red, and why the append-only records (the decision log, the archive, the fix log, the changelogs) deliberately have none. Raising a ceiling is a one-line diff here, justified in the commit.",
 
-  "CLAUDE.md": 3600,
+  "CLAUDE.md": 3750,
   "TASKS.md": 6600,
   "README.md": 2600,
   "ROADMAP.md": 3600,

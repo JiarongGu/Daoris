@@ -2778,3 +2778,44 @@ think about the palette still being over it.
 stories, two for the modal claim), **13 Playwright** including the browser's shortened list and the
 keyboard path, 259 service, 165 driver, 53 modules, `npm run verify` green — and the real window,
 where Ctrl+K opens it and the shell's list carries eleven commands including the two Work actions.
+
+## POLISH1 — a screenshot-driven pass over the console (2026-09-22)
+
+> **"we also need to keep polish the ui/ux you can use screenshot tool to confirm and keep going"**
+> — owner, 2026-09-22. A standing direction rather than a backlog item: the surface is looked at, not
+> reasoned about.
+
+✅ first pass done 2026-09-22. Five changes, every one found by opening the real window and reading
+it rather than by inspecting code. `docs/2026-09-19-platform-ux.md` §4 carries them as an amendment,
+because each is a rule and not a one-off.
+
+**Prose had no measure.** D41 §2 caps the content *column* at 72rem, which is right for cards and
+rows — and every explanatory paragraph inherited it, running to about **190 characters a line** at
+the D56 scale against the 45–75 the eye tracks. The Machine view was a wall of them. `Prose` (65ch,
+font-relative so it survives the next scale change) now carries the console's own explanations. It is
+deliberately *not* applied to content: a quest's body, a repository summary and a search excerpt are
+what the family wrote, and content is shown as it is.
+
+**The dark theme had invisible form fields**, and the light theme hid it completely. Inputs were
+`--line` on `--raised` inside a `--raised` card; in dark that is very nearly no border at all. All 18
+field declarations now use `--line-strong`, which gives the rule: **a field is outlined with
+`line-strong`, a container with `line`** — an input has to read as somewhere you can type.
+
+**A form was sized to its container.** Three equal thirds of a 72rem card gave a 570px box to the word
+"default". The wire form is now proportioned to what each field holds and capped.
+
+**Every card carried 24px of dead space above its own heading.** `SectionTitle` applied `mt-6`
+unconditionally, including when it *was* the first thing in the card — which it usually is. `first:mt-0`.
+
+**Quests contradicted D41 §5.** That section specifies `pill · title · route · how long`, and Overview
+follows it; Quests had pushed the status pill to the far edge, about a thousand pixels from the title
+it described, so the eye had to cross the whole card to connect them. Status leads now; the secondary
+marks (sat-a-week, live session) stay right, because they are exceptions rather than identity.
+
+**The method is the point.** Four of these five are invisible in the source — they are properties of
+the assembled page at a real width, in a real theme. The same class as the two defects the previous
+landings found by looking (the stacked icon rail, the tooltip swallowing clicks). `npm run desktop --
+shot [--theme dark]` is the instrument, and it earned its keep again.
+
+**Proven.** 369 web unit, 13 Playwright, `npm run verify` green, and before/after captures of
+Overview, Quests and Machine in both themes.

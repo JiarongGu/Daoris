@@ -6,7 +6,7 @@ import { ago, sentence } from './format';
 import { useRegistry, useRepositories } from './queries';
 import { useDriver, useSetDrivable, useSetHold, useSetTrees } from './shell';
 import {
-  Button, Card, CheckField, Chip, type Notify, PageHeader, SkeletonRows, Tip, useErrorNotify,
+  Button, Card, CheckField, Chip, type Notify, PageHeader, Prose, SkeletonRows, Tip, useErrorNotify,
 } from './ui';
 
 /**
@@ -178,7 +178,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
             <span className="text-body font-semibold">{t('projects.outside.title')}</span>
             <span className="font-mono text-small tabular-nums text-ink-faint">{outside.length}</span>
           </header>
-          <p className="mt-1.5 text-body text-ink-soft">{t('projects.outside.body')}</p>
+          <Prose className="mt-1.5">{t('projects.outside.body')}</Prose>
           <ul className="m-0 mt-2 list-none p-0">
             {outside.map((project) => {
               const counts = indexed(project.repository);

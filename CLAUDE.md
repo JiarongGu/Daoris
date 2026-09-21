@@ -127,6 +127,12 @@ risk, **authorship** was.
   accept, discard, send it back — carry every `reaching-in` guard; the merge refuses into a checkout
   anyone is working in, and the discard asks twice. **SURF9** made every action addressable by name — a pure registry, absent in a browser by
   omission. **SURF5b and SURF8 remain.**
+- 🔴 **Polishing the UI/UX is standing work, and it is done by LOOKING** (owner, 2026-09-22:
+  *"we also need to keep polish the ui/ux you can use screenshot tool to confirm"*). Take
+  `npm run desktop -- shot [--theme dark]` to any surface you change. The defects that matter are
+  invisible in the source — a 190-character measure, a field with no border in dark, an icon rail
+  stacked on the page at 680px — because they are properties of the assembled window at a real
+  width in a real theme. `docs/2026-09-19-platform-ux.md` §4 carries what each pass settled.
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

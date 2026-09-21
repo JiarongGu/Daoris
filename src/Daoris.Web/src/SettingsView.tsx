@@ -5,7 +5,9 @@ import {
   useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useUnwireRemote, useWireRemote,
 } from './shell';
 import { SessionConsole } from './SessionConsole';
-import { Button, Card, Chip, type Notify, PageHeader, Pill, SectionTitle, Tip, useErrorNotify } from './ui';
+import {
+  Button, Card, Chip, type Notify, PageHeader, Pill, Prose, SectionTitle, Tip, useErrorNotify,
+} from './ui';
 
 /**
  * The machine's own settings (D50): what is true about THIS computer rather than about the family.
@@ -60,7 +62,7 @@ export function SettingsView({ notify }: { notify: Notify }) {
 
       <Card>
         <SectionTitle>{t('settings.wiring.title')}</SectionTitle>
-        <p className="mt-1.5 text-body text-ink-soft">{t('settings.wiring.body')}</p>
+        <Prose className="mt-1.5">{t('settings.wiring.body')}</Prose>
 
         {wiring.data && (
           <p className="mt-2 break-all font-mono text-small text-ink-faint">{wiring.data.path}</p>
@@ -76,7 +78,7 @@ export function SettingsView({ notify }: { notify: Notify }) {
         )}
 
         {remotes.length === 0 ? (
-          <p className="mt-3 text-body text-ink-soft">{t('settings.wiring.none')}</p>
+          <Prose className="mt-3">{t('settings.wiring.none')}</Prose>
         ) : (
           <ul className="m-0 mt-3 list-none p-0">
             {remotes.map((remote) => (
@@ -107,14 +109,17 @@ export function SettingsView({ notify }: { notify: Notify }) {
 
         <div className="mt-4 border-t border-line pt-3.5">
           <SectionTitle>{t('settings.wiring.addTitle')}</SectionTitle>
-          <div className="mt-2 grid gap-2 md:grid-cols-3">
+          {/* Sized to what the fields HOLD, not to the column they sit in. Three equal thirds of a
+              72rem card gave a 570px box to the word "default"; a workspace name is short, a
+              deployment URL is long, and a key is in between — so the widths say so. */}
+          <div className="mt-2 grid max-w-[48rem] gap-2 md:grid-cols-[10rem_minmax(0,1fr)_12rem]">
             <label className="grid gap-1 text-small text-ink-faint">
               {t('settings.wiring.workspace')}
               <input
                 value={workspace}
                 onChange={(event) => setWorkspace(event.target.value)}
                 placeholder={t('settings.wiring.workspacePlaceholder')}
-                className="rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink"
+                className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
             <label className="grid gap-1 text-small text-ink-faint">
@@ -123,7 +128,7 @@ export function SettingsView({ notify }: { notify: Notify }) {
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
                 placeholder="https://…"
-                className="rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
+                className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
               />
             </label>
             <label className="grid gap-1 text-small text-ink-faint">
@@ -133,11 +138,11 @@ export function SettingsView({ notify }: { notify: Notify }) {
                 type="password"
                 onChange={(event) => setKey(event.target.value)}
                 placeholder="dk_…"
-                className="rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
+                className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
               />
             </label>
           </div>
-          <p className="mt-2 text-small text-ink-soft">{t('settings.wiring.keyBody')}</p>
+          <Prose className="mt-2 text-small">{t('settings.wiring.keyBody')}</Prose>
           <Button
             variant="primary"
             className="mt-3"
@@ -202,7 +207,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   return (
     <Card className="mt-3.5">
       <SectionTitle>{t('harness.title')}</SectionTitle>
-      <p className="mt-1.5 text-body text-ink-soft">{t('harness.body')}</p>
+      <Prose className="mt-1.5">{t('harness.body')}</Prose>
       <p className="mt-2 break-all font-mono text-small text-ink-faint">{answered.settingsPath}</p>
 
       {harnesses.map((harness) => (
@@ -234,7 +239,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
           )}
 
           {(harness.profiles ?? []).length === 0 ? (
-            <p className="mt-2 text-body text-ink-soft">{t('harness.noProfiles')}</p>
+            <Prose className="mt-2">{t('harness.noProfiles')}</Prose>
           ) : (
             <ul className="m-0 mt-2 list-none p-0">
               {harness.profiles.map((profile) => (

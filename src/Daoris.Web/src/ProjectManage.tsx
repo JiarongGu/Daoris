@@ -118,7 +118,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
             value={workspace}
             onChange={(event) => setWorkspace(event.target.value)}
             placeholder={t('projects.manage.workspacePlaceholder')}
-            className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
+            className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
           <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.workspaceNote')}</p>
         </div>
@@ -193,7 +193,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
           value={workspace}
           onChange={(event) => setWorkspace(event.target.value)}
           aria-label={t('projects.workspace')}
-          className="min-w-0 flex-1 rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
+          className="min-w-0 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
         />
         <Button onClick={saveWiring} disabled={wire.isPending}>{t('projects.manage.rewire')}</Button>
       </div>
@@ -210,7 +210,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               id="declaration-summary"
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
+              className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
             />
             <label className="mt-2.5 block text-small text-ink-faint" htmlFor="declaration-owns">
               {t('projects.owns')}
@@ -220,7 +220,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               value={owns}
               rows={3}
               onChange={(event) => setOwns(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-small"
+              className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-small"
             />
             <label className="mt-2.5 block text-small text-ink-faint" htmlFor="declaration-accepts">
               {t('projects.accepts')}
@@ -230,7 +230,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               value={accepts}
               rows={3}
               onChange={(event) => setAccepts(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-small"
+              className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-small"
             />
             <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.linesNote')}</p>
             <Button

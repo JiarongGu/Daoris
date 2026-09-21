@@ -29,7 +29,7 @@ export function SearchView({ onOpen, notify }: {
           type="search" value={query} autoFocus
           placeholder={t('search.placeholder')}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-h-[2.2rem] flex-1 basis-88 rounded-control border border-line bg-raised px-3 py-2 text-body text-ink"
+          className="min-h-[2.2rem] flex-1 basis-88 rounded-control border border-line-strong bg-raised px-3 py-2 text-body text-ink"
         />
         {/* Local-only by default: canonical content is byte-identical in every adopter, so including
             it returns a dozen copies of one rule and calls that a corpus. */}

@@ -341,14 +341,33 @@ export function PageHeader({ title, description, action }: {
   title: string; description: string; action?: ReactNode;
 }) {
   return (
-    <header className="mb-6 flex items-start justify-between gap-4">
-      <div>
+    <header className="mb-5 flex items-start justify-between gap-4">
+      <div className="min-w-0">
         <h1 className="text-view font-[650] tracking-[-0.01em]">{title}</h1>
-        <p className="mt-1 text-body text-ink-soft">{description}</p>
+        <Prose className="mt-1">{description}</Prose>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </header>
   );
+}
+
+/**
+ * Explanatory text, at a measure a person can actually read.
+ *
+ * @remarks
+ * **The column is 72rem and prose is not.** D41 §2 caps the CONTENT column, which is right for cards,
+ * tiles and tables — but a paragraph inheriting it runs to about **190 characters a line** at the
+ * amended 13px scale, roughly triple the 45–75 the eye tracks without losing its place. Measured in
+ * the real window before this existed: every sentence on the Machine view was one of those lines.
+ *
+ * `max-w-prose` is 65ch and font-relative, so it stays right if the scale moves again — which is
+ * exactly the property the hardcoded type sizes did not have (D56).
+ *
+ * This is for the console EXPLAINING itself. It is not for data: a quest's body, a knowledge entry
+ * and a session's note are content, and content is shown as it is.
+ */
+export function Prose({ className, children }: { className?: string; children: ReactNode }) {
+  return <p className={cn('m-0 max-w-prose text-body text-ink-soft', className)}>{children}</p>;
 }
 
 /**
@@ -358,7 +377,14 @@ export function PageHeader({ title, description, action }: {
  */
 export function SectionTitle({ level = 2, children }: { level?: 2 | 3; children: ReactNode }) {
   const Heading = level === 3 ? 'h3' : 'h2';
-  return <Heading className="mb-2.5 mt-6 text-small font-semibold text-ink-faint">{children}</Heading>;
+  // `mt-6` separates a section from the one above it — and is dead space when the title IS the first
+  // thing in its card, which it usually is. Every card in the console was carrying 24px of it above
+  // its own heading, on top of the card's own padding.
+  return (
+    <Heading className="mb-2 mt-6 text-small font-semibold text-ink-faint first:mt-0">
+      {children}
+    </Heading>
+  );
 }
 
 /* ---------------------------------------------------------------- drawer */
@@ -419,7 +445,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
     <RadixSelect.Root value={value || undefined} onValueChange={onChange} required={required}>
       <RadixSelect.Trigger
         aria-label={ariaLabel}
-        className="inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint"
+        className="inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint"
       >
         <RadixSelect.Value placeholder={placeholder} />
         <ChevronDown size={14} aria-hidden className="text-ink-faint" />

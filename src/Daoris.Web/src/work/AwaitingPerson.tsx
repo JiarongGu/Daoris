@@ -57,7 +57,7 @@ export function AwaitingPerson({ note, pending = false, onResolve }: {
                 aria-label={t('work.awaiting.declinePlaceholder')}
                 onChange={(event) => setReason(event.target.value)}
                 placeholder={t('work.awaiting.declinePlaceholder')}
-                className="min-h-14 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink"
+                className="min-h-14 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
             <div className="flex flex-wrap gap-2">

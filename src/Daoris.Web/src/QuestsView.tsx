@@ -141,8 +141,13 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
             if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetail(quest); }
           }}
         >
-          <header className="flex items-baseline justify-between gap-4">
-            <span className="text-body font-semibold">{quest.title}</span>
+          {/* Status FIRST, beside the title it describes — the order D41 §5 already specifies for
+              Overview's rows (`pill · title · route · how long`). Pushed to the far edge it sat a
+              thousand pixels from the thing it was about, and the eye had to cross the whole card to
+              connect them. The secondary marks stay right: they are exceptions, not identity. */}
+          <header className="flex items-baseline gap-2">
+            <Pill tone={tone} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
+            <span className="min-w-0 flex-1 truncate text-body font-semibold">{quest.title}</span>
             <span className="flex shrink-0 items-baseline gap-1.5">
               {/* A week of silence is the signal this view exists to surface. */}
               {quest.status === 'Open' && sat >= 7 && (
@@ -154,7 +159,6 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
                   {t(`sessionState.${session.state}`)}
                 </Pill>
               )}
-              <Pill tone={tone} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
             </span>
           </header>
           <p className="mt-1 text-body text-accent">
@@ -252,7 +256,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
                       placeholder={t('quests.detail.declinePlaceholder')}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
-                      className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
+                      className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
                     />
                     {/* Declining without a reason is refused by the service; the form does not offer
                         the mistake. */}
@@ -324,7 +328,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
                   <p className="mt-2 mb-0 text-body text-ink-soft">{session.note}</p>
                 )}
                 {session.evidence && (
-                  <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line bg-raised px-3 py-2.5 font-mono text-small">
+                  <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line-strong bg-raised px-3 py-2.5 font-mono text-small">
                     {session.evidence}
                   </pre>
                 )}
@@ -390,7 +394,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
               <input
                 required value={draft.title}
                 onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                className="min-h-[1.9rem] rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink"
+                className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
             {target && !target.registered && (
@@ -404,7 +408,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
               <textarea
                 required value={draft.body}
                 onChange={(e) => setDraft({ ...draft, body: e.target.value })}
-                className="min-h-28 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink"
+                className="min-h-28 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
           </form>
