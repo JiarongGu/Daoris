@@ -113,15 +113,19 @@ risk, **authorship** was.
   agents in one tree corrupt it" survives; only the incidental cap does not), **D52** the surface, and
   **D55** the frame: Manage ⇄ Work are two **frames** of one application rather than a sixth nav item,
   with a status bar, a growable output panel, a frameless window whose top strip is application chrome
-  (SURF7) and a monitor window (SURF8). **All of SURF4 has landed** — the atoms, the rail, the
-  attended session (its timeline **derived**, because the record has no event log) and the **frame**:
-  Work is reachable and usable today (`npm run desktop -- run`, then *Work*). **The stream has one
-  home**, the output panel — `ChatDrawer` is gone, Quests keeps the record and gains a door,
-  Projects keeps the registry's controls. **SURF5's attention half** landed with it: `AwaitingPerson`
-  has a surface at last, with **three** moves and not the ledger's fourth (answering it is a
-  message, not a move), landing on the driver so the process and the record move together. The
-  **right dock** is deliberately unbuilt until the diff gives it a second occupant (SURF6).
-  **SURF5b (the notification), SURF6, SURF7–9 remain.**
+  (SURF7) and a monitor window (SURF8). **All of SURF4 and SURF5's attention half have landed** —
+  atoms, rail, attended session (its timeline **derived**: the record has no event log), the frame,
+  and a parked session's three moves. Work is usable today (`npm run desktop -- run`, then *Work*);
+  **the stream has one home**, the output panel, so `ChatDrawer` is gone and Quests keeps the record
+  plus a door. The archive carries the rest.
+- 🔴 **The owner is not satisfied with the desktop's own design** (2026-09-21, after SURF5a: *"I
+  still dont see good design for the desktop app itself"*). **Start here.** The regions work and
+  the application around them does not: an OS title bar, Manage's nav filling Work's sidebar, no
+  app chrome of its own, web spacing where an IDE is dense.
+  **`docs/2026-09-21-desktop-design-brief.md`** is the brief and **SURF10** the backlog item — read
+  both before touching anything with a screen, and **confirm the reading with the owner** rather
+  than inferring it. SURF7 is a piece of the answer, not the whole of it. **SURF5b, SURF6, SURF7–9
+  remain** beneath it.
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

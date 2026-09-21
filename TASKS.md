@@ -346,6 +346,20 @@ the driver so the process and the record move together — plus Overview's *what
 the count on the Work switch. What remains of SURF5 is the **notification** (SURF5b). **SURF5b,
 SURF6 and SURF7–9 are what remain of the arc.**
 
+- [ ] 🔴 **SURF10 — the desktop application's own design** (owner, 2026-09-21, after SURF5a: *"I
+  still dont see good design for the desktop app itself"*). **The next thing to do, and it comes
+  before SURF5b, SURF6 and SURF7** — SURF7 is a piece of the answer, not the whole of it. Every
+  region SURF4–5 built works; what is missing is the *application* they sit in. The brief is
+  **`docs/2026-09-21-desktop-design-brief.md`**: what is observably wrong (an OS title bar over a
+  page that draws its own everything; Work borrowing Manage's sidebar with half the column empty;
+  an attended column that is mostly white; a permanent form at the top of the rail; web spacing
+  where an IDE is dense; no icons, hover states or keyboard story), and what must not move (D41's
+  tokens and status palette — though its *spacing* is the likeliest thing to need amending, as a
+  decision rather than a drift; D42's stack; no editor, ever; the disclosure boundary).
+  **Take it as a direction and confirm the reading with the owner before building**, the way D53
+  and ARCH1 were. Deliverable: a reference pass on the *window*, a decision recorded before the
+  build, and a real-window loop — `npm run desktop -- shot` is the only thing that can see it.
+
 - [ ] **SURF7 — the window is part of the frame** (D55 §a has the traps and the reasons; this is the
   work). `MainForm` becomes an `OptimizedForm` with `FramelessChrome`; the top strip becomes app
   menu + mode switch + workspace scope + caption buttons. Map `WindowCommandModule` **late, from
