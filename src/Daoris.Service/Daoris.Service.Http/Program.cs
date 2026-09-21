@@ -347,7 +347,8 @@ app.MapPost("/api/sessions", async (
     // service has no binaries to look at, which is exactly the D46 §7 split: records here, processes
     // there. It records what it is told and judges none of it.
     var outcome = await s.Ledger.OpenAsync(
-        body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, ct);
+        body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
+        body.BaseCommit, ct);
 
     return outcome.Refusal switch
     {
@@ -377,7 +378,7 @@ app.MapPost("/api/sessions/chat", async (
         body.Repository,
         // The adapter is the harness, never a model (D24). Silence takes the supported one.
         string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
-        DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, ct);
+        DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct);
 
     return outcome.Refusal switch
     {
@@ -714,7 +715,8 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     s.Created, s.Updated, s.Workspace, s.Kind.ToString().ToLowerInvariant(),
     s.HarnessVersion,
     Profile: loopback ? s.Profile : null,
-    Tree: loopback ? s.Tree : null);
+    Tree: loopback ? s.Tree : null,
+    BaseCommit: loopback ? s.BaseCommit : null);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

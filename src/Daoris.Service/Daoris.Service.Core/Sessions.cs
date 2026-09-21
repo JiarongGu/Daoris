@@ -109,7 +109,8 @@ public sealed record Session(
     SessionKind Kind = SessionKind.Driven,
     string? HarnessVersion = null,
     string? Profile = null,
-    string? Tree = null)
+    string? Tree = null,
+    string? BaseCommit = null)
 {
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
@@ -182,7 +183,13 @@ public sealed class SessionStore
                   profile         TEXT NULL,
                   -- D51: which working tree it holds. Null means the repository's main tree, whose
                   -- path this deployment may not know — and the lock reads that conservatively.
-                  tree            TEXT NULL
+                  tree            TEXT NULL,
+                  -- SURF6: the commit this tree stood at when the spawn began, so the range the
+                  -- review reads is a FACT rather than a guess reconstructed from the evidence
+                  -- string. Written once at spawn like the three above. It is a repository fact, not
+                  -- a machine one — but the remote feed copies a named allowlist and does not name
+                  -- it, so it stays here unless someone decides otherwise.
+                  base_commit     TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
                 """;
@@ -192,7 +199,7 @@ public sealed class SessionStore
         // Records made before a column existed must survive its arrival: a session record is the
         // reviewable trace of work that actually happened, and a store that dropped them on an upgrade
         // would lose exactly the history the person reviews. Workspaces came with D48, kinds with D49,
-        // the tree with D51.
+        // the tree with D51, the base commit with SURF6.
         foreach (var (column, definition) in new[]
         {
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
@@ -200,6 +207,7 @@ public sealed class SessionStore
             ("harness_version", "harness_version TEXT NULL"),
             ("profile", "profile TEXT NULL"),
             ("tree", "tree TEXT NULL"),
+            ("base_commit", "base_commit TEXT NULL"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -253,11 +261,12 @@ public sealed class SessionStore
               kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}',
               harness_version TEXT NULL,
               profile         TEXT NULL,
-              tree            TEXT NULL
+              tree            TEXT NULL,
+              base_commit     TEXT NULL
             );
             INSERT INTO sessions_relaxed
               SELECT id, quest, repository, adapter, state, note, evidence, transcript, created,
-                     updated, workspace, kind, harness_version, profile, tree
+                     updated, workspace, kind, harness_version, profile, tree, base_commit
               FROM sessions;
             DROP TABLE sessions;
             ALTER TABLE sessions_relaxed RENAME TO sessions;
@@ -274,25 +283,26 @@ public sealed class SessionStore
         string? quest, string repository, string adapter, DateTimeOffset now,
         string? workspace = null, SessionKind kind = SessionKind.Driven,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        CancellationToken ct = default)
+        string? baseCommit = null, CancellationToken ct = default)
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
             SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
             // Written at creation and never again: these say what the spawn ran ON, AS and IN, and a
             // later state change is about how it ended, not about what it was.
-            Blank(harnessVersion), Blank(profile), Trees.Normalize(tree));
+            Blank(harnessVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit));
 
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree)
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit)
             """;
         command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$kind", session.Kind.ToString());
         command.Parameters.AddWithValue("$harnessVersion", (object?)session.HarnessVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$profile", (object?)session.Profile ?? DBNull.Value);
         command.Parameters.AddWithValue("$tree", (object?)session.Tree ?? DBNull.Value);
+        command.Parameters.AddWithValue("$baseCommit", (object?)session.BaseCommit ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", session.Id);
         command.Parameters.AddWithValue("$quest", (object?)session.Quest ?? DBNull.Value);
         command.Parameters.AddWithValue("$repository", session.Repository);
@@ -462,7 +472,9 @@ public sealed class SessionStore
         reader.IsDBNull(reader.GetOrdinal("harness_version"))
             ? null : reader.GetString(reader.GetOrdinal("harness_version")),
         reader.IsDBNull(reader.GetOrdinal("profile")) ? null : reader.GetString(reader.GetOrdinal("profile")),
-        reader.IsDBNull(reader.GetOrdinal("tree")) ? null : reader.GetString(reader.GetOrdinal("tree")));
+        reader.IsDBNull(reader.GetOrdinal("tree")) ? null : reader.GetString(reader.GetOrdinal("tree")),
+        reader.IsDBNull(reader.GetOrdinal("base_commit"))
+            ? null : reader.GetString(reader.GetOrdinal("base_commit")));
 
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
     private static string? Blank(string? value) =>

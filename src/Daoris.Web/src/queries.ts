@@ -23,6 +23,8 @@ export const keys = {
   remotes: ['remotes'] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */
   harnesses: ['harnesses'] as const,
+  /** One session's landed work, read off the checkout — shell-only for the console's reason (SURF6). */
+  diff: (session: string) => ['diff', session] as const,
   entry: (id: string) => ['entry', id] as const,
   convergence: (minimumSimilarity: number, workspace: string | null) =>
     ['convergence', minimumSimilarity, workspace ?? '*'] as const,

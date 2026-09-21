@@ -181,6 +181,12 @@ public sealed class DriverModule : ModuleBase
             case "RESOLVE_SESSION":
                 return await ResolveAsync(request, cancellationToken);
 
+            // What a session actually did (SURF6, design §5). The evidence string says that work
+            // happened; this says what it was. Desktop-only by construction, like the console: it is
+            // read off a checkout, and only the machine holding one can answer at all.
+            case "SESSION_DIFF":
+                return await DiffAsync(request, cancellationToken);
+
             // This machine's harnesses, and the accounts they run as (D49 §4). Detection is free and
             // read-only — it asks each tool its own version and each profile's own login state — so
             // the page may ask whenever it likes; `refresh` is the person pressing "look again".
@@ -297,6 +303,79 @@ public sealed class DriverModule : ModuleBase
     /// sentence also carries the one fact the state cannot: `completed` normally means the session
     /// closed its own quest, and this one means a person decided it was done.</para>
     /// </remarks>
+    /// <summary>
+    /// One session's landed work, as a diff (SURF6).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Read-only, and that is the whole of this route.</b> It runs `git diff` in the tree the
+    /// record names and returns what git said. Nothing here writes, merges or removes anything — the
+    /// acts that do are the person's and are their own routes, so a surface that only shows the work
+    /// cannot accidentally change it.</para>
+    ///
+    /// <para><b>Unreviewable is INFORMATION, not a failure</b> (D48 §6's class): a record mirrored
+    /// from another machine names no tree here, a record made before the base commit was written has
+    /// no range, and a tree that has been discarded is gone. None of those is a fault, and each has a
+    /// different sentence, so the page can say which.</para>
+    /// </remarks>
+    private async Task<object?> DiffAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+
+        if (_loop.Service is not { } service)
+        {
+            throw Refusals.Because(
+                Refusals.DriverNotReady,
+                "the driver is still coming up — its service is not answering yet. A moment.");
+        }
+
+        var (tree, baseCommit) = await service.SessionGroundAsync(id, cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(tree))
+        {
+            throw Refusals.Because(
+                Refusals.SessionNotReviewable,
+                "this session's record names no working tree on this machine, so there is nothing "
+                + "here to diff. That is what a record looks like when it travelled from the machine "
+                + "that did the work.",
+                ("session", id));
+        }
+
+        if (string.IsNullOrWhiteSpace(baseCommit))
+        {
+            throw Refusals.Because(
+                Refusals.SessionNotReviewable,
+                "this session's record does not say which commit its tree stood at when it began, so "
+                + "there is no range to measure. Records made before Daoris started writing that down "
+                + "keep their evidence line and cannot gain a diff.",
+                ("session", id));
+        }
+
+        var diff = await WorkingTree.DiffAsync(tree, baseCommit, cancellationToken);
+        if (diff is null)
+        {
+            throw Refusals.Because(
+                Refusals.SessionNotReviewable,
+                "git could not read that range where the session ran — the tree has moved, been "
+                + "discarded, or no longer holds the commit it started from.",
+                ("session", id));
+        }
+
+        return new
+        {
+            Session = id,
+            diff.Base,
+            diff.Truncated,
+            Files = diff.Files.Select(file => new
+            {
+                file.Path,
+                file.Status,
+                file.Added,
+                file.Removed,
+                file.Patch,
+            }).ToArray(),
+        };
+    }
+
     private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

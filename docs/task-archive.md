@@ -2619,3 +2619,68 @@ width — with a Playwright case at a 680px viewport, sabotaged and watched fail
 `docs/FIX-LOG.md` has the trap: **a responsive rule is half a pair**, and retiring the other half
 leaves it pointing at nothing. The boundary itself held exactly as designed: no caption slots, no
 mode switch, no Machine domain, no resize strip, no `remote` segment, and `driver · none here`.
+
+## SURF6a — review: seeing what a session landed (2026-09-22)
+
+> **SURF6 — review: the diff** (design §5, D52; same method — `DiffFileRow` as a molecule with every
+> file state in its story, `DiffPane` over it). The session's landed work as a diff, computed by git
+> where the tree is and carried over the bridge — desktop-only for the console's reason (D47 §4),
+> measured from the `HEAD` the driver already records, **bounded and saying what it truncated**. …
+> **D55 reshapes the surface**: a **multibuffer** … with **accept**, or **send it back as a quest**.
+
+✅ **read-only half done 2026-09-22.** A person can now see what a session did. The two ACTS — accept
+into the canonical line, discard the tree, send it back as a quest — are **not** in this landing and
+remain as SURF6b; the split is along the risk boundary, and the reason is below.
+
+**The range was not a fact, and the design assumed it was.** Design §5 says "the driver already
+records `HEAD` before spawning, so the range is a fact rather than a guess". It recorded it into a
+local variable and spent it on the evidence *string*; nothing persisted it. So the first work was
+making the sentence true: a `base_commit` column on the session store (additive, like workspace, kind,
+harness_version, profile and tree before it), written once at spawn through **both** doors — the
+driven one and the conversation one. Two places would have dropped it silently: the quest-relaxation
+rebuild lists its columns by hand, and the remote feed is an allowlist. The rebuild was updated; the
+allowlist was deliberately **not**, so the base stays on the machine that can use it.
+
+**🔴 git walks UP, and it nearly showed the wrong repository's work.** `DiffAsync` pointed at a
+directory that is not a repository returns a clean exit code and the ENCLOSING repository's diff. The
+desktop's example family are plain directories under this repository's `_fixtures/`, so a review of an
+`engine` session showed **Daoris's own last commit** as what that session did. Caught by a test in the
+same hour, guarded by confirming `rev-parse --show-toplevel` names the path being diffed — which also
+rejects a subdirectory, where git would have silently narrowed the diff instead. `docs/FIX-LOG.md` has
+it; the general form is that **a process which searches upward has no failure mode visible in its exit
+code**, and the damage is the `reaching-in` one in read-only disguise: attributing work to whoever did
+not do it.
+
+**Committed work only, and the docstring says why.** The range is `before..HEAD`, exactly what the
+evidence string counts, so the two can never disagree. Uncommitted changes are deliberately absent: a
+chat may open on a dirty tree (D49 §3), so what is uncommitted is not knowably the session's.
+
+**The bound is the host's and it is stated** (design §5): whole patches are dropped rather than one
+cut mid-hunk, the **file list survives intact** so a person always learns that a file changed, and the
+sentence names where the rest is. A binary file reports `null` counts rather than zero — "not counted"
+and "counted nothing" are different answers, and the row says *binary*.
+
+**The right dock exists now, because it finally has a second occupant** (components plan §3a). The
+timeline moved into it, which is what gives the attended column back the height SURF10 measured and
+SURF7 could not fix. Below `lg` the dock is not rendered and the timeline stays in the column, so
+nothing is unreachable on a laptop.
+
+**Unreviewable is INFORMATION, not a fault** (D48 §6's class), and there are three different facts:
+no tree on this machine (a record that travelled here), no base recorded (a session older than the
+column), and git could not read the range (the tree moved or was discarded). One refusal code,
+`SESSION_NOT_REVIEWABLE`, with the sentence saying which — plus its entry in **both** catalogues,
+which the refusal-catalogue test demanded before it would go green.
+
+**Why the acts are not here.** They are the destructive half and `reaching-in` governs them: *never
+revert a file you do not own*, *treat "it was clean when I looked" as expired*, *assume concurrency*,
+and *a tool that enforces a rule is the most likely thing to break it*. Merging into a canonical line
+and discarding a tree deserve their own landing with those guards written first, not the tail of one
+that was already large. The read-only half is complete and useful on its own: the person can see the
+work, which is what D37 puts them at.
+
+**Proven.** 334 web unit tests (up from 312: the row's every state, the dock, the review over a mocked
+bridge, the three refusals), 12 Playwright including *a browser sees no Review tab and no dock*, 259
+service, **157 driver** (up from 152 — five against real git, because a mock agreeing with a guess
+about `--name-status` proves only that the guess is self-consistent), 53 desktop modules, `npm run
+verify` green, and **173/173 family rehearsal** — which matters here because the schema moved.
+Seen in the real window: the dock, the tabs, and the information refusal rendering verbatim.

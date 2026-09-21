@@ -9,6 +9,9 @@ import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify 
 import { AttendedSession } from './AttendedSession';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
+import { DiffPane } from './DiffPane';
+import { type DockTab, RightDock } from './RightDock';
+import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN } from './frame';
@@ -70,6 +73,9 @@ export function WorkFrame({ selected, onSelect, notify }: {
   const { t } = useTranslation();
   const [refusal, setRefusal] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  // Which dock surface is up. Not remembered across launches: unlike the mode and the attended
+  // session, this one is answered by what the person is doing in the next ten seconds.
+  const [dock, setDock] = useState<DockTab>('timeline');
   const [height, setHeight] = useState(() => remembered(PANEL_HEIGHT, 200));
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -248,6 +254,26 @@ export function WorkFrame({ selected, onSelect, notify }: {
           onToggle={toggle}
         />
       </div>
+
+      {/* The third column, built now that it has a second occupant (components plan §3a). It is
+          keyed to the attended session like every other region, and it is what gives the centre
+          column its height back — the timeline used to share that space with the composer and the
+          panel. */}
+      <RightDock tab={dock} onTab={setDock}>
+        {dock === 'review'
+          ? <DiffPane session={attended?.id ?? null} />
+          : attended
+            ? (
+              <div className="p-3">
+                <SessionTimeline
+                  session={attended}
+                  quest={quest}
+                  hideCurrentNote={attended.state === 'awaiting-person'}
+                />
+              </div>
+            )
+            : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>}
+      </RightDock>
     </div>
   );
 }

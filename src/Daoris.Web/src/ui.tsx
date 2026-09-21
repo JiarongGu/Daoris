@@ -6,8 +6,8 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowLeftRight, Check, ChevronDown, GitMerge, Inbox, Languages, LayoutGrid, Layers,
-  Plus, RotateCw, Search, SlidersHorizontal, X,
+  ArrowLeftRight, Check, ChevronDown, ChevronRight, FileDiff, GitMerge, Inbox, Languages,
+  LayoutGrid, Layers, Plus, RotateCw, Search, SlidersHorizontal, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -31,6 +31,10 @@ const ICONS = {
   check: Check,
   inbox: Inbox,
   languages: Languages,
+  // The review's own three (SURF6): a disclosure arrow both ways, and the dock's tab.
+  chevronDown: ChevronDown,
+  chevronRight: ChevronRight,
+  diff: FileDiff,
 } as const;
 
 export type IconName = keyof typeof ICONS;

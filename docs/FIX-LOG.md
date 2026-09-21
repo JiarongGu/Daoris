@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## git walks UP, so a diff of a session tree nearly showed the parent project's work (2026-09-22)
+
+**Symptom.** Caught before it shipped, by a test written in the same hour: `WorkingTree.DiffAsync`
+pointed at a directory that is not a git repository returned a **clean exit code and a diff**, where
+it was supposed to return null. The test asserted null and went red.
+
+**Root cause.** `git` searches upward for a repository. Run it in any directory that sits inside one
+and it answers for the ENCLOSING repository — exit 0, real output, nothing to suggest the answer is
+about somewhere else. So a session whose tree had been discarded, or a checkout that was never a
+repository, would have produced a diff of whatever project contained it.
+
+**Why that is worse than it sounds here.** The desktop's own example family are plain directories
+under this repository's gitignored `_fixtures/`. Opening *Review* on a session in one of them, before
+the guard, showed **Daoris's own last commit** — four files from the previous landing — rendered as
+what the `engine` session did. Confirmed by hand:
+`git rev-parse --show-toplevel` in that session tree answers with the Daoris repository root.
+
+**Fix.** Ask git for `rev-parse --show-toplevel` first and refuse unless it names the path being
+diffed. That rejects a non-repository, a deleted tree, and a SUBDIRECTORY of a real repository — the
+last of which git would have happily answered by silently narrowing the diff to that subtree. The test
+now covers all three, including the plain-directory-inside-a-repository shape that made this real.
+
+**The trap to inherit.** **A process that searches upward has no failure mode you can detect from its
+exit code.** git, and every tool like it, will answer a question about somewhere else rather than
+refuse — so a command run in a path the caller does not control needs the path CONFIRMED, not just
+the exit code checked. And it is the `reaching-in` lesson in read-only form: the damage from reading
+the wrong repository is attributing its work to someone who did not do it.
+
 ## A responsive rule outlived the thing it was written for, and stacked the icon rail on top of the page (2026-09-22)
 
 **Symptom.** On a browser window under 768px the 48px activity bar became a **48×276 column above the

@@ -108,10 +108,16 @@ public sealed class ChatRunner(
 
         var workTree = opened?.Path ?? root!;
 
+        // Where the tree stands before the conversation begins (SURF6). A chat may open on a DIRTY
+        // tree (D49 §3), so this is the commit — not the working state — and the review it feeds is
+        // committed work only, for exactly that reason.
+        var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
+
         var (sessionId, message) = await service
             // The tree the conversation runs in (D51) — its own where one was grown, the checkout
             // found above otherwise, stated by the side that is about to spawn into it.
-            .OpenChatAsync(repository, resolved.Name, selection.Version, selection.Profile, workTree, ct)
+            .OpenChatAsync(
+                repository, resolved.Name, selection.Version, selection.Profile, workTree, before, ct)
             .ConfigureAwait(false);
         if (sessionId is null)
         {

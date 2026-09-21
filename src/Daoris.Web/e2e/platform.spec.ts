@@ -299,6 +299,12 @@ test('a browser has one frame, and it is Manage (D55)', async ({ page }) => {
 
   // The status bar IS here — it belongs to the application — and it says what a browser is.
   await expect(page.getByLabel('state of this machine')).toContainText('none here');
+
+  // And no review (SURF6). A diff is read off a checkout on the machine that ran the session, so a
+  // browser has no door onto one — the dock that would hold it is part of the Work frame and the
+  // Work frame is not rendered here at all.
+  await expect(page.getByRole('tab', { name: 'Review' })).toHaveCount(0);
+  await expect(page.getByRole('tablist', { name: 'Session surfaces' })).toHaveCount(0);
 });
 
 /**

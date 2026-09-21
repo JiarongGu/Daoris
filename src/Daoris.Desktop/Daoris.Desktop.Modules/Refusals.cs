@@ -57,11 +57,19 @@ public static class Refusals
     /// <summary>A decline with nothing in it. The same rule the quest door holds, for its reason.</summary>
     public const string SessionDeclineNeedsReason = "SESSION_DECLINE_NEEDS_REASON";
 
+    /// <summary>
+    /// A review asked for where this machine cannot answer it (SURF6): the record names no tree or no
+    /// base commit, or the tree is gone. It is INFORMATION rather than a fault — a session whose
+    /// record travelled here from another machine has nothing to diff here and never will, and so
+    /// does one that predates the base commit being recorded.
+    /// </summary>
+    public const string SessionNotReviewable = "SESSION_NOT_REVIEWABLE";
+
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
         RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, DriverRefused,
-        SessionMoveNotYours, SessionDeclineNeedsReason,
+        SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable,
     ];
 
     /// <summary>

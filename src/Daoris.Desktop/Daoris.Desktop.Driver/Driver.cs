@@ -155,13 +155,21 @@ public sealed class Driver(
 
         var workTree = opened?.Path ?? root;
 
+        // Where the tree stands BEFORE anything runs in it (SURF6). Read here rather than after the
+        // spawn so it is genuinely the base: between this line and the process starting, the only
+        // thing that touches the tree is the process. It goes onto the record because the review
+        // reads it back on a later launch, long after this variable is gone — which is what makes
+        // the range a fact rather than something reconstructed from the evidence string.
+        var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
+
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
         var (sessionId, message) = await service
             // The tree this spawn will hold (D51) — its own where the repository opted in, the
             // registered root otherwise. Stated rather than left to the service to infer, because
             // this side is the one that knows where it is about to run a process.
-            .OpenSessionAsync(quest.Id, config.Adapter, selection.Version, selection.Profile, workTree, ct)
+            .OpenSessionAsync(
+                quest.Id, config.Adapter, selection.Version, selection.Profile, workTree, before, ct)
             .ConfigureAwait(false);
         if (sessionId is null)
         {
@@ -197,7 +205,6 @@ public sealed class Driver(
                 // by then the record's Tree field and the evidence say the rest.
                 note: opened?.Sentence, ct: ct).ConfigureAwait(false);
 
-            var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 

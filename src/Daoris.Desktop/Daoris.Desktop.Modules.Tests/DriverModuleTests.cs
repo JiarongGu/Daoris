@@ -37,6 +37,27 @@ public sealed class DriverModuleTests : Bridge
     /// file is what gets asserted, not this module's own answer, which would only prove it agrees
     /// with itself.
     /// </summary>
+    /// <summary>
+    /// The review route on a cold start (SURF6). Every other refusal it can raise needs a service to
+    /// answer first; this one is the state a person actually meets, and it has to be a sentence.
+    /// </summary>
+    [Fact]
+    public async Task Asking_what_a_session_landed_before_the_driver_is_up_is_a_sentence()
+    {
+        var refusal = await RefusalAsync(Module(), "SESSION_DIFF", new { id = "s1a2b3c4" });
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+        // The sentence, not just the code: this is the state a person meets on a cold start.
+        Assert.Contains("still coming up", refusal);
+    }
+
+    /// <summary>A review of nothing in particular is a malformed call, not an empty answer.</summary>
+    [Fact]
+    public async Task Asking_what_a_session_landed_without_naming_one_is_refused()
+    {
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "SESSION_DIFF", new { }));
+    }
+
     [Fact]
     public async Task Opting_a_repository_in_writes_the_file_the_loop_reads()
     {

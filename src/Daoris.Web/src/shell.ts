@@ -2,6 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
+// The shape lives beside the components that render it, so a molecule can name it without
+// importing this module (SURF6).
+import type { SessionDiff } from './work/diff';
+
+export type { DiffFile, SessionDiff } from './work/diff';
 
 // The shell's half of the platform (D46 §6). In a browser none of this exists — the bridge is absent,
 // the query never runs, and every control gated on it stays unrendered. That is the design, not a
@@ -394,5 +399,33 @@ export const useStopSession = () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.driver });
     },
+  });
+};
+
+/**
+ * What a session actually did (SURF6, design §5).
+ *
+ * @remarks
+ * **Shell-only, structurally** — the same rule as the console (D47 §4): it is read off a checkout on
+ * this machine, so a browser has nothing to ask and is never asked to. `enabled` gates on the bridge
+ * for that reason rather than as an optimisation.
+ *
+ * **It is not fetched until a person looks.** A diff costs several `git` processes, and the rail
+ * changes far more often than anyone opens a review — so this is keyed by session and left to the
+ * pane that renders it, never prefetched alongside the record.
+ *
+ * A refusal is the host's own sentence and reaches the person verbatim: "no tree here", "no range
+ * recorded", "git could not read it" are three different facts, and each names which.
+ */
+export const useSessionDiff = (session: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.diff(session ?? ''),
+    queryFn: () => call<SessionDiff>('SESSION_DIFF', { id: session }),
+    enabled: isAvailable && Boolean(session),
+    // A landed session's work does not change under the reader; a running one's does, but a review
+    // is read at the end. Refetching on focus would re-run git every time the window is touched.
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 };

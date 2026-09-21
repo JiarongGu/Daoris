@@ -75,7 +75,7 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? harnessVersion = null, string? profile = null,
-        string? tree = null, CancellationToken ct = default)
+        string? tree = null, string? baseCommit = null, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
@@ -89,6 +89,9 @@ public sealed class ServiceClient : IDisposable
             // Which working tree this spawn will hold (D51). The same split: the service has no
             // checkout to look at, and this side is about to run a process in one.
             if (tree is not null) writer.WriteString("tree", tree);
+            // Where that tree stood before the process ran (SURF6) — the range the review is measured
+            // from. Observed here for the same reason as the two above: only this side has a checkout.
+            if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
             writer.WriteEndObject();
         });
 
@@ -114,7 +117,7 @@ public sealed class ServiceClient : IDisposable
     /// </summary>
     public async Task<(string? SessionId, string Message)> OpenChatAsync(
         string repository, string adapter, string? harnessVersion = null, string? profile = null,
-        string? tree = null, CancellationToken ct = default)
+        string? tree = null, string? baseCommit = null, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
@@ -124,6 +127,7 @@ public sealed class ServiceClient : IDisposable
             if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
             if (profile is not null) writer.WriteString("profile", profile);
             if (tree is not null) writer.WriteString("tree", tree);
+            if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
             writer.WriteEndObject();
         });
 
@@ -214,6 +218,32 @@ public sealed class ServiceClient : IDisposable
         }
 
         return repositories;
+    }
+
+    /// <summary>
+    /// Where one session ran and what it started from — the two machine-local facts a review needs
+    /// (SURF6).
+    /// </summary>
+    /// <remarks>
+    /// Both come back only over loopback, which is the point: the tree is a filesystem path and the
+    /// base is useless without the checkout it names. A caller on another machine reads nulls and has
+    /// nothing to diff, which is the honest answer rather than a refusal.
+    /// </remarks>
+    public async Task<(string? Tree, string? BaseCommit)> SessionGroundAsync(
+        string id, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(
+            await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (Text(session, "id") == id)
+            {
+                return (Text(session, "tree"), Text(session, "baseCommit"));
+            }
+        }
+
+        return (null, null);
     }
 
     private static IReadOnlyList<SessionView> ReadSessions(string json)

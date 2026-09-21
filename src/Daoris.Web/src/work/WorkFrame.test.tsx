@@ -499,3 +499,101 @@ describe('clearing a parked session', () => {
     expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
   });
 });
+
+/**
+ * Review (SURF6, design §5): what the session actually did. The dock's second occupant — which is
+ * why the dock exists at all now, and why the timeline moved into it.
+ */
+describe('reviewing what a session landed', () => {
+  const DIFF = {
+    session: 's1a2b3c4',
+    base: 'abc1234567890',
+    truncated: null as string | null,
+    files: [
+      {
+        path: 'src/chunk.ts', status: 'modified', added: 4, removed: 1,
+        patch: '@@ -1 +1,2 @@\n-old\n+new',
+      },
+      { path: 'assets/logo.png', status: 'added', added: null, removed: null, patch: null },
+    ],
+  };
+
+  beforeEach(() => {
+    SESSIONS = [DRIVEN];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+  });
+
+  /** The dock opens on the timeline: a running session is watched far more often than reviewed. */
+  it('docks the timeline beside the session, and asks for no diff until someone looks', async () => {
+    show('s1a2b3c4');
+    await screen.findByRole('tab', { name: 'Review' });
+
+    expect(screen.getByRole('tab', { name: 'Timeline' }).getAttribute('aria-selected')).toBe('true');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
+  });
+
+  it('reads the landed work off the checkout when the review tab is opened', async () => {
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+
+    expect(await screen.findByText('src/chunk.ts')).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', {
+      payload: { id: 's1a2b3c4' },
+    });
+    // The range it is measured from, stated — a review that does not say so is an opinion.
+    expect(screen.getByText(/abc12345/)).toBeTruthy();
+    // And a binary file is listed as uncounted rather than as an empty change.
+    expect(screen.getByText('binary')).toBeTruthy();
+  });
+
+  /**
+   * The bound is the host's sentence and reaches the person word for word — the console's rule,
+   * applied to a surface that has no upper size either.
+   */
+  it('shows the bound verbatim when the host truncated the patches', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_DIFF'
+      ? { ...DIFF, truncated: '9 more files changed; their patches are not shown here. `git diff` in the tree has all of it.' }
+      : DRIVER_STATE));
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+
+    expect(await screen.findByText(/9 more files changed/)).toBeTruthy();
+  });
+
+  /**
+   * Unreviewable is INFORMATION, not a fault (D48 §6's class): a record that travelled from another
+   * machine names no tree here and never will. The host's sentence says which of the three it is.
+   */
+  it('renders the host’s own sentence when there is nothing here to diff', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type !== 'SESSION_DIFF') return DRIVER_STATE;
+      throw Object.assign(new Error('fallback'), {
+        code: 'SESSION_NOT_REVIEWABLE', parameters: { session: 's1a2b3c4' },
+      });
+    });
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+
+    expect(await screen.findByText(/no diff to read for this session/)).toBeTruthy();
+  });
+
+  /** A session that committed nothing changed nothing — an answer, not an empty list. */
+  it('says a session landed nothing rather than showing an empty diff', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? { ...DIFF, files: [] } : DRIVER_STATE));
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+
+    expect(await screen.findByText('Nothing landed')).toBeTruthy();
+  });
+});

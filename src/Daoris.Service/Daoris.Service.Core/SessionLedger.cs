@@ -91,7 +91,7 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
     public async Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        CancellationToken ct = default)
+        string? baseCommit = null, CancellationToken ct = default)
     {
         var known = registry is null
             ? null
@@ -125,7 +125,7 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
         var session = await sessions
             .CreateAsync(
                 null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
-                harnessVersion, profile, holding, ct)
+                harnessVersion, profile, holding, baseCommit, ct)
             .ConfigureAwait(false);
 
         return new(
@@ -141,7 +141,7 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
     public async Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        CancellationToken ct = default)
+        string? baseCommit = null, CancellationToken ct = default)
     {
         var quest = await quests.FindAsync(questId.TrimStart('#'), ct).ConfigureAwait(false);
         if (quest is null)
@@ -177,7 +177,7 @@ public sealed class SessionLedger(QuestStore quests, SessionStore sessions, Know
         var session = await sessions
             .CreateAsync(
                 quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
-                harnessVersion, profile, holding, ct)
+                harnessVersion, profile, holding, baseCommit, ct)
             .ConfigureAwait(false);
 
         return new(

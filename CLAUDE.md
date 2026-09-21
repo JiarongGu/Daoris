@@ -118,15 +118,15 @@ risk, **authorship** was.
   and a parked session's three moves. Work is usable today (`npm run desktop -- run`, then *Work*);
   **the stream has one home**, the output panel, so `ChatDrawer` is gone and Quests keeps the record
   plus a door. The archive carries the rest.
-- **The application has a frame of its own now** (SURF10 → **D56**,
-  `docs/2026-09-21-desktop-frame-design.md`, 2026-09-21): an app strip, a 48px **activity bar**
-  identical in both frames, the rail's `＋`, one owner for the verbs, and **D41 §3 amended to one
-  denser scale** — seven named type tokens, held by `tokens.test.ts`, because the literal form had
-  drifted to fifteen values. The diagnosis was **measured** (`run` → `shot` → `eval`), which is how
-  a design complaint became a decision: navigation 42% → 23%, the session ~28% → ~72%. **SURF7
-  landed 2026-09-22**: frameless, the strip IS the title bar, and the **window** paints the caption
-  buttons into the reserved room (**D56 as amended**, which has the reason).
-  `npm run desktop -- shot --theme <light|dark>` is the only instrument that sees native chrome. **SURF5b, SURF6, SURF8, SURF9 remain.**
+- **The application has a frame of its own** (SURF10/SURF7 → **D56**,
+  `docs/2026-09-21-desktop-frame-design.md`): a frameless window whose **app strip is the title
+  bar**, a 48px **activity bar** identical in both frames, the rail's `＋`, one owner for the verbs,
+  a **right dock** beside the attended session, and **D41 §3 amended to one denser scale** — seven
+  named type tokens held by `tokens.test.ts`, because the literal form had drifted to fifteen
+  values. The diagnosis was **measured**, which is how a design complaint became a decision.
+  `npm run desktop -- shot --theme <light|dark>` is the only instrument that sees native chrome, and
+  🔴 **git walks UP** — a diff of a path that is not a repository answers for the one above it
+  (FIX-LOG). **SURF5b, SURF6b, SURF8, SURF9 remain**; the archive carries how each landed.
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

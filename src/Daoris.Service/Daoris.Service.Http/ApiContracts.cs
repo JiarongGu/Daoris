@@ -62,13 +62,19 @@ public sealed record RegistrationResponse(
 public sealed record SessionResponse(
     string Id, string? Quest, string Repository, string Adapter, string State,
     string? Note, string? Evidence, string? Transcript, DateTimeOffset Created, DateTimeOffset Updated,
-    string Workspace, string Kind, string? HarnessVersion, string? Profile, string? Tree);
+    string Workspace, string Kind, string? HarnessVersion, string? Profile, string? Tree,
+    // SURF6: the commit the tree stood at when the spawn began, so the review's range is a fact. It
+    // is a repository fact rather than a machine one, but only the machine holding the checkout can
+    // do anything with it — so it rides the same loopback gate as the tree beside it.
+    string? BaseCommit = null);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
 // look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
 public sealed record OpenSessionRequest(
-    string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree);
+    string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree,
+    string? BaseCommit = null);
 public sealed record OpenChatRequest(
-    string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree);
+    string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
+    string? BaseCommit = null);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 // `Quest` is null for a chat and `Kind` says which it was (D49 §3) — both travel, because a teammate

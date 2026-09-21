@@ -47,11 +47,16 @@ export function AttendedSession({ session, quest, resolving, onResolve }: {
   return (
     <article className="grid content-start gap-4">
       <SessionHead session={session} quest={quest} resolving={resolving} onResolve={onResolve} />
-      <SessionTimeline
-        session={session}
-        quest={quest}
-        hideCurrentNote={session.state === 'awaiting-person' && Boolean(onResolve)}
-      />
+      {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It
+          stays here on a narrow window, where the dock is not rendered at all — the column is the
+          fallback, so nothing is unreachable on a laptop. */}
+      <div className="lg:hidden">
+        <SessionTimeline
+          session={session}
+          quest={quest}
+          hideCurrentNote={session.state === 'awaiting-person' && Boolean(onResolve)}
+        />
+      </div>
     </article>
   );
 }

@@ -42,7 +42,11 @@ by the page — drivable and hold per repository, stop a running session, and si
 console**: `TAIL_SESSION` for a session's backlog and batched `SESSION_OUTPUT` events for what it says
 next, fed by the capture pump's tee into a bounded per-session buffer that never leaves this machine;
 since D49 §3 **conversations** too — `START_CHAT`, `SESSION_INPUT`, `END_CHAT` and a `SESSION_ENDED`
-event over the same bridge, and `daoris-driver chat --repository <name>` for a machine with no screen;
+event over the same bridge, and `daoris-driver chat --repository <name>` for a machine with no screen; since SURF6 **the
+review** — `SESSION_DIFF` returns a session's landed work as a bounded diff, measured from the
+`base_commit` the spawn records, read-only by construction and desktop-only for the console's
+reason (🔴 it confirms `rev-parse --show-toplevel` names the tree it was given, because git
+searches UPWARD and would otherwise answer for the repository above it);
 and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine has and `HARNESS_ACTION`
 for the person's install, update or login, each spawning that harness's own mechanism and relaying it
 through the console under `<harness>:<action>`, never a session id, because it is not a session),
