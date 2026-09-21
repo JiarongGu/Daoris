@@ -35,7 +35,11 @@ agents, repositories and concurrent sessions, designed with real UI/UX (research
 `docs/2026-09-20-working-surface-research.md`).** That direction is now **designed** (SURF1 →
 `docs/2026-09-21-working-surface-design.md`, 2026-09-21): **D51** settles the isolation model — the
 tree is the unit of exclusion and a repository may have more than one — and **D52** settles the
-surface, with a build order of five items, **SURF2–SURF6**. Beside them sit three smaller leftovers —
+surface, with a build order of five items, **SURF2–SURF6** — since extended to **SURF8** by **D55**
+(2026-09-21), which re-positions the desktop as a **code-gen-driven IDE** after a second reference
+study of the applications developers actually live in (`docs/2026-09-21-ide-reference-study.md`):
+Work becomes a **second frame** rather than a sixth nav item, the window becomes frameless with the
+top strip as application chrome (SURF7), and a **monitor window** joins it (SURF8). Beside them sit three smaller leftovers —
 CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind
 (WSP5 landed 2026-09-21: the switcher is global chrome, and it is in the archive).
 **The owner then interposed the dsh evaluation (2026-09-21), and DSH1 ran it the same day**: eight
@@ -304,6 +308,18 @@ surface is built **component by component**, each with its story and its own tes
 head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
 thing that renders is the last thing.
 
+**D55 re-positions the whole surface** (owner, 2026-09-21: *"the desktop is becoming more a dev ide
+(but code gen driven)"*, with the method note *"you should reference more existing application for
+designing the ui/ux"*). The evidence is `docs/2026-09-21-ide-reference-study.md`; five patterns
+recur across its references and the platform has none of them, which is why Work is a **frame** and
+not a nav item. **Nothing built is wasted** — atoms and molecules are frame-independent, which is
+what "a molecule imports no hook" bought. One item the study argues for that nobody had filed:
+
+- [ ] **SURF9 — a command palette.** The only affordance that scales past roughly seven top-level
+  domains, and Daoris is about to have Manage's five plus Work plus Review. It is much cheaper before
+  the count grows than after, because the expensive half is the *discipline* — every action
+  addressable by name — not the widget.
+
 **SURF4 is four items, cut along the layers** (owner, 2026-09-21: *"this is a large UI/UX as a whole,
 so develop it component by component — more of an atomic design pattern — so each part can be tested
 one by one"*). The method, the inventory and the dependency rule are
@@ -324,7 +340,12 @@ check needs no gate row. **The parts are there to build with; SURF4b is next.**
 - [ ] **SURF4b — the rail** (components §4–§5). `SessionRow` and `RepositoryGroup` as props-only
   molecules — all nine states, driven vs chat, no quest, long and CJK titles, selected — then
   `SessionRail` over them: grouped by repository, the group header carrying drivable/held/busy, the
-  empty state, selection. Mocked-bridge vitest for the organism only.
+  empty state, selection. Mocked-bridge vitest for the organism only. **D55 adds two fields to the
+  row**, both already in the record: **where it runs** (Daoris is multi-machine by construction and
+  the row says nothing about it today) and **elapsed** (a session three minutes old and one three
+  hours deep read identically under "moved 4m ago"), and **a per-session "own tree" control** beside
+  the Machine view's per-repository toggle — that is how the need arrives, and it is the shape every
+  reference uses.
 
 - [ ] **SURF4c — the attended session** (design §3, components §4). `SessionHead` (state, repository,
   tree, quest, tool + account, age; parked sessions show their analysis at the top), `TimelineEntry`
@@ -334,13 +355,29 @@ check needs no gate row. **The parts are there to build with; SURF4b is next.**
   `AttendedSession` — `SessionConsole` moves, it does not get rewritten. First real-window pass
   (`npm run desktop -- shot`).
 
-- [ ] **SURF4d — the view** (design §3). `Composer` with its two distinct endings, then `WorkView`:
-  the full-bleed layout (the one view that breaks the reading-width cap), the sixth nav item, the
-  last-view memory, and **one home for the stream** — Quests keeps the record summary and gains a door,
+- [ ] **SURF4d — the frame** (design §3, §3b; **reshaped by D55** — it was "the view and a sixth nav
+  item"). `Composer` with its two distinct endings, then the **Work frame**: `WorkFrame` (rail +
+  attended + panel), `ModeSwitch` (Manage ⇄ Work as peers), `StatusBar` (driver, session count,
+  workspace, remote — ambient truth with nowhere to live today), `OutputPanel` (the stream, growable,
+  shrinkable, hideable — **not** a fixed well in a card), and the remembered **mode** in place of the
+  remembered view. **One home for the stream** — Quests keeps the record summary and gains a door,
   Projects keeps the registry's own controls. Starting a session moves here (repository, harness,
   profile, and whether it opens its own tree). Both locale catalogues throughout; the page suite in
-  the vitest shape `shell.test.tsx` already uses, Playwright for the record half, and a real-window
-  pass to close it.
+  the vitest shape `shell.test.tsx` already uses, Playwright asserting Work's **absence** in a
+  browser, and a real-window pass to close it.
+
+- [ ] **SURF7 — the window is part of the frame** (D55 §a has the traps and the reasons; this is the
+  work). `MainForm` becomes an `OptimizedForm` with `FramelessChrome`; the top strip becomes app
+  menu + mode switch + workspace scope + caption buttons. Map `WindowCommandModule` **late, from
+  where the window is created**, and wire `SET_THEME` and `SET_CAPTION_BUTTONS`. 🔴 Read
+  `IAppMaximizable`, never `Form.WindowState` — verify the existing `WindowStateHostOptions` stack
+  does, rather than assume it. `npm run desktop -- shot` is the only gate that can see any of this.
+
+- [ ] **SURF8 — the monitor window** (D55 §b). `SecondaryWindows`: `monitor` (rail plus live streams,
+  read-only, for a second screen) and `session:<id>` (one attended session, detached) — routes into
+  the same bundle, so the components are SURF4b/4c's unchanged, and the native frame stays. The thing
+  to prove is **a second reader on the console pump**: SES1's bounded per-session buffer was written
+  for one.
 
 - [ ] **SURF5 — attention** (design §4, D52; its UI half follows the component plan —
   `AttentionRow` as a props-only molecule, `AttentionBand` over it). Overview's **what needs you** band (parked first, then
@@ -360,7 +397,12 @@ check needs no gate row. **The parts are there to build with; SURF4b is next.**
   reversible and stays a press because it is where D37's verification lands; discard confirms and
   names what would be lost. The evidence string is unchanged for whoever reads the record from
   another machine. Playwright holds the negative guarantee: a browser sees the record and never a
-  diff, a stream, a tree path or a notification setting.
+  diff, a stream, a tree path or a notification setting. **D55 reshapes the surface**: a
+  **multibuffer** — one scrollable aggregation of every changed file with a per-file *viewed* mark —
+  not a file tree beside a pane, because that is what makes a forty-file review finishable (Zed's
+  `AgentDiffPane`, study §2). The verbs stay Daoris's: **accept**, or **send it back as a quest**, and
+  never the reference's keep/reject per hunk — the session already committed, and reaching in to fix
+  what you are reviewing is exactly what D32 forbids.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

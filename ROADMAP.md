@@ -64,26 +64,28 @@ real UI/UX.** That is a different product from what exists: the platform today i
 console*, which optimises for scanning state, and a working surface optimises for holding attention on
 one thing while several others run.
 
-**Interposed 2026-09-21 (owner): the dsh evaluation comes before the view is built — and it has run.**
-[deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) (MIT) already supplied the
-surface's structure (D52 as amended); the owner asked whether Daoris should adopt its *function* too.
-`docs/2026-09-21-dsh-direction.md` was the plan; **DSH1** ran it the same day
-(`docs/2026-09-21-dsh-evaluation.md`: eight probes against an installed `dsh`, driven on a scripted
-provider), and **D53 is the answer, accepted 2026-09-21**: *dsh is adopted as a protocol, not a
-product* — the adapter seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the
-working surface stays `Daoris.Web`. The protocol items, **ACP1 → ACP2 → ACP3**, come first;
-**SURF4a–d and the UI halves of SURF5/SURF6** follow, unblocked and unchanged in design.
+**Interposed 2026-09-21 (owner): the dsh evaluation came first, and has run.** **DSH1** probed an
+installed [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) the same day
+(`docs/2026-09-21-dsh-evaluation.md`), and **D53 is the answer, accepted 2026-09-21**: *dsh is
+adopted as a protocol, not a product* — the adapter seam grows an **ACP door**, dsh and codex arrive
+as configurations of it, and the working surface stays `Daoris.Web`. **ACP1 → ACP2 → ACP3** come
+first; SURF4a–d and the UI halves of SURF5/SURF6 follow.
 
 The research is `docs/2026-09-20-working-surface-research.md`; the contract is
 `docs/2026-09-21-working-surface-design.md` (SURF1, done 2026-09-21). The question that came before
 any screen is settled as **D51**: **the tree is the unit of exclusion, and a repository may have more
-than one.** "One session per repository" was two claims welded together — *two agents in one tree
-corrupt it*, which is permanent, and *a repository has one tree*, which was only ever a fact about how
-the registry was built. Unwelding them lets the person and the driver work in one repository at once
-without weakening anything; D46 §9 survives, because the planner still paces a domain at one driven
-session. **D52** settles the surface: Work as a sixth view rather than a second application, the
-stream promoted with an observed timeline beside it (and no screen-scraping of another program's
-stdout), `AwaitingPerson` given a surface at last, review as a real diff, and no PTY.
+than one** — "one session per repository" was two claims welded together, and unwelding them lets the
+person and the driver work in one repository at once without weakening D46 §9. **D52** settles the
+surface: the stream promoted with an observed timeline beside it (and no screen-scraping of another
+program's stdout), `AwaitingPerson` given a surface at last, review as a real diff, and no PTY.
+
+**D55 then re-positions it** (2026-09-21, from the owner: *the desktop is becoming more a dev IDE,
+but code-gen driven* — and *reference more existing applications*). The second study answered the
+method note (`docs/2026-09-21-ide-reference-study.md`: IDEs, not session managers) and found five
+patterns recurring in nearly every reference that the platform has **none** of. So **Work is a second
+frame, not a sixth view**: Manage ⇄ Work as peers, a status bar, a growable output panel, a frameless
+window whose top strip is application chrome (SURF7), and a monitor window (SURF8). The organising
+object is a **session, not a file**, and there is no editor in the plan at any point.
 
 | Item | What | Where it stands |
 |---|---|---|
@@ -91,9 +93,12 @@ stdout), `AwaitingPerson` given a surface at last, review as a real diff, and no
 | **SURF3 · Session trees** | `git worktree` under `~/.daoris/trees/`, on request and opt-in; `connect` refused from a linked worktree; removal that refuses to destroy work; only the registered root ever feeds | **Built** (2026-09-21) — a deliberately dirty root no longer holds the driver: the session ran in its own tree, the person's file untouched, and removal refused while the work sat unmerged |
 | **ACP1 · The protocol door** (D53) | An ACP door on the adapter seam: `AcpSession` over the spawned process's stdio, a permission request refused by construction, the record still moved by the exit code and the quest | **Built** (2026-09-21) — the rehearsal drives a quest to done over it with no model, and the refusal reaches both sides |
 | **ACP2–3 · The harnesses on it** | `claude-code` through the ACP project's adapter, closing with a real driven run; then dsh and codex as configurations of the same door (HARNESS2 closes into ACP3) | Next — ACP2's closing step spends a real login |
-| **SURF4a–d · The Work view** | Built component by component (D52 as amended, `docs/2026-09-21-working-surface-components.md`): the atoms and the two helpers, then the rail, then the attended session, then the view. A story before each component, its own test, and no hook inside a molecule. SURF4c's timeline reads the protocol | Unblocked by D53; after ACP1, whose events the timeline renders |
+| **SURF4a–d · The Work frame** | Built component by component (D52 as amended, `docs/2026-09-21-working-surface-components.md`): the atoms and the two helpers, then the rail, then the attended session, then — **D55** — the *frame* rather than a sixth nav item. A story before each component, its own test, and no hook inside a molecule. SURF4c's timeline reads the protocol | **SURF4a built** (2026-09-21): three atoms, `SESSION_TONE` moved, `sessionTitle`, a sabotage-tested presentational boundary, every story a smoke test. 4b next |
 | **SURF5 · Attention** | Overview's *what needs you*, `AwaitingPerson`'s surface, the sidebar counts, OS notification on park and end | Planned |
-| **SURF6 · Review** | The diff over the bridge, bounded; merge and discard as the person's acts | Planned |
+| **SURF6 · Review** | The diff over the bridge, bounded; **a multibuffer with a per-file *viewed* mark** (D55); accept, or send it back as a quest | Planned |
+| **SURF7 · The window is the frame** (D55) | `OptimizedForm` with frameless chrome; the top strip becomes app menu + mode switch + scope + caption buttons; `WindowCommandModule` mapped late, Snap Layouts bought by reporting the button rectangles | Planned — the framework ships it; `Form.WindowState` lies about a frameless window and `IAppMaximizable` is the truth |
+| **SURF8 · The monitor window** (D55) | `SecondaryWindows`: a read-only rail-and-streams window for a second screen, and a detached session — named windows on their own STA threads, geometry per name | Planned — the thing to prove is a **second reader** on the console pump |
+| **SURF9 · Command palette** (D55) | The only affordance that scales past ~7 domains, and cheaper before the count grows | Planned |
 
 ---
 

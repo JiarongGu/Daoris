@@ -149,7 +149,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 
 | Molecule | What | Story states |
 |---|---|---|
-| `SessionRow` | one session in the rail: dot, identity, state, age | all nine states · driven vs chat · no quest · long + CJK title · selected |
+| `SessionRow` | one session in the rail: dot, identity, state, **where it runs**, **elapsed**, age (D55) | all nine states · driven vs chat · no quest · long + CJK title · selected · another machine · running three hours |
 | `RepositoryGroup` | the rail's group header | drivable, held, busy, not adopted, no root |
 | `SessionHead` | the attended session's record: state, repo, tree, quest, tool + account, age | driven, chat, parked-with-analysis, ended, `--real` tree vs session tree |
 | `TimelineEntry` | one observed event: state change, quest transition, commit landed | each kind · a long commit subject · an entry with no note |
@@ -168,10 +168,21 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `AttentionBand` | Overview's *what needs you* | mocked-bridge vitest |
 | `DiffPane` | the review surface, bounded and stating what it truncated | mocked-bridge vitest |
 
-### Page and shell
+### Page and shell — **revised by D55**
 
-`WorkView` (the full-bleed layout, rail + attended), the sixth nav item with its two counts, and the
-last-view memory.
+~~`WorkView` (the full-bleed layout, rail + attended), the sixth nav item with its two counts, and the
+last-view memory.~~ Work is the **second frame**, not a sixth nav item
+(`docs/2026-09-21-ide-reference-study.md` §4, answered B). The page-and-shell layer is therefore:
+
+| Piece | What | Story / test states |
+|---|---|---|
+| `ModeSwitch` | *Manage* ⇄ *Work*, peers | either mode · Work absent (a browser) |
+| `StatusBar` | ambient truth: driver, session count, workspace, remote | running · stopped · no shell · a remote wired |
+| `OutputPanel` | the stream, **growable, shrinkable, hideable** — `MonoWell` inside a region, not a well inside a card | collapsed · default · grown · no session attended |
+| `WorkFrame` | rail + attended + panel + status bar | the assembled frame |
+
+The remembered mode replaces the remembered view, and is a per-browser preference like the language
+and the workspace scope — never machine wiring, never a tracked file.
 
 ## 5. The build order, cut along the layers
 
@@ -183,7 +194,7 @@ the same method. Each item is TDD, gates green, archived on completion.
 | **SURF4a** ✔ | the three atoms, `SESSION_TONE`, `sessionTitle`, the presentational-import check, stories-as-smoke-tests | stories + `ui.test.tsx`; the import check sabotage-tested |
 | **SURF4b** | `SessionRow`, `RepositoryGroup`, and `SessionRail` over them | props-only vitest for the two molecules; mocked bridge for the rail |
 | **SURF4c** | `SessionHead`, `TimelineEntry`, `SessionTimeline`, and the stream promoted into `AttendedSession` | mocked-bridge vitest; the first `npm run desktop -- shot` of the assembled region |
-| **SURF4d** | `Composer`, `WorkView`, the nav item, last-view memory, one home for the stream | the page suite; Playwright's record half; a real-window pass |
+| **SURF4d** | `Composer`, then the **frame** (D55): `WorkFrame`, `ModeSwitch`, `StatusBar`, `OutputPanel`, remembered mode | the page suite; Playwright asserting Work's **absence** in a browser; a real-window pass |
 
 **Why this order.** Each item renders something a person can look at: 4a puts every state in
 Storybook before a view exists, 4b makes the rail real, 4c makes one session attendable, 4d makes it a

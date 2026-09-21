@@ -8,6 +8,14 @@
 > isolation model, **D52** settles the surface. Read with D46 (the driver) and D49 (the interactive
 > surface) — this extends both without weakening either — and with D41's design language, which does
 > not move.
+>
+> **Amended 2026-09-21 by D55.** The owner reset the positioning mid-build — *"the desktop is becoming
+> more a dev ide (but code gen driven)"* — with the method note *"you should reference more existing
+> application"*. A second study answered it (`docs/2026-09-21-ide-reference-study.md`: IDEs, not
+> session managers) and **D55** carries the result. Everything below stands **except the container**:
+> Work is a **second frame** beside Manage, not a sixth nav item, and it brings a status bar, a
+> growable output panel and a mode switch with it. §3's rail, attended session, stream and timeline
+> are unchanged in content — see §3b for the three places the study adds to them.
 
 ## 1. What it is for
 
@@ -162,6 +170,31 @@ profile, and whether it opens its own tree — belongs in Work, where the result
 **The shell remembers the last view**, because a working surface is a place someone returns to, and
 re-landing on a management screen every launch is a toll. Attention is carried by the sidebar's counts
 instead (§4), which is what makes "what needs me" answerable from wherever the person actually is.
+
+## 3b. What the IDE study adds to §3 (D55, 2026-09-21)
+
+§3's title — *"Work is a view, not a second application"* — was half right and is now precise: Work
+is not a second application, and it is **not a view either**. It is the second **frame** of one
+application. Three additions, each from a named reference in
+`docs/2026-09-21-ide-reference-study.md`:
+
+- **The frame gains a status bar and a panel.** Ambient state (`driver: running · 2 sessions ·
+  workspace: default`) has nowhere to live today and must be true without being looked at — VS Code's
+  status bar. The stream stops being a fixed-height well inside a box and becomes a **panel you can
+  grow, shrink and hide** — the one arrangement a well inside a card can never offer, and the reason
+  output lives in a panel in every workbench ever shipped.
+- **A session row carries two more facts, both already in the record.** **Where it runs** — Daoris is
+  multi-machine by construction (D47) and a row that says nothing about which machine holds a session
+  is a gap the remote opened and nobody filled — and **elapsed**, because "moved 4m ago" reads the
+  same for a session three minutes old and one three hours deep.
+- **"Own tree" becomes a control on the session**, not only the per-repository toggle the Machine
+  view has. That is how the need arrives — you want a *second* session in a repository that already
+  has one — and it is the shape every reference uses (Cursor's "move an agent into a worktree").
+
+And one correction to §5: review is a **multibuffer**, one scrollable aggregation of every changed
+file with a per-file *viewed* mark, not a file tree beside a diff pane. The verbs stay Daoris's —
+**accept**, or **send it back as a quest** — because the session already committed and reaching in to
+fix what you are reviewing is the thing D32 forbids.
 
 ## 4. Attention: nobody should have to watch
 
