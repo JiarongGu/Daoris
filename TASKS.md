@@ -354,13 +354,11 @@ because the dock's second occupant let the timeline move out of it. **SURF6b clo
 discard and send-it-back, with every `reaching-in` guard on the merge and a discard that asks twice.
 **SURF9 landed 2026-09-22** — every action
 addressable by name, absent in a browser by omission, paying back the discoverability SURF10 spent.
-**SURF5b and SURF8 are what remain of the arc.**
-
-- [ ] **SURF8 — the monitor window** (D55 §b). `SecondaryWindows`: `monitor` (rail plus live streams,
-  read-only, for a second screen) and `session:<id>` (one attended session, detached) — routes into
-  the same bundle, so the components are SURF4b/4c's unchanged, and the native frame stays. The thing
-  to prove is **a second reader on the console pump**: SES1's bounded per-session buffer was written
-  for one.
+**SURF8 landed 2026-09-22** — the monitor and a detached session, routes into the same bundle on
+their own STA pumps, read-only in both because D56's one-owner rule holds across windows too; the
+second reader on the console pump turned out already true (`Tail` keeps no cursor) and is now held by
+tests, and the real window found three defects the source could not show. **SURF5b is what remains of
+the arc.**
 
 - [ ] **SURF5b — the notification, and the terminal's half** (design §4; the rest of SURF5 landed
   2026-09-21). **An OS notification on park and on end**, never for an ending the person caused,

@@ -97,7 +97,7 @@ object is a **session, not a file**, and there is no editor in the plan at any p
 | **SURF5 · Attention** | Overview's *what needs you*, `AwaitingPerson`'s surface, the sidebar counts, OS notification on park and end | Planned |
 | **SURF6 · Review** | The diff over the bridge, bounded; **a multibuffer with a per-file *viewed* mark** (D55); accept, or send it back as a quest | Planned |
 | **SURF7 · The window is the frame** (D55) | `OptimizedForm` with frameless chrome; the top strip becomes app menu + mode switch + scope + caption buttons; `WindowCommandModule` mapped late, Snap Layouts bought by reporting the button rectangles | Planned — the framework ships it; `Form.WindowState` lies about a frameless window and `IAppMaximizable` is the truth |
-| **SURF8 · The monitor window** (D55) | `SecondaryWindows`: a read-only rail-and-streams window for a second screen, and a detached session — named windows on their own STA threads, geometry per name | Planned — the thing to prove is a **second reader** on the console pump |
+| **SURF8 · The monitor window** (D55) | `SecondaryWindows`: a read-only rail-and-streams window for a second screen, and a detached session — named windows on their own STA threads, geometry per name | **Built** (2026-09-22): both are routes into the same bundle; the second reader was already true (`Tail` keeps no cursor) and is now asserted; a secondary window needs its own thread-affine WebView2 environment and follows the OS theme itself |
 | **SURF9 · Command palette** (D55) | The only affordance that scales past ~7 domains, and cheaper before the count grows | Planned |
 
 ---

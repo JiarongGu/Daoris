@@ -126,7 +126,10 @@ risk, **authorship** was.
   (FIX-LOG). **SURF6 closed it**: the landed work is a bounded diff in the dock, and its acts —
   accept, discard, send it back — carry every `reaching-in` guard; the merge refuses into a checkout
   anyone is working in, and the discard asks twice. **SURF9** made every action addressable by name — a pure registry, absent in a browser by
-  omission. **SURF5b and SURF8 remain.**
+  omission. **SURF8 landed 2026-09-22**: monitor and detached session are **routes into the same
+  bundle** on their own STA pumps, read-only, the second reader on the pump now asserted. 🔴 A
+  secondary window needs its **own** WebView2 environment and follows the OS theme itself, and
+  `shot`/`eval`/`click` need **`--window <monitor|session:ID>`** (FIX-LOG). **SURF5b remains.**
 - 🔴 **Polishing the UI/UX is standing work, and it is done by LOOKING** (owner, 2026-09-22:
   *"we also need to keep polish the ui/ux you can use screenshot tool to confirm"*). Take
   `npm run desktop -- shot [--theme dark]` to any surface you change. The defects that matter are

@@ -65,11 +65,25 @@ internal static class Program
         // `daoris remote` edits; the service has no door onto it, deliberately.
         builder.Services.AddIpcModule<RemotesModule>();
 
+        // The second screen (D55 §b, SURF8): named windows on their own STA pumps, each carrying
+        // this same bundle at its own route. The other thing a page cannot do for itself.
+        builder.Services.AddSingleton(sp => new SecondaryWindows(
+            sp.GetService<Microsoft.Extensions.Logging.ILogger<SecondaryWindows>>()));
+        builder.Services.AddSingleton<SecondaryWindowHost>();
+        builder.Services.AddSingleton<ISecondaryWindows>(
+            sp => sp.GetRequiredService<SecondaryWindowHost>());
+        builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
+        builder.Services.AddIpcModule<WindowsModule>();
+
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.
         builder.OnStarting(app => app.Services.GetRequiredService<DriverLoop>().Start());
         builder.OnStopping(app =>
         {
+            // The secondary windows first, and disposed rather than abandoned: their threads are
+            // BACKGROUND, so an unwaited exit kills them before the geometry saves their own
+            // FormClosed handlers run. Bounded, so a wedged window cannot hang shutdown.
+            app.Services.GetRequiredService<SecondaryWindowHost>().Dispose();
             // Order matters: end the loop first (an in-flight session is ended and recorded
             // `stopped` by the driver itself), and only then the host it reports to.
             app.Services.GetRequiredService<DriverLoop>().Stop();

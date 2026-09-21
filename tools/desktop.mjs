@@ -246,8 +246,35 @@ function pruneShots() {
   for (const entry of prune(entries)) unlinkSync(entry.path);
 }
 
-/** Attach to the running shell's page, having first established that it IS the shell. */
-async function attach() {
+/**
+ * Take a `--window <name>` off an argument list, and say which window was asked for (SURF8).
+ *
+ * One flag for both instruments, deliberately: `eval` and `click` reach a *page* over CDP and `shot`
+ * photographs a *window* through the OS, and a tool that needed a URL parameter for one and a
+ * caption for the other would be a tool people get wrong. Null is the application's own window.
+ */
+function takeWindow(args) {
+  const at = args.indexOf('--window');
+  if (at === -1) return null;
+
+  const name = args[at + 1];
+  if (!name) fail('usage: --window <monitor|session:ID>');
+  args.splice(at, 2);
+  return name;
+}
+
+/** What the shell captions that window — how the OS-level capture finds it. */
+function windowCaption(window) {
+  return window === 'monitor' ? 'Monitor' : window;
+}
+
+/**
+ * Attach to one of the running shell's pages, having first established that it IS the shell.
+ *
+ * @param window - null for the application's own window, or a secondary window's name (SURF8):
+ * `monitor`, or `session:<id>`. Since the shell can hold more than one page, the caller says which.
+ */
+async function attach(window = null) {
   const state = readRun();
   if (!state?.cdpPort) {
     fail('nothing to attach to — `node tools/desktop.mjs run` starts a shell with its debug port open.');
@@ -260,8 +287,11 @@ async function attach() {
       + 'started without this tool. `node tools/desktop.mjs restart`.');
   }
 
-  const target = pickPageTarget(targets);
-  if (!target) fail(`no page on the debug port ${state.cdpPort}:\n${JSON.stringify(targets, null, 2)}`);
+  const target = pickPageTarget(targets, window);
+  if (!target) {
+    const which = window ? `no \`${window}\` window` : 'no main-window page';
+    fail(`${which} on the debug port ${state.cdpPort}:\n${JSON.stringify(targets, null, 2)}`);
+  }
 
   const cdp = await new Cdp(target.webSocketDebuggerUrl).open();
 
@@ -463,6 +493,15 @@ async function main(command, args) {
         args.splice(themeFlag, 2);
       }
 
+      /* `--window <name>` photographs a SECONDARY window (SURF8) — `monitor`, or `session:<id>` —
+       * rather than the main one.
+       *
+       * It exists because `Process.MainWindowHandle` answers for exactly one window and Windows
+       * chooses which, so with the monitor open a capture silently photographs whichever the OS
+       * calls main. A name that matches no open window is refused rather than falling back: the
+       * whole point of asking is that the main window is not the one wanted. */
+      const window = takeWindow(args);
+
       const name = (args[0] ?? `shell-${new Date().toISOString().slice(11, 19).replaceAll(':', '')}`)
         .replace(/[^\w.-]/g, '-');
 
@@ -470,10 +509,11 @@ async function main(command, args) {
         '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
         '-ProcessName', 'daoris-desktop',
         '-ExePath', exe,
+        ...(window ? ['-WindowTitle', windowCaption(window)] : []),
         '-OutFile', join(SHOTS, `${name}.png`)]);
 
       if (theme) {
-        const cdp = await attach();
+        const cdp = await attach(window);
         try {
           await cdp.send('Emulation.setEmulatedMedia', {
             features: [{ name: 'prefers-color-scheme', value: theme }],
@@ -494,10 +534,11 @@ async function main(command, args) {
     }
 
     case 'eval': {
+      const window = takeWindow(args);
       const expression = args.join(' ');
-      if (!expression) fail('usage: node tools/desktop.mjs eval "<js expression>"');
+      if (!expression) fail('usage: node tools/desktop.mjs eval [--window <name>] "<js expression>"');
 
-      const cdp = await attach();
+      const cdp = await attach(window);
       try {
         console.log(JSON.stringify(await cdp.evaluate(expression), null, 2));
       } catch (error) {
@@ -510,10 +551,11 @@ async function main(command, args) {
     }
 
     case 'click': {
+      const window = takeWindow(args);
       const selector = args.join(' ');
-      if (!selector) fail('usage: node tools/desktop.mjs click "<css selector>"');
+      if (!selector) fail('usage: node tools/desktop.mjs click [--window <name>] "<css selector>"');
 
-      const cdp = await attach();
+      const cdp = await attach(window);
       /* One element or none. A selector matching three things and clicking the first is how a loop
        * reports success for an interaction that never happened — so the COUNT is the answer, and a
        * miss is a refusal rather than a silent first-match. The click is the page's own, dispatched

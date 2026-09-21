@@ -38,11 +38,32 @@ export async function freePort(preferred, span = 20) {
  * Choose the page to drive.
  *
  * Not `targets.find(t => t.type === 'page')`: the first page is only the one you meant when nothing
- * else is open. The shell has exactly one page, so this is mostly a guard against attaching to a
- * devtools window or a foreign target and reporting its answer as the shell's.
+ * else is open. It guards against attaching to a devtools window or a foreign target and reporting
+ * its answer as the shell's.
+ *
+ * 🔴 **The shell no longer has exactly one page** (SURF8). A secondary window — the monitor, a
+ * detached session — is a route into the same bundle, so it is a second WebView2 on the same debug
+ * port, and which one comes back first is the browser's order rather than the caller's choice.
+ * Measured: with the monitor open, `eval` attached to it and then refused, because the monitor's
+ * URL carries a query the main window's does not.
+ *
+ * @param window - null for the application's own window (the page with no `window=`), or a window
+ * name (`monitor`, `session:<id>`) for that one.
  */
-export function pickPageTarget(targets) {
-  return (targets ?? []).find((t) => t.type === 'page' && !String(t.url).startsWith('devtools://')) ?? null;
+export function pickPageTarget(targets, window = null) {
+  const pages = (targets ?? [])
+    .filter((t) => t.type === 'page' && !String(t.url).startsWith('devtools://'));
+
+  const named = (target) => {
+    try {
+      return new URL(target.url).searchParams.get('window');
+    } catch {
+      // A target with no parseable URL is not a window anybody asked for.
+      return null;
+    }
+  };
+
+  return pages.find((target) => named(target) === window) ?? null;
 }
 
 /** The targets a CDP endpoint is serving, or null when nothing is listening there. */

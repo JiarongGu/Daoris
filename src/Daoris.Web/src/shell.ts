@@ -183,6 +183,26 @@ export const useWireRemote = () =>
 export const useUnwireRemote = () => useWiringChange<{ workspace: string }>('REMOVE');
 
 /**
+ * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.
+ *
+ * @remarks
+ * **The one thing a page cannot do for itself**, like naming a folder — a window belongs to the
+ * shell. In a browser this simply rejects, which is why every surface that offers it is gated on a
+ * shell being here rather than on the call succeeding.
+ *
+ * **Pressing it twice is safe**: one window per name is the framework's contract, and the second
+ * press brings the window forward. That is what a person means by it.
+ *
+ * Nothing is cached. The person can close one of these with its own close button and no page would
+ * hear about it, so an "is the monitor open" answer would be stale more often than it was right.
+ */
+export const useOpenWindow = () => useMutation({
+  mutationFn: (name: string) =>
+    getBridge().invoke<{ opened: boolean; windows: string[] }>(
+      'DAORIS.WINDOWS', 'OPEN', { payload: { name } }),
+});
+
+/**
  * A session's console, live (D49 §2).
  *
  * @remarks

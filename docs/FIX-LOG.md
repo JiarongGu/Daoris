@@ -5,6 +5,91 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A second window opened, and then failed its bring-up on a thread-affine environment (2026-09-22)
+
+**Symptom.** The monitor window (SURF8) opened with its native frame, and its content was one
+sentence: *"CoreWebView2Environment members can only be accessed from the UI thread."* The main
+window was unaffected, nothing was logged, and the build was green.
+
+**Root cause.** A `CoreWebView2Environment` is **affine to the thread that created it**, and
+`SecondaryWindows` runs every window on its **own STA thread with its own message pump** — which is
+the whole reason that API exists. The new form was handed the DI-registered
+`WebViewEnvironmentOptions` singleton, which is correct, but `WebViewHost` defaults to
+`UseSharedEnvironment = true` — the process-wide environment, created by and for the **main UI
+thread**. So the first call into it from the window's own thread threw.
+
+**Why nothing caught it.** Nothing could. There is no test in this repository that starts a second
+STA pump with a real WebView2 in it, and there will not be: the failure is a property of two real
+threads and a real browser process. It was found by opening the window and looking at it, which is
+what the standing polish direction is for.
+
+**Fix.** `UseSharedEnvironment = false` on the secondary host's options — the framework's documented
+answer, which its own thread-affinity note names for exactly this case. Same options and same
+user-data folder, so the two environments still share one browser process; it costs a handle, not a
+browser. `src/Daoris.Desktop/Daoris.Desktop.App/SecondaryForm.cs`.
+
+**Verify.** `npm run desktop -- run`, open the monitor from the palette, and the window renders the
+platform. Captured in both themes.
+
+**The trap to inherit.** **A "process-wide" singleton is a claim about a thread**, and a framework
+that hands out per-thread constructors is telling you so. Before sharing anything into a window with
+its own pump, look for the affinity note — this one was written down in the API documentation and was
+simply not read before it was needed.
+
+## A secondary window wore the old theme, because `SET_THEME` belongs to exactly one window (2026-09-22)
+
+**Symptom.** With the OS in dark mode the monitor window's page was dark and its **title bar was
+light**. The main window was correct in both.
+
+**Root cause.** The main window follows the OS theme by being **told**: the page pushes `SET_THEME`
+over `WindowCommandModule`, and the form re-applies the DWM border, the fill and the dark-mode flag.
+`WindowCommandModule` targets one form and its module name (`SHENORA.WINDOW`) is **reserved and
+singular** — recorded in D55 §b as the reason secondary windows keep their native frame — so a
+secondary window's page has no channel to its own frame. The form read the OS theme once, at
+construction, and never again.
+
+**Fix.** The secondary window follows the OS **directly**:
+`SystemEvents.UserPreferenceChanged` → `ApplyChromeTheme`. Two details that are the whole fix:
+marshalled with `BeginInvoke` and never `Invoke`, because the notification arrives on the
+system-events thread and a blocking marshal into a window with its own pump is the deadlock the
+framework warns about; and unhooked on `FormClosed`, because `SystemEvents` holds a **static**
+handler list, so every monitor the person ever opened would otherwise stay alive handling theme
+changes.
+
+**Verify.** `npm run desktop -- shot --window monitor --theme dark|light`, both read correctly.
+
+**The trap to inherit.** **When a mechanism is documented as singular, everything downstream of it is
+singular too** — and the second instance does not fail, it just quietly stops being updated. Ask what
+*tells* a component its state, not only what renders it.
+
+## The dev instruments addressed whichever window Windows called main (2026-09-22)
+
+**Symptom.** With the monitor open, `shot` photographed the **main** window while reporting success,
+and `eval` attached to the monitor's page and then refused with *"the page on 9333 is not this
+shell"*. Two consecutive `shot` runs with the same windows open returned different windows.
+
+**Root cause.** Both instruments were written when the shell had exactly one window and one page, and
+both said so — `shot-window.ps1` used `Process.MainWindowHandle`, which answers for one window chosen
+by **Windows**; `pickPageTarget` took the first non-devtools page and carried the comment *"the shell
+has exactly one page"*. SURF8 made both false. The `eval` refusal was the identity check working
+correctly on the wrong page: the monitor's URL carries `?window=monitor`, which is not the origin the
+run recorded.
+
+**Fix.** `--window <monitor|session:ID>` on `shot`, `eval` and `click`. One flag for both layers
+though they address different things — `pickPageTarget(targets, window)` matches the page whose URL
+carries that `window` parameter (and null means the page with none), while the capture enumerates the
+process's visible top-level windows with `EnumWindows` and matches the caption. A name that matches
+nothing is **refused**, never a fall back to the main window: the point of asking is that the main
+window is not the one wanted. `tools/desktop.mjs`, `tools/cdp.mjs`, `tools/shot-window.ps1`.
+
+**Verify.** `node tools/desktop.mjs eval --window monitor "document.querySelector('h1').textContent"`
+answers `"Monitor"` and the same call without the flag answers `"Overview"`.
+
+**The trap to inherit.** **An instrument encodes the shape of the thing it measures**, and when that
+shape changes the instrument does not fail — it answers about something else. Both of these carried
+the old assumption in a comment, which is the cheapest possible place to have found it and the last
+place anybody looks.
+
 ## The design language claimed `aria-modal` and no dialog had ever had it (2026-09-22)
 
 **Symptom.** A test written for the new command palette asserted what D41 §6 says every drawer is —

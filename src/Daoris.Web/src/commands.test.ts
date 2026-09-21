@@ -16,6 +16,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => ({
   toggleLanguage: vi.fn(),
   startSession: vi.fn(),
   review: vi.fn(),
+  monitor: vi.fn(),
   ...over,
 });
 
@@ -54,6 +55,23 @@ describe('the command registry', () => {
     expect(list).toContain('go.settings');
     expect(list).toContain('work.start');
     expect(list).toContain('work.review');
+    // The second screen (SURF8) — a window is the shell's to open, so it follows the same rule.
+    expect(list).toContain('work.monitor');
+  });
+
+  /**
+   * Detach is absent when nothing is attended, for the same reason a shell-only action is absent in
+   * a browser: a row that does nothing is a palette breaking its promise.
+   */
+  it('offers detaching only where there is a session to detach', () => {
+    expect(ids(commands(world()))).not.toContain('work.detach');
+
+    const detach = vi.fn();
+    const list = commands(world({ detach }));
+    expect(ids(list)).toContain('work.detach');
+
+    list.find((command) => command.id === 'work.detach')!.run();
+    expect(detach).toHaveBeenCalled();
   });
 
   /** Only ever the frame you are not in: an entry that does nothing is noise in this list. */

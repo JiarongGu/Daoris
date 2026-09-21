@@ -147,7 +147,7 @@ public sealed class MainForm : OptimizedForm
     /// Dark is the fallback when the value is missing or the hive is unreadable — it was this shell's
     /// fill before any of this, and a light flash on a dark desktop is the more jarring mistake.
     /// </remarks>
-    private static bool OperatingSystemPrefersDark()
+    internal static bool OperatingSystemPrefersDark()
     {
         try
         {

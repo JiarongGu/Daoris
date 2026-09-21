@@ -149,6 +149,78 @@ public sealed class SessionOutputTests
 
         Assert.Equal(["said anyway"], output.Tail("s1").Lines.Select(l => l.Text));
     }
+
+    /// <summary>
+    /// Two windows, one buffer (SURF8): the monitor and the main window read the same session at
+    /// once, each at its own position, and neither moves the other's.
+    /// </summary>
+    /// <remarks>
+    /// This is the property the monitor window is built on and the one D55 §b flagged as unproven —
+    /// "SES1's bounded per-session buffer was written for one". It holds because <b>the buffer keeps
+    /// no cursor at all</b>: a reader says what it has seen and is told the rest. Asserted rather
+    /// than assumed, because a later optimisation that remembered a position would be the natural
+    /// way to break it and would break it silently.
+    /// </remarks>
+    [Fact]
+    public void Two_readers_hold_their_own_positions_in_one_session()
+    {
+        var output = new SessionOutput();
+        foreach (var text in new[] { "one", "two", "three" }) output.Append("s1", text);
+
+        // The main window has read everything; the monitor has just opened.
+        var caughtUp = output.Tail("s1", after: 3);
+        var fresh = output.Tail("s1");
+
+        Assert.Empty(caughtUp.Lines);
+        Assert.Equal(["one", "two", "three"], fresh.Lines.Select(l => l.Text));
+
+        output.Append("s1", "four");
+
+        // Both are told about the new line, each from where it actually is.
+        Assert.Equal(["four"], output.Tail("s1", after: 3).Lines.Select(l => l.Text));
+        Assert.Equal(["four"], output.Tail("s1", after: 3).Lines.Select(l => l.Text));
+    }
+
+    /// <summary>
+    /// A window opened halfway through is told what it missed — the same number every other reader
+    /// is told, because <c>Dropped</c> is a property of the buffer rather than of who is asking.
+    /// </summary>
+    [Fact]
+    public void A_reader_that_joined_late_is_told_the_same_truth_as_one_that_was_there()
+    {
+        var output = new SessionOutput();
+        for (var line = 1; line <= SessionOutput.LinesPerSession + 20; line++)
+        {
+            output.Append("s1", $"line {line}");
+        }
+
+        var early = output.Tail("s1", after: 1);
+        var late = output.Tail("s1");
+
+        Assert.Equal(20, early.Dropped);
+        Assert.Equal(early.Dropped, late.Dropped);
+        // The late reader gets the whole window; the early one gets only what it had not seen, and
+        // the window is all that is left of either.
+        Assert.Equal(SessionOutput.LinesPerSession, late.Lines.Count);
+        Assert.Equal(late.Lines.Count, early.Lines.Count);
+    }
+
+    /// <summary>
+    /// A window watching several sessions at once — which is what the monitor is — reads each one
+    /// independently, because a buffer is per session and a tail names which.
+    /// </summary>
+    [Fact]
+    public void One_window_can_watch_every_live_session_at_once()
+    {
+        var output = new SessionOutput();
+        output.Append("s1", "building");
+        output.Append("s2", "testing");
+        output.Append("s1", "built");
+
+        Assert.Equal(["building", "built"], output.Tail("s1").Lines.Select(l => l.Text));
+        Assert.Equal(["testing"], output.Tail("s2").Lines.Select(l => l.Text));
+        Assert.Equal(["s1", "s2"], output.Buffered.Order(StringComparer.Ordinal));
+    }
 }
 
 /// <summary>
@@ -179,6 +251,34 @@ public sealed class ConsoleRelayTests
         await relay.FlushAsync();
 
         Assert.Equal([("s1", 2), ("s2", 1)], batches);
+    }
+
+    /// <summary>
+    /// A second destination on the pump costs the first one nothing (SURF8) — the tee is an event,
+    /// not a single delegate, so subscribing does not consume.
+    /// </summary>
+    /// <remarks>
+    /// The shell runs one relay onto an event bus and lets the bus fan out to every attached window,
+    /// which is why this is not how the monitor is wired. It is here because the pump's fan-out is
+    /// the property the second window rests on, and a change from an event to a handler would look
+    /// like a simplification and would quietly make the monitor the only reader.
+    /// </remarks>
+    [Fact]
+    public async Task A_second_destination_on_the_pump_takes_nothing_from_the_first()
+    {
+        var output = new SessionOutput();
+        var main = new List<(string Session, int Count)>();
+        var monitor = new List<(string Session, int Count)>();
+        using var first = Relay(output, main);
+        using var second = Relay(output, monitor);
+
+        output.Append("s1", "one");
+        output.Append("s1", "two");
+        await first.FlushAsync();
+        await second.FlushAsync();
+
+        Assert.Equal([("s1", 2)], main);
+        Assert.Equal(main, monitor);
     }
 
     [Fact]

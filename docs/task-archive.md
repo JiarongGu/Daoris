@@ -2819,3 +2819,88 @@ shot [--theme dark]` is the instrument, and it earned its keep again.
 
 **Proven.** 369 web unit, 13 Playwright, `npm run verify` green, and before/after captures of
 Overview, Quests and Machine in both themes.
+
+## SURF8 — the monitor window (2026-09-22)
+
+> **SURF8 — the monitor window** (D55 §b). `SecondaryWindows`: `monitor` (rail plus live streams,
+> read-only, for a second screen) and `session:<id>` (one attended session, detached) — routes into
+> the same bundle, so the components are SURF4b/4c's unchanged, and the native frame stays. The thing
+> to prove is **a second reader on the console pump**: SES1's bounded per-session buffer was written
+> for one.
+
+✅ done 2026-09-22. Both windows exist, both are reachable by name, and the claim they rest on is
+asserted rather than assumed.
+
+**A secondary window is a ROUTE, not a second frontend.** `?window=monitor` / `?window=session:<id>`
+into the same bundle the main window and a browser are served — which is the whole reason the monitor
+cost the rail, the tile and the console rather than a second application to keep in step. One name is
+read by three things — the page parses it out of its own URL, the shell navigates to the address made
+from it, and the geometry store writes the file named after it — so the derivations live in one place
+(`SecondaryWindow` in Modules, `work/window.ts` in the page) and both are tested against the same
+strings. The escape does both jobs: `Uri.EscapeDataString` is injective over the alphabet a session id
+may use, so two windows can never share a geometry file. A `-` substitution would have collided
+`session:laptop/a1b2` with `session:laptop-a1b2`.
+
+**The name is refused, never sanitised.** It becomes an address AND a filename, so `session:../../x`
+is not "nearly a window name" — it is not one, and `WINDOW_UNKNOWN` says so in both catalogues. The
+refusal-catalogue test caught the missing translations on the first run, which is the three-part
+refusal rule (REV2) doing exactly its job.
+
+**Read-only, in both windows, and that is D56's rule holding ACROSS windows rather than only within
+one.** Two windows offering the same three moves on one parked session is precisely the arrangement
+"one owner for the verbs at a time" exists to prevent. `SessionHead` already had the state and the
+sentence for it — *nothing here can act, so the analysis is shown and the moves are not; half a
+control is worse than none* — so the detached window reuses it by passing no `onResolve`. The one act
+either window has is opening another window, which is a window command and not a move on a session.
+**If the owner wants a detached conversation to be typed into, that is a deliberate reopening of this**
+— it would need the composer, the refusals and an answer to who owns the verbs, and it is not a gap.
+
+**The second reader turned out to be already true, and is now held.** `SessionOutput.Tail(id, after)`
+keeps **no cursor** — "a reader says what it has not seen", which SES1 wrote down and nothing
+asserted — and `Lined` is a multicast event rather than a handler. So a second window is a second
+*subscriber*, not a second buffer. Three tests hold it now: two readers at their own positions in one
+session, a late reader told the same `Dropped` as an early one, and a second relay taking nothing from
+the first. The monitor's own suite holds the other end — two tiles, two consoles, each its own lines.
+The reason to assert something already true is that the natural "optimisation" here is to remember a
+reader's position, and that would break it silently.
+
+**Absent in a browser, by falling back rather than by hiding.** The route is in the bundle a browser
+is served, so the URL is reachable — and both windows are a rail and a live stream, and a stream has
+no HTTP route at all (D47 §4). A pasted link therefore lands on the platform, the same fallback the
+Work frame makes for a remembered mode it cannot honour. Playwright asserts it, and the palette's two
+new commands are absent there like every other shell-only one.
+
+**🔴 Three defects the real window found, none of them visible in the source** — the mechanisms are in
+`docs/FIX-LOG.md`. A **thread-affine** WebView2 environment, shared into a window with its own STA
+pump, which opened the window and then failed its bring-up. A secondary window with no `SET_THEME`
+channel, wearing a light title bar over a dark page. And a silent console rendering as an empty
+bordered box, which in a read-only window reads as a field to type in — `SessionConsole` gained a
+`quiet` sentence, which is also the more honest shape: *nothing was said* and *the console is showing
+you nothing* are different claims.
+
+**The instruments could not see what this landing built, so they were taught to.** `shot` used
+`Process.MainWindowHandle`, which answers for exactly one window and lets **Windows** choose which —
+with the monitor open, a capture silently photographed whichever the OS called main, and two
+consecutive runs returned different windows. `pickPageTarget` had the same assumption written in a
+comment: *"the shell has exactly one page"*. Both now take `--window <monitor|session:ID>` — one flag
+for both, though one reaches a CDP page and the other an OS window, because a tool needing a URL
+parameter for one and a caption for the other is a tool people get wrong. A name that matches nothing
+is refused rather than falling back, since the point of asking is that the main window is not the one
+wanted. **Considered and not done: promoting any of the three traps to canon.** All three are
+framework-specific — a WebView2 environment's thread affinity, a reserved singular IPC module, an
+instrument's window handle — and the canon installs into repositories that have none of those. The
+general form ("an instrument encodes the shape of what it measures, and answers about something else
+rather than failing when that shape changes") is real but narrower than what the core already holds,
+and the core has about one rule of headroom left. The fix log is the right home, and it is indexed.
+
+**Two smaller things.** `auto-fit` rather than `auto-fill`, with `grid-auto-rows: minmax(15rem, 1fr)`
+— measured on the real window, where `auto-fill` left one session sitting in a sixth of a wide screen
+looking like a rendering failure. And the rail's minimum size is stated in `WindowStateOptions`
+because those values are **also** applied as the form's `MinimumSize` and outrank anything the form
+sets for itself; a utility pinned to a main window's floor cannot be parked narrow beside something
+else, which is most of what a second screen is for.
+
+**Proven.** 398 web unit (up from 391: seven for the monitor over a mocked bridge, six for the tile,
+seven for the route parser, eight stories), 14 Playwright, 169 driver (three new on the pump), 66
+modules (thirteen new), `npm run verify` green — and the real window, where the monitor opens from the
+palette, the tile detaches a session into its own window, and both were photographed in light and dark.

@@ -7,7 +7,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowLeftRight, Check, ChevronDown, ChevronRight, FileDiff, GitMerge, Inbox, Languages,
-  LayoutGrid, Layers, Plus, RotateCw, Search, SlidersHorizontal, X,
+  LayoutGrid, Layers, Monitor, Plus, RotateCw, Search, SlidersHorizontal,
+  SquareArrowOutUpRight, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -35,6 +36,9 @@ const ICONS = {
   chevronDown: ChevronDown,
   chevronRight: ChevronRight,
   diff: FileDiff,
+  // The second screen (SURF8): the monitor window, and popping one session out into its own.
+  monitor: Monitor,
+  external: SquareArrowOutUpRight,
 } as const;
 
 export type IconName = keyof typeof ICONS;

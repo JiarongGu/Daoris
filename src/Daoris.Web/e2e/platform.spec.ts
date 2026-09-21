@@ -308,6 +308,24 @@ test('a browser has one frame, and it is Manage (D55)', async ({ page }) => {
 });
 
 /**
+ * A secondary window's ROUTE is in the same bundle a browser is served (SURF8) — that is what makes
+ * the monitor cost the components the Work frame already has. So the URL is reachable here, and the
+ * window must not be: both of them are a rail and a live stream, and a stream has no HTTP route at
+ * all (D47 §4). A pasted link lands on the platform rather than on an empty imitation of a desktop.
+ */
+test('a browser that asks for a secondary window gets the platform (SURF8)', async ({ page }) => {
+  await page.goto('/?window=monitor');
+
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Monitor' })).toHaveCount(0);
+
+  // Including one naming a session, which is the shape somebody would actually paste.
+  await page.goto('/?window=session:a1b2c3d4');
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(page.getByText('No record of that session')).toHaveCount(0);
+});
+
+/**
  * The command palette lists nothing a browser cannot do (SURF9). A palette is a PROMISE that what it
  * lists can be done, so the disclosure boundary is enforced by omission rather than by a disabled
  * row — and this is the assertion that the omission actually reaches the page, not just the registry.
@@ -328,6 +346,9 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   await expect(palette.getByRole('option', { name: /Switch to Work/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Start a session/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
+  // A window is the shell's to open, so neither of SURF8's is offered here.
+  await expect(palette.getByRole('option', { name: /monitor window/ })).toHaveCount(0);
+  await expect(palette.getByRole('option', { name: /its own window/ })).toHaveCount(0);
 
   // It opens on the keyboard too, which is the affordance it exists to be.
   await page.keyboard.press('Escape');

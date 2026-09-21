@@ -51,6 +51,14 @@ export function commands(world: {
   startSession: () => void;
   /** Ask the Work frame to show the review of whatever is attended. Shell-only. */
   review: () => void;
+  /** Open the monitor window on a second screen (SURF8). Shell-only: a page cannot open a window. */
+  monitor: () => void;
+  /**
+   * Detach the attended session into a window of its own (SURF8) — absent when nothing is attended,
+   * for the reason every other absence here is: a palette is a promise that what it lists can be
+   * done, and "detach" with nothing to detach is a row that does nothing.
+   */
+  detach?: () => void;
 }): Command[] {
   const domains: { id: string; icon: IconName; run: () => void }[] = [
     { id: 'go.overview', icon: 'overview', run: () => world.go('overview') },
@@ -106,7 +114,27 @@ export function commands(world: {
         keywords: 'diff changes landed',
         run: world.review,
       },
+      {
+        id: 'work.monitor',
+        icon: 'monitor',
+        group: world.group('work'),
+        title: world.label('work.monitor'),
+        keywords: 'second screen window watch live monitor',
+        run: world.monitor,
+      },
     );
+
+    // Only where there is something to detach.
+    if (world.detach) {
+      list.push({
+        id: 'work.detach',
+        icon: 'external',
+        group: world.group('work'),
+        title: world.label('work.detach'),
+        keywords: 'window pop out detach second screen',
+        run: world.detach,
+      });
+    }
   }
 
   list.push(

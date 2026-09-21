@@ -65,11 +65,17 @@ public static class Refusals
     /// </summary>
     public const string SessionNotReviewable = "SESSION_NOT_REVIEWABLE";
 
+    /// <summary>
+    /// A window name this build does not open (SURF8). Refused rather than sanitised: the name
+    /// becomes both an address and a filename, and "nearly a window name" is not one.
+    /// </summary>
+    public const string WindowUnknown = "WINDOW_UNKNOWN";
+
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
         RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, DriverRefused,
-        SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable,
+        SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, WindowUnknown,
     ];
 
     /// <summary>

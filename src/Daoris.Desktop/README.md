@@ -34,7 +34,21 @@ reserves is handed to the OS as real caption buttons, which the **window** paint
 (`NativeCaptionButtons`, D56 as amended) from `ChromePalette`'s copy of D41's tokens. 🔴
 `AppPlacement` is the truth about maximized, never `Form.WindowState`, which lies about a window that
 maximizes by hand. `WindowCommandModule` is mapped **late**, from the form's constructor, because it
-needs a live form. Beyond the frame it brings up the local HTTP host — adopting one already running, spawning and owning one
+needs a live form.
+
+**It is no longer the only window** (SURF8/D55 §b). `SecondaryWindows` opens named ones on their own
+STA pumps — `monitor` and `session:<id>`, asked for over `DAORIS.WINDOWS` — each a `SecondaryForm`
+carrying the **same bundle at its own route** (`?window=<name>`), so they are the platform's own
+components and not a second frontend. Three things about them are load-bearing: they keep their
+**native frame** (`WindowCommandModule` targets one form and its module name is reserved and
+singular, so frameless chrome is the main window's alone); each builds its **own WebView2
+environment** (🔴 `UseSharedEnvironment = false` — a `CoreWebView2Environment` is affine to the thread
+that created it, and sharing the main window's opens the window and then fails its bring-up); and each
+follows the **OS theme directly** through `SystemEvents`, because it has no `SET_THEME` channel of its
+own. They are disposed — not abandoned — on shutdown, since their threads are background and an
+unwaited exit kills them before their geometry saves run.
+
+Beyond the frame it brings up the local HTTP host — adopting one already running, spawning and owning one
 otherwise, a dev build run from its project so the bundle serves — carries the platform in its WebView
 (`ProductionUrl`, the same bytes a browser gets), runs the driver's shared watch loop in-process with
 `driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed
@@ -78,9 +92,9 @@ person or an agent starts the shell and sees what it actually rendered.
 | `build [--release]` | the platform bundle into the host's `wwwroot`, then the host, then the shell. That order is the dependency order: a host built before the bundle serves the previous one |
 | `run [--real] [--fresh]` | start the shell **on a machine of its own**, with the debug port attached |
 | `restart` · `kill` | stop the shell **this checkout built** — matched by executable path, never by process name |
-| `shot [name] [--theme light\|dark]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it). `--theme` photographs the OTHER theme without touching the machine's setting — the only way to see the **native** chrome (DWM border, caption buttons) in both, since the page cannot observe what it does not paint |
-| `eval "<js>"` | evaluate inside the running shell's page — **the only instrument that sees the bridge-attached half** (the Machine view, the driver controls, the console, chat) |
-| `click "<css>"` | click exactly one element, and say what it clicked; a selector matching none or several is a refusal, not a first match |
+| `shot [name] [--theme light\|dark] [--window <name>]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it). `--theme` photographs the OTHER theme without touching the machine's setting — the only way to see the **native** chrome (DWM border, caption buttons) in both, since the page cannot observe what it does not paint. 🔴 `--window monitor` or `--window session:<id>` since SURF8: without it the capture takes whichever window **Windows** calls main, which with a secondary window open is not the caller's choice |
+| `eval [--window <name>] "<js>"` | evaluate inside one of the running shell's pages — **the only instrument that sees the bridge-attached half** (the Machine view, the driver controls, the console, chat). `--window` picks a secondary window's page (SURF8); without it, the application's own |
+| `click [--window <name>] "<css>"` | click exactly one element, and say what it clicked; a selector matching none or several is a refusal, not a first match |
 
 **A dev run gets its own machine, and that is a safety property rather than a convenience.** The shell
 runs the driver loop, and the driver spawns **real agent sessions in real repositories**. So `run`

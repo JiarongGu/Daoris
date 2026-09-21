@@ -35,7 +35,9 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
 const ORGANISMS = new Set<string>([
   './SessionConsole.tsx',
   './work/AttentionBand.tsx',
+  './work/DetachedSession.tsx',
   './work/DiffPane.tsx',
+  './work/MonitorWindow.tsx',
   './work/SessionRail.tsx',
   './work/WorkFrame.tsx',
 ]);

@@ -19,7 +19,8 @@ import { ProjectsView } from './ProjectsView';
 import { SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
-import { useDriver, useRemotes } from './shell';
+import { useDriver, useOpenWindow, useRemotes } from './shell';
+import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
 import type { Attention } from './work/AttentionRow';
 import { needsAPerson } from './work/attention';
@@ -120,6 +121,9 @@ export function App() {
   const running = useSessions(null, false);
   const remotes = useRemotes();
   const registry = useRegistry();
+  // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
+  // which is why the commands that use it are gated on a shell being here.
+  const openWindow = useOpenWindow();
 
   // Work does not exist over a keyed remote (D55): no stream, no tree path, nothing honest to show.
   // A remembered `work` on a machine with no shell falls back rather than rendering an empty frame.
@@ -385,6 +389,12 @@ export function App() {
             i18n.language.startsWith('zh') ? 'en' : 'zh'),
           startSession: () => { chooseMode('work'); setWorkIntent('start'); },
           review: () => { chooseMode('work'); setWorkIntent('review'); },
+          // The second screen (SURF8). Opening a window is the shell's act, so both of these are
+          // absent in a browser by the same omission every other shell-only command uses.
+          monitor: () => openWindow.mutate(MONITOR_WINDOW),
+          detach: attending
+            ? () => openWindow.mutate(sessionWindowName(attending))
+            : undefined,
         })}
       />
 
