@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -235,6 +235,49 @@ describe('starting and holding a conversation', () => {
     eventHandlers.clear();
   });
 
+  /**
+   * New is behind one control (D56) — the form used to hold 287×200 of the rail permanently, for
+   * something a person does occasionally. Opening it is now a step, and every test that starts a
+   * session takes it.
+   */
+  const openStart = async () => {
+    await userEvent.click(await screen.findByRole('button', { name: 'Start a session' }));
+    return screen.findByRole('dialog');
+  };
+
+  it('keeps the form behind one control, and the rail a list of sessions', async () => {
+    show(null);
+    await screen.findByRole('navigation', { name: 'sessions' });
+
+    expect(screen.queryByLabelText('repository')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'start' })).toBeNull();
+
+    await openStart();
+    expect(screen.getByLabelText('repository')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'start' })).toBeTruthy();
+  });
+
+  it('closes the form on the session it opened — and keeps it up on a refusal', async () => {
+    let refuse = true;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'START_CHAT') {
+        return refuse ? { sessionId: null, message: 'busy' } : { sessionId: 'c0ffee11', message: 'ok' };
+      }
+      if (type === 'HARNESSES') return ROSTER;
+      return DRIVER_STATE;
+    });
+
+    show(null);
+    await openStart();
+    await userEvent.click(screen.getByRole('button', { name: 'start' }));
+    // A refusal leaves the form open: the choices are still on screen to correct.
+    expect(screen.getByRole('dialog')).toBeTruthy();
+
+    refuse = false;
+    await userEvent.click(screen.getByRole('button', { name: 'start' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
   it('starts one in a repository with a checkout here, and attends what comes back', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'START_CHAT') return { sessionId: 'c0ffee11', message: 'Chat `c0ffee11` opened in `engine`.' };
@@ -243,6 +286,7 @@ describe('starting and holding a conversation', () => {
     });
 
     const { onSelect } = show(null);
+    await openStart();
     await userEvent.click(await screen.findByRole('button', { name: 'start' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
@@ -263,6 +307,7 @@ describe('starting and holding a conversation', () => {
     });
 
     show(null);
+    await openStart();
     await screen.findByLabelText('account');
 
     await userEvent.selectOptions(screen.getByLabelText('account'), 'work');
@@ -294,6 +339,7 @@ describe('starting and holding a conversation', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
+    await openStart();
     await userEvent.click(await screen.findByRole('button', { name: 'start' }));
 
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('already has an active session'), 'error');
@@ -373,6 +419,32 @@ describe('clearing a parked session', () => {
     expect(screen.getByRole('button', { name: 'finish it' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'decline…' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'stop it' })).toBeInTheDocument();
+  });
+
+  /**
+   * **One owner for the moves at a time** (D56). A parked conversation used to render the band's
+   * *finish it · decline… · stop it* and the composer's *send · finish · stop* simultaneously, 400px
+   * apart — two owners for one set of verbs, which is worse than either. The band owns them while a
+   * session is parked, and the composer keeps `send` alone so answering stays possible.
+   */
+  it('gives the verbs to the band while parked, and back to the composer when live', async () => {
+    SESSIONS = [{ ...PARKED, kind: 'chat' }];
+    show('p4rk3d00');
+
+    await screen.findByRole('button', { name: 'finish it' });
+    expect(screen.getByRole('button', { name: 'send' })).toBeInTheDocument();
+    // The band's verbs, and only the band's.
+    expect(screen.queryByRole('button', { name: 'finish' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'stop' })).toBeNull();
+
+    // Working again: no band, and the composer owns both endings.
+    SESSIONS = [{ ...PARKED, kind: 'chat', state: 'working' }];
+    cleanup();
+    show('p4rk3d00');
+
+    await screen.findByRole('button', { name: 'finish' });
+    expect(screen.getByRole('button', { name: 'stop' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
   });
 
   it('finishes it over the driver, with no note the person did not write', async () => {

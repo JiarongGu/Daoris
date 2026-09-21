@@ -11,7 +11,6 @@ import {
   Button, Icon, type IconName, LanguageSwitcher, SESSION_ACTIVE, Tip, Toasts, type ToastItem,
   useErrorNotify,
 } from './ui';
-import { cn } from './lib/cn';
 import { OverviewView } from './OverviewView';
 import { ConvergenceView } from './ConvergenceView';
 import { SearchView } from './SearchView';
@@ -24,7 +23,7 @@ import { useDriver, useRemotes } from './shell';
 import { WorkFrame } from './work/WorkFrame';
 import type { Attention } from './work/AttentionRow';
 import { needsAPerson } from './work/attention';
-import { type DriverPresence, type Mode, ModeSwitch, StatusBar } from './work/frame';
+import { ActivityBar, AppStrip, type DriverPresence, type Mode, StatusBar } from './work/frame';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
@@ -35,13 +34,35 @@ type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'sett
  */
 const MODE = 'daoris.mode';
 
-function rememberedMode(): Mode {
+/**
+ * And which session they were attending (D56). The mode survived a restart and the selection did
+ * not, so relaunching into Work landed on *Nothing attended* while a session sat parked — the one
+ * arrangement SURF5a's whole attention half exists to prevent. An id that no longer names a record
+ * is cleared by the frame's own effect, so a stale one costs nothing.
+ */
+const ATTENDING = 'daoris.attending';
+
+function remembered(key: string): string | null {
   try {
-    return window.localStorage.getItem(MODE) === 'work' ? 'work' : 'manage';
+    return window.localStorage.getItem(key);
   } catch {
-    // A private window, a blocked origin: landing on Manage is the safe half of the choice.
-    return 'manage';
+    // A private window, a blocked origin: not remembering is a lesser failure than not working.
+    return null;
   }
+}
+
+function remember(key: string, value: string | null): void {
+  try {
+    if (value === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  } catch {
+    // As above.
+  }
+}
+
+function rememberedMode(): Mode {
+  // Landing on Manage is the safe half of the choice.
+  return remembered(MODE) === 'work' ? 'work' : 'manage';
 }
 
 const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
@@ -65,7 +86,7 @@ export function App() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('overview');
   const [mode, setMode] = useState<Mode>(rememberedMode);
-  const [attending, setAttending] = useState<string | null>(null);
+  const [attending, setAttendingState] = useState<string | null>(() => remembered(ATTENDING));
   const [readingId, setReadingId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToast = useRef(1);
@@ -139,12 +160,15 @@ export function App() {
 
   const chooseMode = (next: Mode) => {
     setMode(next);
-    try {
-      window.localStorage.setItem(MODE, next);
-    } catch {
-      // Not remembering is a lesser failure than not switching.
-    }
+    remember(MODE, next);
   };
+
+  // The attended session is remembered alongside the mode (D56), so a relaunch into Work reopens
+  // what the person was watching rather than an empty column.
+  const setAttending = useCallback((next: string | null) => {
+    setAttendingState(next);
+    remember(ATTENDING, next);
+  }, []);
 
   // A door from a record into the session itself. The selection lives here rather than inside the
   // frame precisely so a door can name which session it is opening (D55: one selection, every
@@ -166,86 +190,69 @@ export function App() {
     // the status bar is therefore always where it was. Page scrolling would put the output panel
     // below the fold exactly when a session is producing output.
     <div className="flex h-screen flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 max-md:flex-col max-md:overflow-y-auto">
-        <aside className="flex h-full w-60 shrink-0 flex-col overflow-y-auto border-r border-line px-3.5 pb-4 pt-5 max-md:h-auto max-md:w-full max-md:flex-row max-md:items-center max-md:gap-2 max-md:border-b max-md:border-r-0 max-md:px-3.5 max-md:py-2.5">
-        <div className="flex items-baseline gap-2 px-2.5 pb-4 max-md:p-0 max-md:pr-2">
-          <strong className="font-serif text-[1.5rem] font-semibold tracking-[-0.01em]">Daoris</strong>
-          <span className="text-[0.9rem] text-ink-faint">道衍</span>
-        </div>
-
-        {/* Manage ⇄ Work as peers (D55) — above the nav, because the nav belongs to one of them.
-            SURF7 moves this into the window's own top strip, where every reference puts it. */}
-        <div className="pb-3 max-md:pb-0 max-md:pr-2">
-          <ModeSwitch mode={frame} available={attached} attention={waiting} onChange={chooseMode} />
-        </div>
-
-        <nav aria-label={t('nav.label')} className="grid gap-0.5 max-md:flex max-md:overflow-x-auto">
-          {NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ tab: target, icon }) => (
-            <button
-              key={target}
-              onClick={() => setTab(target)}
-              className={cn(
-                'flex w-full items-center gap-1.5 rounded-control px-2.5 py-2 text-[0.9rem] transition-colors duration-(--speed) max-md:w-auto max-md:whitespace-nowrap',
-                tab === target
-                  ? 'border-l-2 border-l-accent bg-accent-soft text-ink max-md:border-b-2 max-md:border-l-0 max-md:border-b-accent'
-                  : 'border-l-2 border-l-transparent text-ink-soft hover:bg-raised hover:text-ink max-md:border-b-2 max-md:border-l-0 max-md:border-b-transparent',
-              )}
-            >
-              <Icon name={icon} />
-              {t(`nav.${target}`)}
-              {target === 'quests' && outstandingCount > 0 && (
-                <span className="ml-auto rounded-full border border-accent bg-accent-soft px-1.5 font-mono text-[0.68rem] tabular-nums text-accent max-md:ml-1">
-                  {outstandingCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-auto grid gap-2 px-2.5 max-md:ml-auto max-md:mt-0 max-md:grid-flow-col max-md:items-center max-md:p-0">
-          {/* Global state, in its one place (D41 §2): the scope first — it decides what every number
-              below and every view beside means — then the tier, the count, the refresh. Absent while
-              the deployment holds one workspace. */}
+      {/* The application's one global row (D56). It holds what is true in BOTH frames, which is
+          exactly why none of it belonged in a sidebar owned by one of them. SURF7 makes this strip
+          the window's own chrome; until then it sits below an OS title bar, which D56 records as a
+          known interim. */}
+      <AppStrip
+        mode={frame}
+        modeAvailable={attached}
+        attention={waiting}
+        onMode={chooseMode}
+        scope={(
           <WorkspaceSwitcher
             workspaces={workspaces.data ?? []}
             value={scope.workspace}
             onChange={scope.setWorkspace}
           />
-          {status.data && (
-            /* The tier is stated on every screen, never implied (D24) — here, in the one global spot.
-               The sentence itself is the service's, verbatim. */
-            <Tip content={status.data.note ?? ''}>
-              <span className={cn(
-                'justify-center rounded-full border px-2 py-1 text-center font-mono text-[0.72rem]',
-                status.data.semantic
-                  ? 'border-accent bg-accent-soft text-accent'
-                  : 'border-warn text-warn',
-              )}
-              >
-                {status.data.tier}
-              </span>
-            </Tip>
+        )}
+      />
+
+      <div className="flex min-h-0 flex-1 max-md:flex-col max-md:overflow-y-auto">
+        {/* The same bar in both frames, which is what makes them peers (D56). It replaces a 15rem
+            labelled sidebar that, in Work, was six items belonging to the other frame above ~440px
+            of empty column. Its foot holds ACTIONS; the state it used to carry went to the status
+            bar, where ambient state belongs. */}
+        <ActivityBar
+          label={t('nav.label')}
+          items={NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ tab: target, icon }) => ({
+            tab: target,
+            label: t(`nav.${target}`),
+            icon,
+            badge: target === 'quests' ? outstandingCount : undefined,
+          }))}
+          // Nothing is current in Work: the current thing is the other frame, and selecting a
+          // domain here is a door back into it.
+          active={frame === 'manage' ? tab : null}
+          onSelect={(target) => {
+            setTab(target);
+            chooseMode('manage');
+          }}
+          footer={(
+            <>
+              <Tip content={refresh.isPending ? t('sidebar.refreshing') : t('sidebar.refresh')}>
+                <Button
+                  variant="ghost"
+                  aria-label={t('sidebar.refresh')}
+                  disabled={refresh.isPending}
+                  onClick={onRefresh}
+                  className="h-9 w-9 justify-center px-0"
+                >
+                  <Icon name="refresh" size={15} />
+                </Button>
+              </Tip>
+              <LanguageSwitcher compact />
+            </>
           )}
-          {indexed > 0 && (
-            <span className="text-[0.75rem] tabular-nums text-ink-faint max-md:hidden">
-              {t('sidebar.count', { entries: indexed.toLocaleString(), repositories: repositories.data?.length ?? 0 })}
-            </span>
-          )}
-          <Button onClick={onRefresh} disabled={refresh.isPending} className="w-full justify-center max-md:w-auto">
-            <Icon name="refresh" size={14} />
-            <span className="max-md:hidden">{refresh.isPending ? t('sidebar.refreshing') : t('sidebar.refresh')}</span>
-          </Button>
-          <LanguageSwitcher />
-        </div>
-        </aside>
+        />
 
         {/* The two frames (D55). Work fills the window because it is for WATCHING; Manage keeps the
-            reading cap, because that is what the cap is for. The nav above belongs to Manage, and
-            Work borrows the sidebar rather than growing a second one. */}
+            reading cap, because that is what the cap is for. Neither carries the other's navigator
+            any more — the bar above is shared and belongs to the application (D56). */}
         {frame === 'work'
           ? <WorkFrame selected={attending} onSelect={setAttending} notify={notify} />
           : (
-            <main className="min-w-0 flex-1 overflow-y-auto px-8 pb-20 pt-7 max-md:px-4 max-md:pb-12 max-md:pt-5">
+            <main className="min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
               <div className="max-w-6xl">
                 {tab === 'overview' && (
                   <OverviewView
@@ -268,8 +275,24 @@ export function App() {
 
       {/* Ambient truth, true in both frames without being looked at (D55). It belongs to the
           application rather than to Work: which circle and whether it syncs are as true on a
-          management screen, and a bar that appeared and vanished with a mode would be chrome. */}
-      <StatusBar driver={presence} sessions={liveSessions} workspace={scope.workspace} remote={wired} />
+          management screen, and a bar that appeared and vanished with a mode would be chrome.
+          Since D56 it also carries the tier — D24's "stated on every screen" is better served by a
+          bar that is on every screen by construction — and what the index holds. */}
+      <StatusBar
+        driver={presence}
+        sessions={liveSessions}
+        workspace={scope.workspace}
+        remote={wired}
+        tier={status.data
+          ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
+          : undefined}
+        indexed={indexed > 0
+          ? t('sidebar.count', {
+            entries: indexed.toLocaleString(),
+            repositories: repositories.data?.length ?? 0,
+          })
+          : undefined}
+      />
 
       {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}
       <Toasts items={toasts} onClose={dismiss} />

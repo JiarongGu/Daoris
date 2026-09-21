@@ -29,7 +29,7 @@ they supply behaviour, ours supplies every pixel.
 | Primitives | **Radix UI** (Dialog, Toast, Select, Tooltip, Checkbox) | Headless and accessibility-complete — focus trapping, dismissal, typeahead, ARIA — the behaviour we were hand-rolling, without a look we would have to fight. |
 | Icons | **lucide-react** | A maintained, consistent stroke set replacing hand-drawn paths; tree-shaken to only what is used. |
 | Server state | **TanStack Query** | The console is a cache over a service. Query gives refetch-on-focus, invalidation after mutations, deduplicated requests, and stale-while-revalidate — the semantics we were approximating by hand, done correctly. |
-| i18n | **react-i18next** (+ browser language detector) | The standard; catalogs are per-locale JSON, `en` and `zh` from day one, detection order `localStorage → navigator`, switcher in the sidebar foot. |
+| i18n | **react-i18next** (+ browser language detector) | The standard; catalogs are per-locale JSON, `en` and `zh` from day one, detection order `localStorage → navigator`, switcher at the activity bar's foot. |
 | Design tool | **Storybook** (react-vite) | The design surface wired to the *real* components: every state of every primitive, plus a tokens gallery showing the validated palettes. A mockup tool would drift from the build; this cannot. |
 | Test loop | **Playwright** over `examples/` | The example family (D39) becomes the UI's fixture: the suite boots the real HTTP host on a scratch store rooted at `examples/`, and drives the real platform — members visible, a quest composed, taken and finished through the drawers, the verbatim refusal, the language switch. |
 
@@ -43,6 +43,24 @@ two key sets diverge. Its styling stack (a styled component framework behind a w
 a hand-duplicated theme file marked "keep in sync") is deliberately *not* adopted: that duplicated
 theme is exactly the drift shape this project exists to remove, and headless primitives need no such
 copy — the tokens are the only theme.
+
+## 2a. A token is only a token if nothing can express it any other way (2026-09-21)
+
+"The tokens are the only theme" was half true for two years' worth of components, and the half that
+was false drifted silently. The **colours** were tokens and held: every component named
+`text-ink-soft` or `bg-st-open`, because there was no other way to say it. The **type scale** was a
+document, and the components wrote `text-[0.85rem]` — so by the time D56 measured it there were
+**fifteen** distinct sizes across 203 sites where D41 named eight, four of them (0.7, 0.78, 0.82,
+0.85) in no scale at all. Nothing reported it, because a hardcoded size is valid Tailwind, renders
+perfectly, and reviews as a one-character diff.
+
+The rule this leaves: **a scale that a component can express as a literal is a suggestion, not a
+scale.** Name the steps in `tokens.css` (`--text-body`), and ship the check that makes the literal
+impossible — `tokens.test.ts` fails on `text-[…rem|px|em]` anywhere in the platform. The check is the
+half that matters; the tokens alone would have drifted the same way, one component at a time.
+
+It generalises past type. Anywhere the design document names a finite set and the code can write a
+value outside it, the two diverge and only a reader notices — eventually.
 
 ## 3. Internationalization rules
 

@@ -126,7 +126,7 @@ export function QuestsView({ notify, onAttend }: {
           }}
         >
           <header className="flex items-baseline justify-between gap-4">
-            <span className="text-[0.95rem] font-semibold">{quest.title}</span>
+            <span className="text-body font-semibold">{quest.title}</span>
             <span className="flex shrink-0 items-baseline gap-1.5">
               {/* A week of silence is the signal this view exists to surface. */}
               {quest.status === 'Open' && sat >= 7 && (
@@ -141,14 +141,14 @@ export function QuestsView({ notify, onAttend }: {
               <Pill tone={tone} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
             </span>
           </header>
-          <p className="mt-1 text-[0.85rem] text-accent">
+          <p className="mt-1 text-body text-accent">
             {quest.from} → {quest.to}
-            <span className="font-mono text-[0.72rem] text-ink-faint">
+            <span className="font-mono text-meta text-ink-faint">
               {' '}· {t('quests.card.filed', { ago: ago(quest.filed) })}
               {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
             </span>
           </p>
-          <p className="mt-1.5 line-clamp-2 text-[0.85rem] text-ink-soft">{quest.body}</p>
+          <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{quest.body}</p>
         </div>
       </Card>
     );
@@ -167,7 +167,7 @@ export function QuestsView({ notify, onAttend }: {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2.5 text-[0.85rem] text-ink-soft">
+        <label className="flex items-center gap-2.5 text-body text-ink-soft">
           {t('quests.addressedTo')}
           <SelectField
             value={repository}
@@ -215,7 +215,7 @@ export function QuestsView({ notify, onAttend }: {
               <Pill tone={QUEST_TONE[detail.status]}>
                 {t(`status.${detail.status}`)}
               </Pill>
-              <span className="font-mono text-[0.72rem] text-ink-faint">#{detail.id}</span>
+              <span className="font-mono text-meta text-ink-faint">#{detail.id}</span>
             </>
           }
           footer={
@@ -236,7 +236,7 @@ export function QuestsView({ notify, onAttend }: {
                       placeholder={t('quests.detail.declinePlaceholder')}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
-                      className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.9rem]"
+                      className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
                     />
                     {/* Declining without a reason is refused by the service; the form does not offer
                         the mistake. */}
@@ -256,7 +256,7 @@ export function QuestsView({ notify, onAttend }: {
             )
           }
         >
-          <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[0.85rem]">
+          <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-body">
             <dt className="text-ink-faint">{t('quests.detail.from')}</dt><dd className="m-0">{detail.from}</dd>
             <dt className="text-ink-faint">{t('quests.detail.to')}</dt><dd className="m-0">{detail.to}</dd>
             <dt className="text-ink-faint">{t('quests.detail.filed')}</dt>
@@ -270,9 +270,9 @@ export function QuestsView({ notify, onAttend }: {
             <dt className="text-ink-faint">{t('quests.detail.state')}</dt>
             <dd className="m-0">{t(`statusHint.${detail.status}`)}</dd>
           </dl>
-          <p className="m-0 whitespace-pre-wrap text-[0.9rem] leading-relaxed">{detail.body}</p>
+          <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{detail.body}</p>
           {detail.note && (
-            <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-[0.85rem] italic">{detail.note}</p>
+            <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{detail.note}</p>
           )}
           {(() => {
             const session = sessionFor.get(detail.id);
@@ -285,7 +285,7 @@ export function QuestsView({ notify, onAttend }: {
                 <SectionTitle>{t('quests.session.title')}</SectionTitle>
                 <div className="flex flex-wrap items-center gap-2">
                   <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
-                  <span className="font-mono text-[0.72rem] text-ink-faint">
+                  <span className="font-mono text-meta text-ink-faint">
                     {session.id} · {sessionTool(session)}
                     {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
                   </span>
@@ -305,10 +305,10 @@ export function QuestsView({ notify, onAttend }: {
                   )}
                 </div>
                 {session.note && (
-                  <p className="mt-2 mb-0 text-[0.85rem] text-ink-soft">{session.note}</p>
+                  <p className="mt-2 mb-0 text-body text-ink-soft">{session.note}</p>
                 )}
                 {session.evidence && (
-                  <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line bg-raised px-3 py-2.5 font-mono text-[0.78rem]">
+                  <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line bg-raised px-3 py-2.5 font-mono text-small">
                     {session.evidence}
                   </pre>
                 )}
@@ -318,7 +318,7 @@ export function QuestsView({ notify, onAttend }: {
                 {onAttend && driver.data && (
                   <Button className="mt-2.5" onClick={() => onAttend(session.id)}>{t('work.open')}</Button>
                 )}
-                <p className="mt-2 mb-0 text-[0.75rem] text-ink-faint">{t('quests.session.hint')}</p>
+                <p className="mt-2 mb-0 text-small text-ink-faint">{t('quests.session.hint')}</p>
               </div>
             );
           })()}
@@ -329,7 +329,7 @@ export function QuestsView({ notify, onAttend }: {
         <Drawer
           title={t('quests.compose.title')}
           onClose={() => setComposing(false)}
-          meta={<span className="font-mono text-[0.72rem] text-ink-faint">{t('quests.compose.meta')}</span>}
+          meta={<span className="font-mono text-meta text-ink-faint">{t('quests.compose.meta')}</span>}
           footer={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -346,9 +346,9 @@ export function QuestsView({ notify, onAttend }: {
           }
         >
           <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); onPublish(); }}>
-            <p className="m-0 text-[0.875rem] text-ink-soft">{t('quests.compose.hint')}</p>
+            <p className="m-0 text-body text-ink-soft">{t('quests.compose.hint')}</p>
             <div className="grid grid-cols-2 gap-2.5 max-md:grid-cols-1">
-              <label className="grid gap-1 text-[0.78rem] text-ink-soft">
+              <label className="grid gap-1 text-small text-ink-soft">
                 {t('quests.compose.from')}
                 <SelectField
                   value={draft.from} required
@@ -358,7 +358,7 @@ export function QuestsView({ notify, onAttend }: {
                   options={adopterOptions}
                 />
               </label>
-              <label className="grid gap-1 text-[0.78rem] text-ink-soft">
+              <label className="grid gap-1 text-small text-ink-soft">
                 {t('quests.compose.to')}
                 <SelectField
                   value={draft.to} required
@@ -369,26 +369,26 @@ export function QuestsView({ notify, onAttend }: {
                 />
               </label>
             </div>
-            <label className="grid gap-1 text-[0.78rem] text-ink-soft">
+            <label className="grid gap-1 text-small text-ink-soft">
               {t('quests.compose.titleLabel')}
               <input
                 required value={draft.title}
                 onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                className="min-h-[1.9rem] rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.9rem] text-ink"
+                className="min-h-[1.9rem] rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
             {target && !target.registered && (
               /* The same caution the service gives an agent, before the person relies on it. */
-              <p className="m-0 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-[0.875rem] text-ink-soft">
+              <p className="m-0 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
                 {t('quests.compose.caution', { repository: target.repository })}
               </p>
             )}
-            <label className="grid gap-1 text-[0.78rem] text-ink-soft">
+            <label className="grid gap-1 text-small text-ink-soft">
               {t('quests.compose.bodyLabel')}
               <textarea
                 required value={draft.body}
                 onChange={(e) => setDraft({ ...draft, body: e.target.value })}
-                className="min-h-28 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.9rem] text-ink"
+                className="min-h-28 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
           </form>

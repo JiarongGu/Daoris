@@ -2476,3 +2476,75 @@ status bar dropping to zero, and the toast naming what happened.
 
 **A dev-loop wrinkle worth knowing.** `npm run desktop -- build` fails while the shell is running —
 the window holds `Daoris.Desktop.Modules.dll` open. `kill`, then `build`, then `run`.
+
+## SURF10 — the desktop application's own design (2026-09-21)
+
+> 🔴 **SURF10 — the desktop application's own design** (owner, 2026-09-21, after SURF5a: *"I still
+> dont see good design for the desktop app itself"*). **The next thing to do, and it comes before
+> SURF5b, SURF6 and SURF7** — SURF7 is a piece of the answer, not the whole of it. Every region
+> SURF4–5 built works; what is missing is the *application* they sit in. The brief is
+> **`docs/2026-09-21-desktop-design-brief.md`** … **Take it as a direction and confirm the reading
+> with the owner before building**, the way D53 and ARCH1 were. Deliverable: a reference pass on the
+> *window*, a decision recorded before the build, and a real-window loop.
+
+✅ done 2026-09-21 — the contract is `docs/2026-09-21-desktop-frame-design.md`; the decision is
+**D56**, recorded before any code, after the owner confirmed the reading against three stated forks
+(the left column → an activity bar in both frames; density → one denser scale app-wide; scope →
+design plus the page-side frame, with SURF7 after).
+
+**The diagnosis was measured, not eyeballed, and that is what made it a decision someone could
+disagree with.** `run` → `shot` → `eval` against the real window, which is the only instrument that
+can see any of this. On 1267 × 765 CSS px: Manage's nav held **240px of content in a 738px column**,
+`StartSession` was a **permanent 287 × 200 form**, and the attended session — the organising object
+of the whole application (D55) — read in a **365px scroll box**. **42% of the width was navigation
+and a form; the session got about 28% of the window.** The brief was written from screenshots and had
+named the empty column and the permanent form; it did not have the 365px, the 42%, the doubled verbs
+or the unremembered selection. A capture shows what is wrong and `eval` says by how much.
+
+**Two defects nobody had recorded.** The same three verbs rendered **twice, 400px apart** — the
+attention band's *finish it · decline… · stop it* and the composer's *send · finish · stop*, both on
+screen at once for a parked session. And **the mode survived a restart while the selection did not**,
+so relaunching into Work landed on *Nothing attended* with a session sitting parked, which is the one
+arrangement SURF5a's whole attention half exists to prevent.
+
+**What shipped.** A 36px **app strip** (wordmark, mode switch, workspace scope, and the caption room
+SURF7 fills — reserved now so the strip's contents do not shift when it arrives). A 48px **activity
+bar**, identical in both frames, replacing the 15rem labelled sidebar in *both* rather than hiding it
+in one; its foot holds the actions and the state it used to carry went to the status bar, where the
+tier now lives — D24's *stated on every screen* is better served by a bar that is on every screen by
+construction. The rail's permanent form went behind a **`＋`** into D41's drawer. The verbs got **one
+owner at a time**, decided by state. The attended selection is remembered beside the mode.
+
+**Afterwards, same instrument, same window:** navigation 527px → **288px (42% → 23%)**; the attended
+session 739 × 365 → **979 × 709, from ~28% of the window to ~72%**; body type 15.2px → 13px.
+
+**The type scale became tokens, which was not in the plan and should have been.** The sweep found the
+literal form had already drifted with nothing reporting it: **fifteen** distinct `text-[…rem]` values
+across 203 sites where D41 named eight, four of them (0.7, 0.78, 0.82, 0.85) in no scale at all. All
+203 now name one of **seven steps**, and `tokens.test.ts` fails on a raw size anywhere in the
+platform — sabotaged in three shapes (`rem`, `px`, `em`) and watched failing against a real file in
+`work/`, because the glob reaching down into the subdirectory is the half that fails silently.
+
+**One number the design did not predict, recorded rather than fixed.** The attended column gained the
+whole width and **no height** — its scroll region is 341px against 365, because the strip took 36px
+and the output panel still holds 236. Its *content* fell from 442px to 371px on density alone, so it
+now nearly fits where it used to scroll by a fifth. The vertical budget is **SURF6's to relieve**:
+the right dock takes the timeline out of this column, which is what the components plan specified all
+along. Raising it here would have meant changing the panel's default height — a behaviour this
+landing said it would leave alone.
+
+**Proven.** 303 web unit tests (285 → 303: 11 for the chrome molecules, 4 for the scale, 3 for the
+drawer and the verb rule), 11 Playwright over the shipped bundle — including *a browser has one
+frame, and it is Manage* and the workspace scope — `npm run verify` green with the canon untouched,
+and three real-window passes. The verb rule was sabotaged and watched fail before being believed.
+
+**A regression the gate caught that no unit test could**, in `docs/FIX-LOG.md`: moving the workspace
+scope into the app strip made its **tooltip** open downward over its own options list and swallow
+every click, because Radix gives the popper wrapper pointer events for hoverable content. Fixed once
+in `Tip` with `disableHoverableContent`. `pointer-events-none` on the content was tried first and did
+nothing — the class lands on the content and the wrapper is a different element. The trap:
+**moving a control changes which way its popup opens**, and the defect lives in the geometry of the
+assembled window, which is exactly what Playwright over the real bundle is for.
+
+**Known interim, recorded so it is not read as a regression:** until SURF7 lands the window shows the
+OS title bar **and** the app strip — two bars. That was the owner's call with the cost stated.

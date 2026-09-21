@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A tooltip swallowed clicks on the control it described, once that control moved (2026-09-21)
+
+**Symptom.** `npm run test:web` went red on the workspace-scope test, in a landing that changed no
+scope code at all: Playwright clicked the `studio` option sixty times over thirty seconds and each
+attempt reported *"`<div role="tooltip">`… from `<div data-radix-popper-content-wrapper>` subtree
+intercepts pointer events"*. The control worked by hand on a first try, which is what made it look
+like a flake.
+
+**Root cause.** Radix's `Tooltip` renders its content inside a **popper wrapper**, and with hoverable
+content enabled — the default — that wrapper is given `pointer-events: auto` so a person can move the
+mouse *into* the tooltip. The workspace switcher wraps its whole `SelectField` in a `Tip`. In the
+sidebar's foot the select opened upward, away from the tooltip; moved into the app strip (D56) it
+opens **downward**, straight under a tooltip that is still open from the click that opened it. The
+tooltip then sat on top of its own options list and ate every click.
+
+**Why no test caught it before.** Nothing had: the arrangement did not exist until the control moved.
+The unit suite drives `WorkspaceSwitcher` in isolation with no strip above it, so the two poppers
+never met — the defect lives in the *geometry of the assembled window*, which is exactly the class
+Playwright over the shipped bundle exists to catch, and it caught it on the first run.
+
+**Fix.** `disableHoverableContent` on `Tooltip.Root` inside `Tip` — in `ui.tsx`, once, for every
+tooltip in the platform. Nothing here is meant to be hovered into; each `Tip` carries one sentence.
+Adding `pointer-events-none` to the tooltip's own content was tried first and **did not work**, which
+is the informative half: the class lands on the content and the wrapper is a different element.
+
+**The trap to inherit.** **Moving a control changes which way its popup opens**, and a component that
+was safe in one corner of the window is not automatically safe in another — a tooltip and a menu that
+never overlapped can start overlapping with no change to either. And when a click retries for thirty
+seconds against something *visible, enabled and stable*, read the interceptor the error names rather
+than reaching for a wait: the message said which element it was, on the first run.
+
 ## A refusal printed local time and called it UTC, and a fixture with an expiry date hid it (2026-09-21)
 
 **Symptom.** Five checks in the family rehearsal's "which commit speaks" phase went red on a run that

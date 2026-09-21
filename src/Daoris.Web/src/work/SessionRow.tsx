@@ -75,20 +75,20 @@ export function SessionRow({ session, quest, root, selected = false, onSelect }:
           {/* A span, so a finished session reads as a lifetime and a live one as an age. */}
           <span
             title={t('work.rail.elapsedTip')}
-            className="shrink-0 font-mono text-[0.72rem] text-ink-faint"
+            className="shrink-0 font-mono text-meta text-ink-faint"
           >
             {elapsed(session.created, running ? null : session.updated)}
           </span>
         </span>
         <span
           title={title}
-          className={cn('mt-0.5 block truncate text-[0.85rem]', running ? 'text-ink' : 'text-ink-soft')}
+          className={cn('mt-0.5 block truncate text-body', running ? 'text-ink' : 'text-ink-soft')}
         >
           {title}
         </span>
         <span
           title={tip || undefined}
-          className="block truncate font-mono text-[0.7rem] text-ink-faint"
+          className="block truncate font-mono text-meta text-ink-faint"
         >
           {meta}
         </span>

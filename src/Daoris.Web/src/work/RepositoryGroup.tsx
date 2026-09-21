@@ -50,7 +50,7 @@ export function RepositoryGroup({
       )
       : null,
     drivable && !held
-      ? <span key="drivable" className="text-[0.72rem] text-ink-faint">{t('work.group.drivable')}</span>
+      ? <span key="drivable" className="text-meta text-ink-faint">{t('work.group.drivable')}</span>
       : null,
     adopted === false ? <Pill key="adopted">{t('work.group.notAdopted')}</Pill> : null,
     hasCheckout === false ? <Pill key="checkout">{t('work.group.noCheckout')}</Pill> : null,
@@ -59,10 +59,10 @@ export function RepositoryGroup({
   return (
     <section className="border-t border-line first:border-t-0">
       <header className="flex items-baseline justify-between gap-2 px-2.5 pb-1 pt-2.5">
-        <h3 className="m-0 truncate text-[0.8rem] font-semibold text-ink">{repository}</h3>
+        <h3 className="m-0 truncate text-small font-semibold text-ink">{repository}</h3>
         <span
           title={t('work.group.sessions', { count })}
-          className="shrink-0 font-mono text-[0.72rem] text-ink-faint"
+          className="shrink-0 font-mono text-meta text-ink-faint"
         >
           {count}
         </span>

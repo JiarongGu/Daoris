@@ -37,7 +37,7 @@ export function AttentionBand({ onOpen }: { onOpen?: (item: Attention) => void }
             </Tip>
           }
           aside={
-            <span className="font-mono text-[0.72rem] tabular-nums text-st-open">{waiting.length}</span>
+            <span className="font-mono text-meta tabular-nums text-st-open">{waiting.length}</span>
           }
         />
       </div>
@@ -46,7 +46,7 @@ export function AttentionBand({ onOpen }: { onOpen?: (item: Attention) => void }
           <AttentionRow key={`${item.kind}:${item.id}`} item={item} onOpen={onOpen} />
         ))}
       </ul>
-      <p className="m-0 px-[1.15rem] pb-3 text-[0.72rem] text-ink-faint">
+      <p className="m-0 px-[1.15rem] pb-3 text-meta text-ink-faint">
         {t('work.attention.reviewNote')}
       </p>
     </Card>

@@ -39,25 +39,25 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
       <span aria-hidden className="absolute bottom-0 left-[3px] top-3 w-px bg-line last:hidden" />
       <span aria-hidden className={`absolute left-0 top-1.5 size-[7px] rounded-full border ${MARK[event.kind]}`} />
 
-      <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-[0.8rem]">
+      <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small">
         <span className="text-ink">{label}</span>
-        <span className="font-mono text-[0.72rem] text-ink-faint">{ago(event.at)}</span>
+        <span className="font-mono text-meta text-ink-faint">{ago(event.at)}</span>
       </p>
 
       {note && (
-        <p className="m-0 mt-0.5 whitespace-pre-wrap text-[0.8rem] italic text-ink-soft">{note}</p>
+        <p className="m-0 mt-0.5 whitespace-pre-wrap text-small italic text-ink-soft">{note}</p>
       )}
 
       {event.kind === 'evidence' && (
         <>
           {event.text && (
-            <p className="m-0 mt-0.5 whitespace-pre-wrap text-[0.8rem] text-ink-soft">{event.text}</p>
+            <p className="m-0 mt-0.5 whitespace-pre-wrap text-small text-ink-soft">{event.text}</p>
           )}
           {event.commits.length > 0 && (
             <ul className="m-0 mt-1 list-none p-0">
               {event.commits.map((commit) => (
-                <li key={commit.sha} className="flex gap-2 text-[0.78rem]">
-                  <code className="shrink-0 font-mono text-[0.72rem] text-accent">{commit.sha}</code>
+                <li key={commit.sha} className="flex gap-2 text-small">
+                  <code className="shrink-0 font-mono text-meta text-accent">{commit.sha}</code>
                   <span className="min-w-0 break-words text-ink-soft">{commit.subject}</span>
                 </li>
               ))}

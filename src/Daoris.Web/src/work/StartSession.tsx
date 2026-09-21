@@ -46,11 +46,11 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
   const [ownTree, setOwnTree] = useState(false);
 
   if (repositories.length === 0) {
-    return <p className="m-0 px-3 py-2 text-[0.8rem] text-ink-faint">{t('work.start.none')}</p>;
+    return <p className="m-0 px-3 py-2 text-small text-ink-faint">{t('work.start.none')}</p>;
   }
 
   const chosen = repository || repositories[0];
-  const field = 'rounded-control border border-line bg-raised px-2 py-1 text-[0.8rem] text-ink';
+  const field = 'rounded-control border border-line bg-raised px-2 py-1 text-small text-ink';
 
   return (
     <form
@@ -65,7 +65,7 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
         });
       }}
     >
-      <label className="grid gap-1 text-[0.72rem] text-ink-faint">
+      <label className="grid gap-1 text-meta text-ink-faint">
         {t('work.start.repository')}
         <select value={chosen} onChange={(event) => setRepository(event.target.value)} className={field}>
           {repositories.map((name) => <option key={name} value={name}>{name}</option>)}
@@ -73,7 +73,7 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
       </label>
 
       {harnesses.length > 1 && (
-        <label className="grid gap-1 text-[0.72rem] text-ink-faint">
+        <label className="grid gap-1 text-meta text-ink-faint">
           {t('work.start.harness')}
           <select value={adapter} onChange={(event) => setAdapter(event.target.value)} className={field}>
             <option value="">{t('work.start.harnessDefault')}</option>
@@ -83,7 +83,7 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
       )}
 
       {profiles.length > 0 && (
-        <label className="grid gap-1 text-[0.72rem] text-ink-faint">
+        <label className="grid gap-1 text-meta text-ink-faint">
           {t('work.start.profile')}
           <select value={profile} onChange={(event) => setProfile(event.target.value)} className={field}>
             <option value="">{t('work.start.profileDefault')}</option>
@@ -99,7 +99,7 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
       )}
 
       <Tip content={t('work.start.ownTreeTip')}>
-        <label className="flex items-center gap-1.5 text-[0.78rem] text-ink-soft">
+        <label className="flex items-center gap-1.5 text-small text-ink-soft">
           <input
             type="checkbox"
             checked={ownTree}

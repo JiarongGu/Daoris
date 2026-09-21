@@ -38,18 +38,18 @@ export function AwaitingPerson({ note, pending = false, onResolve }: {
 
   return (
     <section className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
-      <h3 className="m-0 text-[0.8rem] font-semibold text-st-open">{t('work.head.waiting')}</h3>
+      <h3 className="m-0 text-small font-semibold text-st-open">{t('work.head.waiting')}</h3>
 
       {note && (
-        <p className="m-0 mt-1.5 whitespace-pre-wrap text-[0.875rem] leading-relaxed">{note}</p>
+        <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{note}</p>
       )}
 
-      <p className="m-0 mt-2 text-[0.78rem] text-ink-faint">{t('work.awaiting.hint')}</p>
+      <p className="m-0 mt-2 text-small text-ink-faint">{t('work.awaiting.hint')}</p>
 
       {declining
         ? (
           <div className="mt-2.5 grid gap-2">
-            <label className="grid gap-1 text-[0.78rem] text-ink-faint">
+            <label className="grid gap-1 text-small text-ink-faint">
               <span className="sr-only">{t('work.awaiting.declinePlaceholder')}</span>
               <textarea
                 autoFocus
@@ -57,7 +57,7 @@ export function AwaitingPerson({ note, pending = false, onResolve }: {
                 aria-label={t('work.awaiting.declinePlaceholder')}
                 onChange={(event) => setReason(event.target.value)}
                 placeholder={t('work.awaiting.declinePlaceholder')}
-                className="min-h-14 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.875rem] text-ink"
+                className="min-h-14 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
             <div className="flex flex-wrap gap-2">
@@ -86,7 +86,7 @@ export function AwaitingPerson({ note, pending = false, onResolve }: {
           </div>
         )}
 
-      <p className="m-0 mt-2 text-[0.75rem] text-ink-faint">{t('work.awaiting.answer')}</p>
+      <p className="m-0 mt-2 text-small text-ink-faint">{t('work.awaiting.answer')}</p>
     </section>
   );
 }

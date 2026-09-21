@@ -65,13 +65,13 @@ export function ProjectsView({ notify }: { notify: Notify }) {
           return (
             <Card key={project.repository}>
               <header className="flex items-baseline justify-between gap-4">
-                <span className="inline-flex items-center gap-2 text-[0.95rem] font-semibold">
+                <span className="inline-flex items-center gap-2 text-body font-semibold">
                   <Tip content={t('projects.adoptedDot')}>
                     <span className="inline-block size-2 shrink-0 rounded-full bg-accent" />
                   </Tip>
                   {project.repository}
                 </span>
-                <span className="whitespace-nowrap font-mono text-[0.78rem] tabular-nums text-ink-faint">
+                <span className="whitespace-nowrap font-mono text-small tabular-nums text-ink-faint">
                   {counts
                     ? t('projects.entries', {
                         total: counts.total.toLocaleString(),
@@ -82,29 +82,29 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                 </span>
               </header>
               {project.summary
-                ? <p className="mt-1.5 text-[0.85rem] text-ink-soft">{project.summary}</p>
+                ? <p className="mt-1.5 text-body text-ink-soft">{project.summary}</p>
                 : (
                   /* Addressable regardless — adoption gates addressing, declaration does not (D34) —
                      but an asker deserves to know they would be guessing. */
-                  <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-[0.875rem] text-ink-soft">
+                  <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
                     {t('projects.undeclared')}
                   </p>
                 )}
               {project.owns.length > 0 && (
                 <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.owns')}</span>
+                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.owns')}</span>
                   {project.owns.map((item) => <Chip key={item}>{item}</Chip>)}
                 </p>
               )}
               {project.accepts.length > 0 && (
                 <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.accepts')}</span>
+                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.accepts')}</span>
                   {project.accepts.map((item) => <Chip key={item} accent>{item}</Chip>)}
                 </p>
               )}
               {project.packs.length > 0 && (
                 <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.packs')}</span>
+                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.packs')}</span>
                   {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
                 </p>
               )}
@@ -113,14 +113,14 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                    index is a claim about a commit, and a person who cannot see which commit has no
                    way to tell a current view from one a machine stopped feeding a month ago. */
                 <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.fed')}</span>
+                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.fed')}</span>
                   <Tip content={t('projects.fedTip', {
                     commit: counts.fed.commit,
                     branch: counts.fed.branch,
                     origin: counts.fed.origin ?? t('projects.fedUnknownOrigin'),
                   })}
                   >
-                    <span className="font-mono text-[0.78rem] text-ink-soft">
+                    <span className="font-mono text-small text-ink-soft">
                       {counts.fed.shortCommit} · {ago(counts.fed.committedAt)}
                     </span>
                   </Tip>
@@ -131,7 +131,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                    holding two workspaces would otherwise present them as one family, and the
                    person would have no way to tell from the list that it was two. */
                 <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.workspace')}</span>
+                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.workspace')}</span>
                   <Tip content={t('projects.workspaceTip')}><Chip>{project.workspace}</Chip></Tip>
                 </p>
               )}
@@ -139,7 +139,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                 /* The person's standing choices for THIS machine's driver (D46 §6) — rendered only
                    where a shell answers; a browser has no driver to control, and shows nothing. */
                 <p className="mt-2.5 flex flex-wrap items-center gap-4 border-t border-line pt-2.5">
-                  <span className="min-w-12 text-[0.72rem] text-ink-faint">{t('projects.driver.label')}</span>
+                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.driver.label')}</span>
                   <CheckField
                     checked={named(driver.data.drivable, project.repository)}
                     onChange={(next) => setDrivable.mutate(
@@ -175,20 +175,20 @@ export function ProjectsView({ notify }: { notify: Notify }) {
       {outside.length > 0 && (
         <Card className="mt-3.5">
           <header className="flex items-baseline justify-between gap-4">
-            <span className="text-[0.95rem] font-semibold">{t('projects.outside.title')}</span>
-            <span className="font-mono text-[0.78rem] tabular-nums text-ink-faint">{outside.length}</span>
+            <span className="text-body font-semibold">{t('projects.outside.title')}</span>
+            <span className="font-mono text-small tabular-nums text-ink-faint">{outside.length}</span>
           </header>
-          <p className="mt-1.5 text-[0.85rem] text-ink-soft">{t('projects.outside.body')}</p>
+          <p className="mt-1.5 text-body text-ink-soft">{t('projects.outside.body')}</p>
           <ul className="m-0 mt-2 list-none p-0">
             {outside.map((project) => {
               const counts = indexed(project.repository);
               return (
                 <li
                   key={project.repository}
-                  className="flex items-baseline justify-between gap-4 border-t border-line py-1.5 text-[0.9rem] first:border-t-0"
+                  className="flex items-baseline justify-between gap-4 border-t border-line py-1.5 text-body first:border-t-0"
                 >
                   <span>{project.repository}</span>
-                  <span className="font-mono text-[0.72rem] text-ink-faint">
+                  <span className="font-mono text-meta text-ink-faint">
                     {counts && counts.total > 0
                       ? t('projects.outside.readable', { count: counts.total.toLocaleString() })
                       : '—'}
@@ -197,7 +197,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
               );
             })}
           </ul>
-          <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-[0.8rem]">
+          <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-small">
             {t('projects.outside.join')}
           </p>
         </Card>

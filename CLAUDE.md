@@ -118,14 +118,14 @@ risk, **authorship** was.
   and a parked session's three moves. Work is usable today (`npm run desktop -- run`, then *Work*);
   **the stream has one home**, the output panel, so `ChatDrawer` is gone and Quests keeps the record
   plus a door. The archive carries the rest.
-- 🔴 **The owner is not satisfied with the desktop's own design** (2026-09-21, after SURF5a: *"I
-  still dont see good design for the desktop app itself"*). **Start here.** The regions work and
-  the application around them does not: an OS title bar, Manage's nav filling Work's sidebar, no
-  app chrome of its own, web spacing where an IDE is dense.
-  **`docs/2026-09-21-desktop-design-brief.md`** is the brief and **SURF10** the backlog item — read
-  both before touching anything with a screen, and **confirm the reading with the owner** rather
-  than inferring it. SURF7 is a piece of the answer, not the whole of it. **SURF5b, SURF6, SURF7–9
-  remain** beneath it.
+- **The application has a frame of its own now** (SURF10 → **D56**,
+  `docs/2026-09-21-desktop-frame-design.md`, 2026-09-21): an app strip, a 48px **activity bar**
+  identical in both frames, the rail's `＋`, one owner for the verbs, and **D41 §3 amended to one
+  denser scale** — seven named type tokens, held by `tokens.test.ts`, because the literal form had
+  drifted to fifteen values. The diagnosis was **measured** (`run` → `shot` → `eval`), which is how
+  a design complaint became a decision: navigation 42% → 23%, the session ~28% → ~72%. **SURF7 is
+  next** and the strip reserves its caption room; until it lands the window wears **two bars**, which
+  is recorded, not a regression. **SURF5b, SURF6, SURF7–9 remain.**
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

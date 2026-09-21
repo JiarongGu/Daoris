@@ -17,11 +17,11 @@ export function Reader({ entry, onClose }: { entry: Entry; onClose: () => void }
         <>
           <Pill>{t(`kind.${entry.kind}`)}</Pill>
           <Pill>{t(`provenance.${entry.provenance}`)}</Pill>
-          <span className="font-mono text-[0.72rem] text-ink-faint">{entry.repository} · {entry.path}</span>
+          <span className="font-mono text-meta text-ink-faint">{entry.repository} · {entry.path}</span>
         </>
       }
     >
-      <pre className="m-0 whitespace-pre-wrap break-words font-mono text-[0.82rem] leading-[1.65]">
+      <pre className="m-0 whitespace-pre-wrap break-words font-mono text-small leading-[1.65]">
         {entry.body}
       </pre>
     </Drawer>

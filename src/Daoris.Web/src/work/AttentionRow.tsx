@@ -47,17 +47,17 @@ export function AttentionRow({ item, onOpen }: {
         className="block w-full border-l-[3px] border-l-st-open px-3 py-2 text-left transition-colors duration-(--speed) hover:bg-accent-soft/50"
       >
         <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          <span className="min-w-0 truncate text-[0.9rem] font-semibold text-ink">{item.title}</span>
-          <span className="shrink-0 font-mono text-[0.72rem] text-ink-faint">
+          <span className="min-w-0 truncate text-body font-semibold text-ink">{item.title}</span>
+          <span className="shrink-0 font-mono text-meta text-ink-faint">
             {t('work.attention.since', { ago: ago(item.since) })}
           </span>
         </span>
-        <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[0.78rem]">
+        <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-small">
           <Dot tone="parked" label={t(`work.attention.${item.kind}`)} />
           <span className="text-accent">{item.repository}</span>
         </span>
         {item.detail && (
-          <span className="mt-0.5 line-clamp-2 block text-[0.8rem] text-ink-soft">{item.detail}</span>
+          <span className="mt-0.5 line-clamp-2 block text-small text-ink-soft">{item.detail}</span>
         )}
       </button>
     </li>

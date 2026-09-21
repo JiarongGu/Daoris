@@ -16,7 +16,7 @@ export const Modes: StoryObj = {
       <ModeSwitch mode="manage" available onChange={() => {}} />
       <ModeSwitch mode="work" available onChange={() => {}} />
       {/* A browser: Work does not exist there, so the switch is absent rather than disabled. */}
-      <div className="text-[0.8rem] text-ink-faint">
+      <div className="text-small text-ink-faint">
         <ModeSwitch mode="manage" available={false} onChange={() => {}} />
         (no shell — nothing renders above this line)
       </div>

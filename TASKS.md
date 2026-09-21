@@ -252,7 +252,7 @@ published, and a release is still blocked on REH1.
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (259),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (152), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (173/173), `npm run test:web` (65 + 10). If a `bin`-driven gate is red
+  (152), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (173/173), `npm run test:web` (303 vitest + 11 Playwright). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -343,29 +343,27 @@ deliberately not built — it arrives with its second occupant, the diff (SURF6)
 **SURF5's attention half has landed too** (2026-09-21): `AwaitingPerson` finally has a surface —
 the analysis at the top of the head and **exactly the three moves** the ledger allows, landing on
 the driver so the process and the record move together — plus Overview's *what needs you* band and
-the count on the Work switch. What remains of SURF5 is the **notification** (SURF5b). **SURF5b,
-SURF6 and SURF7–9 are what remain of the arc.**
+the count on the Work switch. What remains of SURF5 is the **notification** (SURF5b).
 
-- [ ] 🔴 **SURF10 — the desktop application's own design** (owner, 2026-09-21, after SURF5a: *"I
-  still dont see good design for the desktop app itself"*). **The next thing to do, and it comes
-  before SURF5b, SURF6 and SURF7** — SURF7 is a piece of the answer, not the whole of it. Every
-  region SURF4–5 built works; what is missing is the *application* they sit in. The brief is
-  **`docs/2026-09-21-desktop-design-brief.md`**: what is observably wrong (an OS title bar over a
-  page that draws its own everything; Work borrowing Manage's sidebar with half the column empty;
-  an attended column that is mostly white; a permanent form at the top of the rail; web spacing
-  where an IDE is dense; no icons, hover states or keyboard story), and what must not move (D41's
-  tokens and status palette — though its *spacing* is the likeliest thing to need amending, as a
-  decision rather than a drift; D42's stack; no editor, ever; the disclosure boundary).
-  **Take it as a direction and confirm the reading with the owner before building**, the way D53
-  and ARCH1 were. Deliverable: a reference pass on the *window*, a decision recorded before the
-  build, and a real-window loop — `npm run desktop -- shot` is the only thing that can see it.
+**SURF10 answered the owner's dissatisfaction with the application itself** (2026-09-21, D56 +
+`docs/2026-09-21-desktop-frame-design.md`, confirmed with the owner before any code): an app strip
+and a 48px activity bar replace the labelled sidebar in **both** frames, the rail's permanent form
+went behind a `＋`, the verbs got one owner at a time, the attended selection is remembered, and
+D41 §3 is amended to one denser scale carried by **seven named type tokens** rather than 203
+literals. Measured before and after on the real window: navigation 42% → 23% of the width, the
+attended session ~28% → ~72% of it. **SURF5b, SURF6 and SURF7–9 are what remain of the arc**, and
+**SURF7 is next** — the strip it needs is built and reserves the room for its caption buttons.
 
-- [ ] **SURF7 — the window is part of the frame** (D55 §a has the traps and the reasons; this is the
-  work). `MainForm` becomes an `OptimizedForm` with `FramelessChrome`; the top strip becomes app
-  menu + mode switch + workspace scope + caption buttons. Map `WindowCommandModule` **late, from
-  where the window is created**, and wire `SET_THEME` and `SET_CAPTION_BUTTONS`. 🔴 Read
-  `IAppMaximizable`, never `Form.WindowState` — verify the existing `WindowStateHostOptions` stack
-  does, rather than assume it. `npm run desktop -- shot` is the only gate that can see any of this.
+- [ ] 🔴 **SURF7 — the window is part of the frame. Next.** (D55 §a has the traps and the
+  reasons; **D56 and `docs/2026-09-21-desktop-frame-design.md` §5 have the design**, and SURF10 built
+  everything page-side.) `MainForm` becomes an `OptimizedForm` with `FramelessChrome`. **The strip
+  already exists** — `AppStrip` in `src/work/frame.tsx`, with `captionRoom` reserving 8.25rem at its
+  right edge so nothing shifts when the buttons arrive; this item fills that room and makes the strip
+  draggable. Map `WindowCommandModule` **late, from where the window is created**, and wire
+  `SET_THEME` and `SET_CAPTION_BUTTONS`. 🔴 Read `IAppMaximizable`, never `Form.WindowState` —
+  verify the existing `WindowStateHostOptions` stack does, rather than assume it. **Until this lands
+  the window wears two bars**, the OS title bar and the app strip: a known interim recorded in D56,
+  not a regression. `npm run desktop -- shot` is the only gate that can see any of this.
 
 - [ ] **SURF8 — the monitor window** (D55 §b). `SecondaryWindows`: `monitor` (rail plus live streams,
   read-only, for a second screen) and `session:<id>` (one attended session, detached) — routes into
@@ -389,7 +387,11 @@ SURF6 and SURF7–9 are what remain of the arc.**
   reversible and stays a press because it is where D37's verification lands; discard confirms and
   names what would be lost. The evidence string is unchanged for whoever reads the record from
   another machine. Playwright holds the negative guarantee: a browser sees the record and never a
-  diff, a stream, a tree path or a notification setting. **D55 reshapes the surface**: a
+  diff, a stream, a tree path or a notification setting. **It also relieves the one number SURF10
+  measured and deliberately did not fix**: the attended column gained the whole width and no height
+  (a 341px scroll region), because the timeline still shares it with the composer and the panel —
+  the right dock is where the timeline goes, which is what the components plan specified all along.
+  **D55 reshapes the surface**: a
   **multibuffer** — one scrollable aggregation of every changed file with a per-file *viewed* mark —
   not a file tree beside a pane, because that is what makes a forty-file review finishable (Zed's
   `AgentDiffPane`, study §2). The verbs stay Daoris's: **accept**, or **send it back as a quest**, and

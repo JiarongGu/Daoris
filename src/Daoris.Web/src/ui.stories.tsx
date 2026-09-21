@@ -147,7 +147,7 @@ export const DrawerDetail: StoryObj = {
     <Drawer
       title="Expose a streaming budget on the chunk API"
       onClose={() => {}}
-      meta={<><Pill tone="open">Open</Pill><span className="font-mono text-[0.72rem] text-ink-faint">#7a82cc</span></>}
+      meta={<><Pill tone="open">Open</Pill><span className="font-mono text-meta text-ink-faint">#7a82cc</span></>}
       footer={
         <div className="flex flex-wrap gap-2">
           <Button>take</Button>
@@ -156,7 +156,7 @@ export const DrawerDetail: StoryObj = {
         </div>
       }
     >
-      <p className="m-0 whitespace-pre-wrap text-[0.9rem] leading-relaxed">
+      <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">
         World streaming needs to cap hydration work per frame; today the engine hydrates unbounded.
         Evidence: the seam appears whenever more than three chunks hydrate in one frame.
       </p>

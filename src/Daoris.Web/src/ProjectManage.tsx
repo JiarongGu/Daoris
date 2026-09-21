@@ -79,7 +79,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
         </div>
       }
     >
-      <p className="text-[0.85rem] text-ink-soft">{t('projects.manage.addBody')}</p>
+      <p className="text-body text-ink-soft">{t('projects.manage.addBody')}</p>
 
       <Button className="mt-3" onClick={choose} disabled={pick.isPending}>
         {t('projects.manage.choose')}
@@ -87,30 +87,30 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
 
       {found && (
         <div className="mt-4 border-t border-line pt-3.5">
-          <p className="break-all font-mono text-[0.8rem] text-ink-soft">{found.path}</p>
+          <p className="break-all font-mono text-small text-ink-soft">{found.path}</p>
           <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
             <Chip accent>{found.name}</Chip>
             <Chip>{found.adopted ? t('projects.manage.adopted') : t('projects.manage.notAdopted')}</Chip>
             <Chip>{found.git ? t('projects.manage.git') : t('projects.manage.noGit')}</Chip>
           </p>
-          {found.summary && <p className="mt-2 text-[0.85rem] text-ink-soft">{found.summary}</p>}
+          {found.summary && <p className="mt-2 text-body text-ink-soft">{found.summary}</p>}
 
           {!found.adopted && (
             /* The join steps as TEXT to run in that repository (D31): adoption is its own agent's
                job — the collisions, the review, the budget — and a button here would do that work
                from outside, by whoever knows that codebase least. */
-            <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-[0.78rem]">
+            <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-small">
               {t('projects.manage.adoptHere')}
             </p>
           )}
 
           {!found.git && (
-            <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-[0.85rem] text-ink-soft">
+            <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
               {t('projects.manage.noGitWarning')}
             </p>
           )}
 
-          <label className="mt-4 block text-[0.78rem] text-ink-faint" htmlFor="add-workspace">
+          <label className="mt-4 block text-small text-ink-faint" htmlFor="add-workspace">
             {t('projects.workspace')}
           </label>
           <input
@@ -118,9 +118,9 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
             value={workspace}
             onChange={(event) => setWorkspace(event.target.value)}
             placeholder={t('projects.manage.workspacePlaceholder')}
-            className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.85rem]"
+            className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
           />
-          <p className="mt-1.5 text-[0.78rem] text-ink-faint">{t('projects.manage.workspaceNote')}</p>
+          <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.workspaceNote')}</p>
         </div>
       )}
     </Drawer>
@@ -183,17 +183,17 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
   return (
     <Drawer
       title={t('projects.manage.title', { name: project.repository })}
-      meta={project.root && <span className="break-all font-mono text-[0.78rem]">{project.root}</span>}
+      meta={project.root && <span className="break-all font-mono text-small">{project.root}</span>}
       onClose={onClose}
     >
       <SectionTitle>{t('projects.manage.wiring')}</SectionTitle>
-      <p className="text-[0.85rem] text-ink-soft">{t('projects.manage.wiringBody')}</p>
+      <p className="text-body text-ink-soft">{t('projects.manage.wiringBody')}</p>
       <div className="mt-2 flex items-center gap-2">
         <input
           value={workspace}
           onChange={(event) => setWorkspace(event.target.value)}
           aria-label={t('projects.workspace')}
-          className="min-w-0 flex-1 rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.85rem]"
+          className="min-w-0 flex-1 rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
         />
         <Button onClick={saveWiring} disabled={wire.isPending}>{t('projects.manage.rewire')}</Button>
       </div>
@@ -202,17 +202,17 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
         <SectionTitle>{t('projects.manage.declaration')}</SectionTitle>
         {project.root ? (
           <>
-            <p className="text-[0.85rem] text-ink-soft">{t('projects.manage.declarationBody')}</p>
-            <label className="mt-2.5 block text-[0.78rem] text-ink-faint" htmlFor="declaration-summary">
+            <p className="text-body text-ink-soft">{t('projects.manage.declarationBody')}</p>
+            <label className="mt-2.5 block text-small text-ink-faint" htmlFor="declaration-summary">
               {t('projects.manage.summary')}
             </label>
             <input
               id="declaration-summary"
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.85rem]"
+              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 text-body"
             />
-            <label className="mt-2.5 block text-[0.78rem] text-ink-faint" htmlFor="declaration-owns">
+            <label className="mt-2.5 block text-small text-ink-faint" htmlFor="declaration-owns">
               {t('projects.owns')}
             </label>
             <textarea
@@ -220,9 +220,9 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               value={owns}
               rows={3}
               onChange={(event) => setOwns(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-[0.8rem]"
+              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-small"
             />
-            <label className="mt-2.5 block text-[0.78rem] text-ink-faint" htmlFor="declaration-accepts">
+            <label className="mt-2.5 block text-small text-ink-faint" htmlFor="declaration-accepts">
               {t('projects.accepts')}
             </label>
             <textarea
@@ -230,9 +230,9 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               value={accepts}
               rows={3}
               onChange={(event) => setAccepts(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-[0.8rem]"
+              className="mt-1 w-full rounded-control border border-line bg-raised px-2.5 py-1.5 font-mono text-small"
             />
-            <p className="mt-1.5 text-[0.78rem] text-ink-faint">{t('projects.manage.linesNote')}</p>
+            <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.linesNote')}</p>
             <Button
               className="mt-2.5"
               onClick={saveDeclaration}
@@ -244,14 +244,14 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
         ) : (
           /* A registration with no checkout here — a teammate's, mirrored down from a remote (D47 §9).
              Its manifest lives on their machine, and editing it from here would be reaching in. */
-          <p className="text-[0.85rem] text-ink-soft">{t('projects.manage.noCheckout')}</p>
+          <p className="text-body text-ink-soft">{t('projects.manage.noCheckout')}</p>
         )}
       </div>
 
       <div className="mt-6">
         <SectionTitle>{t('projects.manage.retire')}</SectionTitle>
-        <p className="text-[0.85rem] text-ink-soft">{t('projects.manage.retireBody')}</p>
-        <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-[0.85rem] text-ink-soft">
+        <p className="text-body text-ink-soft">{t('projects.manage.retireBody')}</p>
+        <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
           {t('projects.manage.retireNotDelete')}
         </p>
         {confirming ? (
@@ -276,7 +276,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
         )}
       </div>
 
-      <p className="mt-6 text-[0.78rem] text-ink-faint">
+      <p className="mt-6 text-small text-ink-faint">
         <Tip content={t('projects.manage.doctrineTip')}>
           <span>{t('projects.manage.doctrine')}</span>
         </Tip>

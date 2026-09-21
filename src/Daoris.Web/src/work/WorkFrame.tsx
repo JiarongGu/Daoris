@@ -5,7 +5,7 @@ import { useQuests, useRegistry, useSessions } from '../queries';
 import {
   useEndChat, useHarnesses, useResolveSession, useSendMessage, useStartChat, useStopSession,
 } from '../shell';
-import { type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
+import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession } from './AttendedSession';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -69,6 +69,7 @@ export function WorkFrame({ selected, onSelect, notify }: {
 }) {
   const { t } = useTranslation();
   const [refusal, setRefusal] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const [height, setHeight] = useState(() => remembered(PANEL_HEIGHT, 200));
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -133,7 +134,7 @@ export function WorkFrame({ selected, onSelect, notify }: {
         // harness is missing, the chosen account is logged out. Each names the action that fixes
         // it, which is why it is shown rather than summarised.
         if (!result.sessionId) notify(result.message, 'error');
-        else attend(result.sessionId);
+        else { setStarting(false); attend(result.sessionId); }
       },
       onError: (error: unknown) => notify(sentence(error), 'error'),
     });
@@ -166,26 +167,51 @@ export function WorkFrame({ selected, onSelect, notify }: {
 
   return (
     <div className="flex min-h-0 flex-1">
-      <aside className="flex w-[18rem] shrink-0 flex-col overflow-y-auto border-r border-line max-lg:w-[14rem]">
-        <StartSession
-          // A checkout on this machine is the whole question: there is nowhere else to talk, and a
-          // teammate's mirrored registration has no tree here (D48 §3/§7).
-          repositories={(registry.data ?? [])
-            .filter((row) => Boolean(row.root))
-            .map((row) => row.repository)
-            .sort()}
-          harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
-          profiles={Array.isArray(spawning?.profiles) ? spawning.profiles : []}
-          pending={startChat.isPending}
-          onStart={onStart}
-        />
-        <div className="min-h-0 flex-1 border-t border-line">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-line max-lg:w-52">
+        {/* The rail is a list of sessions, and NEW is one control (D56). It used to be a permanent
+            287×200 form above the list — 27% of the rail, always, for something a person does
+            occasionally. Every reference in the study puts new behind a single affordance. */}
+        <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line pl-3 pr-1.5">
+          <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">
+            {t('work.rail.label')}
+          </span>
+          <Tip content={t('work.start.title')}>
+            <Button
+              variant="ghost"
+              aria-label={t('work.start.title')}
+              onClick={() => setStarting(true)}
+              className="ml-auto h-6 w-6 justify-center px-0"
+            >
+              <Icon name="plus" size={15} />
+            </Button>
+          </Tip>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <SessionRail selected={selected} onSelect={attend} notify={notify} />
         </div>
       </aside>
 
+      {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
+      {starting && (
+        <Drawer title={t('work.start.title')} onClose={() => setStarting(false)}>
+          <StartSession
+            // A checkout on this machine is the whole question: there is nowhere else to talk, and
+            // a teammate's mirrored registration has no tree here (D48 §3/§7).
+            repositories={(registry.data ?? [])
+              .filter((row) => Boolean(row.root))
+              .map((row) => row.repository)
+              .sort()}
+            harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
+            profiles={Array.isArray(spawning?.profiles) ? spawning.profiles : []}
+            pending={startChat.isPending}
+            onStart={onStart}
+          />
+        </Drawer>
+      )}
+
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           <AttendedSession
             session={attended}
             quest={quest}
@@ -199,6 +225,9 @@ export function WorkFrame({ selected, onSelect, notify }: {
             live={live}
             sending={send.isPending}
             refusal={refusal}
+            // One owner for the moves at a time (D56): while the session is parked the attention
+            // band above holds finish, decline and stop, and this form keeps `send` alone.
+            endings={attended.state !== 'awaiting-person'}
             onSend={onSend}
             onFinish={() => end.mutate(attended.id, {
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),

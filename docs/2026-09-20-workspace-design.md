@@ -371,8 +371,9 @@ machine paths (D46/D47: paths never reach a browser).
    flag that says so is on the wire — the first refusal class in this system that a client is meant
    to report rather than fix.
 5. **WSP5 — the workspace switcher**: the one thing §8's Web row still owed. **Built 2026-09-21** as
-   **global chrome** — one scope per query, in the sidebar's foot beside the rest of the global state
-   (the platform language's rule that global state lives in exactly one place) — rather than a
+   **global chrome** — one scope per query, beside the rest of the global state (the platform
+   language's rule that global state lives in exactly one place; it sits in the **app strip** since
+   D56, having been built into the sidebar foot the sidebar then lost) — rather than a
    per-view filter, because five filters can disagree and §4's rule is that a query names one circle.
    Four choices the building settled: the control is **absent while the deployment holds one
    workspace** (silence is today's behaviour, byte for byte — the same rule as session trees);

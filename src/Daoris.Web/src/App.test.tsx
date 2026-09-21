@@ -57,7 +57,7 @@ describe('the shell in a browser, over two workspaces', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('offers the scope in the sidebar foot, stating that it spans every workspace', async () => {
+  it('offers the scope in the app strip, stating that it spans every workspace', async () => {
     shell();
     const scope = await screen.findByRole('combobox', { name: 'workspace' });
     expect(scope).toHaveTextContent('every workspace · 2');

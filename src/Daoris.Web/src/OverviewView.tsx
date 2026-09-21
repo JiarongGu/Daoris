@@ -107,13 +107,13 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
               <li key={quest.id} className="border-t border-line first:border-t-0">
                 <button
                   onClick={() => onNavigate('quests')}
-                  className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-[0.9rem] hover:bg-accent-soft"
+                  className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-body hover:bg-accent-soft"
                 >
                   <Pill tone={QUEST_TONE[quest.status]}>
                     {t(`status.${quest.status}`)}
                   </Pill>
                   <span className="font-medium">{quest.title}</span>
-                  <span className="ml-auto font-mono text-[0.72rem] text-ink-faint">
+                  <span className="ml-auto font-mono text-meta text-ink-faint">
                     {quest.from} → {quest.to} · {quest.status === 'Open'
                       ? t('overview.outstanding.filed', { ago: ago(quest.filed) })
                       : t('overview.outstanding.taken', { ago: ago(quest.updated) })}
@@ -123,7 +123,7 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
             ))}
           </ul>
           {outstanding.length > 6 && (
-            <p className="mt-2 text-[0.78rem] italic text-ink-faint">
+            <p className="mt-2 text-small italic text-ink-faint">
               {t('overview.outstanding.more', { count: outstanding.length - 6 })}
             </p>
           )}
@@ -147,7 +147,7 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
                   key={repository.name}
                   className="grid grid-cols-[minmax(8.5rem,12rem)_1fr_minmax(7.5rem,auto)] items-center gap-3 py-1.5 max-md:grid-cols-[1fr_auto] max-md:[&>span:nth-child(2)]:col-span-2 max-md:[&>span:nth-child(2)]:row-start-2"
                 >
-                  <span className="flex min-w-0 items-center gap-2 text-[0.85rem]">
+                  <span className="flex min-w-0 items-center gap-2 text-body">
                     {declared?.adopted && (
                       <Tip content={t('overview.repositories.adoptedDot')}>
                         <span className="inline-block size-2 shrink-0 rounded-full bg-accent" />
@@ -161,7 +161,7 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
                       style={{ width: `${(repository.total / most) * 100}%` }}
                     />
                   </span>
-                  <span className="whitespace-nowrap text-right text-[0.8rem] tabular-nums">
+                  <span className="whitespace-nowrap text-right text-small tabular-nums">
                     {repository.total.toLocaleString()}
                     <span className="text-ink-faint"> · {t('overview.repositories.local', { count: repository.local })}</span>
                   </span>
@@ -169,7 +169,7 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
               );
             })}
           </ul>
-          <p className="mt-2 text-[0.78rem] italic text-ink-faint">{t('overview.repositories.hint')}</p>
+          <p className="mt-2 text-small italic text-ink-faint">{t('overview.repositories.hint')}</p>
         </Card>
       </div>
     </section>

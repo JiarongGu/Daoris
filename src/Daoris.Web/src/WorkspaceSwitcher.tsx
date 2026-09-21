@@ -5,9 +5,10 @@ import { SelectField, Tip } from './ui';
 const EVERY = '*';
 
 /**
- * The scope control (WSP5): which circle the console is looking at. Global chrome, in the sidebar's
- * foot with the other global state (platform language §2) — one scope per query, never five filters
- * that can disagree (workspace design §4).
+ * The scope control (WSP5): which circle the console is looking at. Global chrome, in the **app
+ * strip** with the rest of it since D56 — one scope per query, never five filters that can disagree
+ * (workspace design §4). It decides what every number on every screen means, which is why it belongs
+ * to the application rather than to either frame.
  *
  * **Absent while the deployment holds one workspace.** A family that is one circle needs no control
  * to say so, and silence keeps today's behaviour byte for byte — the same rule as session trees.

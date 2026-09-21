@@ -17,6 +17,13 @@ everything else is the system sans. 道衍 sits beside the wordmark as the one b
 
 ## 2. The shell
 
+> **Amended by D56 (2026-09-21).** The labelled 15rem sidebar described here is **retired**: the
+> application wears a 36px **app strip** (wordmark, Manage ⇄ Work, workspace scope) and a 48px
+> **activity bar** carrying these five items as icons, identical in both frames, with the tier pill
+> and the index count moved to the **status bar**. The active-item treatment, the badge, and "global
+> state lives in exactly one place" all survive; only their homes moved.
+> `docs/2026-09-21-desktop-frame-design.md` §3 is the current shell.
+
 A **fixed left sidebar** and a content column — the shape of a console, not a document.
 
 - **Sidebar (15rem)**: wordmark (`Daoris` · 道衍), then navigation — five items, each an icon, a label,
@@ -31,6 +38,13 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   refresh action collapsed to its icon. Nothing is hidden behind a hamburger; five items fit.
 
 ## 3. Tokens
+
+> **Amended by D56 (2026-09-21).** The **type scale and the spacing are denser** — 13px body against
+> 15.2px — and the scale is now **seven named tokens** (`text-meta` … `text-value`) rather than rem
+> literals, because the literal form had drifted to fifteen values across 203 sites with nothing
+> reporting it. `tokens.test.ts` now fails on any raw size. **The palette below is untouched**: the
+> warm paper, the thin ink, the one bronze accent and the six-check validated status set stand
+> exactly as written. `docs/2026-09-21-desktop-frame-design.md` §4 has the new scale.
 
 - **Type scale** (rem): 0.72 mono-meta · 0.8 small · 0.875 secondary · 0.95 body · 1.05 card title ·
   1.25 view title · 1.5 wordmark · 2.0 tile value. Tile values wear proportional figures; columns of

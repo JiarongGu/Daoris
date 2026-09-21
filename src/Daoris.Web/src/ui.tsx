@@ -60,7 +60,7 @@ export function Button({
     <button
       {...props}
       className={cn(
-        'inline-flex min-h-[1.9rem] items-center gap-1.5 rounded-control px-3 py-1.5 text-[0.85rem]',
+        'inline-flex min-h-[1.9rem] items-center gap-1.5 rounded-control px-3 py-1.5 text-body',
         'transition-colors duration-(--speed)',
         BUTTON[variant],
         className,
@@ -150,7 +150,7 @@ export function Pill({ tone = 'neutral', title, children }: {
     <span
       title={title}
       className={cn(
-        'whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[0.72rem]',
+        'whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-meta',
         PILL_TONE[tone],
       )}
     >
@@ -162,7 +162,7 @@ export function Pill({ tone = 'neutral', title, children }: {
 export function Chip({ accent, children }: { accent?: boolean; children: ReactNode }) {
   return (
     <span className={cn(
-      'inline-block rounded-full border px-2.5 py-px text-[0.75rem] leading-[1.45]',
+      'inline-block rounded-full border px-2.5 py-px text-small leading-[1.45]',
       accent ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-raised text-ink-soft',
     )}
     >
@@ -194,7 +194,7 @@ export function Dot({ tone = 'idle', label, className }: {
   const shade = DOT_TONE[tone];
   return (
     <span className={cn(
-      'inline-flex items-center gap-1.5 whitespace-nowrap text-[0.72rem]', shade.word, className,
+      'inline-flex items-center gap-1.5 whitespace-nowrap text-meta', shade.word, className,
     )}
     >
       <span aria-hidden className={cn('inline-block size-1.5 shrink-0 rounded-full', shade.mark)} />
@@ -235,7 +235,7 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false,
   return (
     <div className={cn(fill && 'flex min-h-0 flex-1 flex-col')}>
       {(label || live) && (
-        <p className="mb-1 flex items-baseline gap-2 text-[0.72rem] text-ink-faint">
+        <p className="mb-1 flex items-baseline gap-2 text-meta text-ink-faint">
           {label && <span>{label}</span>}
           {live && <Dot tone="live" label={t('console.live')} />}
         </p>
@@ -244,14 +244,14 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false,
         ref={well}
         className={cn(
           'm-0 overflow-auto whitespace-pre-wrap break-words rounded-control border border-line',
-          'bg-raised px-3 py-2.5 font-mono text-[0.75rem] leading-relaxed text-ink-soft',
+          'bg-raised px-3 py-2.5 font-mono text-small leading-relaxed text-ink-soft',
           fill ? 'min-h-0 flex-1' : tall ? 'max-h-[26rem] min-h-40' : 'max-h-72',
         )}
       >
         {text}
       </pre>
       {dropped > 0 && (
-        <p className="mt-1 text-[0.72rem] text-ink-faint">{t('console.dropped', { count: dropped })}</p>
+        <p className="mt-1 text-meta text-ink-faint">{t('console.dropped', { count: dropped })}</p>
       )}
     </div>
   );
@@ -272,12 +272,12 @@ export function MetaLine({ items, className }: {
   const shown = items.filter((item) => item.value !== null && item.value !== undefined && item.value !== '');
   if (!shown.length) return null;
   return (
-    <dl className={cn('m-0 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[0.8rem]', className)}>
+    <dl className={cn('m-0 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-small', className)}>
       {shown.map((item) => (
         <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
           <dt className="shrink-0 text-ink-faint">{item.label}</dt>
           <dd className={cn(
-            'm-0 min-w-0 text-ink-soft', item.mono && 'break-all font-mono text-[0.75rem]',
+            'm-0 min-w-0 text-ink-soft', item.mono && 'break-all font-mono text-small',
           )}
           >
             {item.value}
@@ -309,7 +309,7 @@ export function Card({ warn, accent, className, children }: {
 export function CardHeader({ title, aside }: { title: ReactNode; aside?: ReactNode }) {
   return (
     <header className="flex items-baseline justify-between gap-4">
-      <span className="text-[0.95rem] font-semibold">{title}</span>
+      <span className="text-body font-semibold">{title}</span>
       {aside}
     </header>
   );
@@ -325,9 +325,9 @@ export function Tile({ label, value, note, warn }: {
       warn && 'border-l-[3px] border-l-st-open',
     )}
     >
-      <span className="text-[0.78rem] text-ink-soft">{label}</span>
-      <span className="text-[2rem] font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
-      <span className={cn('text-[0.75rem]', warn ? 'text-st-open' : 'text-ink-faint')}>{note}</span>
+      <span className="text-small text-ink-soft">{label}</span>
+      <span className="text-value font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
+      <span className={cn('text-small', warn ? 'text-st-open' : 'text-ink-faint')}>{note}</span>
     </div>
   );
 }
@@ -339,8 +339,8 @@ export function PageHeader({ title, description, action }: {
   return (
     <header className="mb-6 flex items-start justify-between gap-4">
       <div>
-        <h1 className="text-[1.25rem] font-[650] tracking-[-0.01em]">{title}</h1>
-        <p className="mt-1 text-[0.9rem] text-ink-soft">{description}</p>
+        <h1 className="text-view font-[650] tracking-[-0.01em]">{title}</h1>
+        <p className="mt-1 text-body text-ink-soft">{description}</p>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </header>
@@ -354,7 +354,7 @@ export function PageHeader({ title, description, action }: {
  */
 export function SectionTitle({ level = 2, children }: { level?: 2 | 3; children: ReactNode }) {
   const Heading = level === 3 ? 'h3' : 'h2';
-  return <Heading className="mb-2.5 mt-6 text-[0.8rem] font-semibold text-ink-faint">{children}</Heading>;
+  return <Heading className="mb-2.5 mt-6 text-small font-semibold text-ink-faint">{children}</Heading>;
 }
 
 /* ---------------------------------------------------------------- drawer */
@@ -377,9 +377,9 @@ export function Drawer({ title, meta, onClose, footer, children }: {
         >
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">
             <div>
-              <Dialog.Title className="text-[1.05rem] font-[650] leading-[1.35]">{title}</Dialog.Title>
+              <Dialog.Title className="text-title font-[650] leading-[1.35]">{title}</Dialog.Title>
               {meta && (
-                <div className="mt-1.5 flex flex-wrap items-baseline gap-2 text-[0.8rem] text-ink-soft">
+                <div className="mt-1.5 flex flex-wrap items-baseline gap-2 text-small text-ink-soft">
                   {meta}
                 </div>
               )}
@@ -410,7 +410,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
     <RadixSelect.Root value={value || undefined} onValueChange={onChange} required={required}>
       <RadixSelect.Trigger
         aria-label={ariaLabel}
-        className="inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.9rem] text-ink data-[placeholder]:text-ink-faint"
+        className="inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint"
       >
         <RadixSelect.Value placeholder={placeholder} />
         <ChevronDown size={14} aria-hidden className="text-ink-faint" />
@@ -425,7 +425,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
               <RadixSelect.Item
                 key={option.value}
                 value={option.value}
-                className="flex cursor-pointer items-center justify-between gap-3 rounded-[4px] px-2 py-1.5 text-[0.9rem] outline-none data-[highlighted]:bg-accent-soft data-[highlighted]:text-ink"
+                className="flex cursor-pointer items-center justify-between gap-3 rounded-[4px] px-2 py-1.5 text-body outline-none data-[highlighted]:bg-accent-soft data-[highlighted]:text-ink"
               >
                 <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
                 <RadixSelect.ItemIndicator><Check size={14} aria-hidden /></RadixSelect.ItemIndicator>
@@ -442,7 +442,7 @@ export function CheckField({ checked, onChange, label }: {
   checked: boolean; onChange: (checked: boolean) => void; label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-[0.85rem] text-ink-soft">
+    <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-body text-ink-soft">
       <Checkbox.Root
         checked={checked}
         onCheckedChange={(state) => onChange(state === true)}
@@ -459,12 +459,21 @@ export function CheckField({ checked, onChange, label }: {
 export function Tip({ content, children }: { content: string; children: ReactNode }) {
   if (!content) return <>{children}</>;
   return (
-    <Tooltip.Root>
+    // `disableHoverableContent` is what makes the tooltip untouchable: with hoverable content on,
+    // Radix gives the popper WRAPPER pointer events so you can move into the tooltip, and the
+    // wrapper then sits over whatever the trigger opened. That is how the workspace scope's tooltip
+    // came to swallow clicks on its own options list once it moved into the app strip (D56).
+    // Nothing here is meant to be hovered INTO — every Tip carries one sentence.
+    <Tooltip.Root disableHoverableContent>
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content
           sideOffset={6}
-          className="z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-[0.8rem] text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
+          // A tooltip explains; it is never a pointer target. Without this it can sit over the very
+          // control it describes and swallow the click — which is exactly what happened when the
+          // workspace scope moved into the app strip (D56) and its tooltip landed on top of its own
+          // options list. The rule belongs here rather than at that one call site.
+          className="pointer-events-none z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-small text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
         >
           {content}
         </Tooltip.Content>
@@ -493,7 +502,7 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
           key={toast.id}
           onOpenChange={(open) => { if (!open) onClose(toast.id); }}
           className={cn(
-            'flex items-start gap-2.5 rounded-card border border-line bg-overlay py-2.5 pl-3.5 pr-2.5 text-[0.85rem]',
+            'flex items-start gap-2.5 rounded-card border border-line bg-overlay py-2.5 pl-3.5 pr-2.5 text-body',
             'border-l-[3px] shadow-[0_6px_24px_rgb(15_12_8/0.12)] motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
             toast.kind === 'error' ? 'border-l-st-declined' : 'border-l-accent',
           )}
@@ -518,8 +527,8 @@ export function EmptyState({ icon, headline, body, action }: {
   return (
     <div className="grid justify-items-center gap-1.5 px-4 py-7 text-center text-ink-faint">
       <Icon name={icon} size={26} />
-      <p className="mt-1 text-[0.95rem] font-semibold text-ink">{headline}</p>
-      <p className="max-w-[28rem] text-[0.85rem] text-ink-soft">{body}</p>
+      <p className="mt-1 text-body font-semibold text-ink">{headline}</p>
+      <p className="max-w-[28rem] text-body text-ink-soft">{body}</p>
       {action && <div className="mt-2.5">{action}</div>}
     </div>
   );
@@ -549,19 +558,26 @@ export function useErrorNotify(error: unknown, notify: Notify) {
 
 /* ---------------------------------------------------------------- language */
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ compact }: { compact?: boolean } = {}) {
   const { i18n, t } = useTranslation();
   const current = i18n.language.startsWith('zh') ? 'zh' : 'en';
   const next = current === 'zh' ? 'en' : 'zh';
+  const label = t(`language.${next}`);
   return (
     // The visible label IS the accessible name — the language it switches to, in that language.
-    <Button
-      variant="ghost"
-      className="w-full justify-center"
-      onClick={() => void i18n.changeLanguage(next)}
-    >
-      <Icon name="languages" size={14} />
-      {t(`language.${next}`)}
-    </Button>
+    // In the activity bar there is no room for it, so it becomes the accessible name instead: the
+    // glyph alone would be a control with no name at all (D41 §6 — icons are decorative BESIDE a
+    // real label, so an icon-only control has to carry one).
+    <Tip content={compact ? label : ''}>
+      <Button
+        variant="ghost"
+        aria-label={compact ? label : undefined}
+        className={compact ? 'h-9 w-9 justify-center px-0' : 'w-full justify-center'}
+        onClick={() => void i18n.changeLanguage(next)}
+      >
+        <Icon name="languages" size={14} />
+        {!compact && label}
+      </Button>
+    </Tip>
   );
 }

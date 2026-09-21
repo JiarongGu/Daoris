@@ -11,9 +11,9 @@ function Swatch({ name, variable, note }: { name: string; variable: string; note
         className="size-8 shrink-0 rounded-control border border-line"
         style={{ background: `var(${variable})` }}
       />
-      <span className="w-32 font-mono text-[0.8rem]">{name}</span>
-      <span className="font-mono text-[0.72rem] text-ink-faint">{variable}</span>
-      {note && <span className="text-[0.78rem] text-ink-soft">— {note}</span>}
+      <span className="w-32 font-mono text-small">{name}</span>
+      <span className="font-mono text-meta text-ink-faint">{variable}</span>
+      {note && <span className="text-small text-ink-soft">— {note}</span>}
     </div>
   );
 }
@@ -22,7 +22,7 @@ function Gallery() {
   return (
     <div className="grid max-w-2xl gap-6">
       <section>
-        <h2 className="mb-2 text-[0.95rem] font-semibold">Surfaces & ink</h2>
+        <h2 className="mb-2 text-body font-semibold">Surfaces & ink</h2>
         <Swatch name="page" variable="--page" />
         <Swatch name="raised" variable="--raised" note="cards, controls" />
         <Swatch name="overlay" variable="--overlay" note="drawers, toasts" />
@@ -32,31 +32,31 @@ function Gallery() {
         <Swatch name="ink-faint" variable="--ink-faint" />
       </section>
       <section>
-        <h2 className="mb-2 text-[0.95rem] font-semibold">Accent — the interactive identity, never a status</h2>
+        <h2 className="mb-2 text-body font-semibold">Accent — the interactive identity, never a status</h2>
         <Swatch name="accent" variable="--accent" note="buttons, active nav, links, single-series bars" />
         <Swatch name="accent-soft" variable="--accent-soft" />
       </section>
       <section>
-        <h2 className="mb-2 text-[0.95rem] font-semibold">Quest states — computed, not tasted</h2>
+        <h2 className="mb-2 text-body font-semibold">Quest states — computed, not tasted</h2>
         <Swatch name="st-open" variable="--st-open" note="waiting" />
         <Swatch name="st-taken" variable="--st-taken" note="in progress" />
         <Swatch name="st-done" variable="--st-done" />
         <Swatch name="st-declined" variable="--st-declined" />
-        <p className="mt-2 max-w-xl text-[0.8rem] text-ink-soft">
+        <p className="mt-2 max-w-xl text-small text-ink-soft">
           Light passes the six validator checks at worst adjacent deutan ΔE 13.3 (normal 21.0); dark is
           its own validated set at 9.2 / 17.5 — not a filter. The red/green pair is separated by
           lightness as well as hue.
         </p>
       </section>
       <section>
-        <h2 className="mb-2 text-[0.95rem] font-semibold">Type scale</h2>
-        <p className="text-[2rem] font-semibold leading-tight">2.0 — tile values</p>
-        <p className="font-serif text-[1.5rem] font-semibold">1.5 — the wordmark, the one serif</p>
-        <p className="text-[1.25rem] font-[650]">1.25 — view titles</p>
-        <p className="text-[1.05rem] font-[650]">1.05 — drawer titles</p>
-        <p className="text-[0.95rem]">0.95 — body</p>
-        <p className="text-[0.875rem] text-ink-soft">0.875 — secondary</p>
-        <p className="font-mono text-[0.72rem] text-ink-faint">0.72 mono — meta</p>
+        <h2 className="mb-2 text-body font-semibold">Type scale</h2>
+        <p className="text-value font-semibold leading-tight">2.0 — tile values</p>
+        <p className="font-serif text-wordmark font-semibold">1.5 — the wordmark, the one serif</p>
+        <p className="text-view font-[650]">1.25 — view titles</p>
+        <p className="text-title font-[650]">1.05 — drawer titles</p>
+        <p className="text-body">0.95 — body</p>
+        <p className="text-body text-ink-soft">0.875 — secondary</p>
+        <p className="font-mono text-meta text-ink-faint">0.72 mono — meta</p>
       </section>
     </div>
   );

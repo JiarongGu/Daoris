@@ -17,13 +17,22 @@ import { Button, Tip } from '../ui';
  *
  * **A refusal renders verbatim**, as every service and driver sentence does: "nothing is listening"
  * is the ledger's answer, and rewriting it here would be the second copy of a sentence.
+ *
+ * **`endings` is the verb-ownership rule** (D56). A parked session used to render the attention
+ * band's *finish it · decline… · stop it* and this form's *send · finish · stop* at the same time,
+ * 400px apart — two owners for one set of moves, which is worse than either. So the state decides:
+ * while a session is `awaiting-person` the band owns the endings and this form keeps `send` alone,
+ * under the band's own sentence saying that answering is a message rather than one of those moves.
+ * No capability is lost; every move stays reachable wherever it is legal, from exactly one place.
  */
-export function Composer({ live, sending = false, refusal, onSend, onFinish, onStop }: {
+export function Composer({ live, sending = false, refusal, endings = true, onSend, onFinish, onStop }: {
   /** Whether anything is listening. False is an ending, not a disabled state. */
   live: boolean;
   sending?: boolean;
   /** The last refusal, shown inline and word for word. */
   refusal?: string | null;
+  /** Whether this form owns the two endings, or something else on screen does. */
+  endings?: boolean;
   onSend: (text: string) => void;
   onFinish: () => void;
   onStop: () => void;
@@ -43,10 +52,10 @@ export function Composer({ live, sending = false, refusal, onSend, onFinish, onS
       className="grid gap-2 border-t border-line px-4 py-3"
       onSubmit={(event) => { event.preventDefault(); say(); }}
     >
-      {refusal && <p className="m-0 text-[0.8rem] text-st-declined">{refusal}</p>}
-      {!live && <p className="m-0 text-[0.8rem] text-ink-soft">{t('work.composer.over')}</p>}
+      {refusal && <p className="m-0 text-small text-st-declined">{refusal}</p>}
+      {!live && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
 
-      <label className="grid gap-1 text-[0.78rem] text-ink-faint">
+      <label className="grid gap-1 text-small text-ink-faint">
         <span className="sr-only">{t('work.composer.label')}</span>
         <textarea
           value={draft}
@@ -59,7 +68,7 @@ export function Composer({ live, sending = false, refusal, onSend, onFinish, onS
             if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); say(); }
           }}
           placeholder={t('work.composer.placeholder')}
-          className="min-h-14 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-[0.9rem] text-ink disabled:opacity-55"
+          className="min-h-14 resize-y rounded-control border border-line bg-raised px-2.5 py-1.5 text-body text-ink disabled:opacity-55"
         />
       </label>
 
@@ -67,7 +76,7 @@ export function Composer({ live, sending = false, refusal, onSend, onFinish, onS
         <Button variant="primary" disabled={!live || !draft.trim() || sending} onClick={say}>
           {t('work.composer.send')}
         </Button>
-        {live && (
+        {live && endings && (
           <>
             <Tip content={t('work.composer.finishTip')}>
               <Button type="button" onClick={onFinish}>{t('work.composer.finish')}</Button>

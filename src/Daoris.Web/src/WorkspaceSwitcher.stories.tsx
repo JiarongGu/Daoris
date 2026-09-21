@@ -34,7 +34,7 @@ export const Many: Story = {
 export const Single: Story = {
   args: { workspaces: ['default'], value: null },
   render: (args) => (
-    <div className="text-[0.8rem] text-ink-faint">
+    <div className="text-small text-ink-faint">
       <WorkspaceSwitcher {...args} />
       <span>(one workspace — nothing to switch, so nothing renders above this line)</span>
     </div>
