@@ -59,6 +59,30 @@ public static class TargetPrompt
 /// </remarks>
 public sealed record ChatTarget(string Repository, string Root, string ServiceUrl);
 
+/// <summary>How the driver talks to the spawned process once it is running (D53).</summary>
+public enum SessionWire
+{
+    /// <summary>
+    /// The harness takes its whole target at once and prints text; the driver reads the text, keeps
+    /// it as the transcript, and observes the exit. The original door, and still the default.
+    /// </summary>
+    Pipe,
+
+    /// <summary>
+    /// The harness speaks the **Agent Client Protocol** on stdio: JSON-RPC frames, a session created
+    /// on the working tree, the target delivered as a prompt, and tool boundaries, turn boundaries
+    /// and thoughts arriving as structured updates.
+    /// </summary>
+    /// <remarks>
+    /// The gain over the pipe is a timeline that needs nothing parsed out of another program's
+    /// stdout — the coupling D23/D24 exist to prevent, and which D52 rejected by name. What does NOT
+    /// change is where a session record comes from: the wire's own stop reason flattens an aborted,
+    /// blocked or errored turn to `end_turn`, so the record still moves on the exit code and the
+    /// quest's state (D46 §4) and the wire only enriches the console and the transcript.
+    /// </remarks>
+    Acp,
+}
+
 /// <summary>
 /// One harness adapter: how a session is spawned, and how the target reaches it. An adapter names a
 /// harness, never a model (D24) — which model answers is that harness's own configuration in that
@@ -67,6 +91,13 @@ public sealed record ChatTarget(string Repository, string Root, string ServiceUr
 public interface ISessionAdapter
 {
     string Name { get; }
+
+    /// <summary>
+    /// Which door the driver holds this harness's session over (D53). Default <see cref="SessionWire.Pipe"/>,
+    /// so an adapter that says nothing behaves exactly as every adapter did before the door existed —
+    /// the same silence-preserves rule the toolchain and the session trees follow.
+    /// </summary>
+    SessionWire Wire => SessionWire.Pipe;
 
     /// <summary>
     /// The process that would be the session: spawned in the root, target delivered, output
@@ -115,9 +146,16 @@ internal static class Spawning
     /// target's pieces: any script shape can read it without parsing, and nothing quest-sized ever
     /// hits a shell's quoting rules.
     /// </summary>
-    public static ProcessStartInfo InRoot(SessionTarget target, string fileName, IEnumerable<string> arguments)
+    /// <param name="redirectInput">
+    /// Open stdin. A pipe-door session is given its whole target at once and has nobody to take turns
+    /// with, so it gets none; a protocol-door session needs one, because the driver writes frames
+    /// into it (D53).
+    /// </param>
+    public static ProcessStartInfo InRoot(
+        SessionTarget target, string fileName, IEnumerable<string> arguments, bool redirectInput = false)
     {
         var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl);
+        if (redirectInput) info.RedirectStandardInput = true;
 
         info.Environment["DAORIS_QUEST_ID"] = target.QuestId;
         info.Environment["DAORIS_QUEST_TITLE"] = target.Title;
@@ -206,6 +244,36 @@ public sealed class StubAdapter : ISessionAdapter
             : throw new DriverException(
                 "the stub adapter needs a command — name one in driver.json: "
                 + """{ "commands": { "stub": ["node", "path/to/agent.mjs"] } }""");
+}
+
+/// <summary>
+/// The stub's protocol twin (D53/ACP1): the same fake-binary trick, one door over.
+/// </summary>
+/// <remarks>
+/// <para>It exists for the reason <see cref="StubAdapter"/> exists — so the whole door can be gated
+/// with no model, no account and no credential anywhere in it (D46 §8). The command it runs is
+/// whatever the configuration names, and the rehearsal names a small ACP agent that speaks the wire
+/// and nothing else.</para>
+///
+/// <para><b>Stdin is open, and that is the difference that matters.</b> A pipe-door session is handed
+/// its target once; a protocol-door session is written to, frame by frame, for as long as it lives.</para>
+/// </remarks>
+public sealed class AcpStubAdapter : ISessionAdapter
+{
+    public string Name => "acp-stub";
+
+    public SessionWire Wire => SessionWire.Acp;
+
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
+    {
+        var resolved = command is { Count: > 0 }
+            ? command
+            : throw new DriverException(
+                "the acp-stub adapter needs a command — name one in driver.json: "
+                + """{ "commands": { "acp-stub": ["node", "path/to/acp-agent.mjs"] } }""");
+
+        return Spawning.InRoot(target, resolved[0], resolved.Skip(1), redirectInput: true);
+    }
 }
 
 /// <summary>
@@ -325,8 +393,11 @@ public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adap
     {
         // The stub gate-verifies the mechanism with no model in it (D46 §8); `claude-code` is the
         // supported harness on top of that proven loop. `codex` arrives explicitly, later — and until
-        // it does, asking for it errors naming these two, which is the honest answer.
+        // it does, asking for it errors naming these three, which is the honest answer.
         ["stub"] = new StubAdapter(),
+        // The same trick one door over (D53/ACP1): it proves the PROTOCOL with no model in it, and a
+        // real harness rides that proven door in ACP2 rather than being the thing that proves it.
+        ["acp-stub"] = new AcpStubAdapter(),
         ["claude-code"] = new ClaudeCodeAdapter(),
     });
 }

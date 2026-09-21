@@ -5,6 +5,39 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A refusal printed local time and called it UTC, and a fixture with an expiry date hid it (2026-09-21)
+
+**Symptom.** Five checks in the family rehearsal's "which commit speaks" phase went red on a run that
+changed nothing near them. The refusal read: *"`atelier` is already fed from a newer commit
+(`754c583c`, 2026-09-21 **20:34Z**…)"* — on a machine whose UTC time was 10:34.
+
+**Two root causes, and the second hid the first.**
+
+The **fixture had an expiry date.** The phase fed a hard-coded `2026-09-21T10:00:00+00:00` as the
+"newer" commit and compared it against a commit the driver had just made. That holds only while the
+rehearsal runs *before* 10:00 UTC on that date. It passed all morning and aged out at lunchtime, with
+nothing wrong in the product — the same class as a test that only passes on one machine, and the
+reason it took a careful read rather than a bisect to believe.
+
+The **sentence was wrong about time.** `{held.CommittedAt:yyyy-MM-dd HH:mm}Z` formats a
+`DateTimeOffset` **in its own offset** and then hard-appends `Z`. A commit carries the committer's
+offset, so the message printed a local wall clock and labelled it UTC. The ordering underneath was
+right — the comparison uses the real instants — and only its *explanation* was wrong, which is the
+worst shape for a sentence whose entire job is to convince a person that being refused is fine.
+
+**Why no test caught it.** Every case in `FeedTests` fed `Z` times, so the offset was always zero and
+the formatting was never exercised. The bug needed a non-zero offset to become visible, and nothing
+in the suite had one.
+
+**Fix.** `.UtcDateTime` before formatting, with a test that feeds `22:30+10:00` and asserts the
+message says `12:30Z` and *not* `22:30Z` — watched failing first. The rehearsal's timestamps are now
+relative to the run (`hoursFromNow(1)`, `(-48)`, `(24)`) instead of wall-clock literals.
+
+**The traps to inherit.** A fixture that encodes an absolute date encodes an expiry date; make times
+relative to the run unless the test is *about* a specific instant. And **a format string that appends
+a timezone letter is a claim** — if the code writes `Z`, something has to convert to UTC, and the
+only way to know it does is a test whose input is not already UTC.
+
 ## The publish build had been broken for two commits, and every gate was green (2026-09-21)
 
 **Symptom.** `npm run rehearse` — the "would a release work?" gate — died at its first step, `npm pack`,

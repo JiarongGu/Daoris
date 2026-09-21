@@ -1956,6 +1956,56 @@ compile-checked doc fences (few fences here yet — the shape is noted for the d
 pastes a declaration), one-line paragraphs (Daoris hard-wraps on purpose), and bilingual doctrine (the
 platform already holds the rule where it matters). No code ported, so no notice owed.
 
+## ACP1 — the protocol door (2026-09-21)
+
+> `ISessionProtocol` beside `ProcessStartInfo` on the adapter seam (D23 evolves, not breaks): a
+> JSON-RPC client over the spawned process's stdio; `session/new` on the tree (D51); the composed
+> target as `session/prompt`; `session/cancel` then stdin EOF as the stop shape; updates teed into a
+> **structured** console stream beside the verbatim one — desktop-only, console-class (D47 §4);
+> `session/request_permission` answered by the D37 posture, **failing closed and never wider** (D52).
+> **Records still move on exit code + quest state** (D46). Proven by a **stub ACP agent** in the
+> family rehearsal with no model.
+
+✅ done 2026-09-21 — the first half of D53, and the door a real harness rides in ACP2. Driver tests
+141 → 149, service 258 → 259, family rehearsal 166 → **173/173**.
+
+**What landed.** `AcpSession` — a JSON-RPC 2.0 peer over newline-delimited frames that takes *streams,
+not a process*, because spawning stays the driver's (D46 §5) and a class owning a process could not be
+tested without one. Every rule it holds is proved against two in-memory streams and a fake agent.
+`SessionWire` on the seam, defaulting to `Pipe`, so every adapter that existed before the door behaves
+exactly as it did — the silence-preserves rule the toolchain and the session trees already follow.
+`AcpStubAdapter` (`acp-stub`), the same fake-binary trick one door over, so the protocol is gated with
+no model, no account and no credential. `Driver.CaptureAcpAsync`, where stdout belongs to the protocol,
+stderr still reaches the transcript, and the **rendered** updates are what a person reads.
+
+**The rule the door exists to hold.** A permission request is **refused, always, and by the option's
+kind rather than its position** — and with no refusal offered the answer is `cancelled`, never the
+first option that happens to be there. A request reaching the driver means the repository's own
+checked-in posture did not already cover the action, and the driver is a component, not a party to the
+work; widening at runtime is exactly what D52 forbids. The harness's standing posture is set where it
+belongs, at session creation, so ordinary reversible work never reaches that path. The rehearsal proves
+it end to end: the agent asks to push, the driver refuses, and **the agent is told** — the refusal is in
+the transcript from both sides.
+
+**What the wire is not allowed to do.** It flattens `aborted | blocked | error` to `end_turn`, so its
+stop reason cannot tell a refusal from a success. The record still moves on the exit code and the
+quest's state, and the wire's ending is written into the transcript as a self-report *saying so*. A
+rehearsal check reads that sentence back, because the tempting simplification is to believe the wire.
+
+**Three failures the building found, each now pinned.** A cancellation callback re-entered the write
+lock on the thread that held it and deadlocked the whole run — `SemaphoreSlim` is not reentrant, and
+the fix that lasts is having no path that can re-enter rather than a lock that tolerates it, so the
+cancel is sent after the await unwinds and every write is async. A courtesy `session/close` that the
+agent never answered hung a run that was already over — now bounded, with a test. And the stub agent
+awaited its permission answer *inside* its own read loop, so it could never read the reply: the driver's
+two-minute timeout is what reported it, and the agent now handles frames without blocking its reader.
+
+**Two things found by running the gate, unrelated to the door** (both in FIX-LOG): the rehearsal's
+"which commit speaks" phase carried a fixture with an expiry date and aged out mid-morning, and the
+stale-feed refusal printed local wall-clock time and appended `Z`. The ordering was right and its
+explanation was wrong, which is the worst shape for a sentence whose job is to convince a person that
+being refused is fine.
+
 ## CANON7 — the core budget's number, and what a budget is for (2026-09-21)
 
 > Decide whether this repository's own `coreBudgetBytes` moves to the D28 default. An owner decision

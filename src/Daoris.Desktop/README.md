@@ -3,9 +3,12 @@
 **Status: built — the driver, its headless host, and the shell all exist, and the person's controls
 landed.** The brief was rewritten 2026-09-19 for D45; **the design is settled:
 `docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
-adapter seam with its `interactive` capability (D49 §3) and its `Toolchain` (D49 §4 — where a harness's
-binary, version question, configuration-home variable and own install/update/login flows are declared),
-the stub, the `claude-code` adapter,
+adapter seam with its `interactive` capability (D49 §3), its `Toolchain` (D49 §4 — where a harness's
+binary, version question, configuration-home variable and own install/update/login flows are declared)
+and, since D53/ACP1, its **`Wire`** — the door the driver holds a session over: the original pipe, or
+**ACP** (`AcpSession`, JSON-RPC on the process's stdio, with `session/request_permission` refused by
+construction and the record still concluded from the exit code and the quest) — the stub, the
+`acp-stub` that proves the protocol door with no model in it, the `claude-code` adapter,
 `ChatRunner` for conversations, `HarnessRoster` — one judgement for both spawn doors: is the harness
 here, and which named credential profile does this run as — and since D47 the machine's **remote sync** —
 `RemoteSync` rides the tick, feeding joined registrations, session records and opted-in knowledge up

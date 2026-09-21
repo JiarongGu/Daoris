@@ -371,9 +371,12 @@ public sealed class KnowledgeService(
             return new(
                 FeedRefusal.Stale,
                 $"`{registration.Repository}` is already fed from a newer commit "
-                + $"(`{held.ShortCommit}`, {held.CommittedAt:yyyy-MM-dd HH:mm}Z"
+                // `.UtcDateTime`, because the sentence writes `Z`. A commit time carries the
+                // committer's own offset, so formatting it directly printed a local wall clock and
+                // called it UTC — an explanation that contradicted the correct ordering underneath it.
+                + $"(`{held.ShortCommit}`, {held.CommittedAt.UtcDateTime:yyyy-MM-dd HH:mm}Z"
                 + $"{(held.Origin is null ? "" : $", from {held.Origin}")}) — this feed is from "
-                + $"`{provenance.ShortCommit}`, {provenance.CommittedAt:yyyy-MM-dd HH:mm}Z, so the index "
+                + $"`{provenance.ShortCommit}`, {provenance.CommittedAt.UtcDateTime:yyyy-MM-dd HH:mm}Z, so the index "
                 + "keeps what it has. Nothing is wrong: this checkout is simply behind.",
                 Entries: 0);
         }

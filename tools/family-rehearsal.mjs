@@ -1353,11 +1353,17 @@ check(
 
 // A newer commit replaces wholesale — which is what makes DELETE work for free: an entry absent from
 // the newest canonical view is an entry the repository deleted.
+//
+// The times are RELATIVE to this run, and that is load-bearing: the first version hard-coded a
+// wall-clock date as "newer", which was true only while the rehearsal ran before that hour. It aged
+// out mid-morning and five checks went red with nothing wrong in the product — a fixture with an
+// expiry date, which is the same failure as a test that only passes on one machine.
+const hoursFromNow = (hours) => new Date(Date.now() + hours * 3_600_000).toISOString();
 const newer = await feed({
   repository: 'atelier',
   entries: [fedEntry('The newest lesson')],
   commit: 'ffff9999eeee8888',
-  committedAt: '2026-09-21T10:00:00+00:00',
+  committedAt: hoursFromNow(1),
   branch: 'main',
 });
 const afterNewer = await heldTitles('atelier');
@@ -1379,7 +1385,7 @@ const stale = await feed({
   repository: 'atelier',
   entries: [fedEntry('A lesson from last week')],
   commit: '1111222233334444',
-  committedAt: '2026-09-19T10:00:00+00:00',
+  committedAt: hoursFromNow(-48),
   branch: 'main',
 });
 check(
@@ -1404,7 +1410,7 @@ const branchFeed = await feed({
   repository: 'atelier',
   entries: [fedEntry('An unmerged lesson')],
   commit: '5555666677778888',
-  committedAt: '2026-09-22T10:00:00+00:00',
+  committedAt: hoursFromNow(24),
   branch: 'feature/streaming',
 });
 check(
@@ -1914,9 +1920,208 @@ check(
 rmSync(join(newcomer, 'work-in-flight.txt'), { force: true });
 cliDriver('trees newcomer off');
 
-// -------------------------------------------------- 17. report
+// -------------------------------------------------- 17. the protocol door
 
-section('17. Result');
+section('17. The protocol door — a session held over ACP (D53/ACP1)');
+
+// The ACP stub: the same fake-session trick as section 7's, one door over (D46 §8). It speaks
+// JSON-RPC on stdout and nothing else — every human word goes to stderr, because stdout belongs to
+// the protocol — and it does REAL work through the same HTTP door its pipe-door twin uses. No model,
+// no account, no credential anywhere in this phase.
+const acpAgent = join(scratch, 'acp-agent.mjs');
+writeFileSync(acpAgent, `
+import { execSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+import { createInterface } from 'node:readline';
+
+const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\\n');
+const say = (...parts) => console.error('acp-agent:', ...parts);
+
+let nextId = 9000;
+const pending = new Map();
+const ask = (method, params) => new Promise((resolve) => {
+  const id = nextId++;
+  pending.set(id, resolve);
+  send({ jsonrpc: '2.0', id, method, params });
+});
+const update = (sessionId, body) =>
+  send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId, update: body } });
+
+const url = process.env.DAORIS_SERVICE_URL;
+const id = process.env.DAORIS_QUEST_ID;
+const respond = async (action, reason) => {
+  const response = await fetch(url + '/api/quests/' + id + '/respond', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ action, reason }),
+  });
+  return { ok: response.ok, text: await response.text() };
+};
+
+async function work(sessionId) {
+  update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'taking quest ' + id } });
+
+  const taken = await respond('take', null);
+  if (!taken.ok) { say('take refused:', taken.text); return 'end_turn'; }
+
+  // A tool call, with its outcome — the structured boundaries the timeline needs, which the pipe
+  // door could only have supplied by parsing this agent's stdout.
+  update(sessionId, { sessionUpdate: 'tool_call', toolCallId: 't1', title: 'write', status: 'in_progress' });
+  writeFileSync('acp-answer.md', '# answered over ACP\\n\\nThe protocol door carried this quest.\\n');
+  update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId: 't1', status: 'completed' });
+
+  // The D37 boundary, asked ON THE WIRE: an outward-facing act the repository's own configuration
+  // did not pre-approve. The driver must refuse it — and the agent reports what it was told, so the
+  // transcript carries the refusal rather than only the driver's side of it.
+  const answer = await ask('session/request_permission', {
+    sessionId,
+    toolCall: { title: 'git push origin main' },
+    options: [
+      { optionId: 'allow', name: 'Allow', kind: 'allow_once' },
+      { optionId: 'deny', name: 'Reject', kind: 'reject_once' },
+    ],
+  });
+  const outcome = JSON.stringify(answer?.outcome ?? answer);
+  update(sessionId, {
+    sessionUpdate: 'agent_message_chunk',
+    content: { type: 'text', text: 'permission answer was ' + outcome + ' — not pushing' },
+  });
+
+  const git = 'git -c user.name="ACP Session" -c user.email="acp@example.invalid"';
+  execSync(git + ' add -A', { stdio: 'ignore' });
+  execSync(git + ' commit -q -m "acp: answer quest ' + id + '"', { stdio: 'ignore' });
+
+  const done = await respond('done', 'Landed by the ACP session.');
+  say('done:', done.ok);
+  return 'end_turn';
+}
+
+const lines = createInterface({ input: process.stdin });
+let session = null;
+
+// Frames are handled WITHOUT awaiting inside the reader, and that is not a style choice: the prompt's
+// work asks the client for a permission decision and must keep reading while it waits for the answer.
+// The first version awaited here and deadlocked — the agent held the quest and never read the reply,
+// and the driver's own two-minute timeout is what reported it.
+const handle = async (line) => {
+  if (!line.trim()) return;
+  let frame;
+  try { frame = JSON.parse(line); } catch { say('not a frame:', line); return; }
+
+  if (frame.method === undefined && frame.id !== undefined) {
+    const waiting = pending.get(frame.id);
+    if (waiting) { pending.delete(frame.id); waiting(frame.result ?? frame.error); }
+    return;
+  }
+
+  switch (frame.method) {
+    case 'initialize':
+      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+      break;
+    case 'session/new':
+      session = 'acp-session-1';
+      say('session on', frame.params?.cwd);
+      send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: session } });
+      break;
+    case 'session/prompt': {
+      const stopReason = await work(frame.params?.sessionId ?? session);
+      send({ jsonrpc: '2.0', id: frame.id, result: { stopReason } });
+      break;
+    }
+    case 'session/close':
+      send({ jsonrpc: '2.0', id: frame.id, result: {} });
+      break;
+    default:
+      if (frame.id !== undefined) {
+        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32601, message: 'no ' + frame.method } });
+      }
+  }
+};
+
+lines.on('line', (line) => { handle(line).catch((error) => say('handler failed:', error.message)); });
+// stdin closed: end of input is the ending, and the process exits on its own.
+lines.on('close', () => { say('input closed; exiting'); process.exit(0); });
+`);
+
+const acpConfig = join(scratch, 'driver-acp.json');
+writeFileSync(acpConfig, `${JSON.stringify({
+  drivable: ['newcomer'],
+  adapter: 'acp-stub',
+  cap: 2,
+  timeoutMinutes: 2,
+  commands: { 'acp-stub': ['node', acpAgent] },
+}, null, 2)}\n`);
+
+const acpAsk = await api('POST', '/api/quests', {
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'Carry this one over the protocol',
+    body: 'Prove the ACP door: a session created on the tree, a prompt, updates, and a quest closed.',
+  },
+});
+const acpQuestId = acpAsk.json?.quest?.id ?? '';
+
+const acpRun = driver({ serviceUrl: BASE, config: acpConfig, mode: '--until-idle' });
+check(
+  'the driver runs a quest to done over the ACP door',
+  acpRun.code === 0 && /completed/.test(acpRun.out),
+  acpRun.out,
+);
+
+const acpQuests = await api('GET', '/api/quests?repository=newcomer&includeClosed=true');
+check(
+  'the quest was closed by the SESSION, through its own door — the wire carried the work, not the verdict',
+  (acpQuests.json ?? []).some((q) => q.id === acpQuestId && q.status === 'Done'),
+  acpQuests.text,
+);
+
+const acpSessions = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true');
+const acpRecord = (acpSessions.json ?? []).find((s) => s.quest === acpQuestId);
+check(
+  'the record ends completed and names the adapter that held it',
+  acpRecord?.state === 'completed' && acpRecord?.adapter === 'acp-stub',
+  JSON.stringify(acpRecord),
+);
+
+const acpTranscript = existsSync(acpRecord?.transcript ?? '')
+  ? readFileSync(acpRecord.transcript, 'utf8')
+  : '';
+check(
+  'the transcript holds RENDERED updates, not the wire',
+  acpTranscript.includes('taking quest ' + acpQuestId)
+    && /→ write/.test(acpTranscript)
+    && /t1 → completed/.test(acpTranscript)
+    && !acpTranscript.includes('"jsonrpc"'),
+  acpTranscript.slice(0, 600),
+);
+
+// The D37 boundary, proven on the wire: the driver refused, and the agent was TOLD it was refused.
+check(
+  'a permission request is refused by the driver, and the refusal reaches the session',
+  /permission refused/.test(acpTranscript) && /"selected"/.test(acpTranscript)
+    && /not pushing/.test(acpTranscript),
+  acpTranscript.slice(-800),
+);
+
+// D46 §4 on the wire: the protocol's own ending is written down and nothing more. The record above
+// was concluded from the exit code and the quest's state — this line is the transcript saying so.
+check(
+  'the wire’s ending is recorded as a self-report, never as the verdict',
+  /the turn ended: end_turn/.test(acpTranscript) && /not\s+from this line/.test(acpTranscript),
+  acpTranscript.slice(-400),
+);
+
+const acpLanded = run('git log --oneline', newcomer);
+check(
+  'the commit the ACP session made is really in the newcomer’s history',
+  new RegExp(`acp: answer quest ${acpQuestId}`).test(acpLanded.out),
+  acpLanded.out,
+);
+
+// -------------------------------------------------- 18. report
+
+section('18. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 

@@ -1,0 +1,394 @@
+using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+namespace Daoris.Driver;
+
+/// <param name="StopReason">What the agent said ended the turn, verbatim from the wire.</param>
+/// <param name="SessionId">The id the agent gave the session, for the cancel verb and the record.</param>
+/// <param name="Updates">How many `session/update` notifications arrived — the timeline's raw count.</param>
+/// <remarks>
+/// <b>None of this moves a session record.</b> The record moves on the exit code and the quest's own
+/// state (D46 §4), because those are the two signals outside work also produces — and because the ACP
+/// wire flattens an aborted, blocked or errored turn to `end_turn`, so its stop reason is a
+/// self-report that cannot be told apart from an ordinary ending. What this carries ENRICHES the
+/// console and the transcript; it never replaces an observation.
+/// </remarks>
+public sealed record AcpOutcome(string StopReason, string SessionId, int Updates);
+
+/// <summary>
+/// One session held over the Agent Client Protocol (D53): JSON-RPC 2.0 in newline-delimited frames,
+/// over a spawned process's stdio.
+/// </summary>
+/// <remarks>
+/// <para><b>Why a protocol door at all.</b> The pipe door gives the driver a wall of text and an exit
+/// code. This one gives tool boundaries with ids, inputs and outcomes, turn boundaries, thoughts and
+/// context pressure — by contract, with nothing parsed out of another program's stdout, which is the
+/// coupling D23/D24 exist to prevent and which D52 rejected by name. One wire reaches dsh natively
+/// and claude-code and codex through the ACP project's adapters.</para>
+///
+/// <para><b>It takes streams, not a process.</b> Spawning stays the driver's (D46 §5: the driver owns
+/// process lifetime, because observing it is its half of the contract), and a class that owned a
+/// process could not be tested without one. Every rule below is provable against two in-memory
+/// streams and a fake agent.</para>
+///
+/// <para><b>Permission requests are refused, always</b> — see <see cref="AnswerPermission"/>.</para>
+/// </remarks>
+/// <param name="closeTimeout">
+/// How long to wait for the agent to acknowledge `session/close`. The turn is already over by then,
+/// so this is courtesy with a bound: an agent that wedges after answering the prompt must not be able
+/// to hang a run that has finished. Found by a test that never returned.
+/// </param>
+public sealed class AcpSession(
+    TextReader incoming, TextWriter outgoing, Action<string> onLine, TimeSpan? closeTimeout = null)
+{
+    /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
+    private const int ProtocolVersion = 1;
+
+    private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
+
+    private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private int _nextId;
+    private int _updates;
+    private string? _sessionId;
+
+    /// <summary>
+    /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
+    /// update rendered as it arrives.
+    /// </summary>
+    /// <param name="cwd">The working tree this session runs in — the registered root, or a session tree (D51).</param>
+    /// <param name="prompt">The composed target, exactly as the pipe door delivers it.</param>
+    public async Task<AcpOutcome> RunAsync(string cwd, string prompt, CancellationToken ct)
+    {
+        using var pumpStopped = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var pump = PumpAsync(pumpStopped.Token);
+
+        try
+        {
+            await RequestAsync(
+                "initialize",
+                new
+                {
+                    protocolVersion = ProtocolVersion,
+                    // Declared honestly: this client offers the agent no filesystem and no terminal of
+                    // its own. The session works in `cwd` with the harness's own tools, under the
+                    // repository's own checked-in configuration — the adapter obligation D46 §5 states.
+                    clientCapabilities = new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false },
+                    clientInfo = new { name = "daoris-driver", version = "0" },
+                },
+                ct).ConfigureAwait(false);
+
+            var created = await RequestAsync("session/new", new { cwd, mcpServers = Array.Empty<object>() }, ct)
+                .ConfigureAwait(false);
+            _sessionId = created.TryGetProperty("sessionId", out var id) ? id.GetString() : null;
+            if (string.IsNullOrEmpty(_sessionId))
+            {
+                throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
+            }
+
+            JsonElement result;
+            try
+            {
+                result = await RequestAsync(
+                    "session/prompt",
+                    new { sessionId = _sessionId, prompt = new[] { new { type = "text", text = prompt } } },
+                    ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // The person's stop is a VERB on this wire (D49's two endings): cancel the turn in
+                // flight rather than killing the process, so the agent winds up its own work. Sent
+                // here rather than from a cancellation callback, because a callback fires on whatever
+                // thread cancelled — including, in the worst case, one already inside the write lock.
+                await NotifyAsync("session/cancel", new { sessionId = _sessionId }).ConfigureAwait(false);
+                throw;
+            }
+
+            var stopReason = result.TryGetProperty("stopReason", out var reason)
+                ? reason.GetString() ?? "unknown"
+                : "unknown";
+
+            // Closed politely so the agent can flush and persist; its exit is still what the driver
+            // observes, and a close that fails changes nothing about the run that already happened.
+            // BOUNDED, because "best effort" without a bound is an unbounded wait: an agent that
+            // stops answering after the prompt would otherwise hang a run that is already finished.
+            using var closing = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            closing.CancelAfter(_closeTimeout);
+            try
+            {
+                await RequestAsync("session/close", new { sessionId = _sessionId }, closing.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or OperationCanceledException)
+            {
+                // Best-effort by construction: the turn is over either way.
+            }
+
+            return new AcpOutcome(stopReason, _sessionId!, _updates);
+        }
+        finally
+        {
+            pumpStopped.Cancel();
+            // Observed rather than awaited: a cancelled run's agent may never send another byte, and
+            // waiting on its reader would turn the person's stop into a hang.
+            _ = pump.ContinueWith(static t => t.Exception, TaskScheduler.Default);
+        }
+    }
+
+    /// <summary>
+    /// Read frames until the stream ends, dispatching each: a response completes its request, a
+    /// notification is rendered, and a request from the agent is answered.
+    /// </summary>
+    private async Task PumpAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await incoming.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                JsonElement frame;
+                try
+                {
+                    frame = JsonDocument.Parse(line).RootElement.Clone();
+                }
+                catch (JsonException)
+                {
+                    // Not a frame. A real agent writes diagnostics to stderr, but stdout purity is its
+                    // promise and not this client's guarantee — so the line is shown rather than
+                    // dropped, and the run continues.
+                    onLine(line);
+                    continue;
+                }
+
+                await DispatchAsync(frame).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The run ended; the reader is nobody's business now.
+        }
+        finally
+        {
+            // Whatever was still awaited will never be answered. Faulting it here is what turns an
+            // agent that died mid-handshake into a sentence rather than a hang.
+            Fail(new DriverException(
+                "the ACP agent's stream ended before it answered — the harness exited, or it is not "
+                + "speaking ACP on stdout."));
+        }
+    }
+
+    private async Task DispatchAsync(JsonElement frame)
+    {
+        var hasMethod = frame.TryGetProperty("method", out var method);
+        var hasId = frame.TryGetProperty("id", out var id);
+
+        if (!hasMethod && hasId)
+        {
+            Complete(id, frame);
+            return;
+        }
+
+        if (!hasMethod) return; // neither a call nor an answer; nothing to do with it
+
+        var name = method.GetString();
+        if (hasId)
+        {
+            await AnswerRequestAsync(name, id, frame).ConfigureAwait(false);
+            return;
+        }
+
+        if (name == "session/update" && frame.TryGetProperty("params", out var p)
+            && p.TryGetProperty("update", out var update))
+        {
+            Interlocked.Increment(ref _updates);
+            if (Render(update) is { } rendered) onLine(rendered);
+        }
+    }
+
+    private void Complete(JsonElement id, JsonElement frame)
+    {
+        if (!id.TryGetInt32(out var key) || !_pending.TryRemove(key, out var waiting)) return;
+
+        if (frame.TryGetProperty("error", out var error))
+        {
+            var message = error.TryGetProperty("message", out var m) ? m.GetString() : error.GetRawText();
+            waiting.TrySetException(new DriverException($"the ACP agent refused the call: {message}"));
+            return;
+        }
+
+        waiting.TrySetResult(frame.TryGetProperty("result", out var result) ? result.Clone() : default);
+    }
+
+    private async Task AnswerRequestAsync(string? method, JsonElement id, JsonElement frame)
+    {
+        if (method == "session/request_permission")
+        {
+            await AnswerPermissionAsync(id, frame).ConfigureAwait(false);
+            return;
+        }
+
+        // Anything else the agent asks of the client, this client does not implement — and says so in
+        // the protocol's own vocabulary rather than leaving the agent waiting. An unanswered request
+        // is a hung turn, which is the worst available outcome.
+        await SendAsync(new JsonObject
+        {
+            ["jsonrpc"] = "2.0",
+            ["id"] = JsonNode.Parse(id.GetRawText()),
+            ["error"] = new JsonObject
+            {
+                ["code"] = -32601,
+                ["message"] = $"daoris-driver does not implement {method}",
+            },
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A permission request is refused — always, and by the option's KIND rather than its position.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>This is D37 and D52 on the wire.</b> A request reaching the driver at all means the
+    /// repository's own checked-in permission configuration did not already cover the action; the
+    /// driver is a component, not a party to the work, and widening the posture at runtime is
+    /// precisely what "a better approval surface must not widen autonomy" forbids. The harness's
+    /// standing posture — `acceptEdits` and its equivalents — is set where it belongs, at session
+    /// creation, so ordinary reversible work never reaches this path.</para>
+    ///
+    /// <para><b>With no refusal offered, the answer is `cancelled`</b> — never the first option that
+    /// happens to be present. Fail closed means closed even when the menu is unhelpful.</para>
+    /// </remarks>
+    private async Task AnswerPermissionAsync(JsonElement id, JsonElement frame)
+    {
+        string? rejectId = null;
+        if (frame.TryGetProperty("params", out var p) && p.TryGetProperty("options", out var options)
+            && options.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var option in options.EnumerateArray())
+            {
+                var kind = option.TryGetProperty("kind", out var k) ? k.GetString() : null;
+                if (kind is not ("reject_once" or "reject_always")) continue;
+                rejectId = option.TryGetProperty("optionId", out var o) ? o.GetString() : null;
+                if (rejectId is not null) break;
+            }
+        }
+
+        var outcome = rejectId is null
+            ? new JsonObject { ["outcome"] = "cancelled" }
+            : new JsonObject { ["outcome"] = "selected", ["optionId"] = rejectId };
+
+        var tool = frame.TryGetProperty("params", out var q) && q.TryGetProperty("toolCall", out var call)
+            ? Compact(call) : "a tool call";
+        onLine($"  permission refused: {tool} — the repository's own configuration governs, and the "
+               + "driver may not widen it");
+
+        await SendAsync(new JsonObject
+        {
+            ["jsonrpc"] = "2.0",
+            ["id"] = JsonNode.Parse(id.GetRawText()),
+            ["result"] = new JsonObject { ["outcome"] = outcome },
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// One update as a console line — the structured source rendered for a transcript a person reads.
+    /// </summary>
+    /// <remarks>
+    /// An update shape this build has never seen is rendered as ITSELF rather than dropped. The wire
+    /// belongs to somebody else and it grows; a console that silently omitted the one update type it
+    /// did not recognise would be a transcript with a hole in it that nothing reports.
+    /// </remarks>
+    internal static string? Render(JsonElement update)
+    {
+        var kind = update.TryGetProperty("sessionUpdate", out var k) ? k.GetString() : null;
+        var text = Text(update);
+
+        return kind switch
+        {
+            "agent_message_chunk" => text,
+            "agent_thought_chunk" => text is null ? null : $"· {text}",
+            "tool_call" => $"→ {Field(update, "title") ?? Field(update, "toolCallId") ?? "tool"}"
+                           + (Field(update, "status") is { } s ? $" [{s}]" : ""),
+            "tool_call_update" => $"  {Field(update, "toolCallId") ?? "tool"} → {Field(update, "status") ?? "?"}",
+            "usage_update" => $"  context {Field(update, "used") ?? "?"}/{Field(update, "size") ?? "?"}",
+            null => $"[update] {Compact(update)}",
+            _ => $"[{kind}] {Compact(update)}",
+        };
+    }
+
+    /// <summary>`content.text`, which is where every textual update carries its words.</summary>
+    private static string? Text(JsonElement update) =>
+        update.TryGetProperty("content", out var content) && content.TryGetProperty("text", out var t)
+            ? t.GetString()
+            : null;
+
+    private static string? Field(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value)
+            ? value.ValueKind == JsonValueKind.String ? value.GetString() : value.GetRawText()
+            : null;
+
+    /// <summary>Bounded raw JSON: enough to recognise, never a log file on one line.</summary>
+    private static string Compact(JsonElement element)
+    {
+        var raw = element.GetRawText();
+        return raw.Length <= 400 ? raw : $"{raw[..400]}… ({raw.Length} chars)";
+    }
+
+    private async Task<JsonElement> RequestAsync(string method, object parameters, CancellationToken ct)
+    {
+        var id = Interlocked.Increment(ref _nextId);
+        var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pending[id] = waiting;
+
+        await SendAsync(new JsonObject
+        {
+            ["jsonrpc"] = "2.0",
+            ["id"] = id,
+            ["method"] = method,
+            ["params"] = JsonSerializer.SerializeToNode(parameters),
+        }).ConfigureAwait(false);
+
+        return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
+    }
+
+    private Task NotifyAsync(string method, object parameters) => SendAsync(new JsonObject
+    {
+        ["jsonrpc"] = "2.0",
+        ["method"] = method,
+        ["params"] = JsonSerializer.SerializeToNode(parameters),
+    });
+
+    /// <summary>
+    /// One frame, one line. Serialized under a lock because the answer to an agent's request is
+    /// written from the read pump while the caller may be writing a request of its own, and two
+    /// interleaved lines are two frames nobody can parse.
+    /// </summary>
+    /// <remarks>
+    /// Asynchronous throughout, deliberately. The first version blocked on the write and took the
+    /// lock synchronously; a cancellation callback then re-entered it on the very thread that held
+    /// it, and the whole run deadlocked. `SemaphoreSlim` is not reentrant, and the fix that lasts is
+    /// to have no path that can re-enter rather than a lock that tolerates it.
+    /// </remarks>
+    private async Task SendAsync(JsonNode frame)
+    {
+        await _writeLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await outgoing.WriteLineAsync(frame.ToJsonString()).ConfigureAwait(false);
+            await outgoing.FlushAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    /// <summary>Fault everything still awaiting an answer that will never come.</summary>
+    private void Fail(Exception error)
+    {
+        foreach (var key in _pending.Keys)
+        {
+            if (_pending.TryRemove(key, out var waiting)) waiting.TrySetException(error);
+        }
+    }
+}

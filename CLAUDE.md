@@ -38,8 +38,8 @@ about a neighbour could only either ignore it or trespass.
 ## Current state
 
 **Built and proven; nothing published.** Fourteen commands, 211 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 258, `Daoris.Devkit` 57, and the
-driver 141. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 259, `Daoris.Devkit` 57, and the
+driver 152. Daoris carries its own manifest and syncs core into its own `.claude/`. Adopted into **Lyntai** as the
 first real consumer — 4 collisions and a renamed twin surfaced and were resolved, its 1337 tests stayed
 green, and the budget gate caught a genuine 45% overage on first contact. **Lyntai has since stepped
 off the tool at its owner's request** (2026-08-17; the synced files stayed as local forks), so the
@@ -55,33 +55,23 @@ the quest lock hardened into code (an atomic guarded `Taken`, closed quests immo
 desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
 gates the whole thing with no model: driver loop, a two-machine remote crossing, **the workspace
 boundary, the registration lifecycle, the remotes map, which commit speaks, a whole
-conversation and a session running as a named account** (151/151). The D48 arc is under way. **The
-workspace exists** (WSP1) — it is the unit of sharing, it is **wiring rather than a tracked
-declaration** (`connect --workspace`, a registry row, no manifest field), and every cross-repository
-entity and answer carries or is scoped by it. **The registry is the authority** (WSP2) — an explicit
-list, not a view over a folder: `connect` adds, `retire` removes (touching no file), `import` is the
-old scan demoted to a verb, a store that has never been managed imports its root once and says so, and
-a registered checkout that has vanished is named rather than silently skipped. **The remotes are a
-map** (WSP3) — `~/.daoris/remotes.json`, one deployment per workspace: a shared host carries its own
-`DAORIS_WORKSPACE` identity and refuses a registration declaring another, the sync runs per circle, the
-quest relay resolves by the quest's workspace, and `daoris remote list|add|remove`, `status --machine`
-and the desktop's Machine view are editors over the one file — a key never printed back beyond its
-audit prefix. **A feed carries the commit it speaks for** (WSP4) — the driver stamps git provenance,
-knowledge feeds only from the declared canonical line, a replacement must be newer than what is held
-(a stale one is refused as *information*, not a failure), and every deployment serves the commit its
-copy stands on, so staleness is seen rather than assumed. **The console streams** (D49/SES1) — the
-capture pump tees into a bounded per-session buffer and the shell relays it to the session drawer,
-verbatim and desktop-only: output is transcript-class material and has no HTTP surface at all. **A
-conversation is a session** (D49/SES2) — `Kind: driven | chat`, quest optional, the same lock on the
-same working tree; the adapter seam grows `interactive`, the harness carries the model and Daoris
-pipes text, and a chat runs from the desktop or from `daoris-driver chat` on a machine with no
-screen. **The toolchain is Daoris's** (D49/SES3) — it finds each harness, reports its version, and
-installs, updates and logs it in **through that harness's own mechanism, only when asked**; many
-accounts per harness are **named credential profiles**, isolated configuration directories whose
-location Daoris owns and whose contents it never touches, chosen per machine, per workspace or per
-conversation. A record names the tool version and the account it ran as; a spawn onto a missing
-harness or a profile nobody signed into refuses **naming the action that fixes it**. `daoris harness`
-and `daoris driver` do all of it from a terminal (D50).
+conversation, a session running as a named account, and **a quest carried to done over the ACP door**
+(173/173).
+
+**The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
+and `docs/task-archive.md` carry the rest. **The workspace is the unit of sharing** (WSP1) and is
+**wiring, never a tracked declaration** — a registry row, set by `connect --workspace`. **The
+registry is the authority** (WSP2): an explicit list `connect`, `retire` and `import` maintain, never
+a view over a folder. **The remotes are a map** (WSP3): `~/.daoris/remotes.json`, one deployment per
+workspace, edited from either surface, a key never printed back beyond its audit prefix. **A feed
+carries the commit it speaks for** (WSP4): only the canonical line feeds knowledge, a replacement
+must be newer, and a stale one is refused as *information* rather than as a failure. **The console
+streams** (SES1) — transcript-class, desktop-only, no HTTP surface at all. **A conversation is a
+session** (SES2) — same entity, same lock, quest optional; the harness carries the model and Daoris
+pipes text. **The toolchain is Daoris's** (SES3): harnesses found, installed and logged in through
+their own mechanisms only when asked, with many accounts held as **named credential profiles** —
+directories Daoris owns the location of and never reads. **Everything has two doors** (D50): whatever
+a screen can set, a terminal can.
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
@@ -126,8 +116,11 @@ risk, **authorship** was.
   `dsh` over a scratch repository, on a scripted provider because no key was supplied — and **D53 is
   the decision, accepted 2026-09-21**: *dsh is adopted as a protocol, not a product*. The adapter seam
   grows an **ACP door**; dsh and codex arrive as configurations of it; the working surface stays
-  `Daoris.Web` (C and D rejected, D on D1's terms). **ACP1 → ACP2 → ACP3 is the next build**, and
-  SURF4a–d are unblocked behind it. The probe instruments are tracked under `tools/dsh-probes/`.
+  `Daoris.Web` (C and D rejected, D on D1's terms). **ACP1 has landed** (2026-09-21): the seam carries
+  a `Wire`, `AcpSession` speaks JSON-RPC over a spawned process's stdio, a permission request is
+  refused by construction (D52), and the record still moves on the exit code and the quest — the wire
+  flattens an aborted turn to `end_turn`, so it enriches and never decides. **ACP2 is next** and its
+  closing step spends a real login. The probe instruments are tracked under `tools/dsh-probes/`.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
@@ -201,7 +194,11 @@ Run every command from the **workspace root**, not from a package directory.
   the fed commit served back — then a conversation held from a terminal, and the toolchain: a session
   spawned under a named credential profile and proving from its own output that it ran in that
   configuration home, a logged-out profile and an uninstalled harness each holding the start with the
-  sentence that fixes it, and both surfaces driven from a terminal.
+  sentence that fixes it, and both surfaces driven from a terminal — then **the protocol door**
+  (D53/ACP1): a quest carried to done over ACP by a stub agent that speaks the wire and nothing else,
+  the transcript holding rendered updates rather than frames, a permission request refused by the
+  driver and the refusal reaching the session, and the wire's own ending recorded as a self-report
+  rather than as the verdict.
   No model, no account and no credential anywhere in the gate. Run when touching
   the service, `connect`, the driver, the remote, the toolchain, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.

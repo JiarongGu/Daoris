@@ -68,10 +68,10 @@ describe('sentence', () => {
   it('carries a driver refusal through verbatim', () => {
     const refusal = Object.assign(new Error('fallback'), {
       code: 'DRIVER_REFUSED',
-      parameters: { message: "unknown adapter 'codex' — one of: claude-code, stub" },
+      parameters: { message: "unknown adapter 'codex' — one of: acp-stub, claude-code, stub" },
     });
 
-    expect(sentence(refusal)).toBe("unknown adapter 'codex' — one of: claude-code, stub");
+    expect(sentence(refusal)).toBe("unknown adapter 'codex' — one of: acp-stub, claude-code, stub");
   });
 
   /**

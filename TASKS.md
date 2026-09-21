@@ -46,8 +46,8 @@ puts the protocol door in front of it.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-211 CLI tests, 258 service, 57 devkit, 141 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **166/166 family rehearsal** including the
+211 CLI tests, 259 service, 57 devkit, 152 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
+2026-09-18, plus a no-staged-leftovers check since REV1), **173/173 family rehearsal** including the
 driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
 which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
 5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
@@ -246,9 +246,9 @@ published, and a release is still blocked on REH1.
   land a surface: seeing the real thing is the step that had no tooling at all.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 211 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (259),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (141), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (166/166), `npm run test:web` (65 + 10). If a `bin`-driven gate is red
+  (152), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (173/173), `npm run test:web` (65 + 10). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -266,20 +266,10 @@ completion.
 
 **Settled by DSH1's evidence** (`docs/2026-09-21-dsh-evaluation.md`): the adapter seam grows a door
 that holds a session over the **Agent Client Protocol** beside today's pipe, and every harness reached
-that way is a *configuration* of the door. **ACP1 is the next build.** Take the three in order — the
-door is proven by a stub with no model before any real harness rides it, which is D46 §8's shape and
-the reason the seam can grow without a key or an account anywhere in a gate.
-
-- [ ] **ACP1 — the protocol door.** `ISessionProtocol` beside `ProcessStartInfo` on the adapter seam
-  (D23 evolves, not breaks): a JSON-RPC client over the spawned process's stdio; `session/new` on the
-  tree (D51); the composed target as `session/prompt`; `session/cancel` then stdin EOF as the stop
-  shape; updates teed into a **structured** console stream beside the verbatim one — desktop-only,
-  console-class (D47 §4); `session/request_permission` answered by the D37 posture from the
-  repository's checked-in configuration, **failing closed and never wider** (D52). **Records still move
-  on exit code + quest state** (D46) — the wire flattens `aborted | blocked | error` to `end_turn`, so
-  the self-report may enrich, never move. Proven by a **stub ACP agent** in the family rehearsal with no
-  model (D46 §8's shape; `tools/dsh-probes/acp-client.mjs` is its mirror), including the permission
-  refusal and the stop shape.
+that way is a *configuration* of the door. **ACP1 has landed** (2026-09-21, in the archive): the seam
+carries a `Wire`, `AcpSession` speaks the protocol, and the rehearsal drives a quest to done over it
+with no model in the gate — including the permission refusal from both sides. **ACP2 is next**, and it
+is the one that needs the owner: its closing step spends a real login.
 
 - [ ] **ACP2 — `claude-code` over ACP.** `@agentclientprotocol/claude-agent-acp` pinned exact as a
   managed toolchain entry (`daoris harness`: install, version, the executable seam

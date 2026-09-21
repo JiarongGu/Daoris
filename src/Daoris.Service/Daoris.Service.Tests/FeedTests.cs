@@ -178,6 +178,32 @@ public sealed class FeedTests : IAsyncLifetime
         Assert.Equal("The newer lesson", (await _store.AllAsync()).Single().Title);
     }
 
+    /// <summary>
+    /// The refusal states UTC instants, because it writes `Z` after them.
+    /// </summary>
+    /// <remarks>
+    /// A commit time carries whatever offset the committer's machine had, and every other test here
+    /// feeds `Z` times — so the offset was always zero and the sentence was never exercised. It
+    /// printed the LOCAL wall clock and appended `Z`, which is a sentence claiming an instant it is
+    /// not: the ordering underneath was right and its explanation was wrong, which is the worst
+    /// shape for a message whose whole job is to convince a person that being refused is fine.
+    /// </remarks>
+    [Fact]
+    public async Task The_stale_refusal_states_its_times_in_the_utc_it_claims()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        // 22:30 at +10:00 is 12:30Z — a held commit whose local clock reads ten hours ahead.
+        await _service.FeedAsync(
+            "Open", [Entry("The newer lesson")], From("newnewnew", at: "2026-09-20T22:30:00+10:00"));
+
+        var stale = await _service.FeedAsync(
+            "Open", [Entry("The older lesson")], From("oldoldold", at: "2026-09-20T11:00:00Z"));
+
+        Assert.Equal(FeedRefusal.Stale, stale.Refusal);
+        Assert.Contains("12:30Z", stale.Message);
+        Assert.DoesNotContain("22:30Z", stale.Message);
+    }
+
     /// <summary>The newest canonical view replaces wholesale — which is what makes DELETE work for free.</summary>
     [Fact]
     public async Task A_feed_from_a_newer_commit_replaces_and_a_deletion_travels_with_it()

@@ -204,7 +204,14 @@ public sealed class Driver(
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             using var tracked = _processes.Track(sessionId, process);
-            var capture = CaptureAsync(process, transcript, sessionId, ct);
+
+            // Which door this harness is held over (D53). The protocol door drives an ACP session on
+            // the same process; the pipe door reads its text. Both end the same way — the record is
+            // concluded below from the exit code and the quest's state, never from what the session
+            // said about itself (D46 §4).
+            Task capture = adapter.Wire == SessionWire.Acp
+                ? CaptureAcpAsync(process, transcript, sessionId, workTree, TargetPrompt.Compose(target), ct)
+                : CaptureAsync(process, transcript, sessionId, ct);
 
             await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
 
@@ -308,6 +315,69 @@ public sealed class Driver(
     /// </remarks>
     private Task CaptureAsync(Process process, string transcript, string sessionId, CancellationToken ct) =>
         CaptureAsync(process, transcript, sessionId, output, ct);
+
+    /// <summary>
+    /// The protocol door's capture (D53): an ACP session held over this process's stdio, with the
+    /// RENDERED updates reaching the transcript and the console rather than the wire itself.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>stdout belongs to the protocol; stderr is still text a person wants.</b> Agents log
+    /// there, and its lines go to the same two destinations through the same tee, so a transcript
+    /// stays one readable stream.</para>
+    ///
+    /// <para><b>The ending is end-of-input, not a kill.</b> When the turn is over the driver closes
+    /// stdin and the agent winds up and exits on its own — the same ending the chat door records as
+    /// `completed` (D49/SES2), and the exit the conclusion below is actually drawn from.</para>
+    ///
+    /// <para><b>The wire's own ending is written down and nothing more.</b> It is a self-report, and
+    /// the protocol flattens an aborted, blocked or errored turn into `end_turn`, so a record moved
+    /// by it would be a record that cannot tell a refusal from a success.</para>
+    /// </remarks>
+    private async Task<AcpOutcome?> CaptureAcpAsync(
+        Process process, string transcript, string sessionId, string cwd, string prompt, CancellationToken ct)
+    {
+        await using var file = new StreamWriter(transcript, append: false);
+
+        void Line(string text)
+        {
+            lock (file) file.WriteLine(text);
+            output?.Append(sessionId, text);
+        }
+
+        var errors = PumpAsync(process.StandardError, file, sessionId, output, ct);
+
+        try
+        {
+            var outcome = await new AcpSession(process.StandardOutput, process.StandardInput, Line)
+                .RunAsync(cwd, prompt, ct).ConfigureAwait(false);
+
+            Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
+                 + "session record is concluded from the exit code and the quest's own state, not "
+                 + "from this line (D46 §4).");
+            return outcome;
+        }
+        catch (DriverException error)
+        {
+            // A protocol failure is a fact about this run and belongs in its transcript. It does not
+            // conclude the record either: the process still has an exit code, and the quest still
+            // has a state, and those two are what the conclusion is made of.
+            Line($"— the ACP session failed: {error.Message}");
+            return null;
+        }
+        finally
+        {
+            try
+            {
+                process.StandardInput.Close();
+            }
+            catch (Exception error) when (error is InvalidOperationException or IOException or ObjectDisposedException)
+            {
+                // Already gone: the agent exited first, which is the ending this was asking for.
+            }
+
+            await errors.ConfigureAwait(false);
+        }
+    }
 
     /// <summary>
     /// The same capture for a session this class did not spawn — a chat (D49 §3), whose process

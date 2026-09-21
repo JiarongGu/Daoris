@@ -32,6 +32,48 @@ public sealed class AdapterTests
         Assert.Equal("stub", AdapterSet.Built().Resolve("stub").Name);
     }
 
+    /// <summary>
+    /// The protocol door is opt-in per adapter (D53). Silence means the pipe, so every adapter that
+    /// existed before the door behaves exactly as it did — the same silence-preserves rule the
+    /// toolchain and the session trees follow.
+    /// </summary>
+    [Fact]
+    public void An_adapter_that_says_nothing_is_held_over_the_pipe()
+    {
+        Assert.Equal(SessionWire.Pipe, AdapterSet.Built().Resolve("stub").Wire);
+        Assert.Equal(SessionWire.Pipe, AdapterSet.Built().Resolve("claude-code").Wire);
+    }
+
+    /// <summary>
+    /// The protocol stub declares the ACP door AND opens stdin — the difference that matters, since
+    /// the driver writes frames into it for as long as the session lives. A pipe-door session is
+    /// handed its target once and has nobody to take turns with.
+    /// </summary>
+    [Fact]
+    public void The_acp_stub_declares_the_protocol_door_and_opens_stdin()
+    {
+        var adapter = AdapterSet.Built().Resolve("acp-stub");
+        var info = adapter.Prepare(Target(), ["node", "acp-agent.mjs"]);
+
+        Assert.Equal(SessionWire.Acp, adapter.Wire);
+        Assert.True(info.RedirectStandardInput);
+        Assert.True(info.RedirectStandardOutput);
+        Assert.Equal("D:/fam/Game", info.WorkingDirectory);
+        // The target still rides the environment, so the same composition serves both doors.
+        Assert.Equal("abc123", info.Environment["DAORIS_QUEST_ID"]);
+    }
+
+    /// <summary>The protocol stub needs its command named, for the same reason the pipe stub does.</summary>
+    [Fact]
+    public void The_acp_stub_needs_a_command_and_says_how_to_give_one()
+    {
+        var error = Assert.Throws<DriverException>(
+            () => AdapterSet.Built().Resolve("acp-stub").Prepare(Target(), command: null));
+
+        Assert.Contains("acp-stub", error.Message);
+        Assert.Contains("driver.json", error.Message);
+    }
+
     /// <summary>The stub runs whatever command the config names — a test double with real mechanics.</summary>
     [Fact]
     public void The_stub_needs_a_command_and_says_how_to_give_one()
