@@ -125,6 +125,50 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   await expect(page.getByText(/Published quest `#[0-9a-f]{6}` to `newcomer`/).first()).toBeVisible();
 });
 
+/**
+ * The workspace scope (WSP5; D48 §4), over the real host and the real bundle.
+ *
+ * The family so far is ONE circle, so the switcher has been absent from every test above — that
+ * absence is a claim too, and it is asserted first. Then the newcomer is re-wired into a second
+ * circle through the same door the desktop's management form uses, and the console gains the scope
+ * control: every workspace, stated with its count; one circle chosen, and every view scoped to it;
+ * the choice surviving a reload; every again afterwards. Re-wired back at the end, so the tests after
+ * this inherit the family they were written against.
+ */
+test('the console scopes by workspace once the family holds two (WSP5)', async ({ page, request }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'workspace' })).toHaveCount(0);
+
+  const wired = await request.post('/api/registry/newcomer/workspace', { data: { workspace: 'studio' } });
+  expect(wired.ok(), await wired.text()).toBe(true);
+
+  await page.goto('/');
+  const scope = page.getByRole('combobox', { name: 'workspace' });
+  await expect(scope).toHaveText(/every workspace · 2/);
+  await expect(page.getByText('of 3 in the family')).toBeVisible();
+
+  await scope.click();
+  await page.getByRole('option', { name: 'studio' }).click();
+  await expect(scope).toHaveText('studio');
+  await expect(page.getByText('of 1 in the family')).toBeVisible();
+  await nav(page, 'Projects').click();
+  await expect(page.getByText('Born during the test run.')).toBeVisible();
+  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toHaveCount(0);
+
+  // Remembered per browser, like the language: a reload keeps the circle.
+  await page.reload();
+  await expect(page.getByRole('combobox', { name: 'workspace' })).toHaveText('studio');
+
+  await page.getByRole('combobox', { name: 'workspace' }).click();
+  await page.getByRole('option', { name: /every workspace/ }).click();
+  await nav(page, 'Projects').click();
+  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
+
+  const back = await request.post('/api/registry/newcomer/workspace', { data: { workspace: 'default' } });
+  expect(back.ok(), await back.text()).toBe(true);
+});
+
 test("a driven session's record reaches the drawer (D46)", async ({ page, request }) => {
   // The driver is not running here — the RECORD is service state, so seeding it through the same
   // doors the driver uses is exactly what the platform will see in real use: the session surface is

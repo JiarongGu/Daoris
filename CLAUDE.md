@@ -204,7 +204,8 @@ Run every command from the **workspace root**, not from a package directory.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
   bundle over the example family: a quest through its whole life in the drawers, the verbatim
   refusal, a session record naming the tool and account that did the work, **what a browser must
-  never learn about this machine**, 中文. Declared in `daoris.gates.json`; it rebuilds the host, so
+  never learn about this machine**, the workspace scope once the family holds two circles (WSP5),
+  中文. Declared in `daoris.gates.json`; it rebuilds the host, so
   stop a running instance first. **A shell-only surface is not out of its reach entirely** — the
   browser still owns what the RECORD shows and what must be ABSENT; the controls belong to the vitest
   inner loop over a mocked bridge (`docs/2026-09-19-frontend-architecture.md` §4).

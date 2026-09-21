@@ -36,7 +36,8 @@ agents, repositories and concurrent sessions, designed with real UI/UX (research
 `docs/2026-09-21-working-surface-design.md`, 2026-09-21): **D51** settles the isolation model — the
 tree is the unit of exclusion and a repository may have more than one — and **D52** settles the
 surface, with a build order of five items, **SURF2–SURF6**. Beside them sit three smaller leftovers —
-CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind.
+CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind
+(WSP5 landed 2026-09-21: the switcher is global chrome, and it is in the archive).
 **The owner then interposed the dsh evaluation (2026-09-21), and DSH1 ran it the same day**: eight
 probes against an installed `dsh`, driven on a scripted provider, and a proposed decision — **D53:
 dsh is adopted as a protocol, not a product** — for the owner to confirm or amend before the view is
@@ -81,7 +82,7 @@ The service is **deployable** (D36) and **ships as executables** (D43): `npm run
 snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
 spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
 remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): the
-family rehearsal (43 checks then; 154 today) and the Playwright suite (9 tests) each run over a scratch
+family rehearsal (43 checks then; 154 today) and the Playwright suite (10 tests) each run over a scratch
 copy of the examples and take a project born mid-run through init → declare → sync → check → connect →
 its first quest. `Daoris.Web` is **the platform** (D38,
 D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
@@ -89,8 +90,8 @@ grouped by state with sitting time, projects as scannable declarations — in a 
 (sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
 headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
 speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a test pyramid
-declared in `daoris.gates.json` — a **55-test Vitest inner loop** (the shell-attached surfaces, over a
-mocked bridge) and a **9/9 Playwright outer loop over `examples/`** (the real bundle over the real
+declared in `daoris.gates.json` — a **65-test Vitest inner loop** (the shell-attached surfaces, over a
+mocked bridge) and a **10/10 Playwright outer loop over `examples/`** (the real bundle over the real
 host — including, since SES3, what a browser must NEVER learn about the machine it is not running on). Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
 canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
 Development is **automation-first** (D37): the person sets the target and verifies the final diff;
@@ -140,11 +141,15 @@ terms). **Until the owner answers, SURF4a–d hold on the proposal's answer**; u
 resume on `Daoris.Web` exactly as designed, with SURF4c's timeline reading the protocol. The build
 order under D53 is **ACP1 → ACP2 → ACP3** (below), and the docs strand produced **DOCS2**.
 
-Smaller and independent of them: **CANON7** (a decision to bring the owner rather than work to do — it
-takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only).
-**HARNESS2** now waits on D53 (it becomes ACP3's codex configuration if confirmed). Four **held** items
-sit below those; do not pick one up until its trigger has arrived. Nothing is pushed or published, and
-a release is still blocked on REH1.
+Smaller and independent of them: **ARCH1** (the owner's mid-session direction of 2026-09-21 — dsh's
+domain separation and plugin design as the example for Daoris's own structure; a study, read as
+*pattern* not runtime until the owner says otherwise), **DOCS2** (the docs strand's take-aways as
+gates), and **CANON7** (a decision to bring the owner rather than work to do — it takes minutes, and
+**CANON5 is parked behind it**). **WSP5 landed 2026-09-21** — the workspace switcher is global chrome,
+absent while the family is one circle, and every cross-repository query carries the scope; in the
+archive. **HARNESS2** now waits on D53 (it becomes ACP3's codex configuration if confirmed). Four
+**held** items sit below those; do not pick one up until its trigger has arrived. Nothing is pushed or
+published, and a release is still blocked on REH1.
 
 - **Read first for SURF work:** `docs/2026-09-21-working-surface-design.md` (the contract),
   `docs/2026-09-21-working-surface-components.md` (**how the screens get built** — the layers, the
@@ -196,7 +201,8 @@ a release is still blocked on REH1.
   (SES2), `49da224` (SES3, with `aa24ea7` closing its outer loops) and `2487ec8` (CANON6), then the
   review: `6f45276` (the gate list) and `beaab13` (the shell's head). All
   gate-green; `git log` is the reviewable record.
-- **What the arc left behind is now three backlog items, not prose** — CANON7, WSP5 and HARNESS2. They
+- **What the arc left behind is now backlog items, not prose** — CANON7 and HARNESS2 (WSP5 landed
+  2026-09-21 and is in the archive; DOCS2 and ARCH1 joined them the same day). They
   were carried as handover sentences for a while, which is how work quietly stops being work; the
   backlog is where something is still to do.
 - **Every capability has TWO doors, and anything new inherits both.** The desktop's IPC and
@@ -239,7 +245,7 @@ a release is still blocked on REH1.
 - **Verify before claiming done, always:** `npm run verify` (CLI 209 + `check` + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (248),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (141), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (166/166), `npm run test:web` (55 + 9). If a `bin`-driven gate is red
+  (141), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (40), `npm run rehearse:family` (166/166), `npm run test:web` (65 + 10). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -288,13 +294,6 @@ answer differs, this section is rewritten from the evidence, not from scratch.
   closes into this.** dsh pinned exact and vendored nowhere: 561 MB per machine, and the
   `subagent-claude-code` bundle on npm was six weeks stale when measured — a harness's own packaging is
   its own problem, but the version the toolchain installs is asserted, not assumed.
-
-- [ ] **DOCS2 — what the docs strand takes from dsh** (`docs/2026-09-21-dsh-evaluation.md` §3). A
-  doc-budget manifest with ceilings for this repository's always-read prose (`CLAUDE.md` first, then
-  the backlog's handover and the design contracts) as a devkit gate with the *relocate → condense →
-  raise* discipline — D28's principle extended from the canon to the repository's own standing orders;
-  a markdown link check beside it; the "Rejected" line asserted on every new decision entry; and dsh's
-  slop checklist folded into `post-feature` as a documentation pass. Nothing ported, so no notice owed.
 
 ### The working surface — the build order (D51/D52, designed 2026-09-21)
 
@@ -374,6 +373,33 @@ runtime (its surfaces are built natively against claude/codex through the adapte
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
+- [ ] **DOCS2 — what the docs strand takes from dsh** (`docs/2026-09-21-dsh-evaluation.md` §3;
+  independent of D53). A doc-budget manifest with ceilings for this repository's always-read prose
+  (`CLAUDE.md` first, then the backlog's handover and the design contracts) as a declared gate with the
+  *relocate → condense → raise* discipline — D28's principle extended from the canon to the
+  repository's own standing orders; a markdown link check beside it; the "Rejected" line asserted on
+  every new decision entry; and dsh's slop checklist folded into `post-feature` as a documentation
+  pass. A new gate is added to **both** lists (`daoris.gates.json` and the release workflow) — the CLI
+  test that asserts they agree will say so. Nothing ported, so no notice owed.
+
+- [ ] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own structure**
+  (owner, 2026-09-21, mid-session: *"the dsh is really a good example to take for design/develop and
+  its domain separation and its plugin design also helps we develop our structure too"*). A design
+  study, one session, in the shape DOCS1 took: read dsh's `packages/<group>/<pkg>` cut (the groups are
+  capability seams — shell, subprocess, sandbox, fs, session, subagent, hooks, acp…), its **capability
+  seam** rule (a seam is complete only with all three roles — Service Definition, Service Provider,
+  Consumer — never one alone), **registrations are effects** (every contribution returns its disposer,
+  so unloading unwinds cleanly), **plugins, not loop changes** (new behaviour goes on documented
+  extension points; changing the loop updates the architecture map), and profiles/bundles as ordered
+  composition layers. Then hold Daoris's own structure against it: the driver's adapter seam (about to
+  gain a protocol door under D53 — is it a seam with three roles, or a provider with no definition?),
+  the desktop's IPC modules, the service's judgement classes, the CLI's management class, and the
+  three-twin files (remotes map, harnesses, driver.json). Deliverable: a comparison note naming what
+  Daoris adopts as *pattern* — D52 as amended and D53 already decline the runtime (Cordis) — and where
+  its current cut disagrees with its own seams; anything load-bearing becomes a D entry. **Read the
+  owner's sentence as pattern, not runtime, until the owner says otherwise**; the reading is recorded
+  in the handover for confirmation.
+
 - [ ] **CANON7 — decide whether this repository's own `coreBudgetBytes` moves to the D28 default.**
   **An owner decision first, then a one-line change and the prose that cites it.** Daoris's manifest
   carries `24000`, written before D28 moved the default to **30000**; the always-loaded core now sits
@@ -387,15 +413,6 @@ runtime (its surfaces are built natively against claude/codex through the adapte
   spending any). **Do not decide this by building it.** Bring the owner the two readings; if the answer
   is to move, it is `daoris.json` plus every place that quotes the number (`CLAUDE.md`, this file,
   `docs/DECISIONS.md` gets an amendment saying which way and why). **CANON5 is parked behind this.**
-
-- [ ] **WSP5 — the platform's workspace switcher.** The one thing §8's Web row promised that the WSP
-  arc did not land, and it was left deliberately: Projects shows each repository's circle and its fed
-  commit, the Machine view shows the wiring, but **no view filters by workspace**. Workspace design §4
-  states the shape — "one more filter, not a new view" — over the `workspace` argument the search,
-  registry and convergence doors already take. The honest scope question to answer first: whether the
-  switcher is a global chrome control (one circle at a time, like a git branch) or a per-view filter;
-  §4's "scoped to one workspace per query" argues for the first, and the second is what a filter
-  usually becomes. Web-only; no service change.
 
 - [ ] **HARNESS2 — a `codex` session adapter.** **Waits on D53.** Under the proposal this is **ACP3's
   codex configuration** — `@agentclientprotocol/codex-acp` on the protocol door — and no hand-built

@@ -1955,3 +1955,47 @@ decision entries, and the slop checklist folded into `post-feature`. Left, with 
 compile-checked doc fences (few fences here yet — the shape is noted for the day a design document
 pastes a declaration), one-line paragraphs (Daoris hard-wraps on purpose), and bilingual doctrine (the
 platform already holds the rule where it matters). No code ported, so no notice owed.
+
+## WSP5 — the platform's workspace switcher (2026-09-21)
+
+> The one thing §8's Web row promised that the WSP arc did not land, and it was left deliberately:
+> Projects shows each repository's circle and its fed commit, the Machine view shows the wiring, but
+> **no view filters by workspace**. Workspace design §4 states the shape — "one more filter, not a
+> new view" — over the `workspace` argument the search, registry and convergence doors already take.
+> The honest scope question to answer first: whether the switcher is a global chrome control (one
+> circle at a time, like a git branch) or a per-view filter; §4's "scoped to one workspace per query"
+> argues for the first, and the second is what a filter usually becomes. Web-only; no service change.
+
+✅ done 2026-09-21 — **global chrome, not a per-view filter.** Web only, as promised: every
+cross-repository door already took `workspace`, and nothing in the service moved. Vitest 55 → 65,
+Playwright 9 → 10, both catalogues 245 → 248 keys.
+
+**The scope question, answered — and the four choices that followed.** The switcher sits in the
+sidebar's foot with the rest of the global state (the platform language's rule that global state lives
+in exactly one place), because §4's rule is that a query names one circle and five per-view filters
+can disagree — Overview counting one circle while Quests lists another is exactly the silent mixing
+the design forbids. It is **absent while the deployment holds one workspace** (silence is today's
+behaviour byte for byte, the same rule as session trees). **"every workspace · N" is the stated
+default** — the D24 shape, report the scope that ran — where the door itself never invents one. The
+choice is **remembered per browser** like the language, never machine wiring and never in a tracked
+file, and a remembered circle the deployment no longer holds **falls back to every, out loud**. And the
+scope **rides the query layer**: every cross-repository hook reads it and carries it in its cache key,
+so no view changed a call and no circle's answers can serve another's from the cache.
+
+**What landed.** `scope.tsx` (the context and provider); `WorkspaceSwitcher.tsx` (props-only — no hook
+from `./queries` or `./shell`, the component plan's rule — with a story per state including the
+absence); `queries.ts` (the scope in every key, `useWorkspaces` as the registry unscoped — the one
+reader that must see every circle — and invalidation moved to the `all*` prefixes); `api.ts` (one
+query-string helper that omits what is unset, so a door asked with no workspace is asked for every
+circle it holds); the shell's foot and the provider around the shell; both catalogues; and two jsdom
+shims Radix Select needed — pointer capture and scroll-into-view — because no test had opened a select
+before.
+
+**Proven in three loops.** Props: the four states. The query layer: a chosen circle rides quests,
+registry and sessions; nothing chosen names none; a circle called 工作区 travels encoded. The shell in a
+browser over two circles: the stated default, one choice scoping the badge's quests, the foot's count
+and the landing view's registry, a remembered-but-gone circle falling back. And Playwright over the
+real host: the control absent while the family is one circle, present with its count once the newborn
+is re-wired into a second through the same door the desktop's form uses, one circle chosen scoping
+Overview and Projects, the choice surviving a reload, and every again — re-wired back at the end so the
+tests after it inherit the family they were written against.

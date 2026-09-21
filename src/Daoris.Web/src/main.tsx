@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { App } from './App';
+import { WorkspaceScopeProvider } from './scope';
 import './tokens.css';
 import './i18n';
 
@@ -20,7 +21,10 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={client}>
       <Tooltip.Provider delayDuration={300}>
-        <App />
+        {/* The workspace scope wraps the whole shell (WSP5): one scope per query, everywhere. */}
+        <WorkspaceScopeProvider>
+          <App />
+        </WorkspaceScopeProvider>
       </Tooltip.Provider>
     </QueryClientProvider>
   </StrictMode>,

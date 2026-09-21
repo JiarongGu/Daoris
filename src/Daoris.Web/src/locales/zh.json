@@ -60,6 +60,9 @@
   "sidebar.refresh": "重建索引",
   "sidebar.refreshing": "读取中…",
   "sidebar.refreshed": "已从 {{repositories}} 个仓库索引 {{entries}} 个条目。",
+  "scope.label": "工作区",
+  "scope.every": "全部工作区 · {{count}}",
+  "scope.tip": "此窗口所限定的圈子。知识、委托与记录只在同一工作区内流通，绝不跨越；未选择时，控制台横跨本部署持有的全部工作区，并在此说明，而非混为一处。",
 
   "common.close": "关闭",
   "common.dismiss": "忽略",

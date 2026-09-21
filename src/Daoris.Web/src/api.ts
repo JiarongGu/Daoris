@@ -95,6 +95,18 @@ export type RefreshReport = {
 /** What a retire actually did — and its sentence, which is mostly about what it did NOT do. */
 export type Retired = { repository: string; retired: boolean; message: string };
 
+/**
+ * A query string from the parameters that are actually set — null and undefined are omitted, so a
+ * door asked with no workspace is asked for every circle it holds (D48 §4: the door never invents a
+ * default, and neither does this).
+ */
+function qs(params: Record<string, string | number | boolean | null | undefined>): string {
+  const pairs = Object.entries(params)
+    .filter(([, value]) => value !== null && value !== undefined)
+    .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`);
+  return pairs.length ? `?${pairs.join('&')}` : '';
+}
+
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(path, { signal });
   if (!response.ok) {
@@ -124,26 +136,22 @@ async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 
 
 export const api = {
   status: (signal?: AbortSignal) => get<Status>('/api/status', signal),
-  repositories: (signal?: AbortSignal) => get<Repository[]>('/api/repositories', signal),
+  // Every cross-repository read below takes the scope (WSP5; D48 §4): null asks for every circle the
+  // deployment holds, and the switcher says so; a name asks for that one, and nothing else is mixed in.
+  repositories: (workspace: string | null, signal?: AbortSignal) =>
+    get<Repository[]>(`/api/repositories${qs({ workspace })}`, signal),
   entry: (id: string, signal?: AbortSignal) =>
     get<Entry>(`/api/entry?id=${encodeURIComponent(id)}`, signal),
-  search: (q: string, localOnly: boolean, signal?: AbortSignal) =>
-    get<Hit[]>(`/api/search?q=${encodeURIComponent(q)}&localOnly=${localOnly}&limit=40`, signal),
-  convergence: (minimumSimilarity: number, signal?: AbortSignal) =>
-    get<Convergence[]>(`/api/convergence?minimumSimilarity=${minimumSimilarity}&limit=40`, signal),
-  quests: (repository: string | null, includeClosed: boolean, signal?: AbortSignal) =>
-    get<Quest[]>(
-      `/api/quests?includeClosed=${includeClosed}`
-      + (repository ? `&repository=${encodeURIComponent(repository)}` : ''),
-      signal,
-    ),
-  registry: (signal?: AbortSignal) => get<Registration[]>('/api/registry', signal),
-  sessions: (repository: string | null, includeClosed: boolean, signal?: AbortSignal) =>
-    get<Session[]>(
-      `/api/sessions?includeClosed=${includeClosed}`
-      + (repository ? `&repository=${encodeURIComponent(repository)}` : ''),
-      signal,
-    ),
+  search: (q: string, localOnly: boolean, workspace: string | null, signal?: AbortSignal) =>
+    get<Hit[]>(`/api/search${qs({ q, localOnly, limit: 40, workspace })}`, signal),
+  convergence: (minimumSimilarity: number, workspace: string | null, signal?: AbortSignal) =>
+    get<Convergence[]>(`/api/convergence${qs({ minimumSimilarity, limit: 40, workspace })}`, signal),
+  quests: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
+  registry: (workspace: string | null, signal?: AbortSignal) =>
+    get<Registration[]>(`/api/registry${qs({ workspace })}`, signal),
+  sessions: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    get<Session[]>(`/api/sessions${qs({ includeClosed, repository, workspace })}`, signal),
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine
   // is touched, and adding a repository still needs the shell — a page may not name a machine path.
   registerRepository: (body: {

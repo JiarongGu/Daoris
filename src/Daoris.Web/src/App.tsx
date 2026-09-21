@@ -1,7 +1,9 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
-import { useEntry, useQuests, useRefreshIndex, useRepositories, useStatus } from './queries';
+import { useEntry, useQuests, useRefreshIndex, useRepositories, useStatus, useWorkspaces } from './queries';
+import { useScope } from './scope';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Icon, type IconName, LanguageSwitcher, Tip, Toasts, type ToastItem, useErrorNotify,
 } from './ui';
@@ -51,6 +53,18 @@ export function App() {
   const refresh = useRefreshIndex();
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const attached = useDriver().data !== undefined;
+
+  // The scope (WSP5): which circle this window is looking at. The roster comes from the registry
+  // unscoped — the one reader that must see every workspace — and a remembered choice the deployment
+  // no longer holds falls back to every, out loud (the switcher then says so), rather than scoping
+  // every query to a circle nobody is in any more.
+  const scope = useScope();
+  const workspaces = useWorkspaces();
+  useEffect(() => {
+    if (workspaces.data && scope.workspace && !workspaces.data.includes(scope.workspace)) {
+      scope.setWorkspace(null);
+    }
+  }, [workspaces.data, scope]);
 
   const dismiss = useCallback((id: number) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -108,6 +122,14 @@ export function App() {
         </nav>
 
         <div className="mt-auto grid gap-2 px-2.5 max-md:ml-auto max-md:mt-0 max-md:grid-flow-col max-md:items-center max-md:p-0">
+          {/* Global state, in its one place (D41 §2): the scope first — it decides what every number
+              below and every view beside means — then the tier, the count, the refresh. Absent while
+              the deployment holds one workspace. */}
+          <WorkspaceSwitcher
+            workspaces={workspaces.data ?? []}
+            value={scope.workspace}
+            onChange={scope.setWorkspace}
+          />
           {status.data && (
             /* The tier is stated on every screen, never implied (D24) — here, in the one global spot.
                The sentence itself is the service's, verbatim. */

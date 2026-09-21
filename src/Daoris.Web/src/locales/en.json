@@ -60,6 +60,9 @@
   "sidebar.refresh": "refresh index",
   "sidebar.refreshing": "reading…",
   "sidebar.refreshed": "Indexed {{entries}} entries from {{repositories}} repositories.",
+  "scope.label": "workspace",
+  "scope.every": "every workspace · {{count}}",
+  "scope.tip": "Which circle this window is scoped to. Knowledge, quests and records cross within a workspace and never across one; with nothing chosen the console spans every workspace this deployment holds — and says so here rather than mixing them.",
 
   "common.close": "close",
   "common.dismiss": "dismiss",

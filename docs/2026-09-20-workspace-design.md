@@ -370,6 +370,18 @@ machine paths (D46/D47: paths never reach a browser).
    choices in §6 above and one thing its successors inherit: a refusal can be INFORMATION, and the
    flag that says so is on the wire — the first refusal class in this system that a client is meant
    to report rather than fix.
+5. **WSP5 — the workspace switcher**: the one thing §8's Web row still owed. **Built 2026-09-21** as
+   **global chrome** — one scope per query, in the sidebar's foot beside the rest of the global state
+   (the platform language's rule that global state lives in exactly one place) — rather than a
+   per-view filter, because five filters can disagree and §4's rule is that a query names one circle.
+   Four choices the building settled: the control is **absent while the deployment holds one
+   workspace** (silence is today's behaviour, byte for byte — the same rule as session trees);
+   **"every workspace · N" is the stated default** (the D24 shape — report the scope that ran — where
+   the door itself never invents one); the choice is **remembered per browser** like the language,
+   never machine wiring and never in a tracked file, and a remembered circle the deployment no longer
+   holds falls back to every, out loud; and the scope **rides the query layer** — every cross-repository
+   hook reads it and carries it in its cache key — so no view changed a call and no circle's answers can
+   serve another's from the cache. Web-only, as §8 said: every door already took the argument.
 
 ## 10. Open questions, deliberately held
 
