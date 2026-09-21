@@ -54,6 +54,11 @@ const USAGE = `daoris <command> [options]
                                                    a profile directory
                          profile list|add|remove <harness> <profile>
                          profile default <harness> <profile> [--workspace W]
+                         pin <harness> <version> [--workspace W]
+                                                   install that version somewhere
+                                                   Daoris owns, and run it
+                         unpin <harness> [--workspace W]
+                                                   back to whatever is on PATH
   driver [verb]        what this machine drives (~/.daoris/driver.json):
                          list                      adapter, cap, what is opted in
                          drive|undrive <repo>      opt a repository in, or out

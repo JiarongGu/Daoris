@@ -357,6 +357,23 @@ export type HarnessReport = {
   version: string | null;
   problem: string | null;
   machineDefault: string | null;
+  /** The version this machine pinned, or null for whatever is on `PATH` (TOOL2/D57). */
+  pinned: string | null;
+  /**
+   * The managed binary actually installed at that pin, or null.
+   *
+   * @remarks
+   * `pinned` without `managed` is a pin naming a version nobody installed — which **refuses every
+   * spawn** rather than quietly running `PATH`, so a surface must say so rather than imply the pin
+   * is in force.
+   */
+  managed: string | null;
+  /**
+   * Whether this harness can be pinned at all — false where it declares no package for Daoris to
+   * fetch. The control is **absent** there rather than present and refusing: half a control is
+   * worse than none, which is the same rule the palette and the parked session's moves follow.
+   */
+  pinnable: boolean;
   profiles: HarnessProfile[];
 };
 export type HarnessRoster = {
@@ -389,8 +406,13 @@ export const useHarnesses = () => {
 export const useHarnessAction = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (action: { harness: string; action: 'install' | 'update' | 'login'; profile?: string }) =>
-      call<{ harness: string; action: string; exitCode: number }>('HARNESS_ACTION', action),
+    mutationFn: (action: {
+      harness: string;
+      action: 'install' | 'update' | 'login' | 'pin' | 'unpin';
+      profile?: string;
+      /** Which version to install and pin to — `pin` only (TOOL2/D57). */
+      version?: string;
+    }) => call<{ harness: string; action: string; exitCode: number }>('HARNESS_ACTION', action),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
   });
 };

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  TOOLCHAINS, commandHarness, harnessesPath, profileHome, profiles,
-  readHarnessSettings, resolveProfile, writeHarnessSettings,
+  TOOLCHAINS, commandHarness, harnessesPath, managedBinary, managedHome, profileHome, profiles,
+  readHarnessSettings, resolveProfile, resolveVersion, writeHarnessSettings,
 } from '../src/toolchain.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
@@ -75,6 +75,8 @@ test('a profile is the pick, then the workspace default, then the machine defaul
   const settings = {
     defaults: { 'claude-code': 'personal' },
     workspaces: { aurora: { 'claude-code': 'work' } },
+    versions: {},
+    workspaceVersions: {},
     rest: {},
   };
 
@@ -88,11 +90,90 @@ test('a profile is the pick, then the workspace default, then the machine defaul
 // ——— Twin rule 3: none means the harness's OWN home. This is the one that must never regress.
 
 test('no profile named anywhere means the harness’s own configuration home', () => {
-  const empty = { defaults: {}, workspaces: {}, rest: {} };
+  const empty = { defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rest: {} };
 
   // Null, not `"default"`: pointing someone who never asked for profiles at a fresh configuration
   // home would log them out of their own tool, which is the loudest way to break "Daoris works alone".
   assert.equal(resolveProfile(empty, 'claude-code', 'aurora', null), null);
+});
+
+// ——— Twin rule 4: the binary is the explicit command, then the managed pin, then PATH (TOOL2/D57).
+//
+// The fourth rule of the twin contract, and the one that carries D48 §2a: **absent means PATH**, byte
+// for byte what a machine did before any of this existed. A machine that installed `claude` itself,
+// and a contributor who never ran Daoris, both keep working.
+
+test('a managed harness lives under a version of its own, and the name may not escape', () => {
+  assert.equal(
+    managedHome('/home', 'claude-code', '1.2.3'),
+    join('/home', 'toolchain', 'claude-code', '1.2.3'));
+
+  // A version is a directory name like any other, so it takes the same refusal a profile does.
+  for (const version of ['../escape', 'a/b', 'a\\b', '', '  ', '.', '..']) {
+    assert.match(captureError(() => managedHome('/home', 'claude-code', version)).message, /version/);
+  }
+});
+
+test('the pin is the pick, then the workspace default, then the machine default, then none', () => {
+  const settings = {
+    defaults: {}, workspaces: {}, rest: {},
+    versions: { 'claude-code': '1.2.3' },
+    workspaceVersions: { aurora: { 'claude-code': '2.0.0' } },
+  };
+
+  assert.equal(resolveVersion(settings, 'claude-code', 'aurora', '9.9.9'), '9.9.9');
+  assert.equal(resolveVersion(settings, 'claude-code', 'aurora', null), '2.0.0');
+  assert.equal(resolveVersion(settings, 'claude-code', 'tools', null), '1.2.3');
+  assert.equal(resolveVersion(settings, 'claude-code', null, null), '1.2.3');
+  // The same shape as a profile, including the answer when nothing names one.
+  assert.equal(resolveVersion(settings, 'codex', 'aurora', null), null);
+});
+
+/**
+ * 🔴 The rule that must never regress, and the twin of "no profile means the harness's own home".
+ * Nothing pinned means `PATH` — not an empty managed directory, and not a refusal.
+ */
+test('no version pinned anywhere means whatever the machine has on PATH', () => {
+  const empty = { defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rest: {} };
+
+  assert.equal(resolveVersion(empty, 'claude-code', 'aurora', null), null);
+  assert.equal(managedBinary('/home', 'claude-code', null, ['claude']), null);
+});
+
+test('a pinned harness resolves to the binary inside the directory Daoris owns', () => {
+  const fx = makeFixture('harness-managed');
+  const bin = join(managedHome(fx.root, 'claude-code', '1.2.3'), 'node_modules', '.bin');
+  mkdirSync(bin, { recursive: true });
+  // npm writes a shim per platform; the resolver takes whichever exists.
+  const shim = join(bin, process.platform === 'win32' ? 'claude.cmd' : 'claude');
+  writeFileSync(shim, '', 'utf8');
+
+  assert.equal(managedBinary(fx.root, 'claude-code', '1.2.3', ['claude']), shim);
+  fx.cleanup();
+});
+
+/**
+ * A pin naming a version that was never installed is a fact the person must be told, not a silent
+ * fall back to `PATH` — that would run a different tool than the one they asked for and say nothing.
+ */
+test('a pin whose directory is not there resolves to nothing rather than to PATH', () => {
+  const fx = makeFixture('harness-managed-missing');
+  assert.equal(managedBinary(fx.root, 'claude-code', '9.9.9', ['claude']), null);
+  fx.cleanup();
+});
+
+test('the pin survives edits made by verbs that do not know it', () => {
+  const fx = makeFixture('harness-pin-preserve');
+  const settings = readHarnessSettings(at(fx));
+  writeHarnessSettings(at(fx), { ...settings, versions: { 'claude-code': '1.2.3' } });
+
+  run(['profile', 'add', 'claude-code', 'work'], at(fx));
+  run(['profile', 'default', 'claude-code', 'work'], at(fx));
+
+  const after = readHarnessSettings(at(fx));
+  assert.equal(after.versions['claude-code'], '1.2.3');
+  assert.equal(after.defaults['claude-code'], 'work');
+  fx.cleanup();
 });
 
 test('a missing file is a machine that named no profiles, and so is an unreadable one', () => {
@@ -194,12 +275,71 @@ test('an unknown harness errors naming what exists, never a silent fallback', ()
   fx.cleanup();
 });
 
+/**
+ * `pin` and `unpin` (TOOL2/D57). The install itself spawns npm and is not run here — what IS run is
+ * every judgement around it: what gets refused, what gets written, and what a pin does to `list`.
+ */
+test('unpin takes the pin off and leaves the installed directory alone', () => {
+  const fx = makeFixture('harness-unpin');
+  const settings = readHarnessSettings(at(fx));
+  writeHarnessSettings(at(fx), {
+    ...settings,
+    versions: { 'claude-code': '1.2.3' },
+    workspaceVersions: { aurora: { 'claude-code': '2.0.0' } },
+  });
+  const installed = managedHome(fx.root, 'claude-code', '1.2.3');
+  mkdirSync(installed, { recursive: true });
+
+  const machine = run(['unpin', 'claude-code'], at(fx));
+  assert.equal(readHarnessSettings(at(fx)).versions['claude-code'], undefined);
+  // The circle's pin is its own choice and is not collateral.
+  assert.equal(readHarnessSettings(at(fx)).workspaceVersions['aurora']!['claude-code'], '2.0.0');
+  // Nothing is deleted — the same rule `profile remove` follows, for the same reason.
+  assert.ok(existsSync(installed));
+  assert.match(machine.out, /PATH/);
+
+  run(['unpin', 'claude-code', '--workspace', 'aurora'], at(fx));
+  assert.deepEqual(readHarnessSettings(at(fx)).workspaceVersions, {});
+  fx.cleanup();
+});
+
+test('unpinning what was never pinned is an answer, not a failure', () => {
+  const fx = makeFixture('harness-unpin-absent');
+  assert.equal(run(['unpin', 'claude-code'], at(fx)).code, 0);
+  fx.cleanup();
+});
+
+test('pin needs a version, and refuses one that would escape the toolchain directory', () => {
+  const fx = makeFixture('harness-pin-args');
+
+  assert.match(captureError(() => run(['pin', 'claude-code'], at(fx))).message, /version/);
+  assert.match(captureError(() => run(['pin', 'claude-code', '../x'], at(fx))).message, /version/);
+  fx.cleanup();
+});
+
+test('pin refuses a harness Daoris has no package for, rather than guessing one', () => {
+  const fx = makeFixture('harness-pin-unknown');
+  assert.match(captureError(() => run(['pin', 'nonesuch', '1.0.0'], at(fx))).message, /nonesuch/);
+  fx.cleanup();
+});
+
+test('list says which version is pinned, and whether it is actually installed', () => {
+  const fx = makeFixture('harness-pin-list');
+  const settings = readHarnessSettings(at(fx));
+  writeHarnessSettings(at(fx), { ...settings, versions: { 'claude-code': '9.9.9' } });
+
+  // Pinned but never installed: the list must say so rather than imply the pin is in force.
+  assert.match(run(['list'], at(fx)).out, /9\.9\.9/);
+  assert.match(run(['list'], at(fx)).out, /not installed|missing/i);
+  fx.cleanup();
+});
+
 test('an unknown verb names the ones that exist', () => {
   const fx = makeFixture('harness-verb');
   const error = captureError(() => run(['frobnicate'], at(fx)));
 
   assert.match(error.message, /unknown harness verb 'frobnicate'/);
-  assert.match(error.message, /list, install, update, login, profile/);
+  assert.match(error.message, /list, install, update, login, pin, unpin, profile/);
   fx.cleanup();
 });
 

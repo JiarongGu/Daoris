@@ -139,7 +139,7 @@ public sealed class ChatRunner(
                 config.Commands.GetValueOrDefault(resolved.Name));
             if (resolved.Toolchain is { } toolchain)
             {
-                HarnessProbe.Apply(info, toolchain, selection.ProfileHome);
+                HarnessProbe.Apply(info, toolchain, selection.ProfileHome, selection.Binary);
             }
 
             process = Process.Start(info)

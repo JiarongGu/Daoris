@@ -3053,3 +3053,63 @@ disclosure argument, which is what kept §4 short.
 first written down: what exhaustion looks like in a harness's own output, how long a cool-off is, and
 whether a rotated session stays reproducible. A string match on somebody else's error text is the
 fragile part, and guessing it is how it gets written wrong.
+
+## TOOL2 — the managed CLI (2026-09-22)
+
+> **TOOL2 — the managed CLI** (design §3). A managed harness under
+> `~/.daoris/toolchain/<harness>/<version>/`, installed by the harness's own installer aimed there
+> rather than at the machine. Selection at spawn is **explicit command → managed pin → `PATH`**, and
+> the pin resolves exactly as a credential profile does. **Absent means `PATH`, which is today's
+> behaviour byte for byte.**
+
+✅ done 2026-09-22. `daoris harness pin <harness> <version> [--workspace W]` and `unpin`, the Machine
+view's half, and the resolution that makes a pin decide what a session actually spawns.
+
+**It is the fourth rule of a twin contract that already had three.** The CLI and the driver share no
+code — the file and the layout are the contract — so profiles were already asserted in both artefacts
+as three numbered rules. The pin is the fourth, written the same way in both: *the binary is the
+explicit command, then the managed pin, then `PATH`*. Reusing the shape meant reusing its safety
+properties too, including the directory-name refusal (a version becomes a directory, so `../escape`
+is refused rather than normalised) and the resolution order (pick → workspace → machine → none).
+
+🔴 **Absent means `PATH`, and that is the rule that must never regress** — the exact twin of "no
+profile means the harness's own configuration home". A machine that installed `claude` itself, and a
+contributor who never ran Daoris, both keep working (D48 §2a). Asserted in both artefacts, in the
+words of the rule, so a later change that made absence mean an empty managed directory fails a test
+rather than a person's machine.
+
+🔴 **A pin nobody installed REFUSES the spawn rather than falling back.** Quietly running `PATH`
+would run a different tool than the one the person asked for, report success, and record the pinned
+version beside work the pinned version did not do. The refusal names both ways out (`pin` to install
+it, `unpin` to go back), which is the shape every refusal in this class already has.
+
+**The explicit command still outranks the pin.** A `commands` entry in `driver.json` is a person
+naming exactly what to run; a standing pin quietly replacing it would be a surface overruling a
+specific instruction. Tested directly, because the precedence is three-deep and invisible.
+
+**One line governs both doors.** The pin is applied in `HarnessProbe.Apply` — the same place the
+credential profile's environment seam is — rather than inside each adapter's `Prepare`. An adapter
+that forgot it would spawn the wrong binary *and* record the pinned version beside it, which is a
+worse failure than not supporting pins at all.
+
+**The write half was the dangerous half, and a test was written for it first.** `HarnessSettings.Save`
+in the driver wrote only `defaults` and `workspaces`. Both artefacts write this one file, so a save
+that knew nothing about `versions` would have **silently deleted** a pin the CLI put there — it
+compiles, it passes every profile test, and it loses data. That is counterpart-set rot in its purest
+form, and the round-trip test names it.
+
+**Two defects the real window found, both invisible in the source.** The `stub` adapter was offered a
+*pin it* button although it declares no package, so pressing it could only produce a refusal — half a
+control, which the roster now answers (`pinnable`) so the control is **absent** instead. And the
+rationale for pinning was repeated beside every harness row; it is stated once in the card's body
+now, which is the "rationale beside each sibling" smell caught by looking rather than by reading.
+
+**`npm run verify` earned its ordering again.** `node --test` strips types, so the existing
+profile-resolution tests — which build a settings literal — only failed at `tsc`. Typecheck-first is
+why that surfaced before `npm pack` rather than after.
+
+**Proven.** 227 CLI (twelve new: the paths, the resolution, the verbs, and what `list` says about a
+pin that is not installed), 195 driver (ten new, including the round trip that would have caught the
+deleted pin), 68 modules, 410 web unit (six new), 14 Playwright, 259 service, `npm run verify`,
+`test:web` and `rehearse:family` (173/173) green — and the real window, in both themes, where
+`claude-code` offers the control and the harness that cannot be pinned does not.

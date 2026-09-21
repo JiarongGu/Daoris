@@ -367,7 +367,7 @@ describe('the harness roster', () => {
     harnesses: [
       {
         harness: 'claude-code', present: true, version: 'claude 9.9.9', problem: null,
-        machineDefault: 'personal',
+        machineDefault: 'personal', pinned: null, managed: null, pinnable: true,
         profiles: [
           { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' },
           { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'out' },
@@ -375,7 +375,8 @@ describe('the harness roster', () => {
       },
       {
         harness: 'codex', present: false, version: null,
-        problem: '`codex` is not on this machine\'s PATH', machineDefault: null, profiles: [],
+        problem: '`codex` is not on this machine\'s PATH', machineDefault: null,
+        pinned: null, managed: null, pinnable: false, profiles: [],
       },
     ],
   };
@@ -447,6 +448,89 @@ describe('the harness roster', () => {
 
     expect(await screen.findByText('aurora')).toBeTruthy();
     expect(screen.queryByText('Harnesses')).toBeNull();
+  });
+
+  /**
+   * The managed toolchain (TOOL2/D57), desktop half. **Absent means PATH**, and the surface says so
+   * rather than leaving a blank — "Daoris manages this" and "the machine happens to have one" are
+   * different facts about the same working session.
+   */
+  it('says a harness runs from PATH until something is pinned', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findAllByText(/on PATH/)).not.toHaveLength(0);
+    expect(screen.queryByText(/Daoris runs/)).toBeNull();
+  });
+
+  it('pinning installs that version and pins to it, in one action', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    const version = await screen.findByLabelText('version of claude-code to pin');
+    await userEvent.type(version, '1.2.3');
+    await userEvent.click(screen.getAllByRole('button', { name: 'pin it' })[0]!);
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'pin', profile: undefined, version: '1.2.3' },
+    });
+  });
+
+  it('offers nothing to press until a version is typed', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    const [pin] = await screen.findAllByRole('button', { name: 'pin it' });
+    expect(pin).toBeDisabled();
+  });
+
+  /**
+   * 🔴 A harness that declares no package has no version for Daoris to fetch, so the control is
+   * **absent** rather than present and refusing — half a control is worse than none. Found by
+   * looking at the real window, where the stub adapter was offering a button whose only possible
+   * outcome was a refusal.
+   */
+  it('offers no pin at all for a harness that cannot be pinned', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    await screen.findByText('claude 9.9.9');
+    // Only the pinnable harness has one, though the roster carries two.
+    expect(screen.getAllByRole('button', { name: 'pin it' })).toHaveLength(1);
+  });
+
+  /**
+   * 🔴 A pin naming a version nobody installed **refuses every spawn**, so the surface must say that
+   * rather than show the pin as though it were in force. The two fields are answered separately by
+   * the host precisely so this state is renderable.
+   */
+  it('a pin with nothing installed at it reads as missing, not as in force', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{ ...ROSTER.harnesses[0], pinned: '9.9.9', managed: null }],
+      }
+      : WIRING));
+
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText(/pinned 9\.9\.9 — not installed/)).toBeTruthy();
+    // And the way back is offered, because a refusing pin is exactly when somebody wants it.
+    expect(screen.getByRole('button', { name: 'use PATH again' })).toBeTruthy();
+  });
+
+  it('a pin that is in force names the binary sessions actually run', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{
+          ...ROSTER.harnesses[0],
+          pinned: '1.2.3',
+          managed: 'C:/somewhere/.daoris/toolchain/claude-code/1.2.3/node_modules/.bin/claude',
+        }],
+      }
+      : WIRING));
+
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('Daoris runs 1.2.3')).toBeTruthy();
+    expect(screen.getByText(/toolchain[\\/]claude-code[\\/]1\.2\.3/)).toBeTruthy();
   });
 
   // The per-session PICKER moved with the start form it belongs to (`work/WorkFrame.test.tsx`).

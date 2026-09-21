@@ -65,6 +65,15 @@ export interface Toolchain {
   profileVariable: string;
   /** Its own installer — a whole command; the harness may not exist yet. */
   install?: string[];
+  /**
+   * The package a managed install fetches, when Daoris owns the binary (TOOL2/D57).
+   *
+   * @remarks
+   * Declared rather than parsed out of `install`, because the two are different questions: `install`
+   * is "how does this tool put itself on a machine", and this is "what do I fetch into a directory
+   * I own". A harness that declares no package cannot be pinned, and says so.
+   */
+  package?: string;
   /** Its own updater, as arguments to the binary. */
   update?: string[];
   /** Its own login flow, as arguments to the binary, run with a profile home in the environment. */
@@ -92,6 +101,7 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     version: ['--version'],
     profileVariable: 'CLAUDE_CONFIG_DIR',
     install: ['npm', 'install', '-g', '@anthropic-ai/claude-code'],
+    package: '@anthropic-ai/claude-code',
     update: ['update'],
     login: ['auth', 'login'],
     // It answers JSON — and volunteers an email, an organisation and a subscription tier with it.
@@ -103,6 +113,7 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     version: ['--version'],
     profileVariable: 'CODEX_HOME',
     install: ['npm', 'install', '-g', '@openai/codex'],
+    package: '@openai/codex',
     update: ['update'],
     login: ['login'],
     // ANCHORED, and that is load-bearing: this harness answers a sentence rather than a field, and
@@ -116,6 +127,13 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
 export interface HarnessSettings {
   defaults: Record<string, string>;
   workspaces: Record<string, Record<string, string>>;
+  /**
+   * Which VERSION each harness runs at, when Daoris manages the binary (TOOL2/D57) — per machine,
+   * and optionally per workspace, resolved by exactly the rule profiles use.
+   */
+  versions: Record<string, string>;
+  /** @see versions */
+  workspaceVersions: Record<string, Record<string, string>>;
   /** Everything else the file held, preserved — this is an editor, not the file's owner. */
   rest: Record<string, unknown>;
 }
@@ -129,18 +147,23 @@ export interface HarnessSettings {
  * stops a session spawning, and the person is told rather than stopped.
  */
 export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
-  const empty: HarnessSettings = { defaults: {}, workspaces: {}, rest: {} };
+  const empty: HarnessSettings = {
+    defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rest: {},
+  };
   if (!existsSync(path)) return empty;
 
   try {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return empty;
 
-    const { defaults, workspaces, ...rest } = parsed;
+    const { defaults, workspaces, versions, workspaceVersions, ...rest } = parsed;
     return {
       defaults: stringMap(defaults),
       workspaces: Object.fromEntries(
         Object.entries(asObject(workspaces)).map(([circle, map]) => [circle, stringMap(map)])),
+      versions: stringMap(versions),
+      workspaceVersions: Object.fromEntries(
+        Object.entries(asObject(workspaceVersions)).map(([circle, map]) => [circle, stringMap(map)])),
       rest,
     };
   } catch {
@@ -150,15 +173,17 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
 
 /** Write it back, preserving anything this build did not put there. */
 export function writeHarnessSettings(path: string, settings: HarnessSettings): void {
-  const workspaces = Object.fromEntries(
-    Object.entries(settings.workspaces)
-      .filter(([, map]) => Object.keys(map).length > 0)
+  const circles = (map: Record<string, Record<string, string>>) => Object.fromEntries(
+    Object.entries(map)
+      .filter(([, inner]) => Object.keys(inner).length > 0)
       .sort(([a], [b]) => (a < b ? -1 : 1)));
 
   writeTextAtomic(path, `${JSON.stringify({
     ...settings.rest,
     defaults: sorted(settings.defaults),
-    workspaces,
+    workspaces: circles(settings.workspaces),
+    versions: sorted(settings.versions),
+    workspaceVersions: circles(settings.workspaceVersions),
   }, null, 2)}\n`);
 }
 
@@ -187,6 +212,61 @@ export function profileHome(home: string, harness: string, profile: string): str
   return join(home, 'harnesses', safeName(harness, 'harness name'), safeName(profile, 'profile name'));
 }
 
+/**
+ * Which version a spawn runs at: the person's pick, the workspace's pin, the machine's, or none
+ * (TOOL2/D57).
+ *
+ * @remarks
+ * 🔴 **None means `PATH`** — whatever the machine has, which is what happened before any of this
+ * existed. Not an empty managed directory and not a refusal: a machine that installed `claude`
+ * itself, and a contributor who never ran Daoris, both have to keep working (D48 §2a). It is the
+ * exact twin of "no profile means the harness's own configuration home", and it regresses the same
+ * way if anybody ever makes absence mean something.
+ */
+export function resolveVersion(
+  settings: HarnessSettings, harness: string, workspace?: string | null, chosen?: string | null,
+): string | null {
+  if (chosen?.trim()) return chosen.trim();
+
+  const circle = workspace?.trim() ? settings.workspaceVersions[workspace.trim()] : undefined;
+  if (circle?.[harness]?.trim()) return circle[harness]!.trim();
+
+  return settings.versions[harness]?.trim() || null;
+}
+
+/** Where a managed version of a harness lives. Daoris owns this location, binary and all. */
+export function managedHome(home: string, harness: string, version: string): string {
+  return join(home, 'toolchain', safeName(harness, 'harness name'), safeName(version, 'version'));
+}
+
+/**
+ * The executable inside a managed install, or null when there is no pin or nothing installed at it.
+ *
+ * @remarks
+ * **npm's layout, because npm is how these harnesses ship**: `--prefix <dir>` puts the package under
+ * `<dir>/node_modules` and its shims in `<dir>/node_modules/.bin`. Windows gets a `.cmd` beside the
+ * shell script, so whichever exists is the answer.
+ *
+ * 🔴 **A pin whose directory is not there answers null, and the caller must say so** rather than
+ * quietly falling back to `PATH` — that would run a different tool than the one the person asked for
+ * and report success.
+ */
+export function managedBinary(
+  home: string, harness: string, version: string | null, binary: string[],
+): string | null {
+  if (!version) return null;
+
+  const name = binary[0];
+  if (!name) return null;
+
+  const bin = join(managedHome(home, harness, version), 'node_modules', '.bin');
+  for (const candidate of [join(bin, `${name}.cmd`), join(bin, name)]) {
+    if (existsSync(candidate)) return candidate;
+  }
+
+  return null;
+}
+
 /** The profiles that exist — the directories that exist, sorted. There is no second register. */
 export function profiles(home: string, harness: string): string[] {
   const root = join(home, 'harnesses', safeName(harness, 'harness name'));
@@ -210,8 +290,8 @@ function safeName(value: string, what: string): string {
 
   if (bad) {
     throw new DaorisError(
-      `\`${value}\` is not a usable ${what} — letters, digits, dashes. A profile is a directory `
-      + 'Daoris owns the location of, so its name may not point anywhere else.');
+      `\`${value}\` is not a usable ${what} — letters, digits, dashes and dots. It becomes a `
+      + 'directory Daoris owns the location of, so it may not point anywhere else.');
   }
 
   return trimmed;
@@ -346,12 +426,80 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       return relay([...toolchain.binary, ...toolchain.login], where, toolchain, write);
     }
 
+    // The managed toolchain (TOOL2/D57): Daoris owns where this version lives and which one runs.
+    case 'pin': {
+      const { name, toolchain } = required(argv, 'pin');
+      if (!toolchain.package) {
+        throw new DaorisError(
+          `\`${name}\` declares no package, so Daoris has no sanctioned way to fetch a version of `
+          + 'it. Install it with its own tooling and Daoris will find it on PATH.');
+      }
+
+      const version = bare(argv, 2, 'pin', '<harness> <version>');
+      const where = managedHome(home, name, version);
+      const workspace = flagValue(argv, '--workspace');
+
+      write(`daoris: installing \`${toolchain.package}@${version}\` into a directory Daoris owns.`);
+      write(`  ${where}`);
+      const installed = relay(
+        ['npm', 'install', '--prefix', where, `${toolchain.package}@${version}`],
+        null, toolchain, write);
+      if (installed !== 0) {
+        write('  Nothing was pinned: a pin naming a version that is not there would run a different');
+        write('  tool than the one you asked for.');
+        return installed;
+      }
+
+      pinTo(name, version, workspace);
+      write(workspace
+        ? `daoris: \`${name}\` runs at ${version} for the \`${workspace}\` circle on this machine.`
+        : `daoris: \`${name}\` runs at ${version} on this machine.`);
+      write('  Sessions spawn this binary rather than whatever is on PATH. `daoris harness unpin`');
+      write('  puts it back, and the version is on every session record either way.');
+      return 0;
+    }
+
+    case 'unpin': {
+      const { name } = required(argv, 'unpin');
+      const workspace = flagValue(argv, '--workspace');
+
+      pinTo(name, null, workspace);
+      write(workspace
+        ? `daoris: the \`${workspace}\` circle no longer pins \`${name}\` on this machine.`
+        : `daoris: \`${name}\` runs from PATH again on this machine.`);
+      write('  Nothing was deleted — the managed install stays where it is, and re-pinning that');
+      write('  version needs no download.');
+      return 0;
+    }
+
     case 'profile':
       return profileVerb();
 
     default:
       throw new DaorisError(
-        `unknown harness verb '${verb}' — one of: list, install, update, login, profile`);
+        `unknown harness verb '${verb}' — one of: list, install, update, login, pin, unpin, profile`);
+  }
+
+  /** Write one pin, machine-wide or for one circle. Null takes it off. */
+  function pinTo(name: string, version: string | null, workspace?: string | null): void {
+    const settings = readHarnessSettings(path);
+    const circle = workspace?.trim() ? normalizeWorkspace(workspace) : null;
+
+    if (circle) {
+      const held = { ...settings.workspaceVersions[circle] };
+      if (version) held[name] = version;
+      else delete held[name];
+      writeHarnessSettings(path, {
+        ...settings,
+        workspaceVersions: { ...settings.workspaceVersions, [circle]: held },
+      });
+      return;
+    }
+
+    const versions = { ...settings.versions };
+    if (version) versions[name] = version;
+    else delete versions[name];
+    writeHarnessSettings(path, { ...settings, versions });
   }
 
   function list(): ExitCode {
@@ -363,6 +511,23 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       write(`  ${name.padEnd(14)} ${report.present ? report.version : `absent — ${report.problem}`}`);
       if (!report.present && toolchain.install) {
         write(`  ${''.padEnd(14)} \`daoris harness install ${name}\` installs it, with its own installer`);
+      }
+
+      // The pin, and whether it is actually in force (TOOL2/D57). A pin whose directory is not there
+      // is reported as MISSING rather than silently ignored: sessions would run whatever is on PATH,
+      // which is a different tool than the one the person asked for.
+      const pinned = resolveVersion(settings, name, null, null);
+      if (pinned) {
+        const binary = managedBinary(home, name, pinned, toolchain.binary);
+        write(`  ${''.padEnd(14)} pinned ${pinned} — `
+          + (binary ? `managed: ${binary}` : 'NOT INSTALLED, so sessions fall back to PATH'));
+        if (!binary) {
+          write(`  ${''.padEnd(14)} \`daoris harness pin ${name} ${pinned}\` installs it`);
+        }
+      }
+
+      for (const [circle, map] of Object.entries(settings.workspaceVersions)) {
+        if (map[name]) write(`  ${''.padEnd(14)} pinned ${map[name]} for the \`${circle}\` circle`);
       }
 
       if (report.profiles.length === 0) {

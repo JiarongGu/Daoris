@@ -214,6 +214,7 @@ public sealed class DriverModule : ModuleBase
 
                 var config = DriverConfig.Load(_loop.ConfigPath);
                 var roster = await _loop.Harnesses.RosterAsync(config, refresh, cancellationToken);
+                var settings = _loop.Harnesses.Settings;
 
                 return new
                 {
@@ -226,6 +227,19 @@ public sealed class DriverModule : ModuleBase
                         report.Version,
                         report.Problem,
                         report.MachineDefault,
+                        // The managed toolchain (TOOL2/D57). `Pinned` is what the machine asked for
+                        // and `Managed` is what is actually there — they differ exactly when a pin
+                        // names a version nobody installed, which the surface must say rather than
+                        // imply the pin is in force.
+                        Pinned = settings.ResolveVersion(report.Adapter, null, null),
+                        Managed = HarnessSettings.ManagedBinary(
+                            _loop.Harnesses.Home, report.Adapter,
+                            settings.ResolveVersion(report.Adapter, null, null),
+                            _loop.Harnesses.Toolchain(report.Adapter)?.Binary ?? []),
+                        // Whether this harness CAN be pinned at all. A harness that declares no
+                        // package has no version for Daoris to fetch, and a surface offering the
+                        // control anyway would be a button whose only outcome is a refusal.
+                        Pinnable = _loop.Harnesses.Toolchain(report.Adapter)?.Package is { Length: > 0 },
                         // The profile HOME is a machine path, and this bridge is the one surface
                         // allowed to carry one (D47 §4) — the page renders it so a person can find
                         // the directory they were told Daoris owns.
@@ -268,9 +282,13 @@ public sealed class DriverModule : ModuleBase
                             ?? _loop.Harnesses.Settings.Resolve(harness, null, null)
                             ?? "default"),
                         stream, cancellationToken),
+                    // The managed toolchain (TOOL2/D57) — the desktop's half of
+                    // `daoris harness pin|unpin`, over the same file.
+                    "pin" => await PinAsync(harness, toolchain, stream, request, cancellationToken),
+                    "unpin" => Unpin(harness),
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
-                        $"unknown harness action '{action}' — one of: install, update, login",
+                        $"unknown harness action '{action}' — one of: install, update, login, pin, unpin",
                         ("action", action)),
                 };
 
@@ -527,6 +545,34 @@ public sealed class DriverModule : ModuleBase
             Session = $"{harness}:{action}",
             Lines = new[] { new { Sequence = Interlocked.Increment(ref sequence), Text = line } },
         });
+    }
+
+    /// <summary>
+    /// Install a version into the directory Daoris owns, and pin to it — <b>in that order</b>
+    /// (TOOL2/D57).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 The pin is written only after the install succeeded. A pin naming a version that is not
+    /// there refuses every spawn, so writing it first would turn a failed download into a machine
+    /// that cannot start a session.
+    /// </remarks>
+    private async Task<int> PinAsync(
+        string harness, HarnessToolchain toolchain, Action<string> stream, IpcRequest request,
+        CancellationToken ct)
+    {
+        var version = PayloadHelper.GetRequiredValue<string>(request.Payload, "version");
+        var code = await HarnessActions.PinAsync(
+            toolchain, _loop.Harnesses.Home, harness, version, stream, ct);
+
+        if (code == 0) _loop.Harnesses.Settings.WithVersion(harness, version).Save(_loop.Harnesses.SettingsPath);
+        return code;
+    }
+
+    /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
+    private int Unpin(string harness)
+    {
+        _loop.Harnesses.Settings.WithVersion(harness, null).Save(_loop.Harnesses.SettingsPath);
+        return 0;
     }
 
     private object State()

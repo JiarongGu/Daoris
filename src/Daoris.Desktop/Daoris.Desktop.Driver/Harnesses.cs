@@ -73,6 +73,12 @@ public sealed record LoginQuestion(IReadOnlyList<string> Arguments, string Logge
 /// the harness itself, because the credential it obtains belongs in the harness's own store.
 /// </param>
 /// <param name="LoginCheck">How to ask a profile's login state. Null leaves every profile <see cref="LoginState.Unknown"/>.</param>
+/// <param name="Package">
+/// The package a managed install fetches, when Daoris owns the binary (TOOL2/D57). Declared rather
+/// than parsed out of <paramref name="Install"/>, because the two are different questions: one is
+/// "how does this tool put itself on a machine", the other is "what do I fetch into a directory I
+/// own". A harness that declares none cannot be pinned, and says so.
+/// </param>
 public sealed record HarnessToolchain(
     IReadOnlyList<string> Binary,
     IReadOnlyList<string> VersionArguments,
@@ -80,7 +86,8 @@ public sealed record HarnessToolchain(
     IReadOnlyList<string>? Install = null,
     IReadOnlyList<string>? UpdateArguments = null,
     IReadOnlyList<string>? LoginArguments = null,
-    LoginQuestion? LoginCheck = null)
+    LoginQuestion? LoginCheck = null,
+    string? Package = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -124,15 +131,30 @@ public sealed record HarnessReport(
 /// </remarks>
 /// <param name="Defaults">Harness → profile, for this machine.</param>
 /// <param name="Workspaces">Workspace → harness → profile. The natural cut: a work account for the work circle.</param>
+/// <param name="Versions">
+/// Harness → pinned version, for this machine (TOOL2/D57) — which binary a session spawns when
+/// Daoris manages it. Absent means <c>PATH</c>.
+/// </param>
+/// <param name="WorkspaceVersions">Workspace → harness → pinned version. The same cut as the profiles.</param>
 public sealed record HarnessSettings(
     IReadOnlyDictionary<string, string>? Defaults = null,
-    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? Workspaces = null)
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? Workspaces = null,
+    IReadOnlyDictionary<string, string>? Versions = null,
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? WorkspaceVersions = null)
 {
     public IReadOnlyDictionary<string, string> Defaults { get; init; } =
         Defaults ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Workspaces { get; init; } =
         Workspaces ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <inheritdoc cref="Versions"/>
+    public IReadOnlyDictionary<string, string> Versions { get; init; } =
+        Versions ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <inheritdoc cref="WorkspaceVersions"/>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceVersions { get; init; } =
+        WorkspaceVersions ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
     public const string PathVariable = "DAORIS_HARNESS_CONFIG";
 
@@ -176,7 +198,10 @@ public sealed record HarnessSettings(
                 }
             }
 
-            return new HarnessSettings(defaults, workspaces);
+            return new HarnessSettings(
+                defaults, workspaces,
+                ReadMap(document.RootElement, "versions"),
+                ReadCircles(document.RootElement, "workspaceVersions"));
         }
         catch (Exception error)
             when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -205,20 +230,20 @@ public sealed record HarnessSettings(
 
             writer.WriteEndObject();
 
-            writer.WriteStartObject("workspaces");
-            foreach (var (workspace, map) in Workspaces.OrderBy(e => e.Key, StringComparer.Ordinal))
-            {
-                if (map.Count == 0) continue;
-                writer.WriteStartObject(workspace);
-                foreach (var (harness, profile) in map.OrderBy(e => e.Key, StringComparer.Ordinal))
-                {
-                    writer.WriteString(harness, profile);
-                }
+            WriteCircles(writer, "workspaces", Workspaces);
 
-                writer.WriteEndObject();
+            // 🔴 The pins go out too, or this write DELETES what `daoris harness pin` put there.
+            // Both artefacts write this one file, and a save that knew only about profiles would
+            // compile, pass every profile test, and silently lose somebody's toolchain (TOOL2).
+            writer.WriteStartObject("versions");
+            foreach (var (harness, version) in Versions.OrderBy(e => e.Key, StringComparer.Ordinal))
+            {
+                writer.WriteString(harness, version);
             }
 
             writer.WriteEndObject();
+            WriteCircles(writer, "workspaceVersions", WorkspaceVersions);
+
             writer.WriteEndObject();
         }
 
@@ -277,6 +302,95 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
+    /// Which version a spawn runs at: the person's pick, the workspace's pin, the machine's, or
+    /// <b>none at all</b> — and none means whatever the machine has on <c>PATH</c> (TOOL2/D57).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 The exact twin of <see cref="Resolve"/>, including what absence means. A machine that
+    /// installed the harness itself, and a contributor who never ran Daoris, both keep working
+    /// (D48 §2a) — which is why nothing pinned may ever come to mean an empty managed directory.
+    /// </remarks>
+    public string? ResolveVersion(string harness, string? workspace, string? chosen)
+    {
+        if (!string.IsNullOrWhiteSpace(chosen)) return chosen.Trim();
+
+        if (!string.IsNullOrWhiteSpace(workspace)
+            && WorkspaceVersions.TryGetValue(workspace.Trim(), out var circle)
+            && circle.TryGetValue(harness, out var perCircle)
+            && !string.IsNullOrWhiteSpace(perCircle))
+        {
+            return perCircle;
+        }
+
+        return Versions.TryGetValue(harness, out var machine) && !string.IsNullOrWhiteSpace(machine)
+            ? machine
+            : null;
+    }
+
+    /// <summary>Set or clear this machine's pinned version for a harness. Null clears.</summary>
+    public HarnessSettings WithVersion(string harness, string? version)
+    {
+        var versions = new Dictionary<string, string>(Versions, StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(version)) versions.Remove(harness);
+        else versions[harness] = version.Trim();
+
+        return this with { Versions = versions };
+    }
+
+    /// <summary>Set or clear one workspace's pinned version for a harness. Null clears.</summary>
+    public HarnessSettings WithWorkspaceVersion(string workspace, string harness, string? version)
+    {
+        var circles = new Dictionary<string, IReadOnlyDictionary<string, string>>(
+            WorkspaceVersions, StringComparer.OrdinalIgnoreCase);
+        var circle = circles.TryGetValue(workspace, out var existing)
+            ? new Dictionary<string, string>(existing, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(version)) circle.Remove(harness);
+        else circle[harness] = version.Trim();
+
+        if (circle.Count == 0) circles.Remove(workspace);
+        else circles[workspace] = circle;
+
+        return this with { WorkspaceVersions = circles };
+    }
+
+    /// <summary>Where a managed version of a harness lives. Daoris owns this location, binary and all.</summary>
+    public static string ManagedHome(string home, string harness, string version) =>
+        Path.Combine(home, "toolchain", SafeName(harness, "harness name"), SafeName(version, "version"));
+
+    /// <summary>
+    /// The executable inside a managed install, or null when nothing is pinned or nothing is
+    /// installed at the pin.
+    /// </summary>
+    /// <remarks>
+    /// <b>npm's layout, because npm is how these harnesses ship</b>: <c>--prefix &lt;dir&gt;</c> puts
+    /// the shims in <c>&lt;dir&gt;/node_modules/.bin</c>, with a <c>.cmd</c> beside the shell script
+    /// on Windows — whichever exists is the answer.
+    ///
+    /// <para>🔴 A pin whose directory is not there answers null, and every caller falls back to
+    /// <c>PATH</c> and <b>says so</b>. Silently running a different tool than the one the person
+    /// pinned, and reporting success, is the failure this shape exists to prevent.</para>
+    /// </remarks>
+    public static string? ManagedBinary(
+        string home, string harness, string? version, IReadOnlyList<string> binary)
+    {
+        if (string.IsNullOrWhiteSpace(version) || binary.Count == 0) return null;
+
+        var bin = Path.Combine(ManagedHome(home, harness, version), "node_modules", ".bin");
+        foreach (var candidate in new[]
+                 {
+                     Path.Combine(bin, binary[0] + ".cmd"),
+                     Path.Combine(bin, binary[0]),
+                 })
+        {
+            if (File.Exists(candidate)) return candidate;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Where a named profile's configuration home is. <b>Daoris owns this location and nothing
     /// inside it.</b>
     /// </summary>
@@ -314,9 +428,52 @@ public sealed record HarnessSettings(
 
         return bad
             ? throw new DriverException(
-                $"`{value}` is not a usable {what} — letters, digits, dashes. A profile is a directory "
-                + "Daoris owns the location of, so its name may not point anywhere else.")
+                $"`{value}` is not a usable {what} — letters, digits, dashes and dots. It becomes a "
+                + "directory Daoris owns the location of, so it may not point anywhere else.")
             : trimmed;
+    }
+
+    /// <inheritdoc cref="Name"/>
+    private static string SafeName(string value, string what) => Name(value, what);
+
+    /// <summary>One workspace → harness → value map, read from a named property.</summary>
+    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> ReadCircles(
+        JsonElement root, string property)
+    {
+        var circles = new Dictionary<string, IReadOnlyDictionary<string, string>>(
+            StringComparer.OrdinalIgnoreCase);
+
+        if (root.TryGetProperty(property, out var element) && element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var circle in element.EnumerateObject())
+            {
+                if (circle.Value.ValueKind != JsonValueKind.Object) continue;
+                circles[circle.Name] = ReadMap(circle.Value, null);
+            }
+        }
+
+        return circles;
+    }
+
+    /// <summary>The write half of <see cref="ReadCircles"/>. An empty circle is not written at all.</summary>
+    private static void WriteCircles(
+        Utf8JsonWriter writer, string property,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> circles)
+    {
+        writer.WriteStartObject(property);
+        foreach (var (workspace, map) in circles.OrderBy(e => e.Key, StringComparer.Ordinal))
+        {
+            if (map.Count == 0) continue;
+            writer.WriteStartObject(workspace);
+            foreach (var (harness, value) in map.OrderBy(e => e.Key, StringComparer.Ordinal))
+            {
+                writer.WriteString(harness, value);
+            }
+
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
     }
 
     private static IReadOnlyDictionary<string, string> ReadMap(JsonElement parent, string? property)
@@ -488,13 +645,26 @@ public static class HarnessProbe
     }
 
     /// <summary>
-    /// Put a profile's configuration home into a process's environment, through the seam the harness
-    /// itself provides for it. <b>Creating the directory is part of selecting it</b>: at least one
+    /// Put a spawn's account and its binary onto a process, through the seams the harness itself
+    /// provides. <b>Creating the profile directory is part of selecting it</b>: at least one
     /// supported harness refuses to start when its home variable names a path that does not exist,
     /// and Daoris owns that location by design.
     /// </summary>
-    internal static void Apply(ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome)
+    /// <param name="binary">
+    /// The managed executable to run instead of whatever the adapter resolved (TOOL2/D57), or null
+    /// for <c>PATH</c> — which is the unpinned case and therefore the usual one.
+    /// </param>
+    /// <remarks>
+    /// 🔴 <b>Both doors go through here</b>, which is why the pin is applied in this one place rather
+    /// than inside each adapter's <c>Prepare</c>: an adapter that forgot it would spawn the wrong
+    /// binary and record the pinned version beside it.
+    /// </remarks>
+    internal static void Apply(
+        ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome, string? binary = null)
     {
+        // The arguments the adapter built stay exactly as they are: same tool, different location.
+        if (binary is { Length: > 0 }) info.FileName = binary;
+
         if (profileHome is null) return;
 
         if (toolchain.ProfileVariable is not { Length: > 0 } variable)
@@ -523,8 +693,14 @@ public static class HarnessProbe
 /// <param name="Profile">The profile it runs as, or null for the harness's own configuration home.</param>
 /// <param name="ProfileHome">Where that profile lives. Machine-local: it goes into no record and over no wire.</param>
 /// <param name="Version">The harness version observed, for the record.</param>
+/// <param name="Binary">
+/// The managed executable this spawn runs (TOOL2/D57), or <b>null for whatever is on <c>PATH</c></b>
+/// — which is the unpinned case and therefore the usual one. Machine-local like the profile home:
+/// it is a path, so it goes into no record and over no wire.
+/// </param>
 public sealed record HarnessSelection(
-    string? Refusal, string? Profile = null, string? ProfileHome = null, string? Version = null)
+    string? Refusal, string? Profile = null, string? ProfileHome = null, string? Version = null,
+    string? Binary = null)
 {
     public bool Allowed => Refusal is null;
 }
@@ -625,6 +801,27 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var settings = Settings;
         var profile = settings.Resolve(resolved.Name, workspace, chosen);
 
+        // Which binary this spawn runs (TOOL2/D57): the explicit command, then the managed pin, then
+        // PATH. An explicit `commands` entry is the person naming exactly what to run and has the
+        // last word — a pin quietly replacing it would be a standing choice overruling a specific one.
+        string? managed = null;
+        if (config.Commands.GetValueOrDefault(resolved.Name) is not { Count: > 0 }
+            && settings.ResolveVersion(resolved.Name, workspace, chosen: null) is { } pinned)
+        {
+            managed = HarnessSettings.ManagedBinary(Home, resolved.Name, pinned, toolchain.Binary);
+            if (managed is null)
+            {
+                // 🔴 Refused, never a silent fall back to PATH. Running a different tool than the one
+                // that was pinned — and recording its version as though it were the pinned one —
+                // is the failure this whole shape exists to prevent.
+                return new HarnessSelection(
+                    $"`{resolved.Name}` is pinned to {pinned} on this machine, and nothing is "
+                    + $"installed at that version — `daoris harness pin {resolved.Name} {pinned}` "
+                    + $"installs it, and `daoris harness unpin {resolved.Name}` goes back to PATH. "
+                    + "Daoris will not quietly run a different version than the one you asked for.");
+            }
+        }
+
         var report = await ReportAsync(resolved.Name, config, refresh: false, ct).ConfigureAwait(false);
         if (report is { Present: false })
         {
@@ -645,7 +842,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 + "running loop is a moving target.");
         }
 
-        if (profile is null) return new HarnessSelection(null, null, null, report?.Version);
+        if (profile is null) return new HarnessSelection(null, null, null, report?.Version, managed);
 
         var home = HarnessSettings.ProfileHome(Home, resolved.Name, profile);
         var login = report?.Profiles.FirstOrDefault(
@@ -670,7 +867,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 + "credential stays in the harness's own store.");
         }
 
-        return new HarnessSelection(null, profile, home, report?.Version);
+        return new HarnessSelection(null, profile, home, report?.Version, managed);
     }
 }
 
@@ -698,6 +895,22 @@ public static class HarnessActions
             : throw new DriverException(
                 "that harness declares no installer, so Daoris has no sanctioned way to install it. "
                 + "Install it with its own tooling; Daoris will find it on the next probe.");
+
+    /// <summary>
+    /// Install one version into the directory Daoris owns (TOOL2/D57), leaving the machine's own
+    /// install alone. npm's own `--prefix`, aimed somewhere Daoris chose.
+    /// </summary>
+    public static Task<int> PinAsync(
+        HarnessToolchain toolchain, string home, string harness, string version, Action<string> write,
+        CancellationToken ct = default) =>
+        toolchain.Package is { Length: > 0 } package
+            ? RunAsync(
+                ["npm", "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
+                 $"{package}@{version}"],
+                toolchain, profileHome: null, write, ct)
+            : throw new DriverException(
+                "that harness declares no package, so Daoris has no sanctioned way to fetch a version "
+                + "of it. Install it with its own tooling and Daoris will find it on PATH.");
 
     /// <summary>Update a present harness through its own updater.</summary>
     public static Task<int> UpdateAsync(

@@ -363,7 +363,8 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         LoginCheck: new LoginQuestion(
             ["auth", "status"],
             LoggedIn: @"""loggedIn""\s*:\s*true",
-            LoggedOut: @"""loggedIn""\s*:\s*false"));
+            LoggedOut: @"""loggedIn""\s*:\s*false"),
+        Package: "@anthropic-ai/claude-code");
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : ["claude"];

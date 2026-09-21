@@ -374,15 +374,12 @@ answers narrowed the rest: **usage is measured before it is managed**, and bread
 adapters plus the ACP door, not a registry**. So **D49 §4 and D24 both stand**, which is why none of
 the items below needs a credential or a model name. Take them in order.
 
-- [ ] **TOOL2 — the managed CLI** (design §3). A managed harness under
-  `~/.daoris/toolchain/<harness>/<version>/`, installed by the harness's own installer aimed there
-  rather than at the machine (`npm install --prefix`). Selection at spawn is **explicit command →
-  managed pin → `PATH`**, and the pin resolves exactly as a credential profile does (pick →
-  workspace → machine → none) — one resolution rule, not a second that drifts. **Absent means
-  `PATH`, which is today's behaviour byte for byte**: additive like trees and profiles, so a machine
-  that installed `claude` itself keeps working (D48 §2a). Two doors: `daoris harness pin|unpin` and
-  the Machine view. The version is already on every session record, so "what produced this work"
-  needs nothing new. It makes ACP2's `CLAUDE_CODE_EXECUTABLE` → "the managed `claude`" true.
+**TOOL2 landed 2026-09-22** (in the archive): `daoris harness pin|unpin` plus the Machine view's
+half, and a pin that decides what a session actually spawns. It became the **fourth rule of the twin
+contract** — *the binary is the explicit command, then the managed pin, then `PATH`* — and 🔴 **absent
+still means `PATH`, byte for byte**. A pin nobody installed **refuses** rather than falling back,
+because running a different tool than the one that was pinned and recording the pinned version beside
+it is worse than not supporting pins.
 
 - [ ] **TOOL3 — measurement** (design §4). Parse ACP's `usage_update` structurally instead of
   rendering it to a line; record per session (context used against the window, at high-water) and

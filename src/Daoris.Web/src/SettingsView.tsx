@@ -211,10 +211,18 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // Which action is running, so its console can be shown under the harness that is doing it. One at
   // a time by construction: two installers racing over one PATH is not a thing to make easy.
   const [running, setRunning] = useState<string | null>(null);
+  // The version being typed per harness (TOOL2). Local to the form: a pin only exists once the
+  // install behind it succeeded, so there is nothing to remember until then.
+  const [pinning, setPinning] = useState<Record<string, string>>({});
 
-  const run = (harness: string, action: 'install' | 'update' | 'login', profile?: string) => {
+  const run = (
+    harness: string,
+    action: 'install' | 'update' | 'login' | 'pin' | 'unpin',
+    profile?: string,
+    version?: string,
+  ) => {
     setRunning(`${harness}:${action}`);
-    act.mutate({ harness, action, profile }, {
+    act.mutate({ harness, action, profile, version }, {
       // The harness's own exit code decides which it was: Daoris ran somebody else's tool and reports
       // what it did, rather than deciding on its behalf that it went well.
       onSuccess: (result) => (result.exitCode === 0
@@ -265,6 +273,60 @@ function HarnessRoster({ notify }: { notify: Notify }) {
           {/* The absence names what it is, rather than leaving a person to guess at a blank row. */}
           {harness.problem && (
             <p className="mt-1.5 text-small text-ink-soft">{harness.problem}</p>
+          )}
+
+          {/* The managed toolchain (TOOL2/D57). Absent means PATH, which is the usual case and is
+              stated rather than left blank — "Daoris manages this" and "the machine happens to have
+              one" are different facts about the same working session.
+
+              Absent entirely where the harness declares no package: a control whose only outcome is
+              a refusal is worse than none, and the WHY lives once in the card's body rather than
+              beside every row (measured — repeated per harness it was two long lines each). */}
+          {harness.pinnable && (
+          <div className="mt-2 flex flex-wrap items-baseline gap-2">
+            {harness.pinned ? (
+              <>
+                <Pill tone={harness.managed ? 'done' : 'declined'}>
+                  {t(harness.managed ? 'harness.pin.pinned' : 'harness.pin.missing',
+                    { version: harness.pinned })}
+                </Pill>
+                {harness.managed && (
+                  <Tip content={t('harness.pin.managedTip')}>
+                    <span className="break-all font-mono text-meta text-ink-faint">{harness.managed}</span>
+                  </Tip>
+                )}
+                <Button
+                  variant="ghost"
+                  className="ml-auto"
+                  disabled={act.isPending}
+                  onClick={() => run(harness.harness, 'unpin')}
+                >
+                  {t('harness.pin.unpin')}
+                </Button>
+              </>
+            ) : (
+              <>
+                <span className="text-small text-ink-faint">{t('harness.pin.fromPath')}</span>
+                <span className="ml-auto flex items-baseline gap-2">
+                  <input
+                    aria-label={t('harness.pin.version', { harness: harness.harness })}
+                    value={pinning[harness.harness] ?? ''}
+                    onChange={(event) => setPinning(
+                      (held) => ({ ...held, [harness.harness]: event.target.value }))}
+                    placeholder={t('harness.pin.placeholder')}
+                    className="w-32 rounded-control border border-line bg-raised px-2 py-1 font-mono text-small"
+                  />
+                  <Button
+                    disabled={act.isPending || !(pinning[harness.harness] ?? '').trim()}
+                    onClick={() => run(
+                      harness.harness, 'pin', undefined, (pinning[harness.harness] ?? '').trim())}
+                  >
+                    {t('harness.pin.action')}
+                  </Button>
+                </span>
+              </>
+            )}
+          </div>
           )}
 
           {(harness.profiles ?? []).length === 0 ? (

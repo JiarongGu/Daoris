@@ -147,8 +147,9 @@ risk, **authorship** was.
   working), **usage is measured before it is managed** (ACP's `usage_update`, machine-local because
   it names a profile), and breadth is **more native adapters plus the ACP door, never a registry**.
   Nothing was reopened: measurement needs no credential and native adapters need no catalogue, so
-  D49 §4 and D24 both stand. TOOL2–TOOL5 in `TASKS.md`; **TOOL4 (rotation) is held** until
-  measurement says what exhaustion looks like.
+  D49 §4 and D24 both stand. **TOOL2 landed** — `daoris harness pin|unpin`, a fourth twin rule
+  (*explicit command → managed pin → `PATH`*), and a pin nobody installed **refuses**. TOOL3–TOOL5
+  in `TASKS.md`; TOOL4 is held.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

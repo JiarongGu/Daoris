@@ -235,7 +235,7 @@ public sealed class Driver(
             // and no adapter can forget it.
             if (adapter.Toolchain is { } toolchain)
             {
-                HarnessProbe.Apply(info, toolchain, selection.ProfileHome);
+                HarnessProbe.Apply(info, toolchain, selection.ProfileHome, selection.Binary);
             }
 
             await service.AdvanceAsync(

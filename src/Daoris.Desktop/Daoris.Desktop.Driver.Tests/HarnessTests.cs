@@ -110,6 +110,87 @@ public sealed class HarnessSettingsTests : IDisposable
         Assert.Equal("work", read.Resolve("claude-code", "aurora", null));
     }
 
+    /// <summary>
+    /// Twin rule 4 (TOOL2/D57): the binary is the explicit command, then the managed pin, then
+    /// <c>PATH</c> — and the pin resolves by exactly the rule a profile does.
+    /// </summary>
+    [Fact]
+    public void A_pin_is_the_pick_then_the_workspace_then_the_machine_then_none()
+    {
+        var settings = new HarnessSettings()
+            .WithVersion("claude-code", "1.2.3")
+            .WithWorkspaceVersion("aurora", "claude-code", "2.0.0");
+
+        Assert.Equal("9.9.9", settings.ResolveVersion("claude-code", "aurora", "9.9.9"));
+        Assert.Equal("2.0.0", settings.ResolveVersion("claude-code", "aurora", null));
+        Assert.Equal("1.2.3", settings.ResolveVersion("claude-code", "tools", null));
+        Assert.Equal("1.2.3", settings.ResolveVersion("claude-code", null, null));
+        Assert.Null(settings.ResolveVersion("codex", "aurora", null));
+    }
+
+    /// <summary>
+    /// 🔴 The rule that must never regress, and the twin of "no profile means the harness's own
+    /// home": nothing pinned means whatever the machine has on <c>PATH</c> (D48 §2a).
+    /// </summary>
+    [Fact]
+    public void Nothing_pinned_means_whatever_the_machine_has()
+    {
+        Assert.Null(new HarnessSettings().ResolveVersion("claude-code", "aurora", null));
+        Assert.Null(HarnessSettings.ManagedBinary(_home, "claude-code", null, ["claude"]));
+    }
+
+    /// <summary>
+    /// 🔴 <b>The pin must survive a write from this side.</b> The CLI writes `versions` and this
+    /// artefact writes the same file; a `Save` that knew only about profiles would silently DELETE
+    /// somebody's pin, which is the exact shape of counterpart-set rot — it compiles, it passes every
+    /// test about profiles, and it loses data.
+    /// </summary>
+    [Fact]
+    public void The_pins_round_trip_through_the_file_beside_the_profiles()
+    {
+        new HarnessSettings()
+            .WithDefault("claude-code", "personal")
+            .WithVersion("claude-code", "1.2.3")
+            .WithWorkspaceVersion("aurora", "claude-code", "2.0.0")
+            .Save(Path_);
+
+        var read = HarnessSettings.Load(Path_);
+
+        Assert.Equal("1.2.3", read.ResolveVersion("claude-code", null, null));
+        Assert.Equal("2.0.0", read.ResolveVersion("claude-code", "aurora", null));
+        // And the profile beside it is untouched, which is the other half of the same worry.
+        Assert.Equal("personal", read.Resolve("claude-code", null, null));
+    }
+
+    /// <summary>
+    /// A pin naming a version nobody installed answers null, so the caller falls back to PATH — and
+    /// the surfaces say so rather than implying the pin is in force.
+    /// </summary>
+    [Fact]
+    public void A_pin_with_nothing_installed_at_it_resolves_to_nothing()
+    {
+        Assert.Null(HarnessSettings.ManagedBinary(_home, "claude-code", "9.9.9", ["claude"]));
+
+        var bin = System.IO.Path.Combine(
+            HarnessSettings.ManagedHome(_home, "claude-code", "1.2.3"), "node_modules", ".bin");
+        Directory.CreateDirectory(bin);
+        var shim = System.IO.Path.Combine(bin, OperatingSystem.IsWindows() ? "claude.cmd" : "claude");
+        File.WriteAllText(shim, "");
+
+        Assert.Equal(shim, HarnessSettings.ManagedBinary(_home, "claude-code", "1.2.3", ["claude"]));
+    }
+
+    /// <summary>A version becomes a directory name, so it takes the same refusal a profile does.</summary>
+    [Fact]
+    public void A_version_that_would_escape_the_toolchain_directory_is_refused()
+    {
+        foreach (var version in new[] { "../escape", "a/b", "a\\b", "", "  ", ".", ".." })
+        {
+            Assert.ThrowsAny<Exception>(
+                () => HarnessSettings.ManagedHome(_home, "claude-code", version));
+        }
+    }
+
     /// <summary>Clearing a default is naming none — and it leaves the other circles alone.</summary>
     [Fact]
     public void A_cleared_default_leaves_every_other_wiring_standing()
@@ -410,6 +491,104 @@ public sealed class HarnessSelectionTests : IDisposable
         Assert.Null(selection.Profile);
         Assert.Null(selection.ProfileHome);
         Assert.Equal("present 1.2.3", selection.Version);
+    }
+
+    /// <summary>
+    /// 🔴 <b>The additive case for the toolchain</b> (TOOL2/D57), and the twin of the one above.
+    /// Nothing pinned means the spawn runs whatever is on <c>PATH</c> — the selection names no
+    /// binary at all, so nothing overrides what the adapter built.
+    /// </summary>
+    [Fact]
+    public async Task With_no_version_pinned_the_spawn_runs_what_the_machine_has()
+    {
+        var roster = new HarnessRoster(Set(Toolchain(Present())), Settings);
+
+        var selection = await roster.SelectAsync("fake", Config(), workspace: "aurora", chosen: null);
+
+        Assert.True(selection.Allowed);
+        Assert.Null(selection.Binary);
+    }
+
+    /// <summary>A pin with an install behind it is what the spawn runs, rather than `PATH`.</summary>
+    [Fact]
+    public async Task A_pinned_version_is_the_binary_the_spawn_runs()
+    {
+        new HarnessSettings().WithVersion("fake", "1.2.3").Save(Settings);
+        var shim = Install("1.2.3");
+
+        var selection = await new HarnessRoster(Set(Toolchain(Present())), Settings)
+            .SelectAsync("fake", Config(), workspace: null, chosen: null);
+
+        Assert.True(selection.Allowed);
+        Assert.Equal(shim, selection.Binary);
+    }
+
+    /// <summary>
+    /// 🔴 A pin nobody installed <b>refuses the spawn</b> rather than quietly running `PATH`. Falling
+    /// back would run a different tool than the one the person asked for and report success — and
+    /// the version on the record would then be a claim about the wrong binary.
+    /// </summary>
+    [Fact]
+    public async Task A_pin_with_nothing_installed_at_it_refuses_and_says_how_to_fix_it()
+    {
+        new HarnessSettings().WithVersion("fake", "9.9.9").Save(Settings);
+
+        var selection = await new HarnessRoster(Set(Toolchain(Present())), Settings)
+            .SelectAsync("fake", Config(), workspace: null, chosen: null);
+
+        Assert.False(selection.Allowed);
+        Assert.Contains("9.9.9", selection.Refusal);
+        // Every refusal in this class names the action that fixes it.
+        Assert.Contains("pin", selection.Refusal);
+    }
+
+    /// <summary>
+    /// The explicit command outranks the pin: a person naming exactly what to run in `driver.json`
+    /// has said the last word, and a pin quietly replacing it would be the surface overruling them.
+    /// </summary>
+    [Fact]
+    public async Task An_explicit_command_outranks_the_pin()
+    {
+        new HarnessSettings().WithVersion("fake", "1.2.3").Save(Settings);
+        Install("1.2.3");
+
+        var config = Config() with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["fake"] = ["node", "elsewhere.mjs"] },
+        };
+        var selection = await new HarnessRoster(Set(Toolchain(Present())), Settings)
+            .SelectAsync("fake", config, workspace: null, chosen: null);
+
+        Assert.True(selection.Allowed);
+        Assert.Null(selection.Binary);
+    }
+
+    /// <summary>A circle's pin outranks the machine's, exactly as its profile does.</summary>
+    [Fact]
+    public async Task A_workspace_pin_outranks_the_machine_s()
+    {
+        new HarnessSettings()
+            .WithVersion("fake", "1.2.3")
+            .WithWorkspaceVersion("aurora", "fake", "2.0.0")
+            .Save(Settings);
+        Install("1.2.3");
+        var theirs = Install("2.0.0");
+
+        var selection = await new HarnessRoster(Set(Toolchain(Present())), Settings)
+            .SelectAsync("fake", Config(), workspace: "aurora", chosen: null);
+
+        Assert.Equal(theirs, selection.Binary);
+    }
+
+    /// <summary>A managed install, as npm would leave it.</summary>
+    private string Install(string version)
+    {
+        var bin = Path.Combine(
+            HarnessSettings.ManagedHome(_home, "fake", version), "node_modules", ".bin");
+        Directory.CreateDirectory(bin);
+        var shim = Path.Combine(bin, OperatingSystem.IsWindows() ? "node.cmd" : "node");
+        File.WriteAllText(shim, "");
+        return shim;
     }
 
     /// <summary>The version observed at spawn is what the record will carry — asked, not assumed.</summary>
