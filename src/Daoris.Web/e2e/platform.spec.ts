@@ -308,6 +308,35 @@ test('a browser has one frame, and it is Manage (D55)', async ({ page }) => {
 });
 
 /**
+ * The command palette lists nothing a browser cannot do (SURF9). A palette is a PROMISE that what it
+ * lists can be done, so the disclosure boundary is enforced by omission rather than by a disabled
+ * row — and this is the assertion that the omission actually reaches the page, not just the registry.
+ */
+test('the palette offers a browser nothing that needs this machine (SURF9)', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
+
+  const palette = page.getByRole('dialog');
+  await expect(palette).toBeVisible();
+
+  // The management domains are all here.
+  await expect(palette.getByRole('option', { name: /Overview/ })).toBeVisible();
+  await expect(palette.getByRole('option', { name: /Search/ })).toBeVisible();
+
+  // Nothing that needs a shell is — not disabled, ABSENT.
+  await expect(palette.getByRole('option', { name: /Machine/ })).toHaveCount(0);
+  await expect(palette.getByRole('option', { name: /Switch to Work/ })).toHaveCount(0);
+  await expect(palette.getByRole('option', { name: /Start a session/ })).toHaveCount(0);
+  await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
+
+  // It opens on the keyboard too, which is the affordance it exists to be.
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('Control+k');
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
+
+/**
  * The chrome holds its shape on a narrow window (SURF10/SURF7).
  *
  * This is here because it was BROKEN and nothing noticed. The 15rem sidebar the activity bar

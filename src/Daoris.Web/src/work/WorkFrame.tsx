@@ -60,7 +60,7 @@ function remember(key: string, value: string): void {
  * pane with extra chrome — so the timeline stays in the attended column and moves when it has
  * company.
  */
-export function WorkFrame({ selected, onSelect, notify, onSendBack }: {
+export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIntentTaken }: {
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -75,6 +75,12 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack }: {
    * goes through the channel `repository-owns-its-work` sanctions rather than around it.
    */
   onSendBack?: (repository: string) => void;
+  /**
+   * What the command palette asked for (SURF9) — an event, consumed on arrival, because leaving it
+   * set would reopen the drawer every time anything here re-rendered.
+   */
+  intent?: 'start' | 'review' | null;
+  onIntentTaken?: () => void;
 }) {
   const { t } = useTranslation();
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -173,6 +179,12 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack }: {
       onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };
+
+  if (intent) {
+    if (intent === 'start') setStarting(true);
+    else setDock('review');
+    onIntentTaken?.();
+  }
 
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));

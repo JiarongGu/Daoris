@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The design language claimed `aria-modal` and no dialog had ever had it (2026-09-22)
+
+**Symptom.** A test written for the new command palette asserted what D41 §6 says every drawer is —
+`role="dialog"` **with `aria-modal`** — and got `null`. Not a palette bug: the existing drawer, which
+that sentence was written about, had never had the attribute either.
+
+**Root cause.** Radix's `Dialog.Content` writes the role, portals the content, traps focus and handles
+ESC — but it does **not** write `aria-modal`. `grep -c aria-modal` in the installed package returns
+**0**. The platform relied on the library for something the library never claimed to do, and the
+design document asserted it as fact.
+
+**Why nothing caught it.** Nothing reads prose. D41 §6 is a design document, the drawer's own tests
+covered its behaviour (opens, closes on ESC, traps focus) and not its ARIA surface, and a missing
+`aria-modal` breaks nothing visible — a sighted person notices no difference at all. It is the exact
+shape `claims-need-checks` describes: the claim and the enforcement are written at different moments
+and only the claim is easy.
+
+**Fix.** Both modal surfaces set `aria-modal="true"` explicitly, and `ui.test.tsx` now asserts it for
+each. The test is written as "every modal surface says it is modal" so the next one is caught by the
+act of not being listed. Removed the attribute from the drawer and watched the assertion go red before
+believing it.
+
+**The trap to inherit.** **A behaviour you get from a library is a claim about the library**, and the
+one place it will not be checked is the document that states it most confidently. When prose in a
+design record says a component *is* something, the cheap move is to grep the dependency for the thing
+before believing it — and the durable one is a test that reads the attribute, because the next
+library upgrade is another chance for this to become false silently.
+
 ## git walks UP, so a diff of a session tree nearly showed the parent project's work (2026-09-22)
 
 **Symptom.** Caught before it shipped, by a test written in the same hour: `WorkingTree.DiffAsync`

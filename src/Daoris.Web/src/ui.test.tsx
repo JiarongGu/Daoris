@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { SessionState } from './api';
 import './i18n';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, Dot, EmptyState, MetaLine, MonoWell, Pill, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, Tile,
+  Button, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SESSION_ACTIVE, SESSION_DOT,
+  SESSION_TONE, Tile,
 } from './ui';
+import { CommandPalette } from './work/CommandPalette';
 
 describe('the primitives', () => {
   it('a pill always carries its text label — status never rides on hue alone', () => {
@@ -140,5 +143,35 @@ describe('the session tone map', () => {
     // Parked counts as active on purpose (D46 §4): the person is the flow control, not an exit.
     expect(SESSION_ACTIVE.has('awaiting-person')).toBe(true);
     expect(STATES.filter((state) => !SESSION_ACTIVE.has(state))).toHaveLength(5);
+  });
+});
+
+/**
+ * D41 §6 says a drawer is `role="dialog"` **with `aria-modal`**. Radix writes the role and traps the
+ * focus but never writes that attribute, so the sentence described the design and not the page — for
+ * as long as it had existed, with every gate green, because no gate reads prose.
+ *
+ * This is the gate that now reads it. It covers every modal surface the platform has, so the next one
+ * is caught by the act of not being listed.
+ */
+describe('every modal surface says it is modal', () => {
+  it('the drawer does', () => {
+    render(
+      <Tooltip.Provider>
+        <Drawer title="Reading" onClose={() => {}}>a knowledge entry</Drawer>
+      </Tooltip.Provider>,
+    );
+    expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('true');
+  });
+
+  it('the command palette does', () => {
+    render(
+      <CommandPalette
+        open
+        commands={[{ id: 'a', title: 'A', group: 'go', icon: 'overview', run: () => {} }]}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('true');
   });
 });

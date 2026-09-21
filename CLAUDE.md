@@ -49,9 +49,8 @@ back, which is what the automation-first direction is for; the archive has the a
 `Daoris.Desktop`, the local driver (D45/D46): the shell brings up the local host, carries the
 platform, runs the driver loop, and lands the person's session controls. The **remote server**
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
-minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode — with
-the quest lock hardened into code (an atomic guarded `Taken`, closed quests immovable) and the
-desktop's sync loop feeding records and content up and mirroring quests down. The family rehearsal
+minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
+quest lock hardened into code, and the desktop's sync loop feeding up and mirroring down. The rehearsal
 gates the whole thing with no model: driver loop, a two-machine remote crossing, **the workspace
 boundary, the registration lifecycle, the remotes map, which commit speaks, a whole
 conversation, a session running as a named account, and **a quest carried to done over the ACP door**
@@ -126,7 +125,8 @@ risk, **authorship** was.
   🔴 **git walks UP** — a diff of a path that is not a repository answers for the one above it
   (FIX-LOG). **SURF6 closed it**: the landed work is a bounded diff in the dock, and its acts —
   accept, discard, send it back — carry every `reaching-in` guard; the merge refuses into a checkout
-  anyone is working in, and the discard asks twice. **SURF5b, SURF8, SURF9 remain.**
+  anyone is working in, and the discard asks twice. **SURF9** made every action addressable by name — a pure registry, absent in a browser by
+  omission. **SURF5b and SURF8 remain.**
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

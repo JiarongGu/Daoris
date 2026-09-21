@@ -377,6 +377,11 @@ export function Drawer({ title, meta, onClose, footer, children }: {
         <Dialog.Overlay className="fixed inset-0 z-10 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
+          // D41 §6 says a drawer is `role="dialog"` WITH `aria-modal`, and Radix sets the role and
+          // traps focus but never writes that attribute — so the sentence was true about the design
+          // and false about the page for as long as it had existed. Stated here, and asserted by
+          // `ui.test.tsx`, because a claim nothing checks is one nobody notices going wrong.
+          aria-modal="true"
           className="fixed inset-y-0 right-0 z-10 flex w-[min(32rem,100%)] flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]"
         >
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">

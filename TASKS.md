@@ -315,11 +315,6 @@ recur across its references and the platform has none of them, which is why Work
 not a nav item. **Nothing built is wasted** — atoms and molecules are frame-independent, which is
 what "a molecule imports no hook" bought. One item the study argues for that nobody had filed:
 
-- [ ] **SURF9 — a command palette.** The only affordance that scales past roughly seven top-level
-  domains, and Daoris is about to have Manage's five plus Work plus Review. It is much cheaper before
-  the count grows than after, because the expensive half is the *discipline* — every action
-  addressable by name — not the widget.
-
 **SURF4 is four items, cut along the layers** (owner, 2026-09-21: *"this is a large UI/UX as a whole,
 so develop it component by component — more of an atomic design pattern — so each part can be tested
 one by one"*). The method, the inventory and the dependency rule are
@@ -357,7 +352,9 @@ title bar held and closed the two-bar interim. **SURF6a landed the same day**: a
 work is a diff, docked beside it — which is also what finally gave the attended column its height,
 because the dock's second occupant let the timeline move out of it. **SURF6b closed it the same day** — accept,
 discard and send-it-back, with every `reaching-in` guard on the merge and a discard that asks twice.
-**SURF5b, SURF8 and SURF9 are what remain of the arc.**
+**SURF9 landed 2026-09-22** — every action
+addressable by name, absent in a browser by omission, paying back the discoverability SURF10 spent.
+**SURF5b and SURF8 are what remain of the arc.**
 
 - [ ] **SURF8 — the monitor window** (D55 §b). `SecondaryWindows`: `monitor` (rail plus live streams,
   read-only, for a second screen) and `session:<id>` (one attended session, detached) — routes into

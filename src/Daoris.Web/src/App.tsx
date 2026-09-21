@@ -25,6 +25,8 @@ import type { Attention } from './work/AttentionRow';
 import { needsAPerson } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, type Mode, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
+import { commands } from './commands';
+import { CommandPalette } from './work/CommandPalette';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
@@ -84,7 +86,7 @@ const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
  * view (D31); the service's sentences render verbatim; UI chrome speaks the active language.
  */
 export function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [tab, setTab] = useState<Tab>('overview');
   const [mode, setMode] = useState<Mode>(rememberedMode);
   const [attending, setAttendingState] = useState<string | null>(() => remembered(ATTENDING));
@@ -92,6 +94,10 @@ export function App() {
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses the two frames.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
+  // The palette (SURF9), and what it asks the Work frame to do. Both are events consumed on arrival
+  // rather than state, for the reason the quest composer's opening draft is.
+  const [palette, setPalette] = useState(false);
+  const [workIntent, setWorkIntent] = useState<'start' | 'review' | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToast = useRef(1);
 
@@ -171,6 +177,20 @@ export function App() {
     remember(MODE, next);
   };
 
+  // Ctrl/Cmd+K, the one this class of application has agreed on. Captured on the window so it works
+  // wherever focus is — except inside a text field, where a person typing is typing.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'k' || !(event.ctrlKey || event.metaKey)) return;
+      const inside = event.target as HTMLElement | null;
+      if (inside?.tagName === 'INPUT' || inside?.tagName === 'TEXTAREA') return;
+      event.preventDefault();
+      setPalette((was) => !was);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // The attended session is remembered alongside the mode (D56), so a relaunch into Work reopens
   // what the person was watching rather than an empty column.
   const setAttending = useCallback((next: string | null) => {
@@ -213,11 +233,23 @@ export function App() {
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
         scope={(
+          <>
+            <Tip content={t('palette.open')}>
+              <Button
+                variant="ghost"
+                aria-label={t('palette.open')}
+                onClick={() => setPalette(true)}
+                className="h-7 w-7 justify-center px-0"
+              >
+                <Icon name="search" size={14} />
+              </Button>
+            </Tip>
           <WorkspaceSwitcher
             workspaces={workspaces.data ?? []}
             value={scope.workspace}
             onChange={scope.setWorkspace}
           />
+          </>
         )}
       />
 
@@ -273,6 +305,8 @@ export function App() {
               selected={attending}
               onSelect={setAttending}
               notify={notify}
+              intent={workIntent}
+              onIntentTaken={() => setWorkIntent(null)}
               // Sending work back is publishing a request, which is the platform's own door — so
               // this switches frames onto the composer rather than growing a second one here.
               onSendBack={(repository) => {
@@ -330,6 +364,28 @@ export function App() {
             repositories: repositories.data?.length ?? 0,
           })
           : undefined}
+      />
+
+      {/* Every action, by name (SURF9). The registry is a pure function of what is true right now,
+          so a browser's list and a shell's list differ by OMISSION rather than by a disabled row —
+          a palette is a promise that what it lists can be done. */}
+      <CommandPalette
+        open={palette}
+        onClose={() => setPalette(false)}
+        commands={commands({
+          label: (id) => t(`command.${id}`),
+          group: (id) => t(`palette.group.${id}`),
+          attached,
+          mode: frame,
+          waiting,
+          go: (target) => { setTab(target); chooseMode('manage'); },
+          setMode: chooseMode,
+          refresh: onRefresh,
+          toggleLanguage: () => void i18n.changeLanguage(
+            i18n.language.startsWith('zh') ? 'en' : 'zh'),
+          startSession: () => { chooseMode('work'); setWorkIntent('start'); },
+          review: () => { chooseMode('work'); setWorkIntent('review'); },
+        })}
       />
 
       {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}

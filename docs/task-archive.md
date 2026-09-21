@@ -2729,3 +2729,52 @@ that can only ever refuse, and one of those is destructive.
 
 **Proven.** 341 web unit (up from 334), 12 Playwright, 259 service, **165 driver** (up from 157 —
 eight against real git), 53 modules, `npm run verify` green, 173/173 family rehearsal.
+
+## SURF9 — a command palette (2026-09-22)
+
+> **SURF9 — a command palette.** The only affordance that scales past roughly seven top-level
+> domains, and Daoris is about to have Manage's five plus Work plus Review. It is much cheaper before
+> the count grows than after, because the expensive half is the *discipline* — every action
+> addressable by name — not the widget.
+
+✅ done 2026-09-22. Ctrl/Cmd+K, and a door in the app strip because a shortcut nobody is told about is
+a shortcut nobody uses.
+
+**It pays a debt SURF10 incurred.** Retiring the labelled 15rem sidebar for a 48px icon rail cost
+discoverability, and that landing named the palette as where it would be paid back. This is the
+payment.
+
+**The expensive half was built as a pure function, which is what made it cheap.** `commands(world)`
+takes what is true — is a shell here, which frame, what to run — and returns the list. So "what can I
+do right now" is a **value a test asserts** rather than a screen somebody has to arrange: a browser's
+list, a shell's list in Manage and the same in Work are three arguments, not three fixtures. The
+widget is handed the result and knows nothing about where it came from.
+
+**The disclosure boundary is enforced by OMISSION** (D47 §4), and that is the rule this surface makes
+sharpest: *a palette is a promise that what it lists can be done*, so a shell-only action listed in a
+browser would be the palette lying, and present-but-disabled would be the same lie with extra steps.
+Asserted twice — in the registry's own tests, and by Playwright against the shipped bundle, because
+the registry being right does not prove the omission reached the page.
+
+**Matching is by subsequence, ranked.** "cnv" finds *Convergence* and "sas" finds *Start a session*;
+a match at a word boundary outranks one buried mid-word, so "se" offers *Search* before *Convergence*.
+Hidden keywords carry the words people will actually type — "settings" finds *Machine*, "diff" finds
+*Review* — and 中文 matches, because the console is bilingual and so is this.
+
+**🔴 It found a claim that had been false since it was written.** D41 §6 says drawers are
+`role="dialog"` **with `aria-modal`**; Radix writes the role and traps focus and **never writes that
+attribute at all** — `grep -c aria-modal` in the installed package returns 0. So the sentence
+described the design and not the page, for as long as it had existed, with every gate green, because
+no gate reads prose. Both modal surfaces now set it explicitly and `ui.test.tsx` asserts every one of
+them, sabotaged and watched fail. The general form is `claims-need-checks` exactly: the claim and its
+enforcement were written at different moments and only the claim was easy.
+
+**Two smaller things the building settled.** The selection is clamped to the filtered list, or typing
+past the end of a shorter list and pressing Enter would run a stale index — tested directly. And the
+palette closes **before** it runs, so a command that opens a drawer or switches frames never has to
+think about the palette still being over it.
+
+**Proven.** 369 web unit tests (up from 341: twelve for the registry, ten for the widget, four
+stories, two for the modal claim), **13 Playwright** including the browser's shortened list and the
+keyboard path, 259 service, 165 driver, 53 modules, `npm run verify` green — and the real window,
+where Ctrl+K opens it and the shell's list carries eleven commands including the two Work actions.
