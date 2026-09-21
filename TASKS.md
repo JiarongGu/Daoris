@@ -331,21 +331,12 @@ frame with its geometry, the right dock keyed to the attended session (timeline 
 follow-the-tail stream rule — structure and geometry, never its pixels (D41) and never its plugin
 runtime (its surfaces are built natively against claude/codex through the adapter seam, D23).
 
-**SURF4a has landed** (2026-09-21): the three atoms, `SESSION_TONE` moved rather than written,
-`sessionTitle` in the new `src/work/identity.ts`, the presentational-import check sabotage-tested
-against a real file in `src/work/`, and all fifteen stories rendering in the inner loop through a
-glob. Both of §7's questions are settled in the archive — `composeStories` cost no dependency, and the
-check needs no gate row. **The parts are there to build with; SURF4b is next.**
-
-- [ ] **SURF4b — the rail** (components §4–§5). `SessionRow` and `RepositoryGroup` as props-only
-  molecules — all nine states, driven vs chat, no quest, long and CJK titles, selected — then
-  `SessionRail` over them: grouped by repository, the group header carrying drivable/held/busy, the
-  empty state, selection. Mocked-bridge vitest for the organism only. **D55 adds two fields to the
-  row**, both already in the record: **where it runs** (Daoris is multi-machine by construction and
-  the row says nothing about it today) and **elapsed** (a session three minutes old and one three
-  hours deep read identically under "moved 4m ago"), and **a per-session "own tree" control** beside
-  the Machine view's per-repository toggle — that is how the need arrives, and it is the shape every
-  reference uses.
+**SURF4a and SURF4b have landed** (2026-09-21): the three atoms, `SESSION_TONE` moved rather than
+written, `sessionTitle` in the new `src/work/identity.ts`, the presentational-import check
+sabotage-tested against a real file in `src/work/` — then `SessionRow`, `RepositoryGroup` and
+`SessionRail` over them, with D55's two extra facts on the row and the per-session tree beside them.
+Both of §7's questions are settled in the archive — `composeStories` cost no dependency, and the
+check needs no gate row. **The rail is real; SURF4c is next.**
 
 - [ ] **SURF4c — the attended session** (design §3, components §4). `SessionHead` (state, repository,
   tree, quest, tool + account, age; parked sessions show their analysis at the top), `TimelineEntry`
@@ -362,7 +353,10 @@ check needs no gate row. **The parts are there to build with; SURF4b is next.**
   shrinkable, hideable — **not** a fixed well in a card), and the remembered **mode** in place of the
   remembered view. **One home for the stream** — Quests keeps the record summary and gains a door,
   Projects keeps the registry's own controls. Starting a session moves here (repository, harness,
-  profile, and whether it opens its own tree). Both locale catalogues throughout; the page suite in
+  profile, and whether it opens its own tree) — **which is where D55's per-session "own tree"
+  control lands**. SURF4b put the tree on the row as a *fact*, because a tree is cut at spawn (D51
+  §2) and a running session cannot be moved into one, so the *choice* belongs to the surface that
+  starts sessions and nowhere else. Both locale catalogues throughout; the page suite in
   the vitest shape `shell.test.tsx` already uses, Playwright asserting Work's **absence** in a
   browser, and a real-window pass to close it.
 

@@ -11,6 +11,14 @@ network.
 
 ## Unreleased
 
+- **`claims-need-checks`** (core knowledge, extended) — the *"runner quietly saw fewer inputs"* shape
+  gains its harder half: **the count that never rose.** A file-matching pattern written for a flat
+  layout stops reaching once the code grows a subdirectory, and the files it now excludes have no
+  earlier count to fall from — so the suite is green, the count is unchanged, and nothing reports
+  that a whole directory is unchecked. Found in this repository: two globs, one sabotage-tested for
+  reach and one not, and the untested one had silently stopped covering the new code.
+  **Adopting repositories:** proving one pattern's reach proves nothing about the next one. Each
+  asserts its own scope, so each earns a real file placed where it is supposed to look.
 - **`claims-need-checks`** (core knowledge, extended) — a **fifth** way a check passes without
   checking: *nothing runs it*. A configuration file declared gates that no build step, hook or
   workflow ever invoked, so the declaration read as coverage while nothing executed it — and the

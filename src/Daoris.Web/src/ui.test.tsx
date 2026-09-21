@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import type { SessionState } from './api';
 import './i18n';
 import {
-  Button, Dot, EmptyState, MetaLine, MonoWell, Pill, SESSION_TONE, Tile,
+  Button, Dot, EmptyState, MetaLine, MonoWell, Pill, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, Tile,
 } from './ui';
 
 describe('the primitives', () => {
@@ -115,5 +115,30 @@ describe('the session tone map', () => {
     for (const state of STATES) expect(SESSION_TONE[state]).toBeTruthy();
     expect(Object.keys(SESSION_TONE).sort()).toEqual([...STATES].sort());
     expect(SESSION_TONE['awaiting-person']).toBe('declined');
+  });
+
+  it('marks every session state as a dot too — the pill says which, the dot says whether', () => {
+    for (const state of STATES) expect(SESSION_DOT[state]).toBeTruthy();
+    expect(Object.keys(SESSION_DOT).sort()).toEqual([...STATES].sort());
+  });
+
+  /**
+   * The reference console's one priority rule — a session needing its person outranks its own
+   * activity — holds here by construction rather than by precedence: parked is a STATE, so there is
+   * no busier state to lose to. This is the assertion that would fail if someone folded it into the
+   * running set or gave it the live mark.
+   */
+  it('keeps attention out of the running marks, so activity can never outrank it', () => {
+    expect(SESSION_DOT['awaiting-person']).toBe('parked');
+    expect(SESSION_DOT.working).toBe('live');
+    expect(SESSION_DOT.completed).toBe('ended');
+  });
+
+  it('counts exactly the four states that still hold a repository', () => {
+    expect([...SESSION_ACTIVE].sort())
+      .toEqual(['awaiting-person', 'queued', 'starting', 'working']);
+    // Parked counts as active on purpose (D46 §4): the person is the flow control, not an exit.
+    expect(SESSION_ACTIVE.has('awaiting-person')).toBe(true);
+    expect(STATES.filter((state) => !SESSION_ACTIVE.has(state))).toHaveLength(5);
   });
 });

@@ -29,6 +29,29 @@ export function sittingDays(iso: string): number {
 }
 
 /**
+ * How long something has been going — a SPAN, where `ago` is a point.
+ *
+ * @remarks
+ * The fact the rail could not carry before (D55): "moved 4m ago" reads identically for a session
+ * three minutes old and one three hours deep, and those are different situations. Measured to `to`
+ * where one is given — a finished session has a lifetime, not an age — and to now while it runs.
+ *
+ * Two units at most, because this sits in an 18rem rail beside a title that needs the room. A span
+ * under a minute is said in words rather than as a bare `0m`, and a start in this machine's future
+ * reads as brand new: records travel between machines and clocks do not, so a mirrored record can
+ * legitimately arrive stamped ahead of here, and `-4m` in a rail is a bug report nobody can act on.
+ */
+export function elapsed(from: string, to?: string | null): string {
+  const end = to ? new Date(to).getTime() : Date.now();
+  const minutes = Math.floor(Math.max(0, end - new Date(from).getTime()) / 60_000);
+  if (minutes < 1) return i18n.t('duration.under');
+  if (minutes < 60) return i18n.t('duration.minutes', { count: minutes });
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return i18n.t('duration.hours', { hours, minutes: minutes % 60 });
+  return i18n.t('duration.days', { days: Math.floor(hours / 24), hours: hours % 24 });
+}
+
+/**
  * The sentence a failure puts in front of the person, whichever half of the platform it came from.
  *
  * @remarks

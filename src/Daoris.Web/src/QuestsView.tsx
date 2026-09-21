@@ -1,21 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session, SessionState } from './api';
+import type { Quest, Session } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
 import { useDriver, useStopSession } from './shell';
 import { ago, sentence, sessionTool, sittingDays } from './format';
 import { SessionConsole } from './SessionConsole';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
-  SectionTitle, SelectField, SESSION_TONE, SkeletonRows, useErrorNotify,
+  SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
 
 /** Radix Select cannot carry an empty value, so "everyone" travels as a sentinel. */
 const EVERYONE = '*';
-
-/** The states that still hold their repository — the ones worth a mark on the card (D46 §4). */
-const SESSION_ACTIVE: ReadonlySet<SessionState> = new Set(['queued', 'starting', 'working', 'awaiting-person']);
 
 type Draft = { from: string; to: string; title: string; body: string };
 const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '' };

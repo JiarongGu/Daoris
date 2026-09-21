@@ -141,7 +141,12 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | Helper | What | Why it is not inline |
 |---|---|---|
 | `SESSION_TONE` | session state → pill tone, **exhaustive at compile time** | the twin of `QUEST_TONE`, and the reason that one exists: nine states, and a tenth cannot ship half-toned. ~~Today a session pill is `live ? taken : neutral` — eight states wearing two tones~~ — **wrong when written** (SURF4a): `QuestsView.tsx` already held the exhaustive map. The work was to **move** it, and the reason to is the better one: the rail, the head and the quest card are three readers, and three copies of a nine-row map disagree eventually |
+| `SESSION_DOT` | session state → liveness mark (SURF4b) | the pill says *which* state, the dot says *whether anything is happening*. It is where the reference console's one priority rule lives — and where it costs nothing, because `awaiting-person` is a state and has no busier state to lose to. No "is a process alive" input: the driver's running list is one machine's |
+| `SESSION_ACTIVE` | the four states that still hold a repository (SURF4b) | `Session.Active`'s wire half. `QuestsView` held it privately; the rail asks it too, and a set spelled out twice acquires a tenth state in one of them |
 | `sessionTitle(session, quest)` | the derived identity: repository · kind · what it is for | design §3 — identity is derived and never invented; one implementation, or the rail and the head disagree |
+| `sessionOrigin(session)` | which machine holds it, or null for this deployment's own (SURF4b) | D55 asks a row for *where it runs* and says it is already in the record: the feed keys a mirrored record by `origin/id` (D47 §6). Reading that is a derivation, not a component's business |
+| `treeName(tree)` | a session tree's last segment (SURF4b) | Daoris owns where trees live (D51 §2), so the last segment is the branch — meaningful rather than a guess. The rail has no room for the path, and the path is machine-local besides |
+| `elapsed(from, to?)` | a span, where `ago` is a point (SURF4b) | D55's second added fact. A start in this machine's future reads as brand new: records travel between machines and clocks do not |
 
 `ago`, `sittingDays` and `sessionTool` already exist and are reused.
 
@@ -149,7 +154,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 
 | Molecule | What | Story states |
 |---|---|---|
-| `SessionRow` | one session in the rail: dot, identity, state, **where it runs**, **elapsed**, age (D55) | all nine states · driven vs chat · no quest · long + CJK title · selected · another machine · running three hours |
+| `SessionRow` | one session in the rail: dot, identity, state, **where it runs**, **elapsed**, age (D55) | all nine states · driven vs chat · no quest · long + CJK title · selected · another machine · **its own tree** · running three hours |
 | `RepositoryGroup` | the rail's group header | drivable, held, busy, not adopted, no root |
 | `SessionHead` | the attended session's record: state, repo, tree, quest, tool + account, age | driven, chat, parked-with-analysis, ended, `--real` tree vs session tree |
 | `TimelineEntry` | one observed event: state change, quest transition, commit landed | each kind · a long commit subject · an entry with no note |
@@ -192,7 +197,7 @@ the same method. Each item is TDD, gates green, archived on completion.
 | Item | Lands | Proven by |
 |---|---|---|
 | **SURF4a** ✔ | the three atoms, `SESSION_TONE`, `sessionTitle`, the presentational-import check, stories-as-smoke-tests | stories + `ui.test.tsx`; the import check sabotage-tested |
-| **SURF4b** | `SessionRow`, `RepositoryGroup`, and `SessionRail` over them | props-only vitest for the two molecules; mocked bridge for the rail |
+| **SURF4b** ✔ | `SessionRow`, `RepositoryGroup`, and `SessionRail` over them | props-only vitest for the two molecules; mocked bridge for the rail |
 | **SURF4c** | `SessionHead`, `TimelineEntry`, `SessionTimeline`, and the stream promoted into `AttendedSession` | mocked-bridge vitest; the first `npm run desktop -- shot` of the assembled region |
 | **SURF4d** | `Composer`, then the **frame** (D55): `WorkFrame`, `ModeSwitch`, `StatusBar`, `OutputPanel`, remembered mode | the page suite; Playwright asserting Work's **absence** in a browser; a real-window pass |
 

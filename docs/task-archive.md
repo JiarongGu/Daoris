@@ -2203,3 +2203,84 @@ scaffold file this package had gone without.
 **Not done here, by design.** No view, no molecule, no real-window pass: the plan puts the first
 `npm run desktop -- shot` of an assembled region at SURF4c, and there is nothing assembled yet to
 shoot. The console's footer move is the one visible change in the running app.
+
+## SURF4b — the rail (2026-09-21)
+
+**What it was.** The second cut of SURF4 (`docs/2026-09-21-working-surface-components.md` §4–§5):
+`SessionRow` and `RepositoryGroup` as props-only molecules, `SessionRail` as the organism over them,
+plus the two facts **D55** adds to a row. The first item of this arc that renders something a person
+would recognise as the working surface.
+
+**The row's anatomy, and the fact each part exists for.** The mark and its word, what the session is
+*for*, how long it has been going, and a line of secondary facts. `elapsed` is the one D55 asked for
+by name: "moved 4m ago" reads identically for a session three minutes old and one three hours deep,
+and those are different situations. `sessionOrigin` is the other — the session feed keys a mirrored
+record by `origin/id` (D47 §6) and the origin is the key's own identity, *whose key on which
+machine*, so **where a session runs was already in the record** and nothing had ever read it.
+
+**Silence means here, and it means the root.** Every secondary fact is absent when it has nothing to
+say — the machine while the session is this deployment's own, the tree while it is the registered
+root — which is `MetaLine`'s rule (SURF4a) applied one layer up, and the reason a rail of a dozen
+rows stays readable at 18rem. The typical row says `driven · moved 4m ago`; the interesting one says
+`driven · in streaming-budget · on person@machine-a · moved 4m ago`.
+
+**The reference console's one priority rule needed no code.** deepseek-harness spends a rule on
+*pending user interaction outranks own activity* — a session that needs its person wears the
+attention mark even while its process is busy. Here `awaiting-person` **is a state**, so there is no
+busier state for it to lose to, and `SESSION_DOT` holds it by construction. The assertion that would
+fail if someone folded it into the running set is in `ui.test.tsx`, because the rule is only free
+while the shape stays this way. There is deliberately **no "is a process alive" input** to the mark:
+the driver's `running` list is this machine's, and a mirrored session working on another machine is
+working.
+
+**What a group header carries, and what it refuses to claim.** Drivable, held, and which tree is
+busy — the repository's own facts (design §3), so a row never repeats them. Held outranks drivable,
+which it suspends. **Unknown is not false**: every fact is optional, and an absent one asserts
+nothing, because the driver answers only where a shell is attached (D46 §6) and a header that read
+silence as "not adopted" would invent news out of a query that had not returned. `hasCheckout` is
+only *asked* where a driver answered, for a sharper version of the same reason: a root is answered
+only to a caller on the machine that holds it (D48 §7), so over a remote every registration would
+otherwise look like a teammate's.
+
+**Two decisions inside the rail worth keeping.** It lists what is still running **plus the attended
+session, whatever state it reached** — a session that finishes while its person is reading it must
+not vanish out from under them, and that is the one thing a list of running things must never do.
+And **selection is not held here**: the rail is told which session is attended and reports a choice,
+because one selection binds every region of the Work frame (IDE study §3) and a frame cannot bind a
+selection its rail keeps to itself.
+
+**Three helpers, each because two readers would have disagreed.** `elapsed` in `format.ts`, with a
+start in this machine's future reading as brand new rather than as a negative span — records travel
+between machines and clocks do not, and `-4m` in a rail is a bug report nobody can act on.
+`sessionOrigin` and `treeName` in `work/identity.ts`, the latter because Daoris owns where trees
+live (D51 §2), which is what makes the last segment the branch rather than a guess. And two moves
+into `ui.tsx` beside `SESSION_TONE`: `SESSION_ACTIVE`, which `QuestsView` held privately and the
+rail needed too, and `SESSION_DOT`.
+
+**The per-session "own tree" control is NOT here, and that is the finding.** The backlog filed it
+under this item. A tree is cut at spawn (D51 §2) and a running session cannot be moved into one, so
+there is no control a row can offer — what a row can carry is the *fact*, and it now does. The
+*choice* belongs to the surface that starts sessions, which SURF4d already names; the backlog entry
+moved there rather than being dropped.
+
+**A gap found while landing it.** `stories.test.tsx` globbed `./*.stories.tsx` — top level only. The
+components plan says a new story file is covered "by the act of existing", and every file this item
+adds lives in `src/work/`, so the roster would have silently excluded all of them while still
+reporting a passing suite. The glob now reaches down. SURF4a sabotage-tested the *boundary* glob's
+reach with a real file in `src/work/` and that proof said nothing about the second glob beside it —
+so the lesson went into the canon (`claims-need-checks`, the "runner quietly saw fewer inputs"
+shape): the hard half is the count that never **rose**, because files a pattern has stopped reaching
+have no earlier count to fall from.
+
+**Proven.** 168 web unit tests, up from 99 — twelve props-only for the row, nine for the group,
+eleven for the rail over a mocked bridge, fourteen for the new pure helpers, three for the two new
+maps, and twenty more stories rendering as smoke tests (36, up from 16). `SessionRail` was added to
+the presentational boundary's organism list and the boundary was watched to fail without it, naming
+both imports. The web gate is green end to end: i18n parity at 272 keys, `tsc --noEmit`, the vitest
+suite, the production build, and the ten Playwright specs over the example family. The canon change
+re-synced both examples in the same commit, as D39 requires, and the family rehearsal holds it.
+
+**Not done here, by design.** Nothing mounts the rail: there is no Work frame until SURF4d, so the
+rail is reachable only from the inner loop and the molecules only from Storybook. No real-window
+pass either — the plan puts the first `npm run desktop -- shot` at SURF4c, where a region is
+assembled enough to look at.

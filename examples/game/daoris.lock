@@ -15,7 +15,7 @@
       "source": "core/knowledge/claims-need-checks.md",
       "target": "knowledge/claims-need-checks.md",
       "canonVersion": "0.0.1",
-      "sha256": "5050aba0889575558a4b234d4b1bc6dca169fcd75e3d3904c76deb5b2f567fec"
+      "sha256": "4d55c770bbd091a74b32f9ce7e0891c6fdfb35a85517bded2f2f939a9f6f3feb"
     },
     {
       "pack": "core",

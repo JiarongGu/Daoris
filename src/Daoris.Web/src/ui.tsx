@@ -110,6 +110,38 @@ export const SESSION_TONE: Record<SessionState, keyof typeof PILL_TONE> = {
   'stopped': 'neutral',
 };
 
+/**
+ * Which states still hold their repository — the wire half of `Session.Active`, exhaustive here for
+ * the reason the tone map is: the rail, the quest card and the attention band all ask it, and a set
+ * spelled out three times acquires a tenth state in two of them.
+ */
+export const SESSION_ACTIVE: ReadonlySet<SessionState> =
+  new Set<SessionState>(['queued', 'starting', 'working', 'awaiting-person']);
+
+/**
+ * The same nine states as a LIVENESS mark — `SESSION_TONE`'s sibling, because a pill and a dot
+ * answer different questions: the pill says which state, the dot says whether anything is happening.
+ *
+ * @remarks
+ * **Attention outranks activity, structurally rather than by precedence.** The reference console
+ * spends a rule on it — a session needing its person wears the attention mark even while its process
+ * is busy — and Daoris needs no rule, because `awaiting-person` IS a state and nothing is layered
+ * over it. There is deliberately no "is a process alive" input here: the driver's running list is
+ * this machine's, and a mirrored session working on another machine is working (D47 §6). The record
+ * is what the mark reads.
+ */
+export const SESSION_DOT: Record<SessionState, keyof typeof DOT_TONE> = {
+  'queued': 'idle',
+  'starting': 'live',
+  'working': 'live',
+  'awaiting-person': 'parked',
+  'completed': 'ended',
+  'declined': 'ended',
+  'stood-down': 'ended',
+  'failed': 'ended',
+  'stopped': 'ended',
+};
+
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */
 export function Pill({ tone = 'neutral', title, children }: {
   tone?: keyof typeof PILL_TONE; title?: string; children: ReactNode;

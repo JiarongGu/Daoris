@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from './i18n';
-import { ago, compact, sentence, sittingDays } from './format';
+import { ago, compact, elapsed, sentence, sittingDays } from './format';
 
 describe('compact', () => {
   it('keeps small counts as locale numbers', () => {
@@ -42,6 +42,50 @@ describe('ago and sittingDays', () => {
 
   it('counts whole sitting days — the number the Overview leads with', () => {
     expect(sittingDays('2026-09-07T00:00:00Z')).toBe(12);
+  });
+});
+
+/**
+ * The fact `ago` cannot carry (D55): a session three minutes old and one three hours deep both read
+ * "moved 4m ago". Elapsed is a SPAN, so it says which of the two you are looking at.
+ */
+describe('elapsed', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-19T12:00:00Z'));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('measures to now while a session is still going', () => {
+    expect(elapsed('2026-09-19T11:57:00Z')).toBe('3m');
+    expect(elapsed('2026-09-19T09:46:00Z')).toBe('2h 14m');
+  });
+
+  it('measures to the end once one is given — a finished session has a lifetime, not an age', () => {
+    expect(elapsed('2026-09-19T09:00:00Z', '2026-09-19T09:45:00Z')).toBe('45m');
+  });
+
+  it('drops to the two largest units, so a long run stays a glanceable width', () => {
+    expect(elapsed('2026-09-16T08:00:00Z')).toBe('3d 4h');
+  });
+
+  it('says "under a minute" rather than a bare 0m', () => {
+    expect(elapsed('2026-09-19T11:59:41Z')).toBe('under a minute');
+  });
+
+  /**
+   * A record mirrored from a machine whose clock is ahead arrives with a start in this machine's
+   * future (D47 §6 — records travel, clocks do not). It reads as brand new, never as a negative
+   * span, because "-4m" in a rail is a bug report the person cannot act on.
+   */
+  it('reads a start in the future as brand new rather than as a negative span', () => {
+    expect(elapsed('2026-09-19T12:05:00Z')).toBe('under a minute');
+  });
+
+  it('speaks the active catalog', async () => {
+    await i18n.changeLanguage('zh');
+    expect(elapsed('2026-09-19T09:46:00Z')).toBe('2 小时 14 分');
+    await i18n.changeLanguage('en');
   });
 });
 

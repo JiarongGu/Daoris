@@ -12,9 +12,13 @@ import './i18n';
  *
  * The roster is a glob, so a new `*.stories.tsx` is covered by the act of existing. `composeStories`
  * applies the story's own args and decorators, so what renders here is what a reviewer sees.
+ *
+ * The glob reaches DOWN, not just across: the working surface's components live in `src/work/`
+ * (components plan §2), and a roster that stopped at the top level would have silently excluded
+ * every one of them while still reporting a passing suite.
  */
 type StoriesModule = Parameters<typeof composeStories>[0];
-const modules = import.meta.glob('./*.stories.tsx', { eager: true }) as Record<string, StoriesModule>;
+const modules = import.meta.glob('./**/*.stories.tsx', { eager: true }) as Record<string, StoriesModule>;
 
 describe('the stories', () => {
   it('are found at all — a glob that matches nothing passes every assertion below it', () => {

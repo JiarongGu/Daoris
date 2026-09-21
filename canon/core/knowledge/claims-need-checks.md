@@ -75,7 +75,11 @@ real:
   have substituted for it.
 - **The runner quietly saw fewer inputs.** A file-matching pattern behaved differently on one platform
   and dropped a test file; the suite stayed green and the count fell by one. Watch the *count*, not just
-  the colour — a suite that shrinks is a suite that stopped asking something.
+  the colour — a suite that shrinks is a suite that stopped asking something. The harder half is when
+  the count never *rose*: a pattern written for a flat layout stops reaching once the code grows a
+  subdirectory, and the files it now excludes have no earlier count to fall from. **Proving one
+  pattern's reach proves nothing about the next one** — each is asserting its own scope, so each needs
+  a real file placed where it is supposed to look.
 - **Nothing runs the check.** A configuration file declared gates that no build step, hook or workflow
   ever invoked, so the declaration read as coverage for months while nothing executed it — and when it
   was finally run by hand it failed immediately. A check is only worth what invokes it, so before

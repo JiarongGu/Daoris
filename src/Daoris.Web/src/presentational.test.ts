@@ -25,6 +25,7 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
  */
 const ORGANISMS = new Set<string>([
   './SessionConsole.tsx',
+  './work/SessionRail.tsx',
 ]);
 
 export function offenders(files: [path: string, source: string][]): string[] {

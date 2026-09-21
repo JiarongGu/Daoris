@@ -79,6 +79,13 @@ export type Session = {
    * is the guarantee working rather than a field the service forgot to fill.
    */
   profile?: string | null;
+  /**
+   * The working tree it holds (D51) — the unit of exclusion, and a filesystem path outright, so it
+   * is guarded exactly as the profile and the transcript are. Null is the repository's registered
+   * root: a session that asked for no tree of its own, or a record from a machine that rightly sent
+   * no path. Surfaces show its last segment, which is the branch the tree was cut for.
+   */
+  tree?: string | null;
 };
 
 /**

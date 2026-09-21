@@ -28,3 +28,39 @@ export function sessionTitle(session: Session, quest?: Quest | null): string {
   if (session.quest) return `#${session.quest}`;
   return i18n.t(session.kind === 'chat' ? 'work.identity.conversation' : 'work.identity.session');
 }
+
+/**
+ * Which machine holds this session — or null when it is the deployment's own.
+ *
+ * @remarks
+ * **Already in the record, and D55 is what asks for it on a row.** Daoris is multi-machine by
+ * construction (D47), and the session feed keys a mirrored record by `origin/id`, where the origin
+ * is the key's own identity: whose key, on which machine. Nothing else about the record says where
+ * it ran, and nothing needs to — a local id is eight hex characters and never carries a separator.
+ *
+ * **Silence means here**, the same rule `MetaLine` follows: a row that stamped every session with
+ * this machine's name would spend the rail's scarcest space saying the unsurprising thing. What is
+ * worth a person's attention is the session that is somewhere else.
+ */
+export function sessionOrigin(session: Session): string | null {
+  const separator = session.id.indexOf('/');
+  return separator > 0 ? session.id.slice(0, separator) : null;
+}
+
+/**
+ * A session tree's short name — its last segment, or null where there is no tree.
+ *
+ * @remarks
+ * **Daoris owns where trees live** (D51 §2: `~/.daoris/trees/<workspace>/<repository>/<branch>`),
+ * which is what makes the last segment meaningful rather than a guess: it is the branch the tree
+ * was cut for, and it is the part a person recognises. The rail has no room for the path and the
+ * path is machine-local material besides (D51 §9) — a name is the right amount to show there.
+ *
+ * Null covers both absences and they mean different things, neither of them an error: the session
+ * runs in the repository's registered root, or the reader is not the machine that ran it and was
+ * rightly told no path at all.
+ */
+export function treeName(tree: string | null | undefined): string | null {
+  const segments = (tree ?? '').split(/[/\\]/).filter((segment) => segment.trim().length > 0);
+  return segments.length ? segments[segments.length - 1] : null;
+}
