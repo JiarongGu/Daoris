@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button, Chip, Drawer, EmptyState, Pill, SkeletonRows, Tile, Toasts } from './ui';
+import {
+  Button, Chip, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SkeletonRows, Tile, Toasts,
+} from './ui';
 
 // Every state of every primitive, on the shipped components — including the states real data rarely
 // shows. This is where the design is reviewed and kept (D42); the product cannot drift from it,
@@ -31,6 +33,70 @@ export const Pills: StoryObj = {
       <Pill>Canonical</Pill>
       <Chip>the engine runtime — simulation, rendering, assets</Chip>
       <Chip accent>a failing case</Chip>
+    </div>
+  ),
+};
+
+/**
+ * The four meanings a liveness mark carries, each wearing its word. There is no story here for a dot
+ * without a label, because the component cannot render one — which is the point (D41 §6).
+ */
+export const Dots: StoryObj = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-5">
+      <Dot tone="live" label="working" />
+      <Dot tone="parked" label="awaiting person" />
+      <Dot tone="ended" label="completed" />
+      <Dot tone="idle" label="queued" />
+    </div>
+  ),
+};
+
+/** 500 lines is the scroll case; 12k dropped is the one a person must never have to infer. */
+const LONG_LOG = Array.from(
+  { length: 500 },
+  (_, index) => `[${String(index).padStart(4, '0')}] resolving dependency graph — 道衍 canon/core/rules`,
+).join('\n');
+
+export const Wells: StoryObj = {
+  render: () => (
+    <div className="grid max-w-3xl gap-6">
+      <MonoWell label="empty — the well is there, with nothing in it yet" text="" />
+      <MonoWell
+        label="console"
+        live
+        text={'$ npm run verify\ndaoris: clean — 23862 of 26000 bytes of always-loaded core\nrelease-prep: 0.0.1 agrees across every shipped reference'}
+      />
+      <MonoWell label="console" tall dropped={12_043} text={LONG_LOG} />
+    </div>
+  ),
+};
+
+/**
+ * A pair with no value is absent, never blank: on a session record an absence means something real
+ * (no profile means the harness's own home), and a placeholder would look like a bug instead.
+ */
+export const MetaLines: StoryObj = {
+  render: () => (
+    <div className="grid max-w-2xl gap-5">
+      <MetaLine items={[{ label: 'moved', value: '4m ago' }]} />
+      <MetaLine
+        items={[
+          { label: 'repository', value: 'engine' },
+          { label: 'tree', value: 'worktrees/streaming-budget', mono: true },
+          { label: 'quest', value: '#7a82cc', mono: true },
+          { label: 'tool', value: 'claude-code 2.1.4 · as owner' },
+          { label: 'started', value: '2h ago' },
+          { label: 'moved', value: '4m ago' },
+        ]}
+      />
+      <MetaLine
+        items={[
+          { label: 'repository', value: 'engine' },
+          { label: 'profile', value: null },
+          { label: 'tree', value: 'a/deliberately/long/checkout/path/that/has/nowhere/to/wrap/worktrees/streaming', mono: true },
+        ]}
+      />
     </div>
   ),
 };

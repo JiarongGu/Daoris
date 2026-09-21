@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, type ReactNode, useEffect } from 'react';
+import { type ButtonHTMLAttributes, type ReactNode, useEffect, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { sentence } from './format';
 import * as Toast from '@radix-ui/react-toast';
@@ -10,7 +10,7 @@ import {
   Plus, RotateCw, Search, SlidersHorizontal, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Quest } from './api';
+import type { Quest, SessionState } from './api';
 import { cn } from './lib/cn';
 
 // The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
@@ -90,6 +90,26 @@ export const QUEST_TONE: Record<Quest['status'], keyof typeof PILL_TONE> = {
   Declined: 'declined',
 };
 
+/**
+ * The same mapping for a session's nine states — exhaustive at compile time for the same reason,
+ * and shared for a second one: the rail, the head and the quest card must not disagree about what
+ * `stood-down` looks like, and three copies of a nine-row map disagree eventually.
+ *
+ * `awaiting-person` wears the attention tone deliberately: it is the one state nothing but a person
+ * can clear, so it should not sit quietly among the running ones.
+ */
+export const SESSION_TONE: Record<SessionState, keyof typeof PILL_TONE> = {
+  'queued': 'open',
+  'starting': 'taken',
+  'working': 'taken',
+  'awaiting-person': 'declined',
+  'completed': 'done',
+  'declined': 'declined',
+  'stood-down': 'neutral',
+  'failed': 'declined',
+  'stopped': 'neutral',
+};
+
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */
 export function Pill({ tone = 'neutral', title, children }: {
   tone?: keyof typeof PILL_TONE; title?: string; children: ReactNode;
@@ -116,6 +136,118 @@ export function Chip({ accent, children }: { accent?: boolean; children: ReactNo
     >
       {children}
     </span>
+  );
+}
+
+/* ---------------------------------------------------------------- dots, wells, meta lines */
+
+const DOT_TONE: Record<string, { mark: string; word: string }> = {
+  live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent' },
+  parked: { mark: 'bg-st-declined', word: 'text-st-declined' },
+  ended: { mark: 'bg-st-done', word: 'text-ink-soft' },
+  idle: { mark: 'bg-line', word: 'text-ink-faint' },
+};
+
+/**
+ * A liveness mark and the word for it — one component, because the label is not optional (D41 §6).
+ *
+ * @remarks
+ * The mark is `aria-hidden`: the label already IS the accessible name, and a screen reader that
+ * announces the state twice is worse served than one that hears it once. Hue distinguishes the four
+ * at a glance for the people hue works for; the word is what everyone else reads.
+ */
+export function Dot({ tone = 'idle', label, className }: {
+  tone?: keyof typeof DOT_TONE; label: string; className?: string;
+}) {
+  const shade = DOT_TONE[tone];
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-1.5 whitespace-nowrap text-[0.72rem]', shade.word, className,
+    )}
+    >
+      <span aria-hidden className={cn('inline-block size-1.5 shrink-0 rounded-full', shade.mark)} />
+      {label}
+    </span>
+  );
+}
+
+/**
+ * A verbatim monospace region with a "what fell out" footer — a session's console, a build log, a
+ * diff hunk.
+ *
+ * @remarks
+ * **Never translated**: what a tool said is data, and that is where the platform's i18n boundary
+ * sits. The chrome around it — the label, the live word, the footer — speaks the active language.
+ *
+ * The window is bounded and the footer states what the bound cost, because a well that silently
+ * skipped the middle of a build log would be a worse lie than one that showed nothing.
+ *
+ * The tail is followed only **while live**; scrolling a finished log out from under a reader is
+ * rude, and a person who scrolled up did so on purpose.
+ */
+export function MonoWell({ text, label, live = false, dropped = 0, tall = false }: {
+  text: string; label?: ReactNode; live?: boolean; dropped?: number; tall?: boolean;
+}) {
+  const { t } = useTranslation();
+  const well = useRef<HTMLPreElement>(null);
+
+  useEffect(() => {
+    if (live && well.current) well.current.scrollTop = well.current.scrollHeight;
+  }, [text, live]);
+
+  return (
+    <div>
+      {(label || live) && (
+        <p className="mb-1 flex items-baseline gap-2 text-[0.72rem] text-ink-faint">
+          {label && <span>{label}</span>}
+          {live && <Dot tone="live" label={t('console.live')} />}
+        </p>
+      )}
+      <pre
+        ref={well}
+        className={cn(
+          'm-0 overflow-auto whitespace-pre-wrap break-words rounded-control border border-line',
+          'bg-raised px-3 py-2.5 font-mono text-[0.75rem] leading-relaxed text-ink-soft',
+          tall ? 'max-h-[26rem] min-h-40' : 'max-h-72',
+        )}
+      >
+        {text}
+      </pre>
+      {dropped > 0 && (
+        <p className="mt-1 text-[0.72rem] text-ink-faint">{t('console.dropped', { count: dropped })}</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The `label · value` pairs of a record's head.
+ *
+ * @remarks
+ * **A pair with no value is absent, never blank.** On a session record every absence means something
+ * real — no profile means the harness's own configuration home, no version means the record predates
+ * the toolchain, no tree means a browser is reading over a remote — and a dash in the value slot
+ * reads as a bug in all three. The caller says what it knows; this renders what it was given.
+ */
+export function MetaLine({ items, className }: {
+  items: { label: string; value: ReactNode; mono?: boolean }[]; className?: string;
+}) {
+  const shown = items.filter((item) => item.value !== null && item.value !== undefined && item.value !== '');
+  if (!shown.length) return null;
+  return (
+    <dl className={cn('m-0 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[0.8rem]', className)}>
+      {shown.map((item) => (
+        <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
+          <dt className="shrink-0 text-ink-faint">{item.label}</dt>
+          <dd className={cn(
+            'm-0 min-w-0 text-ink-soft', item.mono && 'break-all font-mono text-[0.75rem]',
+          )}
+          >
+            {item.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

@@ -140,7 +140,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 
 | Helper | What | Why it is not inline |
 |---|---|---|
-| `SESSION_TONE` | session state → pill tone, **exhaustive at compile time** | the twin of `QUEST_TONE`, and the reason that one exists: nine states, and a tenth cannot ship half-toned. Today a session pill is `live ? taken : neutral` — eight states wearing two tones |
+| `SESSION_TONE` | session state → pill tone, **exhaustive at compile time** | the twin of `QUEST_TONE`, and the reason that one exists: nine states, and a tenth cannot ship half-toned. ~~Today a session pill is `live ? taken : neutral` — eight states wearing two tones~~ — **wrong when written** (SURF4a): `QuestsView.tsx` already held the exhaustive map. The work was to **move** it, and the reason to is the better one: the rail, the head and the quest card are three readers, and three copies of a nine-row map disagree eventually |
 | `sessionTitle(session, quest)` | the derived identity: repository · kind · what it is for | design §3 — identity is derived and never invented; one implementation, or the rail and the head disagree |
 
 `ago`, `sittingDays` and `sessionTool` already exist and are reused.
@@ -180,7 +180,7 @@ the same method. Each item is TDD, gates green, archived on completion.
 
 | Item | Lands | Proven by |
 |---|---|---|
-| **SURF4a** | the three atoms, `SESSION_TONE`, `sessionTitle`, the presentational-import check, stories-as-smoke-tests | stories + `ui.test.tsx`; the import check sabotage-tested |
+| **SURF4a** ✔ | the three atoms, `SESSION_TONE`, `sessionTitle`, the presentational-import check, stories-as-smoke-tests | stories + `ui.test.tsx`; the import check sabotage-tested |
 | **SURF4b** | `SessionRow`, `RepositoryGroup`, and `SessionRail` over them | props-only vitest for the two molecules; mocked bridge for the rail |
 | **SURF4c** | `SessionHead`, `TimelineEntry`, `SessionTimeline`, and the stream promoted into `AttendedSession` | mocked-bridge vitest; the first `npm run desktop -- shot` of the assembled region |
 | **SURF4d** | `Composer`, `WorkView`, the nav item, last-view memory, one home for the stream | the page suite; Playwright's record half; a real-window pass |
@@ -203,11 +203,18 @@ view. Nothing waits on everything.
   a browser (D47 §4). A component that renders one is a shell component, and Playwright asserts the
   absence rather than the presence.
 
-## 7. Two things to settle when SURF4a starts
+## 7. Two things to settle when SURF4a starts — **both settled** (2026-09-21)
 
-- **`composeStories` explicitly.** It is present as the framework's own dependency; if making it a
+- **`composeStories` explicitly.** ~~It is present as the framework's own dependency; if making it a
   direct devDependency is more than a line, the stories-as-smoke-tests half is dropped rather than
-  worked around — it is a multiplier, not a requirement.
-- **Where the import check lives.** Preferred: a vitest test in the web package, because the gate list
-  is a list two places must agree on and this needs no new row. A devkit gate is the alternative if it
-  ever needs to hold across artefacts.
+  worked around — it is a multiplier, not a requirement.~~ **Kept, at zero cost:**
+  `@storybook/react-vite` is already a direct devDependency and exports it. The roster is an
+  `import.meta.glob` rather than a list, so a new `*.stories.tsx` is covered by the act of existing —
+  and the suite asserts the glob matched something, because a glob that matches nothing passes every
+  assertion under it.
+- **Where the import check lives.** ~~Preferred: a vitest test in the web package…~~ **A vitest test
+  in the web package** (`src/presentational.test.ts`), as preferred. `src/work/` is covered by
+  default and an *organism* is exempted by name: a list of what may reach the data is one someone must
+  justify appending to, where a list of what may not is one someone forgets to append to. Sabotaged
+  twice — against a fabricated source, which proves the matcher, and against a real file dropped into
+  `src/work/`, which proves the glob.

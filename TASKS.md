@@ -315,15 +315,11 @@ frame with its geometry, the right dock keyed to the attended session (timeline 
 follow-the-tail stream rule — structure and geometry, never its pixels (D41) and never its plugin
 runtime (its surfaces are built natively against claude/codex through the adapter seam, D23).
 
-- [ ] **SURF4a — the parts everything else is made of** (components §4). Three atoms in `ui.tsx` with
-  a story per state — `Dot` (live/attention, always beside a label, never hue alone), `MonoWell` (the
-  verbatim well with its "what fell out" footer, extracted from `SessionConsole`), `MetaLine`. Two
-  pure helpers: **`SESSION_TONE`**, exhaustive at compile time — the twin of `QUEST_TONE`, and the
-  reason it exists, since a session pill today is `live ? taken : neutral` and wears two tones for
-  nine states — and **`sessionTitle`**, the one derivation of a session's identity, so the rail and
-  the head cannot disagree. Then the **presentational-import check** (no `./queries` or `./shell`
-  from a molecule; sabotage-test it) and **stories as smoke tests** via `composeStories` inside the
-  existing vitest run — no new gate row.
+**SURF4a has landed** (2026-09-21): the three atoms, `SESSION_TONE` moved rather than written,
+`sessionTitle` in the new `src/work/identity.ts`, the presentational-import check sabotage-tested
+against a real file in `src/work/`, and all fifteen stories rendering in the inner loop through a
+glob. Both of §7's questions are settled in the archive — `composeStories` cost no dependency, and the
+check needs no gate row. **The parts are there to build with; SURF4b is next.**
 
 - [ ] **SURF4b — the rail** (components §4–§5). `SessionRow` and `RepositoryGroup` as props-only
   molecules — all nine states, driven vs chat, no quest, long and CJK titles, selected — then

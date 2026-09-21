@@ -2148,3 +2148,58 @@ real host: the control absent while the family is one circle, present with its c
 is re-wired into a second through the same door the desktop's form uses, one circle chosen scoping
 Overview and Projects, the choice surviving a reload, and every again — re-wired back at the end so the
 tests after it inherit the family they were written against.
+## SURF4a — the parts everything else is made of (2026-09-21)
+
+**What it was.** The first of the four cuts the component plan makes through SURF4
+(`docs/2026-09-21-working-surface-components.md` §4–§5): three atoms with a story per state, two pure
+helpers, the presentational-import check, and stories wired as smoke tests. Taken on the owner's
+direction to *"polish the ui/ux into a more usable state"* before any walkthrough testing — the
+designed path, and the one that puts every state in front of a reviewer before a view exists to hide
+them in.
+
+**The two questions §7 said to settle, settled.** `composeStories` is exported by
+`@storybook/react-vite`, which is **already a direct devDependency** — so the stories-as-smoke-tests
+half cost no dependency at all, not even the one line the plan budgeted for it, and was kept rather
+than dropped. The import check lives as **a vitest test in the web package**, as preferred: the gate
+list is two lists that must agree (`daoris.gates.json` and the release workflow, and they silently did
+not once), so a check that needs no new row is worth more than one that reads tidier.
+
+**A correction to the plan, found by reading the code it describes.** §4 justifies `SESSION_TONE` with
+*"today a session pill is `live ? taken : neutral` — eight states wearing two tones"*. That was already
+false: `QuestsView.tsx` held an exhaustive nine-state map. So the work was to **move** it, not write it
+— and the reason to move it is the better one anyway: the rail, the head and the quest card are three
+readers, and three copies of a nine-row map disagree eventually. The doc has been corrected rather than
+quietly satisfied.
+
+**What landed.** In `ui.tsx`: `Dot` — the mark is `aria-hidden` and `label` is **required**, so a dot
+without its word is not a state the component can reach (D41 §6 held by construction rather than by
+review); `MonoWell` — the verbatim well extracted from `SessionConsole`, with tail-following, the tall
+variant, and the "what fell out" line moved from the header to a **footer**, where it reads as what the
+window cost rather than as a property of the label; `MetaLine` — `label · value` pairs where **an
+absent value omits the pair**, never renders it blank, because on a session record every absence means
+something real and a dash in the value slot reads as a bug in all three cases (`format.ts`'s
+`sessionTool` already argued this for its own three fields). And `SESSION_TONE`, moved.
+
+`src/work/identity.ts` is the new home for derived identity, with `sessionTitle(session, quest)`: the
+quest's title, else the quest **reference** rather than an invented name, else the kind's word. The
+design also names "the conversation's first line" as a chat's identity; the record does not carry one
+(`Note` is what the driver observed), so a chat wears its kind — and the doc comment says so, because
+this function existing is exactly what makes that a one-place change when the composer lands (SURF4d).
+
+`SessionConsole` is now a six-line organism over the atom: it holds the hook so the well holds none.
+Three catalogue keys moved out of `quests.session.*` into `console.*` — the well is no longer the quest
+drawer's, and leaving a generic atom reaching for a view's key is how a namespace stops meaning
+anything. Two new keys for the derived names, both languages.
+
+**Proven.** 99 web unit tests, up from 65. The boundary check was sabotaged twice: once inside the test
+against a fabricated source (which proves the matcher), and once for real — an offending file dropped
+into `src/work/`, the suite watched to fail naming it, then removed (which proves the *glob*, the half
+a fabricated string cannot reach). It also asserts it is looking at files at all, because a glob that
+matches nothing passes every assertion under it. All fifteen stories across three story files now
+render in the inner loop, found by a glob rather than a list, so a new `*.stories.tsx` is covered by
+the act of existing. `src/vite-env.d.ts` was added for `import.meta.glob`'s types — the standard Vite
+scaffold file this package had gone without.
+
+**Not done here, by design.** No view, no molecule, no real-window pass: the plan puts the first
+`npm run desktop -- shot` of an assembled region at SURF4c, and there is nothing assembled yet to
+shoot. The console's footer move is the one visible change in the running app.

@@ -7,7 +7,7 @@ import { ago, sentence, sessionTool, sittingDays } from './format';
 import { SessionConsole } from './SessionConsole';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
-  SectionTitle, SelectField, SkeletonRows, useErrorNotify,
+  SectionTitle, SelectField, SESSION_TONE, SkeletonRows, useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
 
@@ -16,19 +16,6 @@ const EVERYONE = '*';
 
 /** The states that still hold their repository — the ones worth a mark on the card (D46 §4). */
 const SESSION_ACTIVE: ReadonlySet<SessionState> = new Set(['queued', 'starting', 'working', 'awaiting-person']);
-
-/** awaiting-person wears the attention tone deliberately: it is the state only the person can clear. */
-const SESSION_TONE: Record<SessionState, 'neutral' | 'open' | 'taken' | 'done' | 'declined'> = {
-  'queued': 'open',
-  'starting': 'taken',
-  'working': 'taken',
-  'awaiting-person': 'declined',
-  'completed': 'done',
-  'declined': 'declined',
-  'stood-down': 'neutral',
-  'failed': 'declined',
-  'stopped': 'neutral',
-};
 
 type Draft = { from: string; to: string; title: string; body: string };
 const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '' };
