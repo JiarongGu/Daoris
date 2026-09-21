@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago, elapsed, sessionTool } from '../format';
 import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE } from '../ui';
+import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { sessionOrigin, sessionTitle } from './identity';
 
 /**
@@ -15,19 +16,27 @@ import { sessionOrigin, sessionTitle } from './identity';
  * both ends of the clock.
  *
  * **`AwaitingPerson` gets a surface at last** (design §4). It has meant "only the person can clear
- * this" since D46 and has never been rendered anywhere. The analysis sits **above** the record,
- * because it is the reason the person is looking — and it renders verbatim, like every driver
- * observation. The person's three moves are SURF5's; this is where they will attach.
+ * this" since D46 and had never been rendered anywhere. It sits **above** the record, because it is
+ * the reason the person is looking, and it carries the three moves — which is why `onResolve` is a
+ * prop: the head knows nothing about the bridge, and the frame that does hands it down.
+ *
+ * **It does not repeat the driver's note.** The timeline below carries it with the time it was
+ * observed, which is strictly more than a bare sentence here — and one screen saying the same
+ * thing twice teaches a reader to skim both. The one exception is a park, where the analysis IS
+ * the reason the person is here.
  *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
  * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
  * can be passed unconditionally.
  */
-export function SessionHead({ session, quest }: {
+export function SessionHead({ session, quest, resolving = false, onResolve }: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
+  resolving?: boolean;
+  /** How a parked session is cleared. Absent where nothing can act — a browser, or a story. */
+  onResolve?: (state: Resolution, note: string | null) => void;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
@@ -35,11 +44,14 @@ export function SessionHead({ session, quest }: {
 
   return (
     <header className="grid gap-2.5">
-      {parked && session.note && (
+      {parked && onResolve && (
+        <AwaitingPerson note={session.note} pending={resolving} onResolve={onResolve} />
+      )}
+      {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
+          analysis is shown and the moves are not. Half a control is worse than none. */}
+      {parked && !onResolve && session.note && (
         <div className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
           <p className="m-0 text-[0.8rem] font-semibold text-st-open">{t('work.head.waiting')}</p>
-          {/* Verbatim: the analysis is what the session said, and `autonomous-development` asks it
-              to carry options, a recommendation and a reason — none of which survive rewording. */}
           <p className="m-0 mt-1.5 whitespace-pre-wrap text-[0.875rem] leading-relaxed">{session.note}</p>
         </div>
       )}
@@ -70,9 +82,6 @@ export function SessionHead({ session, quest }: {
         ]}
       />
 
-      {!parked && session.note && (
-        <p className="m-0 whitespace-pre-wrap text-[0.85rem] italic text-ink-soft">{session.note}</p>
-      )}
     </header>
   );
 }

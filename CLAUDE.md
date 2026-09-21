@@ -117,8 +117,11 @@ risk, **authorship** was.
   attended session (its timeline **derived**, because the record has no event log) and the **frame**:
   Work is reachable and usable today (`npm run desktop -- run`, then *Work*). **The stream has one
   home**, the output panel — `ChatDrawer` is gone, Quests keeps the record and gains a door,
-  Projects keeps the registry's controls. The **right dock** is deliberately unbuilt until the diff
-  gives it a second occupant (SURF6). **SURF5, SURF6, SURF7–9 remain.**
+  Projects keeps the registry's controls. **SURF5's attention half** landed with it: `AwaitingPerson`
+  has a surface at last, with **three** moves and not the ledger's fourth (answering it is a
+  message, not a move), landing on the driver so the process and the record move together. The
+  **right dock** is deliberately unbuilt until the diff gives it a second occupant (SURF6).
+  **SURF5b (the notification), SURF6, SURF7–9 remain.**
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

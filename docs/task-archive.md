@@ -2404,3 +2404,75 @@ falling back, all over the shipped bundle in a real browser. Then the arc's firs
 rendered and `shot` for what it looks like. The frame's start form was driven end to end there too —
 the harness roster's refusal reached the person verbatim, which is the whole path from the form
 through the bridge to the ledger's own sentence.
+
+## SURF5a — attention: the parked session gets its answer (2026-09-21)
+
+**What it was.** The attention half of SURF5 (design §4): `AwaitingPerson`'s surface with the three
+moves the ledger allows, Overview's **what needs you** band, and the count on the Work switch. The
+notification half is SURF5b and is still open.
+
+**The hole this closed.** `awaiting-person` has meant "only the person can clear this" since D46
+and, until SURF4c, had never been rendered anywhere. SURF4c drew the analysis; a person still could
+not *do* anything about it. Nothing in the driver produces the state either — a session parks
+itself through its own door — so this is the surface arriving before its producer, deliberately and
+as the design asks.
+
+**Three moves, not the four the ledger allows.** From `awaiting-person` the ledger permits
+`working`, `completed`, `declined` and `stopped`. The fourth is the **driver observing a session
+that carried on**, which a person causes by *answering* it — so the surface says that out loud
+("answering it in the box below lets it carry on — that is a message, not one of these") instead of
+offering a second way to do the same thing. The narrowing lives on the surface's host half, not in
+the ledger: which verbs belong to a person is a surface rule, and whether a move is legal at all
+stays the ledger's (D36), whose refusal reaches the person verbatim.
+
+**They go through the driver, not the service.** The obvious wiring — the page advancing the record
+over `/api/sessions/{id}/state` — is wrong in one specific way: a record that says `completed`
+beside a process this machine still holds is exactly the lie the observed lifecycle exists to
+prevent. So `RESOLVE_SESSION` lets the process go **first** and advances the record after, and
+`DriverLoop` exposes its `ServiceClient` for it, the same nullable-until-ready shape `Chat` already
+had.
+
+**A move with no note still writes one.** Found in the real window: the store keeps the previous
+note when a move carries none — deliberately, so a later move cannot erase what an earlier one
+recorded — so a session finished at a checkpoint read *reached completed* beside the analysis it
+was **parked with**, which says the opposite of what happened. The host now stamps a sentence, and
+it carries the fact the state cannot: `completed` normally means the session closed its own quest,
+and this one means a person decided it was done.
+
+**Declining needs a reason**, the same rule the quest door holds and for the same reason — asked
+for in place, as a second step, because a decline that slipped out on one click would routinely
+carry nothing.
+
+**The band, and the one category that is not in it.** Design §4 names three: parked, then
+finished-and-unreviewed, then quests nobody can take. The middle one is **not buildable** —
+nothing records that anybody looked at anything, so every row would be a guess. It arrives with
+SURF6's *viewed* mark, and the band says so in a line rather than leaving a silent gap. The other
+two are real: a parked session, and an **open quest addressed to a repository this deployment has
+no registration for** — which the publish door prevents at the time and which comes to exist
+afterwards, when a receiver retires. No agent will ever pull it, and nothing else said so.
+
+**The band renders nothing when nothing is waiting.** Not an empty card: a band that always says
+all-clear is a band people stop reading, and "is anything sitting" is what the tiles beneath it
+already answer.
+
+**Two counts, and D55 moved where they go.** Design §4 put both in the sidebar. After D55 the
+quantity's home is the status bar (`N session(s)`) and the status's home is the **door into the
+thing**, so *how many need you* is a badge on the Work switch — visible from Manage, which is the
+point, and the only badge wearing a status hue. Both the badge and the band read `needsAPerson`,
+because two answers to "how many need me" disagree the first time either is edited.
+
+**A duplication the real window exposed.** The head rendered the driver's note and the timeline
+rendered the same note with its time, one above the other. The head now leaves it to the timeline —
+strictly more informative — except for a park, where the analysis *is* the reason the person is
+looking; there the timeline drops the note the card is showing.
+
+**Proven.** 277 web unit tests, up from 245, and 46 in the desktop modules, up from 40 — including
+the three refusals asserted from the host side (a move that is not the person's, named with the
+state it refused; a decline with nothing in it; a move before the service answers). Two new refusal
+codes, both translated in both catalogues, both held by the catalogue test that exists because a
+refusal with no translation renders as a bare identifier. And a real-window pass: a seeded parked
+session cleared from the surface, the record moving to `completed` with the stamped note, the
+status bar dropping to zero, and the toast naming what happened.
+
+**A dev-loop wrinkle worth knowing.** `npm run desktop -- build` fails while the shell is running —
+the window holds `Daoris.Desktop.Modules.dll` open. `kill`, then `build`, then `run`.

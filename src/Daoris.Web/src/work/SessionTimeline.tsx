@@ -79,9 +79,19 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
  * layer, not the table — so this takes props, stays inside the presentational boundary, and every
  * shape of timeline is reachable in a story. The plan is corrected rather than quietly satisfied.
  */
-export function SessionTimeline({ session, quest }: { session: Session; quest?: Quest | null }) {
+export function SessionTimeline({ session, quest, hideCurrentNote = false }: {
+  session: Session;
+  quest?: Quest | null;
+  /**
+   * Leave the note off the entry for the state the session is in NOW, because something above is
+   * already showing it — a parked session's analysis, which design §4 puts at the top of the head.
+   * The event keeps its note; only this rendering drops it, so the derivation stays complete.
+   */
+  hideCurrentNote?: boolean;
+}) {
   const { t } = useTranslation();
-  const events = sessionTimeline(session, quest);
+  const events = sessionTimeline(session, quest).map((event) =>
+    (hideCurrentNote && event.kind === 'state' ? { ...event, note: null } : event));
 
   return (
     <section>

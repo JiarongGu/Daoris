@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { useQuests, useRegistry, useSessions } from '../queries';
-import { useEndChat, useHarnesses, useSendMessage, useStartChat, useStopSession } from '../shell';
+import {
+  useEndChat, useHarnesses, useResolveSession, useSendMessage, useStartChat, useStopSession,
+} from '../shell';
 import { type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
 import { AttendedSession } from './AttendedSession';
+import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
@@ -81,6 +84,7 @@ export function WorkFrame({ selected, onSelect, notify }: {
   const harnesses = useHarnesses();
 
   const startChat = useStartChat();
+  const resolve = useResolveSession();
   const send = useSendMessage();
   const end = useEndChat();
   const stop = useStopSession();
@@ -145,6 +149,18 @@ export function WorkFrame({ selected, onSelect, notify }: {
     });
   };
 
+  // The person's answer to a parked session (design §4). The refusal — a move that is not theirs,
+  // a decline with nothing in it — is the host's own sentence and reaches them word for word.
+  const onResolve = (state: Resolution, note: string | null) => {
+    if (!attended) return;
+    resolve.mutate({ id: attended.id, state, note: note ?? undefined }, {
+      onSuccess: () => notify(t('work.awaiting.resolved', {
+        id: attended.id, state: t(`sessionState.${state}`),
+      })),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
+    });
+  };
+
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
 
@@ -170,7 +186,12 @@ export function WorkFrame({ selected, onSelect, notify }: {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          <AttendedSession session={attended} quest={quest} />
+          <AttendedSession
+            session={attended}
+            quest={quest}
+            resolving={resolve.isPending}
+            onResolve={onResolve}
+          />
         </div>
 
         {conversation && attended && (

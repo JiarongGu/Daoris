@@ -43,6 +43,36 @@ function useDriverChange<TVariables extends Record<string, unknown>>(type: strin
   });
 }
 
+/**
+ * The person's answer to a session parked at a checkpoint (design §4).
+ *
+ * @remarks
+ * **Three moves, and it goes through the driver.** `awaiting-person` has meant "only the person can
+ * clear this" since D46; the ledger allows a fourth move from it — back to `working` — and that one
+ * is the driver observing a session that carried on, which a person causes by *answering* it. So
+ * this carries exactly `completed`, `declined` and `stopped`, and the host refuses anything else
+ * with a sentence.
+ *
+ * It lands on the driver rather than on the service because the process and the record must move
+ * together: this machine lets the process go, and only then does the record say it ended.
+ */
+export const useResolveSession = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (move: { id: string; state: 'completed' | 'declined' | 'stopped'; note?: string }) =>
+      call<{ session: string; state: string; message: string }>('RESOLVE_SESSION', {
+        id: move.id,
+        state: move.state,
+        ...(move.note ? { note: move.note } : {}),
+      }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.allQuests });
+      void client.invalidateQueries({ queryKey: keys.driver });
+    },
+  });
+};
+
 export const useSetDrivable = () => useDriverChange<{ repository: string; drivable: boolean }>('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
 /** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */

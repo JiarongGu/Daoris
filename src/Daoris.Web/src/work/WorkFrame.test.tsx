@@ -68,6 +68,11 @@ const CHAT = {
   kind: 'chat', created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
 };
 
+const PARKED = {
+  ...DRIVEN, id: 'p4rk3d00', state: 'awaiting-person',
+  note: 'Two ways forward; I recommend the second.',
+};
+
 let SESSIONS: unknown[] = [DRIVEN];
 
 function respond(url: string): Response {
@@ -340,5 +345,85 @@ describe('starting and holding a conversation', () => {
 
     await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
     expect(screen.queryByLabelText('message')).toBeNull();
+  });
+});
+
+/**
+ * `awaiting-person` has meant "only the person can clear this" since D46 and had no surface at all
+ * (design §4). The three moves land on the DRIVER, not on the service, because the process and the
+ * record must move together — a record saying `completed` beside a process this machine still
+ * holds is the lie the observed lifecycle exists to prevent.
+ */
+describe('clearing a parked session', () => {
+  beforeEach(() => {
+    SESSIONS = [PARKED];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async () => DRIVER_STATE);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+  });
+
+  it('shows the analysis and the three moves on the attended session', async () => {
+    show('p4rk3d00');
+
+    expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'finish it' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'decline…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'stop it' })).toBeInTheDocument();
+  });
+
+  it('finishes it over the driver, with no note the person did not write', async () => {
+    show('p4rk3d00');
+    await userEvent.click(await screen.findByRole('button', { name: 'finish it' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
+      payload: { id: 'p4rk3d00', state: 'completed' },
+    });
+  });
+
+  it('carries the reason a decline was given', async () => {
+    show('p4rk3d00');
+    await userEvent.click(await screen.findByRole('button', { name: 'decline…' }));
+    await userEvent.type(screen.getByLabelText(/the reason/), 'the chunk API is being replaced');
+    await userEvent.click(screen.getByRole('button', { name: 'decline with this reason' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
+      payload: { id: 'p4rk3d00', state: 'declined', note: 'the chunk API is being replaced' },
+    });
+  });
+
+  it('shows the host\'s refusal word for word', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type !== 'RESOLVE_SESSION') return DRIVER_STATE;
+      throw Object.assign(new Error('fallback'), {
+        code: 'SESSION_DECLINE_NEEDS_REASON', parameters: {},
+      });
+    });
+    const notify = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="p4rk3d00" onSelect={vi.fn()} notify={notify} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'finish it' }));
+
+    await vi.waitFor(() => expect(notify)
+      .toHaveBeenCalledWith(expect.stringContaining('Declining needs a reason'), 'error'));
+  });
+
+  /** A driven session that is not parked gets no moves: there is nothing waiting on anybody. */
+  it('offers no moves on a session nobody is waiting for', async () => {
+    SESSIONS = [DRIVEN];
+    show('s1a2b3c4');
+
+    await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
+    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
   });
 });

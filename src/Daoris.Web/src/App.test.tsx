@@ -20,14 +20,18 @@ const REGISTRY = [
   { repository: 'studio', adopted: true, registered: true, summary: 'the studio', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
 ];
 
+/** What Overview's band is made of, when the fixtures below hand it something to show. */
+let QUESTS: unknown[] = [];
+let SESSIONS: unknown[] = [];
+
 let fetchMock: ReturnType<typeof vi.fn>;
 
 function respond(url: string): Response {
   if (url.startsWith('/api/status')) return Response.json(STATUS);
   if (url.startsWith('/api/repositories')) return Response.json(REPOSITORIES);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
-  if (url.startsWith('/api/quests')) return Response.json([]);
-  if (url.startsWith('/api/sessions')) return Response.json([]);
+  if (url.startsWith('/api/quests')) return Response.json(QUESTS);
+  if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   throw new Error(`unstubbed request: ${url}`);
 }
 
@@ -129,5 +133,51 @@ describe('the frames, in a browser', () => {
     expect(bar).toHaveTextContent('none here');
     // The remote question cannot be asked without the map, so it is not answered either.
     expect(bar).not.toHaveTextContent('remote');
+  });
+});
+
+/**
+ * *What needs you* (design §4). It is service data, so a browser sees it — knowing is the half
+ * that travels — but the doors into Work are not offered where Work does not exist.
+ */
+describe('the attention band', () => {
+  beforeEach(() => {
+    QUESTS = [];
+    SESSIONS = [];
+    fetchMock = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
+    vi.stubGlobal('fetch', fetchMock);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    QUESTS = [];
+    SESSIONS = [];
+  });
+
+  it('is absent entirely when nothing is waiting — an always-there all-clear is not read', async () => {
+    shell();
+    await screen.findByRole('heading', { name: 'Overview' });
+
+    expect(screen.queryByText('What needs you')).toBeNull();
+  });
+
+  it('names a parked session and a quest nobody here can take', async () => {
+    SESSIONS = [{
+      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
+      state: 'awaiting-person', note: 'two ways forward.',
+      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
+    }];
+    QUESTS = [{
+      id: '7a82cc', from: 'engine', to: 'retired', title: 'Expose a streaming budget',
+      body: 'a per-frame cap.', status: 'Open',
+      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+    }];
+
+    shell();
+
+    expect(await screen.findByText('What needs you')).toBeInTheDocument();
+    expect(screen.getByText('parked at a checkpoint')).toBeInTheDocument();
+    expect(screen.getByText('nobody here can take this')).toBeInTheDocument();
+    // The category the design names third is not invented: it needs SURF6's viewed mark.
+    expect(screen.getByText(/once review exists/)).toBeInTheDocument();
   });
 });

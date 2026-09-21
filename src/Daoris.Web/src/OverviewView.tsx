@@ -5,6 +5,8 @@ import {
   Card, CardHeader, Button, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from './ui';
+import { AttentionBand } from './work/AttentionBand';
+import type { Attention } from './work/AttentionRow';
 
 /**
  * The management landing (D40). A person overseeing several projects' agents opens this window to
@@ -15,8 +17,14 @@ import {
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
  * Values sit beside the marks in ink, never in the mark's color.
  */
-export function OverviewView({ onNavigate, notify }: {
+export function OverviewView({ onNavigate, onAttend, notify }: {
   onNavigate: (tab: 'quests' | 'projects') => void;
+  /**
+   * The *what needs you* band's door (design §4). Absent where there is nowhere to go — a browser
+   * has no Work frame — and then the band still SHOWS what is waiting, because knowing is the half
+   * that travels.
+   */
+  onAttend?: (item: Attention) => void;
   notify: Notify;
 }) {
   const { t } = useTranslation();
@@ -39,6 +47,11 @@ export function OverviewView({ onNavigate, notify }: {
   return (
     <section>
       <PageHeader title={t('overview.title')} description={t('overview.description')} />
+
+      {/* Above the tiles, because "what needs me" outranks "how is the family" — and absent
+          entirely when nothing is waiting, since a band that always says all-clear stops being
+          read (design §4). */}
+      <AttentionBand onOpen={onAttend} />
 
       <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
         <Tile

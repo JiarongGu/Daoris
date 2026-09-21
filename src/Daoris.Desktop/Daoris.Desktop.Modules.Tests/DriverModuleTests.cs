@@ -131,6 +131,54 @@ public sealed class DriverModuleTests : Bridge
         Assert.False(state.GetProperty("stopped").GetBoolean());
     }
 
+    /// <summary>
+    /// The person's three moves on a parked session (design §4) — and the fourth the ledger allows
+    /// is NOT one of them. Narrowed on this side because it is a surface rule: `awaiting-person` →
+    /// `working` is the driver's observation of a session that carried on, which a person causes by
+    /// answering it, not by pressing anything.
+    /// </summary>
+    [Theory]
+    [InlineData("working")]
+    [InlineData("failed")]
+    [InlineData("queued")]
+    public async Task A_move_that_is_not_the_persons_is_refused_before_the_service_is_asked(string state)
+    {
+        var refusal = await RefusalAsync(Module(), "RESOLVE_SESSION", new { id = "s1a2b3c4", state });
+
+        Assert.Contains(Refusals.SessionMoveNotYours, refusal);
+        // The state is carried as a PARAMETER, so the sentence the person reads can name it.
+        Assert.Contains($"state={state}", refusal);
+    }
+
+    /// <summary>
+    /// The same rule the quest door holds, for the same reason: the note is the part whoever reads
+    /// the record can act on. Refused before the service is asked, so a reasonless decline never
+    /// half-happens.
+    /// </summary>
+    [Fact]
+    public async Task Declining_a_parked_session_needs_a_reason()
+    {
+        var refusal = await RefusalAsync(
+            Module(), "RESOLVE_SESSION", new { id = "s1a2b3c4", state = "declined" });
+
+        Assert.Contains(Refusals.SessionDeclineNeedsReason, refusal);
+    }
+
+    /// <summary>
+    /// A move the person MAY make still needs somewhere to record it. On a cold start that is the
+    /// same sentence every other service-needing control gives, rather than a crash.
+    /// </summary>
+    [Theory]
+    [InlineData("completed")]
+    [InlineData("stopped")]
+    public async Task A_persons_move_before_the_service_answers_says_so(string state)
+    {
+        var refusal = await RefusalAsync(
+            Module(), "RESOLVE_SESSION", new { id = "s1a2b3c4", state, note = "looked at it; it is right." });
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+    }
+
     [Fact]
     public async Task Sending_to_a_session_that_is_not_listening_answers_false()
     {

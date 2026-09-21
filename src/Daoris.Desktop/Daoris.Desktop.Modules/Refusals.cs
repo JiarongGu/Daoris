@@ -47,10 +47,21 @@ public static class Refusals
     /// </remarks>
     public const string DriverRefused = "DRIVER_REFUSED";
 
+    /// <summary>
+    /// A move on a parked session that is not one of the person's three (design §4). The ledger
+    /// allows a fourth — back to `working` — and that one is the driver's observation rather than a
+    /// button: answering a session so it carries on is a message, not a move.
+    /// </summary>
+    public const string SessionMoveNotYours = "SESSION_MOVE_NOT_YOURS";
+
+    /// <summary>A decline with nothing in it. The same rule the quest door holds, for its reason.</summary>
+    public const string SessionDeclineNeedsReason = "SESSION_DECLINE_NEEDS_REASON";
+
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
         RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, DriverRefused,
+        SessionMoveNotYours, SessionDeclineNeedsReason,
     ];
 
     /// <summary>

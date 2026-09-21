@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import {
-  useEntry, useQuests, useRefreshIndex, useRepositories, useSessions, useStatus, useWorkspaces,
+  useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions, useStatus,
+  useWorkspaces,
 } from './queries';
 import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -21,6 +22,8 @@ import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import { useDriver, useRemotes } from './shell';
 import { WorkFrame } from './work/WorkFrame';
+import type { Attention } from './work/AttentionRow';
+import { needsAPerson } from './work/attention';
 import { type DriverPresence, type Mode, ModeSwitch, StatusBar } from './work/frame';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
@@ -81,6 +84,7 @@ export function App() {
   // second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
   const remotes = useRemotes();
+  const registry = useRegistry();
 
   // Work does not exist over a keyed remote (D55): no stream, no tree path, nothing honest to show.
   // A remembered `work` on a machine with no shell falls back rather than rendering an empty frame.
@@ -124,6 +128,10 @@ export function App() {
 
   const presence: DriverPresence = driver.data ? 'running' : driver.isError ? 'stopped' : 'absent';
   const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
+  // The second of design §4's two counts, from the one derivation the band uses — two answers to
+  // "how many need me" would disagree the first time either was edited.
+  const waiting = needsAPerson(
+    running.data ?? [], outstanding.data ?? [], registry.data ?? []).length;
   // Only the machine that holds the map can answer this, so elsewhere the question is not asked.
   const wired = remotes.data
     ? remotes.data.remotes.some((row) => row.workspace === (scope.workspace ?? 'default'))
@@ -146,6 +154,13 @@ export function App() {
     chooseMode('work');
   };
 
+  // A row in Overview's band is a door into whatever is waiting — a parked session opens in Work,
+  // and a quest nobody can take opens where quests are answered.
+  const openAttention = (item: Attention) => {
+    if (item.kind === 'parked') openInWork(item.id);
+    else setTab('quests');
+  };
+
   return (
     // A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
     // the status bar is therefore always where it was. Page scrolling would put the output panel
@@ -161,7 +176,7 @@ export function App() {
         {/* Manage ⇄ Work as peers (D55) — above the nav, because the nav belongs to one of them.
             SURF7 moves this into the window's own top strip, where every reference puts it. */}
         <div className="pb-3 max-md:pb-0 max-md:pr-2">
-          <ModeSwitch mode={frame} available={attached} onChange={chooseMode} />
+          <ModeSwitch mode={frame} available={attached} attention={waiting} onChange={chooseMode} />
         </div>
 
         <nav aria-label={t('nav.label')} className="grid gap-0.5 max-md:flex max-md:overflow-x-auto">
@@ -232,7 +247,13 @@ export function App() {
           : (
             <main className="min-w-0 flex-1 overflow-y-auto px-8 pb-20 pt-7 max-md:px-4 max-md:pb-12 max-md:pt-5">
               <div className="max-w-6xl">
-                {tab === 'overview' && <OverviewView onNavigate={setTab} notify={notify} />}
+                {tab === 'overview' && (
+                  <OverviewView
+                    onNavigate={setTab}
+                    onAttend={attached ? openAttention : undefined}
+                    notify={notify}
+                  />
+                )}
                 {tab === 'quests' && <QuestsView notify={notify} onAttend={attached ? openInWork : undefined} />}
                 {tab === 'projects' && <ProjectsView notify={notify} />}
                 {tab === 'convergence' && (

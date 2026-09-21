@@ -17,9 +17,19 @@ export type Mode = 'manage' | 'work';
  * all, so a switch offering it would be a door onto nothing. `available` is the shell's answer,
  * and `false` renders nothing rather than a disabled control — the same rule the Machine tab
  * follows, and for the same reason: a disabled control implies the thing exists elsewhere.
+ *
+ * **It carries the second of the sidebar's two counts** (design §4): how many things need a
+ * person. It is the **only** badge that wears a status hue, because it is the only one that is a
+ * status — the session count beside it in the status bar is a quantity. Design §4 asked for both
+ * counts in the sidebar; after D55 the quantity's home is the status bar and the status's home is
+ * the door into the thing, which is here.
  */
-export function ModeSwitch({ mode, available, onChange }: {
-  mode: Mode; available: boolean; onChange: (mode: Mode) => void;
+export function ModeSwitch({ mode, available, attention = 0, onChange }: {
+  mode: Mode;
+  available: boolean;
+  /** How many things are waiting on a person. Zero wears nothing: a zero badge is furniture. */
+  attention?: number;
+  onChange: (mode: Mode) => void;
 }) {
   const { t } = useTranslation();
   if (!available) return null;
@@ -37,11 +47,19 @@ export function ModeSwitch({ mode, available, onChange }: {
           aria-pressed={mode === target}
           onClick={() => onChange(target)}
           className={cn(
-            'rounded-[4px] px-2.5 py-1 text-[0.82rem] transition-colors duration-(--speed)',
+            'inline-flex items-center rounded-[4px] px-2.5 py-1 text-[0.82rem] transition-colors duration-(--speed)',
             mode === target ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:text-ink',
           )}
         >
           {t(`work.mode.${target}`)}
+          {target === 'work' && attention > 0 && (
+            <span
+              title={t('work.mode.needsYou', { count: attention })}
+              className="ml-1.5 rounded-full border border-st-open bg-st-open/15 px-1.5 font-mono text-[0.68rem] tabular-nums text-st-open"
+            >
+              {attention}
+            </span>
+          )}
         </button>
       ))}
     </div>

@@ -175,6 +175,12 @@ public sealed class DriverModule : ModuleBase
                 return new { Stopped = stopped };
             }
 
+            // The person's answer to a session parked at a checkpoint (D52 §4). It goes through the
+            // DRIVER rather than straight to the service because the two halves must move together:
+            // this machine lets the process go, and only then does the record say it ended.
+            case "RESOLVE_SESSION":
+                return await ResolveAsync(request, cancellationToken);
+
             // This machine's harnesses, and the accounts they run as (D49 §4). Detection is free and
             // read-only — it asks each tool its own version and each profile's own login state — so
             // the page may ask whenever it likes; `refresh` is the person pressing "look again".
@@ -265,6 +271,81 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>An optional string on a request — absent and blank are the same answer: unstated.</summary>
+    /// <summary>
+    /// The three moves a person may make on a parked session — `completed`, `declined`, `stopped`,
+    /// each carrying what they want the record to say (design §4).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Narrowed here, not re-judged.</b> The ledger allows a fourth from `awaiting-person`
+    /// — back to `working` — and that one is the DRIVER's observation, not a button: a person
+    /// resumes a conversation by answering it, which is the composer's job. Narrowing the person's
+    /// verbs is a surface rule and belongs on the surface; everything about whether the move is
+    /// legal at all stays the ledger's (D36), and its refusal reaches the person verbatim.</para>
+    ///
+    /// <para><b>The process goes first.</b> A record that says `completed` while this machine still
+    /// holds the process is exactly the lie the observed lifecycle exists to prevent — so the
+    /// process is let go, and the record moves after. `Stop` answering false is not an error: the
+    /// common case is a session parked with nothing of ours still running.</para>
+    ///
+    /// <para><b>Declining needs a reason</b>, the same rule the quest door already holds and for the
+    /// same reason: the note is the part whoever reads the record can act on.</para>
+    ///
+    /// <para><b>A move with no note still writes one.</b> The store keeps the previous note when a
+    /// move carries none (deliberately — a later move must not erase what an earlier one recorded),
+    /// so a session finished at a checkpoint would otherwise read <i>reached completed</i> beside
+    /// the analysis it was parked with, which says the opposite of what happened. The stamped
+    /// sentence also carries the one fact the state cannot: `completed` normally means the session
+    /// closed its own quest, and this one means a person decided it was done.</para>
+    /// </remarks>
+    private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var state = PayloadHelper.GetRequiredValue<string>(request.Payload, "state");
+        var note = Optional(request, "note");
+
+        if (state is not ("completed" or "declined" or "stopped"))
+        {
+            throw Refusals.Because(
+                Refusals.SessionMoveNotYours, PersonMoves,
+                ("state", state), ("moves", "completed, declined, stopped"));
+        }
+
+        if (state == "declined" && note is null)
+        {
+            throw Refusals.Because(Refusals.SessionDeclineNeedsReason, DeclineNeedsReason);
+        }
+
+        if (_loop.Service is not { } service)
+        {
+            throw Refusals.Because(
+                Refusals.DriverNotReady,
+                "the driver is still coming up — its service is not answering yet. A moment.");
+        }
+
+        // False is the common case, not a failure: a parked session usually has no process here.
+        _loop.Processes.Stop(id);
+        var message = await service.AdvanceAsync(
+            id, state, note ?? ByThePerson(state), ct: cancellationToken);
+        _loop.Nudge();
+
+        return new { Session = id, State = state, Message = message };
+    }
+
+    private const string PersonMoves =
+        "A person may finish, decline or stop a parked session — not move it anywhere else. "
+        + "Answering it so it carries on is a message, not a move.";
+
+    private const string DeclineNeedsReason =
+        "Declining needs a reason: it is the part whoever reads this record can act on.";
+
+    /// <summary>What the record says when the person wrote nothing — never translated: it is data.</summary>
+    private static string ByThePerson(string state) => state switch
+    {
+        "completed" => "The person finished this at a checkpoint.",
+        "stopped" => "The person stopped this at a checkpoint.",
+        _ => "The person moved this at a checkpoint.",
+    };
+
     private static string? Optional(IpcRequest request, string name) =>
         request.Payload is { } payload
         && payload.TryGetProperty(name, out var value)

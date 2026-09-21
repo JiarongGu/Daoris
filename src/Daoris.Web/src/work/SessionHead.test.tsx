@@ -111,11 +111,16 @@ describe('the attended session\'s head', () => {
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('shows a driver observation on a session that is not parked as a plain note', () => {
+  /**
+   * The timeline below carries the driver's note WITH the time it was observed, which is strictly
+   * more than a bare sentence here — and one screen saying the same thing twice teaches a reader
+   * to skim both. A park is the exception: there the analysis is the reason the person is looking.
+   */
+  it('leaves a driver observation to the timeline rather than repeating it', () => {
     render(<SessionHead session={session({ state: 'failed', note: 'the process exited 1' })} />);
 
     expect(screen.queryByText('This one is waiting on you')).not.toBeInTheDocument();
-    expect(screen.getByText('the process exited 1')).toBeInTheDocument();
+    expect(screen.queryByText('the process exited 1')).not.toBeInTheDocument();
   });
 
   it('speaks the active catalog', async () => {

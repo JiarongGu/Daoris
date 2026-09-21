@@ -37,6 +37,19 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
     /// </summary>
     public ChatRunner? Chat { get; private set; }
 
+    /// <summary>
+    /// The service this loop drives, once the host answers — null before, like <see cref="Chat"/>
+    /// and for the same reason.
+    /// </summary>
+    /// <remarks>
+    /// <b>Exposed so the person's own moves go through the same door the loop's do</b> (D52 §4). A
+    /// parked session is cleared by a judgement rather than by an observation, and the record and
+    /// the process must move together: this machine lets the process go, then advances the record.
+    /// A page that advanced the record by itself would leave a `completed` record beside a process
+    /// still running here, which is the one lie the observed lifecycle exists to prevent.
+    /// </remarks>
+    public ServiceClient? Service { get; private set; }
+
     /// <summary>Where this loop reads the person's choices — what the control surface edits.</summary>
     public string ConfigPath { get; } = DriverConfig.ResolvePath();
 
@@ -113,6 +126,7 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         // …and the same harness roster, so one probe serves both doors and a login the person just
         // did is seen by whichever of them asks next.
         Chat = new ChatRunner(service, AdapterSet.Built(), home, Processes, Output, Harnesses);
+        Service = service;
 
         _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output, Harnesses);
         await _watch.RunAsync(

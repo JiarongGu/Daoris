@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { EmptyState } from '../ui';
+import type { Resolution } from './AwaitingPerson';
 import { SessionHead } from './SessionHead';
 import { SessionTimeline } from './SessionTimeline';
 
@@ -23,10 +24,13 @@ import { SessionTimeline } from './SessionTimeline';
  * The composer sits beneath this region rather than inside it, for the same reason the panel does:
  * the record scrolls and the things you act with do not.
  */
-export function AttendedSession({ session, quest }: {
+export function AttendedSession({ session, quest, resolving, onResolve }: {
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
   quest?: Quest | null;
+  resolving?: boolean;
+  /** Passed straight through to the head, where a parked session's three moves live (design §4). */
+  onResolve?: (state: Resolution, note: string | null) => void;
 }) {
   const { t } = useTranslation();
 
@@ -42,8 +46,12 @@ export function AttendedSession({ session, quest }: {
 
   return (
     <article className="grid content-start gap-4">
-      <SessionHead session={session} quest={quest} />
-      <SessionTimeline session={session} quest={quest} />
+      <SessionHead session={session} quest={quest} resolving={resolving} onResolve={onResolve} />
+      <SessionTimeline
+        session={session}
+        quest={quest}
+        hideCurrentNote={session.state === 'awaiting-person' && Boolean(onResolve)}
+      />
     </article>
   );
 }

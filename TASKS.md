@@ -338,8 +338,13 @@ record has no event log; and the **frame** — `WorkFrame`, `ModeSwitch`, `Statu
 `Composer`, `StartSession`, the remembered mode, and one home for the stream (the chat drawer is
 gone, Quests keeps the record and gains a door, Projects keeps the registry's controls). **The
 surface is reachable and usable**: `npm run desktop -- run`, switch to Work. The right dock is
-deliberately not built — it arrives with its second occupant, the diff (SURF6). **SURF5, SURF6 and
-SURF7–9 are what remain of the arc.**
+deliberately not built — it arrives with its second occupant, the diff (SURF6).
+
+**SURF5's attention half has landed too** (2026-09-21): `AwaitingPerson` finally has a surface —
+the analysis at the top of the head and **exactly the three moves** the ledger allows, landing on
+the driver so the process and the record move together — plus Overview's *what needs you* band and
+the count on the Work switch. What remains of SURF5 is the **notification** (SURF5b). **SURF5b,
+SURF6 and SURF7–9 are what remain of the arc.**
 
 - [ ] **SURF7 — the window is part of the frame** (D55 §a has the traps and the reasons; this is the
   work). `MainForm` becomes an `OptimizedForm` with `FramelessChrome`; the top strip becomes app
@@ -354,15 +359,13 @@ SURF7–9 are what remain of the arc.**
   to prove is **a second reader on the console pump**: SES1's bounded per-session buffer was written
   for one.
 
-- [ ] **SURF5 — attention** (design §4, D52; its UI half follows the component plan —
-  `AttentionRow` as a props-only molecule, `AttentionBand` over it). Overview's **what needs you** band (parked first, then
-  finished-and-unreviewed, then quests nobody can take); `AwaitingPerson`'s surface — its analysis at
-  the top of the head, and exactly the three moves the ledger already allows, **no new states**; the
-  sidebar's two counts, only one of which wears a status hue; and the **OS notification on park and on
-  end**, never for an ending the person caused, per machine and off in one click — the shell's own
-  code over WinForms, which **closes driver design open question 5**. The terminal's half is
-  `daoris-driver` on the machine that holds the sessions (the `daoris` CLI's offline shape does not
-  change), because a headless machine has no screen to notify and still needs the answer (D50).
+- [ ] **SURF5b — the notification, and the terminal's half** (design §4; the rest of SURF5 landed
+  2026-09-21). **An OS notification on park and on end**, never for an ending the person caused,
+  per machine and off in one click — the shell's own code over WinForms, which **closes driver
+  design open question 5**. The terminal's half is `daoris-driver` on the machine that holds the
+  sessions (the `daoris` CLI's offline shape does not change), because a headless machine has no
+  screen to notify and still needs the answer (D50). The setting is machine-local like every other
+  one the Machine view holds, and the same file a terminal can edit (D50's two doors).
 
 - [ ] **SURF6 — review: the diff** (design §5, D52; same method — `DiffFileRow` as a molecule with
   every file state in its story, `DiffPane` over it). The session's landed work as a diff, computed by
