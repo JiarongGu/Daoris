@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
-import { useEntry, useQuests, useRefreshIndex, useRepositories, useStatus, useWorkspaces } from './queries';
+import {
+  useEntry, useQuests, useRefreshIndex, useRepositories, useSessions, useStatus, useWorkspaces,
+} from './queries';
 import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
-  Button, Icon, type IconName, LanguageSwitcher, Tip, Toasts, type ToastItem, useErrorNotify,
+  Button, Icon, type IconName, LanguageSwitcher, SESSION_ACTIVE, Tip, Toasts, type ToastItem,
+  useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
 import { OverviewView } from './OverviewView';
@@ -16,9 +19,27 @@ import { ProjectsView } from './ProjectsView';
 import { SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
-import { useDriver } from './shell';
+import { useDriver, useRemotes } from './shell';
+import { WorkFrame } from './work/WorkFrame';
+import { type DriverPresence, type Mode, ModeSwitch, StatusBar } from './work/frame';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
+
+/**
+ * Which frame the person was last in — a per-browser preference like the language and the scope
+ * (D55), never machine wiring and never a tracked file. It replaces the remembered *view* the
+ * design asked for, because a mode is the thing worth returning to and a view inside Manage is not.
+ */
+const MODE = 'daoris.mode';
+
+function rememberedMode(): Mode {
+  try {
+    return window.localStorage.getItem(MODE) === 'work' ? 'work' : 'manage';
+  } catch {
+    // A private window, a blocked origin: landing on Manage is the safe half of the choice.
+    return 'manage';
+  }
+}
 
 const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
   { tab: 'overview', icon: 'overview' },
@@ -40,6 +61,8 @@ const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
 export function App() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('overview');
+  const [mode, setMode] = useState<Mode>(rememberedMode);
+  const [attending, setAttending] = useState<string | null>(null);
   const [readingId, setReadingId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToast = useRef(1);
@@ -52,7 +75,16 @@ export function App() {
   const reading = useEntry(readingId);
   const refresh = useRefreshIndex();
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
-  const attached = useDriver().data !== undefined;
+  const driver = useDriver();
+  const attached = driver.data !== undefined;
+  // The status bar's other two facts. Both share caches the frames already fill, so neither is a
+  // second fetch — and both are absent in a browser, which is what the bar then says.
+  const running = useSessions(null, false);
+  const remotes = useRemotes();
+
+  // Work does not exist over a keyed remote (D55): no stream, no tree path, nothing honest to show.
+  // A remembered `work` on a machine with no shell falls back rather than rendering an empty frame.
+  const frame: Mode = attached ? mode : 'manage';
 
   // The scope (WSP5): which circle this window is looking at. The roster comes from the registry
   // unscoped — the one reader that must see every workspace — and a remembered choice the deployment
@@ -90,12 +122,46 @@ export function App() {
   const indexed = (repositories.data ?? []).reduce((sum, r) => sum + r.total, 0);
   const outstandingCount = outstanding.data?.length ?? 0;
 
+  const presence: DriverPresence = driver.data ? 'running' : driver.isError ? 'stopped' : 'absent';
+  const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
+  // Only the machine that holds the map can answer this, so elsewhere the question is not asked.
+  const wired = remotes.data
+    ? remotes.data.remotes.some((row) => row.workspace === (scope.workspace ?? 'default'))
+    : null;
+
+  const chooseMode = (next: Mode) => {
+    setMode(next);
+    try {
+      window.localStorage.setItem(MODE, next);
+    } catch {
+      // Not remembering is a lesser failure than not switching.
+    }
+  };
+
+  // A door from a record into the session itself. The selection lives here rather than inside the
+  // frame precisely so a door can name which session it is opening (D55: one selection, every
+  // region) — the mode change alone would land the person on whatever they last attended.
+  const openInWork = (session: string) => {
+    setAttending(session);
+    chooseMode('work');
+  };
+
   return (
-    <div className="flex min-h-screen max-md:flex-col">
-      <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-line px-3.5 pb-4 pt-5 max-md:static max-md:h-auto max-md:w-full max-md:flex-row max-md:items-center max-md:gap-2 max-md:border-b max-md:border-r-0 max-md:px-3.5 max-md:py-2.5">
+    // A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
+    // the status bar is therefore always where it was. Page scrolling would put the output panel
+    // below the fold exactly when a session is producing output.
+    <div className="flex h-screen flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 max-md:flex-col max-md:overflow-y-auto">
+        <aside className="flex h-full w-60 shrink-0 flex-col overflow-y-auto border-r border-line px-3.5 pb-4 pt-5 max-md:h-auto max-md:w-full max-md:flex-row max-md:items-center max-md:gap-2 max-md:border-b max-md:border-r-0 max-md:px-3.5 max-md:py-2.5">
         <div className="flex items-baseline gap-2 px-2.5 pb-4 max-md:p-0 max-md:pr-2">
           <strong className="font-serif text-[1.5rem] font-semibold tracking-[-0.01em]">Daoris</strong>
           <span className="text-[0.9rem] text-ink-faint">道衍</span>
+        </div>
+
+        {/* Manage ⇄ Work as peers (D55) — above the nav, because the nav belongs to one of them.
+            SURF7 moves this into the window's own top strip, where every reference puts it. */}
+        <div className="pb-3 max-md:pb-0 max-md:pr-2">
+          <ModeSwitch mode={frame} available={attached} onChange={chooseMode} />
         </div>
 
         <nav aria-label={t('nav.label')} className="grid gap-0.5 max-md:flex max-md:overflow-x-auto">
@@ -156,20 +222,33 @@ export function App() {
           </Button>
           <LanguageSwitcher />
         </div>
-      </aside>
+        </aside>
 
-      <main className="min-w-0 flex-1 px-8 pb-20 pt-7 max-md:px-4 max-md:pb-12 max-md:pt-5">
-        <div className="max-w-6xl">
-          {tab === 'overview' && <OverviewView onNavigate={setTab} notify={notify} />}
-          {tab === 'quests' && <QuestsView notify={notify} />}
-          {tab === 'projects' && <ProjectsView notify={notify} />}
-          {tab === 'convergence' && (
-            <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
+        {/* The two frames (D55). Work fills the window because it is for WATCHING; Manage keeps the
+            reading cap, because that is what the cap is for. The nav above belongs to Manage, and
+            Work borrows the sidebar rather than growing a second one. */}
+        {frame === 'work'
+          ? <WorkFrame selected={attending} onSelect={setAttending} notify={notify} />
+          : (
+            <main className="min-w-0 flex-1 overflow-y-auto px-8 pb-20 pt-7 max-md:px-4 max-md:pb-12 max-md:pt-5">
+              <div className="max-w-6xl">
+                {tab === 'overview' && <OverviewView onNavigate={setTab} notify={notify} />}
+                {tab === 'quests' && <QuestsView notify={notify} onAttend={attached ? openInWork : undefined} />}
+                {tab === 'projects' && <ProjectsView notify={notify} />}
+                {tab === 'convergence' && (
+                  <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
+                )}
+                {tab === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
+                {tab === 'settings' && attached && <SettingsView notify={notify} />}
+              </div>
+            </main>
           )}
-          {tab === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
-          {tab === 'settings' && attached && <SettingsView notify={notify} />}
-        </div>
-      </main>
+      </div>
+
+      {/* Ambient truth, true in both frames without being looked at (D55). It belongs to the
+          application rather than to Work: which circle and whether it syncs are as true on a
+          management screen, and a bar that appeared and vanished with a mode would be chrome. */}
+      <StatusBar driver={presence} sessions={liveSessions} workspace={scope.workspace} remote={wired} />
 
       {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}
       <Toasts items={toasts} onClose={dismiss} />

@@ -331,27 +331,15 @@ frame with its geometry, the right dock keyed to the attended session (timeline 
 follow-the-tail stream rule — structure and geometry, never its pixels (D41) and never its plugin
 runtime (its surfaces are built natively against claude/codex through the adapter seam, D23).
 
-**SURF4a, SURF4b and SURF4c have landed** (2026-09-21): the three atoms and `sessionTitle`, with the
-presentational-import check sabotage-tested against a real file in `src/work/` — then `SessionRow`,
-`RepositoryGroup` and `SessionRail`, with D55's two extra facts on the row — then `SessionHead`,
-`TimelineEntry`, `SessionTimeline` and `AttendedSession`, with the stream promoted out of the drawer
-unchanged. Both of §7's questions are settled in the archive. **Every region exists; SURF4d is what
-mounts them, and it owes the arc's first real-window pass.**
-
-- [ ] **SURF4d — the frame** (design §3, §3b; **reshaped by D55** — it was "the view and a sixth nav
-  item"). `Composer` with its two distinct endings, then the **Work frame**: `WorkFrame` (rail +
-  attended + panel), `ModeSwitch` (Manage ⇄ Work as peers), `StatusBar` (driver, session count,
-  workspace, remote — ambient truth with nowhere to live today), `OutputPanel` (the stream, growable,
-  shrinkable, hideable — **not** a fixed well in a card), and the remembered **mode** in place of the
-  remembered view. **One home for the stream** — Quests keeps the record summary and gains a door,
-  Projects keeps the registry's own controls. Starting a session moves here (repository, harness,
-  profile, and whether it opens its own tree) — **which is where D55's per-session "own tree"
-  control lands**. SURF4b put the tree on the row as a *fact*, because a tree is cut at spawn (D51
-  §2) and a running session cannot be moved into one, so the *choice* belongs to the surface that
-  starts sessions and nowhere else. Both locale catalogues throughout; the page suite in
-  the vitest shape `shell.test.tsx` already uses, Playwright asserting Work's **absence** in a
-  browser, and a real-window pass to close it — **the arc's first**, inherited from SURF4c, because
-  nothing mounts a region until this item exists.
+**All four SURF4 items have landed** (2026-09-21). The atoms and `sessionTitle`, with the
+presentational-import check sabotage-tested against a real file in `src/work/`; the rail, with
+D55's two extra facts on the row; the attended session, with the timeline **derived** because the
+record has no event log; and the **frame** — `WorkFrame`, `ModeSwitch`, `StatusBar`, `OutputPanel`,
+`Composer`, `StartSession`, the remembered mode, and one home for the stream (the chat drawer is
+gone, Quests keeps the record and gains a door, Projects keeps the registry's controls). **The
+surface is reachable and usable**: `npm run desktop -- run`, switch to Work. The right dock is
+deliberately not built — it arrives with its second occupant, the diff (SURF6). **SURF5, SURF6 and
+SURF7–9 are what remain of the arc.**
 
 - [ ] **SURF7 — the window is part of the frame** (D55 §a has the traps and the reasons; this is the
   work). `MainForm` becomes an `OptimizedForm` with `FramelessChrome`; the top strip becomes app

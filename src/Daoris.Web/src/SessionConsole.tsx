@@ -18,19 +18,24 @@ import { MonoWell } from './ui';
  * the reason those two are one entity in the first place: the console does not care which way in a
  * session was entered.
  */
-export function SessionConsole({ id, tall }: { id: string; tall?: boolean }) {
+export function SessionConsole({ id, tall, fill }: { id: string; tall?: boolean; fill?: boolean }) {
   const { t } = useTranslation();
   const { lines, live, dropped } = useSessionConsole(id);
 
-  if (lines.length === 0 && !live) return null;
+  // `fill` is the output panel's mode (D55): the person gave the panel a height, so an empty
+  // console keeps it rather than collapsing the region they just resized.
+  if (lines.length === 0 && !live && !fill) return null;
 
   return (
-    <div className="mt-3">
+    <div className={fill ? 'flex min-h-0 flex-1 flex-col' : 'mt-3'}>
       <MonoWell
-        label={t('console.label')}
+        // In the panel the region's own header already names it; a second `console` above the
+        // well is the label repeated, not a label.
+        label={fill ? undefined : t('console.label')}
         live={live}
         dropped={dropped}
         tall={tall}
+        fill={fill}
         text={lines.map((line) => line.text).join('\n')}
       />
     </div>

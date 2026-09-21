@@ -5,7 +5,7 @@ import { useDriver } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { RepositoryGroup } from './RepositoryGroup';
 import { SessionRow } from './SessionRow';
-import { treeName } from './identity';
+import { ownTree } from './identity';
 
 /**
  * The rail: everything running, grouped by the repository it runs in (design §3).
@@ -85,7 +85,7 @@ export function SessionRail({ selected = null, onSelect, notify }: {
             // undefined, and the header asserts nothing rather than reading silence as "no".
             drivable={driver.data && driver.data.drivable.includes(repository)}
             held={driver.data && driver.data.holds.includes(repository)}
-            busy={holding ? (treeName(holding.tree) ?? true) : null}
+            busy={holding ? (ownTree(holding, registration?.root) ?? true) : null}
             adopted={registration?.adopted}
             // A root is answered only to a caller on the machine that holds it (D48 §7), so the
             // question is only ASKED where a driver answered — otherwise every registration would
@@ -97,6 +97,7 @@ export function SessionRail({ selected = null, onSelect, notify }: {
                 key={session.id}
                 session={session}
                 quest={session.quest ? questFor.get(session.quest) : null}
+                root={registration?.root}
                 selected={session.id === selected}
                 onSelect={onSelect}
               />

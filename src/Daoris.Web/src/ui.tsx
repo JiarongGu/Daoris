@@ -217,8 +217,13 @@ export function Dot({ tone = 'idle', label, className }: {
  * The tail is followed only **while live**; scrolling a finished log out from under a reader is
  * rude, and a person who scrolled up did so on purpose.
  */
-export function MonoWell({ text, label, live = false, dropped = 0, tall = false }: {
+export function MonoWell({ text, label, live = false, dropped = 0, tall = false, fill = false }: {
   text: string; label?: ReactNode; live?: boolean; dropped?: number; tall?: boolean;
+  /**
+   * Fill the height the caller gives instead of capping at one. What a growable output panel needs
+   * (D55): a well with a maximum of its own can be put in a taller box and simply not use it.
+   */
+  fill?: boolean;
 }) {
   const { t } = useTranslation();
   const well = useRef<HTMLPreElement>(null);
@@ -228,7 +233,7 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false 
   }, [text, live]);
 
   return (
-    <div>
+    <div className={cn(fill && 'flex min-h-0 flex-1 flex-col')}>
       {(label || live) && (
         <p className="mb-1 flex items-baseline gap-2 text-[0.72rem] text-ink-faint">
           {label && <span>{label}</span>}
@@ -240,7 +245,7 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false 
         className={cn(
           'm-0 overflow-auto whitespace-pre-wrap break-words rounded-control border border-line',
           'bg-raised px-3 py-2.5 font-mono text-[0.75rem] leading-relaxed text-ink-soft',
-          tall ? 'max-h-[26rem] min-h-40' : 'max-h-72',
+          fill ? 'min-h-0 flex-1' : tall ? 'max-h-[26rem] min-h-40' : 'max-h-72',
         )}
       >
         {text}

@@ -64,3 +64,31 @@ export function treeName(tree: string | null | undefined): string | null {
   const segments = (tree ?? '').split(/[/\\]/).filter((segment) => segment.trim().length > 0);
   return segments.length ? segments[segments.length - 1] : null;
 }
+
+/** Two paths as the same place. Separators differ by platform; Windows does not care about case. */
+const samePath = (a: string, b: string) =>
+  a.replace(/[\\/]+$/, '').replace(/\\/g, '/').toLowerCase()
+  === b.replace(/[\\/]+$/, '').replace(/\\/g, '/').toLowerCase();
+
+/**
+ * The name of a tree this session opened **for itself**, or null when it is working in the
+ * repository's registered checkout.
+ *
+ * @remarks
+ * **`tree` being set is not the question, and assuming it was is a bug the real window caught.**
+ * The ledger resolves an unstated tree to the registered root before it records one (D51: a caller
+ * that names the root and one that says nothing must land on the same lock key), so an ordinary
+ * conversation carries a `tree` — the root's own path. A surface reading "has a tree" as "has its
+ * own tree" told every session it was somewhere special, and the rail said `in engine` under the
+ * heading `engine`.
+ *
+ * So the question is *which* tree, answered against the registration. With no root in hand — a
+ * browser is told neither path (D48 §7, D51 §9) — the honest answer is null: nothing is claimed.
+ */
+export function ownTree(
+  session: Session, root: string | null | undefined,
+): string | null {
+  if (!session.tree) return null;
+  if (!root || samePath(session.tree, root)) return null;
+  return treeName(session.tree);
+}

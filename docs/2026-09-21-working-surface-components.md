@@ -194,6 +194,7 @@ last-view memory.~~ Work is the **second frame**, not a sixth nav item
 | `ModeSwitch` | *Manage* ⇄ *Work*, peers | either mode · Work absent (a browser) |
 | `StatusBar` | ambient truth: driver, session count, workspace, remote | running · stopped · no shell · a remote wired |
 | `OutputPanel` | the stream, **growable, shrinkable, hideable** — `MonoWell` inside a region, not a well inside a card | collapsed · default · grown · no session attended |
+| `StartSession` | repository, harness, account, own tree — moved out of Projects (SURF4d) | every choice · one harness and no accounts · nothing to talk in |
 | `WorkFrame` | rail + attended + panel + status bar | the assembled frame |
 
 The remembered mode replaces the remembered view, and is a per-browser preference like the language
@@ -209,7 +210,7 @@ the same method. Each item is TDD, gates green, archived on completion.
 | **SURF4a** ✔ | the three atoms, `SESSION_TONE`, `sessionTitle`, the presentational-import check, stories-as-smoke-tests | stories + `ui.test.tsx`; the import check sabotage-tested |
 | **SURF4b** ✔ | `SessionRow`, `RepositoryGroup`, and `SessionRail` over them | props-only vitest for the two molecules; mocked bridge for the rail |
 | **SURF4c** ✔ | `SessionHead`, `TimelineEntry`, `SessionTimeline`, and the stream promoted into `AttendedSession` | props-only vitest + the bridge for the promoted stream; ~~the first `npm run desktop -- shot`~~ — **moved to 4d**: nothing mounts a region until the frame exists |
-| **SURF4d** | `Composer`, then the **frame** (D55): `WorkFrame`, `ModeSwitch`, `StatusBar`, `OutputPanel`, remembered mode | the page suite; Playwright asserting Work's **absence** in a browser; a real-window pass |
+| **SURF4d** ✔ | `Composer`, `StartSession`, then the **frame** (D55): `WorkFrame`, `ModeSwitch`, `StatusBar`, `OutputPanel`, remembered mode | the page suite; Playwright asserting Work's **absence** in a browser; the arc's first real-window pass, which found two real bugs |
 
 **Why this order.** Each item renders something a person can look at: 4a puts every state in
 Storybook before a view exists, 4b makes the rail real, 4c makes one session attendable, 4d makes it a

@@ -250,12 +250,19 @@ export function useSessionConsole(sessionId: string | null) {
 export const useStartChat = () => {
   const client = useQueryClient();
   return useMutation({
-    // The profile is the per-session picker (D49 §4). Omitted is not "no profile": it takes the
-    // workspace's default, then the machine's, then the harness's own configuration home — the same
-    // resolution a driven session gets, so a conversation is not a second set of rules.
-    mutationFn: ({ repository, profile }: { repository: string; profile?: string }) =>
-      call<{ sessionId: string | null; message: string }>(
-        'START_CHAT', profile ? { repository, profile } : { repository }),
+    // Every part after the repository is omittable, and omitted means something: the profile takes
+    // the workspace's default, then the machine's, then the harness's own configuration home (D49
+    // §4); the adapter takes `driver.json`'s; and the tree falls back to the repository's standing
+    // opt-in (D51). The same resolution a driven session gets, so a conversation is not a second
+    // set of rules — which is why each is dropped from the payload rather than sent as a null.
+    mutationFn: (start: {
+      repository: string; profile?: string; adapter?: string; ownTree?: boolean;
+    }) => call<{ sessionId: string | null; message: string }>('START_CHAT', {
+      repository: start.repository,
+      ...(start.profile ? { profile: start.profile } : {}),
+      ...(start.adapter ? { adapter: start.adapter } : {}),
+      ...(start.ownTree ? { ownTree: true } : {}),
+    }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.driver });

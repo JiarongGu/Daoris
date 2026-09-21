@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -209,83 +209,8 @@ describe('the shell-attached registry management', () => {
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing was deleted'));
   });
 
-  /**
-   * The console (D49 §2): the transcript capture, streaming. It reaches the page over the shell's
-   * bridge and has no HTTP route at all, because output is transcript-class material and never leaves
-   * the machine that produced it (D47 §4).
-   */
-  it('a session drawer asks the driver for the console and renders it verbatim', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
-      ? {
-          session: 's1a2b3c4',
-          lines: [{ sequence: 1, text: '$ npm test' }, { sequence: 2, text: 'ok 1337 passing' }],
-          sequence: 2, live: true, dropped: 0,
-        }
-      : DRIVER_STATE));
-
-    show(<QuestsView notify={() => {}} />);
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-
-    expect(await screen.findByText(/ok 1337 passing/)).toBeTruthy();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', {
-      payload: { id: 's1a2b3c4' },
-    });
-  });
-
-  /** Live lines arrive as events and join the backlog as one stream, keyed by the driver's sequence. */
-  it('live output joins the backlog without repeating what was already shown', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
-      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'first' }], sequence: 1, live: true, dropped: 0 }
-      : DRIVER_STATE));
-
-    show(<QuestsView notify={() => {}} />);
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    await screen.findByText(/first/);
-
-    // A batch that repeats a line the page already holds, and adds one it does not.
-    await act(async () => {
-      eventHandlers.get('DAORIS.SESSION_OUTPUT')!({
-        session: 's1a2b3c4',
-        lines: [{ sequence: 1, text: 'first' }, { sequence: 2, text: 'second' }],
-      });
-    });
-
-    const well = await screen.findByText(/second/);
-    expect(well.textContent).toBe('first\nsecond');
-  });
-
-  /**
-   * The console is the part of the drawer that may be missing — a shell older than this surface
-   * answers something else entirely. It degrades to absent; the RECORD is what the drawer is for.
-   */
-  it('an answer that is not a console leaves the record standing', async () => {
-    invoke.mockImplementation(async () => DRIVER_STATE); // no `lines` anywhere in it
-
-    show(<QuestsView notify={() => {}} />);
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-
-    expect(await screen.findByText(/s1a2b3c4 · claude-code/)).toBeTruthy();
-    expect(screen.queryByText('console')).toBeNull();
-  });
-
-  /** Another session's output is not this drawer's — the event carries whose it is. */
-  it('a batch for a different session is ignored', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
-      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'mine' }], sequence: 1, live: true, dropped: 0 }
-      : DRIVER_STATE));
-
-    show(<QuestsView notify={() => {}} />);
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    await screen.findByText(/mine/);
-
-    await act(async () => {
-      eventHandlers.get('DAORIS.SESSION_OUTPUT')!({
-        session: 'somebody-else', lines: [{ sequence: 1, text: 'theirs' }],
-      });
-    });
-
-    expect(screen.queryByText(/theirs/)).toBeNull();
-  });
+  // The CONSOLE's tests moved to `work/WorkFrame.test.tsx` with the console itself (D55): one home
+  // for the stream, and the quest drawer keeps the record summary plus a door into it.
 
   /**
    * Provenance is served, not implied (D48 §6). A person looking at a repository's knowledge must be
@@ -317,112 +242,8 @@ describe('the shell-attached registry management', () => {
   });
 });
 
-/**
- * Conversations (D49 §3): a session a person entered rather than the driver planned. Shell-only,
- * because a chat is a process on this machine and processes never leave the driver (D46 §7) — and
- * Daoris pipes text without ever being the conversation: no model is named anywhere in this surface.
- */
-describe('chat sessions', () => {
-  const CHAT = {
-    id: 'c0ffee11', quest: null, repository: 'engine', adapter: 'stub', state: 'working',
-    kind: 'chat', created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
-  };
-
-  beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-  });
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    invoke.mockReset();
-  });
-
-  it('a repository with no live session offers to start one, and opens what comes back', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'START_CHAT') return { sessionId: 'c0ffee11', message: 'Chat `c0ffee11` opened in `engine`, via stub.' };
-      if (type === 'TAIL_SESSION') return { session: 'c0ffee11', lines: [], sequence: 0, live: true, dropped: 0 };
-      return DRIVER_STATE;
-    });
-
-    show(<ProjectsView notify={() => {}} />);
-    await userEvent.click(await screen.findByRole('button', { name: 'chat' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
-      payload: { repository: 'engine' },
-    });
-  });
-
-  /**
-   * A refusal is the ledger's own sentence, verbatim — and the drawer does not open on one: a
-   * conversation that was refused has no session to show.
-   *
-   * The fixture holds a live DRIVEN session in `engine`, which is the case worth pinning: a driven
-   * session holds the tree but has no channel to speak into, so the button offers to start a chat
-   * (and the ledger refuses, naming what holds it) rather than opening an input box nothing is
-   * listening to.
-   */
-  it('a refused chat surfaces the service sentence and opens nothing', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => (type === 'START_CHAT'
-      ? { sessionId: null, message: '`engine` already has an active session — `s1a2b3c4` (working, quest `#abc123`).' }
-      : DRIVER_STATE));
-    const notify = vi.fn();
-
-    show(<ProjectsView notify={notify} />);
-    await userEvent.click(await screen.findByRole('button', { name: 'chat' }));
-
-    expect(notify).toHaveBeenCalledWith(expect.stringContaining('already has an active session'), 'error');
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('typing sends one message over the bridge and clears the box', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      // A live chat in the repository: the button opens it rather than starting a second.
-      if (url.startsWith('/api/sessions')) return Response.json([CHAT]);
-      return respond(url);
-    }));
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'SESSION_INPUT') return { sent: true };
-      if (type === 'TAIL_SESSION') return { session: 'c0ffee11', lines: [], sequence: 0, live: true, dropped: 0 };
-      return DRIVER_STATE;
-    });
-
-    show(<ProjectsView notify={() => {}} />);
-    await userEvent.click(await screen.findByRole('button', { name: 'open session' }));
-
-    const box = await screen.findByLabelText('message');
-    await userEvent.type(box, 'what is this repository for?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: 'c0ffee11', text: 'what is this repository for?' },
-    });
-    expect((box as HTMLTextAreaElement).value).toBe('');
-  });
-
-  /**
-   * Finishing and stopping are different verbs and mean different things: end-of-input lets the
-   * harness wind up, a stop cuts it off and the record says the person did.
-   */
-  it('finishing and stopping are offered separately', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.startsWith('/api/sessions')) return Response.json([CHAT]);
-      return respond(url);
-    }));
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'END_CHAT') return { ended: true };
-      if (type === 'TAIL_SESSION') return { session: 'c0ffee11', lines: [], sequence: 0, live: true, dropped: 0 };
-      return DRIVER_STATE;
-    });
-
-    show(<ProjectsView notify={() => {}} />);
-    await userEvent.click(await screen.findByRole('button', { name: 'open session' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'finish' }));
-
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: 'c0ffee11' } });
-    expect(screen.getByRole('button', { name: 'stop it' })).toBeTruthy();
-  });
-});
+// CONVERSATIONS moved to `work/WorkFrame.test.tsx` with the surface that starts and holds them
+// (design §3): starting a session belongs where its result appears, not in the registry's view.
 
 /**
  * The machine's wiring (D48 §5, D50): which deployment serves each workspace here. Shell-only and
@@ -598,32 +419,7 @@ describe('the harness roster', () => {
     expect(screen.queryByText('Harnesses')).toBeNull();
   });
 
-  /**
-   * The per-session picker (D49 §4). Empty is not "no profile": it means whatever this machine
-   * already decided — the workspace's default, then the machine's — which is what the label says and
-   * what the payload omitting the field means.
-   */
-  it('projects offer a profile for the next conversation, and omit it when unchosen', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'HARNESSES') return ROSTER;
-      if (type === 'START_CHAT') return { sessionId: null, message: 'busy' };
-      return DRIVER_STATE;
-    });
-
-    show(<ProjectsView notify={() => {}} />);
-    await screen.findByLabelText(/the next conversation runs as/);
-
-    await userEvent.click(screen.getByRole('button', { name: 'chat' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
-      payload: { repository: 'engine' },
-    });
-
-    await userEvent.selectOptions(screen.getByLabelText(/the next conversation runs as/), 'work');
-    await userEvent.click(screen.getByRole('button', { name: 'chat' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
-      payload: { repository: 'engine', profile: 'work' },
-    });
-  });
+  // The per-session PICKER moved with the start form it belongs to (`work/WorkFrame.test.tsx`).
 });
 
 describe('the shell push channel (ShellSignals)', () => {

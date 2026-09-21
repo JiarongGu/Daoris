@@ -268,10 +268,37 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
 
   await nav(page, 'Projects').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
-  // No roster, no picker, and nothing that would name a configuration home.
+  // No roster, and nothing that would name a configuration home. The per-conversation account
+  // picker moved to the Work frame with the rest of starting a session (D55) — and that frame is
+  // itself absent here, which the test below is about.
   await expect(page.getByText('Harnesses')).toHaveCount(0);
-  await expect(page.getByLabel(/the next conversation runs as/)).toHaveCount(0);
   await expect(page.getByText(/\.daoris[\\/]harnesses/)).toHaveCount(0);
+});
+
+/**
+ * The Work frame is not rendered in a browser at all (D55), which is the strongest form the
+ * disclosure rule takes: its centre is a stream, its rows carry tree paths, and its panel is a
+ * transcript — none of which may leave the machine that produced them (D47 §4). Playwright holds
+ * the NEGATIVE, over the shipped bundle, because the positive is only reachable from the desktop.
+ */
+test('a browser has one frame, and it is Manage (D55)', async ({ page }) => {
+  await page.goto('/');
+
+  // No switch, because there is nothing to switch to — absent rather than disabled.
+  await expect(page.getByRole('group', { name: 'mode' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Work', exact: true })).toHaveCount(0);
+
+  // A browser that remembers the other frame still gets this one: the fallback is not cosmetic.
+  await page.evaluate(() => window.localStorage.setItem('daoris.mode', 'work'));
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'sessions' })).toHaveCount(0);
+  await expect(page.getByLabel('console height')).toHaveCount(0);
+  await expect(page.getByLabel('message')).toHaveCount(0);
+  await page.evaluate(() => window.localStorage.removeItem('daoris.mode'));
+
+  // The status bar IS here — it belongs to the application — and it says what a browser is.
+  await expect(page.getByLabel('state of this machine')).toContainText('none here');
 });
 
 test('the console speaks 中文', async ({ page }) => {

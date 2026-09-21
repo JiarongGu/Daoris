@@ -63,11 +63,16 @@ describe('the attended session', () => {
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('asks the driver for this session\'s backlog — the stream is promoted, not rebuilt', () => {
+  /**
+   * The stream has ONE home (design §3, D55) and it is the frame's output panel, not this region.
+   * Asserted here because a second console rendered beside the record is exactly the duplication
+   * the rule exists to prevent — and it stays invisible until two of them disagree.
+   */
+  it('renders no console of its own — the stream lives in the panel', () => {
     render(<AttendedSession session={session()} />);
 
-    expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: 's1a2b3c4' } },
+    expect(invoke).not.toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'TAIL_SESSION', expect.anything(),
     );
   });
 });

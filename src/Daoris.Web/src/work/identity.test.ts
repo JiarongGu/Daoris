@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Quest, Session } from '../api';
-import { sessionOrigin, sessionTitle, treeName } from './identity';
+import { ownTree, sessionOrigin, sessionTitle, treeName } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1',
@@ -101,5 +101,37 @@ describe('a tree name', () => {
     expect(treeName(null)).toBeNull();
     expect(treeName(undefined)).toBeNull();
     expect(treeName('   ')).toBeNull();
+  });
+});
+
+/**
+ * Found by the first real-window pass (SURF4d): the rail said `in engine` under the heading
+ * `engine`, because an ordinary conversation DOES carry a tree — the registered root's own path.
+ * The ledger resolves an unstated tree to the root before recording it, so "has a tree" was never
+ * the question; "which tree" is.
+ */
+describe('a tree the session opened for itself', () => {
+  const root = 'D:/checkouts/engine';
+
+  it('is null when the session is working in the registered checkout', () => {
+    expect(ownTree(session({ tree: root }), root)).toBeNull();
+  });
+
+  it('ignores separators and case, because one path can be spelled several ways', () => {
+    expect(ownTree(session({ tree: 'D:\\checkouts\\Engine\\' }), root)).toBeNull();
+  });
+
+  it('names it when the session opened one for itself (D51)', () => {
+    expect(ownTree(session({ tree: '/home/p/.daoris/trees/default/engine/streaming' }), root))
+      .toBe('streaming');
+  });
+
+  it('claims nothing where the root is not known — a browser is told neither path', () => {
+    expect(ownTree(session({ tree: '/home/p/.daoris/trees/default/engine/streaming' }), null))
+      .toBeNull();
+  });
+
+  it('claims nothing when the record carries no tree at all', () => {
+    expect(ownTree(session(), root)).toBeNull();
   });
 });

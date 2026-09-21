@@ -118,18 +118,25 @@ describe('a session row', () => {
 
   /**
    * D51 made the tree the unit of exclusion, so a repository can hold two sessions at once and the
-   * group header alone can no longer say which is where. Silence is the registered root — and it
-   * is also what a reader who is not this machine gets, since a tree is a path (D51 §9).
+   * group header alone can no longer say which is where. The root case is the one the first
+   * real-window pass caught: an ordinary session carries the ROOT's path in `tree`, so "has a
+   * tree" would have labelled every row.
    */
-  it('names the session\'s own working tree, and says nothing for the registered root', () => {
+  it('names a working tree the session opened for itself, and nothing for the registered root', () => {
+    const root = 'C:/checkouts/engine';
     const { unmount } = render(<SessionRow
+      root={root}
       session={session({ tree: 'C:/somewhere/.daoris/trees/default/engine/streaming-budget' })}
     />);
     expect(screen.getByText(/in streaming-budget/)).toBeInTheDocument();
     unmount();
 
+    const inRoot = render(<SessionRow root={root} session={session({ tree: root })} />);
+    expect(screen.queryByText(/ in /)).not.toBeInTheDocument();
+    inRoot.unmount();
+
     render(<SessionRow session={session({ tree: null })} />);
-    expect(screen.queryByText(/in /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ in /)).not.toBeInTheDocument();
   });
 
   it('measures a finished session to where it ended, not to now', () => {

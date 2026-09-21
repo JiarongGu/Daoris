@@ -88,3 +88,46 @@ describe('the shell in a browser, over two workspaces', () => {
     });
   });
 });
+
+/**
+ * The two frames (D55). In a browser there is exactly one: Work's centre is a stream, its rows
+ * carry tree paths, and neither may leave the machine that produced them (D47 §4) — so the switch
+ * that would offer it is absent rather than disabled, and a remembered `work` cannot resurrect it.
+ */
+describe('the frames, in a browser', () => {
+  beforeEach(() => {
+    fetchMock = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
+    vi.stubGlobal('fetch', fetchMock);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.removeItem('daoris.mode');
+  });
+
+  it('offers no mode switch where there is no shell to hold the other frame', async () => {
+    shell();
+    await screen.findByRole('combobox', { name: 'workspace' });
+
+    expect(screen.queryByRole('group', { name: 'mode' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Work' })).toBeNull();
+  });
+
+  it('falls back to Manage when the browser remembers a frame this deployment does not have', async () => {
+    window.localStorage.setItem('daoris.mode', 'work');
+    shell();
+
+    // Manage's landing view, not an empty Work frame.
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('sessions')).toBeNull();
+  });
+
+  /** Ambient truth is true in both frames, so the bar belongs to the application, not to Work. */
+  it('carries the status bar, saying plainly that this machine has no driver', async () => {
+    shell();
+
+    const bar = await screen.findByLabelText('state of this machine');
+    expect(bar).toHaveTextContent('none here');
+    // The remote question cannot be asked without the map, so it is not answered either.
+    expect(bar).not.toHaveTextContent('remote');
+  });
+});

@@ -113,12 +113,12 @@ risk, **authorship** was.
   agents in one tree corrupt it" survives; only the incidental cap does not), **D52** the surface, and
   **D55** the frame: Manage ⇄ Work are two **frames** of one application rather than a sixth nav item,
   with a status bar, a growable output panel, a frameless window whose top strip is application chrome
-  (SURF7) and a monitor window (SURF8). **Landed:** SURF2, SURF3, **SURF4a** (the atoms, a
-  sabotage-tested presentational boundary, every story a smoke test), **SURF4b** (the rail, with
-  D55's *where it runs* and *elapsed* **read out of the record**) and **SURF4c** (the attended
-  session — the head, the observed timeline **derived** because the record has no event log, and
-  the stream promoted out of the drawer unchanged). **SURF4d mounts them as the frame, and owes the
-  arc's first real-window pass.**
+  (SURF7) and a monitor window (SURF8). **All of SURF4 has landed** — the atoms, the rail, the
+  attended session (its timeline **derived**, because the record has no event log) and the **frame**:
+  Work is reachable and usable today (`npm run desktop -- run`, then *Work*). **The stream has one
+  home**, the output panel — `ChatDrawer` is gone, Quests keeps the record and gains a door,
+  Projects keeps the registry's controls. The **right dock** is deliberately unbuilt until the diff
+  gives it a second occupant (SURF6). **SURF5, SURF6, SURF7–9 remain.**
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface

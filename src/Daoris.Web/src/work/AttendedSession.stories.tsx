@@ -2,10 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../api';
 import { AttendedSession } from './AttendedSession';
 
-// The assembled region. The CONSOLE is absent in every story below and that is the guarantee
-// working, not a gap: a stream arrives over the shell's bridge and Storybook has none, exactly as a
-// browser over a keyed remote has none (D47 §4). What a reviewer judges here is the record and the
-// observed layer around the hole the stream fills on a desktop.
+// The assembled region: the record and the observed layer over it. The stream is deliberately not
+// part of this — it has one home, the frame's output panel (D55) — and neither is the composer,
+// which sits beneath the region rather than inside it.
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 

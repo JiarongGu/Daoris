@@ -1,0 +1,191 @@
+import { useTranslation } from 'react-i18next';
+import { Button, Dot } from '../ui';
+import { SessionConsole } from '../SessionConsole';
+import { cn } from '../lib/cn';
+
+// The frame's own furniture (D55): the mode switch, the status bar and the output panel. Small,
+// presentational, and kept together because they are one arrangement rather than three features —
+// what the workbench references all have and what this platform had nowhere to put.
+
+export type Mode = 'manage' | 'work';
+
+/**
+ * *Manage* ⇄ *Work*, as **peers** (D55) — not a sixth nav item.
+ *
+ * @remarks
+ * **Absent where Work is** (D47 §4 / D55): over a keyed remote the Work frame is not rendered at
+ * all, so a switch offering it would be a door onto nothing. `available` is the shell's answer,
+ * and `false` renders nothing rather than a disabled control — the same rule the Machine tab
+ * follows, and for the same reason: a disabled control implies the thing exists elsewhere.
+ */
+export function ModeSwitch({ mode, available, onChange }: {
+  mode: Mode; available: boolean; onChange: (mode: Mode) => void;
+}) {
+  const { t } = useTranslation();
+  if (!available) return null;
+
+  return (
+    <div
+      role="group"
+      aria-label={t('work.mode.label')}
+      className="inline-flex rounded-control border border-line bg-raised p-0.5"
+    >
+      {(['manage', 'work'] as const).map((target) => (
+        <button
+          key={target}
+          type="button"
+          aria-pressed={mode === target}
+          onClick={() => onChange(target)}
+          className={cn(
+            'rounded-[4px] px-2.5 py-1 text-[0.82rem] transition-colors duration-(--speed)',
+            mode === target ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:text-ink',
+          )}
+        >
+          {t(`work.mode.${target}`)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** What the driver is, as a surface can honestly know it. */
+export type DriverPresence = 'running' | 'stopped' | 'absent';
+
+/**
+ * Ambient truth: the driver, how much is running, which circle, and whether this one syncs.
+ *
+ * @remarks
+ * **It must be true without being looked at** — VS Code's status bar, and the reason D55 added
+ * one: none of these four had anywhere to live, so each was either absent or buried in a view the
+ * person was not on.
+ *
+ * `driver` is three states rather than a boolean because the third is real and different: `absent`
+ * is a browser, which has no driver and never will, and `stopped` is a shell whose driver did not
+ * answer. Telling a person "not answering" when the honest answer is "not here" sends them looking
+ * for a fault.
+ */
+export function StatusBar({ driver, sessions, workspace, remote }: {
+  driver: DriverPresence;
+  sessions: number;
+  /** The chosen circle, or null for every circle this deployment holds (WSP5). */
+  workspace: string | null;
+  /** Whether this workspace has a deployment wired, or null where the question cannot be asked. */
+  remote: boolean | null;
+}) {
+  const { t } = useTranslation();
+  const tone = driver === 'running' ? 'live' : driver === 'stopped' ? 'parked' : 'idle';
+
+  return (
+    <footer
+      aria-label={t('work.status.label')}
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line bg-raised px-4 py-1 text-[0.72rem] text-ink-faint"
+    >
+      <span className="flex items-center gap-1.5">
+        {t('work.status.driver')}
+        <Dot
+          tone={tone}
+          label={t(`work.status.driver${driver === 'running' ? 'Running' : driver === 'stopped' ? 'Stopped' : 'Absent'}`)}
+        />
+      </span>
+      <span>{t('work.status.sessions', { count: sessions })}</span>
+      <span>
+        {t('work.status.workspace')}
+        {' · '}
+        {workspace ?? t('work.status.everyWorkspace')}
+      </span>
+      {remote !== null && (
+        <span>
+          {t('work.status.remote')}
+          {' · '}
+          {remote ? t('work.status.remoteWired') : t('work.status.remoteLocal')}
+        </span>
+      )}
+    </footer>
+  );
+}
+
+/** What a person can drag the panel between. Below the floor it is not a panel, it is a sliver. */
+export const PANEL_MIN = 96;
+export const PANEL_MAX = 720;
+const PANEL_STEP = 48;
+
+/**
+ * The stream, as a region a person can **grow, shrink and hide** (D55).
+ *
+ * @remarks
+ * A well inside a card is the one arrangement that cannot be made bigger when you need it bigger,
+ * which is why output lives in a panel in every workbench ever shipped. The console component is
+ * unchanged — it fills the height this gives it (`MonoWell`'s `fill`) instead of capping at one.
+ *
+ * **The handle is keyboard-operable**, not only draggable: a resize that needs a mouse is a resize
+ * some people do not have. Arrow keys move it a step, Home and End take it to the extremes.
+ *
+ * **Closing is deterministic**: nothing reopens this panel but the person. It is the reference
+ * console's rule, and the reason is that a layout which springs back on a window resize teaches
+ * people not to trust the control.
+ */
+export function OutputPanel({ sessionId, height, collapsed, onResize, onToggle }: {
+  /** Whose stream — null when nothing is attended, which is a state rather than an absence. */
+  sessionId: string | null;
+  height: number;
+  collapsed: boolean;
+  onResize: (height: number) => void;
+  onToggle: () => void;
+}) {
+  const { t } = useTranslation();
+  const clamp = (value: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, value));
+
+  const drag = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startHeight = height;
+    const move = (moved: PointerEvent) => onResize(clamp(startHeight + (startY - moved.clientY)));
+    const done = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', done);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', done);
+  };
+
+  return (
+    <section className="flex shrink-0 flex-col border-t border-line">
+      {!collapsed && (
+        <div
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label={t('work.panel.resize')}
+          aria-valuenow={height}
+          aria-valuemin={PANEL_MIN}
+          aria-valuemax={PANEL_MAX}
+          tabIndex={0}
+          onPointerDown={drag}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowUp') onResize(clamp(height + PANEL_STEP));
+            else if (event.key === 'ArrowDown') onResize(clamp(height - PANEL_STEP));
+            else if (event.key === 'Home') onResize(PANEL_MAX);
+            else if (event.key === 'End') onResize(PANEL_MIN);
+            else return;
+            event.preventDefault();
+          }}
+          className="h-1.5 cursor-ns-resize bg-transparent hover:bg-accent-soft"
+        />
+      )}
+
+      <header className="flex items-center gap-2 px-4 py-1">
+        <span className="text-[0.72rem] text-ink-faint">{t('work.panel.title')}</span>
+        <Button variant="ghost" className="ml-auto" onClick={onToggle}>
+          {collapsed ? t('work.panel.show') : t('work.panel.hide')}
+        </Button>
+      </header>
+
+      {!collapsed && (
+        <div className="flex min-h-0 flex-col px-4 pb-3" style={{ height }}>
+          {sessionId
+            ? <SessionConsole id={sessionId} fill />
+            : <p className="m-0 text-[0.8rem] text-ink-faint">{t('work.panel.none')}</p>}
+        </div>
+      )}
+    </section>
+  );
+}

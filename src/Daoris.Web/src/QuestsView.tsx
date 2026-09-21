@@ -4,7 +4,6 @@ import type { Quest, Session } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
 import { useDriver, useStopSession } from './shell';
 import { ago, sentence, sessionTool, sittingDays } from './format';
-import { SessionConsole } from './SessionConsole';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
   SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
@@ -26,7 +25,14 @@ const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '' };
  * other door, refusals surfaced verbatim — the service's sentence is the contract, so it is never
  * translated or rephrased here.
  */
-export function QuestsView({ notify }: { notify: Notify }) {
+export function QuestsView({ notify, onAttend }: {
+  notify: Notify;
+  /**
+   * The door into Work (design §3): this view keeps the record summary and hands the session over
+   * rather than growing a second console. Absent where Work is — a browser has no frame to open.
+   */
+  onAttend?: (session: string) => void;
+}) {
   const { t } = useTranslation();
   const [repository, setRepository] = useState(EVERYONE);
   const [includeClosed, setIncludeClosed] = useState(false);
@@ -306,7 +312,12 @@ export function QuestsView({ notify }: { notify: Notify }) {
                     {session.evidence}
                   </pre>
                 )}
-                <SessionConsole id={session.id} />
+                {/* One home for the stream (design §3, D55): the console was here, and a session's
+                    console is now the Work frame's output panel. This keeps the record summary and
+                    becomes a DOOR — which is only offered where Work exists at all. */}
+                {onAttend && driver.data && (
+                  <Button className="mt-2.5" onClick={() => onAttend(session.id)}>{t('work.open')}</Button>
+                )}
                 <p className="mt-2 mb-0 text-[0.75rem] text-ink-faint">{t('quests.session.hint')}</p>
               </div>
             );

@@ -2343,3 +2343,64 @@ step-parsing is in `SessionTimeline.test.tsx` by name.
 of this item cannot happen yet: nothing mounts `AttendedSession` until the Work frame exists, so
 `npm run desktop -- shot` would photograph the console it already had. The pass moved to SURF4d,
 where the frame makes it possible, and both the backlog and the plan say so.
+
+## SURF4d — the frame (2026-09-21)
+
+**What it was.** The last cut of SURF4, and the one that makes the surface a place rather than a set
+of parts: `Composer`, `StartSession`, `ModeSwitch`, `StatusBar`, `OutputPanel`, `WorkFrame`, the
+remembered mode, and **one home for the stream**. After this, `npm run desktop -- run` and a click
+on *Work* is a working surface.
+
+**Work is a frame, and the application is a window.** *Manage* and *Work* are peers behind a mode
+switch (D55); the remembered **mode** replaces the remembered view, per browser like the language
+and the scope. Over a keyed remote the switch is **absent rather than disabled** — the same rule the
+Machine tab follows — and a browser that remembers `work` still gets Manage, which Playwright now
+holds by reloading with the preference set.
+
+**One home for the stream, which meant deleting something.** `ChatDrawer.tsx` is gone: its console
+and composer are the frame's, and starting a conversation moved out of Projects to where its result
+appears. Quests keeps the record summary and **gains a door** that names the session it opens —
+which is why the selection lives in `App` rather than inside the frame. Nine tests moved from
+`shell.test.tsx` into a new `work/WorkFrame.test.tsx` rather than being rewritten, and the two
+catalogue namespaces the move emptied (`chat.*`, `projects.chat*`) were retired, thirteen keys in
+both languages.
+
+**The composer's two endings stayed two.** Finishing lets the harness wind up (`completed`);
+stopping is the person's interrupt (`stopped`). A draft the session ended underneath is **kept**,
+disabled, with the ending said out loud — a box that swallows the paragraph somebody was halfway
+through gives them no way back. And "nothing is listening" lands **on the composer** rather than in
+a toast, because that is where the person is looking.
+
+**The panel is a region the person owns.** Growable, shrinkable, hideable, remembered, and
+**keyboard-resizable** — a resize that needs a mouse is a resize some people do not have. Closing is
+deterministic: nothing reopens it but the person. `MonoWell` gained a `fill` mode for it, because a
+well with a maximum of its own can be put in a taller box and simply not use it.
+
+**Two bugs the real window caught, and neither was reachable from a test that did not exist yet.**
+
+1. **`tree` being set is not the same as having a tree of one's own.** The ledger resolves an
+   unstated tree to the registered root before recording it (D51: a caller that names the root and
+   one that says nothing must land on the same lock key), so an ordinary conversation carries a
+   tree — the root's path. The rail read "has a tree" as "has its own tree" and printed `busy ·
+   engine` under the heading `engine`, and `in engine` on the row. `ownTree(session, root)` asks the
+   right question; with no root in hand — a browser is told neither path — it claims nothing.
+2. **The application was a page and needed to be a window.** The frame grew past the viewport, so
+   the status bar sat below the fold and the output panel scrolled away exactly when a session was
+   producing output. The shell is now `h-screen` with every region scrolling inside it, which is
+   what every workbench in the reference study does and what D55 means by a frame.
+
+Both are the argument for DEV1's instrument made concrete: 245 unit tests and 11 Playwright specs
+were green, and a person looking at the window for four seconds saw both.
+
+**What was deliberately not built.** The **right dock** — the reference frame's third column
+(components plan §3a) — arrives with its second occupant, the diff (SURF6). One tab in a dock is a
+pane with extra chrome, so the timeline stays in the attended column and moves when it has company.
+And `SectionTitle` gained a heading `level` in SURF4c for the same region; nothing else moved.
+
+**Proven.** 245 web unit tests, up from 216, and 11 Playwright specs — the new one holds the
+**negative**: no mode switch, no rail, no console height, no composer, and a remembered `work`
+falling back, all over the shipped bundle in a real browser. Then the arc's first real-window pass:
+`npm run desktop -- run` on a scratch machine, a seeded record, `eval` for what the shell actually
+rendered and `shot` for what it looks like. The frame's start form was driven end to end there too —
+the harness roster's refusal reached the person verbatim, which is the whole path from the form
+through the bridge to the ledger's own sentence.

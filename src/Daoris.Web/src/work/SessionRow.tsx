@@ -3,7 +3,7 @@ import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
 import { Dot, SESSION_ACTIVE, SESSION_DOT } from '../ui';
 import { cn } from '../lib/cn';
-import { sessionOrigin, sessionTitle, treeName } from './identity';
+import { ownTree, sessionOrigin, sessionTitle } from './identity';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention (design §3).
@@ -15,23 +15,28 @@ import { sessionOrigin, sessionTitle, treeName } from './identity';
  *
  * **The anatomy is the reference console's, with D55's two facts added** (components plan §3a): the
  * mark and its word, what the session is for, how long it has been going, where it runs, which
- * tree it holds, and when it last moved. `elapsed`, `sessionOrigin` and `treeName` each carry the
- * reason they exist.
+ * tree it opened for itself, and when it last moved. `elapsed`, `sessionOrigin` and `ownTree`
+ * each carry the reason they exist.
  *
  * **Selection is the frame's to hold** (see `SessionRail`): this row is told whether it is attended
  * and reports a click.
  */
-export function SessionRow({ session, quest, selected = false, onSelect }: {
+export function SessionRow({ session, quest, root, selected = false, onSelect }: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
+  /**
+   * The repository's registered checkout, so the row can tell a session in a tree of its OWN from
+   * one in the root. Absent where the path is not answered, and then nothing is claimed.
+   */
+  root?: string | null;
   selected?: boolean;
   onSelect?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const title = sessionTitle(session, quest);
   const origin = sessionOrigin(session);
-  const tree = treeName(session.tree);
+  const tree = ownTree(session, root);
   const running = SESSION_ACTIVE.has(session.state);
 
   // One line of secondary facts, each absent when it has nothing to say — `MetaLine`'s rule, and

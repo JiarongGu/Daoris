@@ -115,8 +115,18 @@ export const AnotherMachine: Story = {
  */
 export const OwnTree: Story = {
   args: {
+    root: 'C:/checkouts/engine',
     session: { ...SESSION, tree: 'C:/somewhere/.daoris/trees/default/engine/streaming-budget' },
   },
+};
+
+/**
+ * The same row in the repository's registered checkout. It carries a tree path too — the ledger
+ * resolves an unstated tree to the root before recording one — and says nothing about it, which
+ * is the distinction the first real-window pass caught the rail getting wrong.
+ */
+export const InTheRegisteredRoot: Story = {
+  args: { root: 'C:/checkouts/engine', session: { ...SESSION, tree: 'C:/checkouts/engine' } },
 };
 
 /** Three hours deep. The whole reason elapsed is on the row: "moved 4m ago" says none of this. */

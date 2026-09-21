@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration } from './api';
 import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
-import { ChatDrawer } from './ChatDrawer';
 import { ago, sentence } from './format';
-import { useRegistry, useRepositories, useSessions } from './queries';
-import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees, useStartChat } from './shell';
+import { useRegistry, useRepositories } from './queries';
+import { useDriver, useSetDrivable, useSetHold, useSetTrees } from './shell';
 import {
   Button, Card, CheckField, Chip, type Notify, PageHeader, SkeletonRows, Tip, useErrorNotify,
 } from './ui';
@@ -33,49 +32,9 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   const [adding, setAdding] = useState(false);
   const [managing, setManaging] = useState<Registration | null>(null);
 
-  // A live CONVERSATION in this repository — not just any live session. A driven session also holds
-  // the tree, but it has no channel to speak into: it was given its whole target at once. Offering
-  // to "open" one would put a person in front of an input box nothing is listening to; starting a
-  // chat instead gets the ledger's own refusal, which names what holds the repository.
-  const sessions = useSessions(null, false);
-  const startChat = useStartChat();
-  const [chatting, setChatting] = useState<string | null>(null);
-
-  // The per-session picker (D49 §4): which credential profile the NEXT conversation runs as. One
-  // control rather than one per row, because it is a standing choice for the next thing a person
-  // starts — and empty is not "no profile", it is "whatever this machine already decided", which is
-  // what the label says. Absent entirely when there is nothing to choose between.
-  const harnesses = useHarnesses();
-  const [profile, setProfile] = useState('');
-  // Shape-tolerant for the same reason the roster is: an older shell answers a request it has never
-  // heard of with something else, and a page that could not start a conversation because of it would
-  // be a worse failure than one that simply offers no picker.
-  const spawning = (Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [])
-    .find((h) => h.harness === harnesses.data?.adapter);
-  const choices = Array.isArray(spawning?.profiles) ? spawning.profiles : [];
-  const chatIn = (repository: string) =>
-    (sessions.data ?? []).find((s) => s.repository === repository && s.kind === 'chat');
-  const chat = (sessions.data ?? []).find((s) => s.id === chatting);
-
-  const onChat = (repository: string) => {
-    const already = chatIn(repository);
-    if (already) {
-      setChatting(already.id);
-      return;
-    }
-
-    startChat.mutate({ repository, profile: profile || undefined }, {
-      onSuccess: (result) => {
-        // A refusal is the ledger's own sentence — the repository is busy, has no checkout here, or
-        // (since D49 §4) its harness is missing or the chosen profile is logged out. Each of those
-        // names the action that fixes it, which is why the sentence is shown rather than summarised.
-        if (!result.sessionId) notify(result.message, 'error');
-        else setChatting(result.sessionId);
-      },
-      onError: (error: unknown) => notify(sentence(error), 'error'),
-    });
-  };
-
+  // Starting and holding a CONVERSATION moved to the Work frame (design §3, D55): one home for the
+  // stream, and starting a session belongs where its result appears. What stays here is the
+  // registry's own business — who is in the family, and this machine's standing driver choices.
   const adopted = (registry.data ?? []).filter((r) => r.adopted);
   const outside = (registry.data ?? []).filter((r) => !r.adopted);
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
@@ -93,31 +52,10 @@ export function ProjectsView({ notify }: { notify: Notify }) {
           : undefined}
       />
 
-      {attached && choices.length > 0 && (
-        <label className="mb-3.5 flex flex-wrap items-center gap-2 text-[0.8rem] text-ink-faint">
-          {t('projects.chatAs')}
-          <select
-            value={profile}
-            onChange={(event) => setProfile(event.target.value)}
-            className="rounded-control border border-line bg-raised px-2 py-1 text-[0.8rem] text-ink"
-          >
-            <option value="">{t('projects.chatAsDefault')}</option>
-            {choices.map((choice) => (
-              // A logged-out profile is offered and labelled rather than hidden: the spawn refuses
-              // with the sentence that names the login action, which teaches more than a missing row.
-              <option key={choice.name} value={choice.name}>
-                {choice.login === 'out' ? t('harness.profileOut', { name: choice.name }) : choice.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
       {adding && <AddProjectDrawer onClose={() => setAdding(false)} notify={notify} />}
       {managing && (
         <ManageProjectDrawer project={managing} onClose={() => setManaging(null)} notify={notify} />
       )}
-      {chat && <ChatDrawer session={chat} onClose={() => setChatting(null)} notify={notify} />}
 
       {registry.isPending && <SkeletonRows rows={4} />}
 
@@ -224,16 +162,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                       { repository: project.repository, ownTree: next }, { onError: onDriverError })}
                     label={t('projects.driver.trees')}
                   />
-                  {/* A conversation in this repository (D49 §3) — where a driver is attached, because
-                      a chat is a process on this machine. Already talking? The same button opens it. */}
-                  <Button
-                    className="ml-auto"
-                    disabled={startChat.isPending}
-                    onClick={() => onChat(project.repository)}
-                  >
-                    {chatIn(project.repository) ? t('projects.chat.open') : t('projects.chat.start')}
-                  </Button>
-                  <Button variant="ghost" onClick={() => setManaging(project)}>
+                  <Button variant="ghost" className="ml-auto" onClick={() => setManaging(project)}>
                     {t('projects.manage.open')}
                   </Button>
                 </p>
