@@ -436,9 +436,13 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>A harness that is there, with a profile question it answers from its own home.</summary>
-    private sealed class FakeAdapter(HarnessToolchain? toolchain) : ISessionAdapter
+    private sealed class FakeAdapter(HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe)
+        : ISessionAdapter
     {
         public string Name => "fake";
+
+        /// <summary>Which door — the protocol one asks for the Agent SDK's executable seam (ACP2).</summary>
+        public SessionWire Wire => wire;
 
         public System.Diagnostics.ProcessStartInfo Prepare(
             SessionTarget target, IReadOnlyList<string>? command) => new();
@@ -446,10 +450,10 @@ public sealed class HarnessSelectionTests : IDisposable
         public HarnessToolchain? Toolchain => toolchain;
     }
 
-    private static AdapterSet Set(HarnessToolchain? toolchain) =>
+    private static AdapterSet Set(HarnessToolchain? toolchain, SessionWire wire = SessionWire.Pipe) =>
         new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["fake"] = new FakeAdapter(toolchain),
+            ["fake"] = new FakeAdapter(toolchain, wire),
         });
 
     private string Present()
@@ -578,6 +582,57 @@ public sealed class HarnessSelectionTests : IDisposable
             .SelectAsync("fake", Config(), workspace: "aurora", chosen: null);
 
         Assert.Equal(theirs, selection.Binary);
+    }
+
+    /// <summary>
+    /// 🔴 The ACP adapter's <b>executable seam</b> (ACP2, §1a): a protocol-door spawn is told which
+    /// `claude` to run, read from the <b>pipe door's</b> pin — because the CLI and the account belong
+    /// to `claude-code`, and the ACP adapter is a separate package that merely runs it.
+    /// </summary>
+    [Fact]
+    public async Task A_protocol_door_spawn_is_told_which_claude_to_run()
+    {
+        var claudeBin = Path.Combine(
+            HarnessSettings.ManagedHome(_home, "claude-code", "2.1.278"), "node_modules", ".bin");
+        Directory.CreateDirectory(claudeBin);
+        var claude = Path.Combine(claudeBin, OperatingSystem.IsWindows() ? "claude.cmd" : "claude");
+        File.WriteAllText(claude, "");
+        new HarnessSettings().WithVersion("claude-code", "2.1.278").Save(Settings);
+
+        var selection = await new HarnessRoster(Set(Toolchain(Present()), SessionWire.Acp), Settings)
+            .SelectAsync("fake", Config(), workspace: null, chosen: null);
+
+        Assert.True(selection.Allowed);
+        Assert.Equal(claude, selection.ClaudeExecutable);
+    }
+
+    /// <summary>
+    /// The pipe door is never told, because it does not run the Agent SDK — it IS the CLI. A machine
+    /// driving the old way must not acquire an environment variable because a new door exists.
+    /// </summary>
+    [Fact]
+    public async Task A_pipe_door_spawn_is_told_nothing_about_an_executable()
+    {
+        new HarnessSettings().WithVersion("claude-code", "2.1.278").Save(Settings);
+
+        var selection = await new HarnessRoster(Set(Toolchain(Present())), Settings)
+            .SelectAsync("fake", Config(), workspace: null, chosen: null);
+
+        Assert.Null(selection.ClaudeExecutable);
+    }
+
+    /// <summary>
+    /// With no `claude` pinned the seam is null, so the SDK finds its own — the additive rule again
+    /// (D48 §2a). A protocol-door session on a machine that pinned nothing works exactly as it would.
+    /// </summary>
+    [Fact]
+    public async Task With_no_claude_pinned_the_protocol_door_lets_the_sdk_find_its_own()
+    {
+        var selection = await new HarnessRoster(Set(Toolchain(Present()), SessionWire.Acp), Settings)
+            .SelectAsync("fake", Config(), workspace: null, chosen: null);
+
+        Assert.True(selection.Allowed);
+        Assert.Null(selection.ClaudeExecutable);
     }
 
     /// <summary>A managed install, as npm would leave it.</summary>

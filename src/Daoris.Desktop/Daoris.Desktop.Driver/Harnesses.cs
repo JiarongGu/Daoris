@@ -73,6 +73,11 @@ public sealed record LoginQuestion(IReadOnlyList<string> Arguments, string Logge
 /// the harness itself, because the credential it obtains belongs in the harness's own store.
 /// </param>
 /// <param name="LoginCheck">How to ask a profile's login state. Null leaves every profile <see cref="LoginState.Unknown"/>.</param>
+/// <param name="AccountOf">
+/// The harness whose ACCOUNT this one runs as, when it has none of its own (ACP2). 🔴 Declared, so
+/// that a missing login flow is a fact rather than a gap — an unanswerable login question is
+/// PERMISSIVE (SES3), so an omission would quietly widen what may spawn.
+/// </param>
 /// <param name="Package">
 /// The package a managed install fetches, when Daoris owns the binary (TOOL2/D57). Declared rather
 /// than parsed out of <paramref name="Install"/>, because the two are different questions: one is
@@ -87,7 +92,8 @@ public sealed record HarnessToolchain(
     IReadOnlyList<string>? UpdateArguments = null,
     IReadOnlyList<string>? LoginArguments = null,
     LoginQuestion? LoginCheck = null,
-    string? Package = null)
+    string? Package = null,
+    string? AccountOf = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -660,10 +666,16 @@ public static class HarnessProbe
     /// binary and record the pinned version beside it.
     /// </remarks>
     internal static void Apply(
-        ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome, string? binary = null)
+        ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome, string? binary = null,
+        string? claudeExecutable = null)
     {
         // The arguments the adapter built stay exactly as they are: same tool, different location.
         if (binary is { Length: > 0 }) info.FileName = binary;
+
+        // The ACP adapter runs the Agent SDK, which finds its CLI through its own seam (ACP2, §1a).
+        // Applied here for the reason everything else here is: one line, both doors, no adapter that
+        // can forget it. Null leaves it unset, so the SDK looks where it always did.
+        ClaudeAcp.PointAtClaude(info, claudeExecutable);
 
         if (profileHome is null) return;
 
@@ -698,9 +710,15 @@ public static class HarnessProbe
 /// — which is the unpinned case and therefore the usual one. Machine-local like the profile home:
 /// it is a path, so it goes into no record and over no wire.
 /// </param>
+/// <param name="ClaudeExecutable">
+/// The managed <c>claude</c> the ACP adapter's Agent SDK should run (ACP2, §1a), or null to let it
+/// find its own. It reads <b>the pipe door's pin</b> deliberately: the CLI and the account belong to
+/// <c>claude-code</c>, and the ACP adapter is a separate package that merely runs it — so a person
+/// who pinned <c>claude</c> gets that <c>claude</c> over either door, which is the point of pinning.
+/// </param>
 public sealed record HarnessSelection(
     string? Refusal, string? Profile = null, string? ProfileHome = null, string? Version = null,
-    string? Binary = null)
+    string? Binary = null, string? ClaudeExecutable = null)
 {
     public bool Allowed => Refusal is null;
 }
@@ -842,7 +860,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 + "running loop is a moving target.");
         }
 
-        if (profile is null) return new HarnessSelection(null, null, null, report?.Version, managed);
+        // The ACP adapter's own seam (ACP2): it runs the Agent SDK, which needs to be told which
+        // `claude` to use. Read from the PIPE door's pin, because that is where the CLI lives.
+        var claude = resolved.Wire == SessionWire.Acp
+            ? HarnessSettings.ManagedBinary(
+                Home, "claude-code", settings.ResolveVersion("claude-code", workspace, null), ["claude"])
+            : null;
+
+        if (profile is null)
+        {
+            return new HarnessSelection(null, null, null, report?.Version, managed, claude);
+        }
 
         var home = HarnessSettings.ProfileHome(Home, resolved.Name, profile);
         var login = report?.Profiles.FirstOrDefault(
@@ -867,7 +895,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 + "credential stays in the harness's own store.");
         }
 
-        return new HarnessSelection(null, profile, home, report?.Version, managed);
+        return new HarnessSelection(null, profile, home, report?.Version, managed, claude);
     }
 }
 

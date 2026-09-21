@@ -7,53 +7,35 @@
 
 **Goal:** one canonical set of agent-facing rules and knowledge, materialized into every repository in
 the family, kept from drifting, and improved from wherever the improvement was found — and, as of D45,
-**Daoris as the driver**: the centralized workflow manager that triggers and coordinates the agent
-sessions doing the family's work. Parts 1 and 2 of D45 are **built and proven by a real driven run**
-(D46, `docs/2026-09-19-driver-design.md`; DRV4 in the archive). The owner continued the sequence
-2026-09-20: part 3 is now **designed (DRV3 → D47, `docs/2026-09-20-remote-design.md`) and built
-(DRV5, six landings, in the archive)** — the remote server exists, gate-proven by the family
-rehearsal's two-machine phase. **All three parts of D45 are built.** The owner set the next direction
-2026-09-20: **workspaces as the unit of sharing, and Daoris as the working surface** — designed the
-same day as D48/D49 with two contracts and eight build items. **The whole D48/D49/D50 arc is built**
-(WSP1–4, SES1–3 and CANON6, all in the archive): the workspace exists, the registry is the authority,
-the remotes are a map, a feed carries the commit it speaks for, the console streams, a conversation is
-a session, harness accounts are named credential profiles — and the canon no longer instructs anything
-a contributor without Daoris cannot do. It was then **reviewed** at the owner's request (REV2), which
-found two things no gate could: the release workflow ran one of the four declared gates, and the
-shell's 1,128 lines had no tests, so every refusal it made reached people as a blank failure. Both
-are fixed and gated. **The owner then set the next direction (2026-09-20): the desktop becomes a
-user-driven working surface** — code sessions the way a terminal agent CLI holds them, but across
-agents, repositories and concurrent sessions, researched in
-`docs/2026-09-20-working-surface-research.md`. That direction is now **designed** (SURF1 →
-`docs/2026-09-21-working-surface-design.md`, 2026-09-21): **D51** settles the isolation model — the
-tree is the unit of exclusion and a repository may have more than one — and **D52** settles the
-surface, with a build order of five items, **SURF2–SURF6** — since extended to **SURF8** by **D55**
-(2026-09-21), which re-positions the desktop as a **code-gen-driven IDE** after a second reference
-study of the applications developers actually live in (`docs/2026-09-21-ide-reference-study.md`):
-Work becomes a **second frame** rather than a sixth nav item, the window becomes frameless with the
-top strip as application chrome (SURF7), and a **monitor window** joins it (SURF8). Beside them sit three smaller leftovers —
-CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind
-(WSP5 landed 2026-09-21: the switcher is global chrome, and it is in the archive).
-**The owner then interposed the dsh evaluation (2026-09-21), and DSH1 ran it the same day**: eight
-probes against an installed `dsh`, driven on a scripted provider, and a decision the owner accepted
-the same day — **D53: dsh is adopted as a protocol, not a product** — which unblocks the view and
-puts the protocol door in front of it. **The SURF arc closed 2026-09-22** (SURF8, then SURF5b, which
-also closed driver design open question 5), and **the owner set the next direction the same day: the
-toolchain and its accounts** — designed as TOOL1 → **D57**, `docs/2026-09-22-toolchain-design.md`.
-The measurement behind it corrected a doctrine overclaim: **the accounts are Daoris's; the binary is
-still the machine's.**
+**Daoris as the driver**: the workflow manager that triggers and coordinates the agent sessions doing
+the family's work.
+
+**The arcs, in order, all closed and all in the archive.** **D45** — the driver: three parts, built,
+with a real driven run behind part 2 (DRV4) and a two-machine crossing behind part 3 (DRV5).
+**D48/D49/D50** — workspaces, the interactive surface, management parity: WSP1–4, SES1–3 and CANON6,
+then reviewed at the owner's request (REV2, which found the release workflow running one of four
+declared gates and the shell's 1,128 lines with no tests at all — both fixed and gated).
+**D51/D52/D55/D56** — the desktop as a **code-gen-driven IDE**, designed by SURF1 after two reference
+studies, built as SURF2–SURF10, closed 2026-09-22 when SURF5b also closed driver open question 5.
+**D53** — the dsh evaluation the owner interposed, accepted the same day: *dsh is adopted as a
+protocol, not a product*, which put the protocol door in front of the view.
+
+**The current direction is the toolchain** (owner, 2026-09-22 → **TOOL1/D57**,
+`docs/2026-09-22-toolchain-design.md`), from three gaps the owner named: no proper credential
+management, no multiple-account usage management, and *"we still don't have managed cli (still reading
+from the machine)"*. The measurement behind it corrected a doctrine overclaim — **the accounts are
+Daoris's; the binary was still the machine's** — and the owner's two answers narrowed the rest:
+**usage is measured before it is managed**, and breadth is **more native adapters plus the ACP door,
+not a registry**. **TOOL2 and TOOL3 have landed.**
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-211 CLI tests, 259 service, 57 devkit, 152 driver, 40 desktop modules, 53/53 release rehearsal (52/52 across eight runs
-2026-09-18, plus a no-staged-leftovers check since REV1), **173/173 family rehearsal** including the
-driver, two-machine remote, never-scans, two-workspace, registration-lifecycle, remotes-map,
-which-commit-speaks, conversation and toolchain phases (2026-09-20), 9 devkit gates. Canon: 8 core rules,
-5 knowledge documents, 5 skills, 6 packs. Always-loaded core is
-**23,862 of 26,000 bytes** — about 2,100 of headroom after CANON7 moved the number, and **advisory
-rather than enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still
-splitting principle from detail, not raising it (D28).
+**227 CLI tests, 259 service, 221 driver, 70 desktop modules, 412 web unit, 14 Playwright**, 57
+devkit, 53/53 release rehearsal, **173/173 family rehearsal** (it names its own phases when you run
+it), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
+core is **23,862 of 26,000 bytes**, and **advisory rather than enforced** (D54: a fact gates, a
+judgement reports). The answer to a full budget is still splitting principle from detail (D28).
 
 **The remote exists** (D47/DRV5, built 2026-09-20): the same HTTP host in shared mode gates every
 route with per-person per-machine minted keys (`keys mint|list|revoke`, hashed with an audit prefix,
@@ -82,18 +64,18 @@ The service is **deployable** (D36) and **ships as executables** (D43): `npm run
 --install` lands both hosts self-contained in `~/.daoris/bin` and prints the ready `.mcp.json`
 snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
 spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
-remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): the
-family rehearsal (43 checks then; 154 today) and the Playwright suite (10 tests) each run over a scratch
-copy of the examples and take a project born mid-run through init → declare → sync → check → connect →
-its first quest. `Daoris.Web` is **the platform** (D38,
+remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): both
+rehearsals run over a scratch copy of the examples and take a project born mid-run through init →
+declare → sync → check → connect → its first quest. `Daoris.Web` is **the platform** (D38,
 D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
 grouped by state with sitting time, projects as scannable declarations — in a designed console shell
 (sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
 headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
 speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a test pyramid
-declared in `daoris.gates.json` — a **65-test Vitest inner loop** (the shell-attached surfaces, over a
-mocked bridge) and a **10/10 Playwright outer loop over `examples/`** (the real bundle over the real
-host — including, since SES3, what a browser must NEVER learn about the machine it is not running on). Doctrine stays unwritable from every view. The **example family** under `examples/` is the router's proof and the setup story (D39) — a
+declared in `daoris.gates.json` — a **Vitest inner loop** (the shell-attached surfaces, over a mocked
+bridge) and a **Playwright outer loop over `examples/`** (the real bundle over the real host —
+including what a browser must NEVER learn about the machine it is not running on). Doctrine stays
+unwritable from every view. The **example family** under `examples/` is the router's proof (D39) — a
 canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
 Development is **automation-first** (D37): the person sets the target and verifies the final diff;
 agents execute and gates verify the middle. `docs/FIX-LOG.md` carries fix root causes, indexed by the
@@ -279,6 +261,26 @@ is the one that needs the owner: its closing step spends a real login.
   adapter, harness version and profile as today. Closes with **the real driven run** (DRV4's shape) —
   the owner supplies the login. **This is D23's "on proof".** The pipe door stays supported until it
   passes.
+
+  ⏸ **Built and keyless-proven 2026-09-22** (in the archive) — everything but the login. The adapter,
+  the mode, both seams, and `tools/acp2-proof.mjs`: readiness, then six keyless checks against the
+  **real** adapter at 0.79.0 (initialize, `session/new`, `acceptEdits` offered as a mode, the scratch
+  config home receiving its own `.claude.json`, the machine's account not spent). Three findings came
+  out of running it: `harness install` had **never worked on Windows** (FIX-LOG), the binary is
+  `claude-agent-acp` rather than the adapter's Daoris name, and a harness with no login check must
+  **declare whose account it borrows** or its silence reads as permissive (SES3).
+
+  🔴 **WHAT IS LEFT IS ONE COMMAND, AND IT IS THE OWNER'S:**
+
+  ```
+  daoris harness pin claude-code-acp 0.79.0     # if not pinned on this machine
+  daoris harness login claude-code              # if the profile is logged out
+  node tools/acp2-proof.mjs --drive             # spends one login; this is D23's proof
+  ```
+
+  It builds a scratch repository, publishes a real quest, drives one tick over the protocol door and
+  asserts DRV4's shape. Until it passes, `claude-code` over the pipe door remains what a machine
+  drives with, and this item stays open.
 
 - [ ] **ACP3 — dsh and codex as configurations.** `dsh --profile acp` with `DSH_HOME` as the profile
   seam (it isolates credentials, settings and sessions as one directory), the model in the profile's

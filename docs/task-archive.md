@@ -3171,3 +3171,63 @@ rule and unreadable-file reading), 70 modules (two new on the route), 412 web un
 CLI, 14 Playwright, 259 service, `npm run verify`, `test:web` and `rehearse:family` (173/173) green —
 and the real window in dark, where a seeded machine totals two accounts correctly and a machine with
 none shows no card at all.
+
+## ACP2 — `claude-code` over the protocol door, built to the edge of a login (2026-09-22)
+
+> **"can you try to develop verify logic and develop it until a state that I can support?"** — owner,
+> 2026-09-22, answering that ACP2's closing run needs a login only they can supply.
+
+✅ built and keyless-proven 2026-09-22. **Not closed**: D23's "on proof" is the real driven run, and
+that run is the owner's to start. What is left is one command.
+
+**Everything but the login.** The `claude-code-acp` adapter (`Wire = Acp`, its own toolchain entry,
+pinned exact), `acceptEdits` as a **mode on the wire** rather than a command-line flag, both §1a seams
+reaching a real spawn through the one line that governs both doors, and the pipe door untouched beside
+it.
+
+**The posture moved vocabulary, not meaning.** The pipe door passes `--permission-mode acceptEdits`;
+this door sets a mode, which is what the evaluation observed Claude Code offering on `session/new`.
+🔴 Three rules guard it: a mode the agent does not offer is **not substituted** (guessing a
+neighbouring one is how a permission boundary widens without a decision), an agent offering no modes
+is left **alone**, and `bypassPermissions` is never asked for although the wire offers it.
+
+**`tools/acp2-proof.mjs` is the deliverable the owner asked for.** Readiness, then the keyless half,
+then — behind `--drive` — the real run. **Readiness is not a failure**: a machine that is not set up
+yet gets the exact commands that set it up and exit 0. The first version got this wrong and printed
+`FAIL` beside "nothing above failed", which is worse than either; readiness items are now `todo` and
+never touch the failure count.
+
+**The keyless half runs against the real adapter and passes six checks**: `initialize` answers,
+`session/new` succeeds on a tree, `acceptEdits` is offered as a mode, the scratch `CLAUDE_CONFIG_DIR`
+receives its own `.claude.json` while the machine's real profile is untouched, and `claude auth
+status` still reads logged in afterwards — because `session/prompt` is deliberately never sent. No
+model was called and nothing was spent.
+
+**Three real findings, each from actually running it.**
+
+- 🔴 **`daoris harness install` has never worked on Windows** (`docs/FIX-LOG.md`) — `npm` is
+  `npm.cmd`, and Node refuses to spawn a `.cmd` without a shell. TOOL2's `pin` inherited it and was
+  the first person-action anybody ran. The trap to inherit is general: *a mechanism no gate runs is a
+  mechanism nobody has run*, and these three are kept out of the gates deliberately.
+- 🔴 **The binary is `claude-agent-acp`, not `claude-code-acp`.** I guessed the binary name from the
+  adapter's Daoris name, which is exactly what this module's own documentation warns against — every
+  field is a claim about somebody else's program. It was caught by TOOL2's own honesty: `harness
+  list` reported a pin that was installed as *NOT INSTALLED*.
+- 🔴 **A harness with no login check is not the same as one that cannot be asked.** The declaration
+  test refused the new entry, correctly: an unanswerable login question is **permissive** (SES3), so
+  a harness that merely omitted the check would quietly widen what may spawn. The adapter now
+  **declares** `accountOf: 'claude-code'` — it runs `claude` and reads the home `claude` logged into
+  — and the test asserts that a harness either asks the question or names whose account it borrows,
+  through the same seam.
+
+**What is left, and it is one command.** `node tools/acp2-proof.mjs --drive` on a machine with the
+adapter pinned and an account logged in. It builds a scratch repository, publishes a real quest, runs
+one driven tick over the protocol door, and asserts DRV4's shape: the session ran on
+`claude-code-acp`, ended completed, the record names the adapter and the harness version, the evidence
+carries a commit, and the session closed its own quest through its own connector. That run is D23's
+"on proof", and until it passes **the pipe door stays what a machine drives with**.
+
+**Proven.** 227 CLI, 221 driver (sixteen new: three on the mode, eight on the adapter and its seams,
+three on the selection, two on the pipe door's untouched spawn), 70 modules, `npm run verify` and
+`rehearse:family` (173/173) green — and the keyless proof itself, 6/6 against the real adapter at
+0.79.0, installed by Daoris into a directory Daoris owns.

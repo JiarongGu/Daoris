@@ -84,6 +84,17 @@ export interface Toolchain {
    * deliberately not consulted. Neither pattern matching means unknown, never logged-out.
    */
   loginCheck?: { args: string[]; in: RegExp; out: RegExp };
+  /**
+   * The harness whose ACCOUNT this one runs as, when it has none of its own (ACP2).
+   *
+   * @remarks
+   * 🔴 **Declared, so that a missing login flow is a fact rather than a gap.** The ACP adapter runs
+   * `claude` and reads the configuration home `claude` logged into; it has no login of its own and
+   * never will. Without this field its silence is indistinguishable from an omission — and an
+   * unanswerable login question is PERMISSIVE (SES3), so an omission would quietly widen what may
+   * spawn. `daoris harness login <accountOf>` is the verb the surfaces then name.
+   */
+  accountOf?: string;
 }
 
 /**
@@ -107,6 +118,24 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     // It answers JSON — and volunteers an email, an organisation and a subscription tier with it.
     // Daoris reads the boolean and keeps nothing else.
     loginCheck: { args: ['auth', 'status'], in: /"loggedIn"\s*:\s*true/i, out: /"loggedIn"\s*:\s*false/i },
+  },
+  // The supported harness over the PROTOCOL door (ACP2/D53). A separate toolchain entry from
+  // `claude-code` on purpose: the ACP adapter and `claude` are different packages at different
+  // versions, and one pin for both would install the wrong thing under a name somebody trusted.
+  //
+  // It declares no login flow and no login question. The ACCOUNT belongs to `claude`, and the
+  // profile directory carries it — `daoris harness login claude-code` is still the verb, and this
+  // adapter reads the home that produced. An unknown login state is permissive, by SES3's rule.
+  'claude-code-acp': {
+    // 🔴 The BINARY is `claude-agent-acp`, not the adapter's Daoris name — verified against the
+    // installed package, after a guess was caught by `list` reporting the pin as not installed.
+    binary: ['claude-agent-acp'],
+    version: ['--version'],
+    profileVariable: 'CLAUDE_CONFIG_DIR',
+    install: ['npm', 'install', '-g', '@agentclientprotocol/claude-agent-acp'],
+    package: '@agentclientprotocol/claude-agent-acp',
+    // It has no login of its own: it runs `claude` and reads the home `claude` logged into.
+    accountOf: 'claude-code',
   },
   codex: {
     binary: ['codex'],
@@ -701,8 +730,13 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       env[toolchain.profileVariable] = profile;
     }
 
-    const result = spawnSync(command[0]!, command.slice(1), {
-      env, stdio: 'inherit', shell: false, windowsHide: true,
+    const [file, argv, verbatim] = spawnable(command);
+    const result = spawnSync(file, argv, {
+      env,
+      stdio: 'inherit',
+      shell: false,
+      windowsHide: true,
+      ...(verbatim ? { windowsVerbatimArguments: true } : {}),
     });
 
     if (result.error) {
@@ -715,6 +749,65 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
     // a tool error, because a failed install is not a policy decision.
     return result.status === 0 ? 0 : 2;
   }
+}
+
+/**
+ * How to actually spawn a harness's own tooling, which on Windows is usually a `.cmd` shim.
+ *
+ * @remarks
+ * 🔴 **Two Windows facts, in order, each of which broke this silently.** `npm` is `npm.cmd`, and
+ * `spawnSync` with `shell: false` does not find it — it answers `ENOENT`, which reads as "npm is not
+ * installed" on a machine where it plainly is. Resolve the extension and the next one lands:
+ * **Node refuses to spawn a `.cmd` or `.bat` without a shell at all** (the 2024 argument-injection
+ * fix), answering `EINVAL`. Between them these broke every npm-shaped mechanism this module declares
+ * — `install`, `update`, and TOOL2's `pin` — for as long as they have existed.
+ *
+ * **`shell: true` is the wrong fix**, twice over. Node does not quote for it on Windows, so a
+ * configuration home under `C:\Users\Some One\` breaks; and it would put a version string a person
+ * typed onto a command line `cmd.exe` parses. So this builds the `cmd.exe /d /s /c` invocation
+ * itself, quotes every token, and passes it verbatim — the quoting is ours, which is the only way it
+ * is anybody's.
+ *
+ * @returns the file to spawn, its arguments, and whether they are a verbatim Windows command line.
+ */
+function spawnable(command: string[]): [string, string[], boolean] {
+  const [name, ...rest] = command as [string, ...string[]];
+  if (process.platform !== 'win32') return [name, rest, false];
+
+  const resolved = windowsExecutable(name);
+  if (!/\.(cmd|bat)$/i.test(resolved)) return [resolved, rest, false];
+
+  // A token cmd.exe would reinterpret is refused rather than escaped. Every argument here is a path
+  // or a `package@version`, so none of them legitimately contains one — and "escaped correctly for
+  // cmd" is a claim nobody should have to verify.
+  for (const token of [resolved, ...rest]) {
+    if (/["%\r\n]/.test(token)) {
+      throw new DaorisError(
+        `\`${token}\` cannot be passed to a Windows command shim safely. Run the harness's own `
+        + 'tooling directly, or move it somewhere without quotes or percent signs in the path.');
+    }
+  }
+
+  const quote = (token: string) => (/[\s&()[\]{}^=;!'+,`~]/.test(token) ? `"${token}"` : token);
+  const line = [resolved, ...rest].map(quote).join(' ');
+  return [process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `"${line}"`], true];
+}
+
+/** Where Windows keeps the shim for a bare command name, or the name itself when it is not one. */
+function windowsExecutable(command: string): string {
+  if (/[\\/]/.test(command) || /\.[a-z]+$/i.test(command)) return command;
+
+  const pathExt = (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean);
+  for (const directory of (process.env.PATH ?? '').split(';')) {
+    if (!directory) continue;
+    for (const extension of pathExt) {
+      const candidate = join(directory, command + extension.toLowerCase());
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+
+  // Not found is not this function's decision to make: spawning reports it, with its own sentence.
+  return command;
 }
 
 function firstLine(output: string): string | null {

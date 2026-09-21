@@ -324,6 +324,102 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// 🔴 <b>The permission posture is a MODE on this wire, not a command-line flag</b> (ACP2, and
+    /// the evaluation's §1a where Claude Code's own modes were observed on `session/new`:
+    /// `default`, `acceptEdits`, `plan`, `auto`, `bypassPermissions`).
+    /// </summary>
+    /// <remarks>
+    /// The posture itself is unchanged and is D37's: edits auto-accept because they are reversible
+    /// and in-repository, and <b>nothing at the outward boundary is ever auto-approved</b> — which
+    /// is why <c>bypassPermissions</c> is not what is asked for even though the wire offers it.
+    /// </remarks>
+    [Fact]
+    public async Task The_permission_posture_is_set_as_a_mode_when_the_agent_offers_one()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return method switch
+            {
+                // The shape §1a observed: modes, with a current one, on the session.
+                "session/new" => Ok(frame, """
+                    {"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[
+                      {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
+                      {"id":"bypassPermissions","name":"Bypass"}]}}
+                    """),
+                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+
+        var mode = agent.Sent
+            .Select(line => JsonDocument.Parse(line).RootElement)
+            .FirstOrDefault(f => f.TryGetProperty("method", out var m) && m.GetString() == "session/set_mode");
+
+        Assert.Equal("acceptEdits", mode.GetProperty("params").GetProperty("modeId").GetString());
+        // 🔴 Never the one that would widen the boundary, however available the wire makes it.
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
+    }
+
+    /// <summary>
+    /// An agent that offers no modes is not asked to set one — and the turn proceeds. The stub, and
+    /// any agent whose permissions are its own business, are that shape.
+    /// </summary>
+    [Fact]
+    public async Task An_agent_that_offers_no_modes_is_not_asked_to_change_one()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return method switch
+            {
+                "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("session/set_mode"));
+    }
+
+    /// <summary>
+    /// An agent that offers modes but not the one asked for is left alone rather than set to
+    /// something else. Guessing a neighbouring mode is how a permission posture silently widens.
+    /// </summary>
+    [Fact]
+    public async Task A_mode_the_agent_does_not_offer_is_not_substituted()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return method switch
+            {
+                "session/new" => Ok(frame, """
+                    {"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[
+                      {"id":"default","name":"Manual"},{"id":"bypassPermissions","name":"Bypass"}]}}
+                    """),
+                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("session/set_mode"));
+    }
+
+    /// <summary>
     /// 🔴 <b>The measurement source</b> (TOOL3/D57 §4). ACP reports context pressure per turn, and
     /// until now it was rendered into a transcript line and structurally discarded. It is the ONLY
     /// structured usage any door delivers, which is why measurement is an argument for the protocol

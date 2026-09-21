@@ -356,11 +356,24 @@ test('every harness declares a real mechanism for each thing Daoris offers to do
     assert.ok(toolchain.profileVariable.length > 0, `${name} has no configuration-home variable`);
     // Install is a WHOLE command, because a machine without the harness cannot run the harness.
     assert.ok(toolchain.install && toolchain.install[0] !== toolchain.binary[0], `${name}'s installer needs itself`);
-    assert.ok(toolchain.loginCheck, `${name} cannot be asked whether a profile is logged in`);
+    // 🔴 A harness answers "is this profile logged in?" itself, or NAMES the harness whose account
+    // it runs as. Silence is neither: an unanswerable login question is permissive (SES3), so a
+    // harness that simply omitted the check would quietly widen what may spawn.
+    assert.ok(
+      toolchain.loginCheck || toolchain.accountOf,
+      `${name} neither asks whether a profile is logged in nor names whose account it uses`);
+    if (toolchain.accountOf) {
+      assert.ok(TOOLCHAINS[toolchain.accountOf], `${name} names an account holder that does not exist`);
+      assert.equal(
+        toolchain.profileVariable, TOOLCHAINS[toolchain.accountOf]!.profileVariable,
+        `${name} borrows an account through a different seam than the harness that owns it`);
+    }
   }
 
   assert.equal(TOOLCHAINS['claude-code']!.profileVariable, 'CLAUDE_CONFIG_DIR');
   assert.equal(TOOLCHAINS.codex!.profileVariable, 'CODEX_HOME');
+  // The protocol door borrows the pipe door's account, through the same seam (ACP2).
+  assert.equal(TOOLCHAINS['claude-code-acp']!.accountOf, 'claude-code');
 });
 
 /**

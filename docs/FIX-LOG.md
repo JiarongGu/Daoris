@@ -5,6 +5,41 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `daoris harness install` has never worked on Windows (2026-09-22)
+
+**Symptom.** `daoris harness pin claude-code-acp 0.79.0` — TOOL2's new verb, on its first real use —
+answered *"`npm` could not be run — spawnSync npm ENOENT"*, on a machine with npm plainly installed.
+
+**Root cause.** Two Windows facts in a row, and `install` and `update` have carried both since they
+were written. **`npm` is `npm.cmd`**, and `spawnSync` with `shell: false` does not resolve `PATHEXT`
+— so it answers `ENOENT`, which reads as "npm is not installed". Resolve the extension and the second
+lands: **Node refuses to spawn a `.cmd` or `.bat` without a shell at all** (the 2024
+argument-injection fix, CVE-2024-27980), answering `EINVAL`. Between them, every npm-shaped mechanism
+this module declares was broken on Windows — silently, because nobody had run one: the gates never
+install a harness, deliberately (D49 §4 keeps install, update and login out of every gate as person
+actions).
+
+**Why `shell: true` is the wrong fix, twice.** Node does not quote arguments for it on Windows, so a
+configuration home under `C:\Users\Some One\` breaks; and it would put a version string a person typed
+onto a command line `cmd.exe` parses, where the directory-name check that guards a pin does not refuse
+`&`.
+
+**Fix.** `spawnable()` in `toolchain.ts`: resolve the shim through `PATHEXT`, and for a `.cmd`/`.bat`
+build the `cmd.exe /d /s /c` invocation explicitly with `windowsVerbatimArguments`, quoting every
+token itself. A token containing `"`, `%` or a newline is **refused** rather than escaped — every
+argument here is a path or a `package@version`, none of which legitimately contains one, and
+"escaped correctly for cmd" is a claim nobody should have to verify.
+
+**Verify.** `daoris harness pin claude-code-acp 0.79.0` installs 105 packages into a directory Daoris
+owns and records the pin. Run against a scratch `DAORIS_HARNESS_CONFIG`, so the developer's real
+`~/.daoris` was untouched.
+
+**The trap to inherit.** **A mechanism no gate runs is a mechanism nobody has run.** These three were
+kept out of the gates for a good reason — they install software and spend logins — and the cost of
+that decision is that their first real execution is by a person, in anger. Where a gate cannot run
+something, the first manual run is the test, and it should happen before the feature is called done
+rather than months later.
+
 ## `desktop kill` orphaned the host it was supposed to stop (2026-09-22)
 
 **Symptom.** A `npm run desktop -- build` failed with MSB3027 — seven `daoris-knowledge-http`

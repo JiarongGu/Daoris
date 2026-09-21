@@ -66,6 +66,12 @@ public sealed class AcpSession(
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
 
+    /// <summary>
+    /// The posture D37 sanctions, in this wire's vocabulary — the same one the pipe door passes as
+    /// <c>--permission-mode acceptEdits</c>. Named once so the two doors cannot drift apart.
+    /// </summary>
+    private const string Posture = "acceptEdits";
+
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
@@ -111,6 +117,8 @@ public sealed class AcpSession(
             {
                 throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
             }
+
+            await SetPostureAsync(created, ct).ConfigureAwait(false);
 
             JsonElement result;
             try
@@ -324,6 +332,50 @@ public sealed class AcpSession(
     /// belongs to somebody else and it grows; a console that silently omitted the one update type it
     /// did not recognise would be a transcript with a hole in it that nothing reports.
     /// </remarks>
+    /// <summary>
+    /// The permission posture Daoris drives under, expressed as this wire's own mode (ACP2).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The posture is unchanged and is D37's</b> — edits auto-accept because they are
+    /// reversible and in-repository, and everything else runs under the repository's own checked-in
+    /// configuration. Only its EXPRESSION moved: the pipe door passes
+    /// <c>--permission-mode acceptEdits</c>, and this door sets a mode, which is what the evaluation
+    /// observed Claude Code offering on `session/new` (§1a).</para>
+    ///
+    /// <para>🔴 <b>Never a mode the agent did not offer, and never a wider one.</b> The wire also
+    /// offers <c>bypassPermissions</c>; a driver that reached for a neighbouring mode when its own
+    /// was missing is how a permission boundary widens without a decision. An agent that offers no
+    /// modes is left exactly alone — its permissions are its own business, which is the stub's
+    /// shape and any future harness's right.</para>
+    /// </remarks>
+    private async Task SetPostureAsync(JsonElement created, CancellationToken ct)
+    {
+        if (!created.TryGetProperty("modes", out var modes)
+            || !modes.TryGetProperty("availableModes", out var available)
+            || available.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        var offered = false;
+        foreach (var mode in available.EnumerateArray())
+        {
+            if (mode.TryGetProperty("id", out var id) && id.GetString() == Posture) offered = true;
+        }
+
+        if (!offered) return;
+
+        // Already there is nothing to ask for — and an agent that started in the posture is a fact
+        // worth not overwriting with an identical call.
+        if (modes.TryGetProperty("currentModeId", out var current) && current.GetString() == Posture)
+        {
+            return;
+        }
+
+        await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = Posture }, ct)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Keep the largest context reading this session reported (TOOL3/D57 §4).
     /// </summary>
