@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A responsive rule outlived the thing it was written for, and stacked the icon rail on top of the page (2026-09-22)
+
+**Symptom.** On a browser window under 768px the 48px activity bar became a **48×276 column above the
+content**, leaving the page **105px** of height. Found by opening the platform in Chrome and resizing
+it — not by any suite.
+
+**Root cause.** `App.tsx`'s layout row carried `max-md:flex-col max-md:overflow-y-auto`. That rule was
+written for the **15rem labelled sidebar** (D41 §2: *"the sidebar becomes a top bar — nothing is
+hidden behind a hamburger; five items fit"*), and it worked because the sidebar answered it with
+`max-md:w-full max-md:flex-row`. SURF10 retired the sidebar and replaced it with a 48px `ActivityBar`
+that has **no responsive rules at all** — correctly, since a 48px rail needs none. The container's
+half of the old pair stayed, so the stacking still happened and the rail had nothing to answer it
+with.
+
+**Why no gate caught it.** vitest has no layout, and every Playwright case ran at the default
+viewport. The regression lives **only** at a width nothing measured, which is the same shape as the
+tooltip one the day before: a defect in the *geometry of the assembled page*, invisible to a check
+that never assembles it at that size.
+
+**Fix.** The rule is gone — one layout at every width, which is also what keeps D55's "a window, not
+a page" true on a narrow screen rather than only on a wide one. A Playwright case sets a 680px
+viewport and asserts the rail is **beside** the content (`main.x >= bar.right`, same `y`), that it is
+still under 60px wide, and that the content keeps its height. Sabotaged by putting the rule back, and
+watched fail on the first assertion.
+
+**The trap to inherit.** **A responsive rule is half a pair, and retiring the other half leaves it
+pointing at nothing.** When a layout element is replaced by one with different rules, grep the
+container for breakpoint classes that were written to cooperate with the old one — they compile, they
+render, and they are only wrong at a width nobody opens. And when a suite's cases all run at one
+viewport, that viewport is the only one that has ever been tested.
+
 ## A tooltip swallowed clicks on the control it described, once that control moved (2026-09-21)
 
 **Symptom.** `npm run test:web` went red on the workspace-scope test, in a landing that changed no

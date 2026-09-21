@@ -218,7 +218,12 @@ export function App() {
         )}
       />
 
-      <div className="flex min-h-0 flex-1 max-md:flex-col max-md:overflow-y-auto">
+      {/* No narrow-window stacking. The 15rem sidebar this replaced had to become a top bar under
+          768px (D41 §2) — a 48px icon rail does not, and stacking it was actively wrong: it put a
+          276px-tall column of icons ABOVE the content and left the page 105px, measured in a real
+          browser at 686px. One layout at every width, which is also what keeps D55's "a window, not
+          a page" true on a narrow screen instead of only on a wide one. */}
+      <div className="flex min-h-0 flex-1">
         {/* The same bar in both frames, which is what makes them peers (D56). It replaces a 15rem
             labelled sidebar that, in Work, was six items belonging to the other frame above ~440px
             of empty column. Its foot holds ACTIONS; the state it used to carry went to the status

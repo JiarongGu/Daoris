@@ -301,6 +301,33 @@ test('a browser has one frame, and it is Manage (D55)', async ({ page }) => {
   await expect(page.getByLabel('state of this machine')).toContainText('none here');
 });
 
+/**
+ * The chrome holds its shape on a narrow window (SURF10/SURF7).
+ *
+ * This is here because it was BROKEN and nothing noticed. The 15rem sidebar the activity bar
+ * replaced turned into a top bar under 768px (D41 §2), and the rule that stacked it outlived it:
+ * at 686px the 48px icon rail became a 276px-tall column ABOVE the content, leaving the page 105px.
+ * Neither suite could see it — vitest has no layout and every other case here runs at one width —
+ * so the viewport is the assertion.
+ */
+test('the chrome stays beside the content on a narrow window, never above it', async ({ page }) => {
+  await page.setViewportSize({ width: 680, height: 800 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+
+  const bar = await page.getByRole('navigation', { name: 'Views' }).boundingBox();
+  const main = await page.locator('main').boundingBox();
+  if (!bar || !main) throw new Error('the activity bar and the content column must both be laid out');
+
+  // Beside, not above: the content starts to the RIGHT of the rail and at the same height.
+  expect(main.x).toBeGreaterThanOrEqual(bar.x + bar.width - 1);
+  expect(Math.abs(main.y - bar.y)).toBeLessThan(4);
+  // And the rail is still a rail rather than a block that ate the window.
+  expect(bar.width).toBeLessThan(60);
+  // The content gets the height, which is the thing the bug actually cost.
+  expect(main.height).toBeGreaterThan(400);
+});
+
 test('the console speaks 中文', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '中文' }).click();

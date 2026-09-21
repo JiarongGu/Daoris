@@ -2606,6 +2606,16 @@ while photographing a light window. The capture now happens with the connection 
 tool says why.
 
 **Proven.** 312 web unit tests (the caption geometry, the drag-target guard sabotaged and watched
-failing, the browser case), 11 Playwright, 51 desktop modules (up from 46), 152 driver, `npm run
+failing, the browser case), **12** Playwright, 51 desktop modules (up from 46), 152 driver, `npm run
 verify` green — and the real window in both themes, with maximize, restore, persistence and relaunch
 all driven rather than reasoned about.
+
+**And then the browser half was opened, which nobody had done.** Playwright asserts the disclosure
+boundary but nothing had *looked* at it, and looking found a regression SURF10 had introduced:
+`App.tsx` still carried `max-md:flex-col`, written for the 15rem sidebar that answered it with
+`max-md:flex-row`. The 48px activity bar that replaced it answers nothing, so under 768px the rail
+became a **48×276 column above the content** and the page got **105px**. Fixed — one layout at every
+width — with a Playwright case at a 680px viewport, sabotaged and watched fail.
+`docs/FIX-LOG.md` has the trap: **a responsive rule is half a pair**, and retiring the other half
+leaves it pointing at nothing. The boundary itself held exactly as designed: no caption slots, no
+mode switch, no Machine domain, no resize strip, no `remote` segment, and `driver · none here`.
