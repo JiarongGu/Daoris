@@ -2999,3 +2999,57 @@ stated here as unverified rather than claimed.
 three for the setting), 68 modules (two new), 404 web unit (six new), 14 Playwright, 259 service,
 `npm run verify`, `npm run test:web` and `rehearse:family` (173/173) all green — and the real window,
 where a park driven through the service reached the page as a toast within one tick.
+
+## TOOL1 — the toolchain and its accounts, designed (2026-09-22)
+
+> **"I still cannot see a proper credential management since we need this for both claude/codex, and
+> other llm if possible (this is kind more from deepseek harness) and also we need to be able managed
+> multiple account with usage management (for example multiple claude accounts) and currently we
+> still don't have managed cli (still reading from the machine)."** — owner, 2026-09-22.
+
+✅ designed 2026-09-22 → `docs/2026-09-22-toolchain-design.md`, accepted as **D57**. Build items
+TOOL2–TOOL5 are in the backlog.
+
+**It began by measuring, and the measurement corrected doctrine.** CLAUDE.md said *"the toolchain is
+Daoris's"*. What is actually Daoris's is the **accounts**: `~/.daoris/harnesses/<harness>/<profile>/`
+is a real per-account configuration home wired through `CLAUDE_CONFIG_DIR` / `CODEX_HOME`, with a
+machine default, a per-workspace default and a probed login state — multiple Claude accounts already
+work. The **binary** is the machine's: `install` runs `npm install -g` into the global prefix and
+`binary: ['claude']` resolves off `PATH`. The owner's "still reading from the machine" was exactly
+right, and the overclaim is what let it hide — `claims-need-checks` in its usual shape, where the
+claim and the mechanism were written at different moments and only the claim was easy. Corrected in
+CLAUDE.md before anything was proposed.
+
+**The one signal already arriving and being thrown away.** ACP's `usage_update` carries context
+used/size per turn, and `Acp.Render` was flattening it into a transcript line. That is the whole
+measurement source, and finding it is what made "measurement first" cheap enough to offer.
+
+**The reference was read before deciding, and its names mislead.** `deepseek-harness`'s `credentials/`
+group **stores secrets itself** — configuration names a `CredentialRef`, a private local store holds
+the value — which is the opposite of D49 §4. Its `llm/token-meter` measures **per-session context
+pressure and message price** by replaying the session log. Neither package answers "which of my three
+Claude accounts is spent", which is the thing the owner actually asked for; saying so was more useful
+than adopting the shape by name.
+
+**Two questions were put to the owner rather than guessed, because each changed the work.** *What is
+usage?* — two features hide under the phrase, per-session cost (measurable, already arriving) and
+per-account quota (not readable without a credential). Answer: **both, measurement first**, so the
+rotation rule gets written against observed behaviour. *How far does breadth go?* — a provider
+registry was rejected by the components plan, and reversing it is the owner's call. Answer: **"more
+native support (so its more match its api and interfaces) also with ACP door"**, which is D23 applied
+more times rather than a registry — so the rejection stands and D24 stands with it.
+
+**The outcome is that nothing had to be reopened.** Both candidate reversals — D49 §4 (never see a
+credential) and D24/the registry rejection — survive, because measurement needs no credential and
+native adapters need no catalogue. That was not the expected answer when the gap was first read, and
+it is the reason the arc is cheap.
+
+**One boundary inherited rather than invented.** Per-account usage names a profile, and a profile name
+is already served only over loopback (`ToSession`: `Profile: loopback ? s.Profile : null`). So usage
+is machine-local by the same rule as the transcript, the tree path and the profile name — no new
+disclosure argument, which is what kept §4 short.
+
+**Rotation is designed and deliberately not built**, with the three questions measurement must answer
+first written down: what exhaustion looks like in a harness's own output, how long a cool-off is, and
+whether a rotated session stays reproducible. A string match on somebody else's error text is the
+fragile part, and guessing it is how it gets written wrong.

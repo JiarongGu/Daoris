@@ -14,25 +14,17 @@ sessions doing the family's work. Parts 1 and 2 of D45 are **built and proven by
 (DRV5, six landings, in the archive)** — the remote server exists, gate-proven by the family
 rehearsal's two-machine phase. **All three parts of D45 are built.** The owner set the next direction
 2026-09-20: **workspaces as the unit of sharing, and Daoris as the working surface** — designed the
-same day as D48/D49 (each amended the same day on the owner's corrections: membership is git-style
-wiring, never tracked; coexistence with non-users is binding; harness accounts are named credential
-profiles) with two contracts and eight build items. **All four WSP items are built** (2026-09-20, in
-the archive): the workspace exists, the registry is the authority, the machine's remotes are a map —
-one deployment per circle — and a feed carries the commit it speaks for, so the newest canonical view
-is the one that stands. **All three SES items have landed too**: a session's console streams live, a
-person can hold a conversation with an agent in any repository, and Daoris manages the harnesses those
-sessions run on — installing and updating them through their own mechanisms, and holding many accounts
-per harness as named credential profiles without ever touching a credential. And **CANON6 has landed**:
-the canon instructs exactly one thing that needs a service running — publishing a quest — and it now
-names the alternative in the same breath, so an adopted repository stays workable for contributors who
-do not run Daoris. **The whole D48/D49/D50 arc is built.** It was then **reviewed** at the owner's
-request (REV2, in the archive), which found two things no gate could: the release workflow ran one of
-the four declared gates, and the shell's 1,128 lines had no tests at all — so every refusal the desktop
-made was reaching people as a blank failure. Both are fixed and gated, along with four smaller things
-the same review noticed. **The owner then set the next direction (2026-09-20): the desktop becomes a
-user-driven working surface — code sessions the way a terminal agent CLI holds them, but across
-agents, repositories and concurrent sessions, designed with real UI/UX (researched in
-`docs/2026-09-20-working-surface-research.md`).** That direction is now **designed** (SURF1 →
+same day as D48/D49 with two contracts and eight build items. **The whole D48/D49/D50 arc is built**
+(WSP1–4, SES1–3 and CANON6, all in the archive): the workspace exists, the registry is the authority,
+the remotes are a map, a feed carries the commit it speaks for, the console streams, a conversation is
+a session, harness accounts are named credential profiles — and the canon no longer instructs anything
+a contributor without Daoris cannot do. It was then **reviewed** at the owner's request (REV2), which
+found two things no gate could: the release workflow ran one of the four declared gates, and the
+shell's 1,128 lines had no tests, so every refusal it made reached people as a blank failure. Both
+are fixed and gated. **The owner then set the next direction (2026-09-20): the desktop becomes a
+user-driven working surface** — code sessions the way a terminal agent CLI holds them, but across
+agents, repositories and concurrent sessions, researched in
+`docs/2026-09-20-working-surface-research.md`. That direction is now **designed** (SURF1 →
 `docs/2026-09-21-working-surface-design.md`, 2026-09-21): **D51** settles the isolation model — the
 tree is the unit of exclusion and a repository may have more than one — and **D52** settles the
 surface, with a build order of five items, **SURF2–SURF6** — since extended to **SURF8** by **D55**
@@ -45,7 +37,11 @@ CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANO
 **The owner then interposed the dsh evaluation (2026-09-21), and DSH1 ran it the same day**: eight
 probes against an installed `dsh`, driven on a scripted provider, and a decision the owner accepted
 the same day — **D53: dsh is adopted as a protocol, not a product** — which unblocks the view and
-puts the protocol door in front of it.
+puts the protocol door in front of it. **The SURF arc closed 2026-09-22** (SURF8, then SURF5b, which
+also closed driver design open question 5), and **the owner set the next direction the same day: the
+toolchain and its accounts** — designed as TOOL1 → **D57**, `docs/2026-09-22-toolchain-design.md`.
+The measurement behind it corrected a doctrine overclaim: **the accounts are Daoris's; the binary is
+still the machine's.**
 
 ## State
 
@@ -363,6 +359,51 @@ and closed the arc** — a park is *seen* by diffing the tick's sessions and an 
 driver's own conclusion, which is what makes "never for an ending the person caused" structural rather
 than bookkeeping; the judgement lives in the library so a machine with no screen answers the same
 question, and `daoris driver notify on|off` is its second door. **Every SURF item is built.**
+
+### The next direction — the toolchain and its accounts (owner, 2026-09-22)
+
+> *"I still cannot see a proper credential management since we need this for both claude/codex, and
+> other llm if possible (this is kind more from deepseek harness) and also we need to be able managed
+> multiple account with usage management (for example multiple claude accounts) and currently we still
+> don't have managed cli (still reading from the machine)."*
+
+**TOOL1 designed it the same day** (in the archive) and the owner accepted **D57**:
+`docs/2026-09-22-toolchain-design.md` is the contract. The measurement it started with corrected
+doctrine — **the accounts are Daoris's and the binary is the machine's** — and the owner's two
+answers narrowed the rest: **usage is measured before it is managed**, and breadth is **more native
+adapters plus the ACP door, not a registry**. So **D49 §4 and D24 both stand**, which is why none of
+the items below needs a credential or a model name. Take them in order.
+
+- [ ] **TOOL2 — the managed CLI** (design §3). A managed harness under
+  `~/.daoris/toolchain/<harness>/<version>/`, installed by the harness's own installer aimed there
+  rather than at the machine (`npm install --prefix`). Selection at spawn is **explicit command →
+  managed pin → `PATH`**, and the pin resolves exactly as a credential profile does (pick →
+  workspace → machine → none) — one resolution rule, not a second that drifts. **Absent means
+  `PATH`, which is today's behaviour byte for byte**: additive like trees and profiles, so a machine
+  that installed `claude` itself keeps working (D48 §2a). Two doors: `daoris harness pin|unpin` and
+  the Machine view. The version is already on every session record, so "what produced this work"
+  needs nothing new. It makes ACP2's `CLAUDE_CODE_EXECUTABLE` → "the managed `claude`" true.
+
+- [ ] **TOOL3 — measurement** (design §4). Parse ACP's `usage_update` structurally instead of
+  rendering it to a line; record per session (context used against the window, at high-water) and
+  aggregate per account. 🔴 **Machine-local, inheriting an existing boundary rather than inventing
+  one**: per-account usage names a profile, and a profile name is already served only over loopback —
+  so `~/.daoris/usage/`, over the shell's bridge, with no HTTP route. A pipe-door session records
+  nothing and **says so rather than showing a zero** (SES1's rule, on a different number). No model
+  named, no price claimed (D24).
+
+- [ ] **TOOL4 — rotation.** ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
+  questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off
+  should be, and whether a rotated session stays reproducible. Exhaustion is **observed, never read**
+  — Daoris cannot ask a provider what is left without a credential, and D49 §4 stands. Do not start
+  this before there are real transcripts to write the signal against; a string match on somebody
+  else's error text is the fragile part and guessing it is how it gets written wrong.
+
+- [ ] **TOOL5 — more native adapters** (design §5). D23 applied more times: a native adapter per tool
+  worth matching properly (its own flags, configuration home, login flow, version question), with the
+  ACP door for tools that speak the protocol and a tool free to be both. **Not a registry** — the
+  components plan's rejection stands and D24 with it. Largely folds into **ACP3**, which already
+  brings dsh and codex as configurations of the door; this item is what remains once that lands.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

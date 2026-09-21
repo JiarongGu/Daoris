@@ -50,25 +50,24 @@ back, which is what the automation-first direction is for; the archive has the a
 platform, runs the driver loop, and lands the person's session controls. The **remote server**
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
-quest lock hardened into code, and the desktop's sync loop feeding up and mirroring down. The rehearsal
-gates the whole thing with no model: driver loop, a two-machine remote crossing, **the workspace
-boundary, the registration lifecycle, the remotes map, which commit speaks, a whole
-conversation, a session running as a named account, and **a quest carried to done over the ACP door**
-(173/173).
+quest lock hardened into code, and the desktop's sync loop feeding up and mirroring down. **The family
+rehearsal gates all of it with no model, no account and no credential** (173/173) — it names its own
+phases when you run it, down to a quest carried to done over the ACP door.
 
 **The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
 and `docs/task-archive.md` carry the rest. **The workspace is the unit of sharing** (WSP1) and is
 **wiring, never a tracked declaration** — a registry row, set by `connect --workspace`. **The
 registry is the authority** (WSP2): an explicit list `connect`, `retire` and `import` maintain, never
 a view over a folder. **The remotes are a map** (WSP3): `~/.daoris/remotes.json`, one deployment per
-workspace, edited from either surface, a key never printed back beyond its audit prefix. **A feed
-carries the commit it speaks for** (WSP4): only the canonical line feeds knowledge, a replacement
-must be newer, and a stale one is refused as *information* rather than as a failure. **The console
+workspace, a key never printed back beyond its audit prefix. **A feed carries the commit it speaks
+for** (WSP4): only the canonical line feeds knowledge, and a stale feed is refused as *information*
+rather than as a failure. **The console
 streams** (SES1) — transcript-class, desktop-only, no HTTP surface at all. **A conversation is a
 session** (SES2) — same entity, same lock, quest optional; the harness carries the model and Daoris
-pipes text. **The toolchain is Daoris's** (SES3): harnesses found, installed and logged in through
-their own mechanisms only when asked, with many accounts held as **named credential profiles** —
-directories Daoris owns the location of and never reads. **Everything has two doors** (D50): whatever
+pipes text. **The ACCOUNTS are Daoris's; the binary is still the machine's** (SES3, measured
+2026-09-22): harnesses are found on `PATH`, installed by their own global installer, and many
+accounts are held as **named credential profiles** — directories Daoris owns and never reads. No
+managed CLI, no pinned version, no per-account usage — the owner named that gap; it is **TOOL1**. **Everything has two doors** (D50): whatever
 a screen can set, a terminal can.
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
@@ -94,43 +93,37 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D55) and why each was made. **D45 is the
-  direction: Daoris drives** — read it before planning anything; **D48–D50 are the closed arc**
-  (workspaces; the interactive surface; management parity) — WSP1–4, SES1–3 and CANON6 have all landed.
-- **The current arc is the desktop as a working surface** (owner, 2026-09-20), and **D55 re-positions
-  it** (owner, 2026-09-21): *the desktop is a **code-gen-driven IDE*** — the organising object is a
-  **session, not a file**, and there is no editor in the plan at any point. Read in this order:
+- `docs/DECISIONS.md` — the numbered decision log (D1–D57) and why each was made. **D45 is the
+  direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
+  (workspaces; the interactive surface; management parity).
+- **The desktop is a working surface** (owner, 2026-09-20) and **D55 re-positions it** (2026-09-21):
+  *a **code-gen-driven IDE*** — the organising object is a **session, not a file**, and there is no
+  editor in the plan at any point. Read in this order:
   **`docs/2026-09-21-working-surface-design.md`** is the contract,
-  **`docs/2026-09-21-ide-reference-study.md`** is what changed it (IDEs rather than session managers;
-  five patterns recur across its references and the platform had none of them), and
-  **`docs/2026-09-21-working-surface-components.md`** is the method — **anything with a screen in it
-  is built component by component**: a story before the component, its own test, and **a molecule
-  imports no hook**, which is what makes every state reachable by passing props. **D51** settles
-  isolation (*the tree is the unit of exclusion, and a repository may have more than one* — "two
-  agents in one tree corrupt it" survives; only the incidental cap does not), **D52** the surface, and
-  **D55** the frame: Manage ⇄ Work are two **frames** of one application rather than a sixth nav item,
-  with a status bar, a growable output panel, a frameless window whose top strip is application chrome
-  (SURF7) and a monitor window (SURF8). **Every SURF item is built**, and Work is usable today
+  **`docs/2026-09-21-ide-reference-study.md`** is what changed it (IDEs rather than session
+  managers), and **`docs/2026-09-21-working-surface-components.md`** is the method — **anything with
+  a screen in it is built component by component**: a story before the component, its own test, and
+  **a molecule imports no hook**, which is what makes every state reachable by passing props.
+  **D51** settles isolation (*the tree is the unit of exclusion, and a repository may have more than
+  one*), **D52** the surface, and **D55** the frame: Manage ⇄ Work are two **frames** of one
+  application rather than a sixth nav item, with a status bar, a growable output panel, a frameless
+  window (SURF7) and a monitor window (SURF8). **Every SURF item is built**, and Work is usable today
   (`npm run desktop -- run`, then *Work*). Two rules the building settled that still bind: a
   timeline is **derived** (the record has no event log), and **the stream has one home**, the output
   panel. The archive carries the rest.
 - **The application has a frame of its own** (SURF10/SURF7 → **D56**,
   `docs/2026-09-21-desktop-frame-design.md`): a frameless window whose **app strip is the title
-  bar**, a 48px **activity bar** identical in both frames, the rail's `＋`, one owner for the verbs,
-  a **right dock** beside the attended session, and **D41 §3 amended to one denser scale** — seven
-  named type tokens held by `tokens.test.ts`, because the literal form had drifted to fifteen
-  values. The diagnosis was **measured**, which is how a design complaint became a decision.
-  🔴 **git walks UP** — a diff of a path that is not a repository answers for the one above it
-  (FIX-LOG). **SURF6** put the landed work in the dock as a bounded diff whose acts carry every
-  `reaching-in` guard, and **SURF9** made every action addressable by name.
+  bar**, a 48px **activity bar** in both frames, one owner for the verbs, a **right dock**, and
+  **D41 §3 amended to one denser scale** — seven named type tokens held by `tokens.test.ts`, after
+  the literal form had drifted to fifteen values. The diagnosis was **measured**, which is how a
+  design complaint became a decision. 🔴 **git walks UP** — a diff of a path that is not a
+  repository answers for the one above it (FIX-LOG).
 - **The last two, and what they bind** (2026-09-22). **SURF8**: the monitor and a detached session
   are **routes into the same bundle** on their own STA pumps, read-only — 🔴 a secondary window needs
-  its **own** WebView2 environment, follows the OS theme itself, and `shot`/`eval`/`click` need
-  **`--window <monitor|session:ID>`** or they address whichever window Windows calls main (FIX-LOG,
-  three times over). **SURF5b** closed the arc and driver open question 5: a park is *seen* (the
-  tick's sessions, diffed), an end is *known* (the driver concluded it and knows whose decision it
-  was), so **"never for an ending the person caused" is structural**. The judgement is the library's,
-  so a headless machine answers it too, and `daoris driver notify on|off` is its second door.
+  its **own** WebView2 environment, and `shot`/`eval`/`click` need **`--window <monitor|session:ID>`**
+  or they address whichever window Windows calls main (FIX-LOG, three times over). **SURF5b** closed
+  the arc and driver open question 5: a park is *seen*, an end is *known*, so "never for an ending
+  the person caused" is structural; `daoris driver notify on|off` is its second door.
 - 🔴 **Polishing the UI/UX is standing work, and it is done by LOOKING** (owner, 2026-09-22:
   *"we also need to keep polish the ui/ux you can use screenshot tool to confirm"*). Take
   `npm run desktop -- shot [--theme dark]` to any surface you change. The defects that matter are
@@ -148,6 +141,14 @@ risk, **authorship** was.
   probe instruments are tracked under `tools/dsh-probes/`.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
+- **The current direction is the toolchain** (owner, 2026-09-22 → **D57**,
+  `docs/2026-09-22-toolchain-design.md`): Daoris owns where a harness's binary lives and which
+  version runs (**absent means `PATH`** — additive, so a machine that installed `claude` itself keeps
+  working), **usage is measured before it is managed** (ACP's `usage_update`, machine-local because
+  it names a profile), and breadth is **more native adapters plus the ACP door, never a registry**.
+  Nothing was reopened: measurement needs no credential and native adapters need no catalogue, so
+  D49 §4 and D24 both stand. TOOL2–TOOL5 in `TASKS.md`; **TOOL4 (rotation) is held** until
+  measurement says what exhaustion looks like.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

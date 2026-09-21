@@ -1947,3 +1947,59 @@ that needs**, so nothing about the strip changed — only who fills the gap. The
 (`CaptionButtonColors` from D41's tokens, re-sent on every theme change), which keeps the rule that
 structure may come from a reference and identity may not. Recorded as an amendment rather than folded
 in silently, because the original sentence is what a reader would otherwise build against.
+
+## D57 — The toolchain becomes Daoris's, usage is measured before it is managed, and breadth is more native adapters rather than a registry (2026-09-22)
+
+**The owner named three gaps** (2026-09-22): no proper credential management across claude/codex and
+other LLMs, no multiple-account handling with usage management, and *"we still don't have managed cli
+(still reading from the machine)"*. The design is `docs/2026-09-22-toolchain-design.md`.
+
+**The measurement came first, and it corrected doctrine.** CLAUDE.md said *"the toolchain is
+Daoris's"*. What is actually Daoris's is the **accounts** — `~/.daoris/harnesses/<harness>/<profile>/`
+is a real per-account configuration home with a machine and per-workspace default and a probed login
+state, so multiple Claude accounts already work. The **binary** is the machine's: `install` runs
+`npm install -g` into the global prefix and `binary: ['claude']` resolves off `PATH`. There is no
+usage of any kind, and the one structured signal that already arrives — ACP's `usage_update` — was
+being rendered into a transcript line and discarded. The overclaim is what let the gap hide, which is
+`claims-need-checks` in its usual shape: the claim and the mechanism were written at different
+moments and only the claim was easy.
+
+**a. The toolchain becomes managed, additively.** A managed harness lives under
+`~/.daoris/toolchain/<harness>/<version>/`, installed by the harness's own installer aimed there
+rather than at the machine. Selection at spawn is **explicit command → managed pin → `PATH`**, and
+the pin resolves exactly as a credential profile does (pick → workspace → machine → none). Absent
+means `PATH`, which is today's behaviour byte for byte — the same additive shape as session trees and
+profiles, and what keeps D48 §2a true for a machine that installed `claude` itself.
+
+**b. Usage is measured before it is managed** (the owner's answer to a direct question). The record
+and the surface are built from ACP's real numbers first; rotation is designed and held until there is
+data showing what exhaustion looks like, so its rule is written against observed behaviour rather
+than a guess. 🔴 **Usage is machine-local material**: per-account usage names a profile, and a profile
+name is already served only over loopback — so it inherits that boundary, lives under
+`~/.daoris/usage/`, reaches a surface over the shell's bridge, and has no HTTP route. **No credential
+is needed for any of this, so D49 §4 is not reopened** — which is the whole reason this ordering was
+offered.
+
+**c. Breadth is more native adapters, plus the ACP door.** The owner's words: *"more native support
+(so its more match its api and interfaces) also with ACP door"*. That is D23 applied more times — a
+native adapter per tool worth matching properly, and ACP for tools that speak the protocol, with a
+tool free to be both (which is what `claude-code` becomes after ACP2). **It is not the provider
+registry the components plan rejected**, so that rejection stands and D24 stands with it: Daoris
+names no model and holds no price table.
+
+**Rejected: adopting the reference's credential model.** `deepseek-harness`'s `credentials/` group
+stores secrets itself — configuration names a `CredentialRef` and a private local store holds the
+value. It was read before this was written. It is the opposite of D49 §4, and the owner's own answer
+("measurement first") makes it unnecessary: nothing in parts a–c needs a credential. Declined on
+those terms rather than by default.
+
+**Rejected: vendoring a harness.** Certain versions at the price of becoming a distributor of
+somebody else's tool, with their licence and their cadence. A pin plus an asserted version buys the
+same certainty.
+
+**Rejected: turning counts into money.** A price table per model per provider, maintained here and
+wrong within a month — and D24 says the deployment decides the model, so it would be Daoris claiming
+to know something it structurally does not.
+
+**Named and out of scope**: spend caps, billing, and anything reading a provider's console. All three
+need either a credential or an API Daoris has no business holding.
