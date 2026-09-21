@@ -1564,9 +1564,15 @@ layer is the dependency rule and the surface's components sit together in `src/w
 D41's language or D42's stack moves — stories import the shipped components, so design and product
 cannot drift.
 
-## D53 — dsh is adopted as a protocol, not a product: ACP becomes the driver's session door, and the surface stays Daoris's (proposed 2026-09-21 — the owner's call)
+## D53 — dsh is adopted as a protocol, not a product: ACP becomes the driver's session door, and the surface stays Daoris's (2026-09-21)
 
-**Decision, proposed.** DSH1 ran the plan's probes (`docs/2026-09-21-dsh-evaluation.md`; every claim
+**Accepted by the owner 2026-09-21**, as proposed and without amendment. Recorded because the shape of
+the decision is unusual: what it *rejects* is the expansive half, so accepting it is the conservative
+act. Option D would have reopened D1 — Daoris is process tooling, not an LLM product — and declining
+it keeps D1, D38 and D41 exactly where they were. What it commits to is additive and reversible: one
+more door on a seam that already has one, proven by a stub before any harness rides it.
+
+**Decision.** DSH1 ran the plan's probes (`docs/2026-09-21-dsh-evaluation.md`; every claim
 below cites an observed run) and closes the dsh direction with **option B, with A folded into it**. The
 adapter seam grows a **protocol door**: the driver may hold a session over the **Agent Client Protocol**
 (ACP v1, JSON-RPC over the spawned process's stdio) beside the pipe door it has today, and every harness
@@ -1574,10 +1580,9 @@ reached that way is a *configuration* of the door rather than a hand-built `ISes
 natively (`dsh --profile acp`), Claude Code and Codex through the ACP project's Apache-licensed
 adapters. **Options C and D are rejected.** D would have reopened D1 and is declined on exactly those
 terms: Daoris is process tooling, and the family layer has nothing to gain from living inside another
-product's plugin runtime. This entry is written as a proposal because the plan said the owner decides a
-direction with D1-sized stakes at its far end; the evaluation's job was to make the decision cheap and
-well-lit. Until the owner confirms or amends it, SURF4's hold rests on this proposal's *answer*, no
-longer on the open question.
+product's plugin runtime. The evaluation's job was to make a decision with D1-sized stakes at its far
+end cheap and well-lit rather than to make it; **SURF4a–d are unblocked by this entry** and resume on
+`Daoris.Web` as designed.
 
 **Why B.** The wire was driven, not read about: a session over dsh's ACP profile streamed a **tool
 lifecycle with ids, inputs and outcomes, the turn boundary, thoughts and context usage — by contract,

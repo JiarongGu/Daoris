@@ -39,9 +39,9 @@ surface, with a build order of five items, **SURF2–SURF6**. Beside them sit th
 CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind
 (WSP5 landed 2026-09-21: the switcher is global chrome, and it is in the archive).
 **The owner then interposed the dsh evaluation (2026-09-21), and DSH1 ran it the same day**: eight
-probes against an installed `dsh`, driven on a scripted provider, and a proposed decision — **D53:
-dsh is adopted as a protocol, not a product** — for the owner to confirm or amend before the view is
-built.
+probes against an installed `dsh`, driven on a scripted provider, and a decision the owner accepted
+the same day — **D53: dsh is adopted as a protocol, not a product** — which unblocks the view and
+puts the protocol door in front of it.
 
 ## State
 
@@ -130,16 +130,15 @@ have landed** (2026-09-21): the lock keys on the tree; the trees exist, opt-in p
 per session before the record, refusing to die holding work — and a dirty root no longer holds the
 driver, which was the point.
 
-**DSH1 has run (2026-09-21) and D53 is proposed — the owner confirms or amends it, and that is the
-next thing that happens.** The evaluation is `docs/2026-09-21-dsh-evaluation.md`: eight probes against
-an installed `dsh` over a scratch repository, driven not read about, on a **scripted provider** because
-no model key was supplied (the note says at every step what that tier proves and what it cannot). The
-proposal, **D53**: *dsh is adopted as a protocol, not a product* — the adapter seam grows an **ACP door**
-(option B), dsh and codex arrive as configurations of it (A folds in; HARNESS2 becomes ACP3), and the
-working surface stays `Daoris.Web` (C and D rejected; D would reopen D1 and is declined on those
-terms). **Until the owner answers, SURF4a–d hold on the proposal's answer**; under the proposal they
-resume on `Daoris.Web` exactly as designed, with SURF4c's timeline reading the protocol. The build
-order under D53 is **ACP1 → ACP2 → ACP3** (below), and the docs strand produced **DOCS2**.
+**DSH1 has run and D53 is accepted (both 2026-09-21).** The evidence is
+`docs/2026-09-21-dsh-evaluation.md`: eight probes against an installed `dsh` over a scratch
+repository, driven not read about, on a **scripted provider** because no model key was supplied (the
+note says at every step what that tier proves and what it cannot). **D53**: *dsh is adopted as a
+protocol, not a product* — the adapter seam grows an **ACP door** (option B), dsh and codex arrive as
+configurations of it (A folds in; HARNESS2 becomes ACP3), and the working surface stays `Daoris.Web`
+(C and D rejected; D would have reopened D1 and is declined on those terms). **SURF4a–d are
+unblocked** and resume as designed, with SURF4c's timeline reading the protocol. The next build is
+**ACP1 → ACP2 → ACP3** (below); the docs strand produced **DOCS2**, which has landed.
 
 Smaller and independent of them: **ARCH1** (the owner's mid-session direction of 2026-09-21 — dsh's
 domain separation and plugin design as the example for Daoris's own structure; a study, read as
@@ -256,18 +255,19 @@ published, and a release is still blocked on REH1.
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, proposed**). The protocol items come first once the owner
-confirms D53; the SURF items follow, in order; the three after them are the arc's leftovers,
+the archive; its decision is **D53, accepted**). The protocol items come first; the SURF items
+follow, in order; the three after them are the arc's leftovers,
 **actionable now**; the four after those are **held**, each waiting on an external trigger that has
 not arrived. Each item is one session-sized landing, TDD, gates green, moved to the archive on
 completion.
 
-### The protocol door — ACP (D53, proposed 2026-09-21; the owner confirms or amends first)
+### The protocol door — ACP (D53, accepted 2026-09-21)
 
-**Proposed by DSH1's evidence** (`docs/2026-09-21-dsh-evaluation.md`): the adapter seam grows a door
+**Settled by DSH1's evidence** (`docs/2026-09-21-dsh-evaluation.md`): the adapter seam grows a door
 that holds a session over the **Agent Client Protocol** beside today's pipe, and every harness reached
-that way is a *configuration* of the door. Nothing here starts until the owner has answered D53; if the
-answer differs, this section is rewritten from the evidence, not from scratch.
+that way is a *configuration* of the door. **ACP1 is the next build.** Take the three in order — the
+door is proven by a stub with no model before any real harness rides it, which is D46 §8's shape and
+the reason the seam can grow without a key or an account anywhere in a gate.
 
 - [ ] **ACP1 — the protocol door.** `ISessionProtocol` beside `ProcessStartInfo` on the adapter seam
   (D23 evolves, not breaks): a JSON-RPC client over the spawned process's stdio; `session/new` on the
@@ -303,10 +303,11 @@ answer differs, this section is rewritten from the evidence, not from scratch.
 The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
 them in order.** SURF2 and SURF3 are done (2026-09-21, in the archive): the lock keys on the tree,
 and the trees exist — opt-in per repository, grown per session, refusing to die holding work.
-**SURF4a–d and the UI halves of SURF5/SURF6 hold on the owner's answer to D53** (above): under the
-proposal they resume on `Daoris.Web` exactly as designed — option C, the view as a dsh deployment, was
-rejected by the evidence — and SURF4c's timeline gains ACP's structured source (tool lifecycle, turn
-boundaries, thoughts, usage) as the protocol D52 said stdout parsing was not.
+**SURF4a–d are unblocked by D53** (accepted 2026-09-21): they build on `Daoris.Web` exactly as
+designed — option C, the view as a dsh deployment, was rejected by the evidence — and SURF4c's
+timeline gains ACP's structured source (tool lifecycle, turn boundaries, thoughts, usage) as the
+protocol D52 said stdout parsing was not. **Take ACP1 first**: SURF4c is the timeline's consumer, and
+building the consumer before the source means building it twice.
 Everything with a screen in it also follows `docs/2026-09-21-working-surface-components.md` — the
 surface is built **component by component**, each with its story and its own test, because a rail, a
 head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
@@ -418,16 +419,14 @@ runtime (its surfaces are built natively against claude/codex through the adapte
   is to move, it is `daoris.json` plus every place that quotes the number (`CLAUDE.md`, this file,
   `docs/DECISIONS.md` gets an amendment saying which way and why). **CANON5 is parked behind this.**
 
-- [ ] **HARNESS2 — a `codex` session adapter.** **Waits on D53.** Under the proposal this is **ACP3's
-  codex configuration** — `@agentclientprotocol/codex-acp` on the protocol door — and no hand-built
-  `ISessionAdapter` is written; if the owner answers D53 differently, the original shape stands: SES3
-  already made codex manageable as a TOOL (`daoris harness` knows its installer, its `CODEX_HOME` seam
-  and how it reports a login, all verified against the real binary), so what would be missing is only
-  `Prepare`, `PrepareChat` and `Interactive`, with two things that make it more than a copy of
-  `ClaudeCodeAdapter`: its non-interactive shape is `codex exec`, not a `-p` flag, and **its permission
-  posture is the D37 boundary in another tool's vocabulary** — the `acceptEdits` equivalent established,
-  not guessed. Either way it lands the way `claude-code` did: the stub proves the loop, a real driven
-  run proves the adapter. **Not HARNESS1** (a second harness *layout*, a doctrine question).
+- [ ] **HARNESS2 — a `codex` session adapter. Absorbed into ACP3 by D53**, and kept here only so the
+  name resolves: it is `@agentclientprotocol/codex-acp` on the protocol door, not a hand-built
+  `ISessionAdapter`. SES3 already made codex manageable as a TOOL (`daoris harness` knows its
+  installer, its `CODEX_HOME` seam and how it reports a login, all verified against the real binary).
+  The one thing the ACP route does not settle for free is **the D37 boundary in codex's own
+  vocabulary** — its `acceptEdits` equivalent is established from what the adapter exposes as a mode,
+  never guessed. It lands the way `claude-code` did: the stub proves the loop, a real driven run
+  proves the harness. **Not HARNESS1** (a second harness *layout*, a doctrine question).
 
 ### Held — each waits on a trigger that has not arrived
 

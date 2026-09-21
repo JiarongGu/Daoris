@@ -375,12 +375,12 @@ product; the family layer (canon, quests, registry, convergence, coexistence, th
 nothing to gain from Cordis, and the CLI stays untouchable regardless. The pre-stable plugin API and the
 churn would put the fastest-moving part of the stack under the slowest-changing judgement.
 
-**Recommendation to the owner** (D53, proposed): **B, with A folded into it** — dsh arrives as an *ACP
+**Recommendation to the owner, accepted the same day as D53**: **B, with A folded into it** — dsh arrives as an *ACP
 configuration* of the protocol door, not as a hand-built adapter, and HARNESS2's codex adapter arrives
 the same way. The design work is the seam; the proof is a real driven run over ACP, which needs the
 owner's login and is the first build item's closing step.
 
-## 5. Proposed build order (conditional on D53 as proposed)
+## 5. The build order (D53, accepted 2026-09-21)
 
 | Item | What lands | Proof |
 |---|---|---|

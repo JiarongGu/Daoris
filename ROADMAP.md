@@ -69,11 +69,10 @@ one thing while several others run.
 surface's structure (D52 as amended); the owner asked whether Daoris should adopt its *function* too.
 `docs/2026-09-21-dsh-direction.md` was the plan; **DSH1** ran it the same day
 (`docs/2026-09-21-dsh-evaluation.md`: eight probes against an installed `dsh`, driven on a scripted
-provider), and **D53 is the proposed answer, awaiting the owner**: *dsh is adopted as a protocol, not a
+provider), and **D53 is the answer, accepted 2026-09-21**: *dsh is adopted as a protocol, not a
 product* — the adapter seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the
-working surface stays `Daoris.Web`. **SURF4a–d and the UI halves of SURF5/SURF6 hold on the owner's
-answer** and resume as designed under the proposal; the protocol items, **ACP1 → ACP2 → ACP3**, come
-first once it is confirmed.
+working surface stays `Daoris.Web`. The protocol items, **ACP1 → ACP2 → ACP3**, come first;
+**SURF4a–d and the UI halves of SURF5/SURF6** follow, unblocked and unchanged in design.
 
 The research is `docs/2026-09-20-working-surface-research.md`; the contract is
 `docs/2026-09-21-working-surface-design.md` (SURF1, done 2026-09-21). The question that came before
@@ -90,8 +89,8 @@ stdout), `AwaitingPerson` given a surface at last, review as a real diff, and no
 |---|---|---|
 | **SURF2 · The lock keys on the tree** | The record names its tree; the ledger's refusals move with it; the planner's rule does not. Nothing creates a tree yet, so behaviour is identical | **Built** (2026-09-21) — two trees in one repository run at once over the real host, and an unknown tree holds every tree, because the lock errs toward refusing |
 | **SURF3 · Session trees** | `git worktree` under `~/.daoris/trees/`, on request and opt-in; `connect` refused from a linked worktree; removal that refuses to destroy work; only the registered root ever feeds | **Built** (2026-09-21) — a deliberately dirty root no longer holds the driver: the session ran in its own tree, the person's file untouched, and removal refused while the work sat unmerged |
-| **ACP1–3 · The protocol door** (D53, proposed) | An ACP door on the adapter seam, proven by a stub agent with no model; `claude-code` over the ACP project's adapter, closing with a real driven run; dsh and codex as configurations of the door | Proposed — the owner confirms D53 first |
-| **SURF4a–d · The Work view** | Built component by component (D52 as amended, `docs/2026-09-21-working-surface-components.md`): the atoms and the two helpers, then the rail, then the attended session, then the view. A story before each component, its own test, and no hook inside a molecule. SURF4c's timeline reads the protocol | Held on D53's answer; resumes as designed under the proposal |
+| **ACP1–3 · The protocol door** (D53) | An ACP door on the adapter seam, proven by a stub agent with no model; `claude-code` over the ACP project's adapter, closing with a real driven run; dsh and codex as configurations of the door | Next — D53 accepted 2026-09-21 |
+| **SURF4a–d · The Work view** | Built component by component (D52 as amended, `docs/2026-09-21-working-surface-components.md`): the atoms and the two helpers, then the rail, then the attended session, then the view. A story before each component, its own test, and no hook inside a molecule. SURF4c's timeline reads the protocol | Unblocked by D53; after ACP1, whose events the timeline renders |
 | **SURF5 · Attention** | Overview's *what needs you*, `AwaitingPerson`'s surface, the sidebar counts, OS notification on park and end | Planned |
 | **SURF6 · Review** | The diff over the bridge, bounded; merge and discard as the person's acts | Planned |
 

@@ -122,11 +122,10 @@ risk, **authorship** was.
   props. **The dsh evaluation has run** (DSH1, 2026-09-21): `docs/2026-09-21-dsh-direction.md` was
   the plan, **`docs/2026-09-21-dsh-evaluation.md`** is the evidence — eight probes against an installed
   `dsh` over a scratch repository, on a scripted provider because no key was supplied — and **D53 is
-  the proposed decision, awaiting the owner**: *dsh is adopted as a protocol, not a product*. The
-  adapter seam grows an **ACP door**; dsh and codex arrive as configurations of it; the working surface
-  stays `Daoris.Web`. SURF4a–d hold on the owner's answer and resume as designed under the proposal;
-  the build order under D53 is ACP1 → ACP2 → ACP3 in the backlog. The probe instruments are tracked
-  under `tools/dsh-probes/`.
+  the decision, accepted 2026-09-21**: *dsh is adopted as a protocol, not a product*. The adapter seam
+  grows an **ACP door**; dsh and codex arrive as configurations of it; the working surface stays
+  `Daoris.Web` (C and D rejected, D on D1's terms). **ACP1 → ACP2 → ACP3 is the next build**, and
+  SURF4a–d are unblocked behind it. The probe instruments are tracked under `tools/dsh-probes/`.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
