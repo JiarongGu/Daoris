@@ -1563,3 +1563,80 @@ scatters one feature across three directories and starts a taxonomy argument on 
 layer is the dependency rule and the surface's components sit together in `src/work/`. Nothing about
 D41's language or D42's stack moves — stories import the shipped components, so design and product
 cannot drift.
+
+## D53 — dsh is adopted as a protocol, not a product: ACP becomes the driver's session door, and the surface stays Daoris's (proposed 2026-09-21 — the owner's call)
+
+**Decision, proposed.** DSH1 ran the plan's probes (`docs/2026-09-21-dsh-evaluation.md`; every claim
+below cites an observed run) and closes the dsh direction with **option B, with A folded into it**. The
+adapter seam grows a **protocol door**: the driver may hold a session over the **Agent Client Protocol**
+(ACP v1, JSON-RPC over the spawned process's stdio) beside the pipe door it has today, and every harness
+reached that way is a *configuration* of the door rather than a hand-built `ISessionAdapter` — dsh
+natively (`dsh --profile acp`), Claude Code and Codex through the ACP project's Apache-licensed
+adapters. **Options C and D are rejected.** D would have reopened D1 and is declined on exactly those
+terms: Daoris is process tooling, and the family layer has nothing to gain from living inside another
+product's plugin runtime. This entry is written as a proposal because the plan said the owner decides a
+direction with D1-sized stakes at its far end; the evaluation's job was to make the decision cheap and
+well-lit. Until the owner confirms or amends it, SURF4's hold rests on this proposal's *answer*, no
+longer on the open question.
+
+**Why B.** The wire was driven, not read about: a session over dsh's ACP profile streamed a **tool
+lifecycle with ids, inputs and outcomes, the turn boundary, thoughts and context usage — by contract,
+with nothing parsed from stdout** — which is the structured source the working surface's timeline
+needed and D52 rightly refused to screen-scrape. Turn-taking becomes a real API (`session/prompt`)
+instead of a line written to a pipe. One wire reaches three harnesses. And the standard does not move
+when dsh does: the same week dsh changed 1,687 commits and 28 packages, its ACP surface stayed ACP v1.
+The Claude adapter was tested keylessly on this machine: `initialize` and `session/new` succeeded with
+**`CLAUDE_CODE_EXECUTABLE` pointed at the `claude` the toolchain already manages** and
+**`CLAUDE_CONFIG_DIR` honoured** (Claude Code's state landed in the empty scratch profile and nowhere
+else), and it exposed Claude Code's permission modes — `acceptEdits` among them — as ACP modes. So the
+door can run the managed binary, under the chosen credential profile, at the driver's posture.
+
+**Why not A alone.** Every mechanic a third-harness adapter needs was observed working (`dsh headless`
+took a target, exited 0/1 by turn outcome, streamed JSON events, landed a commit, wrote a durable record,
+failed closed on escalation with no approver composed). It adds a multi-provider agent option and changes
+nothing structural; its interactive half *is* ACP. A is therefore a configuration of B, not a second seam.
+
+**Why not C.** dsh's web profile is a full product — a model picker (D24), a workspace picker (D48),
+plugin management, its own visual identity (D41), a bound port and two default-on rows that send
+transcript-class material off the machine on its official route (D47 §4) — on a developer preview whose
+README promises breaking changes and whose tree moved 1,687 commits in the week measured. D38's one UI
+would become two in fact, and D31/D47 would need re-proving inside someone else's host at every upgrade.
+Its *structure* was the part worth having, and D52 as amended already took it.
+
+**What does not move.** Session state is **observed, never self-reported** (D46): ACP updates and dsh's
+session log are richer than observation and may *enrich* the record and the console; the record still
+moves on exit code and quest state, which matters because the wire flattens `aborted | blocked | error`
+to `end_turn`. **No model is named** (D24): the model is the harness's configuration — dsh's own
+`settings.yaml`, the adapter's profile — and the record reports the exact route the harness wrote. **The
+stream stays on the machine** (D47 §4): the structured stream is console-class, desktop-only. **The tree
+is the unit** (D51): `session/new` takes an absolute `cwd`. **The D37 boundary does not widen** (D52's
+rule): `session/request_permission` is answered by the driver from the repository's checked-in posture
+and fails closed; dsh itself has no notion of *outward-facing* — a push is a sandbox-legal command in its
+vocabulary — so that line stays where it is today, in the repository's hooks and the prompt. **D23
+evolves rather than breaks**: the seam gains a door; "on proof" now means the first real driven run over
+ACP, which this session could not spend for (no key, no login handed to it) and which is ACP2's closing
+step.
+
+**Rejected within B.** Binding the driver to `dsh headless --json`'s event shape or CLI flags — product
+surfaces that changed in 12 commits in the week measured; bind to the standard. Treating ACP updates as
+lifecycle — they are self-reports, and the wire hides the honest end reason of an aborted turn. Adopting
+dsh's shipped composition unpatched — the two outbound rows are patched off in the profile Daoris owns
+the location of, or accepted out loud. Carrying dsh's headless surface as a separate adapter — it would be
+the one adapter with no conversation.
+
+**Two facts to carry into the build, both found by running.** dsh's credential scrub strips any child
+environment name containing KEY, TOKEN or SECRET (`GIT_CONFIG_KEY_0` vanished while `GIT_CONFIG_COUNT`
+survived; dsh's own source says so) — `DAORIS_*` is unaffected, and nothing an adapter passes may be
+named like a secret. And on Windows without PowerShell 7, a Claude Code hook that blocks by **exit code 2
+does not block** under a PowerShell 5.1 executor, which collapses a native command's exit to 1 — the
+structured `permissionDecision: deny` form does. An adapter promising "the repository's own configuration
+governs" carries that caveat until PowerShell 7's behaviour is verified.
+
+**Consequence.** The build order in the evaluation note §5: **ACP1** (the protocol door, proven by a stub
+ACP agent in the family rehearsal with no model — D46 §8's shape), **ACP2** (`claude-code` over ACP: the
+adapter pinned exact as a managed toolchain entry, the executable and config-dir seams, the permission
+answerer, and the real driven run), **ACP3** (dsh and codex as configurations — HARNESS2 closes into it).
+SURF4a–d resume on `Daoris.Web` as designed once the owner confirms, with SURF4c's timeline reading the
+protocol. DOCS1's strand produced one item, **DOCS2**: dsh's doc-budget manifest and link check as
+devkit gates, the "Rejected" line asserted on new decision entries, and its slop checklist folded into
+`post-feature`.

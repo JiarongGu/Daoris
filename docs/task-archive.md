@@ -1887,3 +1887,71 @@ untouched, no commit on the root's HEAD, and the record naming a tree under the 
 and `--force` was the person meaning it — tree and branch both gone; `connect` from inside the tree
 refused naming the main one; and the tree fed nothing — no registry row, no search hit — because a
 session tree is a place to work, not a repository (D51 rule 1).
+
+## DSH1 — evaluate dsh, and decide what Daoris hands it (2026-09-21)
+
+> One session, next. Run the plan's eight probes against the local checkout and an installed `dsh`
+> over a scratch repository — headless run, the ACP session and its event vocabulary against the
+> timeline's needs, claude-code's ACP story, the hook-config bridge, subagent delegation to real
+> claude-code, the approval map onto D37, the breaking-change price, and (only if still live) the
+> one-trivial-plugin build cost. DOCS1 runs as a strand of this session. Output: an evidence note, a
+> numbered decision naming the chosen and rejected options with reasons — the owner decides; option D
+> reopens D1 and says so — and a build order. `deepseek-harness` is at developer preview: pin exactly,
+> vendor nothing, price the churn (probe 7).
+
+✅ done 2026-09-21 — `docs/2026-09-21-dsh-evaluation.md` (the evidence), **D53 proposed** (the
+decision, for the owner to confirm or amend), and a build order of three items, ACP1–ACP3, plus DOCS2
+from the strand. Nothing in the codebase changed; the probe instruments are tracked under
+`tools/dsh-probes/`.
+
+**How it ran.** `@deepseek-ai/dsh@0.1.6-alpha.2` pinned exact into a gitignored scratch prefix (260
+packages, 561 MB), a scratch harness home, a scratch git repository, telemetry off — and, because no
+model key was supplied for the session, a **scripted provider**: a small OpenAI-compatible server
+answering a fixed plan of tool calls, declared to dsh as a custom route in its own `settings.yaml`. The
+note says at every probe what that tier proves (the harness's mechanics) and what it cannot (a real
+model finishing a quest-shaped task — DRV4's shape for dsh waits for a key).
+
+**What the probes found.** Probe 1: the headless loop dispatched `write` and `pwsh`, landed a commit,
+exited 0 in 3.7 s and wrote a 30-event Zstandard-framed session log — after teaching four things on the
+way: the default route speaks an Anthropic-style Messages protocol; **dsh makes model calls the loop did
+not ask for** (the session-title generator ate a plan step); the Windows sandbox's restricted token fails
+git's ownership check on an admin-owned checkout; and **dsh's credential scrub strips any child
+environment name containing KEY, TOKEN or SECRET**. Probe 2: an ACP session over stdio streamed
+`tool_call → tool_call_update → agent_message_chunk` with usage, `end_turn` in 276 ms — the timeline's
+structured source with nothing parsed. Probe 3: `claude` speaks no ACP and `codex` speaks its own
+`app-server` protocol; the ACP project's Apache adapters (`claude-agent-acp` 0.79.0, `codex-acp`
+1.12.0) do, and the Claude one **ran the machine's managed `claude` through `CLAUDE_CODE_EXECUTABLE`
+under an empty `CLAUDE_CONFIG_DIR`** — session created, state written to the scratch profile only, no
+model called, Claude Code's permission modes exposed as ACP modes. Probe 4: the repository's own
+`PreToolUse` hook fired and blocked a push — **but only in the structured-deny form; exit code 2 was
+collapsed to 1 by Windows PowerShell 5.1**, which dsh's executor falls back to, and hooks run *inside*
+the sandbox. Probe 5: the Claude subagent bundle on npm is six weeks stale and not a profile layer, yet
+composed and advertised `subagent_claude_code`; the delegation itself was **held** because it would
+spend the person's own account. Probe 6: a write outside the workspace was denied by the ACL sandbox,
+the escalation asked for approval and got `unavailable`, the file does not exist — fail-closed, verified
+against the world. Probe 7: 26 prerelease tags in five and a half weeks, 1,687 commits in the last one;
+bind to the standard, not the product. Probe 8: not run — C did not survive the boundary reading.
+
+**The proposal.** B with A folded in: an ACP door on the adapter seam; dsh and codex as configurations;
+the surface stays `Daoris.Web`; C and D rejected, D on D1's terms. Observation (D46), no model named
+(D24), streams on the machine (D47 §4), the tree as the unit (D51) and the D37 line all stand; D23
+evolves, with "on proof" now meaning ACP2's real driven run.
+
+## DOCS1 — study deepseek-harness's documentation system, and take what converges (2026-09-21)
+
+> Runs as a strand of DSH1, not separately. Its `docs/AGENTS.md` is a documentation *standard with
+> gates*: a one-home-per-fact tier taxonomy, per-document word budgets in a manifest enforced by
+> `verify-doc-budgets` with a relocate → condense → raise discipline, fenced `ts` blocks that must
+> compile, generated reference regions that are freshness-gated, a notes lifecycle, and a per-package
+> "Model Experience" section. Half of this converges with what Daoris already holds. Study first, one
+> session; the deliverable is a comparison note naming what is adopted and what is already covered.
+
+✅ done 2026-09-21 — the comparison is §3 of `docs/2026-09-21-dsh-evaluation.md`. Converged, and
+therefore D17-grade evidence for what Daoris already holds: one home per fact (D7), the byte budget's
+split-not-raise discipline (D28), the decision log with its rejected alternatives, generated and
+freshness-gated indexes. Taken, as one backlog item (**DOCS2**): a doc-budget manifest and a link
+check as devkit gates for this repository's own always-read prose, the "Rejected" line asserted on new
+decision entries, and the slop checklist folded into `post-feature`. Left, with the reason stated:
+compile-checked doc fences (few fences here yet — the shape is noted for the day a design document
+pastes a declaration), one-line paragraphs (Daoris hard-wraps on purpose), and bilingual doctrine (the
+platform already holds the rule where it matters). No code ported, so no notice owed.

@@ -105,7 +105,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D52) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D53) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are the closed arc**
   (workspaces; the interactive surface; management parity) — WSP1–4, SES1–3 and CANON6 have all landed.
 - **The current arc is the desktop as a working surface** (owner, 2026-09-20; designed 2026-09-21):
@@ -119,12 +119,14 @@ risk, **authorship** was.
   with a screen in it is built component by component** —
   `docs/2026-09-21-working-surface-components.md` (D52 as amended): a story before the component, its
   own test, and **a molecule imports no hook**, which is what makes every state reachable by passing
-  props. **Before the view is built, the dsh evaluation decides what it is built ON** (owner,
-  2026-09-21): `docs/2026-09-21-dsh-direction.md` is the plan and **DSH1** in the backlog is the next
-  session — deepseek-harness supplied the surface's structure already, and the open question is how
-  much of its *function* Daoris adopts, from a third harness to ACP as the driver's session protocol
-  to hosting its console outright. SURF4a–d hold until that decision; the substrate stands under every
-  option.
+  props. **The dsh evaluation has run** (DSH1, 2026-09-21): `docs/2026-09-21-dsh-direction.md` was
+  the plan, **`docs/2026-09-21-dsh-evaluation.md`** is the evidence — eight probes against an installed
+  `dsh` over a scratch repository, on a scripted provider because no key was supplied — and **D53 is
+  the proposed decision, awaiting the owner**: *dsh is adopted as a protocol, not a product*. The
+  adapter seam grows an **ACP door**; dsh and codex arrive as configurations of it; the working surface
+  stays `Daoris.Web`. SURF4a–d hold on the owner's answer and resume as designed under the proposal;
+  the build order under D53 is ACP1 → ACP2 → ACP3 in the backlog. The probe instruments are tracked
+  under `tools/dsh-probes/`.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).

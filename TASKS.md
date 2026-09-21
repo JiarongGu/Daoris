@@ -37,6 +37,10 @@ agents, repositories and concurrent sessions, designed with real UI/UX (research
 tree is the unit of exclusion and a repository may have more than one — and **D52** settles the
 surface, with a build order of five items, **SURF2–SURF6**. Beside them sit three smaller leftovers —
 CANON7, WSP5, HARNESS2 — of which CANON7 is a decision for the owner that CANON5 is parked behind.
+**The owner then interposed the dsh evaluation (2026-09-21), and DSH1 ran it the same day**: eight
+probes against an installed `dsh`, driven on a scripted provider, and a proposed decision — **D53:
+dsh is adopted as a protocol, not a product** — for the owner to confirm or amend before the view is
+built.
 
 ## State
 
@@ -125,17 +129,22 @@ have landed** (2026-09-21): the lock keys on the tree; the trees exist, opt-in p
 per session before the record, refusing to die holding work — and a dirty root no longer holds the
 driver, which was the point.
 
-**The next work is DSH1** (owner, 2026-09-21): evaluate deepseek-harness for *functional* adoption —
-"maybe fully adopt its function too" — with `docs/2026-09-21-dsh-direction.md` as the plan: four
-options from a third harness to a full re-platform, the boundary inventory, eight hands-on probes
-with pass shapes, DOCS1 as a strand. **SURF4a–d and the UI halves of SURF5/SURF6 hold until its
-decision lands**; the substrate (SURF2/3, the driver, the service) stands under every option. The
-output is an evidence note, a numbered decision the owner makes, and a build order.
+**DSH1 has run (2026-09-21) and D53 is proposed — the owner confirms or amends it, and that is the
+next thing that happens.** The evaluation is `docs/2026-09-21-dsh-evaluation.md`: eight probes against
+an installed `dsh` over a scratch repository, driven not read about, on a **scripted provider** because
+no model key was supplied (the note says at every step what that tier proves and what it cannot). The
+proposal, **D53**: *dsh is adopted as a protocol, not a product* — the adapter seam grows an **ACP door**
+(option B), dsh and codex arrive as configurations of it (A folds in; HARNESS2 becomes ACP3), and the
+working surface stays `Daoris.Web` (C and D rejected; D would reopen D1 and is declined on those
+terms). **Until the owner answers, SURF4a–d hold on the proposal's answer**; under the proposal they
+resume on `Daoris.Web` exactly as designed, with SURF4c's timeline reading the protocol. The build
+order under D53 is **ACP1 → ACP2 → ACP3** (below), and the docs strand produced **DOCS2**.
 
 Smaller and independent of them: **CANON7** (a decision to bring the owner rather than work to do — it
-takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only) or
-**HARNESS2** (a `codex` session adapter). Four **held** items sit below those; do not pick one up until
-its trigger has arrived. Nothing is pushed or published, and a release is still blocked on REH1.
+takes minutes, and **CANON5 is parked behind it**), then **WSP5** (the workspace switcher, web-only).
+**HARNESS2** now waits on D53 (it becomes ACP3's codex configuration if confirmed). Four **held** items
+sit below those; do not pick one up until its trigger has arrived. Nothing is pushed or published, and
+a release is still blocked on REH1.
 
 - **Read first for SURF work:** `docs/2026-09-21-working-surface-design.md` (the contract),
   `docs/2026-09-21-working-surface-components.md` (**how the screens get built** — the layers, the
@@ -145,6 +154,14 @@ its trigger has arrived. Nothing is pushed or published, and a release is still 
   *driven* session per repository even after the lock moves (D46 §9 survives — pacing a domain and
   preventing corruption are different jobs), and **a fresh tree holds nothing git does not track**,
   which is the price the creating sentence has to state out loud.
+- **Read first for the ACP work (D53, once confirmed):** `docs/2026-09-21-dsh-evaluation.md` — §1
+  probe 2 is the wire the door speaks, §1a is the Claude adapter's two seams, §2 is what each standing
+  decision demands, §5 is the build order; D53 itself; and `tools/dsh-probes/` — the ACP client there is
+  the mirror of the stub agent ACP1's rehearsal phase needs. Three facts from the runs that will bite:
+  dsh's credential scrub strips any child environment name containing KEY, TOKEN or SECRET; an exit-2
+  Claude Code hook does not block under a Windows PowerShell 5.1 executor (the structured deny does);
+  and the ACP wire flattens `aborted | blocked | error` to `end_turn`, which is why records keep moving
+  on exit code + quest state.
 - **Read first for anything else** — the arc the SURF work stands on:
   `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -229,39 +246,65 @@ its trigger has arrived. Nothing is pushed or published, and a release is still 
 ## Backlog
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
-them. **SURF1 designed the next direction and is in the archive too**; its build order is the five
-items below, in order. The three after them are the arc's leftovers, **actionable now**; the four
-after those are **held**, each waiting on an external trigger that has not arrived. Each item is one
-session-sized landing, TDD, gates green, moved to the archive on completion.
+them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
+the archive; its decision is **D53, proposed**). The protocol items come first once the owner
+confirms D53; the SURF items follow, in order; the three after them are the arc's leftovers,
+**actionable now**; the four after those are **held**, each waiting on an external trigger that has
+not arrived. Each item is one session-sized landing, TDD, gates green, moved to the archive on
+completion.
 
-### The dsh direction — evaluate before the view is built (owner, 2026-09-21)
+### The protocol door — ACP (D53, proposed 2026-09-21; the owner confirms or amends first)
 
-**Set by the owner:** deepseek-harness is a good example to use — *maybe fully adopt its function
-too* — and the direction starts next session. **The plan is
-`docs/2026-09-21-dsh-direction.md`**: the option space (a third harness · ACP as the driver's session
-protocol · the working surface as a dsh deployment · full re-platform), the boundary inventory
-(D1/D24, D23, D37, D46/D47 — and which option touches which), the eight hands-on probes with their
-pass shapes, and the sequencing. **SURF4a–d and the UI halves of SURF5/SURF6 hold until this
-decides** — the decision could change what the view is built on; SURF2/SURF3 and the substrate stand
-under every option.
+**Proposed by DSH1's evidence** (`docs/2026-09-21-dsh-evaluation.md`): the adapter seam grows a door
+that holds a session over the **Agent Client Protocol** beside today's pipe, and every harness reached
+that way is a *configuration* of the door. Nothing here starts until the owner has answered D53; if the
+answer differs, this section is rewritten from the evidence, not from scratch.
 
-- [ ] **DSH1 — evaluate dsh, and decide what Daoris hands it.** One session, next. Run the plan's
-  eight probes against the local checkout and an installed `dsh` over a scratch repository — headless
-  run, the ACP session and its event vocabulary against the timeline's needs, claude-code's ACP story,
-  the hook-config bridge, subagent delegation to real claude-code, the approval map onto D37, the
-  breaking-change price, and (only if still live) the one-trivial-plugin build cost. **DOCS1 runs as a
-  strand of this session** — the docs-system study, cheapest while the checkout is warm. Output: an
-  evidence note, a **numbered decision** naming the chosen and rejected options with reasons — the
-  owner decides; option D reopens D1 and says so — and a build order. `deepseek-harness` is at
-  developer preview: pin exactly, vendor nothing, price the churn (probe 7).
+- [ ] **ACP1 — the protocol door.** `ISessionProtocol` beside `ProcessStartInfo` on the adapter seam
+  (D23 evolves, not breaks): a JSON-RPC client over the spawned process's stdio; `session/new` on the
+  tree (D51); the composed target as `session/prompt`; `session/cancel` then stdin EOF as the stop
+  shape; updates teed into a **structured** console stream beside the verbatim one — desktop-only,
+  console-class (D47 §4); `session/request_permission` answered by the D37 posture from the
+  repository's checked-in configuration, **failing closed and never wider** (D52). **Records still move
+  on exit code + quest state** (D46) — the wire flattens `aborted | blocked | error` to `end_turn`, so
+  the self-report may enrich, never move. Proven by a **stub ACP agent** in the family rehearsal with no
+  model (D46 §8's shape; `tools/dsh-probes/acp-client.mjs` is its mirror), including the permission
+  refusal and the stop shape.
+
+- [ ] **ACP2 — `claude-code` over ACP.** `@agentclientprotocol/claude-agent-acp` pinned exact as a
+  managed toolchain entry (`daoris harness`: install, version, the executable seam
+  `CLAUDE_CODE_EXECUTABLE` → the managed `claude`, the profile seam `CLAUDE_CONFIG_DIR` → the chosen
+  credential profile — both verified keylessly in the evaluation's §1a); `acceptEdits` set as the ACP
+  **mode**, not a flag; the permission answerer against Claude Code's real requests; the record naming
+  adapter, harness version and profile as today. Closes with **the real driven run** (DRV4's shape) —
+  the owner supplies the login. **This is D23's "on proof".** The pipe door stays supported until it
+  passes.
+
+- [ ] **ACP3 — dsh and codex as configurations.** `dsh --profile acp` with `DSH_HOME` as the profile
+  seam (it isolates credentials, settings and sessions as one directory), the model in the profile's
+  own `settings.yaml` (Daoris names none — D24), the two outbound rows (`session-telemetry-otel`,
+  `session-log-deepseek`) patched off in the profile Daoris owns the location of, and no login question
+  to ask (permissive `unknown`, SES3's rule); `@agentclientprotocol/codex-acp` likewise. **HARNESS2
+  closes into this.** dsh pinned exact and vendored nowhere: 561 MB per machine, and the
+  `subagent-claude-code` bundle on npm was six weeks stale when measured — a harness's own packaging is
+  its own problem, but the version the toolchain installs is asserted, not assumed.
+
+- [ ] **DOCS2 — what the docs strand takes from dsh** (`docs/2026-09-21-dsh-evaluation.md` §3). A
+  doc-budget manifest with ceilings for this repository's always-read prose (`CLAUDE.md` first, then
+  the backlog's handover and the design contracts) as a devkit gate with the *relocate → condense →
+  raise* discipline — D28's principle extended from the canon to the repository's own standing orders;
+  a markdown link check beside it; the "Rejected" line asserted on every new decision entry; and dsh's
+  slop checklist folded into `post-feature` as a documentation pass. Nothing ported, so no notice owed.
 
 ### The working surface — the build order (D51/D52, designed 2026-09-21)
 
 The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
 them in order.** SURF2 and SURF3 are done (2026-09-21, in the archive): the lock keys on the tree,
 and the trees exist — opt-in per repository, grown per session, refusing to die holding work.
-**SURF4a–d and the UI halves of SURF5/SURF6 are HELD on DSH1** (above): the design stands either way,
-but what the view is built ON is exactly what DSH1 decides.
+**SURF4a–d and the UI halves of SURF5/SURF6 hold on the owner's answer to D53** (above): under the
+proposal they resume on `Daoris.Web` exactly as designed — option C, the view as a dsh deployment, was
+rejected by the evidence — and SURF4c's timeline gains ACP's structured source (tool lifecycle, turn
+boundaries, thoughts, usage) as the protocol D52 said stdout parsing was not.
 Everything with a screen in it also follows `docs/2026-09-21-working-surface-components.md` — the
 surface is built **component by component**, each with its story and its own test, because a rail, a
 head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
@@ -354,36 +397,16 @@ runtime (its surfaces are built natively against claude/codex through the adapte
   §4's "scoped to one workspace per query" argues for the first, and the second is what a filter
   usually becomes. Web-only; no service change.
 
-- [ ] **DOCS1 — study deepseek-harness's documentation system, and take what converges** (owner,
-  2026-09-21: it is itself code-generated, so "take its design for code-gen skill/structure
-  instructions as an example to improve our docs system too"). **Runs as a strand of DSH1**, not
-  separately. Its `docs/AGENTS.md` is a documentation
-  *standard with gates*: a one-home-per-fact tier taxonomy (standing orders / architecture map /
-  subsystem references / decision notes / postmortems / cookbooks / package contracts), **per-document
-  word budgets in a manifest enforced by `verify-doc-budgets`** with a relocate → condense → raise
-  discipline, **fenced `ts` blocks that must compile** (`doc-typecheck`, with `type-equiv` manifests so
-  a pasted declaration cannot drift from its source), generated reference regions that are
-  freshness-gated, a notes lifecycle (`proposed/implemented/rejected/archived`, 447 architecture notes),
-  and a per-package "Model Experience" section saying what a package contributes to the model's
-  context. **Half of this converges with what Daoris already holds** — tier-is-the-directory (D7), the
-  always-loaded byte budget (D28), claims-need-checks, the decision log — which is two ecosystems
-  arriving at the same doctrine independently: D17-grade evidence when canonizing any of it. Study
-  first, one session; the deliverable is a comparison note naming what is adopted (most likely: the
-  doc-budget manifest as a devkit gate, the compile-checked doc examples, the notes lifecycle) and
-  what is already covered. MIT; a ported script carries its notice.
-
-- [ ] **HARNESS2 — a `codex` session adapter.** **Waits for DSH1**: if the adapter seam gains an ACP
-  protocol door, this may be an ACP configuration rather than a hand-built `ISessionAdapter` — build
-  it after that is known, not before. **Not HARNESS1** (that is a second harness *layout*,
-  a doctrine question; this is a second harness the driver can spawn). SES3 already made codex
-  manageable as a TOOL — `daoris harness` knows its installer, its `CODEX_HOME` seam and how it
-  reports a login, all verified against the real binary — so what is missing is only the
-  `ISessionAdapter`: `Prepare`, `PrepareChat`, and `Interactive`. Two things make it more than a copy
-  of `ClaudeCodeAdapter`, and both are why D23 says an adapter arrives deliberately and on proof: its
-  non-interactive shape is `codex exec`, not a `-p` flag, and **its permission posture is the D37
-  boundary in another tool's vocabulary** — the `acceptEdits` equivalent has to be established, not
-  guessed. Land it the way `claude-code` was landed: the stub proves the loop, then a real driven run
-  proves the adapter (DRV4's shape).
+- [ ] **HARNESS2 — a `codex` session adapter.** **Waits on D53.** Under the proposal this is **ACP3's
+  codex configuration** — `@agentclientprotocol/codex-acp` on the protocol door — and no hand-built
+  `ISessionAdapter` is written; if the owner answers D53 differently, the original shape stands: SES3
+  already made codex manageable as a TOOL (`daoris harness` knows its installer, its `CODEX_HOME` seam
+  and how it reports a login, all verified against the real binary), so what would be missing is only
+  `Prepare`, `PrepareChat` and `Interactive`, with two things that make it more than a copy of
+  `ClaudeCodeAdapter`: its non-interactive shape is `codex exec`, not a `-p` flag, and **its permission
+  posture is the D37 boundary in another tool's vocabulary** — the `acceptEdits` equivalent established,
+  not guessed. Either way it lands the way `claude-code` did: the stub proves the loop, a real driven
+  run proves the adapter. **Not HARNESS1** (a second harness *layout*, a doctrine question).
 
 ### Held — each waits on a trigger that has not arrived
 
