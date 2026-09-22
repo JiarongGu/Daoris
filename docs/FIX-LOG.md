@@ -43,7 +43,7 @@ wrong about until proven otherwise.** A stated limitation that names the exact d
 waiting to be written, and the line that names the machine's host in every transcript was the
 evidence nobody read.
 
-**Commit.** _pending_
+**Commit.** `48b0deb`
 
 ## The tokeniser's separators were a list, and 中文 punctuation was not on it (2026-09-23)
 
