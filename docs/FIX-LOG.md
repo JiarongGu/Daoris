@@ -40,7 +40,7 @@ small generic thing matches every large thing.** The same shape as Jaccard-versu
 arguments everywhere; what makes it a trap is that it is invisible until the corpus has both a very
 short and a very long document, which a fixture never does.
 
-**Commit.** pending
+**Commit.** `9fd67b1`
 
 ## Adding a tooltip broke stories that had nothing to do with it (2026-09-22)
 
