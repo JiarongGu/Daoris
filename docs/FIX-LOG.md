@@ -28,7 +28,7 @@ drops the message; any other start failure keeps the runtime's words, which are 
 absent-harness sentence exact — both seen red. On the install: no `stub` card, and `dsh`'s row
 reading the one sentence.
 
-**Commit.** _pending_
+**Commit.** `06e560b`
 
 ## A blue ✕ in a palette with no blue — the OS accent through a native control (2026-09-23)
 
