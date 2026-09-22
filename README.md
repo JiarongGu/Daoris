@@ -83,14 +83,14 @@ what every machine does until someone says otherwise. A key is never printed bac
 prefix, the same handle the deployment's own `keys list` shows.
 
 **One harness, many accounts.** A harness holds one login per configuration home, so `daoris harness`
-makes accounts **named profiles**: each is an isolated configuration directory whose *location* Daoris
-owns (`~/.daoris/harnesses/<harness>/<profile>/`), selected at spawn through the environment variable
-that harness already has for it. Logging in runs the harness's own flow inside that directory, so
-**Daoris never sees, stores, or copies a credential** — it manages directories and names, and the
-secret stays in the harness's own store under your OS account. Pick one per machine, one per workspace
-(a work account for the work circle), or one for a single conversation; the session record then names
-the account and the tool version it ran as. A spawn onto a missing harness or a profile nobody has
-signed into refuses **naming the action that fixes it**, rather than failing bare.
+makes accounts **named profiles**: isolated configuration directories whose *location* Daoris owns
+(`~/.daoris/harnesses/<harness>/<profile>/`), selected at spawn through the environment variable that
+harness already has for it. Logging in runs the harness's own flow inside one, so **Daoris never
+sees, stores or copies a credential** — it manages directories and names. Pick one per machine, per
+workspace, or for a single conversation; the session record then names the account and tool version
+it ran as. A spawn onto a missing harness, a profile nobody signed into, or a workspace the harness
+has never been trusted in refuses **naming the action that fixes it**.
+`docs/2026-09-22-toolchain-design.md` is the contract.
 
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
 no gate ever runs them. `remote`, `harness` and `driver` are management too and reach no network at
@@ -104,10 +104,9 @@ re-run because it states no workspace and unstated wiring is preserved. A store 
 managed imports its configured root **once**, and says so. A registered checkout that is no longer
 where the registry says it is gets **named** by the next refresh rather than silently skipped.
 
-**`--force` is the only way to lose work here**, so it names every file it overwrites or discards. Daoris
-otherwise refuses in all three destructive cases: a file you edited, a file you wrote before adopting,
-and a file being retired upstream that you had improved — that last one being the worst moment to lose an
-edit, since the canonical file it belonged to is gone and `upstream` can no longer save it.
+**`--force` is the only way to lose work here**, so it names every file it overwrites or discards.
+Daoris otherwise refuses in all three destructive cases — a file you edited, a file you wrote before
+adopting, and a file being retired upstream that you had improved.
 
 `analyze` answers the question a repository has *before* it adopts: what already exists here, what
 would collide, what already says the same thing under another name, and what the always-loaded budget
@@ -196,6 +195,21 @@ skill used to be, except that it is generated and therefore never stale.
 **Every vendored file carries a one-line provenance header.** Not decoration: an agent that opens a rule
 needing a tweak will otherwise simply edit it, which is exactly how the copies diverged. The header says
 where the file came from and to use `daoris upstream`; the lock's hash catches the edit either way.
+
+## Extending it
+
+Daoris has **no plugin runtime** and does not want one. It has three seams, each a *declaration*
+rather than code, so none can break the tool that reads it:
+
+| To add | Write |
+|---|---|
+| **Doctrine** for a stack | a pack — `canon/packs/<name>/pack.json` + its tiers |
+| **A gate** | a row in `daoris.gates.json` |
+| **A harness** to drive sessions on | nothing — speak the **Agent Client Protocol** |
+
+A pack declares the canon it needs (`"apiVersion"`), checked before a file is planned. The harness
+seam is a protocol, not a registry: an ACP tool is drivable with no Daoris code.
+`docs/2026-09-22-plugin-design-study.md` has the reasoning and what was declined.
 
 ## Beyond the CLI: the service, the platform, the driver
 

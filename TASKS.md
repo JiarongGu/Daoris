@@ -417,18 +417,12 @@ protocol beats a binary API), and no plugin runtime for the surface (D52).
   "core installs with no opt-out"**, which was a deliberate choice about doctrine rather than a
   limitation. The owner's call, and the study says so rather than assuming it.
 
-- [ ] **PLUG3 — three extension points and nobody is told.** Packs, `daoris.gates.json` and the ACP
-  door are each a way to extend Daoris without touching it, and none is documented as one. The work
-  is a README section and a canon-adjacent page naming all three, what each may add, and what each
-  deliberately may not — which is also the honest answer to "does it have a plugin system".
-
-- [ ] **SURF11 — the strip has no layout toggles.** Measured against a real VS Code window
-  (`docs/2026-09-19-platform-ux.md`): the right of its title bar holds four icons that show and hide
-  the panel, the sidebar and the secondary bar, immediately left of the window controls. Work has an
-  **output panel** and a **right dock** and the strip can reach neither. 🔴 **It needs hoisting
-  before it needs designing**: both states live inside `WorkFrame` (`daoris.panelClosed`, the dock
-  tab), and a toggle in the strip means the strip knows about them — so the question is where that
-  state belongs, not what the icons look like.
+- [x] **PLUG3 — three extension points and nobody is told.** ✅ **done 2026-09-22.** The README has
+  an *Extending it* section naming all three — a pack, a gate row, and speaking ACP — what each may
+  add, and what is deliberately not extensible (the views, D52), pointing at the study for the
+  reasoning. 🔴 **It cost its own budget lesson**: the section put the README 225 words over, and the
+  answer was to relocate detail the design docs already hold (the harness paragraph, the `--force`
+  one) rather than raise the ceiling or shave the new section to uselessness (D28).
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
