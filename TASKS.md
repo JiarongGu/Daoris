@@ -38,29 +38,11 @@ core is **21,817 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and *
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
 principle from detail (D28).
 
-**The remote exists** (D47/DRV5, built 2026-09-20): the same HTTP host in shared mode gates every
-route with per-person per-machine minted keys (`keys mint|list|revoke`, hashed with an audit prefix,
-expiring), refuses to bind beyond loopback in local mode, and never serves a machine path or a page;
-the quest lock is code (an atomic guarded `Taken` transition, closed quests immovable) in the shared
-judgement class, so local mode is hardened too; a quest homes at the remote when its receiver is
-joined and verbs write through synchronously or fail plainly; the desktop's sync loop rides the driver
-tick — feeding stripped registrations, session records keyed by origin + id, and opted-in knowledge
-content (never vectors) up, mirroring the family's quests and foreign registrations down. What may
-leave a machine is two manifest declarations (join; share knowledge), silence meaning local. Proven
-by the rehearsal's remote phase: a quest crossed two machines and drove to done, a raced take left the
-losing driver observing the lock, and the remote store was scanned to hold nothing machine-local.
-
-**The driver drives** (D45/D46, built 2026-09-19): `Daoris.Desktop.Driver` (pure planner, observed
-lifecycle, adapter seam — `stub` and `claude-code` on the pipe door, `acp-stub`, `claude-code-acp`,
-`dsh` and `codex-acp` on the protocol one), the headless `daoris-driver`, and the shell
-`daoris-desktop` on released Shenora.Windows 0.16.0 — it brings up the local HTTP host, carries the
-platform, runs the loop in-process, and lands the person's controls (drivable/hold per repository,
-stop a running session) through the `DAORIS.DRIVER` IPC module, live-updating over `DRIVER_TICK`.
-The quest state machine is the only lock; outside sessions stay first-class. **The loop is proven
-with a real session** (DRV4, 2026-09-19): a scratch-born project, a real quest, a real `claude-code`
-session spawned by the driver — it claimed its quest over its own connector under headless
-`acceptEdits`, committed the work, closed the quest `done` with its note, and the driver's record
-carries the commit as evidence, 71 seconds end to end.
+**The remote exists** (D47/DRV5) and **the driver drives** (D45/D46) — both built, both proven end
+to end, and both described in full in `docs/task-archive.md` rather than here. The shapes that still
+bind: what may leave a machine is two manifest declarations, silence meaning local; the quest state
+machine is the only lock and outside sessions stay first-class; and a session's record is concluded
+from its exit code and its quest's state, never from what it said about itself (D46 §4).
 
 The service is **deployable** (D36) and **ships as executables** (D43): `npm run publish:service --
 --install` lands both hosts self-contained in `~/.daoris/bin` and prints the ready `.mcp.json`
@@ -299,44 +281,17 @@ wire evidence.
   all three. Probe 4 found the Windows trap. Held behind ACP4 and CANON8: a guard is worth less than
   the doctrine it enforces arriving at all. (HELP1 became CANON8; D59 has it.)
 
-### The working surface — the build order (D51/D52, designed 2026-09-21)
+### The working surface — the build order (D51/D52/D55/D56)
 
-The contract is `docs/2026-09-21-working-surface-design.md`; every item cites its sections. **Take
-them in order.** SURF2 and SURF3 are done (2026-09-21, in the archive): the lock keys on the tree,
-and the trees exist — opt-in per repository, grown per session, refusing to die holding work.
-**SURF4a–d are unblocked by D53** (accepted 2026-09-21): they build on `Daoris.Web` exactly as
-designed — option C, the view as a dsh deployment, was rejected by the evidence — and SURF4c's
-timeline gains ACP's structured source (tool lifecycle, turn boundaries, thoughts, usage) as the
-protocol D52 said stdout parsing was not. **Take ACP1 first**: SURF4c is the timeline's consumer, and
-building the consumer before the source means building it twice.
-Everything with a screen in it also follows `docs/2026-09-21-working-surface-components.md` — the
-surface is built **component by component**, each with its story and its own test, because a rail, a
-head, a live stream, a timeline, a composer and a diff built as one view is a file where the first
-thing that renders is the last thing.
-
-**D55 re-positions the whole surface** (owner, 2026-09-21: *"the desktop is becoming more a dev ide
-(but code gen driven)"*, with the method note *"you should reference more existing application for
-designing the ui/ux"*). The evidence is `docs/2026-09-21-ide-reference-study.md`; five patterns
-recur across its references and the platform has none of them, which is why Work is a **frame** and
-not a nav item. **Nothing built is wasted** — atoms and molecules are frame-independent, which is
-what "a molecule imports no hook" bought. One item the study argues for that nobody had filed:
-
-**SURF4 is four items, cut along the layers** (owner, 2026-09-21: *"this is a large UI/UX as a whole,
-so develop it component by component — more of an atomic design pattern — so each part can be tested
-one by one"*). The method, the inventory and the dependency rule are
-`docs/2026-09-21-working-surface-components.md`; read it before starting any of the four. Its one
-load-bearing rule: **a molecule imports no hook**, which is what makes every state reachable by
-passing props — and a test asserts it, so it cannot quietly stop being true. **The layout structure
-is deepseek-harness's** (owner, 2026-09-21; components doc §3a, D52 as amended): the three-column
-frame with its geometry, the right dock keyed to the attended session (timeline + diff), the
-follow-the-tail stream rule — structure and geometry, never its pixels (D41) and never its plugin
-runtime (its surfaces are built natively against claude/codex through the adapter seam, D23).
-
-🔴 **Every SURF item is built** — SURF2, SURF3, SURF4a–d, SURF5, SURF5b, SURF6a, SURF6b, SURF7,
-SURF8, SURF9 and SURF10, all landed by 2026-09-22. `docs/task-archive.md` carries each one's outcome,
-and `docs/2026-09-19-platform-ux.md` §4 what each look-at-it pass settled. **The surface is reachable
-and usable**: `npm run desktop -- run`, switch to *Work*. Nothing in this section is open; it is kept
-only because the paragraphs above are the contract a *new* surface item would be built against.
+**Closed 2026-09-22.** Every SURF item is built — SURF2, SURF3, SURF4a–d, SURF5, SURF5b, SURF6a,
+SURF6b, SURF7 through SURF10 — and the surface is usable: `npm run desktop -- run`. The contracts are
+`docs/2026-09-21-working-surface-design.md` (what it is),
+`docs/2026-09-21-working-surface-components.md` (**how a screen gets built** — a story before the
+component, its own test, and **a molecule imports no hook**, which a test asserts) and
+`docs/2026-09-21-ide-reference-study.md` (what changed it). `docs/2026-09-19-platform-ux.md` carries
+what each look-at-it pass settled, including the IDE layout of 2026-09-22. Two rules the building
+established that still bind anything new: a timeline is **derived**, and **the stream has one home**.
+Nothing here is open; a new surface item is built against those documents, not against this heading.
 
 ### The instruction file — where the always-loaded tier lives (owner, 2026-09-22 → D59)
 
@@ -442,6 +397,30 @@ one gate.**
   scratch run and a real one must not contend for a window's geometry. Owner's call; measure before
   moving anything.
 
+### Plugins — what the study left (owner, 2026-09-22 → ARCH1)
+
+`docs/2026-09-22-plugin-design-study.md` is the contract. **Two standing decisions are NOT reopened
+by any of these**: no adapter registry (D23/D24/TOOL5 — the ACP door is already that answer, and a
+protocol beats a binary API), and no plugin runtime for the surface (D52).
+
+- [ ] 🔴 **PLUG1 — a pack cannot say which canon it needs.** `pack.json` carries `name` and
+  `description` and nothing else, so a pack written against a newer canon and installed by an older
+  CLI fails in whatever way it happens to fail. Yaorin declares an integer `apiVersion` in every
+  plugin manifest and the host reads it **before loading anything** — the cheapest and highest-value
+  idea in either reference. Add it, refuse a pack the build cannot serve **naming both numbers**, and
+  treat its absence as version 1 so every pack that exists keeps working.
+
+- [ ] **PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
+  ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest
+  `packs: []` is a flat set with no precedence. ⛔ **Decide before building**: this reopens **D4's
+  "core installs with no opt-out"**, which was a deliberate choice about doctrine rather than a
+  limitation. The owner's call, and the study says so rather than assuming it.
+
+- [ ] **PLUG3 — three extension points and nobody is told.** Packs, `daoris.gates.json` and the ACP
+  door are each a way to extend Daoris without touching it, and none is documented as one. The work
+  is a README section and a canon-adjacent page naming all three, what each may add, and what each
+  deliberately may not — which is also the honest answer to "does it have a plugin system".
+
 ### Open — the arc's leftovers, in the order they are worth doing
 
 - [ ] **DEVKIT3 — the devkit is not run over its own repository, and its scan has six findings
@@ -454,23 +433,15 @@ one gate.**
   one object already acknowledged by sha. The work is to read and judge each — acknowledge it by sha
   or neutralise the fixture, never a path ignore (the devkit's own asymmetry argument) — then wire
   `daoris-devkit verify` into the gate list and the release workflow **as one row in both**, and
-  correct the devkit README's "it runs this repository's own gates", which today it does not.- [ ] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own structure**
-  (owner, 2026-09-21, mid-session: *"the dsh is really a good example to take for design/develop and
-  its domain separation and its plugin design also helps we develop our structure too"*). A design
-  study, one session, in the shape DOCS1 took: read dsh's `packages/<group>/<pkg>` cut (the groups are
-  capability seams — shell, subprocess, sandbox, fs, session, subagent, hooks, acp…), its **capability
-  seam** rule (a seam is complete only with all three roles — Service Definition, Service Provider,
-  Consumer — never one alone), **registrations are effects** (every contribution returns its disposer,
-  so unloading unwinds cleanly), **plugins, not loop changes** (new behaviour goes on documented
-  extension points; changing the loop updates the architecture map), and profiles/bundles as ordered
-  composition layers. Then hold Daoris's own structure against it: the driver's adapter seam (about to
-  gain a protocol door under D53 — is it a seam with three roles, or a provider with no definition?),
-  the desktop's IPC modules, the service's judgement classes, the CLI's management class, and the
-  three-twin files (remotes map, harnesses, driver.json). Deliverable: a comparison note naming what
-  Daoris adopts as *pattern* — D52 as amended and D53 already decline the runtime (Cordis) — and where
-  its current cut disagrees with its own seams; anything load-bearing becomes a D entry. **Read the
-  owner's sentence as pattern, not runtime, until the owner says otherwise**; the reading is recorded
-  in the handover for confirmation.
+  correct the devkit README's "it runs this repository's own gates", which today it does not.- [x] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own
+  structure.** ✅ **done 2026-09-22**, widened by the owner to include a second reference
+  (*"you might check how yaorin did"*). `docs/2026-09-22-plugin-design-study.md` is the note.
+  🔴 **It reordered its own question**: Daoris already has **three** extension systems — canon packs,
+  the declared gate list, and the ACP door — and none of them is called one. So the finding is not
+  "Daoris needs plugins" but "two of the three are undocumented and one manifest is missing a
+  version field". The Cordis runtime is **declined again** on the evidence already gathered, and
+  *registrations are effects* is adopted as the rule for anything ever loaded at runtime. PLUG1–3
+  below are what it left.
 
 - [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met, and the budget no longer
   blocks it** (unparked by CANON7, 2026-09-21). The bilingual sibling carries the rule and the gate;
