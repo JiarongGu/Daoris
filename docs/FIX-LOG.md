@@ -28,7 +28,7 @@ Both files gained a `.tsx` extension to carry the JSX.
 wrapped by hand, with the hand-wrapping no longer load-bearing. The next component to gain a `Tip`
 needs nothing.
 
-**Commit.** pending
+**Commit.** `c58591a`
 
 ## A re-published install kept every bundle it had ever served (2026-09-22)
 
