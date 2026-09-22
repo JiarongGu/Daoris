@@ -24,7 +24,7 @@ marker's language.
 `会话` · 的 · `记录` · 在此 — both seen red. On the install, the same search: one result, the two
 words marked in its excerpt.
 
-**Commit.** _pending_
+**Commit.** `fbfa609`
 
 ## The drawer's close button was under the window's own (2026-09-23)
 
