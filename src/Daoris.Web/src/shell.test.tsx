@@ -606,7 +606,9 @@ describe('the shell push channel (ShellSignals)', () => {
 
     expect(notify).toHaveBeenCalledWith('engine  spawned s1a2b3c4');
     expect(notify).toHaveBeenCalledWith('sync  fed 2');
-    for (const key of [keys.allSessions, keys.allQuests, keys.driver]) {
+    // The index too: a schema rebuild is observable, and a summary cached mid-feed stayed "555 · 7"
+    // on an index of 1,050 · 17 for as long as the window was open (deployed app, 2026-09-23).
+    for (const key of [keys.allSessions, keys.allQuests, keys.driver, keys.allRepositories]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
   });

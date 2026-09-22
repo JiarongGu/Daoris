@@ -52,6 +52,12 @@ export function ShellSignals({ notify, onAttend }: {
     void client.invalidateQueries({ queryKey: keys.allSessions });
     void client.invalidateQueries({ queryKey: keys.allQuests });
     void client.invalidateQueries({ queryKey: keys.driver });
+    // 🔴 And the index. Seen on the deployed application: the status bar read "555 entries · 7
+    // repositories" for as long as the window stayed open, on an index that held 1,050 across 17 —
+    // the page had asked while a schema rebuild was still feeding, cached the partial answer, and
+    // nothing since had told it to look again. A rebuild is observable, so the tick that says "the
+    // world may have changed" has to include the world's size.
+    void client.invalidateQueries({ queryKey: keys.allRepositories });
   });
 
   useShenoraEvent<{ message?: string }>('DAORIS', 'DRIVER_ERROR', (error) => {

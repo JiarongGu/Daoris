@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The status bar counted a rebuild half-fed, and kept the number (2026-09-23)
+
+**Symptom.** After the index's schema bump, the deployed application's status bar read
+*"555 entries · 7 repositories"* — and stayed there — on an index that held 1,050 across 17. Neither
+the old count nor the new one: a number nothing else on the machine agreed with.
+
+**Root cause.** A schema mismatch drops the index and the next refresh re-feeds it, repository by
+repository, over several seconds — so the rebuild is **observable**, and the page happened to ask for
+the summary seven repositories in. That is fine; what is not is that the answer was then cached
+with no path to a second look. `useRepositories` sets no `staleTime` and no interval, and the
+driver tick — the page's one heartbeat for *"the world may have changed"* — invalidated sessions,
+quests and the driver, and not the index. Pressing *refresh index* refetched it (555 · 7 →
+1,051 · 17 in one second), which is how the theory was confirmed and also why nobody would have
+found it: the fix for the symptom is the button beside it.
+
+**Fix.** `DRIVER_TICK` invalidates `keys.allRepositories` too (`ShellSignals.tsx`). One line, and
+the existing tick test lists the key with the others.
+
+**Verify.** The tick test extended. On the deployed application, the honest way: the page had cached
+*1,051 · 17*; a re-index was triggered over the API, not the button (a new fix-log entry made it
+1,052); **ten seconds later the bar read 1,052 · 17**, on the driver's tick, with nothing pressed.
+
+**The trap to inherit.** 🔴 **A count taken during a rebuild is a snapshot of the rebuild.** Any
+cache of a summary needs a refetch path that fires without a person, or the first partial answer is
+the answer for as long as the window stays open.
+
+**Commit.** pending
+
 ## Every Chinese query returned the whole corpus — 中文 search had never worked (2026-09-23)
 
 **Symptom.** On the deployed application's real index, `记录` and `会话` each returned **41 hits in
