@@ -110,12 +110,17 @@ workspace `testbed`, each with its own `.mcp.json` and trust settings, registere
 host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
 it. Two branches there hold what the failed sessions produced.
 
-🔴 **Nothing in the backlog is actionable without a trigger or a decision**, as of 2026-09-22, and
-that is a state worth naming rather than a gap to fill. Every remaining row waits on the owner (four)
-or on something arriving (seven); the list and what each waits for is in the Backlog's own
-introduction. **A fresh session should expect a new direction rather than a next item** — and if one
-is wanted from the list, the two ripest are **DEPLOY4** and **PLUG2**, because both are decisions
-that need no login and no external event, only a call.
+🔴 **The direction is the DESKTOP, and development happens against the install** (owner, 2026-09-22
+→ **D62**): the shell carries the platform, runs the driver loop, hosts the machine's service, and
+is the only surface that can reach a machine-local fact at all — most of what Daoris can do, only it
+can do. **Look at the real thing, not the fixture**: `npm run desktop -- run --install <dir>` starts
+the published application with a debug port so `shot`, `eval` and `click` reach it (the published
+app opens none by itself). The scratch loop has one circle, one account and two example
+repositories, so every UI judgement made against it is a judgement about a machine nobody has.
+
+🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
+(four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface
+work now comes from looking at the deployed application and writing down what is wrong with it.
 
 🔴 **TOOL5 was read against what is built and is a trigger, not work** — every sentence of the
 toolchain design's §5 is realised, and what is waiting is a tool somebody names. It joins the held

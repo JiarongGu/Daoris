@@ -113,6 +113,11 @@ risk, **authorship** was.
 - **Two traps the last surface items left** (2026-09-22). A secondary window needs its **own**
   WebView2 environment, and `shot`/`eval`/`click` need **`--window <monitor|session:ID>`** or they
   address whichever window Windows calls main (FIX-LOG, three times over).
+- 🔴 **The desktop app is the focus, and the install is where it is judged** (owner, 2026-09-22 →
+  **D62**): it carries the platform, runs the driver loop, hosts the machine's service, and is the
+  only surface that reaches a machine-local fact. `npm run desktop -- run --install <dir>` starts the
+  **published** application with a debug port so the instruments reach it; the scratch loop's one
+  circle and one account are a fixture, not a machine.
 - 🔴 **Polishing the UI/UX is standing work, and it is done by LOOKING** (owner, 2026-09-22:
   *"we also need to keep polish the ui/ux you can use screenshot tool to confirm"*). Take
   `npm run desktop -- shot [--theme dark]` to any surface you change. The defects that matter are
