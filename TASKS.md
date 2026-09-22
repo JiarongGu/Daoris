@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**269 CLI tests, 262 service, 273 driver, 71 desktop modules, 412 web unit, 14 Playwright**, 57
+**274 CLI tests, 262 service, 294 driver, 77 desktop modules, 429 web unit, 14 Playwright**, 57
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
 core is **21,817 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -76,47 +76,52 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 ## Handover — where a fresh session picks up
 
 **Every prior arc is closed and in `docs/task-archive.md`** — D45 (the driver), D47 (the remote),
-D48/D49/D50 (workspaces, the interactive surface, management parity), D51–D56 (the working surface,
-SURF2 through SURF10), D53/ACP1 (the protocol door), D57 (the toolchain, TOOL2 and TOOL3). Nothing is
-pushed or published, and a release is still blocked on REH1.
+D48/D49/D50, D51–D56 (the working surface), D53/ACP1–ACP4 (the protocol door, all four
+configurations), D57 (the toolchain), CANON8/D59 (the instruction file), and ARCH1 (the plugin
+study). Nothing is pushed or published, and a release is still blocked on REH1.
 
-🔴 **ACP2 is one command away, and it is the owner's** (2026-09-22). ACP4 has landed, so the blocker
-is gone: a driven session is now handed the knowledge server it is told to claim its quest with.
+🔴 **Daoris is DEPLOYED and running as an installed application** (2026-09-22), which is new and
+changes what "works" means. `npm run publish:desktop -- --to <folder> --service` installs it: one
+`daoris-desktop.exe` at the root, binaries under `app/`, state in `data/`. It runs against the real
+`~/.daoris`, so **starting it starts the driver loop**.
+`docs/2026-09-22-first-deployment-case-study.md` is the record, and it is the first document to read
+before touching the desktop — four defects were invisible from inside the workspace, three of them
+*because* of something the workspace provides.
+
+🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
+(DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that
+path in their own `~/.claude.json`; three real runs did the work and none could take its quest.
+The driver reads that record and **holds** rather than spending nine minutes and a login. **What is
+still the owner's**: whether adoption should ever *ask* and write that flag. 🔴 Never silently — the
+flag is the person's grant. And **measure the ACP door first**: it runs the Agent SDK rather than the
+CLI's trust flow, so it may not have the problem at all. One driven run answers it.
+
+**Two things spend a real login and are the owner's to authorise**, both one command:
 
 ```
-node tools/acp2-proof.mjs --drive      # spends one real login; this is D23's "on proof"
+node tools/acp2-proof.mjs --drive      # ACP2 — D23's "on proof". DRV6 caps it at three attempts.
 ```
 
-It builds a scratch family, publishes a real quest, drives one tick over the protocol door and
-asserts DRV4's shape. **DRV6 caps it at three attempts** — the first attempt at this burned eighteen
-sessions before anything stopped it, which is what DRV6 was written from. Until it passes, ACP2 stays
-open and `claude-code` over the pipe door remains what a machine drives with.
+…and a driven run over `claude-code-acp` against the testbed, which would settle the trust question
+above. Until ACP2 passes, `claude-code` over the pipe door remains what a machine drives with.
 
-**What else is open**, in the Backlog below: **HELP3**, then TOOL5, DEVKIT3, ARCH1, CANON5.
-**CANON8d closed 2026-09-22** and the instruction-file arc with it; **ACP3 closed the same day**, and
-**HELP2 and HARNESS2 with it** — the protocol door now carries four configurations. Four **held**
-items sit at the bottom; do not pick one up until its trigger has arrived. Nothing is pushed or
-published.
+**The testbed is live and wired** (`tools/testbed.mjs --root <folder>`): three repositories in
+workspace `testbed`, each with its own `.mcp.json` and trust settings, registered against the running
+host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
+it. Two branches there hold what the failed sessions produced.
+
+**What is open**, in the Backlog below, in the order worth doing: **DEPLOY2** (nothing gates the
+deployed artefact — it would have caught two of the four deployment defects), **SURF11** (layout
+toggles; 🔴 needs the panel and dock state hoisted out of `WorkFrame` before it needs designing),
+then HELP3, TOOL5, DEVKIT3, CANON5. **Two are decisions, not work**: PLUG2 reopens D4's *"core
+installs with no opt-out"*, and DEPLOY4 asks whether per-install UI state joins `~/.daoris` — and
+🔴 `~/.daoris` being machine-wide is load-bearing, since it is what makes the CLI and the desktop two
+doors onto one machine. Four **held** items sit at the bottom; do not pick one up until its trigger
+has arrived.
 
 **Start by reading the contract the item cites** — every backlog row names one. The bullets below are
 the traps that are not in any contract, because they were found rather than designed.
 
-- **Read first for SURF work:** `docs/2026-09-21-working-surface-design.md` (the contract),
-  `docs/2026-09-21-working-surface-components.md` (**how the screens get built** — the layers, the
-  inventory, the three loops each part passes) with
-  `docs/2026-09-20-working-surface-research.md` behind them (the field, and what Daoris already has
-  that it does not), and **D51/D52**. Two sentences from the contract carry the most weight: the planner keeps one
-  *driven* session per repository even after the lock moves (D46 §9 survives — pacing a domain and
-  preventing corruption are different jobs), and **a fresh tree holds nothing git does not track**,
-  which is the price the creating sentence has to state out loud.
-- **Read first for the ACP work (D53, once confirmed):** `docs/2026-09-21-dsh-evaluation.md` — §1
-  probe 2 is the wire the door speaks, §1a is the Claude adapter's two seams, §2 is what each standing
-  decision demands, §5 is the build order; D53 itself; and `tools/dsh-probes/` — the ACP client there is
-  the mirror of the stub agent ACP1's rehearsal phase needs. Three facts from the runs that will bite:
-  dsh's credential scrub strips any child environment name containing KEY, TOKEN or SECRET; an exit-2
-  Claude Code hook does not block under a Windows PowerShell 5.1 executor (the structured deny does);
-  and the ACP wire flattens `aborted | blocked | error` to `end_turn`, which is why records keep moving
-  on exit code + quest state.
 - **Read first for anything else** — the arc the SURF work stands on:
   `docs/2026-09-20-workspace-design.md` and `docs/2026-09-20-interactive-design.md`
   (the two contracts — every WSP/SES item cites its sections); `docs/DECISIONS.md` **D48–D50** (the
@@ -192,11 +197,13 @@ the traps that are not in any contract, because they were found rather than desi
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 269 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 274 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (262),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (273), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (71), `npm run rehearse:family` (180/180), `npm run test:web` (412 vitest + 14 Playwright). If a `bin`-driven gate is red
+  (294), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (429 vitest + 14 Playwright).
+  🔴 **Stop a running shell and its host first** — an orphaned `daoris-knowledge-http` holds the
+  build's own assemblies, which reads as a broken gate and is a lock (`npm run desktop -- kill`). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 

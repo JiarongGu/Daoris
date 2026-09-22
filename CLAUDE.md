@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fourteen commands, 269 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fourteen commands, 274 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 262, `Daoris.Devkit` 57, and the
-driver 273. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+driver 294. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -97,21 +97,12 @@ risk, **authorship** was.
 - `docs/DECISIONS.md` — the numbered decision log (D1–D59) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
-- **The desktop is a working surface** (owner, 2026-09-20) and **D55 re-positions it** (2026-09-21):
-  *a **code-gen-driven IDE*** — the organising object is a **session, not a file**, and there is no
-  editor in the plan at any point. Read in this order:
-  **`docs/2026-09-21-working-surface-design.md`** is the contract,
-  **`docs/2026-09-21-ide-reference-study.md`** is what changed it (IDEs rather than session
-  managers), and **`docs/2026-09-21-working-surface-components.md`** is the method — **anything with
-  a screen in it is built component by component**: a story before the component, its own test, and
-  **a molecule imports no hook**, which is what makes every state reachable by passing props.
-  **D51** settles isolation (*the tree is the unit of exclusion, and a repository may have more than
-  one*), **D52** the surface, and **D55** the frame: Manage ⇄ Work are two **frames** of one
-  application rather than a sixth nav item, with a status bar, a growable output panel, a frameless
-  window (SURF7) and a monitor window (SURF8). **Every SURF item is built**, and Work is usable today
-  (`npm run desktop -- run`, then *Work*). Two rules the building settled that still bind: a
-  timeline is **derived** (the record has no event log), and **the stream has one home**, the output
-  panel. The archive carries the rest.
+- **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
+  and there is no editor in the plan. `docs/2026-09-21-working-surface-design.md` is the contract,
+  `docs/2026-09-21-working-surface-components.md` the method — **a molecule imports no hook**, held
+  by a test — and `docs/2026-09-21-ide-reference-study.md` what changed it. **Every SURF item is
+  built**; Work is usable (`npm run desktop -- run`). Two rules that still bind: a timeline is
+  **derived**, and **the stream has one home**.
 - **The application has a frame of its own** (SURF10/SURF7 → **D56**,
   `docs/2026-09-21-desktop-frame-design.md`): a frameless window whose **app strip is the title
   bar**, a 48px **activity bar** in both frames, one owner for the verbs, a **right dock**, and
@@ -149,6 +140,16 @@ risk, **authorship** was.
   `usage_update` parsed rather than rendered away, per session at its **high-water mark** and
   totalled per account, machine-local by the profile's own rule. 🔴 **Absent is never zero**, and no
   price is claimed. TOOL4 is held.
+- 🔴 **Daoris is DEPLOYED** (2026-09-22): `npm run publish:desktop -- --to <dir> --service` installs
+  it — one exe at the root, binaries under `app/`, state in `data/` — and it runs against the real
+  `~/.daoris`, so **starting it starts the driver loop**.
+  `docs/2026-09-22-first-deployment-case-study.md` is the first thing to read before touching the
+  desktop: four defects were invisible from inside the workspace, three *because* of what the
+  workspace provides. 🔴 **Stop a running shell before building** — an orphaned host holds the
+  build's own assemblies.
+- **Extension is three declarative seams, never a plugin runtime** (ARCH1,
+  `docs/2026-09-22-plugin-design-study.md`): a canon pack, a `daoris.gates.json` row, and speaking
+  **ACP**. A pack declares the canon it needs (`apiVersion`), checked before a file is planned.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
