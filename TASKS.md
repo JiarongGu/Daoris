@@ -118,6 +118,15 @@ the published application with a debug port so `shot`, `eval` and `click` reach 
 app opens none by itself). The scratch loop has one circle, one account and two example
 repositories, so every UI judgement made against it is a judgement about a machine nobody has.
 
+**The looking pass, as far as it has got** (2026-09-22). On the real machine — 20 registered
+repositories, 14 with index entries, two workspaces, no named accounts — these have been reviewed
+and what they showed is fixed and landed: **Overview** (three counts reading as a contradiction, a
+card past the fold with its legend cut off, a seven-line toast over the card it described) and
+**Machine** (the accounts surface, regrouped from adapters to tools). 🔴 **Not looked at on real
+data at all: Quests, Projects, Search, Convergence, and the whole Work frame.** Those are where the
+fixture is least like a real machine, so that is where the next defects are. The fixture's two
+repositories and one quest cannot show what fourteen and a real backlog do.
+
 🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
 (four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface
 work now comes from looking at the deployed application and writing down what is wrong with it.
