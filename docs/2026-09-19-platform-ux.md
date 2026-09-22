@@ -94,6 +94,14 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   button is painted by WebView2 in Windows' accent colour — a blue ✕ in a palette with no blue.
 >   The platform draws its own affordances; a native one left showing is a defect in whichever
 >   colour the person's system happens to be.
+> - **A setting is a row** (2026-09-23, owner: *"you have this really long list of setup (this
+>   machine), which probably can be improved ui/ux"*): label, one-line hint, the control at the
+>   right, and the paragraph that motivated it on an info glyph — `SettingRow`. Measured before: five
+>   cards each opening with a four-line paragraph, the first checkbox 580px below the title and the
+>   next dial a screen further down, and the right 60% of every card empty because prose is 65ch
+>   and the column is 72rem. A settings page laid out as an essay is read once and scrolled past
+>   every time after; a page of rows is scanned. A rarely-used form (wiring a deployment, adding an
+>   account) is one press away, not open on every visit.
 
 > **Amended again 2026-09-22, the app strip** (owner: *"the application topbar you can take more
 > example from application like vscode"*, and *"the backdrop should not cover the topbar? because we
@@ -167,6 +175,11 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   non-adopters as the marked list with the join steps proposed as text.
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the
   drawer instead of a centered modal.
+- **Machine** (desktop only) — the home's path under the header, then cards that are *sections of
+  one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,
+  the wired rows, *Wire a workspace* behind a press), Agent tools (one row per tool, its accounts
+  leading, its ways in beneath), and usage. Every setting is a `SettingRow`; its terminal twin is
+  the hint and its reason is the glyph.
 
 ## 6. Accessibility
 

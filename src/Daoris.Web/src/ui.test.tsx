@@ -5,7 +5,7 @@ import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SESSION_ACTIVE, SESSION_DOT,
-  SESSION_TONE, Tile,
+  SESSION_TONE, SettingRow, Tile,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -38,6 +38,36 @@ describe('the primitives', () => {
   it('a disabled primary stays announced as disabled', () => {
     render(<Button variant="primary" disabled>publish quest</Button>);
     expect(screen.getByRole('button', { name: 'publish quest' })).toBeDisabled();
+  });
+});
+
+/**
+ * A setting is a row (2026-09-23): label, one-line hint, the control at the right — and the why on
+ * the glyph, for the reader who asks, rather than as the paragraph that used to sit above every
+ * control on the Machine view.
+ */
+describe('a setting row', () => {
+  it('leads with the label, keeps the hint to a line, and holds the why off the page', () => {
+    render(
+      <Tooltip.Provider>
+        <SettingRow
+          label="Park a quest after this many failed sessions"
+          hint="Also `daoris driver strikes <n>`."
+          why="One quest whose session could not start ran eighteen times."
+          control={<input aria-label="count" defaultValue="3" />}
+        >
+          <span>zero means it keeps trying</span>
+        </SettingRow>
+      </Tooltip.Provider>,
+    );
+
+    expect(screen.getByText('Park a quest after this many failed sessions')).toBeTruthy();
+    expect(screen.getByText(/daoris driver strikes/)).toBeTruthy();
+    expect(screen.getByLabelText('count')).toBeTruthy();
+    expect(screen.getByText('zero means it keeps trying')).toBeTruthy();
+    // The why is announced on its glyph and is not a paragraph anyone has to scroll past.
+    expect(screen.getByRole('note', { name: /eighteen times/ })).toBeTruthy();
+    expect(screen.queryByText(/eighteen times/)).toBeNull();
   });
 });
 

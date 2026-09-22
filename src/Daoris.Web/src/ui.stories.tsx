@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Button, Chip, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SkeletonRows, Tile, Toasts,
+  Button, CheckField, Chip, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SettingRow,
+  SkeletonRows, Tile, Toasts,
 } from './ui';
 
 // Every state of every primitive, on the shipped components — including the states real data rarely
@@ -33,6 +34,38 @@ export const Pills: StoryObj = {
       <Pill>Canonical</Pill>
       <Chip>the engine runtime — simulation, rendering, assets</Chip>
       <Chip accent>a failing case</Chip>
+    </div>
+  ),
+};
+
+/**
+ * A setting is a row (2026-09-23): the four shapes the Machine view uses — a switch, a number, a
+ * path that is read rather than set, and a row whose value earned a warning beneath it.
+ */
+export const SettingRows: StoryObj = {
+  render: () => (
+    <div className="max-w-[48rem] rounded-card border border-line bg-raised px-[1.15rem] py-4">
+      <SettingRow
+        label="Tell me when a session parks or ends unasked"
+        hint="Also `daoris driver notify on|off` — one file, either door."
+        why="Nobody should have to watch a driver."
+        control={<CheckField hideLabel checked onChange={() => {}} label="Tell me when a session parks or ends unasked" />}
+      />
+      <SettingRow
+        label="Park a quest after this many failed sessions"
+        hint="Also `daoris driver strikes <n>`; stand-downs, declines and stops never count."
+        why="One quest whose session could not start ran eighteen times, and every run spent an account."
+        control={<input type="number" defaultValue={0} className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink" />}
+      >
+        <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+          Zero means it keeps trying.
+        </p>
+      </SettingRow>
+      <SettingRow
+        label="Daoris home"
+        hint="Every file on this page lives under it."
+        control={<span className="break-all font-mono text-small text-ink">C:/somewhere/Daoris/data</span>}
+      />
     </div>
   ),
 };

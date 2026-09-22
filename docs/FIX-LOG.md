@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The testbed's own connector held every testbed quest (2026-09-23)
+
+**Symptom.** After D63 moved the installed hosts under the Daoris home, `tools/testbed.mjs` was
+re-run to re-point each testbed's `.mcp.json` — and the deployed shell then toasted *"held #… →
+testbed-core: the working tree has uncommitted changes (1 paths) — somebody's work in progress"*
+for every testbed. The driver was right: each tree was dirty. The one path was the connector.
+
+**Root cause.** The script commits once, at birth (`README.md`, *"the starting point"*), and never
+again: `init`, `sync`, the declaration and the connector are written afterwards and left for
+somebody to commit. On the first build a driven session happened to land them with its own work;
+on a re-run nothing did, so the file the script rewrote wholesale sat modified, and the driver's
+clean-tree rule (D46) held the quest on the fixture's own wiring. A fixture that leaves the driver's
+precondition unmet on every re-run is a fixture that tests nothing after the first day.
+
+**Fix.** `tools/testbed.mjs` commits what the run wrote, per repository: the set of paths dirty
+after the run and not before, plus the files it writes wholesale every time (`.mcp.json`,
+`.claude/settings.json`, `daoris.json`) whether or not an earlier run left them dirty — because
+"dirty before" there is the previous run's, and the previous run was this script too. Anything
+else dirty is somebody's and stays. The row says `(committed)` when it did.
+
+**Verify.** Re-run against the deployed install: three `(committed)`, `git status --porcelain`
+empty in all three testbeds, the last commit *"adopted, synced and wired by tools/testbed.mjs"*,
+and no held toast on the next tick.
+
+**Commit.** pending
+
 ## The account a person has was invisible, and Forget forgot nothing (2026-09-23)
 
 **Symptom.** Owner: *"a lot ui/ux issue which does not allow to manage account easily"*. Exercised

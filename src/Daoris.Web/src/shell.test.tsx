@@ -347,14 +347,37 @@ describe('the machine settings surface', () => {
     show(<SettingsView notify={() => {}} />);
     await screen.findByText('aurora');
 
-    // The header still names the home in a sentence; what is absent is the card that would show one.
-    expect(screen.queryByText(/every file on this page lives under it/)).toBeNull();
+    // The header still names the home in a sentence; what is absent is the path a newer shell answers.
+    expect(screen.queryByText(/somewhere\/Daoris\/data/)).toBeNull();
+    expect(screen.queryByText(/moved in from/)).toBeNull();
+  });
+
+  /**
+   * A setting is a row (2026-09-23): the control sits beside its label, the terminal's door is the
+   * one-line hint, and the paragraph that motivated the setting is on the glyph rather than on the
+   * page — so the first control is where the eye lands rather than a screen below the title.
+   */
+  it('lays each setting out as a row, with its why one hover away rather than on the page', async () => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: true, strikes: 3 } : WIRING));
+    show(<SettingsView notify={() => {}} />);
+    await screen.findByRole('checkbox', { checked: true });
+
+    // The number dial is reachable by its label, and the why is a note, not a paragraph.
+    expect(screen.getByLabelText('Park a quest after this many failed sessions')).toBeTruthy();
+    expect(screen.getByRole('note', { name: /Nobody should have to watch a driver/ })).toBeTruthy();
+    expect(screen.queryByText(/Nobody should have to watch a driver/)).toBeNull();
+    // The wiring form is one press away, not open on every visit.
+    expect(screen.queryByLabelText('deployment')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Wire a workspace' }));
+    expect(screen.getByLabelText('deployment')).toBeTruthy();
   });
 
   it('wiring a workspace edits the map and clears the key out of the form', async () => {
     show(<SettingsView notify={() => {}} />);
     await screen.findByText('aurora');
 
+    await userEvent.click(screen.getByRole('button', { name: 'Wire a workspace' }));
     await userEvent.type(screen.getByLabelText('workspace'), 'tools');
     await userEvent.type(screen.getByLabelText('deployment'), 'https://tools.example.com');
     await userEvent.type(screen.getByLabelText('key'), 'dk_toolskey0000');
@@ -363,7 +386,10 @@ describe('the machine settings surface', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'SET', {
       payload: { workspace: 'tools', url: 'https://tools.example.com', key: 'dk_toolskey0000' },
     });
-    // The key does not linger in the form once it has landed in the file.
+    // The form closes on success, and the key does not linger in it once it has landed in the file:
+    // opened again, it is empty.
+    expect(screen.queryByLabelText('key')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Wire a workspace' }));
     expect((screen.getByLabelText('key') as HTMLInputElement).value).toBe('');
   });
 
@@ -657,7 +683,8 @@ describe('the harness roster', () => {
   it('says a harness runs from PATH until something is pinned', async () => {
     show(<SettingsView notify={() => {}} />);
 
-    expect(await screen.findAllByText(/on PATH/)).not.toHaveLength(0);
+    // Said on the door itself, where the pin control is — the roster's body no longer restates it.
+    expect(await screen.findAllByText(/from PATH/)).not.toHaveLength(0);
     expect(screen.queryByText(/Daoris runs/)).toBeNull();
   });
 

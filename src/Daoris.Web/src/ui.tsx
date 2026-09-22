@@ -7,8 +7,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, FileDiff, GitMerge, Inbox,
-  KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, LogIn, Monitor, Plus, RotateCw, Search,
-  SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal, Trash2, X,
+  Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, LogIn, Monitor, Plus, RotateCw,
+  Search, SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal, Trash2, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -53,6 +53,8 @@ const ICONS = {
   account: KeyRound,
   login: LogIn,
   remove: Trash2,
+  // A setting's WHY (2026-09-23): the paragraph that used to sit above every control, one hover away.
+  info: Info,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -511,20 +513,71 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
   );
 }
 
-export function CheckField({ checked, onChange, label }: {
-  checked: boolean; onChange: (checked: boolean) => void; label: string;
+/**
+ * A checkbox with its sentence. `hideLabel` keeps the sentence for the accessibility tree and takes
+ * it off the screen — for a setting row, where the label already stands at the left and a second
+ * copy beside the box would say everything twice.
+ */
+export function CheckField({ checked, onChange, label, hideLabel }: {
+  checked: boolean; onChange: (checked: boolean) => void; label: string; hideLabel?: boolean;
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-body text-ink-soft">
       <Checkbox.Root
         checked={checked}
         onCheckedChange={(state) => onChange(state === true)}
-        className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink"
+        className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line-strong bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink"
       >
         <Checkbox.Indicator><Check size={12} strokeWidth={2.2} aria-hidden /></Checkbox.Indicator>
       </Checkbox.Root>
-      {label}
+      <span className={cn(hideLabel && 'sr-only')}>{label}</span>
     </label>
+  );
+}
+
+/**
+ * One setting, as a row: what it is, one line on what it does, the control at the right — and the
+ * reason it exists one hover away, on the glyph, instead of in a paragraph above it.
+ *
+ * @remarks
+ * 🔴 Written from the owner's *"you have this really long list of setup (this machine), which
+ * probably can be improved ui/ux"* (2026-09-23), and the screenshot said what "long" meant: five
+ * cards, each opening with a four-line paragraph, the first control 580px below the title at the
+ * D56 scale and the second a full screen down — a settings page laid out as an essay, with the
+ * right 60% of every card empty because the prose measure is 65ch and the column is 72rem. A setting
+ * is a row, the way every settings surface a person already knows lays one out: the label leads, the
+ * hint is one line, the control sits where the eye expects it. The paragraph that motivated the
+ * setting is still there, on the info glyph, for the person who asks why.
+ *
+ * `children` is the row's own extra — a warning the value earned, a notice about it — spanning both
+ * columns beneath.
+ */
+export function SettingRow({ label, hint, why, control, children }: {
+  label: ReactNode; hint?: ReactNode; why?: string; control?: ReactNode; children?: ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 text-body font-medium text-ink">
+          <span>{label}</span>
+          {why && (
+            <Tip content={why}>
+              <span
+                tabIndex={0}
+                role="note"
+                aria-label={why}
+                className="inline-flex cursor-help text-ink-faint hover:text-ink"
+              >
+                <Icon name="info" size={13} />
+              </span>
+            </Tip>
+          )}
+        </div>
+        {hint && <div className="mt-0.5 max-w-prose text-small text-ink-faint">{hint}</div>}
+      </div>
+      {control && <div className="flex min-w-0 shrink-0 items-center justify-end gap-2">{control}</div>}
+      {children && <div className="col-span-2 min-w-0">{children}</div>}
+    </div>
   );
 }
 

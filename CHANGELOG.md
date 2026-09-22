@@ -279,6 +279,10 @@ The first version: doctrine that installs, is checked, and flows back.
   than double-starting), carries the platform in its window — the same bytes a browser gets — and runs
   the driver loop in-process, re-reading the person's standing choices every tick: drivable and hold
   per repository, stop a running session, all through the platform's own session-control surface.
+- **The Machine view is a settings page of rows.** Each setting is a label, a one-line hint naming
+  its terminal twin, and the control at the right; the paragraph that motivated it is on an info
+  glyph. The home's path sits under the header, the driver's two dials share a card, and wiring a
+  deployment is behind a press — five cards of prose became a page a person scans.
 - **The application's own folder is the Daoris home, and nothing lives under the user profile** (D63).
   Every machine-local file Daoris owns — the registry, `driver.json`, `harnesses.json` and the
   credential profiles beside it, the remotes map, the index, session records, the installed service

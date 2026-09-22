@@ -11,7 +11,7 @@ import { SessionConsole } from './SessionConsole';
 import { byTool, type ToolDoor } from './tools';
 import {
   Button, Card, CheckField, Chip, Icon, type Notify, PageHeader, Pill, Prose, SectionTitle,
-  SelectField, Tip, useErrorNotify,
+  SelectField, SettingRow, Tip, useErrorNotify,
 } from './ui';
 
 /**
@@ -48,6 +48,9 @@ export function SettingsView({ notify }: { notify: Notify }) {
   const [workspace, setWorkspace] = useState('');
   const [url, setUrl] = useState('');
   const [key, setKey] = useState('');
+  // The wiring form is one press away, not open on every visit: it is done once per machine per
+  // deployment, and open it was the largest thing on a page most people come to for a checkbox.
+  const [wiringOpen, setWiringOpen] = useState(false);
 
   const remotes = wiring.data?.remotes ?? [];
   const onError = (error: unknown) => notify(sentence(error), 'error');
@@ -68,6 +71,7 @@ export function SettingsView({ notify }: { notify: Notify }) {
         setWorkspace('');
         setUrl('');
         setKey('');
+        setWiringOpen(false);
       },
       onError,
     });
@@ -76,94 +80,104 @@ export function SettingsView({ notify }: { notify: Notify }) {
     <section>
       <PageHeader title={t('settings.title')} description={t('settings.description')} />
 
-      {/* Where this machine's Daoris lives (D63) — first, because every path on this page is under
-          it, and a person asking "where did that file go" is asking this. The notice is the shell's
-          own sentence about what the start did (state moved in, the account's variable set), carried
-          in the state rather than only raised: a toast raised before the page subscribed reached
-          nobody, which is exactly what happened the first time. */}
+      {/* 🔴 A setting is a ROW (owner, 2026-09-23: *"you have this really long list of setup (this
+          machine), which probably can be improved ui/ux"*). Every card here used to open with a
+          paragraph and put its one control beneath it, so the first checkbox sat 580px below the
+          title and the next dial a screen further down. `SettingRow` carries the shape now — the
+          label leads, the hint is one line, the control is at the right, the paragraph is on the
+          glyph — and the cards are the sections of one settings page rather than five essays. */}
+
+      {/* Where this machine's Daoris lives (D63) — under the header, because the header's sentence
+          is about it and every path below is under it. A card of its own cost 200px of the page for
+          one line of fact (measured), and pushed the first control below the fold's first third. The
+          notice is the shell's own sentence about what the start did, carried in the state rather
+          than only raised: a toast raised before the page subscribed reached nobody. */}
       {driver.data?.home && (
-        <Card>
-          <p className="break-all font-mono text-small text-ink">{driver.data.home}</p>
-          <Prose className="mt-1.5 text-small">{t('settings.home')}</Prose>
+        <div className="-mt-3.5 mb-5">
+          <Tip content={t('settings.home.hint')}>
+            <p className="m-0 inline-block max-w-full cursor-help break-all font-mono text-small text-ink-soft">
+              {driver.data.home}
+            </p>
+          </Tip>
           {driver.data.homeNotice && (
-            <p className="mt-2.5 max-w-prose border-l-[3px] border-accent bg-raised px-3.5 py-2 text-body text-ink-soft">
+            <p className="mt-2 max-w-prose border-l-[3px] border-accent bg-raised px-3.5 py-2 text-body text-ink-soft">
               {driver.data.homeNotice}
             </p>
           )}
-        </Card>
+        </div>
       )}
 
-      {/* Off in one click, which is what design §4 asks for — and the reason it sits above the
-          wiring is that it is the setting a person is most likely to have come here to change. */}
+      {/* The driver's two dials, in one card: that one asks to be TOLD when a driver stops, this one
+          bounds what it spends before anyone is told (D58). The notification switch leads because it
+          is the setting a person is most likely to have come here to change. */}
       <Card>
-        <SectionTitle>{t('settings.notify.title')}</SectionTitle>
-        <Prose className="mt-1.5">{t('settings.notify.body')}</Prose>
-
-        <div className="mt-3">
-          <CheckField
-            checked={driver.data?.notify ?? true}
-            onChange={(on) => setNotify.mutate({ notify: on }, {
-              onSuccess: () => notify(t(on ? 'settings.notify.on' : 'settings.notify.off')),
-              onError,
-            })}
-            label={t('settings.notify.label')}
-          />
-        </div>
-
-        {/* The other door, named where the switch is. A person who finds this on a machine they
-            reach over ssh should learn it is the same file, not go looking for a second one. */}
-        <p className="mt-2.5 text-small text-ink-faint">{t('settings.notify.terminal')}</p>
-      </Card>
-
-      {/* Beside notifications because they answer the same worry from opposite ends: that one asks to
-          be TOLD when a driver stops, this one bounds what it spends before anyone is told (D58). */}
-      <Card>
-        <SectionTitle>{t('settings.strikes.title')}</SectionTitle>
-        <Prose className="mt-1.5">{t('settings.strikes.body')}</Prose>
-
-        {/* Sized to what it HOLDS, which is one or two digits — the lesson the wiring fields above
-            were re-cut for. A full-width box for a number reads as a text field somebody forgot. */}
-        <label className="mt-3 grid justify-items-start gap-1 text-small text-ink-faint">
-          {t('settings.strikes.label')}
-          <input
-            type="number"
-            min={0}
-            max={99}
-            value={strikes ?? String(driver.data?.strikes ?? 3)}
-            onChange={(event) => setStrikes(event.target.value)}
-            onBlur={() => {
-              const value = Number(strikes);
-              if (!Number.isInteger(value) || value < 0) {
-                setStrikes(String(driver.data?.strikes ?? 3));
-                return;
-              }
-
-              setStrikesMutation.mutate({ strikes: value }, {
-                onSuccess: () => notify(t(value === 0 ? 'settings.strikes.never' : 'settings.strikes.set', { count: value })),
+        <SectionTitle>{t('settings.driver.title')}</SectionTitle>
+        <SettingRow
+          label={t('settings.notify.label')}
+          hint={t('settings.notify.terminal')}
+          why={t('settings.notify.body')}
+          control={(
+            <CheckField
+              hideLabel
+              checked={driver.data?.notify ?? true}
+              onChange={(on) => setNotify.mutate({ notify: on }, {
+                onSuccess: () => notify(t(on ? 'settings.notify.on' : 'settings.notify.off')),
                 onError,
-              });
-            }}
-            className="w-[5.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-          />
-        </label>
+              })}
+              label={t('settings.notify.label')}
+            />
+          )}
+        />
 
-        {/* Stated where the zero is, because zero is the one value whose consequence is invisible. */}
-        {Number(strikes ?? driver.data?.strikes ?? 3) === 0 && (
-          <p className="mt-2.5 max-w-prose border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-            {t('settings.strikes.zero')}
-          </p>
-        )}
+        <SettingRow
+          label={t('settings.strikes.label')}
+          hint={t('settings.strikes.terminal')}
+          why={t('settings.strikes.body')}
+          control={(
+            /* Sized to what it HOLDS, which is one or two digits. A full-width box for a number reads
+               as a text field somebody forgot. */
+            <input
+              type="number"
+              min={0}
+              max={99}
+              aria-label={t('settings.strikes.label')}
+              value={strikes ?? String(driver.data?.strikes ?? 3)}
+              onChange={(event) => setStrikes(event.target.value)}
+              onBlur={() => {
+                const value = Number(strikes);
+                if (!Number.isInteger(value) || value < 0) {
+                  setStrikes(String(driver.data?.strikes ?? 3));
+                  return;
+                }
 
-        <p className="mt-2.5 max-w-prose text-small text-ink-faint">{t('settings.strikes.terminal')}</p>
+                setStrikesMutation.mutate({ strikes: value }, {
+                  onSuccess: () => notify(t(value === 0 ? 'settings.strikes.never' : 'settings.strikes.set', { count: value })),
+                  onError,
+                });
+              }}
+              className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
+            />
+          )}
+        >
+          {/* Stated where the zero is, because zero is the one value whose consequence is invisible. */}
+          {Number(strikes ?? driver.data?.strikes ?? 3) === 0 && (
+            <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+              {t('settings.strikes.zero')}
+            </p>
+          )}
+        </SettingRow>
       </Card>
 
-      <Card>
+      <Card className="mt-3.5">
         <SectionTitle>{t('settings.wiring.title')}</SectionTitle>
-        <Prose className="mt-1.5">{t('settings.wiring.body')}</Prose>
-
-        {wiring.data && (
-          <p className="mt-2 break-all font-mono text-small text-ink-faint">{wiring.data.path}</p>
-        )}
+        <SettingRow
+          label={t('settings.wiring.label')}
+          hint={t('settings.wiring.hint')}
+          why={t('settings.wiring.body')}
+          control={wiring.data && (
+            <span className="break-all font-mono text-small text-ink-faint">{wiring.data.path}</span>
+          )}
+        />
 
         {wiring.data?.fromEnvironment && (
           /* With the environment pair set, no loader reads the file — so the rows below are what is
@@ -204,8 +218,19 @@ export function SettingsView({ notify }: { notify: Notify }) {
           </ul>
         )}
 
-        <div className="mt-4 border-t border-line pt-3.5">
-          <SectionTitle>{t('settings.wiring.addTitle')}</SectionTitle>
+        {!wiringOpen ? (
+          <Button
+            variant="ghost"
+            className="mt-3"
+            disabled={wire.isPending}
+            onClick={() => setWiringOpen(true)}
+          >
+            <Icon name="plus" size={13} />
+            {t('settings.wiring.addTitle')}
+          </Button>
+        ) : (
+        <div className="mt-3 border-t border-line pt-3">
+          <SectionTitle level={3}>{t('settings.wiring.addTitle')}</SectionTitle>
           {/* Sized to what the fields HOLD, not to the column they sit in. Three equal thirds of a
               72rem card gave a 570px box to the word "default"; a workspace name is short, a
               deployment URL is long, and a key is in between — so the widths say so. */}
@@ -240,15 +265,18 @@ export function SettingsView({ notify }: { notify: Notify }) {
             </label>
           </div>
           <Prose className="mt-2 text-small">{t('settings.wiring.keyBody')}</Prose>
-          <Button
-            variant="primary"
-            className="mt-3"
-            disabled={!url.trim() || !key.trim() || wire.isPending}
-            onClick={add}
-          >
-            {t('settings.wiring.add')}
-          </Button>
+          <div className="mt-3 flex gap-2">
+            <Button
+              variant="primary"
+              disabled={!url.trim() || !key.trim() || wire.isPending}
+              onClick={add}
+            >
+              {t('settings.wiring.add')}
+            </Button>
+            <Button variant="ghost" onClick={() => setWiringOpen(false)}>{t('settings.wiring.cancel')}</Button>
+          </div>
         </div>
+        )}
       </Card>
 
       <HarnessRoster notify={notify} />
@@ -344,10 +372,14 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   return (
     <Card className="mt-3.5">
       <SectionTitle>{t('harness.title')}</SectionTitle>
-      <Prose className="mt-1.5">{t('harness.body')}</Prose>
-      {/* Said ONCE, where it used to be repeated under every harness's add form. */}
-      <Prose className="mt-1.5">{t('harness.profile.note')}</Prose>
-      <p className="mt-2 break-all font-mono text-small text-ink-faint">{answered.settingsPath}</p>
+      {/* One line each, and the rest on the glyph: what a tool is here, and what an account is —
+          said ONCE, where the second used to be repeated under every harness's add form. */}
+      <SettingRow
+        label={t('harness.body')}
+        hint={t('harness.secrets')}
+        why={t('harness.profile.note')}
+        control={<span className="break-all font-mono text-small text-ink-faint">{answered.settingsPath}</span>}
+      />
 
       {/* 🔴 A card per TOOL, and the adapters are its ways in (owner, 2026-09-22: *"'harness
           account'? and `*-acp` really confusing of the scope of this project"*, with the correction
@@ -686,7 +718,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
       {accounts.length > 0 && (
         <div className="mt-4 border-t border-line pt-3.5">
           <SectionTitle>{t('usage.title')}</SectionTitle>
-          <Prose className="mt-1.5">{t('usage.body')}</Prose>
+          <Prose className="mt-1.5 text-small">{t('usage.body')}</Prose>
           <ul className="m-0 mt-2 list-none p-0">
             {accounts.map((account) => (
               <li
@@ -715,8 +747,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
         </div>
       )}
 
-      <p className="mt-4 text-small text-ink-soft">{t('harness.secrets')}</p>
-      <Button className="mt-3" disabled={refresh.isPending} onClick={() => refresh.mutate()}>
+      <Button className="mt-4" disabled={refresh.isPending} onClick={() => refresh.mutate()}>
         {t('harness.refresh')}
       </Button>
     </Card>

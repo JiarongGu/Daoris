@@ -118,6 +118,36 @@ function claimRoot() {
 
 const run = (command, cwd) => execSync(command, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const daoris = (args, cwd) => run(`node "${cli}" ${args}`, cwd);
+const git = (where, args) => execFileSync('git', args, { cwd: where, encoding: 'utf8' });
+
+/** The files this script writes wholesale on every run, as `git status` spells them. */
+const WRITTEN = new Set(['.mcp.json', '.claude/settings.json', 'daoris.json']);
+
+/** Every path the working tree currently differs in, tracked or not — the set a run compares. */
+const dirty = (where) => new Set(
+  git(where, ['status', '--porcelain', '--untracked-files=all']).split('\n')
+    .filter(Boolean).map((line) => line.slice(3).replace(/^"(.*)"$/, '$1')));
+
+/**
+ * Commit what THIS run wrote — the adoption, the sync, the connector — and nothing else.
+ *
+ * 🔴 The script wrote the connector and never committed it, so a re-run that re-pointed `.mcp.json`
+ * left every testbed dirty, and the driver — correctly — HELD each of their quests as *"the working
+ * tree has uncommitted changes — somebody's work in progress"* (measured on the deployed shell,
+ * 2026-09-23, after D63 moved the installed host). The difference between the tree before the run
+ * and after it is exactly what the run owns; a path that was dirty before it is somebody's, and stays.
+ */
+function landed(where, before) {
+  const after = dirty(where);
+  // What this run wrote wholesale is this script's whether or not an earlier run left it dirty —
+  // the connector and the declaration are rewritten every time, so "dirty before" is not "somebody's"
+  // for them; it is the previous run's, and the previous run was this script too.
+  const mine = [...after].filter((path) => !before.has(path) || WRITTEN.has(path));
+  if (mine.length === 0) return false;
+  git(where, ['add', '--', ...mine]);
+  git(where, ['commit', '-qm', 'adopted, synced and wired by tools/testbed.mjs']);
+  return true;
+}
 
 /** A repository that exists and has one commit — the state every Daoris command assumes. */
 function born(repo) {
@@ -240,12 +270,16 @@ for (const repo of FAMILY) {
   // silently overwrite a repository's own adoption. So re-running was not idempotent at all, though
   // the header above promised it was: the second run died on the first repository. Adopt once;
   // everything after this line is safe to repeat.
+  const before = dirty(where);
   if (!existsSync(join(where, 'daoris.json'))) daoris(`init --name ${repo.name}`, where);
   declare(where, repo);
   daoris('sync', where);
   const wired = connector(where);
+  // Landed, so a driven session meets a clean tree: what the driver requires is what this leaves.
+  const committed = landed(where, before);
   const packs = (repo.packs.length > 0 ? `  + ${repo.packs.join(', ')}` : '')
-    + (wired ? '' : '  (no connector — install the service host)');
+    + (wired ? '' : '  (no connector — install the service host)')
+    + (committed ? '  (committed)' : '');
   try {
     // `--workspace` is the wiring, and it is a REGISTRY row rather than anything on disk (WSP1):
     // nothing in the repository records which circle it joined, which is why re-running is safe.
