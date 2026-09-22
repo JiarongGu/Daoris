@@ -24,7 +24,7 @@ own class list.
 **Verify.** The tokens test, red then green. On the install: the quest drawer's header sits below
 the strip with its × visible and the caption buttons beside it, not over it.
 
-**Commit.** _pending_
+**Commit.** `57281d2`
 
 ## The Overview asked whether anything was sitting, and never said why (2026-09-23)
 
