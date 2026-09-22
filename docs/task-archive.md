@@ -3440,8 +3440,26 @@ whitespace-collapsed copy, because the claim is the sentence and not the column 
   that governs the flow this most matters in.
 - **`canon-authoring.md` also claimed the core budget is *"measured and gated"***, which **D54**
   retired before D59 existed. Corrected in the same edit: it is measured and **reported**.
-- **`CLAUDE.md` claimed 211 CLI tests**, against 265 before this item and 267 after. Byte-neutral fix,
-  which matters at 3,724 of 3,750 words.
+- **`CLAUDE.md` claimed 211 CLI tests**, against 265 before this item. Byte-neutral fix, which matters
+  at 3,724 of 3,750 words.
+
+**The follow-up pass, the same day: every countable claim in the two status files was wrong, and now
+two of them are gated.** `CHANGELOG.md` said *"Twelve commands"* while fourteen shipped — `harness`
+and `driver` landed with TOOL2 and SES3 and the sentence never moved, so it was wrong for two whole
+landings with every gate green. `CLAUDE.md` had the service at 259 (262), the driver at 165 (239), the
+family rehearsal at 173/173 (180/180) and the decision log at D1–D57 (D59). `TASKS.md` disagreed with
+*itself*: its state line said 239 driver and 71 modules while its verify checklist said 152 and 40.
+All corrected against a run rather than against memory.
+
+🔴 **The count was the symptom; the counterpart set was the disease.** The dispatcher and the two
+documents that enumerate it must stay in step and nothing made them, so `version.test.ts` gained two
+checks — the README's table must list **exactly** the dispatcher's commands, and the changelog must
+state the right number **and name every one**. Asserted as a **set**, not a count: a count agrees with
+itself while naming the wrong command, and a renamed verb is precisely the change that keeps the
+number right. Watched fail in three shapes before being believed — the old *"Twelve"*, a command
+silently unnamed in the prose, and a new command added to the dispatcher that no document mentions.
+The test counts themselves are deliberately **not** gated: they change on every landing, so a gate
+would be a chore that teaches people to update a number without reading it.
 
 🔴 **The backlog's own note on the fourth item was wrong, and that is the reusable part.** It read
 *"a **canon** file, so it must stay project-agnostic and re-sync `examples/` in the same commit"*.

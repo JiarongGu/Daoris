@@ -49,3 +49,39 @@ test('every shipped reference names the repository exactly', () => {
   assert.ok(readCli('src/commands.ts').includes('github:JiarongGu/Daoris#v'), 'what init writes');
   assert.equal(/OWNER/.test(readCli('src/commands.ts')), false, 'the placeholder must not ship');
 });
+
+/**
+ * The dispatcher and the two documents that enumerate it are a counterpart set, and counterpart sets
+ * rot: `harness` and `driver` shipped, the README's table grew two rows, and the changelog went on
+ * saying "Twelve commands" — a sentence nothing read, wrong for two whole landings.
+ *
+ * Asserted as a SET rather than a count, because a count agrees with itself while naming the wrong
+ * command, and a renamed verb is exactly the change that would keep the number right.
+ */
+const dispatcherCommands = (): string[] => {
+  const table = readCli('src/cli.ts').match(/const commands[^{]*\{([\s\S]*?)\n\};/);
+  assert.ok(table, 'the dispatcher table must be findable — this test is worthless if it is not');
+  return [...table[1]!.matchAll(/^\s{2}([a-z]+):/gm)].map((m) => m[1]!).sort();
+};
+
+test('the README command table lists exactly the commands the dispatcher has', () => {
+  const documented = [...read('README.md').matchAll(/^\| `([a-z]+)[ `]/gm)].map((m) => m[1]!).sort();
+  assert.deepEqual(documented, dispatcherCommands());
+});
+
+test('the changelog says how many commands there actually are, and names them all', () => {
+  const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+    'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen',
+    'eighteen', 'nineteen', 'twenty'];
+  const commands = dispatcherCommands();
+  const changelog = read('CHANGELOG.md');
+
+  const claim = changelog.match(/\*\*([A-Z][a-z]+) commands\.\*\*/);
+  assert.ok(claim, 'the changelog must state a command count');
+  assert.equal(claim[1]!.toLowerCase(), NUMBERS[commands.length],
+    `the changelog claims ${claim[1]} commands; the dispatcher has ${commands.length}`);
+
+  // The count is the cheap half. A command nobody wrote a sentence for is the expensive one.
+  const missing = commands.filter((name) => !changelog.includes(`\`${name}\``));
+  assert.deepEqual(missing, [], 'every command must be named in the changelog');
+});
