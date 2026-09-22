@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## One result, zero marks — the marker cut 中文 differently from the index (2026-09-23)
+
+**Symptom.** Searching `会话记录` on the deployed application: one result, correctly — a body that
+says `会话的记录` — and nothing marked in its excerpt, though marking the matched term is the whole
+reason the excerpt is shown.
+
+**Root cause.** The index matches a run of ideographs by its overlapping bigrams (`会话 话记 记录`,
+the 中文 search fix of the same day); the marker looked for the query as it was typed, one
+four-character term, which the body does not contain. Two halves of one rule cut two ways — the
+same shape as the tokeniser's floor, found the same day, in the other direction.
+
+**Fix.** `termsOf` cuts a run of ideographs into its bigrams before marking (`highlight.ts`,
+`cut`), a lone ideograph staying one unit and everything else whole — `Text.Segment`'s rule, in the
+marker's language.
+
+**Verify.** `highlight.test.ts`: `会话记录` → `会话 话记 记录`, and the body `会话的记录在此` marked as
+`会话` · 的 · `记录` · 在此 — both seen red. On the install, the same search: one result, the two
+words marked in its excerpt.
+
+**Commit.** _pending_
+
 ## The drawer's close button was under the window's own (2026-09-23)
 
 **Symptom.** In a quest drawer on the deployed application, the header's × was not there: a sliver

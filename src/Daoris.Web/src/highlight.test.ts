@@ -18,6 +18,19 @@ describe('termsOf', () => {
     expect(termsOf('')).toEqual([]);
     expect(termsOf('a of')).toEqual([]);
   });
+
+  /**
+   * 🔴 The service cuts a run of ideographs into overlapping bigrams and matches THOSE — that is how
+   * `会话记录` finds a body that says `会话的记录`. Marking the query as one four-character term
+   * marked nothing in that body: one result, zero marks, on the deployed application. The marker
+   * cuts the same way the index does, so what is marked is what matched.
+   */
+  it('cuts a run of ideographs into the bigrams the service matched on', () => {
+    expect(termsOf('会话记录')).toEqual(['会话', '话记', '记录']);
+    expect(termsOf('记录')).toEqual(['记录']);
+    expect(termsOf('书')).toEqual(['书']);
+    expect(termsOf('the 会话 log')).toEqual(['the', '会话', 'log']);
+  });
 });
 
 describe('mark', () => {
@@ -51,6 +64,13 @@ describe('mark', () => {
   it('marks 中文 as readily as anything else', () => {
     expect(mark('会话的记录在此', '记录')).toEqual([
       { text: '会话的', hit: false },
+      { text: '记录', hit: true },
+      { text: '在此', hit: false },
+    ]);
+    // A longer query marks the pieces that matched, each where the body has it.
+    expect(mark('会话的记录在此', '会话记录')).toEqual([
+      { text: '会话', hit: true },
+      { text: '的', hit: false },
       { text: '记录', hit: true },
       { text: '在此', hit: false },
     ]);

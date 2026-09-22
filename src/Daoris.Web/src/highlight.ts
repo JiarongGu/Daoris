@@ -17,12 +17,50 @@ export interface Segment {
 export function termsOf(query: string): string[] {
   return [...new Set(
     query.toLowerCase().split(/[^\p{L}\p{N}_-]+/u)
-      .filter((term) => term.length > 2 || SHORT_WORD_SCRIPTS.test(term)),
+      .flatMap(cut)
+      .filter((term) => term.length > 2 || IDEOGRAPH.test(term)),
   )];
 }
 
-/** Scripts in which a one- or two-character token is a word, not a fragment. */
-const SHORT_WORD_SCRIPTS = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+/** Scripts in which a one- or two-character token is a word, not a fragment — and which carry no spaces between words. */
+const IDEOGRAPH = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+
+/**
+ * A token cut the way the index is cut: a run of ideographs becomes its overlapping two-character
+ * bigrams (a lone ideograph stays one unit), and everything else stays whole.
+ *
+ * @remarks
+ * 🔴 The service matches on bigrams — that is how `会话记录` finds a body that says `会话的记录` —
+ * and a marker that looked for the query as one four-character term marked nothing in the body it
+ * had just matched: one result, zero marks, on the deployed application. What is marked has to be
+ * what matched, so the cut is the index's cut (`Text.Segment`, the service's own half of this rule).
+ */
+function cut(token: string): string[] {
+  const pieces: string[] = [];
+  let run: string[] = [];
+  let other = '';
+  const flushRun = () => {
+    if (run.length === 1) pieces.push(run[0]);
+    for (let i = 0; i + 1 < run.length; i += 1) pieces.push(run[i] + run[i + 1]);
+    run = [];
+  };
+  const flushOther = () => {
+    if (other) pieces.push(other);
+    other = '';
+  };
+  for (const character of token) {
+    if (IDEOGRAPH.test(character)) {
+      flushOther();
+      run.push(character);
+    } else {
+      flushRun();
+      other += character;
+    }
+  }
+  flushRun();
+  flushOther();
+  return pieces;
+}
 
 /**
  * An excerpt split into the runs a query matched and the runs it did not.

@@ -85,6 +85,18 @@ platform UI, and **controls the repositories and their agent sessions** — spaw
 coordinating development sessions (claude/codex, through an adapter seam) one per domain-owning
 repository. Built on the family's desktop runtime sibling, consumed at a released version (D22).
 
+## Installing it (2026-09-22)
+
+`npm run publish:desktop -- --to <folder> --service` publishes the application: one
+`daoris-desktop.exe` at the folder's root, the service host with its bundle under `app/`, the
+window's own state in `data/` once it has run, and an `INSTALLED.md` saying so. It runs against the
+real `~/.daoris`, so **starting it starts the driver loop**. The publish refuses a folder it did not
+write; `--beside` installs next to whatever is there — the repositories it drives, typically — and
+still refuses to write over a name it did not write. `npm run desktop -- run --install <folder>`
+starts that install with the debug port attached, so the instruments below reach it.
+`docs/2026-09-22-first-deployment-case-study.md` is what deploying found, and `docs/FIX-LOG.md`
+what deploying again found.
+
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
 Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the
