@@ -666,6 +666,31 @@ public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adap
     /// <summary>Every adapter this build has, in a stable order — what a roster enumerates.</summary>
     public IReadOnlyList<string> Names => [.. adapters.Keys.OrderBy(k => k, StringComparer.Ordinal)];
 
+    /// <summary>The plugin a harness came from (D64), or null for one this build carries.</summary>
+    public string? DeclaredBy(string name) =>
+        adapters.TryGetValue(name, out var adapter) && adapter is DeclaredAcpAdapter declared
+            ? declared.Plugin
+            : null;
+
+    /// <summary>
+    /// This set plus every harness the catalogue's contributing plugins declare (D64 §3). The
+    /// catalogue has already refused any name this set carries, so nothing here can be replaced —
+    /// a plugin adds, and the built-in set is exactly what it was.
+    /// </summary>
+    public AdapterSet WithPlugins(PluginCatalog catalog)
+    {
+        var joined = new Dictionary<string, ISessionAdapter>(adapters, StringComparer.OrdinalIgnoreCase);
+        foreach (var plugin in catalog.Contributing)
+        {
+            foreach (var harness in plugin.Manifest.Harnesses)
+            {
+                joined.TryAdd(harness.Name, new DeclaredAcpAdapter(harness, plugin.Manifest.Id));
+            }
+        }
+
+        return new AdapterSet(joined);
+    }
+
     public ISessionAdapter Resolve(string name)
     {
         if (adapters.TryGetValue(name, out var adapter)) return adapter;

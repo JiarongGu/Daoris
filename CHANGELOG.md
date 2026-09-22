@@ -9,7 +9,7 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Fourteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Fifteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
@@ -23,9 +23,10 @@ The first version: doctrine that installs, is checked, and flows back.
   registry without touching a file; `import` registers a folder's subdirectories at once; `remote`
   edits the machine's map of one deployment per workspace, talking to nothing and never printing a key
   back; `harness` manages the agent tools sessions run on and the named credential profiles they run
-  as, spawning each harness's own installer and never handling a credential itself; and `driver` sets
-  what this machine drives. The last two **spawn**; the rest of the class only edits a file under your
-  profile.
+  as, spawning each harness's own installer and never handling a credential itself; `driver` sets
+  what this machine drives; and `plugin` lists, adds, removes and switches the machine's plugins,
+  loading no code from any of them. `harness` **spawns**; the rest of the class only edits files
+  under the Daoris home.
 - **`doctor` covers the one gap the lock cannot.** A repository's own rule duplicating a canonical one is
   local, and local is invisible by design — it surfaced on the first adoption only because someone read
   the generated index end to end. Advisory by construction: word overlap is crude, and a false positive
@@ -279,6 +280,14 @@ The first version: doctrine that installs, is checked, and flows back.
   than double-starting), carries the platform in its window — the same bytes a browser gets — and runs
   the driver loop in-process, re-reading the person's standing choices every tick: drivable and hold
   per repository, stop a running session, all through the platform's own session-control surface.
+- **A plugin is a folder that declares, and may speak** (D64). Under the home's `plugins/<id>/`, a
+  `plugin.json` names what a plugin declares — configurations of the ACP door, so a fifth harness
+  arrives as a file — and what it speaks. The catalogue reads the API version before anything else,
+  refuses a newer one naming both numbers, lists a broken manifest with its problem rather than
+  crashing, and refuses a harness name this build carries or an earlier plugin declared, naming both
+  sides. `daoris plugin list|add|remove|enable|disable`: an add replaces the install wholesale and
+  leaves `.data/<id>` alone; a remove names the data folder rather than deleting it; disabled is a
+  row, never a rename. No code from a plugin loads into any host.
 - **The Machine view is a settings page of rows.** Each setting is a label, a one-line hint naming
   its terminal twin, and the control at the right; the paragraph that motivated it is on an info
   glyph. The home's path sits under the header, the driver's two dials share a card, and wiring a

@@ -14,6 +14,7 @@ import { commandImport, commandRetire } from './manage.ts';
 import { commandRemote } from './remotes.ts';
 import { commandHarness } from './toolchain.ts';
 import { commandDriver } from './driverconfig.ts';
+import { commandPlugin } from './plugins.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
@@ -69,12 +70,19 @@ const USAGE = `daoris <command> [options]
                          notify on|off             say so when a session parks,
                                                    or ends without you asking
                          cap <n> · adapter <name>
+  plugin [verb]        this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json):
+                         list                      each one, what it declares and
+                                                   speaks, why a refused one does not
+                         add <folder>              copy one in under its id
+                         remove <id>               take it out; what it kept stays
+                         enable|disable <id>       a row, never a rename
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
-  service, and no gate ever runs them. remote, harness and driver are management
-  too and reach no network — they edit files under the Daoris home ($DAORIS_HOME,
-  the installed application's own data folder; nothing lives under your profile),
-  and harness spawns each harness's own tooling. Every doctrine command is offline.
+  service, and no gate ever runs them. remote, harness, driver and plugin are
+  management too and reach no network — they edit files under the Daoris home
+  ($DAORIS_HOME, the installed application's own data folder; nothing lives under
+  your profile), and harness spawns each harness's own tooling. Every doctrine
+  command is offline.
 
 Options:
   --dry-run            print the plan; write nothing
@@ -107,6 +115,7 @@ const commands: Record<string, (args: CommandArgs) => ExitCode | Promise<ExitCod
   remote: commandRemote,
   harness: commandHarness,
   driver: commandDriver,
+  plugin: commandPlugin,
   analyze: commandAnalyze,
 };
 

@@ -107,7 +107,11 @@ public sealed record HarnessToolchain(
     string? Package = null,
     string? AccountOf = null,
     bool ProfileMustExist = false,
-    string? TrustFile = null)
+    string? TrustFile = null,
+    // A harness with no version question (a plugin-declared one, D64) is asked whether it is THERE
+    // rather than run: an ACP agent started with no arguments waits on its stdin, and twenty seconds
+    // of that per roster refresh is not a probe, it is a stall.
+    bool ProbeByPresence = false)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -580,8 +584,10 @@ public static class HarnessProbe
             }
         }
 
-        var version = await AskAsync(resolved, toolchain.VersionArguments, profileHome: null, toolchain, ct)
-            .ConfigureAwait(false);
+        var version = toolchain.ProbeByPresence
+            ? (Ran: resolved.Count > 0 && CommandPresence.Resolvable(resolved[0]), Output: "", Problem: (string?)null)
+            : await AskAsync(resolved, toolchain.VersionArguments, profileHome: null, toolchain, ct)
+                .ConfigureAwait(false);
 
         var present = version.Ran;
         var profiles = new List<ProfileReport>();

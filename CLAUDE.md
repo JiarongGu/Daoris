@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fourteen commands, 294 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fifteen commands, 312 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 275, `Daoris.Devkit` 59, and the
 driver 303. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
@@ -149,14 +149,14 @@ risk, **authorship** was.
   it — one exe at the root, binaries under `app/`, **the Daoris home in `data/`**; `--beside` when
   the folder already holds the repositories it drives — and **starting it starts the driver loop**.
   🔴 **Nothing of Daoris's lives under the user profile** (**D63**): `DAORIS_HOME` is the one seam,
-  the install sets it for itself and once for the account, and with none set the writers **refuse**.
+  set by the install for itself and once for the account; with none set the writers **refuse**.
   `docs/2026-09-22-first-deployment-case-study.md` is the first thing to read before touching the
   desktop: four defects were invisible from inside the workspace, three *because* of what the
   workspace provides. **It has a gate now** (DEPLOY2 → **D60**). 🔴 **Stop a running
   shell before building** — an orphaned host holds the build's own assemblies.
-- **Extension is three declarative seams, never a plugin runtime** (ARCH1,
-  `docs/2026-09-22-plugin-design-study.md`): a canon pack, a `daoris.gates.json` row, and speaking
-  **ACP**. A pack declares the canon it needs (`apiVersion`), checked before a file is planned.
+- **A plugin is a folder that declares, and may speak** (**D64**, `docs/2026-09-23-plugin-design.md`):
+  a manifest under `plugins/`, a declared harness on the ACP door, behaviour spoken over a wire —
+  **never code loaded into a host**, no view, no registry.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

@@ -3865,3 +3865,26 @@ than only on one that happened to have run `publish:service --install`.
 meet at a *location both can find*, and a variable is one: the desktop names it, the terminal reads
 it. What was being defended was the profile directory, and the profile directory was only ever the
 place the variable had not been invented yet.
+
+## PLUG4 — the catalogue and a declared harness (2026-09-23)
+
+- [x] **PLUG4 — the catalogue and a declared harness.** `<home>/plugins/<id>/plugin.json` read by
+  both twins (the driver's `PluginCatalog`, the CLI's `plugins.ts`): `apiVersion` before anything
+  else, `plugins.json`'s disabled list, a conflict refused naming both sides. `daoris plugin
+  list|add|remove|enable|disable`. A plugin's `harnesses` row becomes a configuration of the ACP
+  door in `AdapterSet`, so `harness list` shows it and a session can run on it.
+
+✅ **done 2026-09-23** — the first slice of D64. Two twins sharing no code read the same folder by
+four rules each carries a test for: the version before anything else (a newer one refused naming
+both numbers, a non-integer malformed rather than old), a broken manifest a named problem never a
+crash, a conflict refused before anything loads naming both sides (a name this build carries, or one
+an earlier plugin by id declared), and disabled a row never a rename. `AdapterSet.WithPlugins` adds a
+`DeclaredAcpAdapter` per contributing harness — the ACP door configured from a file, with the
+manifest's posture or null (ACP3), the profile variable that makes an account, and the toolchain rows
+the roster needs. 🔴 **A declared harness with no version question is probed by presence, never by
+running it**: an ACP agent started bare waits on its stdin, and the probe's twenty-second patience
+per roster refresh would have been a stall — `HarnessToolchain.ProbeByPresence` asks the file or
+`PATH` instead. `${plugin}` in a command is the install folder, because a plugin cannot work that out
+for itself (the neighbour's SDK says so in its own words). `add` replaces the install wholesale and
+leaves `.data/<id>` alone; `remove` names the data folder rather than deleting it. No code from a
+plugin loads anywhere. Gates: verify (312), driver 325, modules 91, family 181/181.

@@ -424,13 +424,22 @@ both are the owner's.**
   SDK rather than the CLI's trust flow, so it may not have the problem at all, and one driven run
   answers it.
 
-### Plugins — what the study left (owner, 2026-09-22 → ARCH1)
+### Plugins — a folder that declares, and may speak (owner, 2026-09-23 → D64)
 
-`docs/2026-09-22-plugin-design-study.md` is the contract. **PLUG1 and PLUG3 landed 2026-09-22** and
-are in the archive — a pack declares the canon it needs, and the README names all three seams.
-**PLUG2 is the one left, and it is a decision.** **Two standing decisions are NOT reopened by it**:
-no adapter registry (D23/D24/TOOL5 — the ACP door is already that answer, and a protocol beats a
-binary API), and no plugin runtime for the surface (D52).
+`docs/2026-09-23-plugin-design.md` is the contract; `docs/2026-09-22-plugin-design-study.md` the
+study it grew from (PLUG1 and PLUG3 are in the archive). **Two standing decisions are NOT reopened**:
+no adapter registry (D23/D24/D57 — a declared harness is a file on one machine, and the ACP door is
+the seam), and no plugin runtime for the surface (D52). **No code loads into a host, ever.**
+
+- [ ] **PLUG5 — the hook wire.** A hook process per enabled plugin, started and stopped with the
+  loop; `initialize`, `quest/consider` as a fail-closed waterfall whose hold is the consideration's
+  reason, `session/ended` contained. Proven by a stub hook plugin in the family rehearsal — one
+  quest held with a sentence, one ending observed, the plugin stopped with the loop.
+- [ ] **PLUG6 — the Plugins card and the roster's provenance.** The Machine view lists plugins as
+  rows (name, what it declares, its problem if refused, its switch), and a declared harness carries
+  the plugin it came from.
+- [ ] ⏸ **PLUG7 — service-side points** (held): the same wire reaches the knowledge service when a
+  plugin somebody writes asks for a point there.
 
 - [ ] **PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
   ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest

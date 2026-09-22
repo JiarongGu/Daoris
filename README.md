@@ -54,12 +54,13 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
 | `status` | Packs, versions, drift, local files, and what a pending update would change; `--json` for an agent |
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
-| `connect` | Registers this repo with a knowledge service — what it owns, what it accepts, and (with `--workspace`) which circle it shares within |
-| `retire` | Takes a repository off this machine's registry. **Ends the registration only** — no file, history or doctrine is ever touched |
-| `import` | Registers a folder's subdirectories in one go. Safe to re-run, and it never re-points anyone's workspace |
-| `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits a file under the Daoris home and talks to nothing** |
-| `harness` | The agent tools sessions run on, and the accounts they run as: `list`, `install`/`update`/`login <harness>`, `profile list\|add\|remove\|default …`. **Spawns each harness's own tooling; never handles a credential** |
+| `connect` | Registers this repo with a knowledge service: what it owns and accepts, and (`--workspace`) its circle |
+| `retire` | Takes a repository off this machine's registry; **no file, history or doctrine is touched** |
+| `import` | Registers a folder's subdirectories in one go; safe to re-run, and it never re-points a workspace |
+| `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits one file under the home; talks to nothing** |
+| `harness` | Agent tools and the accounts they run as: `list`, `install`/`update`/`login <harness>`, `profile list\|add\|remove\|default …`. **Spawns each harness's own tooling; never handles a credential** |
 | `driver` | What this machine drives: `list`, `drive`/`undrive`, `hold`/`resume`, `cap <n>`, `adapter <name>`. **Edits one file under the Daoris home** |
+| `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
@@ -199,18 +200,19 @@ where the file came from and to use `daoris upstream`; the lock's hash catches t
 
 ## Extending it
 
-Daoris has **no plugin runtime** and does not want one. It has three seams, each a *declaration*
-rather than code, so none can break the tool that reads it:
+Daoris loads **no code into any host**, and has four seams, each a *declaration* or a *wire*, so none
+can break the tool that reads it:
 
 | To add | Write |
 |---|---|
 | **Doctrine** for a stack | a pack — `canon/packs/<name>/pack.json` + its tiers |
 | **A gate** | a row in `daoris.gates.json` |
 | **A harness** to drive sessions on | nothing — speak the **Agent Client Protocol** |
+| **A plugin** on one machine | a folder under the home's `plugins/` with a `plugin.json` (D64): it *declares* ACP-door configurations and may *speak* from a process of its own |
 
-A pack declares the canon it needs (`"apiVersion"`), checked before a file is planned. The harness
-seam is a protocol, not a registry: an ACP tool is drivable with no Daoris code.
-`docs/2026-09-22-plugin-design-study.md` has the reasoning and what was declined.
+A pack and a plugin each declare the API they need (`"apiVersion"`), read first. The harness seam is
+a protocol, not a registry; a plugin is a folder, not a catalogue. `docs/2026-09-23-plugin-design.md`
+is the contract.
 
 ## Beyond the CLI: the service, the platform, the driver
 
@@ -220,18 +222,15 @@ what each repository owns and accepts — and carries **quests**: how one reposi
 work instead of reaching in. **`Daoris.Web`** is the platform over it — knowledge, quests and projects
 in one window, with doctrine read-only everywhere. **`Daoris.Desktop`** is the driver (D45): the
 desktop shell hosts the local service, carries the same platform bundle, and runs the loop that turns
-the quest queue into an execution queue — spawning a fresh agent session per open quest, one per
-repository, onto a clean tree only; the spawned session claims its own quest, so driven and outside
-work are indistinguishable at the quest layer. The same HTTP host in **shared mode** is the team
+the quest queue into an execution queue — a fresh agent session per open quest, one per repository,
+onto a clean tree, claiming its own quest so driven and outside work are indistinguishable. The same
+HTTP host in **shared mode** is the team
 remote (D47): every route gated by minted per-person per-machine keys, fed by each desktop's sync
-loop, never required by anything local. See `src/Daoris.Service/README.md`, `src/Daoris.Web/README.md`
-and `src/Daoris.Desktop/README.md`.
+loop, never required by anything local. Each artefact's own README carries the rest.
 
 **Worked example:** [`examples/`](examples/README.md) is a two-project family — an engine and a game —
-and `npm run rehearse:family` drives the whole arrangement through the real artefacts: adoption,
-registration, a quest's full life, knowledge crossing projects, a restart losing nothing, a quest
-driven to done by the driver's stub session, and a two-machine remote crossing — all with no model in
-the gate.
+and `npm run rehearse:family` drives the whole arrangement through the real artefacts — adoption,
+registration, a quest's full life, a driven session, a two-machine remote — with no model in the gate.
 
 ## Developing Daoris
 
