@@ -24,7 +24,7 @@ prompt with a JSON-RPC error, which the driver concludes as a failed session in 
 
 **Verify.** `npm run rehearse:family` 192/192, with phase 18's two quests both driven over the stub.
 
-**Commit.** pending
+**Commit.** `77e1458`
 
 ## The testbed's own connector held every testbed quest (2026-09-23)
 
