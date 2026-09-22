@@ -36,7 +36,7 @@ draws the same line, and the family rehearsal holds both halves with the stub ha
 **Verify.** Driver, modules, CLI and roster tests, each seen red first. On the install: the own
 row logged in; *work* added, its hint under it, Forget → row and directory gone.
 
-**Commit.** _pending_
+**Commit.** `adeb520`
 
 ## The roster listed a fixture as a tool, and spoke the runtime's words (2026-09-23)
 
