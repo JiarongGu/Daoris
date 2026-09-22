@@ -353,6 +353,93 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>Detection is free and read-only (D49 §4) — the roster answers with no service at all.</summary>
+    /// <summary>
+    /// The plugins (D64) as the page reads them: the same catalogue the driver reads each tick, each
+    /// with what it declares and speaks on, and the two doors' switch over the same row.
+    /// </summary>
+    [Fact]
+    public async Task The_plugin_catalogue_is_answered_and_the_switch_edits_the_same_row_a_terminal_does()
+    {
+        var folder = Path.Combine(Home, "plugins", "acme.gate");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.gate", "name": "Acme gate", "version": "1.2.0", "description": "Holds quests overnight.",
+              "harnesses": [ { "name": "acme-agent", "command": ["${plugin}/agent.mjs"] } ],
+              "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider"] } }
+            """);
+        var broken = Path.Combine(Home, "plugins", "future");
+        Directory.CreateDirectory(broken);
+        File.WriteAllText(Path.Combine(broken, "plugin.json"), """{ "id": "future", "apiVersion": 99 }""");
+        var module = Module();
+
+        var answered = await AnswerAsync(module, "PLUGINS");
+
+        Assert.Equal(Path.Combine(Home, "plugins"), answered.GetProperty("folder").GetString());
+        var plugins = answered.GetProperty("plugins").EnumerateArray().ToList();
+        Assert.Equal(2, plugins.Count);
+        var gate = plugins.Single(p => p.GetProperty("id").GetString() == "acme.gate");
+        Assert.Equal("Acme gate", gate.GetProperty("name").GetString());
+        Assert.Equal("1.2.0", gate.GetProperty("version").GetString());
+        Assert.True(gate.GetProperty("enabled").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, gate.GetProperty("problem").ValueKind);
+        Assert.Equal(["acme-agent"], gate.GetProperty("harnesses").EnumerateArray().Select(h => h.GetString()!).ToArray());
+        Assert.Equal(["quest/consider"], gate.GetProperty("points").EnumerateArray().Select(p => p.GetString()!).ToArray());
+        // No loop is running here, so nothing is up — and the page must be told so rather than guess.
+        Assert.False(gate.GetProperty("running").GetBoolean());
+        Assert.Equal(folder, gate.GetProperty("folder").GetString());
+        // A refused plugin is listed WITH its sentence, and contributes nothing.
+        var future = plugins.Single(p => p.GetProperty("id").GetString() == "future");
+        Assert.Contains("99", future.GetProperty("problem").GetString());
+        Assert.Empty(future.GetProperty("harnesses").EnumerateArray());
+
+        // The switch: a row in the same file `daoris plugin disable` writes, never a rename.
+        var off = await AnswerAsync(module, "PLUGIN_ACTION", new { id = "acme.gate", action = "disable" });
+        Assert.Equal("disable", off.GetProperty("action").GetString());
+        Assert.Contains("acme.gate", File.ReadAllText(Path.Combine(Home, "plugins.json")));
+        Assert.True(Directory.Exists(folder));
+        var again = await AnswerAsync(module, "PLUGINS");
+        Assert.False(again.GetProperty("plugins").EnumerateArray()
+            .Single(p => p.GetProperty("id").GetString() == "acme.gate").GetProperty("enabled").GetBoolean());
+
+        await AnswerAsync(module, "PLUGIN_ACTION", new { id = "acme.gate", action = "enable" });
+        Assert.DoesNotContain("acme.gate", File.ReadAllText(Path.Combine(Home, "plugins.json")));
+
+        // Remove takes the install folder and NAMES the data folder, which stays.
+        var data = Path.Combine(Home, "plugins", ".data", "acme.gate");
+        Directory.CreateDirectory(data);
+        var removed = await AnswerAsync(module, "PLUGIN_ACTION", new { id = "acme.gate", action = "remove" });
+        Assert.Equal(data, removed.GetProperty("data").GetString());
+        Assert.False(Directory.Exists(folder));
+        Assert.True(Directory.Exists(data));
+
+        // An id nobody has, and an action this build lacks, are refusals with the page's own codes.
+        Assert.Contains("PLUGIN_UNKNOWN", await RefusalAsync(module, "PLUGIN_ACTION", new { id = "nobody", action = "enable" }));
+        Assert.Contains("PLUGIN_ACTION_UNKNOWN", await RefusalAsync(module, "PLUGIN_ACTION", new { id = "future", action = "explode" }));
+    }
+
+    /// <summary>A declared harness is on the roster with the plugin it came from beside it (D64).</summary>
+    [Fact]
+    public async Task A_declared_harness_is_on_the_roster_naming_the_plugin_it_came_from()
+    {
+        var folder = Path.Combine(Home, "plugins", "acme.gate");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.gate", "harnesses": [ { "name": "acme-agent", "command": ["${plugin}/agent.mjs"], "profileVariable": "ACME_HOME" } ] }
+            """);
+        File.WriteAllText(Path.Combine(folder, "agent.mjs"), "// never run by a probe\n");
+
+        var roster = await AnswerAsync(Module(), "HARNESSES");
+
+        var rows = roster.GetProperty("harnesses").EnumerateArray().ToList();
+        var declared = rows.Single(h => h.GetProperty("harness").GetString() == "acme-agent");
+        Assert.Equal("acme.gate", declared.GetProperty("plugin").GetString());
+        Assert.Equal("acp", declared.GetProperty("wire").GetString());
+        // Probed by presence: the file is there, so it is present, and nothing was started to say so.
+        Assert.True(declared.GetProperty("present").GetBoolean());
+        // The build's own carry no plugin.
+        Assert.Equal(JsonValueKind.Null, rows.Single(h => h.GetProperty("harness").GetString() == "claude-code").GetProperty("plugin").ValueKind);
+    }
+
     [Fact]
     public async Task The_harness_roster_answers_this_machine_s_toolchains()
     {

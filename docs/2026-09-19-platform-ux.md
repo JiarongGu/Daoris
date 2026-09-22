@@ -178,8 +178,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 - **Machine** (desktop only) — the home's path under the header, then cards that are *sections of
   one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,
   the wired rows, *Wire a workspace* behind a press), Agent tools (one row per tool, its accounts
-  leading, its ways in beneath), and usage. Every setting is a `SettingRow`; its terminal twin is
-  the hint and its reason is the glyph.
+  leading, its ways in beneath — a declared door wearing the plugin it came from), usage, and
+  Plugins (a row per folder: what it declares and speaks on, running or off, the driver's own
+  sentence under a refused one, the switch and Remove). Every setting is a `SettingRow`; its
+  terminal twin is the hint and its reason is the glyph.
 
 ## 6. Accessibility
 

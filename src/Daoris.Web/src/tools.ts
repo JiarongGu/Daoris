@@ -36,6 +36,8 @@ export interface ToolDoor {
   ownLogin?: string | null;
   /** Which circles run this door as which account (D49 §4). */
   workspaceDefaults?: { workspace: string; profile: string }[];
+  /** The plugin this door was declared by (D64), or null for one the build carries. */
+  plugin?: string | null;
 }
 
 /** One tool, with every door onto it and the one account list they share. */

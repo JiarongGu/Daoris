@@ -86,7 +86,22 @@ public sealed class DriverLoop(
     /// what is installed and log a profile in while the host is still coming up — which is exactly the
     /// moment a machine being set up has the question.
     /// </remarks>
-    public HarnessRoster Harnesses { get; } = new(AdapterSet.Built());
+    public HarnessRoster Harnesses { get; } = new(WithPlugins(AdapterSet.Built()));
+
+    /// <summary>
+    /// The build's adapters plus whatever the home's plugins declare (D64) — read at construction so
+    /// the roster a person opens before the loop's first tick already knows a declared harness; every
+    /// tick re-reads the catalogue and hands the roster the live set.
+    /// </summary>
+    private static AdapterSet WithPlugins(AdapterSet built) =>
+        built.WithPlugins(PluginCatalog.Load(
+            Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!, built.Names));
+
+    /// <summary>The plugins that speak (D64): their processes live with this loop and stop with it.</summary>
+    private HookSet? _hooks;
+
+    /// <summary>Which plugins have a hook process up right now, by id — what the Plugins card shows as running.</summary>
+    public IReadOnlyList<string> RunningPlugins => _hooks?.Running ?? [];
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
@@ -167,15 +182,19 @@ public sealed class DriverLoop(
         // (so one lock and one "stop" reach both kinds), the same console buffer.
         // …and the same harness roster, so one probe serves both doors and a login the person just
         // did is seen by whichever of them asks next.
-        Chat = new ChatRunner(service, AdapterSet.Built(), homeDirectory, Processes, Output, Harnesses);
+        Chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses);
         Service = service;
+
+        // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
+        // a session's lines and a harness action's lines land in, readable only over this bridge.
+        _hooks = new HookSet(homeDirectory, Output);
 
         // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.
         var attention = new AttentionWatch();
         string? lastConsidered = null;
 
-        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage);
+        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks);
         await _watch.RunAsync(
             async (report, ticked) =>
             {
@@ -237,6 +256,22 @@ public sealed class DriverLoop(
         catch (AggregateException)
         {
             // Cancellation surfacing as it should; the record writes ride an unbound token inside.
+        }
+
+        // The plugins' processes go with the loop (D64 §4, rule 3): registrations are effects, and
+        // the effect ends here. Bounded per plugin by the set itself; a plugin that will not leave is
+        // ended rather than waited for.
+        var hooks = Interlocked.Exchange(ref _hooks, null);
+        if (hooks is not null)
+        {
+            try
+            {
+                hooks.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(10));
+            }
+            catch (AggregateException)
+            {
+                // A plugin that failed while leaving is a plugin that has left.
+            }
         }
     }
 

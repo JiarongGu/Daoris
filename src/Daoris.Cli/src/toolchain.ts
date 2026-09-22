@@ -34,6 +34,9 @@ import { flagValue } from './args.ts';
 import { DaorisError } from './errors.ts';
 import { writeTextAtomic } from './fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
+// A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
+// `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
+import { readPlugins, resolvable } from './plugins.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -654,6 +657,30 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         write(
           `  ${''.padEnd(14)} ${profile.name.padEnd(16)} ${profile.login.padEnd(8)}`
           + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
+      }
+    }
+
+    // The harnesses this machine's plugins declare (D64): configurations of the ACP door, listed
+    // beside the build's own with the plugin they came from. One with no version question is asked
+    // whether it is THERE rather than run, the same rule the driver's roster applies — an ACP agent
+    // started bare waits on its stdin.
+    for (const plugin of readPlugins(home).contributing) {
+      for (const harness of plugin.manifest.harnesses) {
+        write('');
+        const present = harness.versionArguments
+          ? probe(harness.name, {
+            binary: harness.command,
+            version: harness.versionArguments,
+            profileVariable: harness.profileVariable ?? '',
+            ...(harness.install ? { install: harness.install } : {}),
+            ...(harness.package ? { package: harness.package } : {}),
+            ...(harness.accountOf ? { accountOf: harness.accountOf } : {}),
+          }, home, settings)
+          : { present: resolvable(harness.command[0]!), version: 'present (no version question declared)', problem: `\`${harness.command[0]}\` is not there`, profiles: [] };
+        write(`  ${harness.name.padEnd(14)} ${present.present ? present.version : `absent — ${present.problem}`}`
+          + `  (declared by plugin \`${plugin.manifest.id}\`)`);
+        const existing = profiles(home, harness.name);
+        write(`  ${''.padEnd(14)} ${existing.length > 0 ? `profiles: ${existing.join(', ')}` : 'no profiles — sessions run in the harness\'s own configuration home'}`);
       }
     }
 

@@ -242,11 +242,11 @@ the traps that are not in any contract, because they were found rather than desi
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 294 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 313 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (275),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (278),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (303), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (84), `npm run rehearse:family` (181/181), `npm run test:web` (498 vitest + 14 Playwright),
+  (339), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (93), `npm run rehearse:family` (192/192), `npm run test:web` (507 vitest + 14 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (36/36), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -431,15 +431,8 @@ study it grew from (PLUG1 and PLUG3 are in the archive). **Two standing decision
 no adapter registry (D23/D24/D57 — a declared harness is a file on one machine, and the ACP door is
 the seam), and no plugin runtime for the surface (D52). **No code loads into a host, ever.**
 
-- [ ] **PLUG5 — the hook wire.** A hook process per enabled plugin, started and stopped with the
-  loop; `initialize`, `quest/consider` as a fail-closed waterfall whose hold is the consideration's
-  reason, `session/ended` contained. Proven by a stub hook plugin in the family rehearsal — one
-  quest held with a sentence, one ending observed, the plugin stopped with the loop.
-- [ ] **PLUG6 — the Plugins card and the roster's provenance.** The Machine view lists plugins as
-  rows (name, what it declares, its problem if refused, its switch), and a declared harness carries
-  the plugin it came from.
 - [ ] ⏸ **PLUG7 — service-side points** (held): the same wire reaches the knowledge service when a
-  plugin somebody writes asks for a point there.
+  plugin somebody writes asks for a point there. PLUG4–6 are in the archive.
 
 - [ ] **PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
   ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest

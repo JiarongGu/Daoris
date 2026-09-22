@@ -71,11 +71,18 @@ public static class Refusals
     /// </summary>
     public const string WindowUnknown = "WINDOW_UNKNOWN";
 
+    /// <summary>A plugin id this machine has no folder for (D64).</summary>
+    public const string PluginUnknown = "PLUGIN_UNKNOWN";
+
+    /// <summary>A plugin action this build does not have.</summary>
+    public const string PluginActionUnknown = "PLUGIN_ACTION_UNKNOWN";
+
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
         RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, DriverRefused,
         SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, WindowUnknown,
+        PluginUnknown, PluginActionUnknown,
     ];
 
     /// <summary>

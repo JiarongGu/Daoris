@@ -21,7 +21,10 @@ public sealed class DriverWatch(
     HarnessRoster? harnesses = null,
     // What sessions consumed (TOOL3). Null in the headless host for the same reason the console
     // buffer is: a record nobody reads is a file written for an audience that does not exist.
-    SessionUsage? usage = null)
+    SessionUsage? usage = null,
+    // The plugins that speak (D64), owned by whoever owns this loop and stopped with it; every tick
+    // reconciles them against the catalogue, so an edit between ticks takes effect at the next.
+    HookSet? hooks = null)
 {
     private CancellationTokenSource _pause = new();
 
@@ -59,7 +62,7 @@ public sealed class DriverWatch(
             try
             {
                 var report = await new Driver(
-                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage)
+                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks)
                     .TickAsync(ct).ConfigureAwait(false);
                 await onReport(report, config).ConfigureAwait(false);
             }

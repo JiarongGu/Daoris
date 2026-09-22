@@ -823,6 +823,16 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, HarnessReport> _seen =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The adapters this roster answers for — the build's, plus whatever plugins declare (D64).</summary>
+    public AdapterSet Adapters => adapters;
+
+    /// <summary>
+    /// Answer for a different set from now on — the built-in adapters plus the plugins a tick just
+    /// read. The probe cache is keyed by harness name and survives: a harness that was there before
+    /// is the same harness, and one that just arrived has simply not been asked yet.
+    /// </summary>
+    public void Use(AdapterSet live) => adapters = live;
+
     /// <summary>Where the wiring lives. The profile tree sits beside it.</summary>
     public string SettingsPath { get; } = settingsPath ?? HarnessSettings.ResolvePath();
 

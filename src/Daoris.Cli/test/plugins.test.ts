@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  API_VERSION, MANIFEST, RESERVED_HARNESSES, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
-  enablePlugin, pluginsRoot, readPluginState, readPlugins,
+  API_VERSION, MANIFEST, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
+  enablePlugin, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
 } from '../src/plugins.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
@@ -131,8 +131,20 @@ test('a harness this build carries is refused naming both sides', () => {
   const [entry] = readPlugins(fx.root).plugins;
   assert.match(entry!.problem!, /claude-code/);
   assert.match(entry!.problem!, /this build/);
-  assert.ok(RESERVED_HARNESSES.has('claude-code'));
-  assert.ok(RESERVED_HARNESSES.has('acp-stub'));
+  assert.ok(reservedHarnesses().has('claude-code'));
+  assert.ok(reservedHarnesses().has('acp-stub'));
+  fx.cleanup();
+});
+
+test('presence is asked of the file or PATH, never by running the command', () => {
+  const fx = makeFixture('plugins-presence');
+  const here = join(fx.root, 'agent.mjs');
+  writeFileSync(here, '// would wait on stdin forever if it were run');
+  assert.equal(resolvable(here), true);
+  assert.equal(resolvable(join(fx.root, 'gone.mjs')), false);
+  // `node` is on this machine's PATH — the tests are running on it.
+  assert.equal(resolvable('node'), true);
+  assert.equal(resolvable('no-such-program-daoris-ever-heard-of'), false);
   fx.cleanup();
 });
 

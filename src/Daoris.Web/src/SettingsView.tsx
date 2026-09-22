@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import { useRegistry } from './queries';
 import {
-  useDriver, useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useSetNotify,
-  useSetStrikes,
+  useDriver, useHarnessAction, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
+  useRemotes, useSetNotify, useSetStrikes,
   useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { SessionConsole } from './SessionConsole';
@@ -280,7 +280,106 @@ export function SettingsView({ notify }: { notify: Notify }) {
       </Card>
 
       <HarnessRoster notify={notify} />
+      <Plugins notify={notify} />
     </section>
+  );
+}
+
+/**
+ * This machine's plugins (D64): one row per folder under the home's `plugins/` — what it declares,
+ * what it speaks on, whether it is running, and why it contributes nothing when it does not.
+ *
+ * **Two doors, one folder** (D50): the switch is a row in `plugins.json` that `daoris plugin
+ * enable|disable` edits too, and Remove takes the install folder while naming what the plugin kept.
+ * **No plugin code runs in this page** — a plugin's word reaches the console under `plugin:<id>`.
+ */
+function Plugins({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const catalog = usePlugins();
+  const act = usePluginAction();
+  useErrorNotify(catalog.error, notify);
+
+  // Defensive about the shape, for SES1's reason: a shell older than this surface answers something
+  // else entirely to a question it has never heard, and the page must not go blank for it.
+  const plugins = Array.isArray(catalog.data?.plugins) ? catalog.data.plugins : null;
+  if (!catalog.data || !plugins) return null;
+
+  const run = (id: string, action: 'enable' | 'disable' | 'remove') => act.mutate({ id, action }, {
+    onSuccess: (result) => notify(t(
+      action === 'remove'
+        ? (result.data ? 'plugin.removedKept' : 'plugin.removed')
+        : action === 'enable' ? 'plugin.enabled' : 'plugin.disabled',
+      { id, data: result.data ?? '' })),
+    onError: (error: unknown) => notify(sentence(error), 'error'),
+  });
+
+  const what = (plugin: (typeof plugins)[number]) => {
+    const parts = [
+      plugin.harnesses.length > 0 ? t('plugin.declares', { harnesses: plugin.harnesses.join(', ') }) : null,
+      plugin.points.length > 0 ? t('plugin.speaks', { points: plugin.points.join(', ') }) : null,
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join('; ') : t('plugin.quiet');
+  };
+
+  return (
+    <Card className="mt-3.5">
+      <SectionTitle>{t('plugin.title')}</SectionTitle>
+      <SettingRow
+        label={t('plugin.title')}
+        hint={t('plugin.terminal')}
+        why={t('plugin.body')}
+        control={<span className="break-all font-mono text-small text-ink-faint">{catalog.data.folder}</span>}
+      />
+
+      {plugins.length === 0 ? (
+        <Prose className="mt-3 text-small">{t('plugin.none')}</Prose>
+      ) : plugins.map((plugin) => (
+        <SettingRow
+          key={plugin.id}
+          label={(
+            <span className="flex flex-wrap items-center gap-2">
+              <span>{plugin.name}</span>
+              {plugin.version && <span className="font-mono text-small text-ink-faint">{plugin.version}</span>}
+              {plugin.running && <Pill tone="done">{t('plugin.running')}</Pill>}
+              {!plugin.enabled && <Pill tone="neutral">{t('plugin.off')}</Pill>}
+            </span>
+          )}
+          hint={(
+            <span className="flex flex-col gap-0.5">
+              {/* A refused plugin declares nothing BECAUSE it was refused — saying "declares nothing"
+                  above the sentence that says why would be the same fact twice, the second time
+                  wrong. Its sentence stands alone beneath. */}
+              {!plugin.problem && <span>{what(plugin)}{plugin.description ? ` — ${plugin.description}` : ''}</span>}
+              <span className="truncate font-mono text-meta">{plugin.folder}</span>
+            </span>
+          )}
+          control={(
+            <>
+              <Button
+                variant="ghost"
+                disabled={act.isPending}
+                onClick={() => run(plugin.id, plugin.enabled ? 'disable' : 'enable')}
+              >
+                {t(plugin.enabled ? 'plugin.disable' : 'plugin.enable')}
+              </Button>
+              <Tip content={t('plugin.forgetTip')}>
+                <Button variant="ghost" disabled={act.isPending} onClick={() => run(plugin.id, 'remove')}>
+                  {t('plugin.forget')}
+                </Button>
+              </Tip>
+            </>
+          )}
+        >
+          {/* The driver's own sentence, verbatim — a version this build does not speak, a
+              conflict naming both sides, a manifest that would not parse. Content, not chrome. */}
+          {plugin.problem && (
+            <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+              {plugin.problem}
+            </p>
+          )}
+        </SettingRow>
+      ))}
+    </Card>
   );
 }
 
@@ -599,6 +698,9 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                 {harness.present
                   ? <span className="font-mono text-small text-ink-faint">{harness.version}</span>
                   : <span className="text-small text-ink-faint">{t('harness.absent')}</span>}
+                {/* Where a declared door came from (D64): the plugin's folder is where its command
+                    and its posture live, and a person asking "why is this here" is asking that. */}
+                {harness.plugin && <Chip>{t('harness.declaredBy', { plugin: harness.plugin })}</Chip>}
 
                 <span className="ml-auto flex gap-2">
                   {!harness.present && (

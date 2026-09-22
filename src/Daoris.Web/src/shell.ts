@@ -472,6 +472,57 @@ export const useHarnesses = () => {
 };
 
 /**
+ * This machine's plugins (D64): folders under the home's `plugins/`, each with what it declares,
+ * what it speaks on, whether its process is up, and why it contributes nothing when it does not.
+ *
+ * @remarks
+ * Shell-only for the usual reason — a plugin's folder is a machine path (D47 §4) — and read off
+ * the same catalogue the driver reads each tick, so what the page shows is what the loop has.
+ */
+export type PluginEntry = {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  /** The person's word (`plugins.json`), independent of whether the plugin is sound. */
+  enabled: boolean;
+  /** Why it contributes nothing, in the driver's own sentence; null when sound. */
+  problem: string | null;
+  /** The harnesses it declares — configurations of the ACP door. */
+  harnesses: string[];
+  /** The points it listens on, when it speaks. */
+  points: string[];
+  /** Whether its hook process is up right now. */
+  running: boolean;
+  folder: string;
+  data: string;
+};
+export type PluginCatalog = { folder: string; plugins: PluginEntry[] };
+
+export const usePlugins = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.plugins,
+    queryFn: () => call<PluginCatalog>('PLUGINS'),
+    enabled: isAvailable,
+  });
+};
+
+/** The screen's half of `daoris plugin enable|disable|remove` (D50): a row, or the folder gone with the data named. */
+export const usePluginAction = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' }) =>
+      call<{ id: string; action: string; data: string | null }>('PLUGIN_ACTION', action),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.plugins });
+      // A declared harness came or went with it, so the roster is asked again too.
+      void client.invalidateQueries({ queryKey: keys.harnesses });
+    },
+  });
+};
+
+/**
  * Install, update, or log a profile in — each by that harness's OWN mechanism.
  *
  * @remarks

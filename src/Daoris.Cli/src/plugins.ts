@@ -23,7 +23,7 @@ import {
   cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync,
   writeFileSync,
 } from 'node:fs';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
 import type { ExitCode } from './errors.ts';
 import { daorisHome, HOME_SENTENCE } from './home.ts';
@@ -45,10 +45,29 @@ const ID_SHAPE = /^[a-z0-9][a-z0-9.-]*$/;
 /**
  * The harness names this build carries, which a plugin may not declare. The toolchain table plus the
  * two gate stubs that have no toolchain — the same set the driver's `AdapterSet.Built()` names.
+ *
+ * A function rather than a constant: `toolchain.ts` imports this module for `harness list`, and this
+ * module imports its table — read at call time, the cycle costs nothing; read at load time, whichever
+ * module loaded second would see an empty table.
  */
-export const RESERVED_HARNESSES: ReadonlySet<string> = new Set([
-  ...Object.keys(TOOLCHAINS), 'stub', 'acp-stub', 'dsh',
-]);
+export function reservedHarnesses(): ReadonlySet<string> {
+  return new Set([...Object.keys(TOOLCHAINS), 'stub', 'acp-stub', 'dsh']);
+}
+
+/**
+ * Whether a command would start, without starting it — the twin of the driver's `CommandPresence`.
+ * A declared harness with no version question is asked this rather than run: an ACP agent started
+ * bare waits on its stdin.
+ */
+export function resolvable(command: string, env: Record<string, string | undefined> = process.env): boolean {
+  if (!command.trim()) return false;
+  if (isAbsolute(command) || command.includes('/') || command.includes('\\')) return existsSync(command);
+  const extensions = process.platform === 'win32'
+    ? ['', ...(env.PATHEXT ?? '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean)]
+    : [''];
+  const directories = (env.PATH ?? '').split(process.platform === 'win32' ? ';' : ':').filter(Boolean);
+  return directories.some((dir) => extensions.some((ext) => existsSync(join(dir, command + ext))));
+}
 
 export interface PluginHarness {
   name: string;
@@ -246,7 +265,7 @@ export function readManifest(folderName: string, folder: string): { manifest: Pl
  *
  * @param reserved the harness names this build carries; a plugin declaring one is refused naming both.
  */
-export function readPlugins(home: string, reserved: Iterable<string> = RESERVED_HARNESSES): PluginCatalog {
+export function readPlugins(home: string, reserved: Iterable<string> = reservedHarnesses()): PluginCatalog {
   const root = pluginsRoot(home);
   const plugins: PluginEntry[] = [];
   if (!existsSync(root)) return { plugins, contributing: [] };
@@ -369,7 +388,7 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
         throw new DaorisError(`${MANIFEST} in ${from}: ${problem} Nothing was copied.`);
       }
       for (const harness of manifest.harnesses) {
-        if (RESERVED_HARNESSES.has(harness.name)) {
+        if (reservedHarnesses().has(harness.name)) {
           throw new DaorisError(`plugin \`${manifest.id}\` declares harness \`${harness.name}\`, which this build already `
             + 'carries — a plugin adds a harness and never replaces one. Nothing was copied.');
         }
@@ -435,5 +454,3 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
   }
 }
 
-// `sep` is imported for the one place a path is displayed with the platform's own separator.
-void sep;

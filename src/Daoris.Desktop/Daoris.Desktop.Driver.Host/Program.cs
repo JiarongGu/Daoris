@@ -80,13 +80,17 @@ try
         Console.WriteLine($"driver: nothing is opted in — name repositories under \"drivable\" in {configPath}");
     }
 
+    // The plugins that speak (D64): their processes live as long as this host does, and are stopped
+    // with it. Their diagnostics have no console buffer here, so they go to stderr under their name.
+    await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"));
+
     if (once)
     {
-        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync).TickAsync());
+        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).TickAsync());
     }
     else if (untilIdle)
     {
-        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync).RunUntilIdleAsync())
+        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).RunUntilIdleAsync())
         {
             Print(report);
         }
@@ -103,7 +107,7 @@ try
         // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
         // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
         // below, which is this door's exit-2 contract.
-        await new DriverWatch(service, configPath, home, processes, sync).RunAsync(
+        await new DriverWatch(service, configPath, home, processes, sync, hooks: hooks).RunAsync(
             (report, ticked) =>
             {
                 Print(report, quietWhenIdle: true);

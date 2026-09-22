@@ -101,6 +101,19 @@ starts that install with the debug port attached, so the instruments below reach
 `docs/2026-09-22-first-deployment-case-study.md` is what deploying found, and `docs/FIX-LOG.md`
 what deploying again found.
 
+## Plugins (D64, 2026-09-23)
+
+A plugin is a folder under the home's `plugins/` with a `plugin.json` (`docs/2026-09-23-plugin-design.md`).
+The shell reads the catalogue when it starts and on every tick: a **declared harness** joins the
+roster and the adapter set as a configuration of the ACP door, and a plugin that **speaks** gets a
+process of its own, started with the loop and stopped with it. The driver asks those processes at
+its points — `quest/consider` before a start costs anything (a hold is the quest's own sitting
+reason, and a plugin that cannot decide holds too, naming itself), `session/ended` after — and
+every line one writes reaches the console under `plugin:<id>`, over the bridge and nowhere else.
+`daoris plugin list|add|remove|enable|disable` is the terminal door; the Machine view's Plugins
+card is the other — the same rows, the same `plugins.json`, Remove naming what a plugin kept.
+**No plugin code ever runs inside the shell, the host or the page.**
+
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
 Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the

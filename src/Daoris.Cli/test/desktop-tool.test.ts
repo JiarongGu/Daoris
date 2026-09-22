@@ -72,7 +72,12 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
 
   // Both host paths are pinned rather than redirected: their locators prefer an INSTALLED binary, so
   // an unnamed host means a scratch run silently uses the real machine's (ACP4 added the second).
-  const handled = new Set([...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST']);
+  // The plugin trio is WRITTEN into a hook process's environment and read by nothing here (D64 §4):
+  // a scratch run has nothing to redirect, because the driver is the one setting them.
+  const handled = new Set([
+    ...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST',
+    'DAORIS_PLUGIN_ID', 'DAORIS_PLUGIN_FOLDER', 'DAORIS_PLUGIN_DATA',
+  ]);
   const missed = [...found].filter((name) => !handled.has(name));
   assert.deepEqual(missed, [], `a scratch run would inherit ${missed.join(', ')} from the real machine`);
 });

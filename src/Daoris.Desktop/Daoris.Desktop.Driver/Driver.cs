@@ -10,8 +10,12 @@ namespace Daoris.Driver;
 /// The one fact that separates an interruption worth making from a toast telling somebody what they
 /// just pressed (design §4), and the driver is the only place that knows it.
 /// </param>
+/// <param name="Quest">The quest it served, for a listener that keys on the ask rather than the session (D64).</param>
+/// <param name="Adapter">The harness it ran on, as the record names it.</param>
+/// <param name="Account">The credential profile it ran as, or null for the harness's own home.</param>
 public sealed record SessionEnded(
-    string Session, string Repository, string State, bool ByPerson, string? Note = null);
+    string Session, string Repository, string State, bool ByPerson, string? Note = null,
+    string? Quest = null, string? Adapter = null, string? Account = null);
 
 /// <param name="Considerations">Every open quest, with its verdict and reason — the plan, printable.</param>
 /// <param name="Events">What actually happened this tick: sessions concluded, held, or refused.</param>
@@ -65,7 +69,11 @@ public sealed class Driver(
     HarnessRoster? harnesses = null,
     // What sessions consumed (TOOL3). Null where nobody is keeping the record — the family
     // rehearsal's headless driver, and every test that does not care.
-    SessionUsage? usage = null)
+    SessionUsage? usage = null,
+    // The plugins that speak (D64), shared across ticks like the process registry: their processes
+    // outlive a tick, and the tick asks them at its points. Null where no plugin is read at all,
+    // which is every test that does not care and nothing that runs on a machine.
+    HookSet? hooks = null)
 {
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.
@@ -74,6 +82,10 @@ public sealed class Driver(
     // The same sharing, for the same reason: a probe spawns a process, so the cache has to outlive
     // one tick or every quest would re-detect every harness. Per-instance when nobody passes one.
     private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
+
+    // The adapters this tick spawns with: the build's, plus whatever the plugins read this tick
+    // declare (D64 §3). Set once per tick, before any start is run.
+    private AdapterSet _adapters = adapters;
 
     // The worktree half of D51, beside the transcripts under the same home.
     private readonly SessionTrees _trees = new(home);
@@ -100,6 +112,17 @@ public sealed class Driver(
             foreach (var note in synced.Notes) events.Add($"held  {note}");
         }
 
+        // The plugins, read fresh each tick like the config (D64): a harness declared since the
+        // last look is spawnable now, a hook process disabled since is stopped now. The catalogue
+        // refuses a name this build carries before anything of that plugin is taken.
+        if (hooks is not null)
+        {
+            var catalog = PluginCatalog.Load(home, adapters.Names);
+            _adapters = adapters.WithPlugins(catalog);
+            _harnesses.Use(_adapters);
+            events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
+        }
+
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         var plan = Planner.Plan(snapshot, config);
         var progressed = false;
@@ -113,6 +136,30 @@ public sealed class Driver(
         var heldAt = new Dictionary<string, string>(StringComparer.Ordinal);
 
         var starts = plan.Where(c => c.Verdict == StartVerdict.Start).ToList();
+
+        // The plugins' say, BEFORE a start costs anything (D64 §4): the first hold in catalogue order
+        // is the quest's reason for sitting, exactly as a dirty tree or a missing binary would be —
+        // and a plugin that could not decide holds too, naming itself. Asked in plan order, one at a
+        // time, so two plugins' answers arrive in an order a person can predict.
+        if (hooks is not null && starts.Count > 0)
+        {
+            var allowed = new List<Consideration>();
+            foreach (var start in starts)
+            {
+                var decision = await hooks.ConsiderAsync(start, ct).ConfigureAwait(false);
+                if (decision.Allowed)
+                {
+                    allowed.Add(start);
+                    continue;
+                }
+
+                heldAt[start.Quest.Id] = decision.Reason!;
+                events.Add($"held  #{start.Quest.Id} → {start.Quest.To}: {decision.Reason}");
+            }
+
+            starts = allowed;
+        }
+
         var runs = starts.Select(async start =>
         {
             var (line, opened, ended, held) = await RunAsync(start, ct).ConfigureAwait(false);
@@ -125,6 +172,16 @@ public sealed class Driver(
             }
         });
         await Task.WhenAll(runs).ConfigureAwait(false);
+
+        // What ended, told to whoever listens — contained: nothing a plugin says here changes the
+        // record, which moved on the exit code and the quest before this line ran (D46 §4).
+        if (hooks is not null)
+        {
+            foreach (var ended in concluded)
+            {
+                events.AddRange(await hooks.EndedAsync(ended, ct).ConfigureAwait(false));
+            }
+        }
 
         return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded);
     }
@@ -217,7 +274,7 @@ public sealed class Driver(
         // Resolved defensively: an unknown adapter name is its own error with its own sentence,
         // reported where it already was, so this check simply does not run for one.
         HarnessToolchain? preflight = null;
-        try { preflight = adapters.Resolve(config.Adapter).Toolchain; } catch (DriverException) { }
+        try { preflight = _adapters.Resolve(config.Adapter).Toolchain; } catch (DriverException) { }
 
         if (preflight is { TrustFile: { Length: > 0 } trustFile })
         {
@@ -259,7 +316,7 @@ public sealed class Driver(
 
         try
         {
-            var adapter = adapters.Resolve(config.Adapter);
+            var adapter = _adapters.Resolve(config.Adapter);
             var target = new SessionTarget(
                 quest.Id, quest.Title, quest.Body, quest.From, quest.To, workTree, service.BaseUrl);
             var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
@@ -358,7 +415,8 @@ public sealed class Driver(
                 // that outranks the observation two lines above. Read once, used for both.
                 new SessionEnded(
                     sessionId, quest.To, conclusion.State,
-                    ByPerson: _processes.WasStopRequested(sessionId), conclusion.Note),
+                    ByPerson: _processes.WasStopRequested(sessionId), conclusion.Note,
+                    Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
                 null);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -383,7 +441,7 @@ public sealed class Driver(
             return (
                 $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
                 true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true),
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter),
                 null);
         }
         catch (Exception error) when (error is not OperationCanceledException)
@@ -402,7 +460,7 @@ public sealed class Driver(
             return (
                 $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
                 true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message),
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: config.Adapter),
                 null);
         }
         finally

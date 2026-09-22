@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 312 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 275, `Daoris.Devkit` 59, and the
-driver 303. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+**Built and proven; nothing published.** Fifteen commands, 313 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 278, `Daoris.Devkit` 59, and the
+driver 339. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -52,8 +52,8 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
 quest lock hardened into code, and the desktop's sync loop feeding up and mirroring down. **The family
-rehearsal gates all of it with no model, no account and no credential** (181/181) — it names its own
-phases when you run it, down to a quest carried to done over the ACP door.
+rehearsal gates all of it with no model, no account and no credential** (192/192) — it names its own
+phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
 **The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
 and `docs/task-archive.md` carry the rest. **The workspace is the unit of sharing** (WSP1) and is
@@ -149,7 +149,7 @@ risk, **authorship** was.
   it — one exe at the root, binaries under `app/`, **the Daoris home in `data/`**; `--beside` when
   the folder already holds the repositories it drives — and **starting it starts the driver loop**.
   🔴 **Nothing of Daoris's lives under the user profile** (**D63**): `DAORIS_HOME` is the one seam,
-  set by the install for itself and once for the account; with none set the writers **refuse**.
+  set by the install for itself and once for the account; unset, the writers **refuse**.
   `docs/2026-09-22-first-deployment-case-study.md` is the first thing to read before touching the
   desktop: four defects were invisible from inside the workspace, three *because* of what the
   workspace provides. **It has a gate now** (DEPLOY2 → **D60**). 🔴 **Stop a running
@@ -212,7 +212,7 @@ Run every command from the **workspace root**, not from a package directory.
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
   driver drive?" gate, since D47 the "does the remote cross?" gate, and since D48 the "does the
-  boundary hold?" gate. 180 checks over the example family, from both examples current and clean
+  boundary hold?" gate. 192 checks over the example family, from both examples current and clean
   through a quest's whole life, the workspace boundary refused naming both sides, two simulated
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to

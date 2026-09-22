@@ -265,6 +265,9 @@ public sealed class DriverModule : ModuleBase
                         // account; the second is a way in. The page groups on these two fields.
                         AccountOf = _loop.Harnesses.Toolchain(report.Adapter)?.AccountOf,
                         Wire = _loop.Harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
+                        // The plugin this harness came from (D64), or null for one this build carries
+                        // — shown beside it, so a person knows which folder to look in.
+                        Plugin = _loop.Harnesses.Adapters.DeclaredBy(report.Adapter),
                         // The profile HOME is a machine path, and this bridge is the one surface
                         // allowed to carry one (D47 §4) — the page renders it so a person can find
                         // the directory they were told Daoris owns.
@@ -345,6 +348,78 @@ public sealed class DriverModule : ModuleBase
                 // asks the tool again rather than answering from before.
                 await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
                 return new { Harness = harness, Action = action, ExitCode = code };
+            }
+
+            // This machine's plugins (D64): the catalogue as the driver reads it, each with what it
+            // declares, what it speaks on, whether it is running, and why it contributes nothing when
+            // it does not. Machine paths ride this bridge like every path here.
+            case "PLUGINS":
+            {
+                await Task.CompletedTask;
+                var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
+                var running = new HashSet<string>(_loop.RunningPlugins, StringComparer.Ordinal);
+                return new
+                {
+                    Folder = Path.Combine(_loop.Home, PluginCatalog.Folder),
+                    Plugins = catalog.Plugins.Select(plugin => new
+                    {
+                        plugin.Manifest.Id,
+                        plugin.Manifest.Name,
+                        plugin.Manifest.Version,
+                        plugin.Manifest.Description,
+                        plugin.Enabled,
+                        plugin.Problem,
+                        Harnesses = plugin.Manifest.Harnesses.Select(h => h.Name).ToArray(),
+                        Points = plugin.Manifest.Hooks?.Points ?? [],
+                        Running = running.Contains(plugin.Manifest.Id),
+                        plugin.Folder,
+                        plugin.Data,
+                    }).ToArray(),
+                };
+            }
+
+            // The screen's half of `daoris plugin enable|disable|remove` (D50): a row in
+            // `plugins.json`, or the install folder gone with the data folder named and kept.
+            case "PLUGIN_ACTION":
+            {
+                await Task.CompletedTask;
+                var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                var entry = PluginCatalog.Load(_loop.Home).Plugins
+                    .FirstOrDefault(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
+                    ?? throw Refusals.Because(
+                        Refusals.PluginUnknown, $"no plugin `{id}` on this machine.", ("id", id));
+
+                switch (action)
+                {
+                    case "enable":
+                        PluginState.Enable(_loop.Home, entry.Manifest.Id);
+                        break;
+                    case "disable":
+                        PluginState.Disable(_loop.Home, entry.Manifest.Id);
+                        break;
+                    case "remove":
+                        // The install folder goes; what the plugin kept is NAMED and stays — it is
+                        // the person's to throw away, the same judgement Forget makes for an account.
+                        Directory.Delete(entry.Folder, recursive: true);
+                        PluginState.Enable(_loop.Home, entry.Manifest.Id);
+                        break;
+                    default:
+                        throw Refusals.Because(
+                            Refusals.PluginActionUnknown,
+                            $"unknown plugin action '{action}' — one of: enable, disable, remove",
+                            ("action", action));
+                }
+
+                // The loop reconciles its hook processes against the catalogue each tick; asked to
+                // look now, so a plugin switched off stops before the person has finished reading.
+                _loop.Nudge();
+                return new
+                {
+                    Id = entry.Manifest.Id,
+                    Action = action,
+                    Data = Directory.Exists(entry.Data) ? entry.Data : null,
+                };
             }
 
             // What sessions consumed (TOOL3/D57 §4) — measured before it is managed.

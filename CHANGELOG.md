@@ -288,6 +288,19 @@ The first version: doctrine that installs, is checked, and flows back.
   sides. `daoris plugin list|add|remove|enable|disable`: an add replaces the install wholesale and
   leaves `.data/<id>` alone; a remove names the data folder rather than deleting it; disabled is a
   row, never a rename. No code from a plugin loads into any host.
+- **A plugin may speak.** A manifest's `hooks` row names a process and the points it listens on; the
+  driver starts it with the loop — in the plugin's own folder, its id, folder and data folder in the
+  environment — completes a versioned handshake over JSON-RPC on its stdio, asks it at the points,
+  and stops it with the loop. `quest/consider` is a fail-closed waterfall: the first hold in
+  catalogue order becomes the quest's own reason for sitting, and a plugin that answers late, wrongly
+  or not at all holds too, naming itself and the way out. `session/ended` is contained observation.
+  Every line a plugin writes lands on the console under `plugin:<id>`. Reconciled every tick, so a
+  plugin disabled between ticks is stopped at the next one. A plugin that only declares is never
+  started. The family rehearsal drives one: a declared harness a session runs on, a quest held with
+  the plugin's sentence, an ending kept in its data folder, and the switch from a terminal. The
+  Machine view's Plugins card is the other door: a row per plugin with what it declares and speaks
+  on, running or off, the driver's sentence under a refused one, the switch, and Remove naming what
+  the plugin kept; a declared harness on the roster wears the plugin it came from.
 - **The Machine view is a settings page of rows.** Each setting is a label, a one-line hint naming
   its terminal twin, and the control at the right; the paragraph that motivated it is on an info
   glyph. The home's path sits under the header, the driver's two dials share a card, and wiring a

@@ -3888,3 +3888,37 @@ per roster refresh would have been a stall — `HarnessToolchain.ProbeByPresence
 for itself (the neighbour's SDK says so in its own words). `add` replaces the install wholesale and
 leaves `.data/<id>` alone; `remove` names the data folder rather than deleting it. No code from a
 plugin loads anywhere. Gates: verify (312), driver 325, modules 91, family 181/181.
+
+## PLUG5, PLUG6 — a plugin may speak, and the Plugins card (2026-09-23)
+
+- [x] **PLUG5 — the hook wire.** A hook process per enabled plugin, started and stopped with the
+  loop; `initialize`, `quest/consider` as a fail-closed waterfall whose hold is the consideration's
+  reason, `session/ended` contained. Proven by a stub hook plugin in the family rehearsal — one
+  quest held with a sentence, one ending observed, the plugin stopped with the loop.
+- [x] **PLUG6 — the Plugins card and the roster's provenance.** The Machine view lists plugins as
+  rows (name, what it declares, its problem if refused, its switch), and a declared harness carries
+  the plugin it came from.
+
+✅ **done 2026-09-23** — the second and third slices of D64. `HookPeer` is the wire (JSON-RPC over
+the plugin process's stdio, the `AcpSession` framing with the roles reversed): a versioned
+handshake that takes the points the process *actually* listens on and refuses one beyond its
+manifest, `quest/consider` answered as a typed decision, `session/ended` as an acknowledgement,
+`shutdown` as the notice before the process is ended. `HookProcess` starts the plugin's program in
+its own folder with its id, folder and data folder in the environment — told, never guessed — and
+relays its stderr under `plugin:<id>`. `HookSet` is shared across ticks like the process registry:
+reconciled against the catalogue each tick (started, stopped, restarted on a manifest change; a
+start that failed is a line and is retried), asked as a **fail-closed waterfall** before any start
+costs anything — the first hold in catalogue order is the quest's own sitting reason, and a plugin
+that answers late, wrongly or not at all holds too, naming itself and `daoris plugin disable` as
+the way out — and told of endings, contained. Both hosts own one and stop it with the loop. The
+family rehearsal's phase 18 drives all of it with the ACP stub as a *declared* harness. 🔴 **It found
+the stub agent's own bug on the way**: a fixed answer file with fixed content left a second session
+with nothing to commit, and a turn that failed was never answered, so the driver waited on its
+timeout — a hang dressed as a session. Per-quest files and an error reply now.
+
+The Machine view's Plugins card is a `SettingRow` per plugin — name, version, running or off, what
+it declares and speaks on, the folder — with the driver's own sentence beneath a refused one, Turn
+on/off as the row `plugins.json` holds, and Remove naming what the plugin kept. A declared door
+wears a chip naming its plugin. `PLUGINS` and `PLUGIN_ACTION` on the bridge, two refusal codes in
+both catalogues, and the driver state's `plugin` per harness. Gates: verify (313), driver 339,
+modules 93, web 507 + 14, family 192/192, deploy 36/36.

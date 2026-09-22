@@ -457,6 +457,72 @@ describe('the machine settings surface', () => {
 });
 
 /**
+ * This machine's plugins (D64): one row per folder under the home's `plugins/`, the switch a row in
+ * the same file `daoris plugin enable|disable` edits, and Remove naming what the plugin kept. Every
+ * call lands on the bridge — a plugin's folder is a machine path — and none on the service.
+ */
+describe('the plugins card', () => {
+  const PLUGINS = {
+    folder: 'C:/somewhere/data/plugins',
+    plugins: [
+      {
+        id: 'acme.gate', name: 'Acme gate', version: '1.2.0', description: 'Holds quests overnight.',
+        enabled: true, problem: null, harnesses: ['acme-agent'], points: ['quest/consider'],
+        running: true, folder: 'C:/somewhere/data/plugins/acme.gate', data: 'C:/somewhere/data/plugins/.data/acme.gate',
+      },
+      {
+        id: 'future', name: 'future', version: '', description: '',
+        enabled: true, problem: 'needs plugin API 99, and this build speaks 1 — update Daoris, or use a plugin written for 1.',
+        harnesses: [], points: [], running: false,
+        folder: 'C:/somewhere/data/plugins/future', data: 'C:/somewhere/data/plugins/.data/future',
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'PLUGINS' ? PLUGINS : WIRING));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('lists each plugin with what it declares, what it speaks on, and the driver\'s sentence for a refused one', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('Acme gate')).toBeTruthy();
+    expect(screen.getByText(/declares acme-agent; speaks on quest\/consider/)).toBeTruthy();
+    expect(screen.getByText('running')).toBeTruthy();
+    // The refused plugin is listed WITH the driver's own sentence, verbatim.
+    expect(screen.getByText(/needs plugin API 99/)).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGINS', {});
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  it('the switch and Remove land on the bridge as the actions a terminal has', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+    const row = (await screen.findByText('Acme gate')).closest('div')!.parentElement!.parentElement!;
+
+    await userEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Turn off' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_ACTION', { payload: { id: 'acme.gate', action: 'disable' } });
+
+    await userEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Remove' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_ACTION', { payload: { id: 'acme.gate', action: 'remove' } });
+  });
+
+  it('a machine with no plugins says where one would go', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'PLUGINS' ? { folder: 'C:/somewhere/data/plugins', plugins: [] } : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText(/daoris plugin add/)).toBeTruthy();
+    expect(screen.getByText('C:/somewhere/data/plugins')).toBeTruthy();
+  });
+});
+
+/**
  * The toolchain roster (D49 §4, D50): which harnesses this machine has, and which accounts they hold.
  *
  * Shell-only for the sharpest reason yet — a profile HOME is a filesystem path (D47 §4) — so, like
@@ -624,6 +690,26 @@ describe('the harness roster', () => {
     const card = screen.getByText('Agent tools').closest('section, div')!;
     expect(within(card as HTMLElement).queryByLabelText(/token|password|credential/i)).toBeNull();
     expect(container.textContent).toContain('the tool stores itself');
+  });
+
+  /** A door a plugin declared says so beside its name (D64), and the build's own say nothing. */
+  it('a declared door names the plugin it came from', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [
+          ...ROSTER.harnesses,
+          {
+            harness: 'acme-agent', present: true, version: '(not asked)', problem: null, wire: 'acp',
+            machineDefault: null, pinned: null, managed: null, pinnable: false, profiles: [], plugin: 'acme.gate',
+          },
+        ],
+      }
+      : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('declared by plugin acme.gate')).toBeTruthy();
+    expect(screen.getAllByText(/declared by plugin/)).toHaveLength(1);
   });
 
   /** A shell older than this surface answers something else; the rest of the page must stand. */

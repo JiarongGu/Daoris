@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The rehearsal's ACP stub hung the driver on its second quest (2026-09-23)
+
+**Symptom.** The family rehearsal's new plugin phase (D64) drove a second quest over the ACP stub
+agent, and the driver sat until the gate's 90-second kill with the session record left `working`.
+The transcript ended at *"handler failed: Command failed: git … commit"* and *"the ACP agent's
+stream ended before it answered"*.
+
+**Root cause.** Two, in the fixture. The stub wrote one fixed file with fixed content, so the
+second session's tree had nothing to commit and `git commit` exited non-zero; and its
+`session/prompt` handler let that exception escape, so the prompt was never answered — the driver
+did what it should with an unanswered turn and waited on its own timeout. A turn that fails is
+still a turn, and a harness that crashes mid-turn exits; a stub that neither answered nor exited was
+a hang dressed as a session. It never showed while one quest a run rode the door.
+
+**Fix.** `tools/family-rehearsal.mjs`: the stub writes `acp-answer-<quest>.md` and answers a failed
+prompt with a JSON-RPC error, which the driver concludes as a failed session in seconds.
+
+**Verify.** `npm run rehearse:family` 192/192, with phase 18's two quests both driven over the stub.
+
+**Commit.** pending
+
 ## The testbed's own connector held every testbed quest (2026-09-23)
 
 **Symptom.** After D63 moved the installed hosts under the Daoris home, `tools/testbed.mjs` was

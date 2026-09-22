@@ -2064,7 +2064,9 @@ async function work(sessionId) {
   // A tool call, with its outcome — the structured boundaries the timeline needs, which the pipe
   // door could only have supplied by parsing this agent's stdout.
   update(sessionId, { sessionUpdate: 'tool_call', toolCallId: 't1', title: 'write', status: 'in_progress' });
-  writeFileSync('acp-answer.md', '# answered over ACP\\n\\nThe protocol door carried this quest.\\n');
+  // Per quest, because this agent answers more than one over a run — a fixed file with fixed content
+  // left the second session with nothing to commit, and a commit that failed left the turn hanging.
+  writeFileSync('acp-answer-' + id + '.md', '# answered over ACP\\n\\nThe protocol door carried quest ' + id + '.\\n');
   update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId: 't1', status: 'completed' });
 
   // The D37 boundary, asked ON THE WIRE: an outward-facing act the repository's own configuration
@@ -2128,8 +2130,15 @@ const handle = async (line) => {
       break;
     }
     case 'session/prompt': {
-      const stopReason = await work(frame.params?.sessionId ?? session);
-      send({ jsonrpc: '2.0', id: frame.id, result: { stopReason } });
+      // A turn that fails is ANSWERED as a failure, the way a real agent's would be: an unanswered
+      // prompt is a driver waiting on its timeout, which is a hang dressed as a session.
+      try {
+        const stopReason = await work(frame.params?.sessionId ?? session);
+        send({ jsonrpc: '2.0', id: frame.id, result: { stopReason } });
+      } catch (error) {
+        say('turn failed:', error.message);
+        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32000, message: error.message } });
+      }
       break;
     }
     case 'session/close':
@@ -2234,9 +2243,157 @@ check(
   acpLanded.out,
 );
 
-// -------------------------------------------------- 18. report
+// -------------------------------------------------- 18. a plugin that declares, and speaks
 
-section('18. Result');
+section('18. A plugin declares a harness and holds a quest with a sentence (D64)');
+
+// A plugin is a folder under the home (D63) with a manifest. This one does both things a plugin can
+// do: it DECLARES a harness — the ACP stub agent above, as a configuration of the door, so a session
+// runs on a harness this build never named — and it SPEAKS: a hook process that holds any quest whose
+// title says so, and writes down every ending it is told about. No code of it loads anywhere; the
+// driver starts it, asks it, and stops it.
+//
+// The driver's home is the directory its config sits in (the per-file override wins, D63), which in
+// this rehearsal is `scratch` — so the plugin lives there, and the CLI's two doors onto the same
+// folder are pointed there too, for this phase only.
+const PLUGIN_HOME = { DAORIS_HOME: scratch };
+const pluginFolder = join(scratch, 'plugins', 'rehearsal.gate');
+mkdirSync(pluginFolder, { recursive: true });
+writeFileSync(join(pluginFolder, 'plugin.json'), `${JSON.stringify({
+  id: 'rehearsal.gate',
+  apiVersion: 1,
+  name: 'Rehearsal gate',
+  version: '1.0.0',
+  description: 'Declares the stub agent as a harness, and holds any quest whose title says [hold].',
+  harnesses: [{ name: 'gate-agent', command: ['node', acpAgent] }],
+  hooks: { command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider', 'session/ended'] },
+}, null, 2)}\n`);
+writeFileSync(join(pluginFolder, 'hooks.mjs'), `
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { createInterface } from 'node:readline';
+
+const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\\n');
+const data = process.env.DAORIS_PLUGIN_DATA;
+mkdirSync(data, { recursive: true });
+console.error('gate: up as ' + process.env.DAORIS_PLUGIN_ID);
+
+const lines = createInterface({ input: process.stdin });
+for await (const line of lines) {
+  const frame = JSON.parse(line);
+  if (frame.method === 'initialize') {
+    send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
+  } else if (frame.method === 'hook/quest/consider') {
+    const hold = frame.params.quest.title.includes('[hold]');
+    send({ jsonrpc: '2.0', id: frame.id, result: hold
+      ? { kind: 'hold', reason: 'outside working hours — the gate opens at nine' }
+      : { kind: 'allow' } });
+  } else if (frame.method === 'hook/session/ended') {
+    appendFileSync(join(data, 'ended.log'), frame.params.session + ' ' + frame.params.quest + ' ' + frame.params.state + ' ' + frame.params.adapter + '\\n');
+    send({ jsonrpc: '2.0', id: frame.id, result: {} });
+  } else if (frame.method === 'shutdown') {
+    process.exit(0);
+  }
+}
+`);
+
+// The CLI twin reads the same folder by the same rules.
+const pluginList = run(`node "${cliBin}" plugin list`, scratch, PLUGIN_HOME);
+check(
+  '`daoris plugin list` names the plugin, what it declares and what it speaks on',
+  pluginList.code === 0 && /rehearsal\.gate/.test(pluginList.out)
+    && /declares gate-agent; speaks on quest\/consider, session\/ended/.test(pluginList.out),
+  pluginList.out,
+);
+
+const harnessList = run(`node "${cliBin}" harness list`, scratch, NO_HARNESS);
+check(
+  '`daoris harness list` shows the declared harness beside the build\'s own, naming the plugin',
+  /gate-agent/.test(harnessList.out) && /declared by plugin `rehearsal\.gate`/.test(harnessList.out),
+  harnessList.out,
+);
+
+// Driven on the DECLARED harness: nothing in driver.json names a command, because the declaration
+// carries it. Two quests — one the gate lets through, one it holds.
+const gateConfig = join(scratch, 'driver-gate.json');
+writeFileSync(gateConfig, `${JSON.stringify({
+  drivable: ['newcomer'], adapter: 'gate-agent', cap: 2, timeoutMinutes: 2,
+}, null, 2)}\n`);
+
+const gatePass = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title: 'Carry this one on a declared harness',
+    body: 'A session on a harness a plugin declared: the ACP door, configured from a file.' },
+});
+const gatePassId = gatePass.json?.quest?.id ?? '';
+const gateHeld = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title: '[hold] Rename everything overnight',
+    body: 'The gate should hold this one and say why.' },
+});
+const gateHeldId = gateHeld.json?.quest?.id ?? '';
+
+const gateRun = driver({ serviceUrl: BASE, config: gateConfig, mode: '--until-idle' });
+check(
+  'the driver starts the plugin\'s hook process and says what it listens on',
+  /plugin\s+rehearsal\.gate: started, listening on quest\/consider, session\/ended/.test(gateRun.out),
+  gateRun.out,
+);
+check(
+  'the quest the gate lets through runs to done on the DECLARED harness',
+  gateRun.code === 0 && new RegExp(`completed[^\\n]*#${gatePassId}`).test(gateRun.out),
+  gateRun.out,
+);
+check(
+  '🔴 the quest the gate holds sits with the PLUGIN\'S sentence — "sitting must always say why" holds for a plugin too',
+  new RegExp(`sitting\\s+#${gateHeldId} → newcomer — plugin \`rehearsal\\.gate\` holds it: outside working hours`).test(gateRun.out),
+  gateRun.out,
+);
+
+const gateRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => s.quest === gatePassId);
+check(
+  'the record names the declared harness, and the plugin nowhere',
+  gateRecord?.state === 'completed' && gateRecord?.adapter === 'gate-agent'
+    && !JSON.stringify(gateRecord).includes('rehearsal.gate'),
+  JSON.stringify(gateRecord),
+);
+
+const endedLog = join(scratch, 'plugins', '.data', 'rehearsal.gate', 'ended.log');
+const endedSoFar = () => (existsSync(endedLog) ? readFileSync(endedLog, 'utf8') : '(no ended.log)');
+check(
+  'the ending was told to the plugin, which kept it in ITS data folder — beside the install, never in it',
+  existsSync(endedLog) && new RegExp(`${gateRecord?.id} ${gatePassId} completed gate-agent`).test(endedSoFar())
+    && !existsSync(join(pluginFolder, 'ended.log')),
+  endedSoFar(),
+);
+
+// Disabled from the terminal: a row, never a rename. The next run does not start the process, does
+// not ask it, and the held quest goes — on the build's own stub, since the declared harness went with
+// the plugin.
+const disabled = run(`node "${cliBin}" plugin disable rehearsal.gate`, scratch, PLUGIN_HOME);
+check('`daoris plugin disable` switches it off and says so', disabled.code === 0 && /is off/.test(disabled.out), disabled.out);
+const listedOff = run(`node "${cliBin}" plugin list`, scratch, PLUGIN_HOME).out;
+check(
+  'the folder and its data stay exactly where they were',
+  existsSync(join(pluginFolder, 'plugin.json')) && existsSync(endedLog) && /rehearsal\.gate[^\n]*\(off\)/.test(listedOff),
+  listedOff,
+);
+
+const gateOff = driver({ serviceUrl: BASE, config: acpConfig, mode: '--until-idle' });
+check(
+  'with the plugin off, the held quest runs to done and no hook process is started',
+  gateOff.code === 0 && new RegExp(`completed[^\\n]*#${gateHeldId}`).test(gateOff.out)
+    && !/plugin\s+rehearsal\.gate: started/.test(gateOff.out),
+  gateOff.out,
+);
+check(
+  'a disabled plugin is told nothing — its ending log did not grow',
+  existsSync(endedLog) && !endedSoFar().includes(gateHeldId),
+  endedSoFar(),
+);
+
+// -------------------------------------------------- 19. report
+
+section('19. Result');
 stopEverything();
 await sleep(500); // the store's file handle outlives the kill by a beat on Windows
 
@@ -2283,6 +2440,9 @@ if (totals.failures) {
   console.log('  And the TREE (D51): the lock keys on the working tree rather than on the repository');
   console.log('  that owns it — a second tree of one repository opened beside the first, the record');
   console.log('  named the tree it held, and that path reached the remote store no more than a');
-  console.log('  transcript or an account name does.');
+  console.log('  transcript or an account name does. And a PLUGIN (D64): a folder under the home that');
+  console.log('  declared a harness a session then ran on, and spoke — holding one quest with its own');
+  console.log('  sentence, told of an ending it kept beside its install, stopped with the loop, and');
+  console.log('  switched off from a terminal as a row rather than a rename.');
   rmSync(scratch, { recursive: true, force: true });
 }
