@@ -48,7 +48,7 @@ browse is right for an empty box and catastrophic for a query the tokeniser sile
 because the result looks like success. And a text index is only as multilingual as its tokenizer:
 `unicode61` is not a CJK segmenter, and nothing about a green English suite says otherwise.
 
-**Commit.** pending
+**Commit.** `7faa2de`
 
 ## The sessions frame said "nothing" over four real session records (2026-09-23)
 
