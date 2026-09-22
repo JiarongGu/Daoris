@@ -3707,3 +3707,58 @@ already had entries of their own, so those rows were simply removed.
   "delete"** — it stops this machine pointing at a profile and removes nothing, because the directory
   holds a credential the harness put there; the word on the button is the word for what happens, in
   both doors. Daoris manages directories and names, never secrets.
+
+## DEVKIT3 — the devkit runs over its own repository (2026-09-22)
+
+- [x] **DEVKIT3 — the devkit is not run over its own repository, and its scan has six findings
+  waiting.** Found by DOCS2 while looking for somewhere to put a gate
+  (`docs/2026-09-21-dsh-evaluation.md` §3a). The release workflow runs the devkit's *test suite* and
+  then each declared gate by name; nothing runs `daoris-devkit verify` here, there is no `.githooks/`,
+  and so the universal gates this repository configures in `daoris.gates.json` — sensitive, version,
+  docs, links, doctrine — are configuration nothing reads. Run by hand it exits 1 on **six sensitive
+  findings, all in test fixtures**: Unix home paths and private-range addresses, the same shape as the
+  one object already acknowledged by sha. The work is to read and judge each — acknowledge it by sha
+  or neutralise the fixture, never a path ignore (the devkit's own asymmetry argument) — then wire
+  `daoris-devkit verify` into the gate list and the release workflow **as one row in both**, and
+  correct the devkit README's "it runs this repository's own gates", which today it does not.
+
+✅ **done 2026-09-22.** Five universal gates now run here, declared as `universal` and run by the
+release workflow. Devkit 59 (was 57), service 262, driver 294, CLI 281. **Nine findings, every one
+judged, none silenced by path.**
+
+**Eight sensitive, all fixtures, and the item under-counted because the repository grew.** Two
+Windows placeholders (`C:\Users\<a name with a space>\`) keep the point they were making — a profile
+path with a space breaks `shell: true` — and stop looking like a real one, using the angle-bracket
+convention the deployment case study already set. Four Unix home paths became `/srv/…` and
+`/profile`: a home directory was never what those tests were about, and the locator's one is a
+don't-care argument. Two LAN addresses became **TEST-NET-3** (RFC 5737) — a range that exists to be
+written down, which is strictly better for a fixture than a real private subnet.
+
+**The ninth was the docs gate**, and it was stale in a way that mattered: `src/Daoris.Service/README.md`
+claimed **170 tests** where there are 262, and said nothing about the doctrine region (D59) or the
+tree-keyed ledger (D51). A gate nobody ran is how a number stays wrong for two months.
+
+🔴 **`reviewedObjects` is consulted in HISTORY scope only**, so the item's "acknowledge it by sha"
+half does not exist for a tree finding. That is the devkit's own asymmetry argument working as
+written — a working-tree ignore silences a file and the next secret written to it is silent too — and
+it means the tree route is always *change the file*, which is exactly what the acknowledged `04801cb`
+did in its day: the fixture was fixed in the tree, and the sha covers the immutable copy behind it.
+
+🔴 **The wiring could not be what the item said, and the reason is worth keeping.** `verify` runs the
+declared gates *after* the universal ones, so a row naming it reaches itself; and since DEPLOY2 one
+declared row is Windows-only and cannot pass in a Linux job at all. The devkit gains
+**`--universal-only`**: the universal half is by definition the half a declaration does not contain,
+which makes it well defined where the whole is not. It **names the rows it did not run**, for the
+reason a disabled gate is printed — a run that quietly checked half of a declaration reads as
+coverage it is not.
+
+**CI adds `--allow-builtins-only`, and that is the designed path rather than a weakening.** The
+private pattern list cannot live in the repository being scanned, so on a runner it is always absent
+and the gate **fails closed** — proven both ways here by hiding the file: without the flag it refuses
+and says how, with it the scan runs on 6 structural patterns instead of 15. The dogfood test still
+matches, because the workflow line contains the declared row as a substring.
+
+**Watched failing**, as a new check must be: a Unix home path put back into a fixture turns the run
+red naming the file. **What DEVKIT3 did not do**: `.githooks/` is still absent — `install-hooks`
+writes tracked hooks and sets `core.hooksPath`, which changes how a person's own commits behave, so
+it is theirs to run. The diagnosis mentioned it; the stated work did not include it.

@@ -110,7 +110,16 @@ workspace `testbed`, each with its own `.mcp.json` and trust settings, registere
 host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
 it. Two branches there hold what the failed sessions produced.
 
-**What is open**, in the Backlog below, in the order worth doing: **HELP3, TOOL5, DEVKIT3, CANON5**.
+**What is open**, in the Backlog below, in the order worth doing: **HELP3, TOOL5, CANON5**.
+🔴 **HELP3 is a design question before it is a build**, and the question is *where the guard lives*.
+A hook that refuses a push lives in a repository's `.claude/settings.json`, and Daoris has exactly
+two ways to put one there — through `sync`, which means the canon grows a fourth installable kind
+and Daoris owns part of a JSON file an adopter also owns (D59's problem without comment markers), or
+from the driver, which is **forbidden** (D32, and ACP4's whole point was carrying wiring so nothing
+is written). The `claude-code` adapter already records the rule it has to respect: *"the repository's
+own checked-in configuration governs"*. Probe 4's Windows finding constrains the guard itself — only
+a **structured deny** blocks under a 5.1 executor, never exit 2. Settle where it lives before writing
+one.
 🔴 A *layout-toggles* item was carried in this paragraph for a while and **never existed in the
 backlog** — it was prose pretending to be work, which is exactly what the backlog is for; a surface
 item is written against `docs/2026-09-21-working-surface-design.md` when somebody wants one, and the
@@ -222,8 +231,9 @@ in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifec
 ships. Four are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, DEPLOY4, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
 last four are **held**, each waiting on an external trigger that has not arrived. That leaves
-**HELP3, TOOL5, DEVKIT3 and CANON5** actionable now, in that order. Each item is one session-sized
-landing, TDD, gates green, moved to the archive on completion.
+**HELP3, TOOL5 and CANON5** actionable now, in that order — and 🔴 **HELP3 is a design question
+first**, not a build (see the handover). Each item is one session-sized landing, TDD, gates green,
+moved to the archive on completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -269,6 +279,15 @@ wire evidence.
   written **once** — refuse a write outside the session's tree (D51), refuse a push (D37) — runs on
   all three. Probe 4 found the Windows trap. Held behind ACP4 and CANON8: a guard is worth less than
   the doctrine it enforces arriving at all. (HELP1 became CANON8; D59 has it.)
+  ⛔ **Both holds lifted 2026-09-22, and reading it then surfaced the real one: where does the guard
+  live?** It is a `.claude/settings.json` hook, so it belongs to the repository — the `claude-code`
+  adapter already states the rule it has to respect: *"the repository's own checked-in configuration
+  governs"*. Daoris can only put one there through `sync` (a fourth installable kind, and Daoris
+  owning part of a JSON file the adopter also owns — D59's region problem with no comment markers to
+  mark it) or from the driver, which **D32 forbids** and which ACP4 was built to avoid. **Settle that
+  first; it is a decision, not a patch.** Whatever is written must block **structurally**
+  (`permissionDecision: deny`) and never by exit 2 — Windows PowerShell 5.1 collapses a native exit
+  code, so an exit-2 hook does not block at all (probe 4, run 2).
 
 ### The working surface — the build order (D51/D52/D55/D56)
 
@@ -380,18 +399,6 @@ binary API), and no plugin runtime for the surface (D52).
   limitation. The owner's call, and the study says so rather than assuming it.
 
 ### Open — the arc's leftovers, in the order they are worth doing
-
-- [ ] **DEVKIT3 — the devkit is not run over its own repository, and its scan has six findings
-  waiting.** Found by DOCS2 while looking for somewhere to put a gate
-  (`docs/2026-09-21-dsh-evaluation.md` §3a). The release workflow runs the devkit's *test suite* and
-  then each declared gate by name; nothing runs `daoris-devkit verify` here, there is no `.githooks/`,
-  and so the universal gates this repository configures in `daoris.gates.json` — sensitive, version,
-  docs, links, doctrine — are configuration nothing reads. Run by hand it exits 1 on **six sensitive
-  findings, all in test fixtures**: Unix home paths and private-range addresses, the same shape as the
-  one object already acknowledged by sha. The work is to read and judge each — acknowledge it by sha
-  or neutralise the fixture, never a path ignore (the devkit's own asymmetry argument) — then wire
-  `daoris-devkit verify` into the gate list and the release workflow **as one row in both**, and
-  correct the devkit README's "it runs this repository's own gates", which today it does not.
 
 - [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met, and the budget no longer
   blocks it** (unparked by CANON7, 2026-09-21). The bilingual sibling carries the rule and the gate;
