@@ -36,7 +36,7 @@ set costs nothing and a change always arrives. A `Start` verdict is not sitting.
 the shell test seen red against the previous Overview (the sentence never rendered). On the
 deployed application: the row under `#7786da` reads the driver's trust-flag sentence, and stays.
 
-**Commit.** _pending_
+**Commit.** `9a6390c`
 
 ## A page seen once from a stale host was the page on every start after (2026-09-23)
 
