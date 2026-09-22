@@ -225,7 +225,8 @@ test('an unknown verb names the ones that exist', () => {
   const error = captureError(() => run(['frobnicate'], at(fx)));
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
-  assert.match(error.message, /list, drive, undrive, hold, resume, trees, notify, cap, adapter/);
+  assert.match(
+    error.message, /list, drive, undrive, hold, resume, trees, notify, strikes, retry, cap, adapter/);
   fx.cleanup();
 });
 
@@ -286,5 +287,65 @@ test('notify is written as the driver spells it', () => {
   run(['notify', 'off'], at(fx));
 
   assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).notify, false);
+  fx.cleanup();
+});
+
+/**
+ * DRV6's second door. The desktop can show a parked quest; a headless machine running
+ * `daoris-driver` has no screen, and it is the machine most likely to be the one burning an account
+ * unattended — so the terminal owns the whole verb, not a view of it.
+ */
+test('the strike limit is set from a terminal, and zero is the old behaviour', () => {
+  const fx = makeFixture('driver-strikes');
+
+  const set = run(['strikes', '5'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).strikes, 5);
+  assert.match(set.out, /5/);
+
+  // 🔴 Zero must be settable and must not be read as "unset" — it is the person asking for the loop
+  // to keep trying, which is what every machine did before this existed.
+  run(['strikes', '0'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).strikes, 0);
+  assert.match(run(['list'], at(fx)).out, /never parks|keeps trying/i);
+
+  fx.cleanup();
+});
+
+test('a file written before strikes existed gets the default rather than none', () => {
+  const fx = makeFixture('driver-strikes-absent');
+  writeFileSync(at(fx), `${JSON.stringify({ drivable: ['Game'], cap: 2 }, null, 2)}\n`, 'utf8');
+
+  assert.equal(readDriverChoices(at(fx)).strikes, 3);
+
+  fx.cleanup();
+});
+
+test('retrying a quest marks it at its current failures rather than erasing them', () => {
+  const fx = makeFixture('driver-retry');
+
+  const said = run(['retry', 'a78553', '--at', '4'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).forgiven['a78553'], 4);
+  assert.match(said.out, /a78553/);
+
+  fx.cleanup();
+});
+
+/**
+ * The counterpart-set worry, once more: `strikes` and `forgiven` are written by the driver too, and
+ * an editor that rewrote the file from its own idea of the shape would delete them. This family has
+ * been bitten by exactly that twice — the harness pin, and profiles before it.
+ */
+test('a verb that knows nothing of strikes preserves them', () => {
+  const fx = makeFixture('driver-strikes-preserve');
+  run(['strikes', '7'], at(fx));
+  run(['retry', 'q1', '--at', '2'], at(fx));
+
+  run(['drive', 'Game'], at(fx));
+
+  const held = readDriverChoices(at(fx));
+  assert.equal(held.strikes, 7);
+  assert.equal(held.forgiven['q1'], 2);
+  assert.deepEqual(held.drivable, ['Game']);
+
   fx.cleanup();
 });

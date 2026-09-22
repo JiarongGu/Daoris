@@ -93,6 +93,24 @@ public sealed class DriverModule : ModuleBase
                 return State();
             }
 
+            // How many failed sessions park a quest (DRV6/D58), and the person's way back in. Both
+            // edit what `daoris driver strikes|retry` edits — one truth, two doors (D50).
+            case "SET_STRIKES":
+            {
+                var strikes = PayloadHelper.GetRequiredValue<int>(request.Payload, "strikes");
+                Change(config => config.WithStrikes(strikes));
+                return State();
+            }
+
+            case "RETRY_QUEST":
+            {
+                var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest");
+                // Marked at the limit rather than erased, so the records still read true and the next
+                // `strikes` failures park it again.
+                Change(config => config.WithForgiven(quest, config.Strikes));
+                return State();
+            }
+
             // The console's backlog (D49 §2): what this session has said, or what it has said since
             // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
             // that just opened catches up, and how one that missed a batch closes the gap — the
@@ -623,6 +641,8 @@ public sealed class DriverModule : ModuleBase
             config.Adapter,
             config.PollSeconds,
             config.Notify,
+            config.Strikes,
+            config.Forgiven,
             Running = _loop.Processes.Running,
         };
     }

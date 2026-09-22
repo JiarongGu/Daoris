@@ -38,12 +38,17 @@ export interface DriverChoices {
   adapter: string;
   /** Whether this machine says so when a session parks or ends unasked (SURF5b). */
   notify: boolean;
+  /** How many failed sessions park a quest (DRV6). `0` never parks — the behaviour before it existed. */
+  strikes: number;
+  /** Quests the person restarted, and the failure count each was restarted at. */
+  forgiven: Record<string, number>;
   rest: Record<string, unknown>;
 }
 
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
-  drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true, rest: {},
+  drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
+  strikes: 3, forgiven: {}, rest: {},
 };
 
 /**
@@ -61,13 +66,18 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ...EMPTY, rest: {} };
 
-    const { drivable, holds, trees, cap, adapter, notify, ...rest } = parsed;
+    const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, ...rest } = parsed;
     return {
       drivable: names(drivable),
       holds: names(holds),
       trees: names(trees),
       cap: typeof cap === 'number' && cap >= 1 ? Math.floor(cap) : EMPTY.cap,
       adapter: typeof adapter === 'string' && adapter.length > 0 ? adapter : EMPTY.adapter,
+      // 🔴 Absent means the DEFAULT, and this is the OPPOSITE reading from `notify` directly above.
+      // A machine whose file predates this field is the one that has been driving unattended longest,
+      // so silence there must not mean "never park". Zero is settable and means exactly that.
+      strikes: typeof strikes === 'number' && strikes >= 0 ? Math.floor(strikes) : EMPTY.strikes,
+      forgiven: marks(forgiven),
       // 🔴 Absent means ON, the same reading the driver makes (SURF5b): every machine that already
       // has this file predates the field, and taking silence for "off" would ship the feature
       // switched off on exactly the machines that have been driving longest.
@@ -93,6 +103,8 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     cap: choices.cap,
     adapter: choices.adapter,
     notify: choices.notify,
+    strikes: choices.strikes,
+    forgiven: choices.forgiven,
   }, null, 2)}\n`);
 }
 
@@ -189,6 +201,50 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // DRV6. A number rather than on|off, because the useful question is not "should it give up" but
+    // "after how many" — and 0 is a real answer to it, not the absence of one.
+    case 'strikes': {
+      const value = Number(named(argv, 'strikes'));
+      if (!Number.isInteger(value) || value < 0) {
+        throw new DaorisError(
+          '`driver strikes` needs a whole number of failed sessions, 0 or more — '
+          + 'e.g. `daoris driver strikes 3`, or `0` to never park a quest.');
+      }
+
+      writeDriverChoices(path, { ...choices, strikes: value });
+      write(value === 0
+        ? 'daoris: this machine never parks a quest — it keeps trying, as it did before this setting.'
+        : `daoris: a quest is parked after ${value} failed session(s), and waits for you.`);
+      if (value === 0) {
+        write('  🔴 A quest that fails for a reason no retry can fix will be started again every tick,');
+        write('     and every start spends a real login. That is the behaviour this setting exists for.');
+      } else {
+        write('  A failure is a session that ended without landing anything. A stand-down, a decline,');
+        write('  a stop and a held repository are not failures and never count toward this.');
+      }
+
+      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+      return 0;
+    }
+
+    // Not `unpark` or `forgive`: the person is saying "try this again", and the mark records where
+    // to count from rather than erasing what happened — the records still say it.
+    case 'retry': {
+      const quest = named(argv, 'retry').replace(/^#/, '');
+      const at = argv.indexOf('--at');
+      const mark = at !== -1 && argv[at + 1] ? Number(argv[at + 1]) : choices.strikes;
+      if (!Number.isInteger(mark) || mark < 0) {
+        throw new DaorisError('`driver retry --at` needs a whole number of failures to count from.');
+      }
+
+      writeDriverChoices(path, { ...choices, forgiven: { ...choices.forgiven, [quest]: mark } });
+      write(`daoris: quest \`#${quest}\` may be started again.`);
+      write(`  Counting from ${mark} failure(s) — what already happened is still in the records, and`);
+      write(`  ${choices.strikes || 'no'} more failure(s) will park it again.`);
+      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+      return 0;
+    }
+
     case 'adapter': {
       const adapter = named(argv, 'adapter');
       // Not refused against a list: the driver's adapter set is the driver's, and the CLI naming a
@@ -205,13 +261,21 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     default:
       throw new DaorisError(
-        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, notify, cap, adapter`);
+        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, notify, `
+        + 'strikes, retry, cap, adapter');
   }
 
   function list(): ExitCode {
     write(`daoris: ${path}`);
     write(`  adapter    ${choices.adapter}`);
     write(`  cap        ${choices.cap} concurrent session(s)`);
+    write(`  strikes    ${choices.strikes === 0
+      ? 'off — a quest is never parked, and it keeps trying at the cost of a login each time'
+      : `${choices.strikes} failed session(s) park a quest`}`);
+    for (const [quest, mark] of Object.entries(choices.forgiven)) {
+      write(`  retried    #${quest}  (counting from ${mark} failure(s))`);
+    }
+
     write(`  notify     ${choices.notify ? 'on' : 'off'}`
       + `  (a session parking, or ending without you asking${choices.notify ? '' : ' — not said'})`);
 
@@ -280,6 +344,17 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     throw new DaorisError(
       `\`driver ${verb}\` needs a name — e.g. \`daoris driver ${verb} aurora-engine\`.`);
   }
+}
+
+/** The forgiveness marks, as a map of quest id to the failure count it was restarted at. */
+function marks(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, number> = {};
+  for (const [quest, mark] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof mark === 'number' && Number.isInteger(mark) && mark > 0) held[quest] = mark;
+  }
+
+  return held;
 }
 
 function names(value: unknown): string[] {

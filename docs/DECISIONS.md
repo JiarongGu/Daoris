@@ -2003,3 +2003,54 @@ to know something it structurally does not.
 
 **Named and out of scope**: spend caps, billing, and anything reading a provider's console. All three
 need either a credential or an API Daoris has no business holding.
+
+## D58 — An unattended driver stops after three failures on one quest, and the count is derived (2026-09-22)
+
+**Decision.** A quest that has failed **three** times on this machine is **parked**: the driver stops
+considering it and says so, naming `daoris driver retry <quest>`. The limit is `strikes` in
+`driver.json`, with `0` meaning never park — the behaviour of every machine before this existed. The
+count is **derived** from the session records the driver already writes, and a person's restart is a
+**mark** rather than an erasure.
+
+**What forced it.** ACP2's first real driven run. A session could not take its quest — the protocol
+door hands over no MCP server (ACP4) — so it ended its turn having touched nothing, and **the driver
+started the same quest 18 times before it was stopped by hand**, each one a real login. The mechanism
+was in the design all along and read as a virtue: *"a spawn that fails leaves the quest `Open` and
+untouched — there is no claimed-but-abandoned state to repair"* (driver design §3). It is a virtue,
+and an untouched open quest is eligible again on the very next tick.
+
+**Rejected: exponential backoff.** It assumes the failure is transient, and the one that cost 18
+logins was structural — a missing tool, which no amount of waiting installs. Backoff would have spent
+the same account more slowly and never stopped. What the driver can honestly tell is *how many times
+this has not worked*; the judgement about why belongs to the person. That is `autonomous-development`
+applied where it bites: **a step needing a human choice surfaces as a decision, not a pause**, so the
+refusal carries the count and the verb.
+
+**Rejected: a tally the driver keeps.** Simpler to write and a second register — the shape that has
+bitten this family twice (a `Save` that deleted the harness pin; profiles before it). Derivation costs
+one extra read per tick and cannot disagree with the record.
+
+**Rejected: parking as a quest state.** It would have made a machine's decision about its own spending
+visible to the whole family, and the driver writing quest state is exactly what design §2 forbids.
+Another machine, or a person, must still be able to take a quest this one gave up on.
+
+**Rejected: a per-repository limit.** A repository with one broken quest has to keep working the rest,
+so the limit is per quest.
+
+**Why derived.** A tally the driver kept would be a second register, and this family has been bitten
+by those twice (the harness pin a `Save` deleted; profiles before it). The records already say what
+happened; counting them is the same move as the timeline being derived because the record has no
+event log. Only `failed` counts — a stand-down is the race resolving as designed, a decline is a real
+answer, a stop was the person, and a held repository never spawns at all, which makes "a held tick
+must not count" **structural rather than a rule somebody has to remember**.
+
+**Why a mark, not a reset.** `daoris driver retry` records the failure count it was restarted at, so
+the next three park it again and the history still reads true. A reset would make the derived count
+disagree with the records it was derived from, which is the property that made deriving worth doing.
+
+**Three consequences worth stating.** Parking is **this machine's decision about spending**, not a
+quest state — the driver still never writes one (design §2), and another machine or a person can take
+a parked quest freely. **Absent `strikes` means the default, not off** — the opposite reading from
+`notify`, because a `driver.json` that predates this field belongs to the machine that has been
+driving unattended longest. And the limit is per quest rather than per repository: a repository with
+one broken quest must keep working the rest.

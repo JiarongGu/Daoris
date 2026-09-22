@@ -3231,3 +3231,54 @@ carries a commit, and the session closed its own quest through its own connector
 three on the selection, two on the pipe door's untouched spawn), 70 modules, `npm run verify` and
 `rehearse:family` (173/173) green — and the keyless proof itself, 6/6 against the real adapter at
 0.79.0, installed by Daoris into a directory Daoris owns.
+
+## DRV6 — the strike limit (2026-09-22)
+
+> 🔴 **DRV6 — a driven quest has no strike limit, and each attempt spends a login.** Measured in the
+> same run: the session ended without touching its quest, the driver picked the same quest on the next
+> tick, and **18 sessions ran on one quest** before it was stopped by hand. `Driver.cs` and `Planner.cs`
+> contain no notion of an attempt, a strike or a backoff. For an unattended loop holding a real account
+> that is not a rough edge — it is the failure mode that costs money while nobody is watching, and
+> SURF5b's notification tells the person only after the loop has already run. A quest that has failed
+> *n* times is parked with what each attempt did, and the person restarts it deliberately. Decide *n*
+> and whether a **held** tick counts (it must not: a dirty tree is a wait, not a failure).
+
+✅ **done 2026-09-22 — D58.** `StartVerdict.Exhausted`, ahead of busy and capacity because those are
+waits and this is a stop. `strikes: 3` in `driver.json`, `0` for the old behaviour; `daoris driver
+strikes <n>` and `daoris driver retry <quest>` are the second door (D50), and the parked reason
+carries the count and the verb.
+
+**Both doors, all the way through.** `SET_STRIKES` and `RETRY_QUEST` on `DriverModule`, `strikes` and
+`forgiven` in what `STATE` reports, the hooks, and a card on *This machine* beside Notifications —
+they answer the same worry from opposite ends, one asking to be told when a driver stops and one
+bounding what it spends before anyone is told. The module test is the one that earns its place: a
+setting added to the terminal and not reported over the bridge compiles perfectly and leaves the
+screen unable to show what the machine is doing.
+
+**Three defects the source could not show**, found by looking at the real window (owner, 2026-09-22):
+a 550px box holding one digit — the lesson the wiring fields above it had already been re-cut for; a
+190-character measure on the terminal note; and `text-status-warn`, which `tokens.test.ts` refused
+because D56's scale has seven named steps and `status` is not one of them. The token test caught its
+own case before a person did.
+
+**The count is derived, which was the design's whole question.** Not a tally the driver keeps — the
+`failed` session records it already writes, counted. So there is no second register to drift, and the
+two things that have bitten this family (a `Save` that deleted the harness pin; profiles before it)
+cannot happen to it. **Only `failed` counts**: a stand-down is the race resolving as designed, a
+decline is a real answer, a stop was the person. The backlog's open question — *does a held tick
+count?* — answered **structurally**: a held repository spawns nothing, so there is no record to count,
+and a rule nobody has to remember cannot be forgotten.
+
+**A restart is a mark, not a reset.** `retry` records the failure count it was restarted at, so the
+next three park it again and the records still read true. Resetting would make the derived count
+disagree with what it was derived from.
+
+**Gated with no model** — `rehearse:family` 177/177. The stub grew one branch: a session that dies
+**before** taking its quest, which is the shape that loops (after taking, the quest is `Taken` and
+stops itself). Four checks: bounded at three, the park names its verb, the quest stays `Open` to
+anyone else because parking is this machine's decision about spending rather than a quest state, and
+a retried quest runs again and parks again at the same count.
+
+**One asymmetry recorded on purpose:** absent `strikes` means the **default**, where absent `notify`
+means **on**. Opposite readings, same reasoning — a `driver.json` predating the field belongs to the
+machine that has been driving unattended longest, and that is the machine that needs the protection.

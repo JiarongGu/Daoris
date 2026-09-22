@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import {
   useDriver, useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useSetNotify,
+  useSetStrikes,
   useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { SessionConsole } from './SessionConsole';
@@ -35,6 +36,12 @@ export function SettingsView({ notify }: { notify: Notify }) {
   // `daoris driver notify on|off` edits, which is what makes this a door rather than the door.
   const driver = useDriver();
   const setNotify = useSetNotify();
+  const setStrikesMutation = useSetStrikes();
+
+  // Held as text while it is being typed: a number input mid-edit passes through the empty string
+  // and through "0", and writing either straight to the config would park nothing while the person
+  // was still reaching for the second digit.
+  const [strikes, setStrikes] = useState<string | null>(null);
 
   const [workspace, setWorkspace] = useState('');
   const [url, setUrl] = useState('');
@@ -87,6 +94,48 @@ export function SettingsView({ notify }: { notify: Notify }) {
         {/* The other door, named where the switch is. A person who finds this on a machine they
             reach over ssh should learn it is the same file, not go looking for a second one. */}
         <p className="mt-2.5 text-small text-ink-faint">{t('settings.notify.terminal')}</p>
+      </Card>
+
+      {/* Beside notifications because they answer the same worry from opposite ends: that one asks to
+          be TOLD when a driver stops, this one bounds what it spends before anyone is told (D58). */}
+      <Card>
+        <SectionTitle>{t('settings.strikes.title')}</SectionTitle>
+        <Prose className="mt-1.5">{t('settings.strikes.body')}</Prose>
+
+        {/* Sized to what it HOLDS, which is one or two digits — the lesson the wiring fields above
+            were re-cut for. A full-width box for a number reads as a text field somebody forgot. */}
+        <label className="mt-3 grid justify-items-start gap-1 text-small text-ink-faint">
+          {t('settings.strikes.label')}
+          <input
+            type="number"
+            min={0}
+            max={99}
+            value={strikes ?? String(driver.data?.strikes ?? 3)}
+            onChange={(event) => setStrikes(event.target.value)}
+            onBlur={() => {
+              const value = Number(strikes);
+              if (!Number.isInteger(value) || value < 0) {
+                setStrikes(String(driver.data?.strikes ?? 3));
+                return;
+              }
+
+              setStrikesMutation.mutate({ strikes: value }, {
+                onSuccess: () => notify(t(value === 0 ? 'settings.strikes.never' : 'settings.strikes.set', { count: value })),
+                onError,
+              });
+            }}
+            className="w-[5.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+          />
+        </label>
+
+        {/* Stated where the zero is, because zero is the one value whose consequence is invisible. */}
+        {Number(strikes ?? driver.data?.strikes ?? 3) === 0 && (
+          <p className="mt-2.5 max-w-prose border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+            {t('settings.strikes.zero')}
+          </p>
+        )}
+
+        <p className="mt-2.5 max-w-prose text-small text-ink-faint">{t('settings.strikes.terminal')}</p>
       </Card>
 
       <Card>

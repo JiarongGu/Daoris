@@ -142,4 +142,93 @@ public sealed class PlannerTests
 
         Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
     }
+
+    // ── strikes (DRV6) ────────────────────────────────────────────────────────────────────────────
+    //
+    // 🔴 Measured, not imagined: ACP2's driven run failed for a reason no retry could fix, and the
+    // driver started the same quest 18 times — each one a real login — because a failed spawn leaves
+    // the quest `Open` and untouched (design §3), which is exactly what makes it eligible again.
+    //
+    // The count is DERIVED from the session records the driver already writes, so there is no second
+    // register to drift. What a person sets is the limit and the forgiveness.
+
+    private static Snapshot With(QuestView[] quests, IReadOnlyDictionary<string, int> strikes) =>
+        new(quests, [Repo()], [], strikes);
+
+    [Fact]
+    public void A_quest_that_has_failed_too_often_is_parked_rather_than_started_again()
+    {
+        var plan = Planner.Plan(
+            With([Quest()], new Dictionary<string, int> { ["q1"] = 3 }),
+            Config() with { Strikes = 3 });
+
+        var only = Assert.Single(plan);
+        Assert.Equal(StartVerdict.Exhausted, only.Verdict);
+        // The reason a person reads has to carry the COUNT and the verb that clears it — a park with
+        // neither is a quest that has silently stopped moving (`autonomous-development`: a step
+        // needing a human choice surfaces as a decision, not a pause).
+        Assert.Contains("3", only.Reason);
+        Assert.Contains("retry", only.Reason);
+    }
+
+    /// <summary>One short of the limit still starts — the limit is a ceiling, not a suspicion.</summary>
+    [Fact]
+    public void A_quest_below_the_limit_still_starts()
+    {
+        var plan = Planner.Plan(
+            With([Quest()], new Dictionary<string, int> { ["q1"] = 2 }),
+            Config() with { Strikes = 3 });
+
+        Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
+    }
+
+    /// <summary>
+    /// 🔴 The additive escape hatch, and the one that must never regress: <c>strikes: 0</c> is
+    /// today's behaviour byte for byte, for a person who wants the loop to keep trying.
+    /// </summary>
+    [Fact]
+    public void A_limit_of_zero_never_parks_anything()
+    {
+        var plan = Planner.Plan(
+            With([Quest()], new Dictionary<string, int> { ["q1"] = 99 }),
+            Config() with { Strikes = 0 });
+
+        Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
+    }
+
+    /// <summary>
+    /// Forgiveness raises the bar rather than erasing the history: the person said "try again from
+    /// here", and the records still say what happened. Erasing would make the count a second
+    /// register after all — one the driver writes and the record contradicts.
+    /// </summary>
+    [Fact]
+    public void Forgiving_a_quest_lets_it_run_again_without_rewriting_what_happened()
+    {
+        var config = (Config() with { Strikes = 3 })
+            .WithForgiven("q1", 3);
+
+        Assert.Equal(
+            StartVerdict.Start,
+            Assert.Single(Planner.Plan(With([Quest()], new Dictionary<string, int> { ["q1"] = 3 }), config)).Verdict);
+
+        // …and three more failures past the mark park it again.
+        Assert.Equal(
+            StartVerdict.Exhausted,
+            Assert.Single(Planner.Plan(With([Quest()], new Dictionary<string, int> { ["q1"] = 6 }), config)).Verdict);
+    }
+
+    /// <summary>
+    /// A repository held by the person creates no session at all, so a hold can never accumulate
+    /// strikes. Asserted rather than assumed: "a held tick must not count" is the question this
+    /// design answers structurally, and structure is what a later refactor breaks silently.
+    /// </summary>
+    [Fact]
+    public void A_held_repository_is_held_and_never_exhausted()
+    {
+        var plan = Planner.Plan(
+            With([Quest()], new Dictionary<string, int> { ["q1"] = 99 }),
+            Config(holds: ["Game"]) with { Strikes = 3 });
+
+        Assert.Equal(StartVerdict.Held, Assert.Single(plan).Verdict);
+    }
 }

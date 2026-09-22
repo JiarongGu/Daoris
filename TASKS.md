@@ -296,14 +296,6 @@ is the one that needs the owner: its closing step spends a real login.
   names that (D48 §5). Proof: the stub agent asserts it was offered the server, and the family rehearsal
   drives a quest published **by** a driven session.
 
-- [ ] 🔴 **DRV6 — a driven quest has no strike limit, and each attempt spends a login.** Measured in the
-  same run: the session ended without touching its quest, the driver picked the same quest on the next
-  tick, and **18 sessions ran on one quest** before it was stopped by hand. `Driver.cs` and `Planner.cs`
-  contain no notion of an attempt, a strike or a backoff. For an unattended loop holding a real account
-  that is not a rough edge — it is the failure mode that costs money while nobody is watching, and
-  SURF5b's notification tells the person only after the loop has already run. A quest that has failed
-  *n* times is parked with what each attempt did, and the person restarts it deliberately. Decide *n*
-  and whether a **held** tick counts (it must not: a dirty tree is a wait, not a failure).
 
 - [ ] **HELP1 — the always-loaded tier reaches one harness only.** Measured 2026-09-22
   (`docs/2026-09-21-dsh-evaluation.md` §6.2): `dsh-agent-instructions` loads `AGENTS.md` and

@@ -32,14 +32,47 @@ public sealed record DriverConfig(
     int PollSeconds,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Commands,
     IReadOnlyList<string> Trees,
-    bool Notify = true)
+    bool Notify = true,
+    int Strikes = 3,
+    IReadOnlyDictionary<string, int>? Forgiven = null)
 {
+    /// <summary>
+    /// How many failed sessions park a quest (DRV6). <c>0</c> never parks — today's behaviour, for a
+    /// person who wants the loop to keep trying.
+    /// </summary>
+    public int Strikes { get; init; } = Math.Max(0, Strikes);
+
+    /// <summary>
+    /// Quests the person has restarted, and the failure count they were restarted at. A mark rather
+    /// than an erasure: the records still say what happened, and the next three failures park it
+    /// again. Machine-local, like every other choice in this file.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Forgiven { get; init; } =
+        Forgiven ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Drives nothing, holds nothing — the safe shape silence takes.</summary>
     public static DriverConfig Empty { get; } = new(
         Drivable: [], Holds: [], Cap: 2, Adapter: "claude-code",
         TimeoutMinutes: 30, PollSeconds: 15,
         Commands: new Dictionary<string, IReadOnlyList<string>>(),
         Trees: []);
+
+    /// <summary>The failure count this quest was last restarted at — zero when it never was.</summary>
+    public int ForgivenAt(string questId) =>
+        Forgiven.TryGetValue(questId, out var mark) ? mark : 0;
+
+    /// <summary>Let this quest run again, counting from where it stands now.</summary>
+    public DriverConfig WithForgiven(string questId, int at)
+    {
+        var next = new Dictionary<string, int>(Forgiven, StringComparer.OrdinalIgnoreCase)
+        {
+            [questId] = Math.Max(0, at),
+        };
+        return this with { Forgiven = next };
+    }
+
+    /// <summary>How many failures park a quest on this machine.</summary>
+    public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes) };
 
     public const string PathVariable = "DAORIS_DRIVER_CONFIG";
 
@@ -88,6 +121,14 @@ public sealed record DriverConfig(
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
             writer.WriteNumber("pollSeconds", PollSeconds);
+            writer.WriteNumber("strikes", Strikes);
+            writer.WriteStartObject("forgiven");
+            foreach (var (quest, mark) in Forgiven.OrderBy(f => f.Key, StringComparer.Ordinal))
+            {
+                writer.WriteNumber(quest, mark);
+            }
+
+            writer.WriteEndObject();
             writer.WriteStartObject("commands");
             foreach (var (name, command) in Commands.OrderBy(c => c.Key, StringComparer.Ordinal))
             {
@@ -149,7 +190,31 @@ public sealed record DriverConfig(
             // Absent means ON (SURF5b): every machine that already has a driver.json predates this
             // field, and reading silence as "off" would ship the feature switched off everywhere it
             // matters most — a machine that has been driving for a while.
-            Notify: Bool(root, "notify") ?? Empty.Notify);
+            Notify: Bool(root, "notify") ?? Empty.Notify,
+            // 🔴 Absent means the DEFAULT, not off — the opposite reading from `notify` and for the
+            // opposite reason. A machine that predates this field is exactly the one that has been
+            // driving unattended longest, and reading silence as "never park" would leave it doing
+            // the thing this field exists to stop.
+            Strikes: Int(root, "strikes") ?? Empty.Strikes,
+            Forgiven: ForgivenMap(root));
+    }
+
+    private static IReadOnlyDictionary<string, int> ForgivenMap(JsonElement root)
+    {
+        var forgiven = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty("forgiven", out var element) && element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.Value.ValueKind == JsonValueKind.Number
+                    && property.Value.TryGetInt32(out var mark) && mark > 0)
+                {
+                    forgiven[property.Name] = mark;
+                }
+            }
+        }
+
+        return forgiven;
     }
 
     /// <summary>Whether this machine says so when a session parks or ends unasked (SURF5b).</summary>

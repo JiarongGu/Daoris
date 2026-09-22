@@ -380,6 +380,14 @@ const respond = async (action, reason) => {
   return { ok: response.ok, text: await response.text() };
 };
 
+// The failure DRV6 was written from, reproduced exactly: a session that dies BEFORE taking its
+// quest. That is the shape that loops — the quest is left \`Open\` and untouched, so the very next
+// tick considers it again. A session that fails after taking leaves it \`Taken\` and stops itself.
+if (/never lands/i.test(title)) {
+  console.log('stub: this one fails before it can take anything');
+  process.exit(1);
+}
+
 // The claiming judgement a real session has (D46 §3): if somebody already has the quest, stand down
 // CLEANLY — exit 0 with the quest still theirs is exactly the shape the driver concludes stood-down from.
 const takeAnswer = await respond('take', null);
@@ -501,6 +509,53 @@ check(
     (q) => q.id === (declineAsk.json?.quest?.id ?? '') && q.status === 'Declined' && /declines/.test(q.note ?? ''),
   ),
   declinedQuest.text,
+);
+
+// 🔴 DRV6 — a quest that keeps failing is PARKED, and parking is what stops an unattended loop
+// spending an account on something no retry can fix. Measured before it was designed: ACP2's real
+// driven run started one quest 18 times, because a session that dies before taking leaves the quest
+// `Open` and untouched, and an untouched open quest is eligible again next tick.
+const doomedAsk = await api('POST', '/api/quests', {
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'This one never lands',
+    body: 'The stub dies before it can take this — the shape that loops.',
+  },
+});
+const doomedId = doomedAsk.json?.quest?.id ?? '';
+const doomedRun = drive();
+const doomedSessions = await api('GET', '/api/sessions?includeClosed=true');
+const failures = (doomedSessions.json ?? []).filter((s) => s.quest === doomedId && s.state === 'failed');
+
+check(
+  'a quest that keeps failing is tried a bounded number of times, not forever',
+  failures.length === 3,
+  `${failures.length} session(s) ran on #${doomedId} — the limit is 3\n${doomedRun.out}`,
+);
+check(
+  'the driver says it parked it, and names the verb that starts it again',
+  /parked/i.test(doomedRun.out) && /driver retry/.test(doomedRun.out),
+  doomedRun.out,
+);
+// The quest itself is untouched: parking is THIS MACHINE's decision about spending, and the driver
+// never writes quest state (design §2). Another machine, or a person, can still take it.
+const doomedQuest = await api('GET', '/api/quests?repository=newcomer&includeClosed=true');
+check(
+  'parking is the machine\'s decision and leaves the quest open to anyone else',
+  (doomedQuest.json ?? []).some((q) => q.id === doomedId && q.status === 'Open'),
+  doomedQuest.text,
+);
+
+// And the person's way back in, from a terminal — the second door (D50).
+const retried = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+const afterRetry = drive();
+const retriedSessions = await api('GET', '/api/sessions?includeClosed=true');
+check(
+  'a retried quest runs again, and parks again after the same count',
+  retried.code === 0
+    && (retriedSessions.json ?? []).filter((s) => s.quest === doomedId && s.state === 'failed').length === 6,
+  `${retried.out}\n${afterRetry.out}`,
 );
 
 // Driving is additive, never exclusive (D46 §2): a quest an outside session already took is not the

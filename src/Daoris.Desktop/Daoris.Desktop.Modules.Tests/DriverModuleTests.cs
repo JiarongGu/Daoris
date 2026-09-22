@@ -119,6 +119,34 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// The strike limit over the bridge (DRV6/D58) — the other half of D50's two doors, and the half
+    /// that rots: a setting added to the terminal and not reported here compiles perfectly and leaves
+    /// the screen unable to show, let alone change, what the machine is actually doing.
+    /// </summary>
+    [Fact]
+    public async Task The_strike_limit_and_a_retry_write_the_same_file_the_terminal_edits()
+    {
+        var module = Module();
+
+        Assert.Equal(3, (await AnswerAsync(module, "STATE")).GetProperty("strikes").GetInt32());
+
+        var set = await AnswerAsync(module, "SET_STRIKES", new { strikes = 5 });
+        Assert.Equal(5, set.GetProperty("strikes").GetInt32());
+        Assert.Equal(5, DriverConfig.Load(DriverConfigPath).Strikes);
+
+        // 🔴 Zero is a real answer — "keep trying", the behaviour before this existed — and must not
+        // be read as the absence of one.
+        var never = await AnswerAsync(module, "SET_STRIKES", new { strikes = 0 });
+        Assert.Equal(0, never.GetProperty("strikes").GetInt32());
+        Assert.Equal(0, DriverConfig.Load(DriverConfigPath).Strikes);
+
+        await AnswerAsync(module, "SET_STRIKES", new { strikes = 3 });
+        var retried = await AnswerAsync(module, "RETRY_QUEST", new { quest = "a78553" });
+        Assert.Equal(3, retried.GetProperty("forgiven").GetProperty("a78553").GetInt32());
+        Assert.Equal(3, DriverConfig.Load(DriverConfigPath).ForgivenAt("a78553"));
+    }
+
+    /// <summary>
     /// What sessions consumed (TOOL3/D57 §4), over the bridge and nowhere else. A machine that has
     /// measured nothing answers empty lists — <b>never a zero</b>, because "nothing was measured" and
     /// "it used nothing" are different claims and only one of them is true.

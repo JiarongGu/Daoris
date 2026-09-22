@@ -23,10 +23,21 @@ public sealed record SessionView(
     string Id, string Repository, string State = "", string? Note = null);
 
 /// <summary>Everything a tick's decisions are made from, fetched once so the plan is coherent.</summary>
+/// <param name="Strikes">
+/// How many sessions have <b>failed</b> on each quest, by quest id — <b>derived</b> from the session
+/// records this machine already wrote, never a tally the driver keeps (DRV6). Only `failed` counts: a
+/// stand-down means somebody else got there first, a decline is a real answer, and a stop was the
+/// person. A quest nobody has failed is simply absent.
+/// </param>
 public sealed record Snapshot(
     IReadOnlyList<QuestView> Quests,
     IReadOnlyList<RepoView> Repositories,
-    IReadOnlyList<SessionView> Active);
+    IReadOnlyList<SessionView> Active,
+    IReadOnlyDictionary<string, int>? Strikes = null)
+{
+    public IReadOnlyDictionary<string, int> Strikes { get; init; } =
+        Strikes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+}
 
 public enum StartVerdict
 {
@@ -50,6 +61,12 @@ public enum StartVerdict
 
     /// <summary>The concurrency cap is spent.</summary>
     AtCapacity,
+
+    /// <summary>
+    /// Enough sessions have failed on this quest that trying again is spending an account rather than
+    /// making progress (DRV6). The person restarts it deliberately.
+    /// </summary>
+    Exhausted,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -116,6 +133,19 @@ public static class Planner
             {
                 return new(quest, StartVerdict.NoRoot,
                     $"no root is known for `{quest.To}` — run `daoris connect` from that repository.");
+            }
+
+            // 🔴 Before busy and before capacity, because those are waits and this is a stop: a
+            // parked quest must not read as "queued" in a surface that renders the reason.
+            var strikes = snapshot.Strikes.TryGetValue(quest.Id, out var failures)
+                ? failures - config.ForgivenAt(quest.Id)
+                : 0;
+            if (config.Strikes > 0 && strikes >= config.Strikes)
+            {
+                return new(quest, StartVerdict.Exhausted,
+                    $"{strikes} session(s) have failed on `#{quest.Id}` without landing anything — "
+                    + $"parked, because trying again spends an account rather than making progress. "
+                    + $"`daoris driver retry {quest.Id}` starts it again once you know why.");
             }
 
             if (blockedBy.TryGetValue(quest.To, out var session))

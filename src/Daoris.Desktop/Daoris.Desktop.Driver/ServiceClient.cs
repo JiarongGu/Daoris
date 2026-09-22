@@ -53,7 +53,11 @@ public sealed class ServiceClient : IDisposable
         var quests = ReadQuests(await GetAsync("/api/quests", ct).ConfigureAwait(false));
         var repositories = ReadRegistry(await GetAsync("/api/registry", ct).ConfigureAwait(false));
         var active = ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
-        return new Snapshot(quests, repositories, active);
+        // A second read rather than deriving both from one (DRV6): `/api/sessions` means ACTIVE, the
+        // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
+        // put a second opinion about it on this side of the wire.
+        var strikes = ReadStrikes(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        return new Snapshot(quests, repositories, active, strikes);
     }
 
     /// <summary>One quest's current status, closed ones included — how a session's end is observed.</summary>
@@ -263,6 +267,30 @@ public sealed class ServiceClient : IDisposable
         }
 
         return sessions;
+    }
+
+    /// <summary>
+    /// How often each quest has been failed, from the records themselves (DRV6).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Only <c>failed</c> counts.</b> A <c>stood-down</c> session means somebody else took the
+    /// quest first — the race resolving as designed, not a failure. A <c>declined</c> one is a real
+    /// answer and closes the quest anyway. A <c>stopped</c> one was the person. Counting any of those
+    /// would park quests for succeeding.
+    /// </remarks>
+    internal static IReadOnlyDictionary<string, int> ReadStrikes(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var strikes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (!string.Equals(Text(session, "state"), "failed", StringComparison.OrdinalIgnoreCase)) continue;
+            if (Text(session, "quest") is not { Length: > 0 } quest) continue;
+
+            strikes[quest] = strikes.TryGetValue(quest, out var seen) ? seen + 1 : 1;
+        }
+
+        return strikes;
     }
 
     private static string? Text(JsonElement element, string name) =>

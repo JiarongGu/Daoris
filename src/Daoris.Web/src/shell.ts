@@ -25,6 +25,10 @@ export type DriverState = {
   running: string[];
   /** Whether this machine interrupts the person when a session parks or ends unasked (SURF5b). */
   notify: boolean;
+  /** How many failed sessions park a quest (D58); `0` never parks. */
+  strikes: number;
+  /** Quests the person restarted, by id, and the failure count each was restarted at. */
+  forgiven: Record<string, number>;
 };
 
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>
@@ -89,6 +93,15 @@ export const useResolveSession = () => {
  * why a headless machine honours it too.
  */
 export const useSetNotify = () => useDriverChange<{ notify: boolean }>('SET_NOTIFY');
+
+/**
+ * How many failed sessions park a quest (D58) — `0` never parks, which is how every machine behaved
+ * before it existed. The same field `daoris driver strikes <n>` edits.
+ */
+export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STRIKES');
+
+/** Let a parked quest run again, counting from where it stands — `daoris driver retry <quest>`. */
+export const useRetryQuest = () => useDriverChange<{ quest: string }>('RETRY_QUEST');
 
 export const useSetDrivable = () => useDriverChange<{ repository: string; drivable: boolean }>('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
