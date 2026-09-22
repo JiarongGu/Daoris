@@ -195,7 +195,7 @@ export function ActivityBar<T extends string>({
           ))}
           {/* A frame and a view inside one are not peers, and a rail with no rule between them
               reads as one list of eight equal things. */}
-          <div aria-hidden className="my-1 h-px w-6 shrink-0 bg-line" />
+          <div aria-hidden className="my-1.5 h-px w-5 shrink-0 bg-line" />
         </>
       )}
 

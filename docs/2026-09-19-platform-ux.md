@@ -126,6 +126,26 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 - **Loading**: first load shows static skeleton rows; a refetch holds the previous render at reduced
   opacity — content never jumps.
 
+> **Amended 2026-09-22 again, from a real VS Code window** (owner: *"there is a vscode opening in my
+> app you can check its top/left/bottom bar design"*). Captured with the same instrument the polish
+> passes use and read for structure only. Three differences from what had been built, and one gap:
+>
+> - **A menu bar carries no chevrons.** Its menus are plain words at small gaps — File, Edit,
+>   Selection, View … — with no disclosure arrows at all. A menu bar is a convention strong enough
+>   not to need marking, and a chevron per menu is one piece of furniture per menu. Dropped.
+> - **Groups in the activity bar are separated by POSITION, not by rules**: a top group and a bottom
+>   group pinned to the foot, no lines between. Daoris keeps one rule under the frames, because a
+>   frame and a view inside one are different *kinds* of thing rather than two groups of the same
+>   kind — but the rule is now the lighter of the two weights.
+> - **The status bar is icon-and-number, not prose**: a remote glyph, then `⊗ 0  ⚠ 0`, then a bell.
+>   Daoris's is wordier (`driver ● ready · 1 session(s) · workspace · every circle`), which is
+>   defensible for a console whose facts need naming — but it is the bar most in need of a measured
+>   pass, and this one did not do it.
+> - 🔴 **The gap: layout toggles.** The right of its title bar holds four icons that show and hide the
+>   panel, the sidebar and the secondary bar, immediately left of the window controls. Work has an
+>   output panel and a right dock and neither can be reached from the strip — the state lives inside
+>   `WorkFrame`, so this needs hoisting before it needs designing. Filed as **SURF11**.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

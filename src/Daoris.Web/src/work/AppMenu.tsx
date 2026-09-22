@@ -57,7 +57,11 @@ export function AppMenu({
     <Menu.Root modal={false}>
       <Menu.Trigger
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-control px-2.5 py-1 text-small',
+          // 🔴 No chevron, and tight. Measured against a real VS Code window: its menu bar is plain
+          // words at small gaps — File Edit Selection View Go Run Terminal Help — and carries no
+          // disclosure arrows at all. A menu bar is a convention strong enough not to need marking,
+          // and eight chevrons in a title bar is eight pieces of furniture.
+          'inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-small',
           'transition-colors duration-(--speed)',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
           active ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:bg-raised hover:text-ink',
@@ -69,7 +73,6 @@ export function AppMenu({
             {badge}
           </span>
         )}
-        <Icon name="chevronDown" size={11} className="opacity-60" aria-hidden />
       </Menu.Trigger>
 
       <Menu.Portal>

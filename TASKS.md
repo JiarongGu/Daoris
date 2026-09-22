@@ -421,6 +421,14 @@ protocol beats a binary API), and no plugin runtime for the surface (D52).
   is a README section and a canon-adjacent page naming all three, what each may add, and what each
   deliberately may not — which is also the honest answer to "does it have a plugin system".
 
+- [ ] **SURF11 — the strip has no layout toggles.** Measured against a real VS Code window
+  (`docs/2026-09-19-platform-ux.md`): the right of its title bar holds four icons that show and hide
+  the panel, the sidebar and the secondary bar, immediately left of the window controls. Work has an
+  **output panel** and a **right dock** and the strip can reach neither. 🔴 **It needs hoisting
+  before it needs designing**: both states live inside `WorkFrame` (`daoris.panelClosed`, the dock
+  tab), and a toggle in the strip means the strip knows about them — so the question is where that
+  state belongs, not what the icons look like.
+
 ### Open — the arc's leftovers, in the order they are worth doing
 
 - [ ] **DEVKIT3 — the devkit is not run over its own repository, and its scan has six findings

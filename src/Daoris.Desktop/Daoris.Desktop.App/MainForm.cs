@@ -61,6 +61,25 @@ public sealed class MainForm : OptimizedForm
 
         // Still set: it is the taskbar's label and the caption of the one MessageBox left.
         Text = "Daoris (道衍)";
+
+        // 🔴 The WINDOW's icon, which `ApplicationIcon` alone does not set: that property gives the
+        // executable its face in Explorer and the taskbar, and a WinForms form still opens wearing
+        // the framework's default unless told otherwise. Taken from the running executable rather
+        // than embedded a second time, so the two can never disagree.
+        //
+        // It also fixes the tray: `SessionNotifier` reads `window.Icon ?? SystemIcons.Application`,
+        // so every balloon this app raised wore a generic Windows glyph until now.
+        try
+        {
+            if (Environment.ProcessPath is { Length: > 0 } self)
+            {
+                Icon = System.Drawing.Icon.ExtractAssociatedIcon(self);
+            }
+        }
+        catch (Exception)
+        {
+            // A face is not worth failing to open a window over. The default is still a face.
+        }
         MinimumSize = new Size(960, 600);
         CaptionButtonColors = CaptionColors(_palette);
 

@@ -14,6 +14,10 @@
     <!-- A known, expected WebView2/WindowsBase reference conflict — demoted exactly as the runtime's
          own consumers demote it. -->
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+    <!-- The application's own face, everywhere Windows shows one: the executable in Explorer, the
+         taskbar, the Alt-Tab list. Drawn by `tools/make-icon.py` and COMMITTED, so no consumer needs
+         that script to build this. -->
+    <ApplicationIcon>daoris.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
