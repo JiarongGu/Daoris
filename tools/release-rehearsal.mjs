@@ -116,9 +116,13 @@ check(`it reports ${version}`, versionRun.out.trim() === version, versionRun.out
 const help = daoris('--help');
 check('`daoris --help` exits 0 and lists the commands', help.code === 0 && /init/.test(help.out));
 
-// The repo writes its own rule BEFORE adopting, so the collision path is real.
-mkdirSync(join(consumer, '.claude', 'rules'), { recursive: true });
-writeFileSync(join(consumer, '.claude/rules/sensitive-info.md'), '# Our own rule\n\nWritten here first.\n');
+// The repo writes its own document BEFORE adopting, so the collision path is real.
+//
+// 🔴 A KNOWLEDGE document, because that tier is still files. Since D59 the always-loaded tier is a
+// span in `AGENTS.md`, so a repository's own `.claude/rules/x.md` is no longer at a path the canon
+// claims — it cannot collide, and `doctor` is what reports one restating a canonical rule.
+mkdirSync(join(consumer, '.claude', 'knowledge'), { recursive: true });
+writeFileSync(join(consumer, '.claude/knowledge/reaching-in.md'), '# Our own document\n\nWritten here first.\n');
 mkdirSync(join(consumer, '.claude', 'skills', 'house-deploy'), { recursive: true });
 writeFileSync(
   join(consumer, '.claude/skills/house-deploy/SKILL.md'),
@@ -135,18 +139,23 @@ check('`init` reports available packs', /dotnet-library|windows-machine/.test(in
 check("`init` names the repo's own skill as local", /house-deploy/.test(init.out), init.out);
 
 const collide = daoris('sync');
-check('`sync` refuses to clobber the pre-existing rule', collide.code === 1, collide.out);
-check('...and says which file', /sensitive-info/.test(collide.out), collide.out);
+check('`sync` refuses to clobber the pre-existing document', collide.code === 1, collide.out);
+check('...and says which file', /reaching-in/.test(collide.out), collide.out);
 check(
   '...and leaves it untouched',
-  read('.claude/rules/sensitive-info.md').includes('Written here first'),
+  read('.claude/knowledge/reaching-in.md').includes('Written here first'),
 );
 
-rmSync(join(consumer, '.claude/rules/sensitive-info.md'));
+rmSync(join(consumer, '.claude/knowledge/reaching-in.md'));
 const sync = daoris('sync');
 check('`sync` exits 0 once the collision is resolved', sync.code === 0, sync.out);
-check('rules are materialized', has('.claude/rules/sensitive-info.md'));
-check('the generated index is written', has('.claude/rules/RULES_INDEX.md'));
+// The always-loaded tier lands as a span in the file every harness reads (D59), with the pointer
+// beside it for the one that reads another name.
+check('the doctrine region is materialized', /<!-- daoris:rules /.test(read('AGENTS.md')));
+check('...carrying the rules themselves', /sensitive-info/.test(read('AGENTS.md')));
+check('...and the roster above them', /## Read on demand/.test(read('AGENTS.md')));
+check('the pointer is written', /@AGENTS\.md/.test(read('CLAUDE.md')));
+check('on-demand knowledge is still a file', has('.claude/knowledge/reaching-in.md'));
 check('skills survive packing as directories', has('.claude/skills/doc-loader/SKILL.md'));
 check('the lock is written', has('daoris.lock'));
 
@@ -154,9 +163,11 @@ const skill = read('.claude/skills/doc-loader/SKILL.md');
 check('a skill still starts with its frontmatter', skill.startsWith('---\n'), skill.slice(0, 60));
 check('...with the provenance header beneath it', /---\n<!-- daoris: /.test(skill));
 
-const index = read('.claude/rules/RULES_INDEX.md');
-check("the index marks the repo's own skill local", /house-deploy.*\(local\)/.test(index));
-check('the index lists canonical skills unmarked', /\[doc-loader\]/.test(index));
+// The roster is part of the region now, not a file beside it — so it is loaded rather than merely
+// present, which is the whole reason the tier moved.
+const roster = read('AGENTS.md');
+check("the roster marks the repo's own skill local", /house-deploy.*\(local\)/.test(roster));
+check('the roster lists canonical skills unmarked', /\[doc-loader\]/.test(roster));
 
 const checkRun = daoris('check');
 check('`check` exits 0 on a freshly synced repo', checkRun.code === 0, checkRun.out);
@@ -168,8 +179,12 @@ check('`doctor` exits 0 (advisory, never fails)', doctor.code === 0, doctor.out)
 // ---------------------------------------------------- 4. drift and the return
 
 section('4. Drift, and the return path');
-const ruleFile = join(consumer, '.claude/rules/task-lifecycle.md');
-writeFileSync(ruleFile, `${readFileSync(ruleFile, 'utf8')}\nA local improvement.\n`);
+// A rule is edited where it lives now (D59): inside the region, which is what keeps drift and the
+// return path per RULE rather than per region.
+const regionFile = join(consumer, 'AGENTS.md');
+const editRule = (from, to) =>
+  writeFileSync(regionFile, readFileSync(regionFile, 'utf8').replace(from, to));
+editRule('# Task lifecycle', '# Task lifecycle\n\nA local improvement.');
 
 const drifted = daoris('check');
 check('`check` catches a local edit', drifted.code === 1, drifted.out);
@@ -212,11 +227,8 @@ writeFileSync(join(consumer, 'daoris.json'), `${JSON.stringify(manifest, null, 2
 
 const adopt = withV2('sync');
 check('a promoted edit survives the canon shipping as a new version', adopt.code === 0, adopt.out);
-check('...and the pack installs', has('.claude/rules/windows-machine.md'));
-check(
-  '...with the promotion intact',
-  read('.claude/rules/task-lifecycle.md').includes('A local improvement.'),
-);
+check('...and the pack installs', /windows-machine/.test(read('AGENTS.md')));
+check('...with the promotion intact', read('AGENTS.md').includes('A local improvement.'));
 
 // (b) A canonical file is renamed upstream.
 setCanonVersion('0.0.3');
@@ -229,8 +241,10 @@ setChangelog('## 0.0.3\n\n- `windows-machine` renamed to `windows-traps`.\n\n');
 
 const renamed = withV2('sync');
 check('a rename is reported as a rename', /renamed\s+rules\/windows-machine\.md/.test(renamed.out), renamed.out);
-check('...the old file is gone', !has('.claude/rules/windows-machine.md'));
-check('...and the new one is present', has('.claude/rules/windows-traps.md'));
+// By its provenance line, not by its name: the PACK is also called `windows-machine`, so the bare
+// word is still in the region legitimately and a looser assertion fails on a rename that worked.
+check('...the old rule is gone', !/rules\/windows-machine\.md @/.test(read('AGENTS.md')));
+check('...and the new one is present', /rules\/windows-traps\.md @/.test(read('AGENTS.md')));
 
 // (c) A version bump that changes no document at all.
 setCanonVersion('0.0.4');
@@ -252,7 +266,7 @@ const upgrade = withV2('sync');
 check('`sync` applies the update', upgrade.code === 0, upgrade.out);
 check(
   '...and the new wording is on disk',
-  read('.claude/rules/sensitive-info.md').includes('never in a screenshot'),
+  read('AGENTS.md').includes('never in a screenshot'),
 );
 check('`check` is clean afterwards', withV2('check').code === 0);
 
