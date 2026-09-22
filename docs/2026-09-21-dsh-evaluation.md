@@ -453,3 +453,31 @@ fifth helper belongs on this list.
 
 **Measured since**: ACP4 is not an improvement but a blocker — ACP2’s real driven run reached the model,
 was told to take its quest, found no such tool and ended its turn (TASKS.md, 2026-09-22).
+
+### 6.5 What each harness actually loads — measured, not read off a doc
+
+The owner's observation that orca's layout *"made a common management style for different agents"*
+(2026-09-22) is the fix HELP1 was groping for, and it works for a reason worth writing down. Measured
+on this machine, from each harness's own artefacts rather than from its marketing:
+
+| Harness | Always-loaded file | `@path` imports | `.claude/rules/` |
+|---|---|---|---|
+| **Claude Code** | `CLAUDE.md` | **followed** | **auto-loaded** |
+| **dsh** 0.1.6-alpha.2 | `AGENTS.md`, `CLAUDE.md` (+ `.local` overlays) | not interpreted | not interpreted |
+| **codex** 0.155.1 | `AGENTS.md` | — | detected only, as a foreign layout to **migrate** |
+
+Read from `dsh-agent-instructions`'s own limitations section, and from strings in codex's binary:
+`"failed to load AGENTS.md instructions"` beside a `detect/mod.rs` path that pairs `CLAUDE.md` with
+`"Migrate skills from … to …"`. Codex does not read a Claude Code layout; it offers to convert one.
+
+**So `AGENTS.md` is the only file all three load** — and that is exactly what orca's design exploits:
+the content in `AGENTS.md`, and `CLAUDE.md` reduced to a single line, `@AGENTS.md`, for the one
+harness that looks for the other name. One file to maintain, one line per foreign convention.
+
+🔴 **The uncomfortable consequence, and it is the real question.** Daoris's always-loaded tier is
+`.claude/rules/`, which **only Claude Code reads**. Rendering the same rules into `AGENTS.md` as well
+would hand Claude Code the whole tier *twice* — it already auto-loads the directory — and the tier is
+the largest thing in an adopter's budget. So the choice is not "also write `AGENTS.md`"; it is
+**where the always-loaded tier lives**, and the honest reading is that an instruction file is what
+every harness *means* by always-loaded. Knowledge is read on demand and skills are invoked by name;
+only the rules tier is claiming a property one harness happens to provide.

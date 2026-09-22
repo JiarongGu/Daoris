@@ -2054,3 +2054,50 @@ a parked quest freely. **Absent `strikes` means the default, not off** — the o
 `notify`, because a `driver.json` that predates this field belongs to the machine that has been
 driving unattended longest. And the limit is per quest rather than per repository: a repository with
 one broken quest must keep working the rest.
+
+## D59 — The always-loaded tier lives in `AGENTS.md`, inside a region Daoris owns (2026-09-22)
+
+**Decision.** `sync` stops writing `.claude/rules/` and writes the core rules into a marked region of
+`AGENTS.md`, with `CLAUDE.md` carrying a one-line `@AGENTS.md` import. Knowledge and skills do not
+move. `docs/2026-09-22-instruction-file-design.md` is the contract, and §4 extends D19's table to a
+region. Accepted by the owner on the measurement below.
+
+**What forced it.** Measured across three harnesses (dsh evaluation §6.5): **`.claude/rules/` is read
+by exactly one of them.** dsh's own limitations say it is not interpreted; codex's binary pairs
+`CLAUDE.md` with *"Migrate skills from … to …"* rather than with loading anything. `AGENTS.md` is the
+only file all three load. So Daoris has been shipping an always-loaded tier whose always-loaded-ness
+was a property of one agent harness rather than a guarantee the canon made — and a repository driven
+through dsh or codex had `repository-owns-its-work` on disk and unread.
+
+**Where the shape came from.** A candidate adopter the owner offered as an example, whose `CLAUDE.md`
+is a single line — `@AGENTS.md` — over 133 lines of its own doctrine. The owner read it as *"a common
+management style for different agents"*, which is exactly what it is: one file to maintain, one line
+per foreign convention. Daoris's contribution is to own a region of that file rather than a directory
+beside it.
+
+**Rejected: writing `AGENTS.md` wholesale.** Dead on arrival — the repository that prompted this has
+133 lines of its own in that file, and clobbering an adopter's doctrine to deliver doctrine is
+self-defeating.
+
+**Rejected: a file of Daoris's own, pointed at.** A pointer only works where the harness follows one,
+and `@path` imports are Claude Code's alone. It would have delivered the tier to the one harness that
+already had it.
+
+**Rejected: keeping the directory and ALSO rendering the region.** Nothing existing would change and
+every harness would get the tier — at the cost of Claude Code loading the largest item in an adopter's
+budget twice. The tier is ~24,000 bytes; paying it twice on the harness that already worked is a
+strange price for compatibility with a shape that was wrong.
+
+**Rejected: a pointer paragraph naming the rules instead of carrying them.** Cheap in bytes, and it
+turns *always loaded* into *always told to load* — the precise failure `skills-workflow` was written
+from, since an unread match is indistinguishable from a rule that does not exist.
+
+**D7 is amended and its better half survives.** *The tier is the directory* becomes **the tier is the
+location**. There is still no `tier:` field to disagree with, and the always-loaded footprint is still
+measurable — a region has a byte count exactly as a directory did, so CANON7's budget keeps working
+and keeps meaning the same thing.
+
+**The safety argument is one sentence.** A damaged marker, a reordered pair, or a second region is
+**refused, never guessed at** — the file on the other side of that guess is the adopter's own
+doctrine, and `file-tool-discipline` already states why computed boundaries take the rest of a file
+with them when they are wrong.

@@ -20,13 +20,12 @@ studies, built as SURF2–SURF10, closed 2026-09-22 when SURF5b also closed driv
 **D53** — the dsh evaluation the owner interposed, accepted the same day: *dsh is adopted as a
 protocol, not a product*, which put the protocol door in front of the view.
 
-**The current direction is the toolchain** (owner, 2026-09-22 → **TOOL1/D57**,
-`docs/2026-09-22-toolchain-design.md`), from three gaps the owner named: no proper credential
-management, no multiple-account usage management, and *"we still don't have managed cli (still reading
-from the machine)"*. The measurement behind it corrected a doctrine overclaim — **the accounts are
-Daoris's; the binary was still the machine's** — and the owner's two answers narrowed the rest:
-**usage is measured before it is managed**, and breadth is **more native adapters plus the ACP door,
-not a registry**. **TOOL2 and TOOL3 have landed.**
+**Two live directions, both the owner's and both measured before they were designed.** **The
+toolchain** (2026-09-22 → **TOOL1/D57**): the measurement corrected a doctrine overclaim — the
+accounts were Daoris's and the binary was still the machine's — and **TOOL2 and TOOL3 have landed**.
+**The instruction file** (2026-09-22 → **CANON8/D59**): `.claude/rules/` is read by one harness of
+three, so the always-loaded tier moves into `AGENTS.md`. Nothing of it is built yet, and it is the
+larger of the two.
 
 ## State
 
@@ -91,49 +90,18 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-**The arc is done: workspaces and the interactive surface (D48/D49/D50, 2026-09-20, each amended
-the same day on the owner's corrections).** The owner set the direction in this backlog and granted
-structural redesign (nothing is deployed); the design session turned it into two contracts and eight
-build items, and **all eight landed 2026-09-20**.
-**The workspace arc**: a
-registry row carries the workspace, every cross-repository answer is scoped by it, the family is an
-explicit list that `connect`, `retire` and `import` maintain, each circle syncs with the one deployment
-its own entry names, and a feed carries the commit it speaks for so the newest canonical view is the
-one that stands. **The interactive arc**: the console streams, a conversation is a session, and the
-harnesses those sessions run on are Daoris's to find, install, update and hold many accounts for —
-without ever touching a credential. **And coexistence**: the canon no longer instructs anything a
-contributor without Daoris cannot do.
+**Every prior arc is closed and in `docs/task-archive.md`** — D45 (the driver), D47 (the remote),
+D48/D49/D50 (workspaces, the interactive surface, management parity), D51–D56 (the working surface,
+SURF2 through SURF10), D53/ACP1 (the protocol door), D57 (the toolchain, TOOL2 and TOOL3). Nothing is
+pushed or published, and a release is still blocked on REH1.
 
-**The arc is closed and reviewed (REV2), the owner set the next direction — the desktop becomes a
-working surface — and SURF1 has designed it (2026-09-21).** The contract is
-`docs/2026-09-21-working-surface-design.md`; the decisions are **D51** (the isolation model, settled
-first because everything follows from it) and **D52** (the surface, twice amended the same day: the
-layout structure is deepseek-harness's, and the build is component by component). **SURF2 and SURF3
-have landed** (2026-09-21): the lock keys on the tree; the trees exist, opt-in per repository, grown
-per session before the record, refusing to die holding work — and a dirty root no longer holds the
-driver, which was the point.
+**Two things are open and both are the owner's directions**, in the Backlog below: **CANON8/D59**, the
+instruction file — designed 2026-09-22, nothing built, and the larger of the two; and the rest of the
+toolchain and protocol work (ACP2's last step is ACP4). Four **held** items sit at the bottom; do not
+pick one up until its trigger has arrived.
 
-**DSH1 has run and D53 is accepted (both 2026-09-21).** The evidence is
-`docs/2026-09-21-dsh-evaluation.md`: eight probes against an installed `dsh` over a scratch
-repository, driven not read about, on a **scripted provider** because no model key was supplied (the
-note says at every step what that tier proves and what it cannot). **D53**: *dsh is adopted as a
-protocol, not a product* — the adapter seam grows an **ACP door** (option B), dsh and codex arrive as
-configurations of it (A folds in; HARNESS2 becomes ACP3), and the working surface stays `Daoris.Web`
-(C and D rejected; D would have reopened D1 and is declined on those terms). **SURF4a–d are
-unblocked** and resume as designed, with SURF4c's timeline reading the protocol. The next build is
-**ACP1 → ACP2 → ACP3** (below); the docs strand produced **DOCS2**, which has landed.
-
-Smaller and independent of them: **ARCH1** (the owner's mid-session direction of 2026-09-21 — dsh's
-domain separation and plugin design as the example for Daoris's own structure; a study, read as
-*pattern* not runtime until the owner says otherwise), **DEVKIT3** (the devkit is not run over its own
-repository — found by DOCS2), and **CANON7** (a decision to bring the owner rather than work to do —
-it takes minutes, and **CANON5 is parked behind it**). **DOCS2 landed 2026-09-21** — the doc-budget
-manifest, the rejected-alternatives assertion, and the prose pass in `post-feature`; in the archive.
-**WSP5 landed 2026-09-21** — the workspace switcher is global chrome,
-absent while the family is one circle, and every cross-repository query carries the scope; in the
-archive. **HARNESS2** now waits on D53 (it becomes ACP3's codex configuration if confirmed). Four
-**held** items sit below those; do not pick one up until its trigger has arrived. Nothing is pushed or
-published, and a release is still blocked on REH1.
+**Start by reading the contract the item cites** — every backlog row names one. The bullets below are
+the traps that are not in any contract, because they were found rather than designed.
 
 - **Read first for SURF work:** `docs/2026-09-21-working-surface-design.md` (the contract),
   `docs/2026-09-21-working-surface-components.md` (**how the screens get built** — the layers, the
@@ -297,38 +265,17 @@ is the one that needs the owner: its closing step spends a real login.
   drives a quest published **by** a driven session.
 
 
-- [ ] **HELP1 — the always-loaded tier reaches one harness only.** Measured 2026-09-22
-  (`docs/2026-09-21-dsh-evaluation.md` §6.2): `dsh-agent-instructions` loads `AGENTS.md` and
-  `CLAUDE.md` and says in its own limitations that **`.claude/rules/` is not interpreted**. Codex reads
-  `AGENTS.md`. So `sync` writes a tier that exactly one harness auto-loads, and a Daoris repository
-  driven through dsh or codex has its rules **on disk and invisible** — `repository-owns-its-work`
-  included. 🔴 **A canon-shaped defect, not a dsh one:** "always loaded" is currently a property of one
-  agent harness rather than a guarantee the canon makes. `sync` renders the core rules into the
-  instruction file every harness reads, generated the way `RULES_INDEX.md` already is — never a second
-  hand-maintained copy. Needs a decision first: one `AGENTS.md` or an inclusion inside `CLAUDE.md`, and
-  what it does to the 30000-byte budget an adopter starts at.
-
-  🔴 **Confirmed on a real repository** (owner, 2026-09-22, a candidate adopter): `daoris analyze` —
-  which writes nothing — reported *"ALSO SEEN the AGENTS.md convention … what it installs will be
-  invisible to them"*, and the repository turned out to carry **both** files, with `CLAUDE.md`
-  holding exactly one line: `@AGENTS.md`. So its whole doctrine lives behind an **import**, and
-  `dsh-agent-instructions` says in the same limitations paragraph that `.claude/rules/` *and*
-  `@path` imports are both uninterpreted. That is a **third** loader-specific mechanism, and it
-  changes the shape of the fix: the target is not "an instruction file" but *whichever file this
-  repository's harnesses actually read*, which `analyze` can already detect and `init` would have to
-  record. The detection exists; nothing acts on it.
-
 - [ ] **HELP2 — skills reach one harness only.** `dsh-skill-filesystem` scans `<project>/.dsh/skills`
   and `<project>/.agents/skills`, never `.claude/skills` — but its bundle format is `<name>/SKILL.md`,
   **exactly Daoris's layout**, so this is a root rather than a conversion: `customSkillDirs` naming
-  `.claude/skills`, written into the profile Daoris owns the location of (SES3). Nothing on an
-  adopter's disk changes. Do it with ACP3, which is where the dsh profile is first written.
+  `.claude/skills`, in the profile Daoris owns the location of (SES3). Nothing on an adopter's disk
+  changes. Do it with ACP3, where the dsh profile is first written.
 
 - [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
   Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
-  written **once** in that dialect — refuse a write outside the session's tree (D51), refuse a push
-  (D37) — runs on all three. Probe 4 already found the Windows trap. Held until ACP4 and HELP1 land:
-  a guard is worth less than the doctrine it enforces arriving at all.
+  written **once** — refuse a write outside the session's tree (D51), refuse a push (D37) — runs on
+  all three. Probe 4 found the Windows trap. Held behind ACP4 and CANON8: a guard is worth less than
+  the doctrine it enforces arriving at all. (HELP1 became CANON8; D59 has it.)
 
 ### The working surface — the build order (D51/D52, designed 2026-09-21)
 
@@ -368,6 +315,42 @@ SURF8, SURF9 and SURF10, all landed by 2026-09-22. `docs/task-archive.md` carrie
 and `docs/2026-09-19-platform-ux.md` §4 what each look-at-it pass settled. **The surface is reachable
 and usable**: `npm run desktop -- run`, switch to *Work*. Nothing in this section is open; it is kept
 only because the paragraphs above are the contract a *new* surface item would be built against.
+
+### The instruction file — where the always-loaded tier lives (owner, 2026-09-22 → D59)
+
+> *"this agent file design actually made a common management style for different agents which is good
+> to take"* — on a candidate adopter whose `CLAUDE.md` is one line, `@AGENTS.md`, over 133 lines of
+> its own doctrine.
+
+**Designed and decided the same day**: `docs/2026-09-22-instruction-file-design.md` is the contract and
+**D59** carries the four rejected alternatives. What forced it was a measurement — **`.claude/rules/`
+is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now this arc.
+
+- [ ] **CANON8a — the region, and the state space under it.** `AGENTS.md` grows a marked region
+  holding the core rules; `CLAUDE.md` grows a one-line `@AGENTS.md` import the same way. Design §4 is
+  the table and it must be implemented as a table — D19 was corrected four times before one was
+  written down, and this adds three states a file never had. 🔴 **A damaged marker, a reordered pair
+  and a second region are REFUSED, never guessed at**: the file on the other side of that boundary is
+  the adopter's own doctrine. Per rule inside the region, D19 applies unchanged, because each rule
+  keeps its provenance comment — which is what keeps drift and `upstream` per rule.
+
+- [ ] **CANON8b — `sync`, `check`, `upstream` and the lock over a span.** One lock entry describes a
+  span inside a file rather than a file; drift is measured against the lock as ever (D13); `upstream`
+  extracts one rule from the region. `index` generates the tier table into the region rather than into
+  `RULES_INDEX.md`, and CANON7's budget measures the region — the footprint stays measurable, which is
+  the half of D7 that survives.
+
+- [ ] **CANON8c — migration, and the family in step.** An adopter on the old shape has
+  `.claude/rules/` in its lock: the canonical rules move into the region and the lock entries with
+  them, **a drifted rule is refused rather than moved**, and a local rule is left where it is. Then
+  this repository and `examples/` re-sync **in the same commit** — the rehearsal enforces it — and
+  Daoris's own doctrine moves with everybody else's.
+
+- [ ] **CANON8d — say the new thing.** `analyze` already detects the `AGENTS.md` convention and says
+  *"what it installs will be invisible to them"*, which stops being true; `init`'s adoption flow, the
+  README's three layers, `canon-authoring`'s "`rules/` is always-loaded", and D7 in the contract all
+  describe the directory. Each is a sentence, and a stale one is believed for exactly as long as it
+  survives (`claims-need-checks`).
 
 ### The next direction — the toolchain and its accounts (owner, 2026-09-22)
 
