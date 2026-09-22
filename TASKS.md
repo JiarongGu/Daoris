@@ -96,10 +96,22 @@ D48/D49/D50 (workspaces, the interactive surface, management parity), D51–D56 
 SURF2 through SURF10), D53/ACP1 (the protocol door), D57 (the toolchain, TOOL2 and TOOL3). Nothing is
 pushed or published, and a release is still blocked on REH1.
 
-**Two things are open and both are the owner's directions**, in the Backlog below: **CANON8/D59**, the
-instruction file — designed 2026-09-22, nothing built, and the larger of the two; and the rest of the
-toolchain and protocol work (ACP2's last step is ACP4). Four **held** items sit at the bottom; do not
-pick one up until its trigger has arrived.
+🔴 **ACP2 is one command away, and it is the owner's** (2026-09-22). ACP4 has landed, so the blocker
+is gone: a driven session is now handed the knowledge server it is told to claim its quest with.
+
+```
+node tools/acp2-proof.mjs --drive      # spends one real login; this is D23's "on proof"
+```
+
+It builds a scratch family, publishes a real quest, drives one tick over the protocol door and
+asserts DRV4's shape. **DRV6 caps it at three attempts** — the first attempt at this burned eighteen
+sessions before anything stopped it, which is what DRV6 was written from. Until it passes, ACP2 stays
+open and `claude-code` over the pipe door remains what a machine drives with.
+
+**What else is open**, in the Backlog below: **CANON8d** (the sentences D59 made stale — `analyze`
+still says the AGENTS.md convention makes what Daoris installs *"invisible to them"*, which stopped
+being true), then ACP3, HELP2, HELP3, TOOL5, DEVKIT3, CANON5. Four **held** items sit at the bottom;
+do not pick one up until its trigger has arrived. Nothing is pushed or published.
 
 **Start by reading the contract the item cites** — every backlog row names one. The bullets below are
 the traps that are not in any contract, because they were found rather than designed.
@@ -343,11 +355,19 @@ is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now
   commit. Always-loaded core **23,862 → 21,817 bytes**, because eight frontmatter blocks and a
   separate roster's preamble went away. The archive carries the outcome.
 
-- [ ] **CANON8d — say the new thing.** `analyze` already detects the `AGENTS.md` convention and says
-  *"what it installs will be invisible to them"*, which stops being true; `init`'s adoption flow, the
-  README's three layers, `canon-authoring`'s "`rules/` is always-loaded", and D7 in the contract all
-  describe the directory. Each is a sentence, and a stale one is believed for exactly as long as it
-  survives (`claims-need-checks`).
+- [ ] **CANON8d — say the new thing.** Four sentences D59 made false, each verified stale on
+  2026-09-22 and each one edit:
+  - `src/Daoris.Cli/src/analyze.ts` — the `AGENTS.md` verdict still says *"what it installs will be
+    invisible to them"*, which is now backwards: that file is exactly where it lands.
+  - `docs/2026-08-04-daoris-design.md:71` — **D7**, *"The tier is the directory, not metadata"*.
+    Amend in place the way D59 states it: the tier is the **location**, and D7's better half (no
+    `tier:` field, a measurable footprint) survives untouched.
+  - `README.md:178` — *"The tier is the directory"* in the three-layer story a consumer reads first.
+  - `.claude/knowledge/canon-authoring.md:69` — *"`rules/` is always-loaded"*. 🔴 A **canon** file, so
+    it must stay project-agnostic and re-sync `examples/` in the same commit.
+
+  A stale sentence is believed for exactly as long as it survives, and the confident one is what tells
+  a reader not to go and look (`claims-need-checks`).
 
 ### The next direction — the toolchain and its accounts (owner, 2026-09-22)
 
