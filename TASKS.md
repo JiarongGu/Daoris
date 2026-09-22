@@ -125,9 +125,14 @@ past the fold with its legend cut off, a seven-line toast over the card it descr
 (the accounts surface, regrouped from adapters to tools), **Quests** (🔴 the same hold toast every
 tick, forever — a tick report is a log and a toast is an interruption, and they were one object),
 **Projects** (nothing filed: 20 registrations render and the not-adopted section handles 16 rows),
-and **Search** (a broad query capped at 40 with nothing saying so, and no count at all otherwise).
-🔴 **Still not looked at on real data: Convergence, and the whole Work frame.** Convergence is the
-one most likely to differ — it has 965 entries to pair up where the fixture had a handful.
+**Search** (a broad query capped at 40 with nothing saying so, and no count at all otherwise), and
+**Convergence** (🔴 the lead view's first group was a 990-character template "substantially the same
+words" as a 326 KB document — containment normalised by the smaller set has no size floor, and the
+fixture has no tomes to show it; 13 of 48 groups were that shape and the floor that removes them
+was measured, not guessed — plus the same uncounted cap as search, and a gloss repeating the
+service's sentence under every card). 🔴 **Still not looked at on real data: the Work frame.** It
+is the frame with the most machinery behind it — the stream, the timeline, the review dock, the
+composer — and the fixture's one parked conversation is the only session it has ever shown.
 
 🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
 (four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface

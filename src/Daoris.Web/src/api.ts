@@ -107,7 +107,7 @@ export type Retired = { repository: string; retired: boolean; message: string };
  * door asked with no workspace is asked for every circle it holds (D48 §4: the door never invents a
  * default, and neither does this).
  */
-import { SEARCH_SHOWN } from './results';
+import { PAGE_SHOWN } from './results';
 
 function qs(params: Record<string, string | number | boolean | null | undefined>): string {
   const pairs = Object.entries(params)
@@ -154,9 +154,10 @@ export const api = {
   search: (q: string, localOnly: boolean, workspace: string | null, signal?: AbortSignal) =>
     // One MORE than the view shows, so the view can say whether there are more without guessing
     // (`results.ts`). The extra row is never rendered.
-    get<Hit[]>(`/api/search${qs({ q, localOnly, limit: SEARCH_SHOWN + 1, workspace })}`, signal),
+    get<Hit[]>(`/api/search${qs({ q, localOnly, limit: PAGE_SHOWN + 1, workspace })}`, signal),
   convergence: (minimumSimilarity: number, workspace: string | null, signal?: AbortSignal) =>
-    get<Convergence[]>(`/api/convergence${qs({ minimumSimilarity, limit: 40, workspace })}`, signal),
+    // One more than the view shows, for the same reason search asks for one more (`results.ts`).
+    get<Convergence[]>(`/api/convergence${qs({ minimumSimilarity, limit: PAGE_SHOWN + 1, workspace })}`, signal),
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
   registry: (workspace: string | null, signal?: AbortSignal) =>

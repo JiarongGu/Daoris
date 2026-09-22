@@ -1,5 +1,8 @@
-/** How many hits a search shows. The page asks the service for one more, to learn whether there are. */
-export const SEARCH_SHOWN = 40;
+/**
+ * How many rows a capped list shows — search hits and convergence groups alike. The page asks the
+ * service for one more, to learn whether there are more.
+ */
+export const PAGE_SHOWN = 40;
 
 /**
  * A page of results, and whether the service had more to give.
@@ -21,7 +24,7 @@ export const SEARCH_SHOWN = 40;
  * service capped it, so the honest statement is "there are more", never a number. Two views, two
  * true sentences, and collapsing them would make one of them a lie.
  */
-export function page<T>(received: readonly T[], shown: number = SEARCH_SHOWN): {
+export function page<T>(received: readonly T[], shown: number = PAGE_SHOWN): {
   shown: T[];
   more: boolean;
 } {

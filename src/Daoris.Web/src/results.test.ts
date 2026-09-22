@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SEARCH_SHOWN, page } from './results';
+import { PAGE_SHOWN, page } from './results';
 
 const rows = (n: number) => Array.from({ length: n }, (_, index) => index);
 
@@ -9,7 +9,7 @@ const rows = (n: number) => Array.from({ length: n }, (_, index) => index);
  */
 describe('page', () => {
   it('shows everything when the service had no more to give', () => {
-    const { shown, more } = page(rows(26), SEARCH_SHOWN);
+    const { shown, more } = page(rows(26), PAGE_SHOWN);
     expect(shown).toHaveLength(26);
     expect(more).toBe(false);
   });
@@ -19,11 +19,11 @@ describe('page', () => {
    * received is not — so the page asks for one more than it will ever render.
    */
   it('knows there are more only because it asked for one more', () => {
-    const exactly = page(rows(SEARCH_SHOWN), SEARCH_SHOWN);
+    const exactly = page(rows(PAGE_SHOWN), PAGE_SHOWN);
     expect(exactly.more).toBe(false);
 
-    const overflowing = page(rows(SEARCH_SHOWN + 1), SEARCH_SHOWN);
-    expect(overflowing.shown).toHaveLength(SEARCH_SHOWN);
+    const overflowing = page(rows(PAGE_SHOWN + 1), PAGE_SHOWN);
+    expect(overflowing.shown).toHaveLength(PAGE_SHOWN);
     expect(overflowing.more).toBe(true);
   });
 

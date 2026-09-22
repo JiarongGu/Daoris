@@ -151,6 +151,49 @@ public class ConvergenceTests
         Assert.Empty(candidates);
     }
 
+    /// <summary>
+    /// 🔴 <b>Found on the deployed application, where the index holds 965 entries.</b> The lead view's
+    /// first group was a 990-character rules TEMPLATE, a dev-conventions rule and a 326 KB pitfalls
+    /// document, at similarity 1.000 — because containment over token SETS, normalised by the smaller
+    /// set, scores any short document of common words as fully contained in any long one. Measured
+    /// across all 48 groups: 13 were this shape (vocabulary ratio ≤ 0.09, every one a tiny record
+    /// against a tome), 35 were genuine (ratio ≥ 0.46, every one the same file in two repositories),
+    /// and nothing sat between. A restatement is between documents of comparable size.
+    /// </summary>
+    [Fact]
+    public async Task A_short_document_of_common_words_is_not_a_restatement_of_a_long_one()
+    {
+        var template = "Rule title imperative not historical. One sentence summary of what is "
+            + "enforced. Why the reason this rule exists, a past incident, constraint or preference. "
+            + "How to apply it, so future sessions judge edge cases instead of following blindly.";
+        // Every word of the template, buried in a document ten times its vocabulary.
+        var tome = template + " " + string.Join(' ', Enumerable.Range(0, 400).Select(i => $"distinct{i}"));
+
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "TEMPLATE", template)]);
+        await store.ReplaceRepositoryAsync("beta", [Entry("beta", "pitfalls", tome)]);
+
+        Assert.Empty(await new ConvergenceDetector(store).FindAsync(
+            new ConvergenceOptions(MinimumSimilarity: 0.75)));
+    }
+
+    /// <summary>The guard must not take the case it was written beside: a copy that GREW is still a copy.</summary>
+    [Fact]
+    public async Task A_copy_that_grew_by_a_paragraph_is_still_a_restatement()
+    {
+        var original = "Keep captures small because a large image is rejected by the reader.";
+        var grown = original + " Measured on the second capture tool as well, where the limit is lower "
+            + "and the rejection is silent rather than reported.";
+
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "hygiene", original)]);
+        await store.ReplaceRepositoryAsync("beta", [Entry("beta", "limits", grown)]);
+
+        var found = Assert.Single(await new ConvergenceDetector(store).FindAsync(
+            new ConvergenceOptions(MinimumSimilarity: 0.7)));
+        Assert.Equal(ConvergenceMethod.Restatement, found.Method);
+    }
+
     [Fact]
     public async Task A_pair_below_the_threshold_is_not_reported()
     {

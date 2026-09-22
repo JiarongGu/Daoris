@@ -128,8 +128,16 @@ public sealed class ConvergenceDetector(
     /// Substantially the same words — a copy that has since drifted.
     /// </summary>
     /// <remarks>
-    /// Containment over token sets rather than Jaccard, so a short document restating a long one still
-    /// scores: the same choice the drift detector made, for the same reason.
+    /// <para>Containment over token sets rather than Jaccard, so a copy that grew a paragraph still
+    /// scores: the same choice the drift detector made, for the same reason.</para>
+    ///
+    /// <para>🔴 <b>Between documents of comparable size only</b> (<see cref="Comparable"/>). Containment
+    /// normalised by the smaller set has a failure mode nothing in a fixture can show: any short
+    /// document of common words is fully contained in any long document's vocabulary, so a rules
+    /// TEMPLATE scored 1.000 against a 326 KB pitfalls document and led the view on the first real
+    /// index. Measured across every group on that index: 13 of 48 were this shape, all with a
+    /// vocabulary ratio at or below 0.09; the 35 genuine ones — every one the same file in two
+    /// repositories — were all at or above 0.46. The floor sits in the gap.</para>
     /// </remarks>
     private static IEnumerable<ConvergenceCandidate> FindRestatements(
         IReadOnlyList<KnowledgeEntry> entries, HashSet<string> claimed, double threshold)
@@ -151,6 +159,7 @@ public sealed class ConvergenceDetector(
                 if (other.Id == seed.Id || claimed.Contains(other.Id)) continue;
                 if (string.Equals(other.Repository, seed.Repository, StringComparison.Ordinal)) continue;
 
+                if (!Comparable(tokens[seed.Id], tokens[other.Id])) continue;
                 var score = Containment(tokens[seed.Id], tokens[other.Id]);
                 if (score < threshold) continue;
 
@@ -258,7 +267,24 @@ public sealed class ConvergenceDetector(
         return byId;
     }
 
-    /// <summary>Shared tokens over the smaller set, so a short document restating a long one scores.</summary>
+    /// <summary>
+    /// The smaller vocabulary must be at least this fraction of the larger for two documents to be
+    /// candidates for restatement at all.
+    /// </summary>
+    /// <remarks>
+    /// 0.25 allows a copy to grow fourfold and still be found. Measured on the first real index
+    /// (965 entries): every genuine restatement sat at 0.46 or above and every false one at 0.09 or
+    /// below, so the floor has a margin of roughly two on either side. Raise it only against a
+    /// measurement like that one, never against a fixture — a fixture has no tomes.
+    /// </remarks>
+    private const double RestatementSizeFloor = 0.25;
+
+    /// <summary>Whether two vocabularies are close enough in size for containment to mean anything.</summary>
+    private static bool Comparable(HashSet<string> a, HashSet<string> b) =>
+        a.Count > 0 && b.Count > 0
+        && (double)Math.Min(a.Count, b.Count) / Math.Max(a.Count, b.Count) >= RestatementSizeFloor;
+
+    /// <summary>Shared tokens over the smaller set, so a copy that grew still scores — see <see cref="Comparable"/>.</summary>
     private static double Containment(HashSet<string> a, HashSet<string> b)
     {
         if (a.Count == 0 || b.Count == 0) return 0;

@@ -5,6 +5,43 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A 990-character template was "substantially the same words" as a 326 KB document (2026-09-23)
+
+**Symptom.** The Convergence view — the knowledge half's lead view — opened on the first real index
+with a group at similarity **1.000** holding a rules `TEMPLATE`, a `dev-conventions` rule and a
+`pitfalls` knowledge document from three repositories, and the sentence *"A copy that has drifted."*
+Thirteen of the forty-eight groups were that shape.
+
+**Root cause.** Restatement scores **containment over token sets, normalised by the smaller set**:
+`|A ∩ B| / min(|A|, |B|)`. That was a deliberate choice, so a copy that grew a paragraph still
+scores — and it has a failure mode nothing in a fixture can show. A short document made of common
+words (*rule*, *why*, *reason*, *apply*, *sessions*) has a vocabulary any long document covers
+entirely, so it is "fully contained" in every tome on the index. The fixture's longest entry is a
+paragraph; the real index has 100 KB and 326 KB documents, and against those a template scores 1.0
+with anything.
+
+🔴 **Measured before it was fixed**, across every group on the real index: the 13 false groups all
+had a vocabulary ratio (smaller ÷ larger) at or below **0.09**; the 35 genuine ones — every one the
+same file in two repositories — were all at or above **0.46**. Nothing sat between. That gap is what
+made the fix a number rather than a heuristic.
+
+**Fix.** `Comparable(a, b)`: the smaller vocabulary must be at least **0.25** of the larger before
+containment is consulted at all (`RestatementSizeFloor`, `ConvergenceDetector.cs`). A copy may
+grow fourfold and still be found; a template against a tome is not compared. Two tests: the
+pathology, reproduced as a template inside a document of ten times its vocabulary, and the case the
+guard was written beside — a copy that grew by a paragraph is still a restatement.
+
+**Verify.** Watched failing first (`Assert.Empty() Failure: Collection was not empty`), then service
+264. On the deployed application: **36 groups, none below 0.25, minimum 0.463**, and the lead group
+is two identical templates in two repositories — which *is* a copy. Query time unchanged (4.1 s).
+
+**The trap to inherit.** 🔴 **A similarity normalised by the smaller side needs a size floor, or every
+small generic thing matches every large thing.** The same shape as Jaccard-versus-containment
+arguments everywhere; what makes it a trap is that it is invisible until the corpus has both a very
+short and a very long document, which a fixture never does.
+
+**Commit.** pending
+
 ## Adding a tooltip broke stories that had nothing to do with it (2026-09-22)
 
 **Symptom.** Giving a component a `Tip` turned unrelated stories red — *"`Tooltip` must be used

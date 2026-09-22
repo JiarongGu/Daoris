@@ -5,6 +5,7 @@ import { useConvergence } from './queries';
 import { Card, type Notify, PageHeader, useErrorNotify } from './ui';
 import { cn } from './lib/cn';
 import { useDebounced } from './lib/useDebounced';
+import { page } from './results';
 
 /**
  * The knowledge half's lead view (D30). The threshold is a control rather than a constant,
@@ -24,6 +25,8 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
   const debounced = useDebounced(threshold, 200);
 
   const groups = useConvergence(debounced);
+  // The service caps; the client asks for one more than it shows, so "there are more" is a fact.
+  const { shown, more } = page(groups.data ?? []);
   useErrorNotify(groups.error, notify);
 
   return (
@@ -51,8 +54,18 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
         </p>
       )}
 
+      {/* How many, and whether that is all of them — the same promise the search makes, for the
+          same reason: a capped list with nothing saying so reads as the whole answer. */}
+      {!groups.isPending && shown.length > 0 && (
+        <p className="mb-2 text-small text-ink-faint">
+          {more
+            ? t('convergence.cappedAt', { count: shown.length })
+            : t('convergence.count', { count: shown.length })}
+        </p>
+      )}
+
       <div className={cn(groups.isFetching && groups.data && 'opacity-60 transition-opacity duration-(--speed)')}>
-        {groups.data?.map((group: Convergence, index: number) => (
+        {shown.map((group: Convergence, index: number) => (
           <Card key={index} className="mb-3.5" accent={group.method === 'Convergent'}>
             <header className="flex items-baseline justify-between gap-4">
               <span className="text-body font-semibold">
@@ -78,10 +91,10 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
                 </li>
               ))}
             </ul>
+            {/* The service's sentence is the contract and already says what kind of finding this is;
+                the italic gloss beneath it said the same thing in the UI's words. Seen twice per
+                card on the deployed application, forty cards deep. One sentence — the service's. */}
             <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 text-body">{group.suggestion}</p>
-            <p className="mt-1.5 text-small italic text-ink-faint">
-              {t(`convergence.methods.${group.method}.hint`)}
-            </p>
           </Card>
         ))}
       </div>
