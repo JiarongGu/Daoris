@@ -93,6 +93,11 @@ so the only way to look at the real window was to open it by hand. `npm run desk
 that instrument. **It is not a gate** — it starts nothing in CI and asserts nothing — it is how a
 person or an agent starts the shell and sees what it actually rendered.
 
+**The gate is `npm run rehearse:deploy`** (D60), and it is a different question: this loop runs what
+the workspace built, and that gate publishes the shell to a scratch folder and drives the **artefact**
+— a window that finds its host without being told where it is, and a session transcript compared as
+bytes. Everything this loop provides is what hid two of the first deployment's four defects.
+
 | command | what |
 |---|---|
 | `doctor` | what is built, what is running, what a scratch run would use — and whether an installed host would be adopted instead of this workspace's |

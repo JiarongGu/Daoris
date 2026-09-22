@@ -130,8 +130,43 @@ jobs:
             publish/service/${{ matrix.rid }}/daoris-knowledge-http-${{ matrix.rid }}*
           if-no-files-found: error
 
+  # The deployed artefact (DEPLOY2). The shell is `net10.0-windows`, so this is the one gate that
+  # cannot run beside the others on Linux — and the thing it proves only exists once the application
+  # has been installed somewhere and started from there: the host a locator can see, and a transcript
+  # written through something other than a console's codepage. Both defects were found by deploying,
+  # and both were invisible from inside the workspace.
+  #
+  # It starts a real window, so it needs a desktop session and the Evergreen WebView2 runtime on the
+  # runner. No model, no account, no credential.
+  #
+  # ⚠ UNRUN. Nothing runs on push here, so this job has only ever executed as `npm run rehearse:deploy`
+  # on a developer's Windows machine — where it passes 29/29. Whether a hosted runner can bring the
+  # window up is not something this repository has observed, and the first dispatch is where it will
+  # be found out. Declared anyway: an undeclared gate is the failure the gate-list test exists to
+  # catch, and a gate that has to be argued into the workflow later never is.
+  desktop:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # The publish builds the platform bundle into the host's wwwroot, so the web workspace's own
+      # dependencies have to be present before anything is published.
+      - name: Web dependencies
+        run: npm --prefix src/Daoris.Web ci
+
+      - name: Deployment rehearsal
+        run: npm run rehearse:deploy
+
   release:
-    needs: devkit
+    needs: [devkit, desktop]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

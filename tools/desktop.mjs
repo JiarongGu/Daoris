@@ -200,11 +200,11 @@ const run = (command, args, options = {}) => {
   if (result.status !== 0) fail(`${command} ${args[0] ?? ''} exited ${result.status}`, result.status ?? 2);
 };
 
-const powershell = (script) =>
+export const powershell = (script) =>
   spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' }).stdout ?? '';
 
 /** The shells running from a given executable — pid and path, nothing guessed by name. */
-const running = (exe) => {
+export const running = (exe) => {
   if (!exe) return [];
   // Single-quoted PowerShell strings take backslashes literally; doubling them makes the comparison
   // never match, and a kill that silently no-ops leaves the old window holding the port.
@@ -237,7 +237,7 @@ const running = (exe) => {
  * force kill lands. So this closes REPEATEDLY, re-reading the handle each time: the secondary
  * windows go first, the main window last, and the app exits on its own terms. Same trap as the one
  * `shot --window` exists for, in its third disguise. */
-const stopAll = (exe) => powershell(`
+export const stopAll = (exe) => powershell(`
   Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${exe}' } | ForEach-Object {
     $process = $_
     for ($attempt = 0; $attempt -lt 6 -and -not $process.HasExited; $attempt++) {

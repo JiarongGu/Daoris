@@ -3602,3 +3602,49 @@ Code settled on. And a full-bleed scrim dimmed the title bar while the **nativel
 buttons stayed bright, punching a white block through it; a scrim now starts below the strip, held by
 `tokens.test.ts` as a rule about every overlay, because the next one would have inherited `inset-0`
 without anyone thinking about it.
+
+## DEPLOY2 — the deployed artefact gets a gate (2026-09-22)
+
+- [x] **DEPLOY2 — nothing gates the deployed artefact.** `rehearse` installs and drives the CLI
+  *package*; both rehearsals otherwise run inside the workspace, where the workspace build and the
+  console's own encoding paper over exactly the two defects this deployment found (the host the
+  locator could not see, the transcript that was not UTF-8). The work is a gate that **publishes the
+  shell to a scratch folder and runs it from there** — the desktop's `rehearse`. It needs no model
+  and no account: bringing the window up, finding its host and writing one non-ASCII line to a
+  transcript would have caught both.
+
+✅ **done 2026-09-22** — `tools/deployment-rehearsal.mjs`, `npm run rehearse:deploy`, **29/29**. The
+seventh declared gate, and the first that runs on Windows: `daoris.gates.json` names it and the
+release workflow gains a `windows-latest` job, because the two lists are checked against each other.
+**D60** carries the decision. No model, no account, no credential.
+
+**Both defects were watched failing**, which is the only thing that makes a new check worth anything:
+
+- Removing the locator's nested and `app/` candidates — 2a, exactly — landed the **deployed** shell
+  on `src/Daoris.Service/Daoris.Service.Http/bin/Debug/net10.0/`, and the gate named that path. That
+  is the masking agent itself: on a machine with no workspace beneath the install, the same
+  regression is *no host at all*.
+- Removing `StandardOutputEncoding` from the one place every adapter spawns through wrote
+  `stub: 閬撹 鈥?the unfolding of the way` into the transcript — `e9 88 a5 3f` for the em-dash, byte
+  for byte what the case study recorded.
+
+**Seven phases, and each check is a claim somebody had written down and nobody had read back.** The
+publish says one launcher at the root and no symbols beside it; it says the host travels under
+`app/daoris-knowledge-http/` with its bundle; `INSTALLED.md` says `data/` is the install's own state;
+`--service` says the folder is self-sufficient. Then the artefact: the **deployed** window comes up
+with `DAORIS_HTTP_HOST` deliberately absent and no `--app-root`, finds a host that is not this
+workspace's build, and its own driver loop carries a quest to done through the session's door —
+with the transcript compared **as bytes**, because mojibake is valid UTF-8 and a decoded comparison
+cannot tell.
+
+🔴 **What it cannot control is stated rather than implied.** `~/.daoris/bin` outranks a deployed copy
+by design and the profile is not redirectable (.NET resolves it from the OS token), so phase 4 prints
+which host it located instead of pinning one — on this machine, the nested installed one, which is
+the very candidate 2a could not see. And a machine whose ANSI codepage is already 65001 cannot fail
+phase 5; the check still goes red on every machine that can express the defect.
+
+**Two traps it walked into on its way in.** The module ran its phases *on import*, so the unit suite
+published a folder and started a window — the same trap `tools/desktop.mjs` documents at its own
+foot, now guarded the same way. And the first version identified "the host the shell started" by
+diffing **paths**, which reports nothing new when two processes share one binary; it diffs **pids**.
+Both are in the file, where the next person meets them.

@@ -110,8 +110,7 @@ workspace `testbed`, each with its own `.mcp.json` and trust settings, registere
 host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
 it. Two branches there hold what the failed sessions produced.
 
-**What is open**, in the Backlog below, in the order worth doing: **DEPLOY2** (nothing gates the
-deployed artefact — it would have caught two of the four deployment defects), **SURF11** (layout
+**What is open**, in the Backlog below, in the order worth doing: **SURF11** (layout
 toggles; 🔴 needs the panel and dock state hoisted out of `WorkFrame` before it needs designing),
 then HELP3, TOOL5, DEVKIT3, CANON5. **Two are decisions, not work**: PLUG2 reopens D4's *"core
 installs with no opt-out"*, and DEPLOY4 asks whether per-install UI state joins `~/.daoris` — and
@@ -129,9 +128,11 @@ the traps that are not in any contract, because they were found rather than desi
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
-- **The gates are a list, and it is checked.** `daoris.gates.json` declares six; a CLI test asserts the
+- **The gates are a list, and it is checked.** `daoris.gates.json` declares seven; a CLI test asserts the
   release workflow runs every one, because they silently disagreed for eight landings and both
-  rehearsals passing is exactly what hid it. Adding a test project means adding it to **both**.
+  rehearsals passing is exactly what hid it. Adding a test project means adding it to **both**. The
+  seventh (`deployment`, D60) is the one that runs on **Windows** — the shell is `net10.0-windows`,
+  so the workflow carries a `windows-latest` job for it.
 - **Adding a refusal to a desktop module is three things**, and a test holds each: a code in
   `Refusals`, an entry in **both** locale catalogues, and a throw site using it. A thrown exception's
   message reaches nobody — the host maps it to a generic code carrying only the exception type, which
@@ -201,7 +202,9 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (262),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (294), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (429 vitest + 14 Playwright).
+  (294), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (429 vitest + 14 Playwright),
+  and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (29/29), which
+  publishes the shell to `_fixtures/` and drives **that**.
   🔴 **Stop a running shell and its host first** — an orphaned `daoris-knowledge-http` holds the
   build's own assemblies, which reads as a broken gate and is a lock (`npm run desktop -- kill`). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
@@ -358,9 +361,10 @@ local by the profile's own rule, no price claimed, and a test asserts no currenc
 > vscode"*.
 
 **Done and in the archive**: the deployment itself, `tools/desktop-publish.mjs`, the install layout,
-the command center, the scrim, and four defects only deploying found.
-`docs/2026-09-22-first-deployment-case-study.md` is the record. **What is left is one decision and
-one gate.**
+the command center, the scrim, four defects only deploying found — and **DEPLOY2, the gate over the
+deployed artefact** (`npm run rehearse:deploy`, D60).
+`docs/2026-09-22-first-deployment-case-study.md` is the record. **What is left is two decisions, and
+both are the owner's.**
 
 - [x] 🔴 **DEPLOY1 — a repository cannot grant its own trust.** ✅ **the detection half is done
   2026-09-22**, which was option (a) and the only half that is not the owner's to give. The driver now
@@ -372,14 +376,6 @@ one gate.**
   (option b), or whether the pipe door stays documented as needing a human's first visit (option c).
   🔴 **Never (d), silently.** And **measure the ACP door**: it runs the Agent SDK rather than the
   CLI's trust flow, so it may not have this problem at all — one driven run answers it.
-
-- [ ] **DEPLOY2 — nothing gates the deployed artefact.** `rehearse` installs and drives the CLI
-  *package*; both rehearsals otherwise run inside the workspace, where the workspace build and the
-  console's own encoding paper over exactly the two defects this deployment found (the host the
-  locator could not see, the transcript that was not UTF-8). The work is a gate that **publishes the
-  shell to a scratch folder and runs it from there** — the desktop's `rehearse`. It needs no model
-  and no account: bringing the window up, finding its host and writing one non-ASCII line to a
-  transcript would have caught both.
 
 - [x] 🔴 **DEPLOY3 — there is no credential management surface.** ✅ **done 2026-09-22.** The Machine
   view could list a harness's profiles and log into one, and could not **make, choose or un-point**

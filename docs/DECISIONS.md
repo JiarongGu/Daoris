@@ -2108,3 +2108,48 @@ and keeps meaning the same thing.
 **refused, never guessed at** — the file on the other side of that guess is the adopter's own
 doctrine, and `file-tool-discipline` already states why computed boundaries take the rest of a file
 with them when they are wrong.
+
+## D60 — The deployed artefact gets a gate, and it names the host it found rather than pinning it (2026-09-22)
+
+**Decision.** `npm run rehearse:deploy` publishes the desktop shell to a scratch folder and drives
+**that** — the seventh declared gate, and the first that runs on Windows rather than beside the
+others on Linux. Where the machine legitimately changes the answer, it **reports** rather than
+asserts.
+
+**What forced it.** The first deployment found four defects and two of them were invisible from
+inside the workspace *because of what the workspace provides* — a host locator masked by a build that
+exists on every developer machine and no deployed one, and a transcript decoded through a console
+codepage that `daoris-driver` sets and the windowless shell does not. `rehearse` installs and drives
+the CLI **package**; nothing did the same for the desktop. Both sabotages were watched failing here:
+the locator regression lands the deployed shell on `src/Daoris.Service/…/bin/Debug/`, and the
+encoding regression writes `閬撹 鈥?` — `e9 88 a5 3f`, byte for byte the case study's em-dash.
+
+**The one thing a gate cannot control, and what follows from it.** `~/.daoris/bin` outranks a
+deployed copy, deliberately: one service, upgraded once for every shell on the machine. But the
+profile is **not redirectable** — .NET resolves `SpecialFolder.UserProfile` from the OS token, not
+from `USERPROFILE` — so a gate cannot make its own install win that contest. The gate therefore
+asserts the weaker, always-true thing (the located host is **not this workspace's build**) and prints
+which one it was. That is the assertion that goes red on a real regression and stays green on a
+legitimate machine difference.
+
+**Rejected: a `DAORIS_HOME` override so the gate could redirect the profile.** It would make the
+assertion exact, and it reopens a question that is the owner's — **DEPLOY4** asks precisely whether
+per-install state should join `~/.daoris`, and `~/.daoris` being machine-wide is what makes the CLI
+and the desktop two doors onto one machine (D50). A variable added to make a test sharper would have
+answered that by accident.
+
+**Rejected: pinning `DAORIS_HTTP_HOST` in phase 4.** It is what `tools/desktop.mjs` does to keep the
+dev loop honest, and here it is exactly the variable that skips the code path the defect broke. The
+install's own host is proven **separately**, started directly in phase 3 — two questions, two
+instruments.
+
+**Rejected: leaving it undeclared because it is Windows-only.** The gate list is checked against the
+release workflow by a test, after the two silently disagreed for eight landings; an undeclared gate
+is the failure that test exists to catch. The workflow gains a `windows-latest` job instead, which
+the devkit matrix already established. ⚠ **That job is unrun** — nothing runs on push here, so 29/29
+is a developer machine's result and whether a hosted runner can bring the window up is unobserved.
+
+**Rejected: asserting the served bundle is the install's own.** It is the sharpest check available
+and it turns case-study 4d into a gate — and it goes red on any machine whose installed service is
+stale, which is a true statement about that machine and not about the change under test. A gate that
+fails for the developer's machine state is one people learn to re-run.

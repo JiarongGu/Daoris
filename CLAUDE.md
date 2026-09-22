@@ -145,8 +145,8 @@ risk, **authorship** was.
   `~/.daoris`, so **starting it starts the driver loop**.
   `docs/2026-09-22-first-deployment-case-study.md` is the first thing to read before touching the
   desktop: four defects were invisible from inside the workspace, three *because* of what the
-  workspace provides. 🔴 **Stop a running shell before building** — an orphaned host holds the
-  build's own assemblies.
+  workspace provides. **It has a gate now** (DEPLOY2 → **D60**). 🔴 **Stop a running
+  shell before building** — an orphaned host holds the build's own assemblies.
 - **Extension is three declarative seams, never a plugin runtime** (ARCH1,
   `docs/2026-09-22-plugin-design-study.md`): a canon pack, a `daoris.gates.json` row, and speaking
   **ACP**. A pack declares the canon it needs (`apiVersion`), checked before a file is planned.
@@ -205,29 +205,13 @@ Run every command from the **workspace root**, not from a package directory.
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
   driver drive?" gate, since D47 the "does the remote cross?" gate, and since D48 the "does the
-  boundary hold?" gate. Both examples current and
-  clean, the HTTP host up over them, `connect`, a quest through its whole life, a search crossing
-  projects, restart persistence, a quest driven to done by a stub session — then two workspaces on one
-  machine, wired by `connect --workspace` with no tracked file touched, a search answering from one
-  circle while the other holds the same lesson word for word, and a quest across the boundary refused
-  naming both sides — then the registration lifecycle from a terminal: a folder nobody registered
-  staying invisible, `import` adding it without re-pointing anyone's workspace, `retire` removing it
-  with every file still there, and a vanished checkout named — then a shared host with
-  minted keys, two simulated machines, a quest crossing them, a raced take standing down, and the
-  remote's store scanned for anything machine-local — then the remotes map: a workspace's own
-  deployment wired and unwired from a terminal, only its circle feeding it while a joined-and-sharing
-  repository in another circle reaches it not at all, and a registration declaring another workspace
-  refused naming both — then which commit speaks: a newer feed replacing wholesale and carrying a
-  deletion with it, a stale one refused as information, an unmerged branch refused though newer, and
-  the fed commit served back — then a conversation held from a terminal, and the toolchain: a session
-  spawned under a named credential profile and proving from its own output that it ran in that
-  configuration home, a logged-out profile and an uninstalled harness each holding the start with the
-  sentence that fixes it, and both surfaces driven from a terminal — then **the protocol door**
-  (D53/ACP1): a quest carried to done over ACP by a stub agent that speaks the wire and nothing else,
-  the transcript holding rendered updates rather than frames, a permission request refused by the
-  driver and the refusal reaching the session, and the wire's own ending recorded as a self-report
-  rather than as the verdict.
-  No model, no account and no credential anywhere in the gate. Run when touching
+  boundary hold?" gate. 180 checks over the example family, from both examples current and clean
+  through a quest's whole life, the workspace boundary refused naming both sides, two simulated
+  machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
+  profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to
+  done over ACP by a stub agent that speaks the wire and nothing else. **It names its own phases when
+  you run it**, so they are not restated here; the reasoning is in `docs/DECISIONS.md` and the
+  archive. No model, no account and no credential anywhere in the gate. Run when touching
   the service, `connect`, the driver, the remote, the toolchain, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
@@ -238,6 +222,11 @@ Run every command from the **workspace root**, not from a package directory.
   stop a running instance first. **A shell-only surface is not out of its reach entirely** — the
   browser still owns what the RECORD shows and what must be ABSENT; the controls belong to the vitest
   inner loop over a mocked bridge (`docs/2026-09-19-frontend-architecture.md` §4).
+- **`npm run rehearse:deploy`** — the "does the DEPLOYED thing work?" gate (D60), and the only one on
+  Windows: it publishes the shell to scratch and drives the **artefact**, which nothing else does —
+  both other rehearsals run inside the workspace, where the workspace build and the console's own
+  encoding hide exactly the defects deploying found. Run when touching the desktop, the publish
+  scripts or `ServiceHostLocator`.
 - **There is no push/PR CI, deliberately.** `.github/workflows/release.yml` is manual-dispatch only,
   with `dry_run` defaulting to true; it runs **every gate `daoris.gates.json` declares** plus both
   rehearsals on Linux before publishing, and builds the service binaries and builds-and-tests the
@@ -282,6 +271,10 @@ Run every command from the **workspace root**, not from a package directory.
   list, and a list is something people append to. Spawning is the same shape of rule for the same
   reason — what makes it fine (a person asked for it) stops holding the moment `check` can reach it.
 - **Plan and apply are separate functions**, so a plan can be printed or asserted without touching disk.
+- **A `tools/` script whose helpers are imported guards its runner** behind
+  `process.argv[1] === import.meta.url` — exports above, phases below. Without it `node --test` runs
+  the tool: `desktop.mjs` says so at its foot, and `deployment-rehearsal.mjs` published a folder and
+  opened a window during a unit test before it learned the same thing.
 - **TDD** — failing test first. **Commit per task, automatically, once gates are green** (D37 as
   amended) — the landed history is the reviewable record. **Push, publish, release and history
   rewrites stay the owner's call.**

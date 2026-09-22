@@ -7,7 +7,8 @@
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },
     { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests" },
     { "name": "modules", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests" },
-    { "name": "web", "run": "npm run test:web" }
+    { "name": "web", "run": "npm run test:web" },
+    { "name": "deployment", "run": "npm run rehearse:deploy" }
   ],
 
   "sensitive": {

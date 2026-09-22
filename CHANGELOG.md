@@ -450,3 +450,8 @@ The first version: doctrine that installs, is checked, and flows back.
   `daoris connect` registered through the real endpoint, the host was killed and restarted with the
   pushed registration and a taken quest both still served, and publishing to a non-adopter was refused
   naming who is addressable.
+- **A deployment rehearsal** (`npm run rehearse:deploy`) that publishes the desktop shell to a folder
+  and drives *that* — the artefact, not the checkout. The deployed window comes up with no help
+  finding its service host, and a quest its own driver loop spawns is carried to done with the session
+  transcript compared as bytes. Every other loop runs inside the workspace, where the workspace build
+  and the console's own encoding hide exactly the defects the first real deployment found.
