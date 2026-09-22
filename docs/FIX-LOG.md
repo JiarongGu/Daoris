@@ -33,7 +33,7 @@ into it, and asserts the decoy is gone and that `index.html` names a bundle the 
 — watched failing first (`index-STALEBUNDLE.js, index-yAgtBJUV.js`), then 32/32. The machine's own
 install went from seven bundles to one on the next publish.
 
-**Commit.** pending
+**Commit.** `f873d16`
 
 ## Three real driven runs failed on a flag the repository could not set (2026-09-22)
 
