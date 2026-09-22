@@ -86,15 +86,14 @@ changes what "works" means. `npm run publish:desktop -- --to <folder> --service`
 `~/.daoris`, so **starting it starts the driver loop**.
 `docs/2026-09-22-first-deployment-case-study.md` is the record, and it is the first document to read
 before touching the desktop — four defects were invisible from inside the workspace, three of them
-*because* of something the workspace provides. 🔴 **The second deployment (2026-09-23) found three
-more**, all in `docs/FIX-LOG.md`: the shell spawned the machine's older host instead of the one
-`--service` had published beside it (the locator now prefers what the install carries); a shell
-that ADOPTS a running host serving another page now says so once, naming both bundles — as a
-toast, which dismisses itself, and a notice that outlives one is a surface item nobody has filed;
-and beneath both, the page was served from the WebView2 cache — `index.html` is `no-cache` now,
-the hashed assets `immutable`, held by the deployment gate. **Republish and LOOK after every
-surface change** — that is how all three were found, and `document.scripts` names which bundle is
-live.
+*because* of something the workspace provides. 🔴 **The second deployment (2026-09-23) found
+thirteen more, every one in `docs/FIX-LOG.md` under that date** — the three that hid the page
+itself (the machine's older host spawned over the install's own, a stale page reused from the
+WebView2 cache, an adopted host serving another page and nobody told), then what looking at each
+surface on real data turned up: why a quest sits, a drawer under the caption buttons, the OS accent
+through a native control, a fixture on the tool roster. A notice that outlives a toast is the one
+surface item left unfiled. **Republish and LOOK after every surface change, in both themes** — that
+is how all thirteen were found, and `document.scripts` names which bundle is live.
 
 🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
 (DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that
