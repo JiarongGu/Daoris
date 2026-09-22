@@ -26,7 +26,7 @@ hyphenated term marks as one) is held by its own test.
 **Verify.** `TextTests.Tokenize_separates_on_fullwidth_punctuation_as_it_does_on_ascii`, seen red on
 the list (`["d51：", "会话"]`) and green on the rule. 275 service tests.
 
-**Commit.** _pending_
+**Commit.** `99eda22`
 
 ## The Projects page said "nothing indexed" three ways (2026-09-23)
 
@@ -45,7 +45,7 @@ the count sentence only for a count above zero.
 **Verify.** A shell test with the three cases side by side, seen red (one sentence of three) before
 the change. 483 web unit tests.
 
-**Commit.** _pending_
+**Commit.** `99eda22`
 
 ## The status bar counted a rebuild half-fed, and kept the number (2026-09-23)
 
