@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
+import { newsFrom } from './signals';
 import type { Notify } from './ui';
 
 type Tick = { events?: string[] };
@@ -22,6 +23,8 @@ export function ShellSignals({ notify, onAttend }: {
 }) {
   const { isAvailable, bridge } = useShenora();
   const client = useQueryClient();
+  /** What the last tick said, so an unchanged report is not said again. A ref: it must not re-render. */
+  const toldLast = useRef<string[]>([]);
 
   useEffect(() => {
     if (!isAvailable) return;
@@ -32,8 +35,20 @@ export function ShellSignals({ notify, onAttend }: {
   }, [isAvailable, bridge]);
 
   useShenoraEvent<Tick>('DAORIS', 'DRIVER_TICK', (tick) => {
-    // The driver's own sentences, verbatim — like every system sentence in this UI.
-    for (const line of tick?.events ?? []) notify(line);
+    /* 🔴 The driver's own sentences, verbatim — but only the ones that are NEWS.
+     *
+     * A tick report is a log: it says what this tick did, every tick, which is right for a console
+     * and wrong for an interruption. Seen on the deployed application, four identical toasts about
+     * one untrusted repository, stacking up the window — and that condition needs a person to run a
+     * command, so it would have said so forever. The verbatim rule is untouched; what changed is
+     * whether being told again counts as being told something. */
+    const lines = tick?.events ?? [];
+    for (const line of newsFrom(toldLast.current, lines)) notify(line);
+    toldLast.current = lines;
+
+    // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
+    // world — the two questions are different, and collapsing them would make a stale window the
+    // price of a quiet one.
     void client.invalidateQueries({ queryKey: keys.allSessions });
     void client.invalidateQueries({ queryKey: keys.allQuests });
     void client.invalidateQueries({ queryKey: keys.driver });

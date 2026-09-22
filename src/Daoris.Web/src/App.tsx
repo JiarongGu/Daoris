@@ -27,6 +27,7 @@ import { needsAPerson } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, type Mode, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
 import { commands } from './commands';
+import { capped } from './signals';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
@@ -152,7 +153,9 @@ export function App() {
   const notify = useCallback((text: string, kind: 'ok' | 'error' = 'ok') => {
     const id = nextToast.current;
     nextToast.current += 1;
-    setToasts((current) => [...current.slice(-3), { id, text, kind }]);
+    // Capped, so a burst cannot climb the window — the newest are what a corner can promise to
+    // show. The number has a name and a test now rather than being a `-3` nobody could search for.
+    setToasts((current) => [...capped(current), { id, text, kind }]);
   }, []);
 
   useErrorNotify(reading.error, notify);
