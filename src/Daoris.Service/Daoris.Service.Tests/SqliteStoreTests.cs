@@ -112,6 +112,30 @@ public sealed class SqliteStoreTests : IAsyncLifetime
         }));
     }
 
+    /// <summary>
+    /// 🔴 <b>Found on the deployed application, on the first real index.</b> `记录` and `会话` each
+    /// returned forty-one hits in the same order with the rules TEMPLATE first and the term in no
+    /// excerpt — every Chinese query was returning the whole corpus. The tokeniser's floor drops
+    /// anything of two characters or fewer, which is right for "of" and "a" and wrong for a script
+    /// in which two characters is a whole word; with no terms left, the query fell through to the
+    /// browse that an EMPTY query is meant to get. The platform ships 简体中文.
+    /// </summary>
+    [Fact]
+    public async Task A_two_character_Chinese_query_searches_rather_than_browsing()
+    {
+        await _store.ReplaceRepositoryAsync("alpha", [
+            Entry("alpha", "会话的记录", "每个会话都留下一份记录，写在磁盘上。"),
+            Entry("alpha", "Unrelated", "Nothing here mentions the term at all."),
+        ]);
+
+        var hits = await new SqliteKnowledgeSearch(_store).SearchAsync(new KnowledgeQuery("记录"));
+
+        var hit = Assert.Single(hits);
+        Assert.Equal("会话的记录", hit.Entry.Title);
+        Assert.True(hit.Score > 0, "a match, not a browse");
+        Assert.Contains("记录", hit.Excerpt);
+    }
+
     [Fact]
     public async Task An_empty_query_browses()
     {

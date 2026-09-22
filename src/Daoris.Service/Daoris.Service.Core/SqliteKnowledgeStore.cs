@@ -25,7 +25,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 {
     /// <summary>Bump when the schema changes. A mismatch rebuilds rather than migrates.</summary>
     /// <remarks>2 — entries carry their workspace (D48).</remarks>
-    private const int SchemaVersion = 2;
+    // 3: the FTS rows carry CJK text cut into bigrams (`Text.Segment`), so every existing index is
+    //    rebuilt from the raw entries on open — the rows it held were never findable in 中文.
+    private const int SchemaVersion = 3;
 
     private readonly SqliteConnection _connection;
 
@@ -110,7 +112,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
                 """
                 INSERT INTO entries (id, repository, kind, provenance, title, body, relative_path, anchor, workspace)
                 VALUES ($id, $repo, $kind, $prov, $title, $body, $path, $anchor, $workspace);
-                INSERT INTO entries_fts (id, title, body) VALUES ($id, $title, $body);
+                INSERT INTO entries_fts (id, title, body) VALUES ($id, $ftsTitle, $ftsBody);
                 """;
             insert.Parameters.AddWithValue("$id", entry.Id);
             insert.Parameters.AddWithValue("$repo", entry.Repository);
@@ -118,6 +120,11 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             insert.Parameters.AddWithValue("$prov", (int)entry.Provenance);
             insert.Parameters.AddWithValue("$title", entry.Title);
             insert.Parameters.AddWithValue("$body", entry.Body);
+            // 🔴 The FTS row is cut for search; the entries row keeps the text as written. An excerpt
+            // and the Reader read the original; only the index sees ideographs as bigrams — which is
+            // the only way `unicode61` finds a word inside a run of them (`Text.Segment`).
+            insert.Parameters.AddWithValue("$ftsTitle", Text.Segment(entry.Title));
+            insert.Parameters.AddWithValue("$ftsBody", Text.Segment(entry.Body));
             insert.Parameters.AddWithValue("$path", entry.RelativePath);
             insert.Parameters.AddWithValue("$anchor", (object?)entry.Anchor ?? DBNull.Value);
             insert.Parameters.AddWithValue("$workspace", Workspaces.Normalize(entry.Workspace));

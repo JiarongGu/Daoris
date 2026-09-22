@@ -118,25 +118,15 @@ the published application with a debug port so `shot`, `eval` and `click` reach 
 app opens none by itself). The scratch loop has one circle, one account and two example
 repositories, so every UI judgement made against it is a judgement about a machine nobody has.
 
-**The looking pass, as far as it has got** (2026-09-22). On the real machine — 20 registered
-repositories, 14 with index entries, 965 entries, two workspaces, no named accounts. Reviewed, with
-what each showed fixed and landed: **Overview** (three counts reading as a contradiction, a card
-past the fold with its legend cut off, a seven-line toast over the card it described), **Machine**
-(the accounts surface, regrouped from adapters to tools), **Quests** (🔴 the same hold toast every
-tick, forever — a tick report is a log and a toast is an interruption, and they were one object),
-**Projects** (nothing filed: 20 registrations render and the not-adopted section handles 16 rows),
-**Search** (a broad query capped at 40 with nothing saying so, and no count at all otherwise), and
-**Convergence** (🔴 the lead view's first group was a 990-character template "substantially the same
-words" as a 326 KB document — containment normalised by the smaller set has no size floor, and the
-fixture has no tomes to show it; 13 of 48 groups were that shape and the floor that removes them
-was measured, not guessed — plus the same uncounted cap as search, and a gloss repeating the
-service's sentence under every card), and **Work** (🔴 four empty-state sentences over four real
-session records — the rail listed live sessions only, so the driver's own record was reachable after
-a restart exactly never, against §7 of the working-surface design; an *ended* section now lists
-them, newest first, counted past twelve). **The pass is complete: every surface has been read on
-real data once.** What it produced is in `docs/FIX-LOG.md` — six entries in two days, every one a
-defect the fixture structurally could not show. The next pass is the same pass after the next
-change; what remains in this file is decisions and held rows.
+**The looking pass is complete** (2026-09-22/23): every surface read once on the real machine —
+20 registered repositories, 965 entries across 14, two workspaces, no named accounts. Overview,
+Machine, Quests, Projects, Search, Convergence and Work each produced what the fixture structurally
+could not show, and `docs/FIX-LOG.md` holds every one with its mechanism. 🔴 **The last of them is
+the widest: 中文 search never worked in the SQLite index** — the tokeniser's two-character floor
+dropped every Chinese term, and beneath it FTS5's `unicode61` keeps a run of ideographs as one token,
+so even a kept term matched nothing. Every Chinese query had been returning the whole corpus. The
+index is cut into bigrams now (schema 3, rebuilt on open). The next pass is the same pass after the
+next change; what remains in this file is decisions and held rows.
 
 🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
 (four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface

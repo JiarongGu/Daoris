@@ -5,6 +5,51 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Every Chinese query returned the whole corpus — 中文 search had never worked (2026-09-23)
+
+**Symptom.** On the deployed application's real index, `记录` and `会话` each returned **41 hits in
+the same order, the rules TEMPLATE first, the term in no excerpt** — indistinguishable from each
+other and from any other Chinese query. `encoding` returned 26 with the term in 17 excerpts. The
+platform ships 简体中文.
+
+**Root cause, in two layers.** `Text.Tokenize` drops any token of two characters or fewer — right for
+*of* and *a*, wrong for a script in which two characters is a whole word. A Chinese query therefore
+produced **no terms**, and `SqliteKnowledgeSearch` treats no terms as the browse an *empty* query
+gets: `SELECT … ORDER BY repository, title`. Every Chinese query was that browse. Clearing the floor
+exposed the layer beneath: FTS5's `unicode61` tokenizer **keeps a run of ideographs as one token** —
+there are no spaces between words in 中文 — so `每个会话都留下一份记录` was indexed whole and a
+phrase query for `记录` matched nothing inside it. With the floor fixed alone, every Chinese query
+would have returned *nothing*, which is the same defect in a quieter coat.
+
+🔴 **Neither layer can show itself on a fixture.** The fixture has no Chinese prose, and the platform's
+own Playwright suite proves the *interface* speaks 中文, which is a different claim from the *index*
+finding it. The test that caught it was written for the excerpt marker in the view, in the other
+language — it failed on the two-character floor, the same floor was then found in the service, and
+the service's test cleared it and returned empty instead of wrong.
+
+**Fix.** `Text.Segment`: every run of ideographs is cut into its overlapping two-character bigrams,
+space-separated — the standard answer to CJK search without a dictionary; index and query are cut
+the same way so they meet. Applied to the FTS row at write time (`SqliteKnowledgeStore`, schema **3**,
+so every existing index rebuilds on open) and inside `Tokenize` (so lexical scoring, the MATCH
+builder and excerpt terms all use the same units); never to the stored body, which an excerpt and
+the Reader read as written. `Tokenize`'s floor keeps a token in a short-word script whatever its
+length. Bigrams of one query are joined with OR like every other term, so a three-character word
+ranks documents holding both bigrams above those holding one.
+
+**Verify.** Watched failing twice — browse (*"contained 2 items"*), then empty (*"collection was
+empty"*) — then service 274, with nine tests on the segmenter and the tokeniser. On the deployed
+application after the rebuild: `中文` → **23 hits, the term in all 23 excerpts, and exactly 23 of
+974 indexed entries contain it**; `委托` → 1, centred; `简体中文` → 24, with the full term in 5 and a
+bigram in the rest. `记录` → 0, and **0 of 974 entries contain it** — the 114 family files that do
+are not indexed kinds. Before: 41, 41, and 41.
+
+**The trap to inherit.** 🔴 **"No usable terms" is not the same as "no query".** A fallthrough to
+browse is right for an empty box and catastrophic for a query the tokeniser silently emptied —
+because the result looks like success. And a text index is only as multilingual as its tokenizer:
+`unicode61` is not a CJK segmenter, and nothing about a green English suite says otherwise.
+
+**Commit.** pending
+
 ## The sessions frame said "nothing" over four real session records (2026-09-23)
 
 **Symptom.** The Work frame — the frame whose subject is sessions — opened on the deployed

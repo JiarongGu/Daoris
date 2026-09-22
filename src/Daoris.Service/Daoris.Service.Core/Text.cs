@@ -22,12 +22,95 @@ public static class Text
     /// Lower-cased words worth matching on. Two characters and under are dropped: they are almost all
     /// articles and prepositions, and they match everything, which is the same as matching nothing.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>The floor is a Latin heuristic and says so.</b> Two characters is a whole word in 中文 —
+    /// 记录, 会话, 委托 — and on the first real index every Chinese query lost its terms here, fell
+    /// through to the browse an <i>empty</i> query gets, and returned the whole corpus in the same
+    /// order. A token in a script whose words are that short is kept whatever its length. The same
+    /// rule, in the same words, lives in the platform's excerpt marker: found by its test in the
+    /// other language, which is what a test in the other language is for.
+    /// </remarks>
     public static List<string> Tokenize(string? text) =>
-        (text ?? string.Empty)
+        Segment(text ?? string.Empty)
             .ToLowerInvariant()
             .Split(Separators, StringSplitOptions.RemoveEmptyEntries)
-            .Where(token => token.Length > 2)
+            .Where(token => token.Length > 2 || IsShortWordScript(token))
             .ToList();
+
+    /// <summary>
+    /// The same text with every run of ideographs cut into its overlapping two-character bigrams,
+    /// space-separated — so a tokenizer that splits on spaces and punctuation finds words in it.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>FTS5's <c>unicode61</c> keeps a run of ideographs as ONE token.</b> There are no
+    /// spaces between words in 中文, so <c>每个会话都留下一份记录</c> is indexed whole and a query for
+    /// <c>记录</c> matches nothing inside it — found by the test that was written for the tokeniser's
+    /// floor, which cleared the floor and then returned an empty result instead of a wrong one.
+    /// Every Chinese query on the first real index had been browsing the whole corpus; with the
+    /// floor fixed it would have found nothing at all, which is the same defect wearing a quieter
+    /// coat.</para>
+    ///
+    /// <para><b>Bigrams, not a dictionary.</b> Overlapping two-character units are the standard answer
+    /// to CJK search without a segmenter: a two-character word is one unit, a longer word is its
+    /// adjacent units, and the index and the query are cut the same way so they meet. Applied at
+    /// index time (the FTS row) and at query time (through <see cref="Tokenize"/>), never to the
+    /// stored body — an excerpt reads the original. A lone ideograph stays a unigram. Latin text is
+    /// returned untouched, byte for byte.</para>
+    /// </remarks>
+    public static string Segment(string text)
+    {
+        var builder = new System.Text.StringBuilder(text.Length + text.Length / 2);
+        var run = 0;   // length of the current ideograph run, counted in chars
+
+        void FlushRun(int endExclusive)
+        {
+            if (run == 0) return;
+            var start = endExclusive - run;
+            if (run == 1)
+            {
+                builder.Append(text, start, 1);
+            }
+            else
+            {
+                for (var i = start; i < endExclusive - 1; i++)
+                {
+                    if (i > start) builder.Append(' ');
+                    builder.Append(text, i, 2);
+                }
+            }
+            run = 0;
+        }
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (IsIdeograph(text[i]))
+            {
+                if (run == 0 && builder.Length > 0 && builder[^1] != ' ') builder.Append(' ');
+                run++;
+                continue;
+            }
+
+            FlushRun(i);
+            if (i > 0 && IsIdeograph(text[i - 1]) && text[i] != ' ') builder.Append(' ');
+            builder.Append(text[i]);
+        }
+
+        FlushRun(text.Length);
+        return builder.ToString();
+    }
+
+    /// <summary>One character of a script whose words carry no spaces between them.</summary>
+    private static bool IsIdeograph(char c) =>
+        c is (>= '一' and <= '鿿')      // CJK Unified Ideographs
+           or (>= '㐀' and <= '䶿')      // CJK Extension A
+           or (>= '぀' and <= 'ヿ')      // Hiragana, Katakana
+           or (>= '가' and <= '힯');     // Hangul syllables
+
+    /// <summary>
+    /// Whether a token is written in a script where one or two characters is a word, not a fragment —
+    /// the same scripts <see cref="Segment"/> cuts, by the same test, so the two cannot disagree.
+    /// </summary>
+    private static bool IsShortWordScript(string token) => token.Any(IsIdeograph);
 
     /// <summary>
     /// A window of the body around the first matching term, so a result can show why it matched.

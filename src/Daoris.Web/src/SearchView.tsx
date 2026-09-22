@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearch } from './queries';
 import { page } from './results';
+import { mark } from './highlight';
 import { CheckField, type Notify, PageHeader, useErrorNotify } from './ui';
 import { useDebounced } from './lib/useDebounced';
 
@@ -66,7 +67,17 @@ export function SearchView({ onOpen, notify }: {
             <span className="block font-mono text-meta text-ink-faint">
               {hit.repository} · {t(`kind.${hit.kind}`)} · {hit.path}
             </span>
-            {hit.excerpt && <p className="mt-1 text-body text-ink-soft">{hit.excerpt}</p>}
+            {/* The matched terms, MARKED. The service centres the excerpt on the first match and
+                says why in its own source — a result that cannot show its reasoning gets treated as
+                an oracle — and the view was rendering that reasoning as plain text. The wash is
+                `accent-soft`, the same token every other "this is the one" surface here uses. */}
+            {hit.excerpt && (
+              <p className="mt-1 text-body text-ink-soft">
+                {mark(hit.excerpt, debounced).map((run, index) => (run.hit
+                  ? <mark key={index} className="rounded-[2px] bg-accent-soft px-0.5 text-ink">{run.text}</mark>
+                  : <span key={index}>{run.text}</span>))}
+              </p>
+            )}
           </li>
         ))}
       </ul>
