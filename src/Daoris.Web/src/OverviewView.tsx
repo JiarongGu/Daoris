@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useQuests, useRegistry, useRepositories } from './queries';
 import { ago, compact, sittingDays } from './format';
+import { ranked, widest } from './overview';
 import {
   Card, CardHeader, Button, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,
@@ -41,8 +42,10 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
   const oldest = open.length ? Math.max(...open.map((q) => sittingDays(q.filed))) : 0;
   // The service already orders open before taken, oldest first — exactly the reading order here.
   const outstanding = quests.data ?? [];
-  const most = Math.max(1, ...repos.map((r) => r.total));
-  const ranked = [...repos].sort((a, b) => b.total - a.total);
+  // Ranked and capped — a real machine has fourteen of these and the card ran past the fold, taking
+  // its own legend with it (D62: the fixture holds two, so it looked finished).
+  const { shown, hidden } = ranked(repos);
+  const most = widest(shown);
 
   return (
     <section>
@@ -140,7 +143,7 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
           />
           {repositories.isPending && <SkeletonRows />}
           <ul className="m-0 list-none p-0">
-            {ranked.map((repository) => {
+            {shown.map((repository) => {
               const declared = (registry.data ?? []).find((r) => r.repository === repository.name);
               return (
                 <li
@@ -169,6 +172,13 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
               );
             })}
           </ul>
+          {/* Counted, never silently dropped: a list that stops without saying so is a list a
+              person reads as complete. The way to the rest is the card's own header button. */}
+          {hidden > 0 && (
+            <p className="mt-1.5 text-small text-ink-faint">
+              {t('overview.repositories.more', { count: hidden })}
+            </p>
+          )}
           <p className="mt-2 text-small italic text-ink-faint">{t('overview.repositories.hint')}</p>
         </Card>
       </div>

@@ -1,4 +1,6 @@
 import '@testing-library/jest-dom/vitest';
+import { setProjectAnnotations } from '@storybook/react-vite';
+import preview from '../../.storybook/preview';
 
 // The three environment shims the bilingual sibling learned to need first; adopted with the layer.
 
@@ -45,3 +47,14 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList;
 }
+
+/**
+ * 🔴 Storybook's project annotations, so `composeStories` renders a story the way Storybook does.
+ *
+ * Without this, `stories.test.tsx` applies each story's OWN decorators and none of the project's —
+ * so the tooltip provider `.storybook/preview.tsx` mounts for every story is absent here, and any
+ * component carrying a `Tip` throws. That was diagnosed twice in one session as "this story needs
+ * wrapping", which is the wrong fix twice: the suite is meant to render what a reviewer sees, and
+ * it was rendering something slightly different.
+ */
+setProjectAnnotations(preview);

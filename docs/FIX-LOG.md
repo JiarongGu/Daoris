@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Adding a tooltip broke stories that had nothing to do with it (2026-09-22)
+
+**Symptom.** Giving a component a `Tip` turned unrelated stories red — *"`Tooltip` must be used
+within `TooltipProvider`"* — from `stories.test.tsx`, which renders every story as a smoke test.
+Twice in one session: the status bar's items, then the toast's clamped text.
+
+**Root cause.** `composeStories` applies each story's **own** decorators and the project
+annotations it has been given — and it had been given none. So `.storybook/preview`'s globals never
+reached the test, and the provider the application mounts once in `main.tsx` was absent for every
+story. Both times the apparent fix was "wrap this story", which is the wrong fix twice: the suite
+exists to render *what a reviewer sees*, and it was rendering something slightly different.
+
+🔴 **The suite was right and its harness was wrong**, which is the awkward case — a green story in
+Storybook and a red one in the test look like a flaky test rather than a missing global.
+
+**Fix.** The provider becomes a project decorator in `.storybook/preview.tsx`, and
+`src/test/setup.tsx` calls `setProjectAnnotations(preview)` so `composeStories` renders through it.
+Both files gained a `.tsx` extension to carry the JSX.
+
+**Verify.** `npx vitest run src/stories.test.tsx` — 96 stories, including the two that had been
+wrapped by hand, with the hand-wrapping no longer load-bearing. The next component to gain a `Tip`
+needs nothing.
+
+**Commit.** pending
+
 ## A re-published install kept every bundle it had ever served (2026-09-22)
 
 **Symptom.** Listing a deployed install's `wwwroot/assets` showed **seven** hashed JS bundles. It

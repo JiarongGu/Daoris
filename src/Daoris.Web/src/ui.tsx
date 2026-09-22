@@ -575,7 +575,15 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
             toast.kind === 'error' ? 'border-l-st-declined' : 'border-l-accent',
           )}
         >
-          <Toast.Description className="flex-1">{toast.text}</Toast.Description>
+          {/* 🔴 Clamped, with the whole of it one hover away. Seen on the deployed application
+              (D62): the driver's hold on an untrusted repository is six lines naming a path, a
+              consequence and the command that fixes it — every word of it worth keeping, and as a
+              corner toast it covered the card it was about. The first two lines carry the verdict
+              and the subject, which is what a glance is for; the rest is there when the glance was
+              not enough. Never truncated in the DOM, so a screen reader still hears all of it. */}
+          <Tip content={toast.text}>
+            <Toast.Description className="line-clamp-2 flex-1">{toast.text}</Toast.Description>
+          </Tip>
           <Toast.Close asChild>
             <Button variant="ghost" aria-label={t('common.dismiss')}><Icon name="x" size={14} /></Button>
           </Toast.Close>
