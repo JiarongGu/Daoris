@@ -13,6 +13,7 @@
  *   node tools/desktop.mjs doctor              what this machine has, and what a run would use
  *   node tools/desktop.mjs build               the platform bundle, the host, then the shell
  *   node tools/desktop.mjs run                 start it on a scratch machine, debug port attached
+ *   node tools/desktop.mjs run --install <dir> start the DEPLOYED one there, on your real machine
  *   node tools/desktop.mjs shot overview       capture the window
  *   node tools/desktop.mjs eval "document.title"
  *   node tools/desktop.mjs click "[data-nav=quests]"
@@ -160,6 +161,32 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
   return found[0]?.exe ?? null;
 }
 
+/** What a published install calls its launcher. One file at the root — `desktop-publish.mjs`'s rule. */
+export const INSTALLED_LAUNCHER = 'daoris-desktop.exe';
+
+/**
+ * The launcher inside a published install, or null when that folder is not one.
+ *
+ * @remarks
+ * 🔴 **The instrument the first deployment recorded as missing** (case study 2d): `shot`, `eval`
+ * and `click` find a window by THIS checkout's executable path, so a deployed shell — a different
+ * path, and no debug port — could only be looked at by a person. That was recorded rather than
+ * fixed, because *"the honest options are a deliberate opt-in flag or nothing, and that is a
+ * decision, not a patch"*. The owner made the decision on 2026-09-22: **develop against the
+ * install**, because the desktop is where the capability is.
+ *
+ * **The launcher is at the ROOT, never guessed one level down.** An install shows one thing to
+ * double-click and hides the rest under `app/` — so a folder with no launcher at its root is not an
+ * install, and answering null beats launching something that happens to be nearby. The first
+ * deployment's own folder is `<family>/app`, which is exactly the shape that makes "point it at the
+ * folder you published to" easy to get wrong.
+ */
+export function installedExe(directory) {
+  if (!directory) return null;
+  const launcher = join(directory, INSTALLED_LAUNCHER);
+  return existsSync(launcher) ? launcher : null;
+}
+
 /**
  * Which captures a prune would drop: keep the newest `keep`, and stay under `maxBytes`.
  *
@@ -249,6 +276,26 @@ export const stopAll = (exe) => powershell(`
   }`);
 
 const readRun = () => (existsSync(RUN_FILE) ? JSON.parse(readFileSync(RUN_FILE, 'utf8')) : null);
+
+/**
+ * Which shell the instruments address — the one the last `run` started.
+ *
+ * 🔴 Every one of them matches by executable PATH, which is what stops this loop photographing or
+ * killing an install the owner actually uses. That rule does not change when the target IS an
+ * install; what changes is which path, and the run file already records it. Falling back to the
+ * checkout keeps every existing invocation behaving exactly as it did.
+ */
+const targetExe = () => readRun()?.exe ?? assemblyExe(DESKTOP_PROJECT);
+
+/** `--install <dir>`, taken off an argument list. */
+function takeInstall(args) {
+  const at = args.indexOf('--install');
+  if (at === -1) return null;
+  const directory = args[at + 1];
+  if (!directory) fail('usage: --install <folder you published to>');
+  args.splice(at, 2);
+  return directory;
+}
 
 const ago = (path) => {
   const minutes = Math.round((Date.now() - statSync(path).mtimeMs) / 60000);
@@ -358,7 +405,18 @@ async function build(args) {
 }
 
 async function start(command, args) {
-  const exe = assemblyExe(DESKTOP_PROJECT);
+  /* 🔴 The DEPLOYED shell, addressed by the folder it was published to. It implies `--real` and
+     cannot mean anything else: an install has no `DAORIS_*` overrides and runs against the machine's
+     own `~/.daoris` by construction — that is what makes it a deployment rather than a preview.
+     What this adds is the debug port, and it adds it AT LAUNCH through the environment: the shipped
+     application still exposes nothing, which is the half of case study 2d that was right. */
+  const install = takeInstall(args);
+  const exe = install ? installedExe(install) : assemblyExe(DESKTOP_PROJECT);
+  if (install && !exe) {
+    fail(`no \`${INSTALLED_LAUNCHER}\` at the root of \`${install}\` — that is not an install.\n`
+      + '  Point --install at the folder you published to (the one holding the launcher, `app/`\n'
+      + '  and `data/`), not at its parent.');
+  }
   if (!exe) fail('the shell is not built — `node tools/desktop.mjs build`.');
 
   const live = running(exe);
@@ -370,7 +428,7 @@ async function start(command, args) {
       + '`node tools/desktop.mjs restart` replaces it.');
   }
 
-  const real = args.includes('--real');
+  const real = args.includes('--real') || Boolean(install);
   const { freePort } = await import('./cdp.mjs');
   const cdpPort = await freePort(9333);
 
@@ -379,9 +437,16 @@ async function start(command, args) {
   const extra = [];
 
   if (real) {
-    console.log('⚠ --real: your own ~/.daoris — your registry, your quests, your drivable set.');
+    console.log(install
+      ? '⚠ --install: the DEPLOYED application, on your own ~/.daoris.'
+      : '⚠ --real: your own ~/.daoris — your registry, your quests, your drivable set.');
     console.log('  The driver loop starts with the app, so a drivable repository with an open quest');
     console.log('  gets a real agent session. This is the instance you use, not a copy of it.');
+    if (install) {
+      // Said plainly, because it is the one way this differs from double-clicking the launcher.
+      console.log('  Started with a debug port so `shot`, `eval` and `click` can reach it. Nothing');
+      console.log('  in the published application opens one — this run does, and only this run.');
+    }
   } else {
     const home = join(scratchRoot, 'home');
     const family = join(scratchRoot, 'family');
@@ -496,10 +561,10 @@ async function main(command, args) {
       break;
 
     case 'kill': {
-      const exe = assemblyExe(DESKTOP_PROJECT);
+      const exe = targetExe();
       const live = running(exe);
       if (!live.length) {
-        console.log('no shell from this checkout is running.');
+        console.log('no shell this loop started is running.');
         break;
       }
 
@@ -509,7 +574,7 @@ async function main(command, args) {
     }
 
     case 'shot': {
-      const exe = assemblyExe(DESKTOP_PROJECT);
+      const exe = targetExe();
       if (!exe) fail('the shell is not built — nothing to photograph.');
 
       /* `--theme light|dark` photographs the OTHER theme without touching the machine's setting.

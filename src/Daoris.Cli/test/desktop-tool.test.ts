@@ -10,7 +10,7 @@ import { readText, listFiles } from '../src/fsx.ts';
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, REDIRECTED, assemblyExe, prune, scratchEnvironment,
+  CLEARED, REDIRECTED, assemblyExe, installedExe, prune, scratchEnvironment,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 
@@ -174,4 +174,44 @@ test('a prune also enforces the size cap, oldest first', () => {
   // Newest first until the cap is spent: 9, 8, 7 fit in 35 bytes; everything older goes.
   assert.deepEqual(dropped.sort((a: string, b: string) => Number(a.split('.')[0]) - Number(b.split('.')[0])),
     ['0.png', '1.png', '2.png', '3.png', '4.png', '5.png', '6.png']);
+});
+
+/**
+ * 🔴 Reaching the DEPLOYED shell — the instrument the first deployment recorded as missing and
+ * deliberately did not build (case study 2d: *"the honest options are a deliberate opt-in flag or
+ * nothing, and that is a decision, not a patch"*). The owner made that decision on 2026-09-22:
+ * *"you should be develop to <install> ... the desktop app itself should be the main focus"*.
+ *
+ * What is asserted here is the part that is silently wrong when it breaks. The capture, the
+ * attach and the kill all match a shell by its executable's PATH — that is what stops this loop
+ * photographing somebody else's window — so an install path resolved loosely would point every one
+ * of them at the wrong program while every command still appeared to work.
+ */
+test('an install is addressed by its folder, and the launcher is the one at its root', () => {
+  const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
+  writeFileSync(join(root, 'daoris-desktop.exe'), '');
+
+  assert.equal(installedExe(root), join(root, 'daoris-desktop.exe'));
+});
+
+/**
+ * A folder with no launcher is NOT an install, and saying so beats launching nothing. The first
+ * deployment's own folder had the executable one level down (`<family>/app`), so "point it at the
+ * folder you published to" is a thing a person gets wrong on their first try.
+ */
+test('a folder holding no launcher is not an install', () => {
+  const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
+  assert.equal(installedExe(root), null);
+
+  mkdirSync(join(root, 'app'), { recursive: true });
+  writeFileSync(join(root, 'app', 'daoris-desktop.exe'), '');
+  // Still null: the launcher is at the ROOT of an install by construction, and guessing one level
+  // down would silently accept a folder that is not one.
+  assert.equal(installedExe(root), null);
+});
+
+test('no install named is no install, rather than a path built from undefined', () => {
+  assert.equal(installedExe(null), null);
+  assert.equal(installedExe(undefined), null);
+  assert.equal(installedExe(''), null);
 });
