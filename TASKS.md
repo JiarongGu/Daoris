@@ -308,6 +308,16 @@ is the one that needs the owner: its closing step spends a real login.
   hand-maintained copy. Needs a decision first: one `AGENTS.md` or an inclusion inside `CLAUDE.md`, and
   what it does to the 30000-byte budget an adopter starts at.
 
+  🔴 **Confirmed on a real repository** (owner, 2026-09-22, a candidate adopter): `daoris analyze` —
+  which writes nothing — reported *"ALSO SEEN the AGENTS.md convention … what it installs will be
+  invisible to them"*, and the repository turned out to carry **both** files, with `CLAUDE.md`
+  holding exactly one line: `@AGENTS.md`. So its whole doctrine lives behind an **import**, and
+  `dsh-agent-instructions` says in the same limitations paragraph that `.claude/rules/` *and*
+  `@path` imports are both uninterpreted. That is a **third** loader-specific mechanism, and it
+  changes the shape of the fix: the target is not "an instruction file" but *whichever file this
+  repository's harnesses actually read*, which `analyze` can already detect and `init` would have to
+  record. The detection exists; nothing acts on it.
+
 - [ ] **HELP2 — skills reach one harness only.** `dsh-skill-filesystem` scans `<project>/.dsh/skills`
   and `<project>/.agents/skills`, never `.claude/skills` — but its bundle format is `<name>/SKILL.md`,
   **exactly Daoris's layout**, so this is a root rather than a conversion: `customSkillDirs` naming
