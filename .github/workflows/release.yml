@@ -209,6 +209,19 @@ jobs:
           echo "tag=v$final" >> "$GITHUB_OUTPUT"
           echo "current=$current -> final=$final"
 
+      # The devkit's five universal gates, over THIS repository (DEVKIT3). They were configured in
+      # `daoris.gates.json` and read by nothing for as long as that file has existed — the workflow ran
+      # the devkit's own test suite and then each declared gate by name, and never the binary itself.
+      #
+      # `--universal-only` is not a shortcut: `verify` runs the declared gates too, so the full form
+      # would reach its own row and start itself. `--allow-builtins-only` is the explicit opt-out the
+      # sensitive gate requires when the private pattern list is absent, which on a runner it always is
+      # — that list holds names that cannot live in the repository being scanned. The half of the scan
+      # that knows them runs locally and in the pre-commit hook; CI gets the structural patterns, and
+      # says so rather than discovering it silently.
+      - name: Universal gates
+        run: dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only --allow-builtins-only
+
       # Everything that protects a consumer, in the order a consumer meets it.
       - name: Verify gate
         run: npm run verify

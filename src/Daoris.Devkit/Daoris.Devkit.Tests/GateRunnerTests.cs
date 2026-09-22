@@ -35,6 +35,15 @@ public sealed class GateRunnerTests : IDisposable
         return (report, log);
     }
 
+    private (RunReport Report, List<string> Log) RunUniversalOnly(
+        GateDeclaration declaration, params IGate[] gates)
+    {
+        var log = new List<string>();
+        var report = new GateRunner(new GateContext(_fx.Path, declaration), gates)
+            .Run(log.Add, declared: false);
+        return (report, log);
+    }
+
     /// <summary>
     /// Stopping early is the point. Running a twelve-minute build before discovering a staged secret
     /// wastes the twelve minutes and teaches people to start it and walk away.
@@ -128,5 +137,43 @@ public sealed class GateRunnerTests : IDisposable
 
         Assert.False(report.Passed);
         Assert.Contains("exited 3", report.Results.Single().Detail);
+    }
+
+    /// <summary>
+    /// 🔴 The universal half alone — what a repository asks for when its declared gates run somewhere
+    /// this command is not.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The case that forced it is recursion.</b> A repository cannot declare
+    /// <c>daoris-devkit verify</c> as one of its own gates: the run would reach that row and start
+    /// itself, which reaches the row again. Nothing in the declaration can express "except this one",
+    /// and it should not have to — the answer is a command that runs the half the declaration does not
+    /// contain.</para>
+    ///
+    /// <para>The second case is a matrix. Declared gates that are per-platform — a Windows-only one
+    /// among them — cannot all pass in one process on one machine, so a repository runs them as
+    /// separate CI jobs and still wants the universal gates somewhere.</para>
+    /// </remarks>
+    [Fact]
+    public void The_universal_gates_can_run_without_the_declared_ones()
+    {
+        var declaration = new GateDeclaration { Gates = [new DeclaredGate("nope", "exit 3")] };
+
+        var (report, log) = RunUniversalOnly(declaration, new StubGate("universal", GateResult.Pass("universal")));
+
+        Assert.True(report.Passed);
+        Assert.Equal(["universal"], report.Results.Select(r => r.Name));
+        // Said out loud, for the same reason a disabled gate is: a run that quietly checked half of
+        // what the declaration names reads as coverage it is not.
+        Assert.Contains(log, line => line.Contains("not run") && line.Contains("nope"));
+    }
+
+    /// <summary>A declaration with nothing declared says nothing about it — there is no half to skip.</summary>
+    [Fact]
+    public void Universal_only_says_nothing_when_nothing_is_declared()
+    {
+        var (_, log) = RunUniversalOnly(new GateDeclaration(), new StubGate("u", GateResult.Pass("u")));
+
+        Assert.DoesNotContain(log, line => line.Contains("not run"));
     }
 }

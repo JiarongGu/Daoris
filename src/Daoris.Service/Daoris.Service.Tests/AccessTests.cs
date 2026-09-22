@@ -48,7 +48,9 @@ public sealed class AccessTests
     [InlineData("http://0.0.0.0:5177")]
     [InlineData("http://+:80")]
     [InlineData("http://*:80")]
-    [InlineData("http://192.168.1.5:5177")]
+    // TEST-NET-3 (RFC 5737), which exists to be written down: a specific non-loopback interface that
+    // is nobody's actual subnet, because the sensitive scan cannot tell a fixture from a machine.
+    [InlineData("http://203.0.113.5:5177")]
     [InlineData("http://localhost:5177;http://0.0.0.0:5178")]
     public void Local_mode_refuses_to_bind_beyond_loopback(string urls)
     {

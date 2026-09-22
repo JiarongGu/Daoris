@@ -1,14 +1,19 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built.** One self-contained 2.7 MB binary and 57 tests. The two questions this document was
-written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
+**Status: built and run over this repository.** One self-contained 2.7 MB binary and 59 tests. The two
+questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
 
-**Not yet run over this repository, and that is worth knowing before trusting the declaration below.**
-Daoris declares its gates in `daoris.gates.json` and the binary runs them on demand, but no workflow
-step, hook or npm script invokes `daoris-devkit verify` here — so the universal gates configured in
-that file are, today, configuration nothing reads. Run by hand it exits 1 on six sensitive findings,
-all in test fixtures, each needing its own judgement. **DEVKIT3** in `TASKS.md` carries the work of
-adjudicating them and wiring the binary in.
+**The universal gates run here** (DEVKIT3, 2026-09-22): `universal` in `daoris.gates.json` and a step
+in the release workflow both run `verify --universal-only`. For a year of this file's life they did
+not — the workflow ran the devkit's own *test suite* and then each declared gate by name, and never
+the binary, so the gates configured in that file were configuration nothing read. Run by hand the
+first time, it exited 1 on eight sensitive findings and one stale document; every one was real and
+every one is fixed.
+
+🔴 **`--universal-only` is the only form a repository can declare as a gate of its own.** Plain
+`verify` runs the declared gates after the universal ones, so a row naming it would reach itself. The
+flag exists for that and for the other case it implies: declared gates that are per-platform cannot
+all pass in one process on one machine.
 
 ## The problem, measured
 
@@ -108,6 +113,9 @@ outside those look identical unless the run says so.
 
 ```
 daoris-devkit verify          # universal gates, then the declared ones; stops at the first failure
+daoris-devkit verify --universal-only
+                              # …the universal half alone, for a repository whose declared gates run
+                              # elsewhere. A row naming plain `verify` would reach itself.
 daoris-devkit scan            # the sensitive scan on staged changes — what the pre-commit hook runs
 daoris-devkit scan --tree     # …on every tracked file
 daoris-devkit scan --history  # …on everything the repository has EVER contained

@@ -82,6 +82,9 @@ internal static class Repository
         usage: daoris-devkit <command> [flags]
 
           verify                  every universal gate, then this repository's declared ones (default)
+          verify --universal-only the universal gates alone — for a repository whose declared gates
+                                  run elsewhere, and the only form a repository can declare as a gate
+                                  of its own without the run starting itself
           scan [--tree]           the sensitive-content scan alone; staged changes unless --tree
           scan --message <file>   scan a commit message — for the commit-msg hook
           scan --history          AUDIT all history: every object, every path it ever had

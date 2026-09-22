@@ -5,8 +5,13 @@ host carries the same service for a browser or a remote deployment. The core rea
 knowledge into addressable entries, classifies each as canonical or local, stores them in SQLite,
 answers ranked queries over FTS5, and finds where repositories learned the same lesson independently.
 Quests and pushed registrations persist in the same database, so what one session publishes another
-session — or another machine's `connect` — finds waiting. **170 tests**, two of which run against the
+session — or another machine's `connect` — finds waiting. **262 tests**, two of which run against the
 real sibling repositories rather than fixtures.
+
+Since **D59** the always-loaded tier is a region of `AGENTS.md` rather than a directory, so the
+scanner reads `DoctrineRegion` for a repository's rules and a gate holds that a canonical rule stays
+searchable. The ledger side grew with it: a session record keys on the **working tree** it was held in
+(D51), not on the repository that owns it, and carries the diff a review reads (SURF6a).
 
 ## The registry — who is out there, and what they own
 

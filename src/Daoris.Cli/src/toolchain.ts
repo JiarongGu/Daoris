@@ -840,7 +840,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
  * — `install`, `update`, and TOOL2's `pin` — for as long as they have existed.
  *
  * **`shell: true` is the wrong fix**, twice over. Node does not quote for it on Windows, so a
- * configuration home under `C:\Users\Some One\` breaks; and it would put a version string a person
+ * configuration home under `C:\Users\<a name with a space>\` breaks; and it would put a version string a person
  * typed onto a command line `cmd.exe` parses. So this builds the `cmd.exe /d /s /c` invocation
  * itself, quotes every token, and passes it verbatim — the quoting is ours, which is the only way it
  * is anybody's.

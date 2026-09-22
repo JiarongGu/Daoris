@@ -167,9 +167,9 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         Assert.False(elder.Joined);
         Assert.False(elder.SharesKnowledge);
 
-        await store.UpsertAsync(elder with { Root = "/home/dev/Elder", Joined = true }, Now);
+        await store.UpsertAsync(elder with { Root = "/srv/Elder", Joined = true }, Now);
         var upgraded = (await store.AllAsync()).Single();
-        Assert.Equal("/home/dev/Elder", upgraded.Root);
+        Assert.Equal("/srv/Elder", upgraded.Root);
         Assert.True(upgraded.Joined);
     }
 }

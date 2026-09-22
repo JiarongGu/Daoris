@@ -20,14 +20,14 @@ const manifest = {
  * same judgement keeps them off the network.
  */
 test('a local service is told the root', () => {
-  const body = registration('/home/dev/Repo', manifest, 'Repo', 'http://localhost:5177');
+  const body = registration('/srv/Repo', manifest, 'Repo', 'http://localhost:5177');
 
-  assert.equal(body.root, '/home/dev/Repo');
+  assert.equal(body.root, '/srv/Repo');
   assert.equal(body.repository, 'Repo');
 });
 
 test('a remote service is not told the root', () => {
-  const body = registration('/home/dev/Repo', manifest, 'Repo', 'https://daoris.example.com');
+  const body = registration('/srv/Repo', manifest, 'Repo', 'https://daoris.example.com');
 
   assert.equal('root' in body, false);
 });
@@ -37,7 +37,9 @@ test('loopback is the boundary, in every spelling', () => {
   assert.equal(isLocalService('http://127.0.0.1:5177'), true);
   assert.equal(isLocalService('http://[::1]:5177'), true);
   assert.equal(isLocalService('https://daoris.example.com'), false);
-  assert.equal(isLocalService('http://192.168.1.10:5177'), false);
+  // TEST-NET-3 (RFC 5737), which exists to be written down — a fixture must not look like somebody's
+  // actual subnet, and the sensitive scan cannot tell the two apart.
+  assert.equal(isLocalService('http://203.0.113.10:5177'), false);
   // A subdomain that merely CONTAINS the word is not local — the check is the hostname, not a substring.
   assert.equal(isLocalService('http://localhost.example.com'), false);
 });
@@ -53,11 +55,11 @@ test('an unparseable url withholds the root rather than guessing', () => {
  */
 test('the registration carries the remote declaration, and silence means local', () => {
   const declared = { ...manifest, remote: { join: true, knowledge: true } } as Manifest;
-  const body = registration('/home/dev/Repo', declared, 'Repo', 'https://daoris.example.com');
+  const body = registration('/srv/Repo', declared, 'Repo', 'https://daoris.example.com');
   assert.equal(body.join, true);
   assert.equal(body.shareKnowledge, true);
 
-  const silent = registration('/home/dev/Repo', manifest, 'Repo', 'https://daoris.example.com');
+  const silent = registration('/srv/Repo', manifest, 'Repo', 'https://daoris.example.com');
   assert.equal(silent.join, false);
   assert.equal(silent.shareKnowledge, false);
 });
@@ -117,17 +119,17 @@ test('connect --dry-run prints the exact payload, remote declaration and root in
  * nowhere else; the manifest keeps only what it always kept.
  */
 test('--workspace is a wiring statement, and silence says nothing at all', () => {
-  const wired = registration('/home/dev/Repo', manifest, 'Repo', 'http://localhost:5177', 'aurora');
+  const wired = registration('/srv/Repo', manifest, 'Repo', 'http://localhost:5177', 'aurora');
   assert.equal(wired.workspace, 'aurora');
 
   // Silence must be ABSENT, not empty: an absent field preserves the existing row, and `""` would be
   // a statement that re-points every repository to the default on the next ordinary sync tick.
-  const silent = registration('/home/dev/Repo', manifest, 'Repo', 'http://localhost:5177');
+  const silent = registration('/srv/Repo', manifest, 'Repo', 'http://localhost:5177');
   assert.equal('workspace' in silent, false);
 });
 
 test('a remote service is told the workspace too — the wiring is what it registers under', () => {
-  const body = registration('/home/dev/Repo', manifest, 'Repo', 'https://daoris.example.com', 'aurora');
+  const body = registration('/srv/Repo', manifest, 'Repo', 'https://daoris.example.com', 'aurora');
   assert.equal(body.workspace, 'aurora');
   assert.equal('root' in body, false);
 });
@@ -216,7 +218,7 @@ test('connect from a linked worktree is refused, naming the main tree', async ()
     source: 's',
     domain: { summary: 'A test repo.', owns: ['itself'], accepts: ['a quest'] },
   }));
-  fx.write('.git', 'gitdir: /home/dev/Repo/.git/worktrees/session-ab12cd34\n');
+  fx.write('.git', 'gitdir: /srv/Repo/.git/worktrees/session-ab12cd34\n');
   process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
 
   try {
@@ -227,7 +229,7 @@ test('connect from a linked worktree is refused, naming the main tree', async ()
     assert.equal((error as DaorisError).exitCode, 1);
     assert.match((error as DaorisError).message, /linked worktree/);
     // The actionable half: WHERE to run connect instead.
-    assert.match((error as DaorisError).message, /[/\\]home[/\\]dev[/\\]Repo/);
+    assert.match((error as DaorisError).message, /[/\\]srv[/\\]Repo/);
   }
 
   delete process.env.DAORIS_SERVICE_URL;

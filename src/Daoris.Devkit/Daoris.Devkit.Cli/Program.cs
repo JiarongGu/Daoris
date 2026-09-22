@@ -45,13 +45,16 @@ int Verify()
 
     Console.WriteLine($"daoris-devkit {Repository.DevkitVersion} — {root}");
 
+    // 🔴 `--universal-only` exists because a repository cannot declare THIS BINARY as one of its own
+    // gates: the run would reach that row and start itself. It is also what a repository with
+    // per-platform declared gates needs, since those cannot all pass in one process on one machine.
     var report = new GateRunner(context, [
         new SensitiveGate(ScanScope.Tree, new CommandLineGit(root), allowBuiltinsOnly),
         new VersionGate(),
         new DocsGate(new CommandLineGitHistory(root)),
         new LinksGate(new CommandLineGit(root)),
         new DoctrineGate(),
-    ]).Run(Console.WriteLine);
+    ]).Run(Console.WriteLine, declared: !flags.Contains("--universal-only"));
 
     var ran = report.Results.Count(r => !r.Skipped);
     var skipped = report.Results.Count(r => r.Skipped);

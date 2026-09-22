@@ -23,7 +23,20 @@ public sealed record RunReport(IReadOnlyList<GateResult> Results, bool Passed);
 /// </remarks>
 public sealed class GateRunner(GateContext context, IReadOnlyList<IGate> universal)
 {
-    public RunReport Run(Action<string> write)
+    /// <param name="declared">
+    /// Whether to run the repository's own declared gates after the universal ones. False runs the
+    /// universal half alone.
+    /// </param>
+    /// <remarks>
+    /// 🔴 <b>A repository cannot declare this binary as one of its own gates.</b> The run would reach
+    /// that row and start itself, which reaches the row again — and no entry in the declaration can
+    /// say "except this one", nor should it have to. The universal half is by definition the half the
+    /// declaration does not contain, so running it alone is well defined where the whole is not.
+    ///
+    /// The other case is a matrix: declared gates that are per-platform cannot all pass in one process
+    /// on one machine, so they run as separate jobs and the universal gates still need a home.
+    /// </remarks>
+    public RunReport Run(Action<string> write, bool declared = true)
     {
         var results = new List<GateResult>();
         var declaration = context.Declaration;
@@ -43,17 +56,31 @@ public sealed class GateRunner(GateContext context, IReadOnlyList<IGate> univers
             if (!result.Passed) return new RunReport(results, false);
         }
 
-        foreach (var declared in declaration.Gates)
+        // Named, never silent — the same rule a disabled gate follows. A run that checked half of what
+        // the declaration lists and said nothing reads as coverage it is not, and the drift from there
+        // to "we have gates for that" takes about a week.
+        if (!declared)
         {
-            write($"  running   {declared.Name}  ({declared.Run})");
-            var directory = declared.WorkingDirectory is null
-                ? context.RepositoryRoot
-                : context.Path(declared.WorkingDirectory);
+            if (declaration.Gates.Count > 0)
+            {
+                write($"  not run   {string.Join(", ", declaration.Gates.Select(g => g.Name))}  "
+                    + $"(declared in {GateDeclaration.FileName}; this run is the universal gates only)");
+            }
 
-            var code = Process.RunShell(declared.Run, directory);
+            return new RunReport(results, true);
+        }
+
+        foreach (var gate in declaration.Gates)
+        {
+            write($"  running   {gate.Name}  ({gate.Run})");
+            var directory = gate.WorkingDirectory is null
+                ? context.RepositoryRoot
+                : context.Path(gate.WorkingDirectory);
+
+            var code = Process.RunShell(gate.Run, directory);
             var result = code == 0
-                ? GateResult.Pass(declared.Name)
-                : GateResult.Fail(declared.Name, $"exited {code}");
+                ? GateResult.Pass(gate.Name)
+                : GateResult.Fail(gate.Name, $"exited {code}");
 
             results.Add(result);
             write(Format(result));

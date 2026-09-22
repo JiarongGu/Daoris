@@ -212,7 +212,7 @@ install a harness, deliberately (D49 §4 keeps install, update and login out of 
 actions).
 
 **Why `shell: true` is the wrong fix, twice.** Node does not quote arguments for it on Windows, so a
-configuration home under `C:\Users\Some One\` breaks; and it would put a version string a person typed
+configuration home under `C:\Users\<a name with a space>\` breaks; and it would put a version string a person typed
 onto a command line `cmd.exe` parses, where the directory-name check that guards a pin does not refuse
 `&`.
 

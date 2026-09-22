@@ -20,7 +20,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
     [Fact]
     public void What_the_person_said_comes_first()
     {
-        var candidates = ServiceHostLocator.Candidates("D:/somewhere/host.exe", "/home/dev", _root);
+        var candidates = ServiceHostLocator.Candidates("D:/somewhere/host.exe", "/profile", _root);
 
         Assert.Equal("D:/somewhere/host.exe", candidates[0].Executable);
     }
@@ -131,7 +131,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
         Directory.CreateDirectory(deep);
         File.WriteAllText(Path.Combine(workspace, "daoris.json"), "{}");
 
-        var candidates = ServiceHostLocator.Candidates(null, "/home/dev", deep);
+        var candidates = ServiceHostLocator.Candidates(null, "/profile", deep);
         var project = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Http");
 
         var dev = candidates.Single(c =>
@@ -145,7 +145,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
         var lonely = Path.Combine(_root, "lonely");
         Directory.CreateDirectory(lonely);
 
-        var candidates = ServiceHostLocator.Candidates(null, "/home/dev", lonely);
+        var candidates = ServiceHostLocator.Candidates(null, "/profile", lonely);
 
         // 🔴 Asserted by what the candidates ARE, not by counting them. The assertion here used to be
         // `Single`, which said "one" while meaning "nothing from a workspace" — so every later

@@ -245,7 +245,7 @@ public sealed class SessionStoreTests : IAsyncLifetime
             // A tree is a PATH on somebody else's machine (D51) — the newest thing on the list the
             // transcript started. The feed has no field for it, and this is the guard that holds even
             // when a caller fills one in anyway.
-            Tree: "/home/alice/work/Owner");
+            Tree: "/srv/work/Owner");
 
         await _sessions.MirrorAsync(fed);
 
