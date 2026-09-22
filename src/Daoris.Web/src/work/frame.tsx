@@ -4,6 +4,7 @@ import { Button, Dot, Icon, type IconName, Tip } from '../ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
 import { SessionConsole } from '../SessionConsole';
 import { cn } from '../lib/cn';
+import { Mark } from '../Mark';
 
 // The frame's own furniture (D55, extended by D56): the app strip, the activity bar, the mode
 // switch, the status bar and the output panel. Small, presentational, and kept together because
@@ -78,10 +79,15 @@ export function AppStrip({
         />
       )}
 
-      <div className="pointer-events-none flex items-baseline gap-1.5">
-        {/* The serif's one appearance, and the one brand gesture beside it (D41 §1). */}
-        <strong className="font-serif text-wordmark font-semibold tracking-[-0.01em]">Daoris</strong>
-        <span className="text-small text-ink-faint">道衍</span>
+      <div className="pointer-events-none flex items-center gap-2">
+        {/* The mark, then the serif's one appearance and the one brand gesture beside it (D41 §1).
+            Optically aligned rather than baseline-aligned: a glyph has no baseline to share with
+            type, and `items-baseline` dropped it below the wordmark's. */}
+        <Mark size={18} className="text-accent" />
+        <span className="flex items-baseline gap-1.5">
+          <strong className="font-serif text-wordmark font-semibold tracking-[-0.01em]">Daoris</strong>
+          <span className="text-small text-ink-faint">道衍</span>
+        </span>
       </div>
 
       {/* The frames, as menus of what is inside them (VS Code's menu bar). `menus` replaces the
