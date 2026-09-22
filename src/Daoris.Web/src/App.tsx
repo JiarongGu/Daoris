@@ -424,6 +424,7 @@ export function App() {
         scope={(workspaces.data?.length ?? 0) >= 2
           ? (
             <WorkspaceSwitcher
+              bar
               workspaces={workspaces.data ?? []}
               value={scope.workspace}
               onChange={scope.setWorkspace}
@@ -434,6 +435,19 @@ export function App() {
         sessions={liveSessions}
         workspace={scope.workspace}
         remote={wired}
+        /* Where each fact leads, and the rule is that a status item goes where the fact is SET
+           rather than where it is merely repeated (owner, 2026-09-22: *"better design with display
+           and action (on click or on hover)"*). The driver and the remote are both machine wiring,
+           so both land on Machine; sessions are Work's whole subject; the index count leads to the
+           repositories it was built from.
+
+           🔴 Handed over unconditionally and refused per-item inside the bar. A browser has no
+           Machine view at all, and `driver === 'absent'` is exactly that case — the bar drops the
+           target itself rather than making every caller remember to. */
+        onDriver={() => { setTab('settings'); chooseMode('manage'); }}
+        onRemote={() => { setTab('settings'); chooseMode('manage'); }}
+        onSessions={() => chooseMode('work')}
+        onIndex={() => { setTab('projects'); chooseMode('manage'); }}
         tier={status.data
           ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
           : undefined}

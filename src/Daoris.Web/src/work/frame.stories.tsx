@@ -24,16 +24,24 @@ export const Modes: StoryObj = {
   ),
 };
 
+/**
+ * 🔴 Wrapped in the tooltip provider the application mounts once (`main.tsx`). Every status item
+ * carries a tip since the bar became a bar (2026-09-22), and a `Tooltip` outside a provider throws —
+ * so a story that renders one without it is a story that cannot render at all. Caught by the suite
+ * that asserts every story renders, which is exactly what that suite is for.
+ */
 export const Statuses: StoryObj = {
   render: () => (
-    <div className="grid gap-3">
-      <StatusBar driver="running" sessions={2} workspace="default" remote />
-      <StatusBar driver="running" sessions={0} workspace={null} remote={false} />
-      {/* A shell whose driver did not answer — different from having none, and it says so. */}
-      <StatusBar driver="stopped" sessions={0} workspace="aurora" remote />
-      {/* A browser: no driver, and the remote question is not one it can be asked. */}
-      <StatusBar driver="absent" sessions={3} workspace="工作区" remote={null} />
-    </div>
+    <Tooltip.Provider>
+      <div className="grid gap-3">
+        <StatusBar driver="running" sessions={2} workspace="default" remote onDriver={() => {}} />
+        <StatusBar driver="running" sessions={0} workspace={null} remote={false} />
+        {/* A shell whose driver did not answer — different from having none, and it says so. */}
+        <StatusBar driver="stopped" sessions={0} workspace="aurora" remote />
+        {/* A browser: no driver, and the remote question is not one it can be asked. */}
+        <StatusBar driver="absent" sessions={3} workspace="工作区" remote={null} />
+      </div>
+    </Tooltip.Provider>
   ),
 };
 

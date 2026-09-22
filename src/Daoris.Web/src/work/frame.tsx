@@ -310,7 +310,10 @@ export type DriverPresence = 'running' | 'stopped' | 'absent';
  * screen* (D24), which a bar present on every screen by construction serves better than a sidebar
  * foot ever did. The tier's sentence stays the service's own, verbatim, in its tooltip.
  */
-export function StatusBar({ driver, sessions, workspace, remote, tier, indexed, scope }: {
+export function StatusBar({
+  driver, sessions, workspace, remote, tier, indexed, scope,
+  onDriver, onSessions, onRemote, onIndex,
+}: {
   driver: DriverPresence;
   sessions: number;
   /** The chosen circle, or null for every circle this deployment holds (WSP5). */
@@ -323,60 +326,163 @@ export function StatusBar({ driver, sessions, workspace, remote, tier, indexed, 
   indexed?: string;
   /** The scope as a control, where the deployment holds more than one circle (WSP5). */
   scope?: ReactNode;
+  /** Where each fact leads. Absent means the fact is stated and not offered (see `StatusItem`). */
+  onDriver?: () => void;
+  onSessions?: () => void;
+  onRemote?: () => void;
+  onIndex?: () => void;
 }) {
   const { t } = useTranslation();
   const tone = driver === 'running' ? 'live' : driver === 'stopped' ? 'parked' : 'idle';
+  const driverWord = driver === 'running' ? 'Running' : driver === 'stopped' ? 'Stopped' : 'Absent';
 
   return (
     <footer
       aria-label={t('work.status.label')}
-      className="flex flex-wrap items-center gap-x-4 gap-y-0.5 border-t border-line bg-raised px-3 py-0.5 text-meta text-ink-faint"
+      /* 🔴 `items-stretch` and a fixed height, not `items-center` and padding — because a hover
+         target that stops short of the bar's edges reads as a word that lit up rather than as a
+         control. Every item fills the bar's full height; that single property is most of what makes
+         the reference console's bar feel like a bar. */
+      className="flex h-6 shrink-0 items-stretch overflow-hidden border-t border-line bg-raised text-meta text-ink-soft"
     >
-      <span className="flex items-center gap-1.5">
-        {t('work.status.driver')}
-        <Dot
-          tone={tone}
-          label={t(`work.status.driver${driver === 'running' ? 'Running' : driver === 'stopped' ? 'Stopped' : 'Absent'}`)}
-        />
-      </span>
-      <span>{t('work.status.sessions', { count: sessions })}</span>
+      <StatusItem
+        onPress={driver === 'absent' ? undefined : onDriver}
+        tip={t('work.status.driverTip')}
+        label={t('work.status.driver')}
+      >
+        {/* 🔴 The NOUN stays, dimmed, in front of the value. Photographing the bar without it
+            showed `● ready` — ready is not a thing, and the subject was one hover away. The
+            reference console keeps its nouns for the same reason (`Spaces: 2`, `UTF-8`), and the
+            two weights are what stop a noun from competing with its own value.
+            The mark and its word are one component and one tone — the label is not optional
+            (D41 §6), so a second copy beside it would say the same thing twice in two colours. */}
+        <span className="text-ink-faint">{t('work.status.driver')}</span>
+        <Dot tone={tone} label={t(`work.status.driver${driverWord}`)} />
+      </StatusItem>
+
+      <StatusItem
+        onPress={onSessions}
+        tip={t('work.status.sessionsTip')}
+        label={t('work.status.sessionsLabel')}
+      >
+        <Icon name="frameWork" size={12} />
+        <span className="tabular-nums text-ink">{t('work.status.sessions', { count: sessions })}</span>
+      </StatusItem>
+
       {/* 🔴 The scope, and it is a CONTROL here (owner: *"this workspace switch can also in a better
           location and design too"*). It had a dropdown in the app strip AND a read-only copy here,
           which is one fact in two places — and the strip is for what you can do while this bar is
           for what is true, which is exactly what a scope is. Clickable status items are also the
           reference console's own pattern: its remote indicator opens a menu from this bar.
           `scope` absent leaves it read-only, which is what a browser with one circle gets. */}
-      {scope ?? (
-        <span>
-          {t('work.status.workspace')}
-          {' · '}
-          {workspace ?? t('work.status.everyWorkspace')}
-        </span>
-      )}
+      {scope
+        ? <span className="flex items-stretch">{scope}</span>
+        : (
+          <StatusItem tip={t('work.status.workspaceTip')} label={t('work.status.workspace')}>
+            <Icon name="projects" size={12} />
+            <span className="text-ink">{workspace ?? t('work.status.everyWorkspace')}</span>
+          </StatusItem>
+        )}
+
       {remote !== null && (
-        <span>
-          {t('work.status.remote')}
-          {' · '}
-          {remote ? t('work.status.remoteWired') : t('work.status.remoteLocal')}
-        </span>
+        <StatusItem
+          onPress={onRemote}
+          tip={t('work.status.remoteTip')}
+          label={t('work.status.remote')}
+          className="hidden sm:flex"
+        >
+          <Icon name={remote ? 'cloud' : 'cloudOff'} size={12} />
+          <span className="text-ink">
+            {remote ? t('work.status.remoteWired') : t('work.status.remoteLocal')}
+          </span>
+        </StatusItem>
       )}
 
-      {/* Pushed right: what the index is, rather than what the machine is doing. */}
-      {tier && (
-        <Tip content={tier.note}>
-          <span
-            className={cn(
-              'ml-auto font-mono',
-              tier.semantic ? 'text-accent' : 'text-warn',
-            )}
+      {/* Pushed right: what the INDEX is, rather than what the machine is doing. The reference
+          console splits its bar the same way — the workspace on the left, what the editor is
+          currently answering with on the right. */}
+      <span className="ml-auto flex items-stretch">
+        {indexed && (
+          <StatusItem
+            onPress={onIndex}
+            tip={t('work.status.indexedTip')}
+            label={t('work.status.indexedLabel')}
+            className="hidden md:flex"
           >
-            {tier.label}
-          </span>
-        </Tip>
-      )}
-      {indexed && <span className={cn('tabular-nums', !tier && 'ml-auto')}>{indexed}</span>}
+            <Icon name="convergence" size={12} />
+            <span className="tabular-nums">{indexed}</span>
+          </StatusItem>
+        )}
+        {/* The tier's sentence stays the service's own, verbatim (D24) — so this one is a TIP and
+            never a target: there is nothing to go to, only something to understand. */}
+        {tier && (
+          <StatusItem tip={tier.note} label={t('work.status.tierLabel')}>
+            <span className={cn('font-mono', tier.semantic ? 'text-accent' : 'text-warn')}>
+              {tier.label}
+            </span>
+          </StatusItem>
+        )}
+      </span>
     </footer>
   );
+}
+
+/**
+ * One item in the status bar — a full-height box that lights on hover when it leads somewhere.
+ *
+ * @remarks
+ * Written from the owner's *"the bottom styling still not really close to vscode which have better
+ * design with display and action (on click or on hover)"* (2026-09-22), and the two halves need
+ * different answers.
+ *
+ * 🔴 **A button when it leads somewhere, plain text when it does not.** A bar where everything looks
+ * alike and half of it responds is worse than one where nothing does, because the half that does
+ * nothing is the one a person presses first. So the element itself carries the difference —
+ * `<button>` gets the hover wash, the pointer and the focus ring; a `<span>` gets none of them and
+ * cannot be tabbed to.
+ *
+ * **Every item says what it is** through its `label`, whether or not it is pressable. The bar's
+ * values are terse by design (`ready`, `3 sessions`, `wired`) and terse is only legible when the
+ * noun is one hover away — which is also the only way the screen-reader name of a pressable item is
+ * anything other than the value it happens to show right now.
+ *
+ * The wash is `accent-soft`, which is a real token in both themes rather than an opacity over the
+ * bar: a white-alpha hover disappears on a light bar, and this bar is light half the time.
+ */
+function StatusItem({ children, label, tip, onPress, className }: {
+  children: ReactNode;
+  /** The noun, for the tooltip's first line and the accessible name. */
+  label: string;
+  /** What this fact means, or what pressing it does. */
+  tip?: string;
+  /** Absent leaves the item as text — see above; it is the whole distinction. */
+  onPress?: () => void;
+  className?: string;
+}) {
+  const inner = (
+    <span className="flex h-full items-center gap-1.5 px-2">{children}</span>
+  );
+
+  const item = onPress
+    ? (
+      <button
+        type="button"
+        aria-label={label}
+        onClick={onPress}
+        className={cn(
+          'flex items-stretch transition-colors duration-[var(--speed)]',
+          'hover:bg-accent-soft hover:text-ink',
+          'focus-visible:bg-accent-soft focus-visible:outline-none',
+          'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent',
+          className,
+        )}
+      >
+        {inner}
+      </button>
+    )
+    : <span className={cn('flex items-stretch', className)}>{inner}</span>;
+
+  return tip ? <Tip content={`${label} — ${tip}`}>{item}</Tip> : item;
 }
 
 /** What a person can drag the panel between. Below the floor it is not a panel, it is a sliver. */

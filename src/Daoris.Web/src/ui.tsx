@@ -6,9 +6,9 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowLeftRight, Check, ChevronDown, ChevronRight, FileDiff, GitMerge, Inbox, Languages,
-  LayoutDashboard, LayoutGrid, Layers, Monitor, Plus, RotateCw, Search, SlidersHorizontal,
-  SquareArrowOutUpRight, SquareTerminal, X,
+  ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, FileDiff, GitMerge, Inbox,
+  KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, LogIn, Monitor, Plus, RotateCw, Search,
+  SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal, Trash2, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -44,6 +44,15 @@ const ICONS = {
   // different things, which is worse than an unlabelled icon: it is a wrong label.
   frameManage: LayoutDashboard,
   frameWork: SquareTerminal,
+  // The status bar's own two (2026-09-22): whether this circle has a deployment wired. A bar item
+  // that is a word alone reads as a caption, and the glyph is what makes it scan as an item.
+  cloud: Cloud,
+  cloudOff: CloudOff,
+  // The accounts surface (2026-09-22): an account, signing into one, and letting one go. `Trash2`
+  // 🔴 is deliberately NOT on Forget — forgetting removes nothing, and a bin says it does.
+  account: KeyRound,
+  login: LogIn,
+  remove: Trash2,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -446,22 +455,33 @@ export function Drawer({ title, meta, onClose, footer, children }: {
 
 /* ---------------------------------------------------------------- form controls */
 
-export function SelectField({ value, onChange, options, placeholder, ariaLabel, required }: {
+export function SelectField({ value, onChange, options, placeholder, ariaLabel, required, bar }: {
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   placeholder?: string;
   ariaLabel?: string;
   required?: boolean;
+  /**
+   * 🔴 The status bar's shape rather than a form's (owner, 2026-09-22: *"workspace can also have
+   * its switch on the bottom bar"*). It was already there and looked wrong: a 30px bordered control
+   * parked in a 24px bar, which reads as a form that fell out of a dialog. A bar item is
+   * borderless, full-height, and lights on hover like every other item beside it — the chooser is
+   * the same chooser, and only its trigger belongs to the bar.
+   */
+  bar?: boolean;
 }) {
   return (
     <RadixSelect.Root value={value || undefined} onValueChange={onChange} required={required}>
       <RadixSelect.Trigger
         aria-label={ariaLabel}
-        className="inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint"
+        className={bar
+          ? 'flex h-full items-center gap-1.5 px-2 text-meta text-ink transition-colors duration-[var(--speed)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
+          : 'inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint'}
       >
+        {bar && <Layers size={12} aria-hidden className="shrink-0 text-ink-soft" />}
         <RadixSelect.Value placeholder={placeholder} />
-        <ChevronDown size={14} aria-hidden className="text-ink-faint" />
+        <ChevronDown size={bar ? 12 : 14} aria-hidden className="text-ink-faint" />
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
         <RadixSelect.Content

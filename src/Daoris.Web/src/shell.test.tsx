@@ -400,10 +400,12 @@ describe('the harness roster', () => {
   });
 
   /** An absent harness names what it is and offers the action, rather than leaving a blank row. */
-  it('an absent harness says so and offers its own installer', async () => {
+  it('an absent tool says so and offers its own installer', async () => {
     show(<SettingsView notify={() => {}} />);
 
-    expect(await screen.findByText('not installed')).toBeTruthy();
+    // 🔴 Twice over, and on purpose: the TOOL says whether a person has it, and the way in says
+    // whether that particular door is installed. They were one line when a door was a tool.
+    expect(await screen.findAllByText('not installed')).not.toHaveLength(0);
     expect(screen.getByText(/is not on this machine's PATH/)).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: 'install' }));
@@ -419,7 +421,7 @@ describe('the harness roster', () => {
     expect(screen.getByText('not logged in')).toBeTruthy();
 
     // Two profiles, two buttons — the second one is `work`, which is the logged-out one.
-    const logins = screen.getAllByRole('button', { name: 'log in' });
+    const logins = screen.getAllByRole('button', { name: /^Log in/ });
     await userEvent.click(logins[1]!);
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -435,9 +437,9 @@ describe('the harness roster', () => {
     const { container } = show(<SettingsView notify={() => {}} />);
     await screen.findByText('claude 9.9.9');
 
-    const card = screen.getByText('Harnesses').closest('section, div')!;
+    const card = screen.getByText('Agent tools').closest('section, div')!;
     expect(within(card as HTMLElement).queryByLabelText(/token|password|credential/i)).toBeNull();
-    expect(container.textContent).toContain('the harness stores itself');
+    expect(container.textContent).toContain('the tool stores itself');
   });
 
   /** A shell older than this surface answers something else; the rest of the page must stand. */
@@ -447,7 +449,7 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} />);
 
     expect(await screen.findByText('aurora')).toBeTruthy();
-    expect(screen.queryByText('Harnesses')).toBeNull();
+    expect(screen.queryByText('Agent tools')).toBeNull();
   });
 
   /**
@@ -504,6 +506,9 @@ describe('the harness roster', () => {
   it('pinning installs that version and pins to it, in one action', async () => {
     show(<SettingsView notify={() => {}} />);
 
+    // The form is behind a press now: five always-open version boxes were the widest thing on
+    // the surface and almost nobody types in one.
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Pin a version' }))[0]!);
     const version = await screen.findByLabelText('version of claude-code to pin');
     await userEvent.type(version, '1.2.3');
     await userEvent.click(screen.getAllByRole('button', { name: 'pin it' })[0]!);
@@ -516,6 +521,7 @@ describe('the harness roster', () => {
   it('offers nothing to press until a version is typed', async () => {
     show(<SettingsView notify={() => {}} />);
 
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Pin a version' }))[0]!);
     const [pin] = await screen.findAllByRole('button', { name: 'pin it' });
     expect(pin).toBeDisabled();
   });
@@ -530,8 +536,8 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} />);
 
     await screen.findByText('claude 9.9.9');
-    // Only the pinnable harness has one, though the roster carries two.
-    expect(screen.getAllByRole('button', { name: 'pin it' })).toHaveLength(1);
+    // Only the pinnable tool offers the disclosure at all, though the roster carries two.
+    expect(screen.getAllByRole('button', { name: 'Pin a version' })).toHaveLength(1);
   });
 
   /**

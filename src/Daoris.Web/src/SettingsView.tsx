@@ -7,8 +7,9 @@ import {
   useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { SessionConsole } from './SessionConsole';
+import { byTool, type ToolDoor } from './tools';
 import {
-  Button, Card, CheckField, Chip, type Notify, PageHeader, Pill, Prose, SectionTitle, Tip,
+  Button, Card, CheckField, Chip, Icon, type Notify, PageHeader, Pill, Prose, SectionTitle, Tip,
   useErrorNotify,
 } from './ui';
 
@@ -270,6 +271,23 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // install behind it succeeded, so there is nothing to remember until then.
   const [pinning, setPinning] = useState<Record<string, string>>({});
 
+  /**
+   * Which rare control a harness has open — `'account'`, `'pin'`, or nothing.
+   *
+   * @remarks
+   * 🔴 Written from the owner's *"the crediental managment / account login still not really looking
+   * nice and easy to understand"* (2026-09-22), and the screenshot said why: **both rare forms were
+   * always open, on every harness.** Five harnesses meant five empty name boxes, five version
+   * boxes and five copies of the same paragraph, so the surface was mostly controls nobody was
+   * using and the accounts — the thing a person actually came for — were a thin row between them.
+   *
+   * One at a time per harness, because the two are alternatives in practice and two open forms is
+   * the crowding this removes coming back.
+   */
+  const [opened, setOpened] = useState<Record<string, 'account' | 'pin' | null>>({});
+  const open = (harness: string, which: 'account' | 'pin') =>
+    setOpened((held) => ({ ...held, [harness]: held[harness] === which ? null : which }));
+
   const run = (
     harness: string,
     action: 'install' | 'update' | 'login' | 'pin' | 'unpin'
@@ -303,34 +321,184 @@ function HarnessRoster({ notify }: { notify: Notify }) {
     <Card className="mt-3.5">
       <SectionTitle>{t('harness.title')}</SectionTitle>
       <Prose className="mt-1.5">{t('harness.body')}</Prose>
+      {/* Said ONCE, where it used to be repeated under every harness's add form. */}
+      <Prose className="mt-1.5">{t('harness.profile.note')}</Prose>
       <p className="mt-2 break-all font-mono text-small text-ink-faint">{answered.settingsPath}</p>
 
-      {harnesses.map((harness) => (
-        <div key={harness.harness} className="mt-4 border-t border-line pt-3.5 first:border-t-0">
-          <header className="flex flex-wrap items-baseline gap-2">
-            <span className="text-body font-semibold">{harness.harness}</span>
-            {harness.present
-              ? <span className="font-mono text-small text-ink-faint">{harness.version}</span>
-              : <Pill tone="neutral">{t('harness.absent')}</Pill>}
-            {answered.adapter === harness.harness && <Chip accent>{t('harness.spawns')}</Chip>}
+      {/* 🔴 A card per TOOL, and the adapters are its ways in (owner, 2026-09-22: *"'harness
+          account'? and `*-acp` really confusing of the scope of this project"*, with the correction
+          that the reference project is a reference — take its design and its logic, not its words).
 
-            <span className="ml-auto flex gap-2">
-              {!harness.present && (
-                <Button disabled={act.isPending} onClick={() => run(harness.harness, 'install')}>
-                  {t('harness.install')}
-                </Button>
-              )}
-              {harness.present && (
-                <Button disabled={act.isPending} onClick={() => run(harness.harness, 'update')}>
-                  {t('harness.update')}
-                </Button>
-              )}
-            </span>
+          The surface had been listing four adapters as four things to have opinions about. A person
+          has one Claude Code and one account for it; whether Daoris holds the session over a pipe or
+          over the protocol is Daoris's business, not a second tool. `byTool` reads that off
+          `accountOf` and `wire`, both of which have said it all along. */}
+      {byTool(harnesses as ToolDoor[]).map((tool) => (
+        <div
+          key={tool.name}
+          className="mt-3 rounded-card border border-line bg-page/60 p-3 first:mt-3.5"
+        >
+          <header className="flex flex-wrap items-center gap-2">
+            <span className="text-body font-semibold text-ink">{tool.name}</span>
+            {tool.present
+              ? <Pill tone="done">{t('harness.installed')}</Pill>
+              : <Pill tone="neutral">{t('harness.absent')}</Pill>}
+            {tool.doors.some((door) => door.harness === answered.adapter)
+              && <Chip accent>{t('harness.spawns')}</Chip>}
           </header>
 
-          {/* The absence names what it is, rather than leaving a person to guess at a blank row. */}
+          {/* The ACCOUNTS, at the tool where they belong. They are the reason a person opened this
+              card, and they had been a flat baseline row per adapter — so one account read as two
+              whenever a tool had two doors, and the widest thing on the row was a seventy-character
+              directory. The name leads now, its state is beside it, where the sessions actually go
+              is stated rather than implied, and the directory is one truncated line underneath. */}
+          <p className="mt-3 text-small font-semibold text-ink-soft">{t('harness.accounts')}</p>
+          {tool.accounts.length === 0 ? (
+            <Prose className="mt-1">{t('harness.noProfiles')}</Prose>
+          ) : (
+            <ul className="m-0 mt-1 list-none p-0">
+              {tool.accounts.map((profile) => (
+                <li
+                  key={profile.home}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-2 first:border-t-0"
+                >
+                  <span className="flex min-w-0 flex-1 basis-56 flex-col gap-0.5">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Icon name="account" size={13} className="text-ink-faint" />
+                      <span className="text-body font-medium text-ink">{profile.name}</span>
+                      <Pill tone={profile.login === 'in' ? 'done' : 'neutral'}>
+                        {t(`harness.login.${profile.login}`)}
+                      </Pill>
+                      {/* States the CONSEQUENCE, not the setting: "this machine's default" is a fact
+                          about a config file, and what a person wants is which account the next
+                          session runs as — the same fact worded as an answer. */}
+                      {tool.machineDefault === profile.name && (
+                        <Chip accent>{t('harness.profile.sessionsUse')}</Chip>
+                      )}
+                    </span>
+                    <Tip content={t('harness.homeTip')}>
+                      <span className="truncate font-mono text-meta text-ink-faint">{profile.home}</span>
+                    </Tip>
+                  </span>
+                  <div className="ml-auto flex shrink-0 items-center gap-1">
+                    {/* Logging in is the one thing here that is a step in a task rather than a
+                        preference, so it is the one that looks like a button. It runs against the
+                        account-owning door, because that is the tool that HAS the login flow. */}
+                    <Button
+                      variant={profile.login === 'in' ? 'ghost' : 'default'}
+                      disabled={act.isPending || !tool.present}
+                      onClick={() => run(tool.doors[0]!.harness, 'login', profile.name)}
+                    >
+                      {t(profile.login === 'in' ? 'harness.login.again' : 'harness.login.action')}
+                    </Button>
+                    {tool.machineDefault !== profile.name && (
+                      <Button
+                        variant="ghost"
+                        disabled={act.isPending}
+                        onClick={() => run(tool.doors[0]!.harness, 'profile-default', profile.name)}
+                      >
+                        {t('harness.profile.use')}
+                      </Button>
+                    )}
+                    {/* 🔴 "Forget", not "delete". It stops this machine pointing at the account and
+                        removes NOTHING — the directory holds a credential the tool put there, and a
+                        button that quietly destroyed one would be the irreversible act this family
+                        never does silently. The word on the button is the word for what happens. */}
+                    <Tip content={t('harness.profile.forgetTip')}>
+                      <Button
+                        variant="ghost"
+                        disabled={act.isPending}
+                        onClick={() => run(tool.doors[0]!.harness, 'profile-remove', profile.name)}
+                      >
+                        {t('harness.profile.forget')}
+                      </Button>
+                    </Tip>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {opened[tool.name] === 'account' ? (
+            <form
+              className="mt-2 flex flex-wrap items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const name = newProfile[tool.name]?.trim();
+                if (!name) return;
+                run(tool.doors[0]!.harness, 'profile-add', name);
+                setNewProfile((held) => ({ ...held, [tool.name]: '' }));
+                setOpened((held) => ({ ...held, [tool.name]: null }));
+              }}
+            >
+              <input
+                autoFocus
+                value={newProfile[tool.name] ?? ''}
+                onChange={(event) =>
+                  setNewProfile((held) => ({ ...held, [tool.name]: event.target.value }))}
+                placeholder={t('harness.profile.placeholder')}
+                aria-label={t('harness.profile.add', { harness: tool.name })}
+                className="min-w-40 rounded-control border border-line-strong bg-sunken px-2.5 py-1 text-body text-ink outline-none placeholder:text-ink-faint"
+              />
+              <Button type="submit" disabled={act.isPending || !(newProfile[tool.name] ?? '').trim()}>
+                {t('harness.profile.addAction')}
+              </Button>
+            </form>
+          ) : (
+            /* 🔴 The thing that did not exist (DEPLOY3) — a screen could list accounts and log into
+               one and never MAKE one. It still exists; it is one press away instead of an open box
+               on every row, and the paragraph explaining what an account IS moved to the card's
+               body, where it is read once rather than once per tool. */
+            <Button
+              variant="ghost"
+              className="mt-2"
+              disabled={act.isPending}
+              onClick={() => open(tool.name, 'account')}
+            >
+              <Icon name="plus" size={13} />
+              {t('harness.profile.addOpen')}
+            </Button>
+          )}
+
+          {/* 🔴 The ways in, beneath the tool rather than beside it. Each is installed, versioned
+              and pinned separately — they are different packages — which is exactly why they had
+              looked like different tools. Named `harness` below because that is what `driver.json`
+              calls this and what `daoris driver adapter` takes. */}
+          <p className="mt-3 text-small font-semibold text-ink-soft">{t('harness.doors')}</p>
+          {tool.doors.map((harness) => (
+            <div key={harness.harness} className="mt-1 border-t border-line pt-2">
+              <header className="flex flex-wrap items-center gap-2">
+                <Pill tone="neutral">
+                  {t(harness.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe')}
+                </Pill>
+                <span className="font-mono text-small text-ink">{harness.harness}</span>
+                {harness.present
+                  ? <span className="font-mono text-small text-ink-faint">{harness.version}</span>
+                  : <span className="text-small text-ink-faint">{t('harness.absent')}</span>}
+
+                <span className="ml-auto flex gap-2">
+                  {!harness.present && (
+                    <Button disabled={act.isPending} onClick={() => run(harness.harness, 'install')}>
+                      {t('harness.install')}
+                    </Button>
+                  )}
+                  {harness.present && (
+                    <Button variant="ghost" disabled={act.isPending} onClick={() => run(harness.harness, 'update')}>
+                      {t('harness.update')}
+                    </Button>
+                  )}
+                </span>
+              </header>
+
+          {/* The absence names what it is, rather than leaving a person to guess at a blank row.
+              🔴 CLAMPED, with the whole of it one hover away. What the host hands over here ends in
+              the platform's own exception text and a machine path — true, occasionally the thing you
+              need, and four lines of a five-line card when it is not. The useful sentence is the
+              first one, and clamping keeps it first without parsing somebody else's wording. */}
           {harness.problem && (
-            <p className="mt-1.5 text-small text-ink-soft">{harness.problem}</p>
+            <Tip content={harness.problem}>
+              <p className="mt-1.5 line-clamp-2 text-small text-ink-soft">{harness.problem}</p>
+            </Tip>
           )}
 
           {/* The managed toolchain (TOOL2/D57). Absent means PATH, which is the usual case and is
@@ -341,7 +509,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               a refusal is worse than none, and the WHY lives once in the card's body rather than
               beside every row (measured — repeated per harness it was two long lines each). */}
           {harness.pinnable && (
-          <div className="mt-2 flex flex-wrap items-baseline gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-small">
             {harness.pinned ? (
               <>
                 <Pill tone={harness.managed ? 'done' : 'declined'}>
@@ -350,7 +518,9 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                 </Pill>
                 {harness.managed && (
                   <Tip content={t('harness.pin.managedTip')}>
-                    <span className="break-all font-mono text-meta text-ink-faint">{harness.managed}</span>
+                    <span className="min-w-0 flex-1 truncate font-mono text-meta text-ink-faint">
+                      {harness.managed}
+                    </span>
                   </Tip>
                 )}
                 <Button
@@ -364,116 +534,57 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               </>
             ) : (
               <>
-                <span className="text-small text-ink-faint">{t('harness.pin.fromPath')}</span>
-                <span className="ml-auto flex items-baseline gap-2">
-                  <input
-                    aria-label={t('harness.pin.version', { harness: harness.harness })}
-                    value={pinning[harness.harness] ?? ''}
-                    onChange={(event) => setPinning(
-                      (held) => ({ ...held, [harness.harness]: event.target.value }))}
-                    placeholder={t('harness.pin.placeholder')}
-                    className="w-32 rounded-control border border-line bg-raised px-2 py-1 font-mono text-small"
-                  />
-                  <Button
-                    disabled={act.isPending || !(pinning[harness.harness] ?? '').trim()}
-                    onClick={() => run(
-                      harness.harness, 'pin', undefined, (pinning[harness.harness] ?? '').trim())}
-                  >
-                    {t('harness.pin.action')}
-                  </Button>
-                </span>
+                <span className="text-ink-faint">{t('harness.pin.fromPath')}</span>
+                {/* 🔴 Behind a press, not always open. An always-open `1.2.3` box on every harness
+                    is five inputs offering an action almost nobody takes, and they were the widest
+                    thing on the surface. */}
+                <Button
+                  variant="ghost"
+                  className="ml-auto"
+                  aria-expanded={opened[harness.harness] === 'pin'}
+                  onClick={() => open(harness.harness, 'pin')}
+                >
+                  {t('harness.pin.open')}
+                </Button>
               </>
             )}
           </div>
           )}
 
-          {(harness.profiles ?? []).length === 0 ? (
-            <Prose className="mt-2">{t('harness.noProfiles')}</Prose>
-          ) : (
-            <ul className="m-0 mt-2 list-none p-0">
-              {harness.profiles.map((profile) => (
-                <li
-                  key={profile.name}
-                  className="flex flex-wrap items-baseline gap-3 border-t border-line py-2 first:border-t-0"
-                >
-                  <Chip>{profile.name}</Chip>
-                  <Pill tone={profile.login === 'in' ? 'done' : profile.login === 'out' ? 'open' : 'neutral'}>
-                    {t(`harness.login.${profile.login}`)}
-                  </Pill>
-                  {harness.machineDefault === profile.name && (
-                    <span className="text-small text-ink-faint">{t('harness.machineDefault')}</span>
-                  )}
-                  <Tip content={t('harness.homeTip')}>
-                    <span className="break-all font-mono text-meta text-ink-faint">{profile.home}</span>
-                  </Tip>
-                  <div className="ml-auto flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      disabled={act.isPending || !harness.present}
-                      onClick={() => run(harness.harness, 'login', profile.name)}
-                    >
-                      {t('harness.login.action')}
-                    </Button>
-                    {harness.machineDefault !== profile.name && (
-                      <Button
-                        variant="ghost"
-                        disabled={act.isPending}
-                        onClick={() => run(harness.harness, 'profile-default', profile.name)}
-                      >
-                        {t('harness.profile.use')}
-                      </Button>
-                    )}
-                    {/* 🔴 "Forget", not "delete". It stops this machine pointing at the profile and
-                        removes NOTHING — the directory holds a credential the harness put there, and
-                        a button that quietly destroyed one would be the irreversible act this family
-                        never does silently. The word on the button is the word for what happens. */}
-                    <Tip content={t('harness.profile.forgetTip')}>
-                      <Button
-                        variant="ghost"
-                        disabled={act.isPending}
-                        onClick={() => run(harness.harness, 'profile-remove', profile.name)}
-                      >
-                        {t('harness.profile.forget')}
-                      </Button>
-                    </Tip>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          {harness.pinnable && !harness.pinned && opened[harness.harness] === 'pin' && (
+            <form
+              className="mt-2 flex flex-wrap items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const version = (pinning[harness.harness] ?? '').trim();
+                if (!version) return;
+                run(harness.harness, 'pin', undefined, version);
+              }}
+            >
+              <input
+                autoFocus
+                aria-label={t('harness.pin.version', { harness: harness.harness })}
+                value={pinning[harness.harness] ?? ''}
+                onChange={(event) => setPinning(
+                  (held) => ({ ...held, [harness.harness]: event.target.value }))}
+                placeholder={t('harness.pin.placeholder')}
+                className="w-32 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+              />
+              <Button
+                type="submit"
+                disabled={act.isPending || !(pinning[harness.harness] ?? '').trim()}
+              >
+                {t('harness.pin.action')}
+              </Button>
+            </form>
           )}
 
-          {/* 🔴 The thing that did not exist (DEPLOY3). A screen could list profiles and log into
-              one and never MAKE one, so "there is no credential management location" was literally
-              true. Daoris manages directories and names, never secrets: this makes a directory, and
-              what lands inside it is the harness's own login flow's. */}
-          <form
-            className="mt-3 flex flex-wrap items-center gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const name = newProfile[harness.harness]?.trim();
-              if (!name) return;
-              run(harness.harness, 'profile-add', name);
-              setNewProfile((held) => ({ ...held, [harness.harness]: '' }));
-            }}
-          >
-            <input
-              value={newProfile[harness.harness] ?? ''}
-              onChange={(event) =>
-                setNewProfile((held) => ({ ...held, [harness.harness]: event.target.value }))}
-              placeholder={t('harness.profile.placeholder')}
-              aria-label={t('harness.profile.add', { harness: harness.harness })}
-              className="min-w-40 rounded-control border border-line-strong bg-sunken px-2.5 py-1 text-body text-ink outline-none placeholder:text-ink-faint"
-            />
-            <Button type="submit" disabled={act.isPending || !(newProfile[harness.harness] ?? '').trim()}>
-              {t('harness.profile.addAction')}
-            </Button>
-            <Prose className="basis-full">{t('harness.profile.note')}</Prose>
-          </form>
-
-          {/* A harness action is a process like any other, so it streams through the same console
-              (D49 §2). An install that printed nothing until it finished is indistinguishable from
-              one that hung. */}
-          {running?.startsWith(`${harness.harness}:`) && <SessionConsole id={running} />}
+              {/* A tool action is a process like any other, so it streams through the same console
+                  (D49 §2). An install that printed nothing until it finished is indistinguishable
+                  from one that hung. It belongs to the DOOR that is doing it. */}
+              {running?.startsWith(`${harness.harness}:`) && <SessionConsole id={running} />}
+            </div>
+          ))}
         </div>
       ))}
 

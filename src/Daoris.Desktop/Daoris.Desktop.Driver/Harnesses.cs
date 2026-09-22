@@ -806,6 +806,19 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public HarnessToolchain? Toolchain(string adapter) => adapters.Resolve(adapter).Toolchain;
 
     /// <summary>
+    /// Which door this adapter holds a session over (D53) — what a surface calls the *tool's* way in
+    /// rather than a tool of its own.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Added for the roster surface after the owner read it as a catalogue of five tools
+    /// (2026-09-22: *"`*-acp` really confusing of the scope of this project"*). It is not five tools;
+    /// it is three, two of which can be reached two ways. The page cannot say so without knowing
+    /// which entry is a door and which is a tool, and <see cref="HarnessToolchain.AccountOf"/>
+    /// already answers the second half — this answers the first.
+    /// </remarks>
+    public SessionWire Wire(string adapter) => adapters.Resolve(adapter).Wire;
+
+    /// <summary>
     /// One harness as this machine has it. Cached after the first look; <paramref name="refresh"/>
     /// asks again, which is what the roster surface's refresh and every refusal do.
     /// </summary>

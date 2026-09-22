@@ -4,7 +4,7 @@ import { render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
-import { ActivityBar, AppStrip } from './frame';
+import { ActivityBar, AppStrip, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
 const render = (node: ReactElement) => {
@@ -147,5 +147,103 @@ describe('ActivityBar', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'refresh' })).toBeTruthy();
+  });
+});
+
+/**
+ * The status bar, after the owner's *"the bottom styling still not really close to vscode which have
+ * better design with display and action (on click or on hover)"* (2026-09-22).
+ *
+ * The complaint has two halves and only one of them is visual. **Display** is the part a screenshot
+ * settles, and it did: an 11px run of `·`-joined prose on a 2px-tall strip reads as a caption on the
+ * window, not as a bar. **Action** is what these assertions are for — the reference console's status
+ * items are *targets*: each is a full-height box that lights on hover and does something on click,
+ * and every one of them says what it will do before you press it.
+ */
+describe('StatusBar', () => {
+  it('states the four ambient facts', () => {
+    render(<StatusBar driver="running" sessions={2} workspace="default" remote />);
+
+    expect(screen.getByText('ready')).toBeTruthy();
+    expect(screen.getByText('2 sessions')).toBeTruthy();
+    expect(screen.getByText('default')).toBeTruthy();
+    expect(screen.getByText('wired')).toBeTruthy();
+  });
+
+  /**
+   * 🔴 An item is a BUTTON when it leads somewhere and plain text when it does not — the distinction
+   * a person reads as "this is pressable". A bar where everything looks alike and half of it
+   * responds is worse than one where nothing does, because the half that does nothing is the one
+   * they will press.
+   */
+  it('makes an item that leads somewhere a button, and leaves the rest as text', async () => {
+    const onDriver = vi.fn();
+    render(
+      <StatusBar
+        driver="running"
+        sessions={0}
+        workspace="default"
+        remote={null}
+        onDriver={onDriver}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /driver/i }));
+    expect(onDriver).toHaveBeenCalled();
+    // Sessions was given no handler, so it is not a target.
+    expect(screen.queryByRole('button', { name: /session/i })).toBeNull();
+  });
+
+  it('routes each item to its own destination', async () => {
+    const onDriver = vi.fn();
+    const onSessions = vi.fn();
+    const onRemote = vi.fn();
+    render(
+      <StatusBar
+        driver="running"
+        sessions={3}
+        workspace="default"
+        remote={false}
+        onDriver={onDriver}
+        onSessions={onSessions}
+        onRemote={onRemote}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /session/i }));
+    expect(onSessions).toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: /remote/i }));
+    expect(onRemote).toHaveBeenCalled();
+    expect(onDriver).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The absent driver is a browser, which has no driver and never will (D55). Offering to take a
+   * person to the machine's driver settings from a window that has no machine is a promise the
+   * frame cannot keep, so the item stays text there however it was wired.
+   */
+  it('is not a target when the fact it states cannot be acted on here', () => {
+    render(
+      <StatusBar driver="absent" sessions={0} workspace={null} remote={null} onDriver={() => {}} />,
+    );
+
+    expect(screen.queryByRole('button', { name: /driver/i })).toBeNull();
+    expect(screen.getByText('none here')).toBeTruthy();
+  });
+
+  /** The scope is a control in its own right (WSP5) and replaces the read-only circle entirely. */
+  it('gives the scope control the workspace slot rather than sitting beside it', () => {
+    render(
+      <StatusBar
+        driver="running"
+        sessions={0}
+        workspace="default"
+        remote={null}
+        scope={<button type="button">switch circle</button>}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'switch circle' })).toBeTruthy();
+    expect(screen.queryByText('default')).toBeNull();
   });
 });

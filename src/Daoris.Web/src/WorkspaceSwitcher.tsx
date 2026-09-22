@@ -18,10 +18,12 @@ const EVERY = '*';
  * Props only, no hook from `./queries` or `./shell` (the component plan's rule): every state here is
  * reachable by passing it, which is what its story and its test do.
  */
-export function WorkspaceSwitcher({ workspaces, value, onChange }: {
+export function WorkspaceSwitcher({ workspaces, value, onChange, bar }: {
   workspaces: string[];
   value: string | null;
   onChange: (workspace: string | null) => void;
+  /** Render as a status-bar item rather than a form control — see `SelectField`'s own note. */
+  bar?: boolean;
 }) {
   const { t } = useTranslation();
   if (workspaces.length < 2) return null;
@@ -33,8 +35,9 @@ export function WorkspaceSwitcher({ workspaces, value, onChange }: {
 
   return (
     <Tip content={t('scope.tip')}>
-      <div className="grid">
+      <div className={bar ? 'flex items-stretch' : 'grid'}>
         <SelectField
+          bar={bar}
           ariaLabel={t('scope.label')}
           value={value ?? EVERY}
           onChange={(next) => onChange(next === EVERY ? null : next)}

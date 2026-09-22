@@ -258,6 +258,13 @@ public sealed class DriverModule : ModuleBase
                         // package has no version for Daoris to fetch, and a surface offering the
                         // control anyway would be a button whose only outcome is a refusal.
                         Pinnable = _loop.Harnesses.Toolchain(report.Adapter)?.Package is { Length: > 0 },
+                        // 🔴 Which TOOL's account this entry runs as, and which door it holds a
+                        // session over. Both were already declared and neither reached the page,
+                        // which is why the surface listed `claude-code` and `claude-code-acp` as two
+                        // things a person has to have opinions about. They are one tool and one
+                        // account; the second is a way in. The page groups on these two fields.
+                        AccountOf = _loop.Harnesses.Toolchain(report.Adapter)?.AccountOf,
+                        Wire = _loop.Harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
                         // The profile HOME is a machine path, and this bridge is the one surface
                         // allowed to carry one (D47 §4) — the page renders it so a person can find
                         // the directory they were told Daoris owns.

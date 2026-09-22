@@ -1,0 +1,105 @@
+import { describe, expect, it } from 'vitest';
+import { byTool, toolOf, type ToolDoor } from './tools';
+
+/**
+ * The roster's grouping, after the owner read four adapter rows as four tools (2026-09-22).
+ *
+ * These are the assertions that matter because nothing else can make them: the UI renders whatever
+ * this returns, so a wrong grouping is a *plausible* screen — four cards where there are three
+ * tools looks exactly like a machine with four tools on it.
+ */
+
+const door = (over: Partial<ToolDoor> & { harness: string }): ToolDoor => ({
+  present: false,
+  ...over,
+});
+
+describe('byTool', () => {
+  it('folds a door that borrows an account into the tool that owns it', () => {
+    const tools = byTool([
+      door({ harness: 'claude-code', present: true, version: '2.1.278' }),
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code', wire: 'acp' }),
+    ]);
+
+    expect(tools).toHaveLength(1);
+    expect(tools[0]!.name).toBe('claude-code');
+    expect(tools[0]!.doors.map((d) => d.harness)).toEqual(['claude-code', 'claude-code-acp']);
+  });
+
+  /**
+   * 🔴 The case that makes naming-by-account right rather than merely tidy. `codex-acp` runs as
+   * `codex`'s account and the driver has no native `codex` adapter at all — so the tool exists with
+   * one door whose name is not its own. Grouping by any door's name would have produced a tool
+   * called `codex-acp`, which is the confusion this was written to remove.
+   */
+  it('names a tool after its account even when no door carries that name', () => {
+    const tools = byTool([door({ harness: 'codex-acp', accountOf: 'codex', wire: 'acp' })]);
+
+    expect(tools.map((t) => t.name)).toEqual(['codex']);
+    expect(tools[0]!.doors.map((d) => d.harness)).toEqual(['codex-acp']);
+  });
+
+  it('leaves a tool that owns its own account alone', () => {
+    const tools = byTool([door({ harness: 'dsh', present: true, wire: 'acp' })]);
+
+    expect(tools.map((t) => t.name)).toEqual(['dsh']);
+    expect(tools[0]!.doors).toHaveLength(1);
+  });
+
+  it('keeps the roster’s order, so installing something does not reshuffle the surface', () => {
+    const tools = byTool([
+      door({ harness: 'dsh' }),
+      door({ harness: 'claude-code' }),
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code' }),
+    ]);
+
+    expect(tools.map((t) => t.name)).toEqual(['dsh', 'claude-code']);
+  });
+
+  /**
+   * One configuration home per tool by declaration, so two doors report the same account. Shown
+   * twice it reads as two accounts, which is the same misreading one level down.
+   */
+  it('reports one account once, however many doors can see it', () => {
+    const profiles = [{ name: 'owner', home: '/profiles/owner', login: 'in' }];
+    const tools = byTool([
+      door({ harness: 'claude-code', profiles }),
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code', profiles }),
+    ]);
+
+    expect(tools[0]!.accounts).toHaveLength(1);
+    expect(tools[0]!.accounts[0]!.name).toBe('owner');
+  });
+
+  it('deduplicates on the directory, because that is what an account IS', () => {
+    const tools = byTool([
+      door({ harness: 'claude-code', profiles: [{ name: 'work', home: '/p/one', login: 'in' }] }),
+      door({
+        harness: 'claude-code-acp',
+        accountOf: 'claude-code',
+        // The same directory under another name is the same account; a different one is not.
+        profiles: [
+          { name: 'renamed', home: '/p/one', login: 'in' },
+          { name: 'other', home: '/p/two', login: 'out' },
+        ],
+      }),
+    ]);
+
+    expect(tools[0]!.accounts.map((a) => a.home)).toEqual(['/p/one', '/p/two']);
+  });
+
+  it('answers "have I got this" and "which account" across the doors', () => {
+    const tools = byTool([
+      door({ harness: 'claude-code', present: false }),
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code', present: true, machineDefault: 'work' }),
+    ]);
+
+    expect(tools[0]!.present).toBe(true);
+    expect(tools[0]!.machineDefault).toBe('work');
+  });
+
+  it('treats a blank borrowed account as none at all', () => {
+    expect(toolOf(door({ harness: 'dsh', accountOf: '  ' }))).toBe('dsh');
+    expect(toolOf(door({ harness: 'codex-acp', accountOf: 'codex' }))).toBe('codex');
+  });
+});
