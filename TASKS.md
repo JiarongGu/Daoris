@@ -146,15 +146,10 @@ toolchain design's §5 is realised, and what is waiting is a tool somebody names
 set on CANON2's bar. The reading found one real gap and it is fixed: the toolchain twin tables
 pinned the three ACP arrivals and left `claude-code` — what a machine actually drives with —
 asserted on neither side.
-🔴 **HELP3 is a design question before it is a build**, and the question is *where the guard lives*.
-A hook that refuses a push lives in a repository's `.claude/settings.json`, and Daoris has exactly
-two ways to put one there — through `sync`, which means the canon grows a fourth installable kind
-and Daoris owns part of a JSON file an adopter also owns (D59's problem without comment markers), or
-from the driver, which is **forbidden** (D32, and ACP4's whole point was carrying wiring so nothing
-is written). The `claude-code` adapter already records the rule it has to respect: *"the repository's
-own checked-in configuration governs"*. Probe 4's Windows finding constrains the guard itself — only
-a **structured deny** blocks under a 5.1 executor, never exit 2. Settle where it lives before writing
-one.
+🔴 **HELP3 is a design question before it is a build** — *where the guard lives* — and its row now
+carries a measured third answer beside the two that were refused: Claude Code takes `--settings` at
+spawn, so the guard can be wiring Daoris carries rather than a file anyone writes (ACP4's shape).
+The owner decides; only a **structured deny** blocks under a 5.1 executor, never exit 2 (probe 4).
 🔴 A *layout-toggles* item was carried in this paragraph for a while and **never existed in the
 backlog** — it was prose pretending to be work, which is exactly what the backlog is for; a surface
 item is written against `docs/2026-09-21-working-surface-design.md` when somebody wants one, and the
@@ -324,17 +319,19 @@ wire evidence.
 - [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
   Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
   written **once** — refuse a write outside the session's tree (D51), refuse a push (D37) — runs on
-  all three. Probe 4 found the Windows trap. Held behind ACP4 and CANON8: a guard is worth less than
-  the doctrine it enforces arriving at all. (HELP1 became CANON8; D59 has it.)
-  ⛔ **Both holds lifted 2026-09-22, and reading it then surfaced the real one: where does the guard
-  live?** It is a `.claude/settings.json` hook, so it belongs to the repository — the `claude-code`
-  adapter already states the rule it has to respect: *"the repository's own checked-in configuration
-  governs"*. Daoris can only put one there through `sync` (a fourth installable kind, and Daoris
-  owning part of a JSON file the adopter also owns — D59's region problem with no comment markers to
-  mark it) or from the driver, which **D32 forbids** and which ACP4 was built to avoid. **Settle that
-  first; it is a decision, not a patch.** Whatever is written must block **structurally**
-  (`permissionDecision: deny`) and never by exit 2 — Windows PowerShell 5.1 collapses a native exit
-  code, so an exit-2 hook does not block at all (probe 4, run 2).
+  all three. Probe 4 found the Windows trap. (HELP1 became CANON8; D59 has it.)
+  ⛔ **Where does the guard live? — measured 2026-09-23, and there is a third door.** The two named
+  on 2026-09-22 were `sync` writing part of a JSON file the adopter also owns (D59's region problem,
+  with no comment markers) and the driver writing into the tree, which **D32 forbids** and ACP4 was
+  built to avoid. Claude Code 2.1.280 on this machine takes `--settings <file-or-json>` — *"load
+  additional settings from"* — so the pipe door can carry a guard **as wiring at spawn**, from a
+  file Daoris owns under `~/.daoris`, and the repository is never written: ACP4's shape exactly. A
+  named credential profile is a configuration home Daoris owns, so a `settings.json` there reaches
+  every session under that profile on both doors, while the person's own home stays untouched.
+  **That is the proposal, not the decision**: it is bundle evidence (`--help`), and one driven
+  session under a profile proves the hook fires — the owner's login. Whatever is written blocks
+  **structurally** (`permissionDecision: deny`), never by exit 2 — PowerShell 5.1 collapses a native
+  exit code (probe 4, run 2).
 
 ### The working surface — the build order (D51/D52/D55/D56)
 
