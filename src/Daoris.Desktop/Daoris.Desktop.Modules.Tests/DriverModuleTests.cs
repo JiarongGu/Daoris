@@ -373,6 +373,46 @@ public sealed class DriverModuleTests : Bridge
         Assert.Equal(home, profile.GetProperty("home").GetString());
         // Nothing ran, so nothing can be claimed about the login — unknown, never a guess.
         Assert.Equal("unknown", profile.GetProperty("login").GetString());
+        // The tool's own home is answered the same way, beside the profiles rather than instead of
+        // them: the account a person actually has, which the roster used to call "No accounts".
+        Assert.Equal("unknown", stub.GetProperty("ownLogin").GetString());
+    }
+
+    /// <summary>
+    /// 🔴 A work account for the work circle (D49 §4) could be set from a terminal
+    /// (`daoris harness profile default … --workspace`) and not from the screen — D50 in the
+    /// direction nothing tests. The bridge carries the workspace, the roster answers which circles
+    /// use which account, and an action naming no profile CLEARS the default rather than refusing:
+    /// "use the tool's own home again" is a choice, not a missing argument.
+    /// </summary>
+    [Fact]
+    public async Task A_workspace_s_default_account_is_set_answered_and_cleared_over_the_bridge()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "work"));
+        File.WriteAllText(DriverConfigPath, """
+            { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
+              "commands": { "stub": ["node", "agent.mjs"] } }
+            """);
+
+        await AnswerAsync(Module(), "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" });
+        var stub = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
+            .Single(h => h.GetProperty("harness").GetString() == "stub");
+        var circle = Assert.Single(stub.GetProperty("workspaceDefaults").EnumerateArray().ToList());
+        Assert.Equal("aurora", circle.GetProperty("workspace").GetString());
+        Assert.Equal("work", circle.GetProperty("profile").GetString());
+
+        // No profile named: the circle goes back to the tool's own home.
+        await AnswerAsync(Module(), "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-default", workspace = "aurora" });
+        stub = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
+            .Single(h => h.GetProperty("harness").GetString() == "stub");
+        Assert.Empty(stub.GetProperty("workspaceDefaults").EnumerateArray());
+
+        // And the machine's own default clears the same way.
+        await AnswerAsync(Module(), "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work" });
+        await AnswerAsync(Module(), "HARNESS_ACTION", new { harness = "stub", action = "profile-default" });
+        Assert.Empty(HarnessSettings.Load(DriverConfigPath.Replace("driver.json", "harnesses.json")).Defaults);
     }
 
     /// <summary>

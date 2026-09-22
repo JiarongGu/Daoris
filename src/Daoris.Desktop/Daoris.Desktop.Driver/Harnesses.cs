@@ -124,6 +124,11 @@ public sealed record ProfileReport(string Name, string Home, LoginState Login);
 /// One harness as this machine has it (D49 §4): present or absent, its version, its profiles.
 /// </summary>
 /// <param name="Problem">Why it could not be probed — the sentence a person acts on, when absent.</param>
+/// <param name="OwnLogin">
+/// What the harness says about logging in to its OWN configuration home — the account a person
+/// actually has before naming any profile, asked the same read-only way. Unknown when absent.
+/// 🔴 The roster called a machine with no named profile "No accounts" while its owner was logged in.
+/// </param>
 public sealed record HarnessReport(
     string Adapter,
     bool Present,
@@ -131,7 +136,8 @@ public sealed record HarnessReport(
     string? Problem,
     string? ProfileVariable,
     string? MachineDefault,
-    IReadOnlyList<ProfileReport> Profiles);
+    IReadOnlyList<ProfileReport> Profiles,
+    LoginState OwnLogin = LoginState.Unknown);
 
 /// <summary>
 /// The person's harness wiring: which named profile each harness runs as, per machine and optionally
@@ -588,6 +594,12 @@ public static class HarnessProbe
                         : LoginState.Unknown));
         }
 
+        // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
+        // answers about wherever it keeps its own credential. Read-only; Daoris never logs into it.
+        var own = present
+            ? await LoginAsync(resolved, toolchain, profileHome: null, ct).ConfigureAwait(false)
+            : LoginState.Unknown;
+
         return new HarnessReport(
             adapter,
             present,
@@ -595,7 +607,8 @@ public static class HarnessProbe
             present ? null : version.Problem,
             toolchain.ProfileVariable,
             settings.Defaults.TryGetValue(adapter, out var machine) ? machine : null,
-            profiles);
+            profiles,
+            own);
     }
 
     /// <summary>
@@ -604,7 +617,7 @@ public static class HarnessProbe
     /// none of that is Daoris's to hold, log, or put on a roster.
     /// </summary>
     private static async Task<LoginState> LoginAsync(
-        IReadOnlyList<string> resolved, HarnessToolchain toolchain, string profileHome, CancellationToken ct)
+        IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, CancellationToken ct)
     {
         if (toolchain.LoginCheck is not { } question) return LoginState.Unknown;
 

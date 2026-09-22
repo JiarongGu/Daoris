@@ -482,6 +482,8 @@ export const useHarnessAction = () => {
       profile?: string;
       /** Which version to install and pin to — `pin` only (TOOL2/D57). */
       version?: string;
+      /** Which circle a default is for — `profile-default` only (D49 §4); absent means the machine's. */
+      workspace?: string;
     }) => call<{ harness: string; action: string; exitCode: number }>('HARNESS_ACTION', action),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
   });

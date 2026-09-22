@@ -274,6 +274,18 @@ public sealed class DriverModule : ModuleBase
                             profile.Home,
                             Login = profile.Login.ToString().ToLowerInvariant(),
                         }).ToArray(),
+                        // 🔴 The account a person actually HAS — the tool's own configuration home —
+                        // answered beside the profiles rather than left out, which read as "No
+                        // accounts" to an owner who was logged in.
+                        OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
+                        // Which circles run this harness as which account (D49 §4): the terminal
+                        // could set it and the page could not even see it.
+                        WorkspaceDefaults = settings.Workspaces
+                            .Where(circle => circle.Value.TryGetValue(report.Adapter, out var chosen)
+                                && !string.IsNullOrWhiteSpace(chosen))
+                            .OrderBy(circle => circle.Key, StringComparer.Ordinal)
+                            .Select(circle => new { Workspace = circle.Key, Profile = circle.Value[report.Adapter] })
+                            .ToArray(),
                     }).ToArray(),
                 };
             }
@@ -320,7 +332,7 @@ public sealed class DriverModule : ModuleBase
                     // Daoris manages directories and names, never secrets: adding one MAKES A
                     // DIRECTORY and nothing else, and what lands inside it is the harness's own.
                     "profile-add" => ProfileAdd(harness, request),
-                    "profile-remove" => ProfileRemove(harness, request),
+                    "profile-remove" => await ProfileRemoveAsync(harness, request, config, stream, cancellationToken),
                     "profile-default" => ProfileDefault(harness, request),
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
@@ -656,17 +668,53 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// Stop pointing at a profile — 🔴 <b>and delete nothing.</b>
+    /// Stop pointing at a profile — 🔴 <b>and never delete a credential.</b>
     /// </summary>
     /// <remarks>
-    /// The directory holds a credential the harness put there, and a button that quietly destroyed
-    /// one would be the irreversible act this family never does silently. Un-defaulting is the
-    /// reversible half and is what "remove" means here, in both doors.
+    /// <para>Un-defaulting is the reversible half and is what "remove" means, in both doors. What the
+    /// directory holds is the harness's own, and a button that quietly destroyed a credential would
+    /// be the irreversible act this family never does silently.</para>
+    ///
+    /// <para>🔴 But "deletes nothing" made Forget on a fresh account do nothing anyone could see: the
+    /// directory IS the account, the roster lists directories, and the harness scaffolds a fresh
+    /// home the first time it is asked about it — so a forgotten account stayed on the list,
+    /// unpointed, forever (deployed application, 2026-09-23). The directory goes when there is
+    /// nothing signed-in to destroy, by the only evidence Daoris will take: it is EMPTY, or the
+    /// harness itself, asked as the roster asks, reports that account signed OUT. Signed in, or
+    /// unanswerable, and it stays — and the console says which, and where. The CLI's
+    /// <c>profile remove</c> draws the same line.</para>
     /// </remarks>
-    private int ProfileRemove(string harness, IpcRequest request)
+    private async Task<int> ProfileRemoveAsync(
+        string harness, IpcRequest request, DriverConfig config, Action<string> stream, CancellationToken ct)
     {
         var profile = Named(request);
         var settings = _loop.Harnesses.Settings;
+
+        var directory = HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, profile);
+        if (Directory.Exists(directory))
+        {
+            var empty = !Directory.EnumerateFileSystemEntries(directory).Any();
+            var login = LoginState.Unknown;
+            if (!empty)
+            {
+                var report = await _loop.Harnesses.ReportAsync(harness, config, refresh: true, ct).ConfigureAwait(false);
+                login = report?.Profiles.FirstOrDefault(p => p.Name == profile)?.Login ?? LoginState.Unknown;
+            }
+
+            if (empty || login == LoginState.Out)
+            {
+                Directory.Delete(directory, recursive: true);
+                stream(empty
+                    ? $"removed the empty directory Daoris made — nothing was ever put in it: {directory}"
+                    : $"removed {directory} — `{harness}` reports that account signed out, so nothing signed-in was in it.");
+            }
+            else
+            {
+                stream(login == LoginState.In
+                    ? $"kept {directory} — `{harness}` reports that account signed in, and Daoris never deletes a credential. Sign out with the tool, then forget it; or remove the directory yourself."
+                    : $"kept {directory} — `{harness}` could not say whether that account is signed in, so Daoris leaves it. Remove the directory yourself if you are sure.");
+            }
+        }
 
         if (settings.Defaults.TryGetValue(harness, out var machine) && machine == profile)
         {
@@ -685,10 +733,14 @@ public sealed class DriverModule : ModuleBase
         return 0;
     }
 
-    /// <summary>Which profile this harness runs as — the machine's, or one workspace's (D49 §4).</summary>
+    /// <summary>
+    /// Which profile this harness runs as — the machine's, or one workspace's (D49 §4). 🔴 No profile
+    /// named CLEARS it: "use the tool's own home again" is a choice a person makes, not an argument
+    /// they forgot, and the file's own rule is that absence means the harness's own home.
+    /// </summary>
     private int ProfileDefault(string harness, IpcRequest request)
     {
-        var profile = Named(request);
+        var profile = Optional(request, "profile");
         var workspace = Optional(request, "workspace");
         var settings = _loop.Harnesses.Settings;
 

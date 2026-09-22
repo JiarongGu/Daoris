@@ -319,6 +319,35 @@ public sealed class HarnessProbeTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 The account a person actually has is the tool's OWN configuration home, and the roster
+    /// never said a word about it: a machine with no named profile read "No accounts" while its
+    /// owner was logged in. The probe asks the harness about its own home exactly as it asks about
+    /// each profile — read-only, one boolean — and reports it beside them.
+    /// </summary>
+    [Fact]
+    public async Task The_tool_s_own_home_is_asked_about_logging_in_like_any_profile()
+    {
+        var report = await HarnessProbe.ProbeAsync(
+            "fake", Toolchain(FakeBinary()), command: null, new HarnessSettings(), _home);
+
+        // The fake answers from FAKE_HARNESS_HOME, which the probe leaves unset for the tool's own
+        // home — so the tool answers about wherever IT keeps its credential, and here that is "out".
+        Assert.Equal(LoginState.Out, report.OwnLogin);
+    }
+
+    [Fact]
+    public async Task An_absent_harness_has_no_own_login_to_report()
+    {
+        var toolchain = new HarnessToolchain(
+            Binary: ["daoris-no-such-binary-anywhere"], VersionArguments: ["--version"]);
+
+        var report = await HarnessProbe.ProbeAsync(
+            "fake", toolchain, command: null, new HarnessSettings(), _home);
+
+        Assert.Equal(LoginState.Unknown, report.OwnLogin);
+    }
+
+    /// <summary>
     /// 🔴 A fixture is not a tool. The stub declares a toolchain with no binary of its own — the
     /// "binary" is whatever `driver.json` names, which is what lets the rehearsal gate the whole
     /// roster with no model — and the deployed application, which names nothing, listed it as an

@@ -1842,13 +1842,29 @@ check(
   typo.code !== 0 && /has no profile `typo`/.test(typo.out) && /work/.test(typo.out),
   typo.out,
 );
+// `work` was added and never signed into: an empty directory Daoris made. Removing the profile
+// un-points it everywhere AND takes the directory — 🔴 leaving it was a remove nobody could see,
+// because the directory IS the profile and it stayed listed (deployed application, 2026-09-23).
 const removed = cliHarness('profile remove claude-code work');
 check(
-  '`profile remove` un-defaults it and deletes nothing — the credential is the harness’s',
-  removed.code === 0 && /directory is untouched/.test(removed.out)
-    && existsSync(profileAt('claude-code', 'work'))
+  '`profile remove` un-defaults it everywhere, and an empty directory Daoris made goes with it',
+  removed.code === 0 && /empty directory/.test(removed.out)
+    && !existsSync(profileAt('claude-code', 'work'))
     && !JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'],
   removed.out,
+);
+// The other half of the rule, on a harness whose word this machine cannot get — `dsh` declares no
+// login question, so its answer is "could not say" everywhere — with something in the directory:
+// kept, untouched, and the sentence says why. Never a credential, on any evidence short of the
+// harness's own word that there is none.
+cliHarness('profile add dsh kept');
+writeFileSync(join(profileAt('dsh', 'kept'), 'credentials.json'), '{}\n');
+const removedKept = cliHarness('profile remove dsh kept');
+check(
+  '…while a directory the harness cannot vouch for is untouched, and the sentence says why',
+  removedKept.code === 0 && /directory is untouched/.test(removedKept.out) && /could not say/.test(removedKept.out)
+    && existsSync(join(profileAt('dsh', 'kept'), 'credentials.json')),
+  removedKept.out,
 );
 
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's

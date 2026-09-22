@@ -24,7 +24,7 @@
 // DAORIS NEVER SEES, STORES OR COPIES A CREDENTIAL. It manages directories and names; login runs the
 // harness's own flow INTO a profile directory, and whatever that obtains the harness stores itself.
 
-import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -694,9 +694,21 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         const profile = bare(argv, 3, 'profile remove', '<harness> <profile>');
         const where = profileHome(home, name, profile);
 
-        // Deliberately NOT deleted. The directory holds a credential the harness put there, and a
-        // verb that quietly destroyed one would be the kind of irreversible act this family never
-        // does silently. Un-defaulting is the reversible half, and it is what was asked for.
+        // Never a credential. Un-defaulting is the reversible half and is what "remove" means; a
+        // verb that quietly destroyed a credential would be the irreversible act this family never
+        // does silently.
+        //
+        // 🔴 But "deletes nothing" made a remove nobody could see: the directory IS the profile, so
+        // a profile stayed listed after being removed — and a harness scaffolds a fresh home the
+        // first time it is asked about it, so "empty" alone did not cover a real one. The directory
+        // goes when there is nothing signed-in to destroy, by the only evidence Daoris takes: it is
+        // empty, or the harness itself, asked as `list` asks, reports that profile signed OUT.
+        // Signed in, or unanswerable, and it stays — said out loud, with the path. The desktop's
+        // Forget draws the same line.
+        const empty = existsSync(where) && readdirSync(where).length === 0;
+        const login = !existsSync(where) || empty
+          ? 'unknown'
+          : probe(name, TOOLCHAINS[name]!, home, settings).profiles.find((p) => p.name === profile)?.login ?? 'unknown';
         const cleared = { ...settings, defaults: { ...settings.defaults } };
         if (cleared.defaults[name] === profile) delete cleared.defaults[name];
         cleared.workspaces = Object.fromEntries(
@@ -709,8 +721,25 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         writeHarnessSettings(path, cleared);
 
         write(`daoris: \`${profile}\` is no longer a default for \`${name}\` anywhere on this machine.`);
+        if (empty) {
+          rmSync(where, { recursive: true, force: true });
+          write(`  The empty directory Daoris made is gone with it — nothing was ever put in it: ${where}`);
+          return 0;
+        }
+        if (login === 'out') {
+          rmSync(where, { recursive: true, force: true });
+          write(`  The directory is gone with it — \`${name}\` reports that profile signed out, so nothing`);
+          write(`  signed-in was in it: ${where}`);
+          return 0;
+        }
+
         write(`  The directory is untouched — ${where}`);
-        write('  It holds a credential the harness put there; deleting it is yours to do, deliberately.');
+        write(login === 'in'
+          ? `  \`${name}\` reports it signed in, and Daoris never deletes a credential: sign out with the`
+          : `  \`${name}\` could not say whether it is signed in, so Daoris leaves it: remove the`);
+        write(login === 'in'
+          ? '  tool, then remove it — or delete the directory yourself, deliberately.'
+          : '  directory yourself if you are sure.');
         return 0;
       }
 

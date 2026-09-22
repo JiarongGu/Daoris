@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
+import { useRegistry } from './queries';
 import {
   useDriver, useHarnessAction, useHarnesses, useRefreshHarnesses, useRemotes, useSetNotify,
   useSetStrikes,
@@ -9,8 +10,8 @@ import {
 import { SessionConsole } from './SessionConsole';
 import { byTool, type ToolDoor } from './tools';
 import {
-  Button, Card, CheckField, Chip, Icon, type Notify, PageHeader, Pill, Prose, SectionTitle, Tip,
-  useErrorNotify,
+  Button, Card, CheckField, Chip, Icon, type Notify, PageHeader, Pill, Prose, SectionTitle,
+  SelectField, Tip, useErrorNotify,
 } from './ui';
 
 /**
@@ -262,6 +263,11 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   const act = useHarnessAction();
   // What each account has carried (TOOL3). Beside the roster because it is about the same accounts.
   const usage = useUsage();
+  // The circles this machine has, so an account can be chosen for one (D49 §4) — the terminal
+  // could already do it (`daoris harness profile default … --workspace`), and the screen could not.
+  const registry = useRegistry();
+  const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace).filter(Boolean))]
+    .sort() as string[];
   useErrorNotify(roster.error, notify);
 
   // Which action is running, so its console can be shown under the harness that is doing it. One at
@@ -294,9 +300,10 @@ function HarnessRoster({ notify }: { notify: Notify }) {
       | 'profile-add' | 'profile-remove' | 'profile-default',
     profile?: string,
     version?: string,
+    workspace?: string,
   ) => {
     setRunning(`${harness}:${action}`);
-    act.mutate({ harness, action, profile, version }, {
+    act.mutate({ harness, action, profile, version, workspace }, {
       // The harness's own exit code decides which it was: Daoris ran somebody else's tool and reports
       // what it did, rather than deciding on its behalf that it went well.
       onSuccess: (result) => (result.exitCode === 0
@@ -353,14 +360,55 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               directory. The name leads now, its state is beside it, where the sessions actually go
               is stated rather than implied, and the directory is one truncated line underneath. */}
           <p className="mt-3 text-small font-semibold text-ink-soft">{t('harness.accounts')}</p>
-          {tool.accounts.length === 0 ? (
-            <Prose className="mt-1">{t('harness.noProfiles')}</Prose>
-          ) : (
-            <ul className="m-0 mt-1 list-none p-0">
-              {tool.accounts.map((profile) => (
+          <ul className="m-0 mt-1 list-none p-0">
+            {/* 🔴 The account a person actually HAS leads: the tool's own configuration home. A
+                machine with no named profile read "No accounts" while its owner was logged in —
+                and nothing said that sessions were running as that login. The state is the
+                tool's own answer about its own home, read-only; Daoris never logs into it, so
+                there is no button for that here, and the row says whose business it is. */}
+            <li className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+              <span className="flex min-w-0 flex-1 basis-56 flex-col gap-0.5">
+                <span className="flex flex-wrap items-center gap-2">
+                  <Icon name="account" size={13} className="text-ink-faint" />
+                  <span className="text-body font-medium text-ink">{t('harness.own')}</span>
+                  {tool.present && tool.ownLogin !== 'unknown' && (
+                    <Pill tone={tool.ownLogin === 'in' ? 'done' : 'neutral'}>
+                      {t(`harness.login.${tool.ownLogin}`)}
+                    </Pill>
+                  )}
+                  {tool.machineDefault === null && (
+                    <Chip accent>{t('harness.profile.sessionsUse')}</Chip>
+                  )}
+                </span>
+                <span className="text-meta text-ink-faint">{t('harness.ownHome')}</span>
+              </span>
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                {/* Naming NO profile clears the default — "use the tool's own home again". */}
+                {tool.machineDefault !== null && (
+                  <Button
+                    variant="ghost"
+                    disabled={act.isPending}
+                    onClick={() => run(tool.doors[0]!.harness, 'profile-default')}
+                  >
+                    {t('harness.profile.use')}
+                  </Button>
+                )}
+                {workspaces.length > 0 && (
+                  <SelectField
+                    value=""
+                    onChange={(workspace) =>
+                      run(tool.doors[0]!.harness, 'profile-default', undefined, undefined, workspace)}
+                    options={workspaces.map((workspace) => ({ value: workspace, label: workspace }))}
+                    placeholder={t('harness.profile.useForPlaceholder')}
+                    ariaLabel={t('harness.profile.useFor', { profile: t('harness.own') })}
+                  />
+                )}
+              </div>
+            </li>
+            {tool.accounts.map((profile) => (
                 <li
                   key={profile.home}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-2 first:border-t-0"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-2"
                 >
                   <span className="flex min-w-0 flex-1 basis-56 flex-col gap-0.5">
                     <span className="flex flex-wrap items-center gap-2">
@@ -375,10 +423,25 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       {tool.machineDefault === profile.name && (
                         <Chip accent>{t('harness.profile.sessionsUse')}</Chip>
                       )}
+                      {/* And which circles run as it (D49 §4) — one chip per circle, the same fact
+                          worded the same way. */}
+                      {tool.workspaceDefaults
+                        .filter((circle) => circle.profile === profile.name)
+                        .map((circle) => (
+                          <Chip accent key={circle.workspace}>
+                            {t('harness.profile.workspaceUses', { workspace: circle.workspace })}
+                          </Chip>
+                        ))}
                     </span>
                     <Tip content={t('harness.homeTip')}>
                       <span className="truncate font-mono text-meta text-ink-faint">{profile.home}</span>
                     </Tip>
+                    {/* 🔴 What the next step IS and what it will do, on the row that needs it. After
+                        "Add" there was a name, a "not logged in" pill and a button, and nothing
+                        about the browser window about to open or where the output would go. */}
+                    {profile.login !== 'in' && (
+                      <span className="text-meta text-ink-faint">{t('harness.login.hint')}</span>
+                    )}
                   </span>
                   <div className="ml-auto flex shrink-0 items-center gap-1">
                     {/* Logging in is the one thing here that is a step in a task rather than a
@@ -401,9 +464,12 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       </Button>
                     )}
                     {/* 🔴 "Forget", not "delete". It stops this machine pointing at the account and
-                        removes NOTHING — the directory holds a credential the tool put there, and a
-                        button that quietly destroyed one would be the irreversible act this family
-                        never does silently. The word on the button is the word for what happens. */}
+                        never deletes a credential — a button that quietly destroyed one would be the
+                        irreversible act this family never does silently. The directory goes only on
+                        the tool's own word that the account is signed out (or when it is empty);
+                        "deletes nothing" had left a forgotten account on the list forever, because
+                        the directory IS the account. The word on the button is the word for what
+                        happens, and the console says which it was. */}
                     <Tip content={t('harness.profile.forgetTip')}>
                       <Button
                         variant="ghost"
@@ -413,11 +479,20 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                         {t('harness.profile.forget')}
                       </Button>
                     </Tip>
+                    {workspaces.length > 0 && (
+                      <SelectField
+                        value=""
+                        onChange={(workspace) =>
+                          run(tool.doors[0]!.harness, 'profile-default', profile.name, undefined, workspace)}
+                        options={workspaces.map((workspace) => ({ value: workspace, label: workspace }))}
+                        placeholder={t('harness.profile.useForPlaceholder')}
+                        ariaLabel={t('harness.profile.useFor', { profile: profile.name })}
+                      />
+                    )}
                   </div>
                 </li>
               ))}
             </ul>
-          )}
 
           {opened[tool.name] === 'account' ? (
             <form

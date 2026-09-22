@@ -75,25 +75,97 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>Remove un-points and DELETES NOTHING.</b> The directory holds a credential the harness
-    /// put there, and a button that quietly destroyed one would be the irreversible act this family
-    /// never does silently. Both doors mean the same thing by the word.
+    /// A harness for the remove tests: real spawn, real answers, no account. Signed in exactly when
+    /// the profile holds a `credentials.json` — which is what a real login leaves behind — and the
+    /// stub adapter's own toolchain asks it with <c>--login-state</c>. Machine-independent: the
+    /// first version of these tests asked the machine's own `claude`, whose answer is the machine's.
+    /// </summary>
+    private DriverModule ModuleWithStubHarness()
+    {
+        var script = Path.Combine(Home, "harness.mjs");
+        File.WriteAllText(script, """
+            import { existsSync } from 'node:fs';
+            if (process.argv[2] === '--version') { console.log('stub-harness 1.0.0'); process.exit(0); }
+            if (process.argv[2] === '--login-state') {
+              const home = process.env.DAORIS_STUB_CONFIG_DIR;
+              console.log(home && existsSync(home + '/credentials.json') ? 'logged-in' : 'logged-out');
+              process.exit(0);
+            }
+            """);
+        File.WriteAllText(DriverConfigPath, $$"""
+            { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
+              "commands": { "stub": ["node", {{JsonSerializer.Serialize(script)}}] } }
+            """);
+        return Module();
+    }
+
+    /// <summary>
+    /// 🔴 <b>Remove un-points and never deletes a credential.</b> A signed-in account stays, every
+    /// file with it, and the console says so and where: a button that quietly destroyed a credential
+    /// would be the irreversible act this family never does silently.
     /// </summary>
     [Fact]
-    public async Task Removing_a_profile_stops_pointing_at_it_and_keeps_every_file()
+    public async Task Removing_a_signed_in_profile_stops_pointing_at_it_and_keeps_every_file()
     {
-        var module = Module();
+        var module = ModuleWithStubHarness();
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-add", profile = "work" });
-        File.WriteAllText(Path.Combine(ProfileAt("claude-code", "work"), "whatever.json"), "{}");
+            new { harness = "stub", action = "profile-add", profile = "work" });
+        File.WriteAllText(Path.Combine(ProfileAt("stub", "work"), "credentials.json"), "{}");
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-default", profile = "work" });
+            new { harness = "stub", action = "profile-default", profile = "work" });
 
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-remove", profile = "work" });
+            new { harness = "stub", action = "profile-remove", profile = "work" });
 
-        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("claude-code"));
-        Assert.True(File.Exists(Path.Combine(ProfileAt("claude-code", "work"), "whatever.json")));
+        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("stub"));
+        Assert.True(File.Exists(Path.Combine(ProfileAt("stub", "work"), "credentials.json")));
+        Assert.Contains(Raised.Select(Line), line => line.Contains("kept") && line.Contains("signed in"));
+    }
+
+    /// <summary>
+    /// 🔴 "Deletes nothing" made Forget on a fresh account do nothing anyone could see: the directory
+    /// is the account, the roster lists directories, and the harness scaffolds a fresh home the first
+    /// time it is asked about it — so a forgotten account stayed on the list, unpointed, forever
+    /// (deployed application, 2026-09-23). The harness's own word that the account is signed OUT is
+    /// the evidence there is nothing signed-in to destroy, and the directory goes with the forget.
+    /// </summary>
+    [Fact]
+    public async Task Forgetting_a_signed_out_profile_removes_its_directory_scaffolding_and_all()
+    {
+        var module = ModuleWithStubHarness();
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-add", profile = "stale" });
+        // What a harness leaves in a home it was merely asked about — settings, never a credential.
+        File.WriteAllText(Path.Combine(ProfileAt("stub", "stale"), "settings.json"), "{}");
+
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-remove", profile = "stale" });
+
+        Assert.False(Directory.Exists(ProfileAt("stub", "stale")));
+        Assert.Contains(Raised.Select(Line), line => line.Contains("removed") && line.Contains("signed out"));
+    }
+
+    /// <summary>An empty directory is the same answer with nothing to ask: it goes.</summary>
+    [Fact]
+    public async Task Forgetting_a_profile_nobody_ever_wrote_into_removes_the_empty_directory()
+    {
+        var module = ModuleWithStubHarness();
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-add", profile = "fresh" });
+        Assert.True(Directory.Exists(ProfileAt("stub", "fresh")));
+
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-remove", profile = "fresh" });
+
+        Assert.False(Directory.Exists(ProfileAt("stub", "fresh")));
+    }
+
+    /// <summary>The text of one relayed console line, or empty for any other event.</summary>
+    private static string Line(Shenora.Core.Events.EventMessage message)
+    {
+        if (message.Type != "SESSION_OUTPUT") return string.Empty;
+        var json = JsonSerializer.SerializeToElement(message.Payload);
+        return string.Join("\n", json.GetProperty("Lines").EnumerateArray().Select(l => l.GetProperty("Text").GetString()));
     }
 
     /// <summary>A profile verb with no profile is refused rather than guessing one.</summary>

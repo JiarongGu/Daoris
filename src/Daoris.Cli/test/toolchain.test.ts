@@ -244,24 +244,46 @@ test('`profile default` sets the machine’s, and `--workspace` sets one circle�
 });
 
 /**
- * The directory holds a credential the harness put there. Removing a profile clears the WIRING and
- * says, out loud, that it deleted nothing — an irreversible act is never a side effect here.
+ * The directory holds what the harness put there. Removing a profile clears the WIRING and, unless
+ * the harness itself says the profile is signed out, says out loud that it deleted nothing — an
+ * irreversible act is never a side effect here. `dsh` declares no login question, so its answer is
+ * always "could not say", on every machine: the case that must keep the directory.
  */
-test('`profile remove` un-defaults it everywhere and deletes nothing', () => {
+test('`profile remove` un-defaults it everywhere and keeps a directory it cannot vouch for', () => {
   const fx = makeFixture('harness-remove');
-  run(['profile', 'add', 'claude-code', 'work'], at(fx));
-  run(['profile', 'default', 'claude-code', 'work'], at(fx));
-  run(['profile', 'default', 'claude-code', 'work', '--workspace', 'aurora'], at(fx));
-  writeFileSync(join(profileHome(fx.root, 'claude-code', 'work'), 'credentials.json'), '{}', 'utf8');
+  run(['profile', 'add', 'dsh', 'work'], at(fx));
+  run(['profile', 'default', 'dsh', 'work'], at(fx));
+  run(['profile', 'default', 'dsh', 'work', '--workspace', 'aurora'], at(fx));
+  writeFileSync(join(profileHome(fx.root, 'dsh', 'work'), 'credentials.json'), '{}', 'utf8');
 
-  const result = run(['profile', 'remove', 'claude-code', 'work'], at(fx));
+  const result = run(['profile', 'remove', 'dsh', 'work'], at(fx));
 
   assert.equal(result.code, 0);
   assert.match(result.out, /directory is untouched/);
-  assert.ok(existsSync(join(profileHome(fx.root, 'claude-code', 'work'), 'credentials.json')));
+  assert.match(result.out, /could not say/);
+  assert.ok(existsSync(join(profileHome(fx.root, 'dsh', 'work'), 'credentials.json')));
   const settings = readHarnessSettings(at(fx));
-  assert.equal(resolveProfile(settings, 'claude-code', 'aurora', null), null);
-  assert.equal(resolveProfile(settings, 'claude-code', null, null), null);
+  assert.equal(resolveProfile(settings, 'dsh', 'aurora', null), null);
+  assert.equal(resolveProfile(settings, 'dsh', null, null), null);
+  fx.cleanup();
+});
+
+/**
+ * 🔴 The other half of the same rule. A profile the harness never wrote into is an empty directory
+ * Daoris made; removing THAT destroys nothing, and leaving it was a "remove" nobody could see —
+ * the directory is the account, so the account stayed listed after being forgotten. (A signed-out
+ * but scaffolded profile goes the same way on the harness's own word; the family rehearsal's stub
+ * harness is where that answer can be given with no account on any machine.)
+ */
+test('`profile remove` takes an empty directory with it', () => {
+  const fx = makeFixture('harness-remove-empty');
+  run(['profile', 'add', 'claude-code', 'fresh'], at(fx));
+
+  const result = run(['profile', 'remove', 'claude-code', 'fresh'], at(fx));
+
+  assert.equal(result.code, 0);
+  assert.match(result.out, /empty directory/);
+  assert.ok(!existsSync(profileHome(fx.root, 'claude-code', 'fresh')));
   fx.cleanup();
 });
 

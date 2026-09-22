@@ -206,8 +206,13 @@ choices the building settled:
 - **A profile is a directory, and the directory is the contract.** There is no register of profiles to
   disagree with the disk — the same argument that made the registry the authority rather than a view
   over a scan (D48 §3). A name that could escape that directory is refused rather than normalised, and
-  `profile remove` clears the WIRING and says out loud that it deleted nothing: the directory holds a
-  credential the harness put there, and destroying one is never a side effect.
+  `profile remove` clears the WIRING and never deletes a credential: what the directory holds is the
+  harness's own, and destroying a credential is never a side effect. **It takes the directory only
+  when there is nothing signed-in to destroy, by the harness's own word** — the directory is empty,
+  or the harness, asked exactly as the roster asks, reports that profile signed out; signed in or
+  unanswerable, the directory stays and the sentence says why and where (2026-09-23). "Deletes
+  nothing" had left a forgotten account on the list forever: the directory is the account, and a
+  harness scaffolds a fresh home the first time it is asked about it.
 - **Install is a whole command; update and login are the harness's own subcommands.** A machine without
   the harness cannot run the harness, so installing is that harness's package manager; a harness that
   is present updates and authenticates itself. The shapes differ because the meanings do.

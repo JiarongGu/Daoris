@@ -98,6 +98,27 @@ describe('byTool', () => {
     expect(tools[0]!.machineDefault).toBe('work');
   });
 
+  /**
+   * 🔴 The account a person actually has is the tool's own configuration home, and the roster
+   * called a machine with no named profile "No accounts" while its owner was logged in. The
+   * account-owning door answers for the tool's own home; a workspace's choice of account is
+   * carried beside the machine's, once per circle however many doors report it.
+   */
+  it('carries the tool’s own login and each workspace’s choice of account', () => {
+    const tools = byTool([
+      door({ harness: 'claude-code', present: true, ownLogin: 'in', workspaceDefaults: [{ workspace: 'work', profile: 'office' }] }),
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code', ownLogin: 'unknown', workspaceDefaults: [{ workspace: 'work', profile: 'office' }] }),
+    ]);
+
+    expect(tools[0]!.ownLogin).toBe('in');
+    expect(tools[0]!.workspaceDefaults).toEqual([{ workspace: 'work', profile: 'office' }]);
+  });
+
+  it('answers unknown for a tool whose doors say nothing about their own home', () => {
+    expect(byTool([door({ harness: 'dsh' })])[0]!.ownLogin).toBe('unknown');
+    expect(byTool([door({ harness: 'dsh' })])[0]!.workspaceDefaults).toEqual([]);
+  });
+
   it('treats a blank borrowed account as none at all', () => {
     expect(toolOf(door({ harness: 'dsh', accountOf: '  ' }))).toBe('dsh');
     expect(toolOf(door({ harness: 'codex-acp', accountOf: 'codex' }))).toBe('codex');

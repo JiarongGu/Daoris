@@ -32,6 +32,10 @@ export interface ToolDoor {
   managed?: string | null;
   machineDefault?: string | null;
   profiles?: { name: string; home: string; login: string }[];
+  /** What the tool says about logging in to its OWN configuration home — the account a person has before naming any. */
+  ownLogin?: string | null;
+  /** Which circles run this door as which account (D49 §4). */
+  workspaceDefaults?: { workspace: string; profile: string }[];
 }
 
 /** One tool, with every door onto it and the one account list they share. */
@@ -46,6 +50,13 @@ export interface Tool {
   machineDefault: string | null;
   /** Whether any door onto this tool is installed — "have I got this tool" in one word. */
   present: boolean;
+  /**
+   * The tool's own home's login state — `in`, `out` or `unknown`. 🔴 The account a person actually
+   * has: a machine with no named profile read "No accounts" while its owner was logged in.
+   */
+  ownLogin: string;
+  /** Which circles use which account, once per circle however many doors report it. */
+  workspaceDefaults: { workspace: string; profile: string }[];
 }
 
 /** Which tool this door belongs to: the account it borrows, or itself. */
@@ -98,12 +109,26 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
       }
     }
 
+    // One circle, one answer: the doors read one file, so the first door to name a circle speaks
+    // for it — like the accounts above, the second door saying it again is the same fact.
+    const workspaceDefaults: Tool['workspaceDefaults'] = [];
+    for (const door of doorsInOrder) {
+      for (const circle of door.workspaceDefaults ?? []) {
+        if (workspaceDefaults.some((held) => held.workspace === circle.workspace)) continue;
+        workspaceDefaults.push(circle);
+      }
+    }
+
     return {
       name,
       doors: doorsInOrder,
       accounts,
       machineDefault: doorsInOrder.find((door) => door.machineDefault)?.machineDefault ?? null,
       present: doorsInOrder.some((door) => door.present),
+      // The account-owning door's word; any door's definite answer beats every door's silence.
+      ownLogin: doorsInOrder.map((door) => door.ownLogin).find((state) => state && state !== 'unknown')
+        ?? 'unknown',
+      workspaceDefaults,
     };
   });
 }

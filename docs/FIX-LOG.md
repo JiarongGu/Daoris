@@ -5,6 +5,39 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The account a person has was invisible, and Forget forgot nothing (2026-09-23)
+
+**Symptom.** Owner: *"a lot ui/ux issue which does not allow to manage account easily"*. Exercised
+on the deployed application: `claude-code` read **"No accounts — sessions run in this tool's own
+configuration home"** to an owner who was logged in there; *Add an account* made a row with a name,
+a *not logged in* pill and a *Log in* button, and nothing about the browser window about to open or
+where its output would go; a work account for the work circle could be set from a terminal
+(`daoris harness profile default … --workspace`) and not from the screen; the toast read
+*"claude-code: harness.profile-add finished."*; and **Forget on the new account did nothing anyone
+could see** — the row stayed, the directory stayed.
+
+**Root cause.** Four. The roster reported named profiles only, never the tool's own home — the
+account that exists before any is named. The page carried no workspace on `profile-default` and
+the payload carried no per-circle defaults, so the file's own shape (D49 §4) was invisible from
+the screen. Three action names had no catalogue key. And "deletes nothing" was literal: a profile
+is a directory, the roster lists directories, and Claude Code scaffolds a fresh home the first
+time it is asked `auth status` — so a fresh account was never empty and never went away.
+
+**Fix.** The probe asks the harness about its own home exactly as it asks each profile
+(`HarnessReport.OwnLogin`); the roster leads with *this machine's own · logged in · sessions use
+this*, and takes no login from here — that is the tool's own business and the row says so. A
+logged-out row says what *Log in* will do. Each row offers *use for a workspace…* over the circles
+this machine has, the payload carries `workspaceDefaults`, and the row says *sessions in X use
+this*; `profile-default` with no profile **clears** rather than refuses. Forget takes the
+directory when there is nothing signed-in to destroy by the harness's own word — empty, or
+reported signed out — and keeps it otherwise, saying which and where; the CLI's `profile remove`
+draws the same line, and the family rehearsal holds both halves with the stub harness and `dsh`.
+
+**Verify.** Driver, modules, CLI and roster tests, each seen red first. On the install: the own
+row logged in; *work* added, its hint under it, Forget → row and directory gone.
+
+**Commit.** _pending_
+
 ## The roster listed a fixture as a tool, and spoke the runtime's words (2026-09-23)
 
 **Symptom.** The Machine view on the deployed application ended with an agent tool called `stub` —

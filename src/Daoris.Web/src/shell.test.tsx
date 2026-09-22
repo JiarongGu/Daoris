@@ -74,6 +74,14 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
+/**
+ * What went over the SERVICE while a shell-only surface rendered. The registry is the one thing
+ * these surfaces may read from it — which circles this machine has, for choosing an account per
+ * workspace — and it is public, non-sensitive data every view reads. Everything else must be absent.
+ */
+const serviceCalls = () =>
+  vi.mocked(fetch).mock.calls.map((call) => String(call[0])).filter((url) => !url.startsWith('/api/registry'));
+
 function show(node: React.ReactElement, client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
     <QueryClientProvider client={client}>
@@ -310,7 +318,7 @@ describe('the machine settings surface', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'STATE', {});
     // Not a single call toward the service: a keyed remote's browser must never learn, or change,
     // where a machine syncs.
-    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+    expect(serviceCalls()).toEqual([]);
   });
 
   it('wiring a workspace edits the map and clears the key out of the form', async () => {
@@ -377,7 +385,7 @@ describe('the machine settings surface', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'REMOVE', { payload: { workspace: 'aurora' } });
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing at the deployment changed'));
-    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+    expect(serviceCalls()).toEqual([]);
   });
 
   /**
@@ -410,6 +418,8 @@ describe('the harness roster', () => {
       {
         harness: 'claude-code', present: true, version: 'claude 9.9.9', problem: null,
         machineDefault: 'personal', pinned: null, managed: null, pinnable: true,
+        ownLogin: 'in',
+        workspaceDefaults: [{ workspace: 'orbit', profile: 'work' }],
         profiles: [
           { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' },
           { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'out' },
@@ -438,7 +448,7 @@ describe('the harness roster', () => {
 
     expect(await screen.findByText('claude 9.9.9')).toBeTruthy();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', {});
-    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+    expect(serviceCalls()).toEqual([]);
   });
 
   /** An absent harness names what it is and offers the action, rather than leaving a blank row. */
@@ -459,7 +469,8 @@ describe('the harness roster', () => {
   it('each profile shows its login state, and logging in names the profile', async () => {
     show(<SettingsView notify={() => {}} />);
 
-    expect(await screen.findByText('logged in')).toBeTruthy();
+    // The tool's own home and `personal` are both logged in; `work` is the one that is not.
+    expect(await screen.findAllByText('logged in')).toHaveLength(2);
     expect(screen.getByText('not logged in')).toBeTruthy();
 
     // Two profiles, two buttons — the second one is `work`, which is the logged-out one.
@@ -468,6 +479,81 @@ describe('the harness roster', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'login', profile: 'work' },
+    });
+  });
+
+  /**
+   * 🔴 The account a person actually has — the tool's own configuration home — led nowhere: a
+   * machine with no named profile read "No accounts" while its owner was logged in. It leads the
+   * list now, with the login state the tool reports for its own home, and it is what sessions use
+   * until a default is named. Daoris never logs into it: that is the tool's own business, and the
+   * row says so instead of offering a button.
+   */
+  it('the tool’s own home leads the accounts, with its login state, and takes no login from here', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    // Two tools, two own rows; claude-code's is first, in the roster's order.
+    const own = (await screen.findAllByText("this machine's own"))[0]!.closest('li')!;
+    expect(within(own).getByText('logged in')).toBeTruthy();
+    expect(within(own).queryByRole('button', { name: /^Log in/ })).toBeNull();
+    // `personal` is the machine's default, so the own home is not what sessions use — yet.
+    expect(within(own).queryByText('sessions use this')).toBeNull();
+    // Choosing it again names no profile: the default is CLEARED, not pointed somewhere.
+    await userEvent.click(within(own).getByRole('button', { name: 'Make default' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-default' },
+    });
+  });
+
+  it('the tool’s own home is what sessions use when nothing is named', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], machineDefault: null, profiles: [] }] }
+      : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    const own = (await screen.findAllByText("this machine's own"))[0]!.closest('li')!;
+    expect(within(own).getByText('sessions use this')).toBeTruthy();
+    expect(screen.queryByText(/^No accounts/)).toBeNull();
+  });
+
+  /** After "Add", the next step and what it does were nowhere: the logged-out row says both. */
+  it('a logged-out account says what Log in will do', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    const work = (await screen.findByText('work')).closest('li')!;
+    expect(within(work).getByText(/runs the tool's own sign-in/)).toBeTruthy();
+    const personal = screen.getByText('personal').closest('li')!;
+    expect(within(personal).queryByText(/runs the tool's own sign-in/)).toBeNull();
+  });
+
+  /**
+   * 🔴 A work account for the work circle (D49 §4) could be set from a terminal and not from here.
+   * The row says which circles use it, and a circle is chosen from the ones this machine has.
+   */
+  it('an account can be made one workspace’s default, and the row says which circles use it', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) {
+        return Response.json([
+          { ...REGISTRY[0], workspace: 'orbit' },
+          { ...REGISTRY[0], repository: 'game', workspace: 'lab' },
+        ]);
+      }
+      return respond(url);
+    }));
+    show(<SettingsView notify={() => {}} />);
+
+    const work = (await screen.findByText('work')).closest('li')!;
+    expect(within(work).getByText('sessions in orbit use this')).toBeTruthy();
+
+    // Opened from the keyboard: in this suite a pointer click leaves the Radix trigger closed, where
+    // the App suite's does not, and Enter is a door the person has too.
+    const trigger = await screen.findByRole('combobox', { name: 'use personal for a workspace' });
+    trigger.focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'lab' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-default', profile: 'personal', workspace: 'lab' },
     });
   });
 
