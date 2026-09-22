@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**282 CLI tests, 275 service, 297 driver, 81 desktop modules, 483 web unit, 14 Playwright**, 59
+**293 CLI tests, 275 service, 297 driver, 81 desktop modules, 483 web unit, 14 Playwright**, 59
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), **36/36 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -248,7 +248,7 @@ the traps that are not in any contract, because they were found rather than desi
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 282 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 293 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (275),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`

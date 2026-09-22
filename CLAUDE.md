@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fourteen commands, 282 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fourteen commands, 293 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 275, `Daoris.Devkit` 59, and the
 driver 297. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
