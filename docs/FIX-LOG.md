@@ -39,7 +39,7 @@ the case study's own table — and choosing one opens its record. Web 472 + 14 P
 absence.** Any list that filters to "live" needs to answer what happens to the rest, and "some
 other view" is not an answer until that view exists.
 
-**Commit.** pending
+**Commit.** `39503dd`
 
 ## A 990-character template was "substantially the same words" as a 326 KB document (2026-09-23)
 
