@@ -31,7 +31,7 @@ the existing tick test lists the key with the others.
 cache of a summary needs a refetch path that fires without a person, or the first partial answer is
 the answer for as long as the window stays open.
 
-**Commit.** pending
+**Commit.** `e3df788`
 
 ## Every Chinese query returned the whole corpus — 中文 search had never worked (2026-09-23)
 
