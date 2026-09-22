@@ -30,6 +30,33 @@ export function newsFrom(previous: readonly string[], current: readonly string[]
 }
 
 /**
+ * One open quest as the driver judged it on its last tick: whether it starts, and if not, why — the
+ * driver's own sentence (D46 §3: "sitting must always say why"). Shape of the tick's `considered`.
+ */
+export interface Consideration {
+  quest: string;
+  repository: string;
+  verdict: string;
+  reason: string;
+}
+
+/**
+ * Why a quest is sitting, in the driver's words — or null when the driver is starting it, or has
+ * said nothing about it.
+ *
+ * @remarks
+ * 🔴 **Found on the deployed application** (D62). The driver has said this every tick since D46 and
+ * the shell forwarded it in every tick; the page read the tick's `events` and dropped the rest. So
+ * the Overview led with *"is anything sitting"* and never once said why, while the reason sat in the
+ * payload it had just handled — and the one surface that DID say it was a toast, gone in seconds.
+ * A `Start` verdict is not sitting, and saying "starting" under a quest would be noise.
+ */
+export function sittingBecause(considered: readonly Consideration[], quest: string): Consideration | null {
+  const found = considered.find((c) => c.quest === quest);
+  return found && found.verdict !== 'Start' ? found : null;
+}
+
+/**
  * How many notices may be on screen at once.
  *
  * 🔴 A viewport that grows without limit is its own defect: the four stacked toasts had reached the

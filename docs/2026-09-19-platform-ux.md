@@ -149,9 +149,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*
-  (row = pill · title · route · how long) beside *Repositories by index size* (single-hue bars, adopted
-  dot, values in ink). Every row is a door: outstanding rows open the quest drawer; repository rows go
-  to Projects.
+  (row = pill · title · route · how long — and, on the desktop, *sitting — why*, the driver's own
+  sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
+  size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
+  quest drawer; repository rows go to Projects.
 - **Quests** — page action opens the **compose drawer**; the list stays scannable (pill, title, route,
   age, first line of the ask) grouped Open / In progress / Closed; **clicking a card opens the detail
   drawer**: the whole ask, the meta, the note, and the actions — take, done, decline-with-reason —

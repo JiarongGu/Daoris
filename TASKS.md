@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**293 CLI tests, 275 service, 297 driver, 81 desktop modules, 483 web unit, 14 Playwright**, 59
+**293 CLI tests, 275 service, 300 driver, 81 desktop modules, 487 web unit, 14 Playwright**, 59
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), **36/36 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -115,8 +115,9 @@ above. Until ACP2 passes, `claude-code` over the pipe door remains what a machin
 
 **The testbed is live and wired** (`tools/testbed.mjs --root <folder>`): three repositories in
 workspace `testbed`, each with its own `.mcp.json` and trust settings, registered against the running
-host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
-it. Two branches there hold what the failed sessions produced.
+host. Quest `#7786da` is open and retried (three strikes behind it), and every tick **holds** it on
+the trust flag, which the Overview row now says under the quest. Two branches there hold what the
+failed sessions produced.
 
 🔴 **The direction is the DESKTOP, and development happens against the install** (owner, 2026-09-22
 → **D62**): the shell carries the platform, runs the driver loop, hosts the machine's service, and
@@ -252,11 +253,11 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (275),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (297), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (81), `npm run rehearse:family` (180/180), `npm run test:web` (483 vitest + 14 Playwright),
+  (300), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (81), `npm run rehearse:family` (180/180), `npm run test:web` (483 vitest + 14 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (36/36), which
-  publishes the shell to `_fixtures/` and drives **that**. 🔴 **Its phase 4 asserts the host the
-  deployed shell started is the INSTALL's own** — on this machine `~/.daoris/bin` holds a second
-  host, which is the decoy that check exists for; a clean machine cannot express the defect.
+  publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
+  the INSTALL's own** — `~/.daoris/bin` on this machine is the decoy; a clean machine cannot
+  express the defect.
   🔴 **Stop a running shell and its host first** — an orphaned `daoris-knowledge-http` holds the
   build's own assemblies, which reads as a broken gate and is a lock (`npm run desktop -- kill`). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack

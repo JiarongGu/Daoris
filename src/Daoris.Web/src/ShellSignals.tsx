@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
-import { newsFrom } from './signals';
+import { type Consideration, newsFrom } from './signals';
 import type { Notify } from './ui';
 
-type Tick = { events?: string[] };
+type Tick = { events?: string[]; considered?: Consideration[] };
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
@@ -45,6 +45,11 @@ export function ShellSignals({ notify, onAttend }: {
     const lines = tick?.events ?? [];
     for (const line of newsFrom(toldLast.current, lines)) notify(line);
     toldLast.current = lines;
+
+    // Why every open quest is sitting, this tick — the half of the report that is not news but a
+    // STANDING answer, so it lands where the views read it rather than in a toast that dismisses
+    // itself. Replaced whole: a quest the driver no longer considers is no longer sitting.
+    client.setQueryData(keys.considered, tick?.considered ?? []);
 
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
     // world — the two questions are different, and collapsing them would make a stale window the

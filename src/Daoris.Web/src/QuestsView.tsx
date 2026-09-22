@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
-import { useDriver, useStopSession } from './shell';
+import { useConsidered, useDriver, useStopSession } from './shell';
 import { ago, sentence, sessionTool, sittingDays } from './format';
+import { sittingBecause } from './signals';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
   SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
@@ -62,6 +63,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
   const registry = useRegistry();
   const sessions = useSessions(null, true);
   const driver = useDriver();
+  const considered = useConsidered().data ?? [];
   const stop = useStopSession();
   const publish = usePublishQuest();
   const respond = useRespondQuest();
@@ -289,6 +291,17 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
             )}
             <dt className="text-ink-faint">{t('quests.detail.state')}</dt>
             <dd className="m-0">{t(`statusHint.${detail.status}`)}</dd>
+            {(() => {
+              // Why this machine's driver is not starting it, in its own words (D46 §3) — the
+              // whole sentence here, where there is room; the Overview row carries it truncated.
+              const sitting = sittingBecause(considered, detail.id);
+              return sitting && (
+                <>
+                  <dt className="text-ink-faint">{t('quests.detail.sitting')}</dt>
+                  <dd className="m-0">{sitting.reason}</dd>
+                </>
+              );
+            })()}
           </dl>
           <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{detail.body}</p>
           {detail.note && (

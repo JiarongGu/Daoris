@@ -5,6 +5,39 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The Overview asked whether anything was sitting, and never said why (2026-09-23)
+
+**Symptom.** On the deployed application with one open quest held on the trust flag: the Overview's
+outstanding row read *pill · title · route · filed 8h ago* and nothing else, and the only place the
+reason appeared was a toast — three of them, as the hold's reason flapped — gone in seconds. A person
+looking at the row had no way to learn that this machine's driver had looked at the quest every ten
+seconds and declined to start it, or why.
+
+**Root cause.** Three halves. The driver has said why every open quest is sitting since D46 §3
+(*"sitting must always say why"* — `Consideration.Reason`), and the shell forwarded it in every tick
+as `considered`; the page read the tick's `events` and dropped the rest. The loop forwarded a tick
+only when it had events or a planned start — so a quest sitting *silently* (not drivable here, no
+root, at capacity) never reached the page at all, on any tick. And the holds a real machine actually
+hits — a dirty tree, a logged-out harness, a tree that would not grow, a trust flag never given —
+are decided at **spawn**, after the planner said `Start`; the report kept the plan, so the quest
+this machine held every fifteen seconds read `Start` in every consideration. The first build of
+this fix shipped the page's half, republished, and showed nothing under the row: that is how the
+third half was found.
+
+**Fix.** A spawn-time hold becomes the quest's verdict in the report — `StartVerdict.Blocked`, the
+hold's own sentence as the reason (`Considerations.Blocked`; the plan itself is untouched). The tick
+writes `considered` to its own query key (`keys.considered`, never invalidated, never fetched);
+`useConsidered` reads it; the Overview row carries *sitting — <reason>* truncated with the whole
+sentence in its tip, and the quest drawer carries it whole. The loop forwards a tick when the
+considerations' **signature** changes (`Considerations.Signature`, order-free), so a stable sitting
+set costs nothing and a change always arrives. A `Start` verdict is not sitting.
+
+**Verify.** `sittingBecause`, the signature helper and the blocked fold-in, each seen red first;
+the shell test seen red against the previous Overview (the sentence never rendered). On the
+deployed application: the row under `#7786da` reads the driver's trust-flag sentence, and stays.
+
+**Commit.** _pending_
+
 ## A page seen once from a stale host was the page on every start after (2026-09-23)
 
 **Symptom.** With the host precedence fixed and the install demonstrably running its own host, the

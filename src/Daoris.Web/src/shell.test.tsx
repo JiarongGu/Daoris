@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -25,6 +25,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import { OverviewView } from './OverviewView';
 import { ProjectsView } from './ProjectsView';
 import { QuestsView } from './QuestsView';
 import { SettingsView } from './SettingsView';
@@ -652,6 +653,37 @@ describe('the shell push channel (ShellSignals)', () => {
     for (const key of [keys.allSessions, keys.allQuests, keys.driver, keys.allRepositories]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
+  });
+
+  /**
+   * Why a quest is sitting — the driver has said it every tick since D46, the shell forwarded it,
+   * and the page dropped it: the Overview asked "is anything sitting" and never said why, while
+   * the only surface that did was a toast (deployed application, 2026-09-23).
+   */
+  it('the Overview says why a quest is sitting, in the driver’s own words from its last tick', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    show(
+      <>
+        <ShellSignals notify={() => {}} />
+        <OverviewView onNavigate={() => {}} notify={() => {}} />
+      </>,
+      client,
+    );
+    await screen.findByText('Expose a streaming budget');
+    expect(screen.queryByText(/sitting —/)).not.toBeInTheDocument();
+
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({
+      events: [],
+      considered: [{ quest: 'abc123', repository: 'engine', verdict: 'NotDrivable', reason: 'engine is not drivable on this machine' }],
+    });
+    expect(await screen.findByText('sitting — engine is not drivable on this machine')).toBeTruthy();
+
+    // A later tick that would START it is not sitting, and the line goes.
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({
+      events: ['engine  spawned s1a2b3c4'],
+      considered: [{ quest: 'abc123', repository: 'engine', verdict: 'Start', reason: 'starting' }],
+    });
+    await waitFor(() => expect(screen.queryByText(/sitting —/)).not.toBeInTheDocument());
   });
 
   it("a driver error arrives as an error toast, the driver's own sentence verbatim", () => {

@@ -11,6 +11,69 @@ namespace Daoris.Desktop.Driver.Tests;
 /// sitting because nobody CAN take it is the person's setup work; sitting because the driver has not
 /// started it is the driver's state to explain.
 /// </summary>
+/// <summary>
+/// The shell forwards a tick to the page only when it has something to say. Considerations are
+/// "something to say" exactly when they CHANGED — a stable set of sitting quests would otherwise
+/// arrive every poll, and the page refetches four queries on every tick it receives.
+/// </summary>
+public sealed class ConsiderationSignatureTests
+{
+    private static Consideration Sitting(string quest, StartVerdict verdict, string reason) =>
+        new(new QuestView(quest, "asker", "receiver", "title", "body", "Open"), verdict, reason);
+
+    [Fact]
+    public void The_same_considerations_sign_the_same_whatever_their_order()
+    {
+        var a = new[] { Sitting("q1", StartVerdict.Held, "paused"), Sitting("q2", StartVerdict.NotDrivable, "not here") };
+        var b = new[] { a[1], a[0] };
+
+        Assert.Equal(Considerations.Signature(a), Considerations.Signature(b));
+    }
+
+    /// <summary>
+    /// 🔴 The holds a real machine actually hits — a dirty tree, a logged-out harness, a trust flag
+    /// never given — are decided at SPAWN, after the planner said Start. The report used to keep the
+    /// plan, so the quest the deployed application was holding every ten seconds read `Start` in
+    /// every consideration and the Overview had nothing to say under it.
+    /// </summary>
+    [Fact]
+    public void A_start_held_at_spawn_is_reported_as_blocked_with_the_holds_own_sentence()
+    {
+        var plan = new[]
+        {
+            Sitting("q1", StartVerdict.Start, "starting"),
+            Sitting("q2", StartVerdict.NotDrivable, "not here"),
+        };
+        var heldAt = new Dictionary<string, string>
+        {
+            ["q1"] = "the working tree has uncommitted changes (1 paths)",
+            ["nobody"] = "a hold for a quest that was never planned is ignored",
+        };
+
+        var reported = Considerations.Blocked(plan, heldAt);
+
+        Assert.Equal(StartVerdict.Blocked, reported[0].Verdict);
+        Assert.Equal("the working tree has uncommitted changes (1 paths)", reported[0].Reason);
+        Assert.Equal("q1", reported[0].Quest.Id);
+        Assert.Equal(plan[1], reported[1]);
+        Assert.Equal(2, reported.Count);
+        // The plan itself is untouched: what was decided and what happened are two records.
+        Assert.Equal(StartVerdict.Start, plan[0].Verdict);
+    }
+
+    [Fact]
+    public void A_changed_reason_or_verdict_signs_differently_and_nothing_signs_empty()
+    {
+        var before = new[] { Sitting("q1", StartVerdict.Held, "paused") };
+        var reason = new[] { Sitting("q1", StartVerdict.Held, "still paused") };
+        var verdict = new[] { Sitting("q1", StartVerdict.Start, "paused") };
+
+        Assert.NotEqual(Considerations.Signature(before), Considerations.Signature(reason));
+        Assert.NotEqual(Considerations.Signature(before), Considerations.Signature(verdict));
+        Assert.Equal(string.Empty, Considerations.Signature([]));
+    }
+}
+
 public sealed class PlannerTests
 {
     private static QuestView Quest(string id = "q1", string to = "Game", string status = "Open") =>

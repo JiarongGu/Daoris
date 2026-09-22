@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { capped, newsFrom } from './signals';
+import { type Consideration, capped, newsFrom, sittingBecause } from './signals';
 
 /**
  * The driver's tick lines, as notices. Written from four identical toasts stacked on the deployed
@@ -46,6 +46,34 @@ describe('newsFrom', () => {
     const before = [HELD];
     expect(newsFrom(before, [])).toEqual([]);
     expect(before).toEqual([HELD]);
+  });
+});
+
+/**
+ * Why a quest is sitting, in the driver's own words. The driver has said this every tick since D46
+ * ("sitting must always say why"); the page dropped it, and the Overview asked "is anything
+ * sitting" without ever answering "why" (deployed application, 2026-09-23).
+ */
+describe('sittingBecause', () => {
+  const considered: Consideration[] = [
+    { quest: '7786da', repository: 'testbed-core', verdict: 'Held', reason: 'the person paused testbed-core' },
+    { quest: 'abc123', repository: 'engine', verdict: 'Start', reason: 'starting' },
+    { quest: 'def456', repository: 'game', verdict: 'NotDrivable', reason: 'game is not drivable on this machine' },
+  ];
+
+  it('answers with the consideration for a quest the driver is not starting', () => {
+    expect(sittingBecause(considered, '7786da')?.reason).toBe('the person paused testbed-core');
+    expect(sittingBecause(considered, 'def456')?.verdict).toBe('NotDrivable');
+  });
+
+  /** A quest the driver is starting is not sitting — saying "starting" under it would be noise. */
+  it('answers nothing for a quest the driver is starting', () => {
+    expect(sittingBecause(considered, 'abc123')).toBeNull();
+  });
+
+  it('answers nothing for a quest the driver has not spoken about', () => {
+    expect(sittingBecause(considered, 'nobody')).toBeNull();
+    expect(sittingBecause([], '7786da')).toBeNull();
   });
 });
 

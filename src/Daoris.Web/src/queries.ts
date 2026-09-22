@@ -14,6 +14,8 @@ import { useScope } from './scope';
 // The `all*` prefixes are what invalidation addresses: whatever the scope, a change moves them all.
 export const keys = {
   status: ['status'] as const,
+  /** The driver's last verdict per open quest — written by the tick, never fetched (its own root, so no invalidation reaches it). */
+  considered: ['considered'] as const,
   allRepositories: ['repositories'] as const,
   repositories: (workspace: string | null) => ['repositories', workspace ?? '*'] as const,
   allRegistry: ['registry'] as const,

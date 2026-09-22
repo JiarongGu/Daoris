@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { useQuests, useRegistry, useRepositories } from './queries';
 import { ago, compact, sittingDays } from './format';
 import { ranked, widest } from './overview';
+import { useConsidered } from './shell';
+import { sittingBecause } from './signals';
 import {
   Card, CardHeader, Button, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,
@@ -32,6 +34,8 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
   const repositories = useRepositories();
   const registry = useRegistry();
   const quests = useQuests(null, false);
+  // What this machine's driver said about each open quest on its last look — empty in a browser.
+  const considered = useConsidered().data ?? [];
   useErrorNotify(repositories.error ?? registry.error ?? quests.error, notify);
 
   const repos = repositories.data ?? [];
@@ -106,24 +110,37 @@ export function OverviewView({ onNavigate, onAttend, notify }: {
             />
           )}
           <ul className="m-0 list-none p-0">
-            {outstanding.slice(0, 6).map((quest) => (
-              <li key={quest.id} className="border-t border-line first:border-t-0">
-                <button
-                  onClick={() => onNavigate('quests')}
-                  className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-body hover:bg-accent-soft"
-                >
-                  <Pill tone={QUEST_TONE[quest.status]}>
-                    {t(`status.${quest.status}`)}
-                  </Pill>
-                  <span className="font-medium">{quest.title}</span>
-                  <span className="ml-auto font-mono text-meta text-ink-faint">
-                    {quest.from} → {quest.to} · {quest.status === 'Open'
-                      ? t('overview.outstanding.filed', { ago: ago(quest.filed) })
-                      : t('overview.outstanding.taken', { ago: ago(quest.updated) })}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {outstanding.slice(0, 6).map((quest) => {
+              const sitting = sittingBecause(considered, quest.id);
+              return (
+                <li key={quest.id} className="border-t border-line first:border-t-0">
+                  <button
+                    onClick={() => onNavigate('quests')}
+                    className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-body hover:bg-accent-soft"
+                  >
+                    <Pill tone={QUEST_TONE[quest.status]}>
+                      {t(`status.${quest.status}`)}
+                    </Pill>
+                    <span className="font-medium">{quest.title}</span>
+                    <span className="ml-auto font-mono text-meta text-ink-faint">
+                      {quest.from} → {quest.to} · {quest.status === 'Open'
+                        ? t('overview.outstanding.filed', { ago: ago(quest.filed) })
+                        : t('overview.outstanding.taken', { ago: ago(quest.updated) })}
+                    </span>
+                    {/* WHY it is sitting, on the desktop only (a browser has no driver): the driver's
+                        own sentence from its last look — which is the answer to the question this
+                        view leads with, and was a toast that dismissed itself until now (D62). */}
+                    {sitting && (
+                      <Tip content={t('overview.outstanding.sittingTip')}>
+                        <span className="basis-full truncate text-small text-ink-faint">
+                          {t('overview.outstanding.sitting', { reason: sitting.reason })}
+                        </span>
+                      </Tip>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           {outstanding.length > 6 && (
             <p className="mt-2 text-small italic text-ink-faint">

@@ -67,6 +67,14 @@ public enum StartVerdict
     /// making progress (DRV6). The person restarts it deliberately.
     /// </summary>
     Exhausted,
+
+    /// <summary>
+    /// Planned to start, and held at SPAWN by what only the spawn can see — a dirty tree, an absent
+    /// or logged-out harness, a tree that would not grow, a trust flag never given. The reason is the
+    /// hold's own sentence, which names the fix. Never produced by the planner: it is what a tick
+    /// reports when what happened differs from what was decided, so "sitting" still says why.
+    /// </summary>
+    Blocked,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -76,6 +84,38 @@ public enum StartVerdict
 /// <param name="Workspace">The receiver's circle, carried for the same reason — and read by the toolchain.</param>
 public sealed record Consideration(
     QuestView Quest, StartVerdict Verdict, string Reason, string? Root = null, string? Workspace = null);
+
+public static class Considerations
+{
+    /// <summary>
+    /// What a set of considerations SAYS, as one string — equal when the same quests carry the same
+    /// verdicts and reasons, whatever the order. The shell forwards a tick to the page when this
+    /// changes: a page that shows why each quest is sitting needs the change, and nothing else,
+    /// because every tick it receives refetches four queries.
+    /// </summary>
+    public static string Signature(IEnumerable<Consideration> considered) =>
+        string.Join("\n", considered
+            .Select(c => $"{c.Quest.Id}\t{c.Verdict}\t{c.Reason}")
+            .OrderBy(line => line, StringComparer.Ordinal));
+
+    /// <summary>
+    /// The plan as it turned out: every start that was held at spawn becomes
+    /// <see cref="StartVerdict.Blocked"/> with the hold's own sentence, and everything else is the
+    /// plan's word. The plan is not edited — what was decided and what happened are two records.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Found on the deployed application: the quest it held every tick — trust flag never given —
+    /// read <c>Start</c> in every consideration, because the hold lived only in the event line. The
+    /// Overview, asked to say why each quest sits, had nothing to say under the one that mattered.
+    /// </remarks>
+    public static IReadOnlyList<Consideration> Blocked(
+        IReadOnlyList<Consideration> plan, IReadOnlyDictionary<string, string> heldAt) =>
+        plan.Select(c =>
+                c.Verdict == StartVerdict.Start && heldAt.TryGetValue(c.Quest.Id, out var why)
+                    ? c with { Verdict = StartVerdict.Blocked, Reason = why }
+                    : c)
+            .ToList();
+}
 
 /// <summary>
 /// The decision half of a tick: which open quests start, and why every other one is sitting.

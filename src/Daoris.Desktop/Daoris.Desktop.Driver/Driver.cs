@@ -107,20 +107,26 @@ public sealed class Driver(
         // What this tick ended, structurally — the half of the report a watcher can act on (SURF5b).
         var concluded = new List<SessionEnded>();
 
+        // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
+        // the report's considerations, so "why is this sitting" is answered for the holds a real
+        // machine actually hits, not only the ones the planner can see.
+        var heldAt = new Dictionary<string, string>(StringComparer.Ordinal);
+
         var starts = plan.Where(c => c.Verdict == StartVerdict.Start).ToList();
         var runs = starts.Select(async start =>
         {
-            var (line, opened, ended) = await RunAsync(start, ct).ConfigureAwait(false);
+            var (line, opened, ended, held) = await RunAsync(start, ct).ConfigureAwait(false);
             lock (events)
             {
                 events.Add(line);
                 progressed |= opened;
                 if (ended is not null) concluded.Add(ended);
+                if (held is not null) heldAt[start.Quest.Id] = held;
             }
         });
         await Task.WhenAll(runs).ConfigureAwait(false);
 
-        return new TickReport(plan, events, progressed, snapshot.Active, concluded);
+        return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded);
     }
 
     /// <summary>
@@ -141,16 +147,19 @@ public sealed class Driver(
     }
 
     /// <returns>
-    /// The console line, whether a session actually opened, and — when one ended here — what it
-    /// ended as and whose decision that was (SURF5b). A hold or a refusal ends nothing, so its
-    /// third value is null: there is no session to have ended.
+    /// The console line, whether a session actually opened, — when one ended here — what it ended
+    /// as and whose decision that was (SURF5b), and — when the start was HELD at spawn — the hold's
+    /// own sentence, which the report carries as the quest's verdict. A hold or a refusal ends
+    /// nothing, so the third value is null: there is no session to have ended. A refusal is not a
+    /// hold either: somebody else got there first, and the quest is theirs rather than sitting.
     /// </returns>
-    private async Task<(string Line, bool Opened, SessionEnded? Ended)> RunAsync(
+    private async Task<(string Line, bool Opened, SessionEnded? Ended, string? Held)> RunAsync(
         Consideration start, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
         var isolated = config.OpensOwnTree(quest.To);
+        (string, bool, SessionEnded?, string?) Hold(string why) => ($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
 
         // Clean tree, or nothing: uncommitted changes are somebody's work in flight (D46 §3). No
         // session record exists yet, so a hold here costs nothing and destroys nothing. VACUOUS for a
@@ -162,7 +171,7 @@ public sealed class Driver(
             var (clean, detail) = await WorkingTree.CleanAsync(root, ct).ConfigureAwait(false);
             if (!clean)
             {
-                return ($"held  #{quest.Id} → {quest.To}: {detail}", false, null);
+                return Hold(detail);
             }
         }
 
@@ -176,7 +185,7 @@ public sealed class Driver(
             .ConfigureAwait(false);
         if (!selection.Allowed)
         {
-            return ($"held  #{quest.Id} → {quest.To}: {selection.Refusal}", false, null);
+            return Hold(selection.Refusal!);
         }
 
         // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
@@ -192,7 +201,7 @@ public sealed class Driver(
             }
             catch (DriverException error)
             {
-                return ($"held  #{quest.Id} → {quest.To}: {error.Message}", false, null);
+                return Hold(error.Message);
             }
         }
 
@@ -216,7 +225,7 @@ public sealed class Driver(
                 ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             if (ClaudeTrust.Accepted(Path.Combine(configHome, trustFile), workTree) == false)
             {
-                return ($"held  #{quest.Id} → {quest.To}: {ClaudeTrust.Refusal(workTree)}", false, null);
+                return Hold(ClaudeTrust.Refusal(workTree));
             }
         }
 
@@ -245,7 +254,7 @@ public sealed class Driver(
                 await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             }
 
-            return ($"refused  #{quest.Id} → {quest.To}: {message}", false, null);
+            return ($"refused  #{quest.Id} → {quest.To}: {message}", false, null, null);
         }
 
         try
@@ -349,7 +358,8 @@ public sealed class Driver(
                 // that outranks the observation two lines above. Read once, used for both.
                 new SessionEnded(
                     sessionId, quest.To, conclusion.State,
-                    ByPerson: _processes.WasStopRequested(sessionId), conclusion.Note));
+                    ByPerson: _processes.WasStopRequested(sessionId), conclusion.Note),
+                null);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -373,7 +383,8 @@ public sealed class Driver(
             return (
                 $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
                 true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true));
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true),
+                null);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
@@ -391,7 +402,8 @@ public sealed class Driver(
             return (
                 $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
                 true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message));
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message),
+                null);
         }
         finally
         {

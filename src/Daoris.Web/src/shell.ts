@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
+import type { Consideration } from './signals';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
@@ -44,6 +45,19 @@ export const useDriver = () => {
     enabled: isAvailable,
   });
 };
+
+/**
+ * Why each open quest is sitting, in the driver's own words, as of its last tick (D46 §3). Written
+ * by the tick (`ShellSignals`) and never fetched — the driver says it and nothing else knows — so
+ * this query only ever answers what the last tick put there. Empty in a browser, where no tick
+ * arrives, and empty before the first one.
+ */
+export const useConsidered = () => useQuery({
+  queryKey: keys.considered,
+  queryFn: () => [] as Consideration[],
+  staleTime: Infinity,
+  gcTime: Infinity,
+});
 
 /** One mutation shape for the two toggles: edit the file, and the loop looks now, not at the poll. */
 function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {

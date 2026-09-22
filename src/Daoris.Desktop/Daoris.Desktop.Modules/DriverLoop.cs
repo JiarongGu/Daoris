@@ -148,6 +148,7 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.
         var attention = new AttentionWatch();
+        string? lastConsidered = null;
 
         _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output, Harnesses, Usage);
         await _watch.RunAsync(
@@ -172,7 +173,15 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
                     }
                 }
 
-                if (report.PlannedAnything || report.Events.Count > 0)
+                // Forwarded when the tick has something to say: it did something, or what it says
+                // about the sitting quests CHANGED. The considerations are a standing answer the
+                // Overview renders — "why is this sitting" (D46 §3) — so a change has to reach the
+                // page, and a stable set must not: every tick the page receives refetches four
+                // queries, and a machine with one held quest would otherwise send one every poll.
+                var considered = Considerations.Signature(report.Considerations);
+                var changed = considered != lastConsidered;
+                lastConsidered = considered;
+                if (report.PlannedAnything || report.Events.Count > 0 || changed)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
                     {
