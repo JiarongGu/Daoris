@@ -44,6 +44,20 @@ export function scrimsOverTheStrip(files: [path: string, source: string][]): str
     (source.match(FULL_BLEED_SCRIM) ?? []).map((hit) => `${path} scrims the app strip: ${hit}`));
 }
 
+/**
+ * 🔴 **And neither does a PANEL.** The scrim learned to start below the strip; the drawer beside it
+ * did not, and stayed `inset-y-0` — so on the deployed application its header, close button
+ * included, sat exactly where the window paints its caption buttons. The × was under the ✕: not
+ * dimmed, not clickable, not visible. Seen in a screenshot of a quest drawer, on the second
+ * deployment; in a browser there is no caption to hide behind.
+ */
+const FULL_HEIGHT_PANEL = /fixed inset-y-0[^"'`]*bg-overlay|bg-overlay[^"'`]*fixed inset-y-0/g;
+
+export function panelsOverTheStrip(files: [path: string, source: string][]): string[] {
+  return files.flatMap(([path, source]) =>
+    (source.match(FULL_HEIGHT_PANEL) ?? []).map((hit) => `${path} raises a panel over the app strip: ${hit}`));
+}
+
 const sources = import.meta.glob('./**/*.tsx', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
@@ -93,5 +107,18 @@ describe('the scrim', () => {
 
   it('holds: no overlay covers the strip the window paints its buttons into', () => {
     expect(scrimsOverTheStrip(components)).toEqual([]);
+  });
+
+  it('catches a full-height panel — the shape the drawer had', () => {
+    expect(panelsOverTheStrip([['./ui.tsx',
+      '<Dialog.Content className="fixed inset-y-0 right-0 z-10 flex w-[min(32rem,100%)] flex-col bg-overlay">']]))
+      .toHaveLength(1);
+    // And what must keep passing: a panel that starts below the strip.
+    expect(panelsOverTheStrip([['./ui.tsx', 'className="fixed bottom-0 right-0 top-9 z-10 flex bg-overlay"']]))
+      .toEqual([]);
+  });
+
+  it('holds: no panel puts its own header under the caption buttons', () => {
+    expect(panelsOverTheStrip(components)).toEqual([]);
   });
 });

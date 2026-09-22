@@ -106,7 +106,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   draw — so a full-bleed scrim greyed the whole title bar and left the caption buttons as a bright
 >   block punched through it. Held by `tokens.test.ts` as a rule about every overlay, because the
 >   next overlay would have inherited `inset-0` without anyone thinking about it. It is also what VS
->   Code does: the title bar stays live while quick-open is up.
+>   Code does: the title bar stays live while quick-open is up. **And so does a panel** (2026-09-23):
+>   the drawer stayed full-height after the scrim learned this, and its close button sat under the
+>   window's — the same rule, now held for panels too.
 
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), `danger` reserved for decline confirmation.

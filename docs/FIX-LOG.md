@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The drawer's close button was under the window's own (2026-09-23)
+
+**Symptom.** In a quest drawer on the deployed application, the header's × was not there: a sliver
+of a button showed beneath the window's caption buttons, and the rest was hidden. ESC and the
+scrim still closed the drawer; the control the header carries for it did not exist to a person.
+
+**Root cause.** The app strip is the window's title bar (D56), and the three caption slots in it
+are painted by the **window**, over the page. The scrim learned this on 2026-09-22 (`top-9`, held
+by `tokens.test.ts`); the panel beside it did not, and stayed `fixed inset-y-0` — so its header sat
+in the strip, under the buttons the page does not draw. Invisible in every browser test, because
+a browser has no caption to hide behind; visible in one screenshot.
+
+**Fix.** The drawer starts at `top-9`, like the scrim (`ui.tsx`). The rule is now held for every
+panel, not only every scrim: `panelsOverTheStrip` in `tokens.test.ts`, seen red on the drawer's
+own class list.
+
+**Verify.** The tokens test, red then green. On the install: the quest drawer's header sits below
+the strip with its × visible and the caption buttons beside it, not over it.
+
+**Commit.** _pending_
+
 ## The Overview asked whether anything was sitting, and never said why (2026-09-23)
 
 **Symptom.** On the deployed application with one open quest held on the trust flag: the Overview's

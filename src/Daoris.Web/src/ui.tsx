@@ -430,7 +430,12 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           // and false about the page for as long as it had existed. Stated here, and asserted by
           // `ui.test.tsx`, because a claim nothing checks is one nobody notices going wrong.
           aria-modal="true"
-          className="fixed inset-y-0 right-0 z-10 flex w-[min(32rem,100%)] flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]"
+          // 🔴 `top-9`, like the scrim beside it — the strip is the window's title bar (D56), and
+          // the caption buttons the window paints there are painted OVER the page. A panel that
+          // started at the top put its own header, close button included, under them: on the
+          // deployed application the drawer's × sat exactly beneath the window's ✕, neither
+          // dimmed nor reachable. Held by `tokens.test.ts` for every panel, as the scrim is.
+          className="fixed bottom-0 right-0 top-9 z-10 flex w-[min(32rem,100%)] flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]"
         >
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">
             <div>
