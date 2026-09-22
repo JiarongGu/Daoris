@@ -30,7 +30,7 @@ public sealed record RemoteQuestAnswer(int Status, string Message, Quest? Quest)
 /// overriding.
 /// </summary>
 /// <remarks>
-/// <para>The file is `~/.daoris/remotes.json` — a MAP, `{ "aurora": { "url": "...", "key": "dk_..." } }` —
+/// <para>The file is the home's `remotes.json` (D63) — a MAP, `{ "aurora": { "url": "...", "key": "dk_..." } }` —
 /// because one shared deployment serves one workspace (D48 §5), and a machine may hold repositories
 /// from several circles. The workspace NAME keys the map; whether a given repository may feed at all
 /// stays its own manifest's `remote` declaration: the manifest says MAY, the machine says WHERE.</para>
@@ -49,9 +49,11 @@ public sealed record RemoteConfig(string Url, string Key)
 
     public const string PathVariable = "DAORIS_REMOTE_CONFIG";
 
-    /// <summary>The map's conventional home — what every surface reads and edits.</summary>
-    public static string DefaultPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remotes.json");
+    /// <summary>
+    /// The map's conventional home — under the Daoris home (D63), and null where there is none: a
+    /// machine with no home has no remotes, which is the documented default anyway.
+    /// </summary>
+    public static string? DefaultPath => DaorisHome.File("remotes.json");
 
     /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
     public static IReadOnlyDictionary<string, RemoteConfig> Load() => Load(
@@ -68,7 +70,7 @@ public sealed record RemoteConfig(string Url, string Key)
     /// a merge, which would let a real map leak into a process that thought it had named its only
     /// remote. <see cref="WorkspaceVariable"/> names which circle the pair serves.
     /// </remarks>
-    public static IReadOnlyDictionary<string, RemoteConfig> Load(Func<string, string?> environment, string path)
+    public static IReadOnlyDictionary<string, RemoteConfig> Load(Func<string, string?> environment, string? path)
     {
         var map = new Dictionary<string, RemoteConfig>(StringComparer.OrdinalIgnoreCase);
         var url = environment(UrlVariable);

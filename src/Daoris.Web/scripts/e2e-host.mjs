@@ -47,8 +47,10 @@ const host = spawn('dotnet', [dll], {
     // CI job, and an orphaned host on a shared port makes one gate's readiness probe answer against
     // the other's server — a failure that reads as flakiness rather than a port clash.
     ASPNETCORE_URLS: 'http://localhost:5196',
-    // Hermetic like the family rehearsal (its own prelude states the argument): a real
-    // ~/.daoris/remotes.json on the developer's machine must never leak a deployment into a gate run.
+    // Hermetic like the family rehearsal (its own prelude states the argument): the developer's real
+    // remotes map must never leak a deployment into a gate run — and the home itself points at
+    // scratch (D63), so nothing this host derives from it is the machine's either.
+    DAORIS_HOME: scratch,
     DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
   },
 });

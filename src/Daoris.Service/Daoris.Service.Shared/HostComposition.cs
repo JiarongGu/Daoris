@@ -38,9 +38,12 @@ internal static class HostComposition
                 new LyntaiOptions());
     }
 
-    /// <summary>Where the index lives by default — one file under the profile, shared by every session.</summary>
-    public static string DefaultDatabasePath() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "knowledge.db");
+    /// <summary>
+    /// Where the index lives by default — one file under the Daoris home (D63), shared by every
+    /// session on the machine — or null where there is no home, which a host refuses to start on
+    /// rather than writing an index somewhere nobody pointed it.
+    /// </summary>
+    public static string? DefaultDatabasePath() => DaorisHome.File("knowledge.db");
 
     /// <summary>
     /// The folder above the workspace holding this binary, when there is one — the shared walk-up from

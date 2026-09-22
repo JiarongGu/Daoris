@@ -4,8 +4,8 @@
  * source checkout with a build step (D43).
  *
  *   node tools/service-publish.mjs                # publish both hosts for this platform
- *   node tools/service-publish.mjs --install      # …and land them in ~/.daoris/bin, printing the
- *                                                 #    ready .mcp.json snippet with the root filled in
+ *   node tools/service-publish.mjs --install      # …and land them in $DAORIS_HOME/bin (D63), printing
+ *                                                 #    the ready .mcp.json snippet with the root filled in
  *   node tools/service-publish.mjs --rid linux-x64
  *
  * Self-contained single-file: no .NET install on the consuming machine, and reflection stays intact
@@ -17,7 +17,6 @@
  */
 import { execSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -63,7 +62,16 @@ if (argv.includes('--install')) {
     process.exit(1);
   }
 
-  const bin = join(homedir(), '.daoris', 'bin');
+  // Under the Daoris home, never under the profile (D63): the installed desktop sets `DAORIS_HOME`
+  // for the account, and a machine with no home has nowhere Daoris may put a binary.
+  const home = process.env.DAORIS_HOME?.trim();
+  if (!home) {
+    console.error('service-publish: --install needs DAORIS_HOME — the installed application\'s `data`');
+    console.error('  folder (the desktop sets it for your account on first start). Daoris keeps nothing');
+    console.error('  under the user profile, so there is no default to fall back to.');
+    process.exit(1);
+  }
+  const bin = join(home, 'bin');
   mkdirSync(bin, { recursive: true });
   cpSync(join(out, 'daoris-knowledge', exe('daoris-knowledge')), join(bin, exe('daoris-knowledge')));
   // 🔴 REPLACED, not merged into. A copy over the old directory leaves every previous hashed bundle
@@ -84,7 +92,10 @@ if (argv.includes('--install')) {
     mcpServers: {
       'daoris-knowledge': {
         command: join(bin, exe('daoris-knowledge')),
-        env: { DAORIS_KNOWLEDGE_ROOT: familyRoot },
+        // The home named explicitly, because a harness spawns its servers with whatever environment
+        // it was itself started with — and a terminal opened before the desktop set the variable
+        // has none. The snippet and the binary move together either way.
+        env: { DAORIS_HOME: home, DAORIS_KNOWLEDGE_ROOT: familyRoot },
       },
     },
   }, null, 2));

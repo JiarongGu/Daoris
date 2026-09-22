@@ -52,10 +52,10 @@ public static class KnowledgeConnector
     /// that has other work to do.
     /// </remarks>
     public static AcpMcpServer? Offer(
-        string? explicitPath, string userProfile, string baseDirectory,
+        string? explicitPath, string? home, string baseDirectory,
         IReadOnlyDictionary<string, string?>? environment = null)
     {
-        var located = Locate(explicitPath, userProfile, baseDirectory);
+        var located = Locate(explicitPath, home, baseDirectory);
         if (located is null) return null;
 
         var carried = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -71,20 +71,21 @@ public static class KnowledgeConnector
     }
 
     /// <summary>The first place this machine actually has the host, or null.</summary>
-    public static string? Locate(string? explicitPath, string userProfile, string baseDirectory) =>
-        Candidates(explicitPath, userProfile, baseDirectory).FirstOrDefault(File.Exists);
+    public static string? Locate(string? explicitPath, string? home, string baseDirectory) =>
+        Candidates(explicitPath, home, baseDirectory).FirstOrDefault(File.Exists);
 
     /// <summary>
     /// Where to look, in the order they deserve trust — the same order the HTTP host's locator uses,
     /// because a machine that installed one installed both.
     /// </summary>
+    /// <param name="home">The Daoris home (D63), whose `bin/` is the CLI's install landing place; null when the machine has none.</param>
     public static IReadOnlyList<string> Candidates(
-        string? explicitPath, string userProfile, string baseDirectory)
+        string? explicitPath, string? home, string baseDirectory)
     {
         var candidates = new List<string>();
         if (!string.IsNullOrWhiteSpace(explicitPath)) candidates.Add(explicitPath);
 
-        candidates.Add(Path.Combine(userProfile, ".daoris", "bin", ExecutableName));
+        if (home is not null) candidates.Add(Path.Combine(home, "bin", ExecutableName));
 
         var directory = new DirectoryInfo(baseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))

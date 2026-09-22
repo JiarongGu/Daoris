@@ -4,8 +4,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The shell's first question — where is the HTTP host — answered in an order a person can predict:
-/// what they said, then the installed home, then the workspace build. A wrong order here starts a
-/// stale binary while the person stares at a fresh one.
+/// what they said, then what the install carries, then the installed home under the Daoris home
+/// (D63), then the workspace build. A wrong order here starts a stale binary while the person stares
+/// at a fresh one.
 /// </summary>
 public sealed class ServiceHostLocatorTests : IDisposable
 {
@@ -20,64 +21,34 @@ public sealed class ServiceHostLocatorTests : IDisposable
     [Fact]
     public void What_the_person_said_comes_first()
     {
-        var candidates = ServiceHostLocator.Candidates("D:/somewhere/host.exe", "/profile", _root);
+        var candidates = ServiceHostLocator.Candidates("D:/somewhere/host.exe", "/home", _root);
 
         Assert.Equal("D:/somewhere/host.exe", candidates[0].Executable);
     }
 
     /// <summary>
-    /// Then what the install carries, then the machine's installed home — and the home runs beside
-    /// its bundle. Asserted as an ORDER, because the order is the contract: the second deployment
-    /// found the machine's older host outranking the one `desktop-publish --service` had just put
-    /// beside the shell, and the window showed the previous page with nothing failed.
+    /// Then what the install carries, then the installed home — `$DAORIS_HOME/bin`, the CLI's
+    /// `publish:service --install` landing place (D63) — and the home runs beside its bundle.
+    /// Asserted as an ORDER, because the order is the contract: the second deployment found the
+    /// machine's older host outranking the one `desktop-publish --service` had just put beside the
+    /// shell, and the window showed the previous page with nothing failed.
     /// </summary>
     [Fact]
     public void What_the_install_carries_comes_next_and_then_the_installed_home_beside_its_bundle()
     {
-        var profile = Path.Combine(_root, "profile");
-        var candidates = ServiceHostLocator.Candidates(null, profile, _root);
+        var home = Path.Combine(_root, "home");
+        var candidates = ServiceHostLocator.Candidates(null, home, _root);
 
-        var home = Path.Combine(profile, ".daoris", "bin");
+        var bin = Path.Combine(home, "bin");
         Assert.Equal(
             [
                 Path.Combine(_root, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
                 Path.Combine(_root, "app", "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
-                Path.Combine(home, ServiceHostLocator.ExecutableName),
-                Path.Combine(home, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
+                Path.Combine(bin, ServiceHostLocator.ExecutableName),
+                Path.Combine(bin, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
             ],
             candidates.Select(c => c.Executable).Take(4));
-        Assert.Equal(home, candidates[2].WorkingDirectory);
-    }
-
-    /// <summary>
-    /// 🔴 <b>A deployed shell runs the host it was published with, even when the machine has one of
-    /// its own.</b> The previous order ranked `~/.daoris/bin` above the install's copy so that a
-    /// service upgrade would reach every shell — and the second deployment showed the inverse:
-    /// `desktop-publish --service` put a NEWER host beside the shell, the shell spawned the OLDER
-    /// machine-wide one, and the window served a bundle that no longer existed on disk anywhere but
-    /// there. The install is self-sufficient (the deployment gate's own phase 3 says so), and what it
-    /// carries is what it runs; a shell published without `--service` still falls through to the
-    /// machine's home next.
-    /// </summary>
-    [Fact]
-    public void A_deployed_shell_prefers_the_host_published_with_it_over_the_machines_installed_home()
-    {
-        var profile = Path.Combine(_root, "profile");
-        var installedHome = Path.Combine(profile, ".daoris", "bin", "daoris-knowledge-http");
-        Directory.CreateDirectory(installedHome);
-        File.WriteAllText(Path.Combine(installedHome, ServiceHostLocator.ExecutableName), "");
-
-        var app = Path.Combine(_root, "install");
-        var beside = Path.Combine(app, "app", "daoris-knowledge-http");
-        Directory.CreateDirectory(beside);
-        var own = Path.Combine(beside, ServiceHostLocator.ExecutableName);
-        File.WriteAllText(own, "");
-
-        var found = ServiceHostLocator.Locate(null, profile, app);
-
-        Assert.NotNull(found);
-        Assert.Equal(own, found.Executable);
-        Assert.Equal(beside, found.WorkingDirectory);
+        Assert.Equal(bin, candidates[2].WorkingDirectory);
     }
 
     /// <summary>
@@ -95,19 +66,50 @@ public sealed class ServiceHostLocatorTests : IDisposable
     [Fact]
     public void The_installed_host_is_found_where_the_installer_puts_it()
     {
-        var profile = Path.Combine(_root, "profile");
-        var nested = Path.Combine(profile, ".daoris", "bin", "daoris-knowledge-http");
+        var home = Path.Combine(_root, "home");
+        var nested = Path.Combine(home, "bin", "daoris-knowledge-http");
         Directory.CreateDirectory(nested);
         var executable = Path.Combine(nested, ServiceHostLocator.ExecutableName);
         File.WriteAllText(executable, "");
 
-        var found = ServiceHostLocator.Locate(null, profile, _root);
+        var found = ServiceHostLocator.Locate(null, home, _root);
 
         Assert.NotNull(found);
         Assert.Equal(executable, found.Executable);
         // Beside its own bundle, for the reason the dev candidate runs from its project directory:
         // a host started elsewhere answers every API call while serving no page.
         Assert.Equal(nested, found.WorkingDirectory);
+    }
+
+    /// <summary>
+    /// 🔴 <b>A deployed shell runs the host it was published with, even when the machine has one of
+    /// its own.</b> The previous order ranked the installed home above the install's copy so that a
+    /// service upgrade would reach every shell — and the second deployment showed the inverse:
+    /// `desktop-publish --service` put a NEWER host beside the shell, the shell spawned the OLDER
+    /// machine-wide one, and the window served a bundle that no longer existed on disk anywhere but
+    /// there. The install is self-sufficient (the deployment gate's own phase 3 says so), and what it
+    /// carries is what it runs; a shell published without `--service` still falls through to the
+    /// machine's home next.
+    /// </summary>
+    [Fact]
+    public void A_deployed_shell_prefers_the_host_published_with_it_over_the_machines_installed_home()
+    {
+        var home = Path.Combine(_root, "home");
+        var installedHome = Path.Combine(home, "bin", "daoris-knowledge-http");
+        Directory.CreateDirectory(installedHome);
+        File.WriteAllText(Path.Combine(installedHome, ServiceHostLocator.ExecutableName), "");
+
+        var app = Path.Combine(_root, "install");
+        var beside = Path.Combine(app, "app", "daoris-knowledge-http");
+        Directory.CreateDirectory(beside);
+        var own = Path.Combine(beside, ServiceHostLocator.ExecutableName);
+        File.WriteAllText(own, "");
+
+        var found = ServiceHostLocator.Locate(null, home, app);
+
+        Assert.NotNull(found);
+        Assert.Equal(own, found.Executable);
+        Assert.Equal(beside, found.WorkingDirectory);
     }
 
     /// <summary>
@@ -136,8 +138,9 @@ public sealed class ServiceHostLocatorTests : IDisposable
         var executable = Path.Combine(beside, ServiceHostLocator.ExecutableName);
         File.WriteAllText(executable, "");
 
-        // An empty profile: nothing installed machine-wide, which is the deployed case.
-        var found = ServiceHostLocator.Locate(null, Path.Combine(_root, "empty-profile"), app);
+        // No home at all: nothing installed machine-wide, which is the deployed case before anything
+        // is set — and a machine with no home has no installed home to look in (D63).
+        var found = ServiceHostLocator.Locate(null, home: null, app);
 
         Assert.NotNull(found);
         Assert.Equal(executable, found.Executable);
@@ -151,14 +154,14 @@ public sealed class ServiceHostLocatorTests : IDisposable
     [Fact]
     public void A_hand_placed_flat_binary_still_comes_first()
     {
-        var profile = Path.Combine(_root, "profile");
-        var bin = Path.Combine(profile, ".daoris", "bin");
+        var home = Path.Combine(_root, "home");
+        var bin = Path.Combine(home, "bin");
         Directory.CreateDirectory(Path.Combine(bin, "daoris-knowledge-http"));
         File.WriteAllText(Path.Combine(bin, "daoris-knowledge-http", ServiceHostLocator.ExecutableName), "");
         var flat = Path.Combine(bin, ServiceHostLocator.ExecutableName);
         File.WriteAllText(flat, "");
 
-        Assert.Equal(flat, ServiceHostLocator.Locate(null, profile, _root)!.Executable);
+        Assert.Equal(flat, ServiceHostLocator.Locate(null, home, _root)!.Executable);
     }
 
     /// <summary>
@@ -174,7 +177,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
         Directory.CreateDirectory(deep);
         File.WriteAllText(Path.Combine(workspace, "daoris.json"), "{}");
 
-        var candidates = ServiceHostLocator.Candidates(null, "/profile", deep);
+        var candidates = ServiceHostLocator.Candidates(null, home: null, deep);
         var project = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Http");
 
         var dev = candidates.Single(c =>
@@ -188,7 +191,7 @@ public sealed class ServiceHostLocatorTests : IDisposable
         var lonely = Path.Combine(_root, "lonely");
         Directory.CreateDirectory(lonely);
 
-        var candidates = ServiceHostLocator.Candidates(null, "/profile", lonely);
+        var candidates = ServiceHostLocator.Candidates(null, "/home", lonely);
 
         // 🔴 Asserted by what the candidates ARE, not by counting them. The assertion here used to be
         // `Single`, which said "one" while meaning "nothing from a workspace" — so every later
@@ -198,12 +201,25 @@ public sealed class ServiceHostLocatorTests : IDisposable
         Assert.NotEmpty(candidates);
     }
 
+    /// <summary>No home and no workspace: the two places an installed or built host could be, both absent — still a list, still no crash.</summary>
+    [Fact]
+    public void No_home_means_no_installed_candidates_either()
+    {
+        var lonely = Path.Combine(_root, "lonely");
+        Directory.CreateDirectory(lonely);
+
+        var candidates = ServiceHostLocator.Candidates(null, home: null, lonely);
+
+        Assert.DoesNotContain(candidates, c => c.Executable.Contains("bin"));
+        Assert.NotEmpty(candidates);
+    }
+
     [Fact]
     public void Locate_answers_null_rather_than_throwing_when_nothing_exists()
     {
         var lonely = Path.Combine(_root, "nothing");
         Directory.CreateDirectory(lonely);
 
-        Assert.Null(ServiceHostLocator.Locate(null, Path.Combine(_root, "no-profile"), lonely));
+        Assert.Null(ServiceHostLocator.Locate(null, Path.Combine(_root, "no-home"), lonely));
     }
 }

@@ -1,20 +1,19 @@
 // `daoris driver` — this machine's standing driving choices, from a terminal (D50).
 //
-// The file is `~/.daoris/driver.json` and the driver re-reads it every tick (D46 §6), which is what
+// The file is the home's `driver.json` (`$DAORIS_HOME`, D63) and the driver re-reads it every tick (D46 §6), which is what
 // makes management parity cheap here: the desktop's checkboxes and these verbs edit the same file,
 // and hand-editing keeps working because the FILE — not the surface — is the truth. A headless
 // machine running `daoris-driver` has no checkbox and still has to be told what it may drive.
 //
 // It is a MANAGEMENT command and it is entirely OFFLINE: it reads and writes one file under the
-// profile and talks to nothing. It does not even spawn, unlike its sibling `toolchain.ts`.
+// home and talks to nothing. It does not even spawn, unlike its sibling `toolchain.ts`.
 //
 // EVERY EDIT PRESERVES WHAT IT DID NOT TOUCH. The driver writes fields this build has no verb for
 // (`timeoutMinutes`, `pollSeconds`, the per-adapter `commands` map), and an editor that rewrote the
 // file from its own idea of the shape would silently delete the command that makes the stub run.
 
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
 import { writeTextAtomic } from './fsx.ts';
 import { TOOLCHAINS } from './toolchain.ts';
@@ -25,7 +24,7 @@ export const PATH_VARIABLE = 'DAORIS_DRIVER_CONFIG';
 
 /** The file's path: the override, or the conventional home beside the remotes map. */
 export function driverConfigPath(env: Record<string, string | undefined> = process.env): string {
-  return env[PATH_VARIABLE] ?? join(homedir(), '.daoris', 'driver.json');
+  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'driver.json');
 }
 
 /** The choices, plus everything else the file held — this is an editor, not the file's owner. */

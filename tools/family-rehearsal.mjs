@@ -41,15 +41,21 @@ const AURORA_BASE = 'http://localhost:5200';
 const EXAMPLES = ['engine', 'game'];
 
 // Hermetic by construction: every host and driver in this rehearsal points its remote-config lookup at
-// a file that does not exist, so a real ~/.daoris/remotes.json on the developer's machine can never
-// leak a real deployment into a gate run. The remote phases then opt in per process — by env pair, or
-// by pointing the lookup at a map this run wrote itself.
+// a file that does not exist, so the developer's real remotes map can never leak a real deployment
+// into a gate run. The remote phases then opt in per process — by env pair, or by pointing the lookup
+// at a map this run wrote itself.
 const NO_REMOTE = { DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json') };
 
 // The same guard for the toolchain (D49 §4). Profiles live BESIDE this file, so pointing it into
-// scratch keeps the developer's real ~/.daoris/harnesses.json — and their real credential
-// directories — entirely out of a gate run. The toolchain phase opts into a map it writes itself.
+// scratch keeps the developer's real harness wiring — and their real credential directories —
+// entirely out of a gate run. The toolchain phase opts into a map it writes itself.
 const NO_HARNESS = { DAORIS_HARNESS_CONFIG: join(scratch, 'no-harness.json') };
+
+// The home itself (D63), for every child of this run at once: a CLI or driver that resolves a default
+// path resolves it under `DAORIS_HOME`, and with none set it REFUSES — there is no default under the
+// profile any more, and a gate must never make one there. Set on the process because every child
+// inherits it; the per-file guards above still outrank it where a phase wants a file of its own.
+process.env.DAORIS_HOME = join(scratch, 'home');
 
 openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
 const { totals, check, section } = makeChecker();

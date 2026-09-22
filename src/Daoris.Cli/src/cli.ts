@@ -59,7 +59,7 @@ const USAGE = `daoris <command> [options]
                                                    Daoris owns, and run it
                          unpin <harness> [--workspace W]
                                                    back to whatever is on PATH
-  driver [verb]        what this machine drives (~/.daoris/driver.json):
+  driver [verb]        what this machine drives ($DAORIS_HOME/driver.json):
                          list                      adapter, cap, what is opted in
                          drive|undrive <repo>      opt a repository in, or out
                          hold|resume <repo>        pause one, or release it
@@ -72,8 +72,9 @@ const USAGE = `daoris <command> [options]
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them. remote, harness and driver are management
-  too and reach no network — they edit files under ~/.daoris, and harness spawns
-  each harness's own tooling. Every doctrine command is offline.
+  too and reach no network — they edit files under the Daoris home ($DAORIS_HOME,
+  the installed application's own data folder; nothing lives under your profile),
+  and harness spawns each harness's own tooling. Every doctrine command is offline.
 
 Options:
   --dry-run            print the plan; write nothing

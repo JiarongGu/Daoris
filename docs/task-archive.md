@@ -3828,3 +3828,40 @@ that drops it replaces every such message with one fixed sentence.
 then destroyed by a console or a redirected stream — are real and cost this repository a defect the
 same week, and they already live in `windows-machine`. The document names the concern and points away
 from itself. Two copies of a rule become two different rules.
+
+## DEPLOY4 — the application folder is the home (2026-09-23)
+
+- [x] **DEPLOY4 — Daoris writes in two places, and one of them is per-install.** Everything the tool
+  owns is under `~/.daoris` (registry, `driver.json`, `harnesses.json`, the index, sessions, `bin/`,
+  `toolchain/`, and profiles when they exist) — **except** the desktop's own `data/` beside the
+  install, which holds the WebView2 profile and the window's geometry. Two homes for one application.
+  🔴 **`~/.daoris` being machine-wide is load-bearing, not an accident**: it is what makes the CLI and
+  the desktop two doors onto one machine (D50), and moving it inside an install would give two
+  installs two registries and leave `daoris` on a terminal unable to see either. Owner's call;
+  measure before moving anything.
+
+✅ **done 2026-09-23 — decided by the owner, the other way from the recommendation.** The item was
+measured on 2026-09-22 (472 MB under the profile against 21 MB and five integers under the install)
+and the recommendation was *leave it*. The owner read the profile directory and said what the
+measurement had not asked: *"we should manage files within the app folder instead put it in
+shared"* — and, to the pointer file proposed so a terminal could still find the home, *"you should
+not keep dump thing into user folder"*. **D63** carries the decision and the three shapes rejected.
+
+**What landed.** One seam, `DAORIS_HOME`, held by three twins sharing no code (the CLI's `home.ts`,
+the service's and the driver's `DaorisHome`), and every default in every artefact derived from it —
+the driver's config, the harness wiring and profiles, the remotes map, the index, session records,
+usage, trees, the installed service binaries. With no home there is **no default**: the management
+class and both hosts refuse in one sentence naming the variable, and doctrine commands never needed a
+home. The installed desktop establishes the home first thing — `data/` beside the executable, set on
+its own process before any module captures a path, and once on the account's environment when it has
+none — and a `~/.daoris` from before the decision moves in on the first start with an empty home,
+`bin/` excepted, one entry at a time so a file something still holds open costs that file and not
+the start. The shell says what it did once, on the channel a person acts on. The publish scripts,
+the testbed's connector and the `.mcp.json` snippet follow the home; the deployment gate plants its
+own decoy under the scratch home's `bin/`, so the locator's order is asserted on every machine rather
+than only on one that happened to have run `publish:service --install`.
+
+**The load-bearing sentence in the original item was wrong about what carried the load.** Two doors
+meet at a *location both can find*, and a variable is one: the desktop names it, the terminal reads
+it. What was being defended was the profile directory, and the profile directory was only ever the
+place the variable had not been invented yet.

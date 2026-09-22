@@ -18,7 +18,7 @@ import {
  * The machine's own settings (D50): what is true about THIS computer rather than about the family.
  *
  * Today that is the wiring — which deployment serves each workspace here (D48 §5) — over
- * `~/.daoris/remotes.json`, the same file `daoris remote` edits and the sync loop reads. The file is
+ * the home's `remotes.json`, the same file `daoris remote` edits and the sync loop reads. The file is
  * the truth and this is an editor over it, exactly as the driver's controls are editors over
  * `driver.json`: hand-editing keeps working, and neither surface is the only way to say anything.
  *
@@ -75,6 +75,23 @@ export function SettingsView({ notify }: { notify: Notify }) {
   return (
     <section>
       <PageHeader title={t('settings.title')} description={t('settings.description')} />
+
+      {/* Where this machine's Daoris lives (D63) — first, because every path on this page is under
+          it, and a person asking "where did that file go" is asking this. The notice is the shell's
+          own sentence about what the start did (state moved in, the account's variable set), carried
+          in the state rather than only raised: a toast raised before the page subscribed reached
+          nobody, which is exactly what happened the first time. */}
+      {driver.data?.home && (
+        <Card>
+          <p className="break-all font-mono text-small text-ink">{driver.data.home}</p>
+          <Prose className="mt-1.5 text-small">{t('settings.home')}</Prose>
+          {driver.data.homeNotice && (
+            <p className="mt-2.5 max-w-prose border-l-[3px] border-accent bg-raised px-3.5 py-2 text-body text-ink-soft">
+              {driver.data.homeNotice}
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* Off in one click, which is what design §4 asks for — and the reason it sits above the
           wiring is that it is the setting a person is most likely to have come here to change. */}

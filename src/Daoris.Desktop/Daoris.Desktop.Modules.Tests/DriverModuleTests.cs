@@ -30,6 +30,27 @@ public sealed class DriverModuleTests : Bridge
         // The path is answered so the page can tell a person which file its checkboxes edit.
         Assert.Equal(DriverConfigPath, state.GetProperty("configPath").GetString());
         Assert.Equal("claude-code", state.GetProperty("adapter").GetString());
+        // And the home (D63), so the page can say where this machine's Daoris lives — with nothing
+        // to announce on a start that established nothing.
+        Assert.Equal(Home, state.GetProperty("home").GetString());
+        Assert.Equal(JsonValueKind.Null, state.GetProperty("homeNotice").ValueKind);
+    }
+
+    /// <summary>
+    /// What establishing the home did rides the STATE, not only the one-time event: the page
+    /// subscribes after the host answers, and a sentence raised before that reached nobody.
+    /// </summary>
+    [Fact]
+    public async Task What_establishing_the_home_did_is_in_the_state_for_the_page_to_show()
+    {
+        var established = new HomeEstablished(
+            Home, SetForUser: true, Moved: ["driver.json"], Failed: [],
+            Notice: $"Daoris home: {Home} — moved in: driver.json.");
+        var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", established);
+
+        var state = await AnswerAsync(new DriverModule(Bus, loop), "STATE");
+
+        Assert.Equal(established.Notice, state.GetProperty("homeNotice").GetString());
     }
 
     /// <summary>

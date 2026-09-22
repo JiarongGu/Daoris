@@ -245,7 +245,9 @@ test('a redacted key shows the audit prefix and nothing else', () => {
 });
 
 test('the map has a conventional home, overridable for a test or a second profile', () => {
-  assert.match(remotesPath({}), /[\\/]\.daoris[\\/]remotes\.json$/);
+  assert.match(remotesPath({ DAORIS_HOME: '/x/data' }) ?? '', /[\\/]data[\\/]remotes\.json$/);
+  // 🔴 No default under the user profile (D63): no home is no map, which is the silent default (D21).
+  assert.equal(remotesPath({}), null);
   assert.equal(remotesPath({ DAORIS_REMOTE_CONFIG: '/tmp/x.json' }), '/tmp/x.json');
 });
 

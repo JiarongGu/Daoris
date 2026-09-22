@@ -42,7 +42,7 @@ const environment = () => scratchEnvironment({
 
 /**
  * The pair-check the tool's own comment promises. Every source that builds a path under the person's
- * `~/.daoris` offers an environment override; a scratch run must either point that override somewhere
+ * Daoris home offers an environment override; a scratch run must either point that override somewhere
  * of its own or unset it. A NEW machine-local file is the case this exists for: it fails here, rather
  * than in somebody's real driver config three weeks later.
  */
@@ -58,14 +58,17 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
     for (const file of listFiles(dir)) {
       if (!file.endsWith('.cs') || file.startsWith('bin/') || file.startsWith('obj/')) continue;
       const text = readText(join(dir, file));
-      // Only files that actually resolve a path under the profile's `.daoris`. Everything else names
-      // variables about transport or identity, which a scratch machine has no opinion about.
-      if (!text.includes('".daoris"')) continue;
+      // Only files that actually resolve a path under the Daoris home (D63) — the ones that touch
+      // `DaorisHome`. Everything else names variables about transport or identity, which a scratch
+      // machine has no opinion about. (Before D63 the tell was a `".daoris"` literal; there are none.)
+      if (!text.includes('DaorisHome.') && !text.includes('class DaorisHome')) continue;
       for (const [name] of text.matchAll(/DAORIS_[A-Z_]+/g)) found.add(name);
     }
   }
 
   assert.ok(found.size >= 4, `expected to find the machine-local variables, found ${[...found]}`);
+  // The home itself is the one that matters most: every other default derives from it.
+  assert.ok(found.has('DAORIS_HOME') && REDIRECTED.includes('DAORIS_HOME'));
 
   // Both host paths are pinned rather than redirected: their locators prefer an INSTALLED binary, so
   // an unnamed host means a scratch run silently uses the real machine's (ACP4 added the second).

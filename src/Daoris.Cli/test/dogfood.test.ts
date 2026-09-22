@@ -293,7 +293,7 @@ function reachableFrom(entry: string): Set<string> {
 }
 
 /**
- * Most of the management class needs no network at all (D50): `remote` edits `~/.daoris/remotes.json`
+ * Most of the management class needs no network at all (D50): `remote` edits the home's `remotes.json`
  * and `status --machine` reads it. The usage text says so out loud, and prose is the one surface with
  * no compiler — so the claim is held here.
  *

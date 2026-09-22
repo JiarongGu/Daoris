@@ -10,7 +10,12 @@ namespace Daoris.Desktop;
 /// <see cref="DriverWatch"/>'s; this class owns only what the shell adds — bringing the host up, and
 /// turning reports into event-bus notifications.
 /// </summary>
-public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, string serviceUrl) : IDisposable
+/// <param name="home">
+/// What establishing the install's home did (D63), when this shell is an install and something is
+/// worth saying — state moved in, or the variable set for the person's account. Null otherwise.
+/// </param>
+public sealed class DriverLoop(
+    IEventBus eventBus, HostSupervisor supervisor, string serviceUrl, HomeEstablished? home = null) : IDisposable
 {
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
@@ -32,8 +37,8 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
 
     /// <summary>
     /// What sessions consumed (TOOL3/D57 §4) — machine-local by the same rule as the console and the
-    /// profile name it records, and reachable only over this bridge. Its home is the machine's own
-    /// `.daoris`, which is the directory `driver.json` sits in.
+    /// profile name it records, and reachable only over this bridge. Its home is the Daoris home,
+    /// which is the directory `driver.json` sits in.
     /// </summary>
     public SessionUsage Usage { get; } = new(
         Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!);
@@ -60,6 +65,17 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
 
     /// <summary>Where this loop reads the person's choices — what the control surface edits.</summary>
     public string ConfigPath { get; } = DriverConfig.ResolvePath();
+
+    /// <summary>The Daoris home (D63): the directory every machine-local file lives in.</summary>
+    public string Home => Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
+
+    /// <summary>
+    /// What establishing the home did on this start, when it is worth a person's attention — state
+    /// moved in from a profile directory, or the account's environment gaining the variable. Carried
+    /// in the state as well as raised once, because the page subscribes only after the host answers,
+    /// and a one-time sentence raised before that is a sentence nobody read.
+    /// </summary>
+    public string? HomeNotice => home is { Worth: true } ? home.Notice : null;
 
     /// <summary>
     /// This machine's harnesses and the accounts they run as (D49 §4) — the roster surface reads it,
@@ -120,7 +136,16 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
                 .ConfigureAwait(false);
         }
 
-        var home = Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
+        // The home's own one-time news (D63) on the same channel, for the same reason: a `~/.daoris`
+        // that just moved into the install, or a variable just set for the account, is something the
+        // person acts on once — a terminal opened before it was set does not see it.
+        if (home is { Worth: true })
+        {
+            await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = home.Notice })
+                .ConfigureAwait(false);
+        }
+
+        var homeDirectory = Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         using var service = new ServiceClient(serviceUrl, key);
 
@@ -142,7 +167,7 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         // (so one lock and one "stop" reach both kinds), the same console buffer.
         // …and the same harness roster, so one probe serves both doors and a login the person just
         // did is seen by whichever of them asks next.
-        Chat = new ChatRunner(service, AdapterSet.Built(), home, Processes, Output, Harnesses);
+        Chat = new ChatRunner(service, AdapterSet.Built(), homeDirectory, Processes, Output, Harnesses);
         Service = service;
 
         // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
@@ -150,7 +175,7 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
         var attention = new AttentionWatch();
         string? lastConsidered = null;
 
-        _watch = new DriverWatch(service, ConfigPath, home, Processes, sync, Output, Harnesses, Usage);
+        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage);
         await _watch.RunAsync(
             async (report, ticked) =>
             {

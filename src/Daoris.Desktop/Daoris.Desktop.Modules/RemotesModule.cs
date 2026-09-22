@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The machine's wiring, as a surface (D50, workspace design §2b): which deployment serves each
-/// workspace on this machine. The page asks, this edits `~/.daoris/remotes.json` — the same file
+/// workspace on this machine. The page asks, this edits the home's `remotes.json` — the same file
 /// `daoris remote` edits and the same file the sync loop reads.
 /// </summary>
 /// <remarks>

@@ -5,9 +5,11 @@
 // and under which credential profile does a session spawn.
 //
 // Management parity, in the shape the driver proved: THE FILES ARE THE API and this is an editor over
-// them. `~/.daoris/harnesses.json` holds which profile each harness runs as; `~/.daoris/harnesses/
-// <harness>/<profile>/` IS the profile — a directory, so nothing has to agree with a register about
-// which profiles exist. The desktop's roster edits the same file and the same directories.
+// them. The home's `harnesses.json` holds which profile each harness runs as; `harnesses/<harness>/
+// <profile>/` beside it IS the profile — a directory, so nothing has to agree with a register about
+// which profiles exist. The desktop's roster edits the same file and the same directories. The home
+// is `$DAORIS_HOME` (D63) — the installed application's own `data/` folder — and with none set this
+// command refuses rather than writing under the user profile.
 //
 // It is the CLI's twin of the driver's `Harnesses.cs`. Two copies exist because the two artefacts
 // share no code — the FILE AND THE LAYOUT are the contract — so these rules must hold in both, and
@@ -25,7 +27,7 @@
 // harness's own flow INTO a profile directory, and whatever that obtains the harness stores itself.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { requireHomeFile } from './home.ts';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { flagValue } from './args.ts';
@@ -39,10 +41,10 @@ export const PATH_VARIABLE = 'DAORIS_HARNESS_CONFIG';
 
 /** Where the wiring lives; the profile tree sits beside it. */
 export function harnessesPath(env: Record<string, string | undefined> = process.env): string {
-  return env[PATH_VARIABLE] ?? join(homedir(), '.daoris', 'harnesses.json');
+  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'harnesses.json');
 }
 
-/** The directory profiles live under — `~/.daoris` on an ordinary machine. */
+/** The directory profiles live under — the Daoris home (D63). */
 export function harnessHome(path = harnessesPath()): string {
   return join(path, '..');
 }

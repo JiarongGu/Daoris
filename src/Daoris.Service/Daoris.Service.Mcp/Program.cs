@@ -20,9 +20,11 @@ using ModelContextProtocol.Server;
 // Every session in every repository on this machine spawns over the same file, which is how a quest
 // published in one repository's session is waiting when another repository's session starts.
 //
+//   DAORIS_HOME            where every machine-local file lives (D63) — the installed desktop's own
+//                          `data/`, set for the account; with neither it nor the DB named, exit 2
 //   DAORIS_KNOWLEDGE_ROOT  where the repositories are      (default: the parent of this workspace)
-//   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: ~/.daoris/knowledge.db)
-//   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: ~/.daoris/remotes.json —
+//   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: $DAORIS_HOME/knowledge.db)
+//   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: $DAORIS_HOME/remotes.json —
 //                          D48 §5; DAORIS_REMOTE_URL/_KEY/_WORKSPACE override it whole). Read only to
 //                          relay verbs on remote-homed quests; a machine with no remote — the
 //                          default — never opens a socket at all.
@@ -53,8 +55,18 @@ builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogL
 // logs bury the one line that matters when something is actually wrong.
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
-var serviceOptions = ServiceOptions.FromEnvironment(
-    DefaultRepositoryRoot(), HostComposition.DefaultDatabasePath());
+// The index lives under the Daoris home (D63) unless named directly. No home and no name is a
+// refusal on stderr, not a default: an index written somewhere nobody pointed this host is the
+// thing removed.
+var database = Environment.GetEnvironmentVariable(ServiceOptions.DatabaseVariable)
+    ?? HostComposition.DefaultDatabasePath();
+if (database is null)
+{
+    Console.Error.WriteLine(DaorisHome.Sentence);
+    return 2;
+}
+
+var serviceOptions = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), database);
 
 // The provider is built HOST-SIDE, not in Core: the domain holds `IVectorProvider` and nothing that
 // implements one, which is what keeps a model out of it (D22, D24). Everything downstream of that
@@ -87,7 +99,7 @@ builder.Services
 await builder.Build().RunAsync().ConfigureAwait(false);
 await composed.DisposeAsync().ConfigureAwait(false);
 
-return;
+return 0;
 
 // The folder holding the repositories — the shared walk-up from the binary (HostComposition), with
 // THIS host's fallback: a published binary has no workspace above it, and the working directory here

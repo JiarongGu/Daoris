@@ -5,13 +5,15 @@ using Daoris.Driver;
 // shell embeds. It watches a service, starts sessions where the person opted in, and prints every
 // verdict — a quest that is sitting must always say why.
 //
+//   DAORIS_HOME            where every machine-local file lives (D63) — required unless each file's
+//                          own variable names it; the installed desktop sets it for the account
 //   DAORIS_SERVICE_URL     where the service is                (required — the driver is its client)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set     (absent: local trust, D21)
-//   DAORIS_DRIVER_CONFIG   the person's standing choices       (default: ~/.daoris/driver.json)
-//   DAORIS_REMOTE_URL      one workspace's remote, with its key (or ~/.daoris/remotes.json — D48 §5;
+//   DAORIS_DRIVER_CONFIG   the person's standing choices       (default: $DAORIS_HOME/driver.json)
+//   DAORIS_REMOTE_URL      one workspace's remote, with its key (or $DAORIS_HOME/remotes.json — D48 §5;
 //   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole,
 //   DAORIS_REMOTE_WORKSPACE  for the workspace named here — absent: `default`)
-//   DAORIS_REMOTE_CONFIG   where the map is                    (default: ~/.daoris/remotes.json)
+//   DAORIS_REMOTE_CONFIG   where the map is                    (default: $DAORIS_HOME/remotes.json)
 //
 //   --once        one tick, then exit
 //   --until-idle  tick until nothing starts, then exit — the deterministic mode a gate drives
@@ -62,7 +64,7 @@ try
 
     using var service = ServiceClient.FromEnvironment();
 
-    // The machine's remotes, one per workspace that has one (~/.daoris/remotes.json, environment
+    // The machine's remotes, one per workspace that has one ($DAORIS_HOME/remotes.json, environment
     // overriding — D47 §9, D48 §5): the syncs ride the tick, so a headless driver on a server machine
     // feeds and mirrors exactly as the desktop does. Absence is silent and local.
     using var sync = RemoteSyncSet.FromEnvironment(

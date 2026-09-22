@@ -773,6 +773,10 @@ public sealed class DriverModule : ModuleBase
         return new
         {
             _loop.ConfigPath,
+            // Where this machine's Daoris lives (D63), and what establishing it did this start — a
+            // machine-local path, answered only over this bridge, like every path here.
+            _loop.Home,
+            _loop.HomeNotice,
             config.Drivable,
             config.Holds,
             config.Trees,

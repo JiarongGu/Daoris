@@ -34,7 +34,9 @@ function run(argv: string[], path: string): { code: number; out: string } {
 
 test('the path is the override, or the conventional home beside the other wiring files', () => {
   assert.equal(driverConfigPath({ DAORIS_DRIVER_CONFIG: '/x/d.json' }), '/x/d.json');
-  assert.match(driverConfigPath({}), /[\\/]\.daoris[\\/]driver\.json$/);
+  assert.match(driverConfigPath({ DAORIS_HOME: '/x/data' }), /[\\/]data[\\/]driver\.json$/);
+  // 🔴 No default under the user profile (D63): a machine nobody pointed is refused, not written to.
+  assert.throws(() => driverConfigPath({}), /DAORIS_HOME/);
 });
 
 test('a machine that opted nothing in says so, and says how to opt something in', () => {

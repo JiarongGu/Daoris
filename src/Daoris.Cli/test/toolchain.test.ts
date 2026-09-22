@@ -22,7 +22,7 @@ import { captureError } from './_fixture.ts';
  * artefacts share no code. The three rules below are asserted in both, and they move together.
  */
 
-/** Everything runs against a fixture, never the developer's real `~/.daoris`. */
+/** Everything runs against a fixture, never the developer's real home. */
 function at(fx: { root: string }): string {
   return join(fx.root, 'harnesses.json');
 }
@@ -42,9 +42,11 @@ function run(argv: string[], path: string): { code: number; out: string } {
   }
 }
 
-test('the path is the override, or the conventional home beside the other wiring files', () => {
+test('the path is the override, or the file under the Daoris home, or a refusal naming what to set', () => {
   assert.equal(harnessesPath({ DAORIS_HARNESS_CONFIG: '/x/h.json' }), '/x/h.json');
-  assert.match(harnessesPath({}), /[\\/]\.daoris[\\/]harnesses\.json$/);
+  assert.equal(harnessesPath({ DAORIS_HOME: '/x/data' }), join('/x/data', 'harnesses.json'));
+  // 🔴 No default under the user profile (D63): a machine nobody pointed is refused, not written to.
+  assert.throws(() => harnessesPath({}), /DAORIS_HOME/);
 });
 
 // ——— Twin rule 1: a profile is a directory, and the directories that exist are the profiles.

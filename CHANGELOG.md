@@ -279,6 +279,16 @@ The first version: doctrine that installs, is checked, and flows back.
   than double-starting), carries the platform in its window — the same bytes a browser gets — and runs
   the driver loop in-process, re-reading the person's standing choices every tick: drivable and hold
   per repository, stop a running session, all through the platform's own session-control surface.
+- **The application's own folder is the Daoris home, and nothing lives under the user profile** (D63).
+  Every machine-local file Daoris owns — the registry, `driver.json`, `harnesses.json` and the
+  credential profiles beside it, the remotes map, the index, session records, the installed service
+  binaries — lives under `DAORIS_HOME`, and every default in the CLI, the hosts and the driver derives
+  from that one variable. The installed desktop sets it to its own `data/` for itself and every
+  session it spawns, and once for the account when it has none, so a terminal's `daoris` meets the
+  same machine; a `~/.daoris` from before moves in on the first start and the shell says so once.
+  With no home set the management commands and the hosts refuse in a sentence naming it, rather than
+  writing somewhere nobody pointed them. `publish:service --install` lands the hosts under the home's
+  `bin/` and prints the `.mcp.json` snippet with the home filled in.
 
 ### The remote
 

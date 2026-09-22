@@ -22,7 +22,7 @@ public sealed class QuestRelayTests : IAsyncLifetime
 
     /// <summary>
     /// The machine's remotes, one per workspace (D48 §5) — the map a real deployment builds from
-    /// `~/.daoris/remotes.json`, with fakes in place of HTTP clients.
+    /// the home's `remotes.json`, with fakes in place of HTTP clients.
     /// </summary>
     private sealed class FakeRoutes(params (string Workspace, IRemoteQuestClient Client)[] entries)
         : IRemoteQuestRoutes

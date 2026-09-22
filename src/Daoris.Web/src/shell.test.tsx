@@ -321,6 +321,36 @@ describe('the machine settings surface', () => {
     expect(serviceCalls()).toEqual([]);
   });
 
+  /**
+   * Where this machine's Daoris lives (D63), and what the start did about it. The notice rides the
+   * STATE rather than only the one-time event, because the page subscribes after the host answers
+   * and a toast raised before that reached nobody — measured on the first migrated start.
+   */
+  it('shows where this machine\'s Daoris lives, and what establishing it did', async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
+      ? {
+        ...DRIVER_STATE,
+        home: 'D:/somewhere/Daoris/data',
+        homeNotice: 'Daoris home: D:/somewhere/Daoris/data — moved in from D:/somewhere/.daoris: driver.json.',
+      }
+      : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
+    expect(screen.getByText(/moved in from/)).toBeTruthy();
+    // Every path on the page is under it — the wiring file included.
+    expect(screen.getByText('C:/somewhere/.daoris/remotes.json')).toBeTruthy();
+  });
+
+  it('says nothing about the home on a shell that has never heard of one', async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    show(<SettingsView notify={() => {}} />);
+    await screen.findByText('aurora');
+
+    // The header still names the home in a sentence; what is absent is the card that would show one.
+    expect(screen.queryByText(/every file on this page lives under it/)).toBeNull();
+  });
+
   it('wiring a workspace edits the map and clears the key out of the form', async () => {
     show(<SettingsView notify={() => {}} />);
     await screen.findByText('aurora');

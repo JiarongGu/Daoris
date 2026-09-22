@@ -152,12 +152,11 @@ The owner decides; only a **structured deny** blocks under a 5.1 executor, never
 🔴 A *layout-toggles* item was carried in this paragraph for a while and **never existed in the
 backlog** — it was prose pretending to be work, which is exactly what the backlog is for; a surface
 item is written against `docs/2026-09-21-working-surface-design.md` when somebody wants one, and the
-panel and dock state would need hoisting out of `WorkFrame` first. **Four are decisions, not work**:
-ACP2 and DEPLOY1's second half both cost a real login to settle, PLUG2 reopens D4's *"core installs
-with no opt-out"*, and DEPLOY4 asks whether per-install UI state joins `~/.daoris` — and
-🔴 `~/.daoris` being machine-wide is load-bearing, since it is what makes the CLI and the desktop two
-doors onto one machine. Four **held** items sit at the bottom; do not pick one up until its trigger
-has arrived.
+panel and dock state would need hoisting out of `WorkFrame` first. **Three are decisions, not work**:
+ACP2 and DEPLOY1's second half both cost a real login to settle, and PLUG2 reopens D4's *"core
+installs with no opt-out"*. DEPLOY4 was decided the other way from its recommendation (**D63**, the
+application folder is the home, nothing under the profile) and is in the archive. Four **held** items
+sit at the bottom; do not pick one up until its trigger has arrived.
 
 **Start by reading the contract the item cites** — every backlog row names one. The bullets below are
 the traps that are not in any contract, because they were found rather than designed.
@@ -233,8 +232,8 @@ the traps that are not in any contract, because they were found rather than desi
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
 - **Every open item now waits on something**, which is new and is the honest state rather than a
-  lull. **Four are the owner's** (ACP2 and DEPLOY1's second half each cost a real login; DEPLOY4 and
-  PLUG2 are decisions). **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts, TOOL5 and CANON2
+  lull. **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a real login; PLUG2 is a
+  decision). **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts, TOOL5 and CANON2
   on a repository naming what it wants, HARNESS1 on the same, REH1 and TEST1 on a captured recurrence,
   and HELP3 on where the guard lives being settled. Pick one up only when its trigger has actually
   arrived — and **a new direction from the owner outranks all of them**.
@@ -250,8 +249,8 @@ the traps that are not in any contract, because they were found rather than desi
   (303), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (84), `npm run rehearse:family` (181/181), `npm run test:web` (498 vitest + 14 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (36/36), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
-  the INSTALL's own** — `~/.daoris/bin` on this machine is the decoy; a clean machine cannot
-  express the defect.
+  the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
+  every machine can express the defect.
   🔴 **Stop a running shell and its host first** — an orphaned `daoris-knowledge-http` holds the
   build's own assemblies, which reads as a broken gate and is a lock (`npm run desktop -- kill`). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
@@ -263,8 +262,8 @@ the traps that are not in any contract, because they were found rather than desi
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
 the archive; its decision is **D53, accepted**). **Thirteen items are open** and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Four are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
-DEPLOY1's second half, DEPLOY4, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
+ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
+DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
 last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
 that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
 question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
@@ -272,9 +271,9 @@ design's §5 is realised and what waits is a tool somebody names.
 
 🔴 **Which leaves nothing actionable**, as of 2026-09-22. That is the first time it has been true and
 it is a result, not a stall: the D45, D47, D48–D50, D51–D56, D53, D57, D59, D60 and ARCH1 arcs are
-all closed and in the archive. **The two ripest rows are DEPLOY4 and PLUG2** — both decisions, both
-needing no login and no external event. Each item is one session-sized landing, TDD, gates green,
-moved to the archive on completion.
+all closed and in the archive. **The ripest row is PLUG2** — a decision needing no login and no
+external event (DEPLOY4, the other one, became D63 on 2026-09-23). Each item is one session-sized
+landing, TDD, gates green, moved to the archive on completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -424,30 +423,6 @@ both are the owner's.**
   (d), silently** — that flag *is* the grant. And **measure the ACP door first**: it runs the Agent
   SDK rather than the CLI's trust flow, so it may not have the problem at all, and one driven run
   answers it.
-
-- [ ] **DEPLOY4 — Daoris writes in two places, and one of them is per-install.** Everything the tool
-  owns is under `~/.daoris` (registry, `driver.json`, `harnesses.json`, the index, sessions, `bin/`,
-  `toolchain/`, and profiles when they exist) — **except** the desktop's own `data/` beside the
-  install, which holds the WebView2 profile and the window's geometry. Two homes for one application.
-  🔴 **`~/.daoris` being machine-wide is load-bearing, not an accident**: it is what makes the CLI and
-  the desktop two doors onto one machine (D50), and moving it inside an install would give two
-  installs two registries and leave `daoris` on a terminal unable to see either. So the question is
-  narrower than it looks — whether per-install UI state should join it, and under what key, since a
-  scratch run and a real one must not contend for a window's geometry. Owner's call; measure before
-  moving anything.
-  ✅ **Measured 2026-09-22, against the live deployment on this machine**, which is what the item
-  asked for before anything moves. `~/.daoris` is **472 MB**: `toolchain/` 273 MB (one pinned
-  adapter), `bin/` 182 MB (two self-contained hosts), `knowledge.db` 17 MB, `sessions/` 16 KB, and
-  two config files of 1 KB each. The per-install `data/` is **21 MB and two things**: a WebView2
-  user-data folder (21 MB of browser cache, cookies and local storage) and `window-state.json` —
-  **five integers**, `Width Height X Y Placement`.
-  🔴 **So the question is smaller than the item feared, and the two homes hold different KINDS of
-  thing.** Everything in `~/.daoris` is a machine fact both doors read; everything in `data/` is one
-  window's rendering state, and 99.99% of it by size is a browser profile that a scratch run and a
-  real one must never share. **Recommendation: leave it**, and say so in the README rather than move
-  it — D50's property is already satisfied, because nothing in `data/` is a *capability* a
-  screenless machine would be denied. The five integers could move, and moving them alone would need
-  a per-install-root key for more machinery than five integers are worth. Still the owner's call.
 
 ### Plugins — what the study left (owner, 2026-09-22 → ARCH1)
 

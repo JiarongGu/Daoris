@@ -493,7 +493,7 @@ public sealed class Driver(
             // connector, exactly as it did before.
             var connector = KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                DaorisHome.Resolve(),
                 AppContext.BaseDirectory);
             if (connector is null)
             {

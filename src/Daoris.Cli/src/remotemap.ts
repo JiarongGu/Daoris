@@ -1,4 +1,5 @@
-// The machine's remotes — `~/.daoris/remotes.json`, a map of workspace → { url, key } (D48 §5).
+// The machine's remotes — `remotes.json` under the Daoris home (D63), a map of workspace → { url, key }
+// (D48 §5).
 //
 // This module READS AND WRITES A FILE AND NOTHING ELSE. It opens no socket, which is why `status` may
 // import it without touching the doctrine commands' offline guarantee (D8/D50): the wiring is a local
@@ -13,9 +14,8 @@
 //   3. Absence is the default, and it is silent (D21).
 
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { normalize, writeTextAtomic } from './fsx.ts';
+import { homeFile, requireHomeFile } from './home.ts';
 
 /** Where a workspace's shared deployment is, and the key this machine speaks to it with. */
 export interface Remote {
@@ -27,8 +27,11 @@ export interface Remote {
 export interface Wiring {
   /** `environment` when the env pair is set, `file` when the map named something, `none` otherwise. */
   source: 'environment' | 'file' | 'none';
-  /** The map's path — reported even when the environment outranks it, so the person can find it. */
-  path: string;
+  /**
+   * The map's path — reported even when the environment outranks it, so the person can find it; null
+   * on a machine with no Daoris home, which has no map to find.
+   */
+  path: string | null;
   remotes: Map<string, Remote>;
 }
 
@@ -47,9 +50,17 @@ export function normalizeWorkspace(name?: string | null): string {
   return name?.trim() ? name.trim() : DEFAULT_WORKSPACE;
 }
 
-/** The map's path: the override, or the conventional home beside the driver's own config. */
-export function remotesPath(env: Env = process.env): string {
-  return env[PATH_VARIABLE] ?? join(homedir(), '.daoris', 'remotes.json');
+/**
+ * The map's path: the override, or the file under the Daoris home (D63) — or null where there is no
+ * home, which is a machine with no remotes: the documented default, and silent.
+ */
+export function remotesPath(env: Env = process.env): string | null {
+  return env[PATH_VARIABLE] ?? homeFile(env, 'remotes.json');
+}
+
+/** The map's path for a verb that EDITS it: the override, or the home's file, or a refusal naming what to set. */
+export function remotesPathRequired(env: Env = process.env): string {
+  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'remotes.json');
 }
 
 /**
@@ -62,9 +73,9 @@ export function redactKey(key: string): string {
 }
 
 /** The map as it sits on disk — every entry, including ones missing half a pair. */
-function parse(path: string): Map<string, Remote> {
+function parse(path: string | null): Map<string, Remote> {
   const remotes = new Map<string, Remote>();
-  if (!existsSync(path)) return remotes;
+  if (path === null || !existsSync(path)) return remotes;
 
   let parsed: unknown;
   try {

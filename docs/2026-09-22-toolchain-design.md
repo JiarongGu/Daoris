@@ -47,7 +47,9 @@ seam. Building them together would mean one change that cannot be reviewed.
 
 ## 3. The managed CLI
 
-- **A managed harness lives under `~/.daoris/toolchain/<harness>/<version>/`**, installed with the
+- **A managed harness lives under `toolchain/<harness>/<version>/` in the Daoris home** (written
+  here as `~/.daoris/…` before D63 moved the home into the application's own folder; the tree is the
+  same under the new root), installed with the
   harness's own installer pointed at that directory rather than at the machine — for npm-published
   harnesses, `npm install --prefix <dir> <package>@<version>`, which is the same mechanism already
   declared, aimed somewhere Daoris owns. No vendoring, no bundling: **a harness's own packaging stays

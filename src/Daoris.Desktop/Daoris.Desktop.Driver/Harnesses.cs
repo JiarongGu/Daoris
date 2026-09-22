@@ -144,7 +144,7 @@ public sealed record HarnessReport(
 /// per workspace (D49 §4). <b>Machine-local and tracked by nothing</b>, exactly like the remotes map.
 /// </summary>
 /// <remarks>
-/// <para><b>The FILE is the contract</b> (`~/.daoris/harnesses.json`), and so is the directory layout
+/// <para><b>The FILE is the contract</b> (`harnesses.json` under the Daoris home), and so is the directory layout
 /// beside it — the CLI's `daoris harness` and this class share no code, because the driver links
 /// against no CLI and the CLI has no .NET. The twins move together, the same rule the remotes map's
 /// three copies established (WSP3).</para>
@@ -184,15 +184,17 @@ public sealed record HarnessSettings(
 
     public const string PathVariable = "DAORIS_HARNESS_CONFIG";
 
-    /// <summary>The conventional home, beside the driver's own config and the remotes map.</summary>
-    public static string DefaultPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "harnesses.json");
+    /// <summary>
+    /// The conventional home, beside the driver's own config and the remotes map — under the Daoris
+    /// home (D63). A machine with no home and no override is refused, naming what to set.
+    /// </summary>
+    public static string DefaultPath => DaorisHome.Require("harnesses.json");
 
     /// <summary>The file every surface reads and writes — the override, or the conventional home.</summary>
     public static string ResolvePath() =>
         Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
 
-    /// <summary>The directory the profile tree and the wiring file share. The machine's `.daoris`.</summary>
+    /// <summary>The directory the profile tree and the wiring file share — the Daoris home (D63).</summary>
     public static string HomeOf(string settingsPath) =>
         Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
 
@@ -818,7 +820,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <summary>Where the wiring lives. The profile tree sits beside it.</summary>
     public string SettingsPath { get; } = settingsPath ?? HarnessSettings.ResolvePath();
 
-    /// <summary>The directory profiles live under — `~/.daoris` on an ordinary machine.</summary>
+    /// <summary>The directory profiles live under — the Daoris home (D63), which is the directory the wiring file sits in.</summary>
     public string Home => HarnessSettings.HomeOf(SettingsPath);
 
     /// <summary>The person's harness wiring, as it stands on disk right now.</summary>

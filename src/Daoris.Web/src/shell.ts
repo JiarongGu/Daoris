@@ -30,6 +30,13 @@ export type DriverState = {
   strikes: number;
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
+  /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
+  home?: string;
+  /**
+   * What establishing the home did on this start, when it is worth saying — state moved in from a
+   * profile directory, or the account's environment gaining the variable. Null when nothing was.
+   */
+  homeNotice?: string | null;
 };
 
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>

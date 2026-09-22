@@ -121,7 +121,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             ? locate()
             : ServiceHostLocator.Locate(
                 Environment.GetEnvironmentVariable(ServiceHostLocator.PathVariable),
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                DaorisHome.Resolve(),
                 AppContext.BaseDirectory);
 
     /// <summary>

@@ -76,9 +76,11 @@ public sealed record DriverConfig(
 
     public const string PathVariable = "DAORIS_DRIVER_CONFIG";
 
-    /// <summary>The conventional home, beside the store the driver watches.</summary>
-    public static string DefaultPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "driver.json");
+    /// <summary>
+    /// The conventional home, beside the store the driver watches — under the Daoris home (D63). A
+    /// machine with no home and no override is refused, naming what to set, rather than written to.
+    /// </summary>
+    public static string DefaultPath => DaorisHome.Require("driver.json");
 
     /// <summary>The file every door reads and writes — the override, or the conventional home.</summary>
     public static string ResolvePath() =>

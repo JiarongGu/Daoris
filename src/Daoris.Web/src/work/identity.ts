@@ -51,7 +51,7 @@ export function sessionOrigin(session: Session): string | null {
  * A session tree's short name — its last segment, or null where there is no tree.
  *
  * @remarks
- * **Daoris owns where trees live** (D51 §2: `~/.daoris/trees/<workspace>/<repository>/<branch>`),
+ * **Daoris owns where trees live** (D51 §2: `trees/<workspace>/<repository>/<branch>` under the home),
  * which is what makes the last segment meaningful rather than a guess: it is the branch the tree
  * was cut for, and it is the part a person recognises. The rail has no room for the path and the
  * path is machine-local material besides (D51 §9) — a name is the right amount to show there.

@@ -9,19 +9,26 @@ using Shenora.Windows;
 // and runs the driver loop in-process. Built on the desktop runtime sibling at a released version
 // (D22); the runtime's single-instance guard also keeps two shells from fighting over the port.
 //
+//   DAORIS_HOME            where every machine-local file lives (D63)          (an install: `data/` beside this exe, set here)
 //   DAORIS_SERVICE_URL     where the service is, and what the WebView shows   (default: http://localhost:5177)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
-//   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: ~/.daoris/driver.json)
+//   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: $DAORIS_HOME/driver.json)
 //   DAORIS_HTTP_HOST       the host executable, when it lives somewhere unusual
-//   DAORIS_REMOTE_URL      one workspace's remote, with its key                (or ~/.daoris/remotes.json — D48 §5)
+//   DAORIS_REMOTE_URL      one workspace's remote, with its key                (or $DAORIS_HOME/remotes.json — D48 §5)
 //   DAORIS_REMOTE_KEY        either env var present means the environment is the answer, whole,
 //   DAORIS_REMOTE_WORKSPACE  for the workspace named here                      (absent: `default`)
-//   DAORIS_REMOTE_CONFIG   where the map is                                    (default: ~/.daoris/remotes.json)
+//   DAORIS_REMOTE_CONFIG   where the map is                                    (default: $DAORIS_HOME/remotes.json)
 internal static class Program
 {
     [STAThread]
     private static void Main(string[] args)
     {
+        // The home before anything else (D63): an install's `data/` folder is the Daoris home for this
+        // process and every host and session it spawns. Before the builder, because every module
+        // captures its path at construction — and a workspace build is left alone, so the dev loop's
+        // scratch home stays the dev loop's.
+        var home = InstallHome.Establish(AppContext.BaseDirectory);
+
         var serviceUrl = Environment.GetEnvironmentVariable(Daoris.Driver.ServiceClient.UrlVariable)
             ?? "http://localhost:5177";
 
@@ -52,7 +59,8 @@ internal static class Program
         builder.Services.AddSingleton(sp => new DriverLoop(
             sp.GetRequiredService<Shenora.Core.Events.IEventBus>(),
             sp.GetRequiredService<HostSupervisor>(),
-            serviceUrl));
+            serviceUrl,
+            home));
         builder.Services.AddSingleton<MainForm>();
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();

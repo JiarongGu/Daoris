@@ -23,7 +23,6 @@
  */
 import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OWN } from './desktop-publish.mjs';
@@ -160,7 +159,11 @@ function declare(where, repo) {
  * unpublished, which is why a machine path is fine here and in nothing this repository tracks.
  */
 function connector(where) {
-  const host = join(homedir(), '.daoris', 'bin', process.platform === 'win32'
+  // The installed host lives under the Daoris home (D63) — the same `bin/` `service-publish
+  // --install` fills — and a machine with no home has no installed host to wire.
+  const home = process.env.DAORIS_HOME?.trim();
+  if (!home) return false;
+  const host = join(home, 'bin', process.platform === 'win32'
     ? 'daoris-knowledge.exe' : 'daoris-knowledge');
   if (!existsSync(host)) return false;
 
@@ -169,8 +172,9 @@ function connector(where) {
       'daoris-knowledge': {
         command: host,
         // The same store the driver reads. Passed rather than defaulted, for the reason the driver
-        // passes it: a session that wrote to a different database would look like it worked.
-        env: { DAORIS_KNOWLEDGE_ROOT: root },
+        // passes it: a session that wrote to a different database would look like it worked. The
+        // home too, because a harness spawns its servers with the environment IT was started with.
+        env: { DAORIS_HOME: home, DAORIS_KNOWLEDGE_ROOT: root },
       },
     },
   }, null, 2)}\n`);

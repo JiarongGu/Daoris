@@ -22,10 +22,11 @@
  * TWO RULES SHAPE ALL OF IT.
  *
  * **A dev run gets its own machine.** The shell is not a viewer: it runs the driver loop, and the
- * driver SPAWNS AGENT SESSIONS in real repositories against real quests. Pointed at `~/.daoris` it is
- * the person's actual Daoris, with their registry, their quests and their drivable set — so `run`
- * redirects every machine-local file, takes its own port, and copies `examples/` to work over. The
- * real one is `--real`, spelled out, because reaching it should be a sentence somebody typed.
+ * driver SPAWNS AGENT SESSIONS in real repositories against real quests. Pointed at the machine's
+ * Daoris home it is the person's actual Daoris, with their registry, their quests and their drivable
+ * set — so `run` redirects every machine-local file, takes its own port, and copies `examples/` to
+ * work over. The real one is `--real`, spelled out, because reaching it should be a sentence somebody
+ * typed.
  *
  * **It only ever touches what this checkout built.** `kill` matches the executable's PATH, never the
  * process name; `shot` photographs that same path. An installed Daoris and this one are two programs
@@ -50,11 +51,14 @@ export const scratchRoot = join(repoRoot, '_fixtures', 'desktop');
  *
  * ⚠ THIS LIST IS HALF OF A PAIR. The other half is the code that reads them — `DriverConfig`,
  * `RemoteTarget`, `Harnesses`, the store and the index root — and a name missing here does not fail:
- * it silently writes into the person's real `~/.daoris`. A test asserts the two agree, because the
+ * it silently writes into the person's real Daoris home. A test asserts the two agree, because the
  * failure this prevents is invisible until somebody's driver config has a repository in it they never
  * opted in.
  */
 export const REDIRECTED = [
+  // The home itself (D63): every machine-local default derives from it, so a scratch run points it
+  // at scratch before anything else — a new file under the home is then scratch by construction.
+  'DAORIS_HOME',
   'DAORIS_KNOWLEDGE_DB',
   'DAORIS_KNOWLEDGE_ROOT',
   'DAORIS_DRIVER_CONFIG',
@@ -82,7 +86,7 @@ export const CLEARED = [
  * The environment a scratch run needs, whole.
  *
  * ⚠ `DAORIS_HTTP_HOST` is not an optimisation. `ServiceHostLocator` prefers an INSTALLED host in
- * `~/.daoris/bin` over this workspace's build, so a dev shell on a machine that has ever run
+ * the home's `bin/` over this workspace's build, so a dev shell on a machine that has ever run
  * `npm run publish:service -- --install` brings up yesterday's binary serving yesterday's bundle, and
  * every change appears to do nothing. Naming the built host is what makes the loop honest.
  *
@@ -112,6 +116,7 @@ export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost
     // scratch run that moved only the probe waits on a host answering somewhere else and sits on the
     // splash forever. Found on this tool's first real run.
     ASPNETCORE_URLS: serviceUrl,
+    DAORIS_HOME: home,
     DAORIS_KNOWLEDGE_DB: join(home, 'knowledge.db'),
     DAORIS_KNOWLEDGE_ROOT: family,
     DAORIS_DRIVER_CONFIG: join(home, 'driver.json'),
@@ -406,8 +411,8 @@ async function build(args) {
 
 async function start(command, args) {
   /* 🔴 The DEPLOYED shell, addressed by the folder it was published to. It implies `--real` and
-     cannot mean anything else: an install has no `DAORIS_*` overrides and runs against the machine's
-     own `~/.daoris` by construction — that is what makes it a deployment rather than a preview.
+     cannot mean anything else: an install has no `DAORIS_*` overrides and makes its own `data/` the
+     Daoris home by construction (D63) — that is what makes it a deployment rather than a preview.
      What this adds is the debug port, and it adds it AT LAUNCH through the environment: the shipped
      application still exposes nothing, which is the half of case study 2d that was right. */
   const install = takeInstall(args);
@@ -438,8 +443,9 @@ async function start(command, args) {
 
   if (real) {
     console.log(install
-      ? '⚠ --install: the DEPLOYED application, on your own ~/.daoris.'
-      : '⚠ --real: your own ~/.daoris — your registry, your quests, your drivable set.');
+      ? `⚠ --install: the DEPLOYED application, on its own home (${join(install, 'data')}).`
+      : `⚠ --real: your own Daoris home (${process.env.DAORIS_HOME ?? 'DAORIS_HOME is not set — '
+        + 'the shell will refuse'}) — your registry, your quests, your drivable set.`);
     console.log('  The driver loop starts with the app, so a drivable repository with an open quest');
     console.log('  gets a real agent session. This is the instance you use, not a copy of it.');
     if (install) {
@@ -489,15 +495,19 @@ async function start(command, args) {
   console.log(`shell started (pid ${child.pid})`);
   console.log(`  platform   ${serviceUrl}`);
   console.log(`  debug port ${cdpPort}`);
-  console.log(`  machine    ${real ? '~/.daoris — YOUR OWN' : join(scratchRoot, 'home')}`);
+  console.log(`  machine    ${real
+    ? `${install ? join(install, 'data') : process.env.DAORIS_HOME ?? '(no DAORIS_HOME)'} — YOUR OWN`
+    : join(scratchRoot, 'home')}`);
 }
 
 function doctor() {
   const shell = assemblyExe(DESKTOP_PROJECT);
   const host = assemblyExe(HTTP_PROJECT);
   const bundle = join(HTTP_PROJECT, 'wwwroot', 'index.html');
-  const installed = join(process.env.USERPROFILE ?? process.env.HOME ?? '', '.daoris', 'bin',
-    'daoris-knowledge-http.exe');
+  // Where `publish:service --install` lands one (D63) — and no home means none installed.
+  const installed = process.env.DAORIS_HOME
+    ? join(process.env.DAORIS_HOME, 'bin', 'daoris-knowledge-http', 'daoris-knowledge-http.exe')
+    : null;
   const state = readRun();
 
   console.log('built');
@@ -526,7 +536,7 @@ function doctor() {
   console.log(`  family           ${join(scratchRoot, 'family')}`
     + `${existsSync(join(scratchRoot, 'family')) ? '' : ' (copied from examples/ on first run)'}`);
   console.log(`  service host     ${host ?? '(none built)'}`);
-  if (existsSync(installed)) {
+  if (installed && existsSync(installed)) {
     console.log('  ⚠ an installed service host exists on this machine.');
     console.log('    ServiceHostLocator prefers it over this workspace, which is why `run` names the');
     console.log('    built one explicitly — a shell started any other way serves that one instead.');

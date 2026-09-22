@@ -2132,6 +2132,11 @@ asserts the weaker, always-true thing (the located host is **not this workspace'
 which one it was. That is the assertion that goes red on a real regression and stays green on a
 legitimate machine difference.
 
+> **Amended 2026-09-23 (D63).** The installed home is no longer `~/.daoris/bin` — nothing of Daoris's
+> lives under the user profile — but `$DAORIS_HOME/bin`, the CLI's `publish:service --install` landing
+> place inside the application's own folder. The order and the reasoning below stand with that one
+> substitution.
+
 > **Amended 2026-09-23, by the second deployment.** The precedence above was wrong, and this
 > paragraph had recorded the defect as a limitation: `--service` published a newer host beside the
 > shell, the shell spawned the older machine-wide one, and the gate passed 32/32 while its own
@@ -2239,3 +2244,43 @@ by nothing else.
 D35); the canon is still the thing being propagated and the service still indexes it; **every
 capability keeps two doors** (D50) — a machine with no screen loses no capability, which is exactly
 why the shell may be the focus without becoming the requirement.
+
+## D63 — The application folder is Daoris's home, and nothing of Daoris's lives under the user profile (2026-09-23)
+
+**Decision.** DEPLOY4, decided by the owner and the other way from the recommendation held for it:
+*"we should manage files within the app folder instead put it in shared"*, and, on the pointer file
+proposed to keep the CLI meeting the same machine, *"you should not keep dump thing into user
+folder"*. So: **every machine-local file Daoris owns lives under one home** — `driver.json`,
+`harnesses.json`, `remotes.json`, `knowledge.db`, `sessions/`, `trees/`, `usage/`,
+`harnesses/<tool>/<profile>/`, `toolchain/`, `bin/` — **and the home is the application's own
+folder**, `<install>/data/`, beside the WebView2 profile and the window's geometry that were already
+there. `~/.daoris` is no longer a default anywhere, and no artefact writes a file under the user
+profile — not a config, not a pointer.
+
+**The one seam is `DAORIS_HOME`.** Every default derives from it, in all three artefacts (the CLI,
+the service hosts, the driver — three twins sharing no code, the same shape as the remotes map's
+three copies, WSP3). Absent, there is **no default**: the management class and the hosts refuse with
+one sentence naming what to set; doctrine commands never needed a home and still do not. The per-file
+overrides (`DAORIS_DRIVER_CONFIG`, `DAORIS_KNOWLEDGE_DB`, …) still win where set — they are how every
+gate stays hermetic, and a scratch run now sets the home too.
+
+**How the two doors still meet** (D50 is untouched). The installed desktop sets `DAORIS_HOME` in its
+own process before anything resolves a path — its host and every session inherit it — and, when the
+user's environment has no `DAORIS_HOME`, sets one there: a variable, not a file, the way a toolchain's
+home is conventionally found. A terminal's `daoris` and a session's MCP host then read the same
+machine. It says so once.
+
+**Migration.** An install whose home holds no state, on a machine whose `~/.daoris` does, moves that
+state in on first start — the files and directories above, never `bin/` (that is the CLI's own
+install, and `publish:service --install` lands the next one under the home) — and says what it
+moved. A one-time transition for machines from before this decision; nothing is copied twice.
+
+**Rejected: a pointer file in `~/.daoris`.** It was the smallest thing that would let a terminal find
+the home with no environment to read, and it is still a file under the user profile. The owner's rule
+is the simpler one. **Rejected: an XDG/AppData configuration directory.** Same folder by another
+name. **Rejected: the CLI defaulting to `~/.daoris` "for compatibility".** A default that writes
+where nobody pointed it is the thing being removed; a refusal that names `DAORIS_HOME` is the honest
+answer on a machine with no application.
+
+**What it changes elsewhere.** D60's "installed home" is `$DAORIS_HOME/bin` (amended in place); the
+toolchain design's directory layout is the same tree under a different root; DEPLOY4 closes.

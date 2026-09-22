@@ -1,12 +1,12 @@
 // `daoris remote` — the machine's wiring, from a terminal (D50, workspace design §2b).
 //
 // Management parity, in the shape the driver already proved: THE FILE IS THE API and this is an editor
-// over it. `~/.daoris/remotes.json` maps a workspace to the deployment that serves it (D48 §5); the
+// over it. The home's `remotes.json` maps a workspace to the deployment that serves it (D48 §5); the
 // desktop's settings surface edits the same file, and hand-editing keeps working because the file —
 // not the surface — is the truth.
 //
 // It is a MANAGEMENT command and it is nonetheless entirely OFFLINE: it edits one file under the
-// profile and talks to nothing. Validating the url by calling it was considered and rejected — a verb
+// home and talks to nothing. Validating the url by calling it was considered and rejected — a verb
 // that needed the deployment to be up could not wire a machine before the deployment exists, which is
 // the order a person actually does it in, and the sync's own report is where an unreachable remote
 // gets named (`RemoteSyncSet`).
@@ -19,7 +19,7 @@ import { flagValue } from './args.ts';
 import { DaorisError } from './errors.ts';
 import {
   KEY_VARIABLE, PATH_VARIABLE, URL_VARIABLE, WORKSPACE_VARIABLE,
-  normalizeWorkspace, readRemotes, redactKey, remotesPath, writeRemotes,
+  normalizeWorkspace, readRemotes, redactKey, remotesPath, remotesPathRequired, writeRemotes,
 } from './remotemap.ts';
 import type { Remote } from './remotemap.ts';
 import type { CommandArgs } from './types.ts';
@@ -110,24 +110,28 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
           + 'The workspace name keys the map; the url and the key are what speak to its server.');
       }
 
+      // An edit needs a place to land: the override, or the home's file, or a refusal naming what
+      // to set (D63) — never a default under the user profile.
+      const target = remotesPathRequired();
       write(`daoris: wiring \`${workspace}\` on this machine`);
       const key = await resolveKey(argv, workspace, write);
 
-      const { remotes } = readFile(path);
+      const { remotes } = readFile(target);
       const replacing = remotes.get(workspace);
       remotes.set(workspace, { url: url.replace(/\/+$/, ''), key });
-      writeRemotes(path, remotes);
+      writeRemotes(target, remotes);
 
       write(`  ${workspace}  ${url.replace(/\/+$/, '')}  ${redactKey(key)}`);
       if (replacing) write(`  (replacing ${replacing.url} — the previous key is untouched at its deployment)`);
-      write(`  written to ${path} — machine-local, tracked by nothing (D47 §7).`);
+      write(`  written to ${target} — machine-local, tracked by nothing (D47 §7).`);
       write('  Repositories feed it where their own manifest says they may; the map only says where.');
       return 0;
     }
 
     case 'remove': {
       const workspace = normalizeWorkspace(requireName(argv, 'remove'));
-      const { remotes } = readFile(path);
+      const target = remotesPathRequired();
+      const { remotes } = readFile(target);
 
       if (!remotes.delete(workspace)) {
         // The end state is the one that was asked for, so a non-zero exit would make an idempotent
@@ -136,7 +140,7 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
         return 0;
       }
 
-      writeRemotes(path, remotes);
+      writeRemotes(target, remotes);
       write(`daoris: \`${workspace}\` is no longer wired on this machine.`);
       write('  Nothing at the deployment changed: the key stays valid there until an operator revokes');
       write('  it, and what that workspace already fed stays where it is. This circle now syncs');
@@ -151,14 +155,16 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
   function list(out: (line: string) => void): ExitCode {
     const wiring = readRemotes();
 
+    // No home is no map — the same answer as no remote, and the sentence says where one would go.
+    const where = path ?? 'the home\'s remotes.json, once DAORIS_HOME names one';
     if (wiring.source === 'environment') {
-      out(`daoris: the environment names this machine's remote, whole — ${path} is not read.`);
+      out(`daoris: the environment names this machine's remote, whole — ${where} is not read.`);
       out(`  (${URL_VARIABLE} / ${KEY_VARIABLE}, for the workspace ${WORKSPACE_VARIABLE} names.)`);
     }
 
     if (wiring.remotes.size === 0) {
       out('daoris: no remote on this machine — every workspace stays local, which is the default (D21).');
-      out(`  \`daoris remote add <workspace> --url https://… --key dk_…\` wires one (${path}).`);
+      out(`  \`daoris remote add <workspace> --url https://… --key dk_…\` wires one (${where}).`);
       return 0;
     }
 

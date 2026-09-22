@@ -79,10 +79,12 @@ Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database
 
 **Local — the default, and no daemon.** The MCP host is spawned by each agent session and exits with
 it; the **database** is what persists. Every session in every repository on this machine spawns over
-the same file (`~/.daoris/knowledge.db`), which is how a quest published from one repository's session
-is waiting when another repository's session starts. This repository's own `.mcp.json` registers it as
-`daoris-knowledge`; a sibling adds the same entry to its own `.mcp.json` — that file is the sibling's
-to write — with an absolute `--project` path:
+the same file (`knowledge.db` under the Daoris home — `DAORIS_HOME`, which the installed desktop sets
+for the account, D63), which is how a quest published from one repository's session is waiting when
+another repository's session starts. With no home and no `DAORIS_KNOWLEDGE_DB`, the host says so on
+stderr and exits 2 rather than opening a database under the user profile. This repository's own
+`.mcp.json` registers it as `daoris-knowledge`; a sibling adds the same entry to its own `.mcp.json` —
+that file is the sibling's to write — with an absolute `--project` path:
 
 ```json
 { "mcpServers": { "daoris-knowledge": {
@@ -94,11 +96,13 @@ to write — with an absolute `--project` path:
 executable** (D43):
 
 ```sh
-npm run publish:service -- --install    # both hosts → ~/.daoris/bin, self-contained single-file
+npm run publish:service -- --install    # both hosts → $DAORIS_HOME/bin, self-contained single-file
 ```
 
-`--install` prints the ready `.mcp.json` snippet with the family root already filled in — a published
-binary has no workspace above it to walk to, so the root must be **named**; run without it, the host
+`--install` lands them under the Daoris home — it refuses with no `DAORIS_HOME` set, since there is no
+default under the profile — and prints the ready `.mcp.json` snippet with the home and the family root
+already filled in: a published binary has no workspace above it to walk to, so the root must be
+**named**; run without it, the host
 says so on stderr rather than silently indexing whatever directory spawned it. From a source checkout
 the walk-up still lands on the right folder wherever the client spawned it. The release workflow ships
 the same binaries per platform, each with a sha256 beside it (D27's shape): `daoris-knowledge-<rid>`
@@ -141,7 +145,7 @@ keys are administered on the binary itself — `keys mint --name <person@machine
 `keys list`, `keys revoke <prefix>`. The key is shown once and stored hashed; the prefix is the
 non-secret audit handle. **A shared deployment serves one workspace** (D48 §5), named by
 `DAORIS_WORKSPACE`: every row it takes lands in that circle, and one declaring another is refused in a
-sentence naming both. A machine names its remotes in `~/.daoris/remotes.json` — a map,
+sentence naming both. A machine names its remotes in the home's `remotes.json` — a map,
 `{ "<workspace>": { "url": ..., "key": ... } }`, with the environment pair overriding it whole — and
 the desktop's sync loop, which runs once per wired circle, does the rest.
 
@@ -162,13 +166,14 @@ Configuration is by environment, and every variable is optional — the defaults
 
 | | |
 |---|---|
+| `DAORIS_HOME` | The Daoris home (D63) — every default below that names a file derives from it. Unset, and with the file's own variable unset too, a host refuses rather than defaulting under the profile |
 | `DAORIS_KNOWLEDGE_ROOT` | Where the repositories are. Default: the folder containing this workspace |
-| `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `~/.daoris/knowledge.db` |
+| `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `$DAORIS_HOME/knowledge.db` |
 | `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
 | `DAORIS_EMBED_URL` | Embedding endpoint. Default: `http://localhost:11434` (Ollama) |
 | `DAORIS_MODE` | HTTP host only: `local` (default) or `shared` — the team deployment (D47) |
 | `DAORIS_WORKSPACE` | HTTP host only: which circle a **shared** deployment serves (default: `default`). Refused on a local host, which holds every circle the machine wired |
-| `DAORIS_REMOTE_URL` / `DAORIS_REMOTE_KEY` | one workspace's remote, overriding `~/.daoris/remotes.json` **whole**; `DAORIS_REMOTE_WORKSPACE` names which circle the pair serves |
+| `DAORIS_REMOTE_URL` / `DAORIS_REMOTE_KEY` | one workspace's remote, overriding the home's `remotes.json` **whole**; `DAORIS_REMOTE_WORKSPACE` names which circle the pair serves |
 
 Verified end to end against the real family with `nomic-embed-text`: **409 entries embedded in 34 s**,
 and a query whose words appear in none of the matching documents — *"stop the console from stealing

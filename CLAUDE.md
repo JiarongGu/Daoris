@@ -59,7 +59,7 @@ phases when you run it, down to a quest carried to done over the ACP door.
 and `docs/task-archive.md` carry the rest. **The workspace is the unit of sharing** (WSP1) and is
 **wiring, never a tracked declaration** — a registry row, set by `connect --workspace`. **The
 registry is the authority** (WSP2): an explicit list `connect`, `retire` and `import` maintain, never
-a view over a folder. **The remotes are a map** (WSP3): `~/.daoris/remotes.json`, one deployment per
+a view over a folder. **The remotes are a map** (WSP3): the home's `remotes.json`, one deployment per
 workspace, a key never printed back beyond its audit prefix. **A feed carries the commit it speaks
 for** (WSP4): only the canonical line feeds knowledge, and a stale feed is refused as *information*
 rather than as a failure. **The console
@@ -146,9 +146,10 @@ risk, **authorship** was.
   totalled per account, machine-local by the profile's own rule. 🔴 **Absent is never zero**, and no
   price is claimed. TOOL4 is held.
 - 🔴 **Daoris is DEPLOYED** (2026-09-22): `npm run publish:desktop -- --to <dir> --service` installs
-  it — one exe at the root, binaries under `app/`, state in `data/`; `--beside` when the folder
-  already holds the repositories it drives — and it runs against the real `~/.daoris`, so
-  **starting it starts the driver loop**.
+  it — one exe at the root, binaries under `app/`, **the Daoris home in `data/`**; `--beside` when
+  the folder already holds the repositories it drives — and **starting it starts the driver loop**.
+  🔴 **Nothing of Daoris's lives under the user profile** (**D63**): `DAORIS_HOME` is the one seam,
+  the install sets it for itself and once for the account, and with none set the writers **refuse**.
   `docs/2026-09-22-first-deployment-case-study.md` is the first thing to read before touching the
   desktop: four defects were invisible from inside the workspace, three *because* of what the
   workspace provides. **It has a gate now** (DEPLOY2 → **D60**). 🔴 **Stop a running
@@ -248,7 +249,7 @@ Run every command from the **workspace root**, not from a package directory.
   **not a gate**: it starts the real window on a scratch machine of its own and lets you *see* it —
   `eval` is the only instrument that reaches the bridge-attached half (the Machine view, the driver
   controls, the console, chat), which Playwright cannot reach and the vitest loop only mocks. A run
-  redirects every `~/.daoris` file because the driver loop starts with the app and spawns **real
+  redirects every machine-local file because the driver loop starts with the app and spawns **real
   sessions**; `--real` is your own machine and says so. `src/Daoris.Desktop/README.md` has the table.
 - `node --test` — tests only.
 - `node src/Daoris.Cli/bin/daoris.mjs <command>` — run the CLI against this repository.

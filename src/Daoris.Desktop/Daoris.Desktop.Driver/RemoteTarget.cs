@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Where this machine's remotes are — machine-local configuration, never per-repository (D47 §9,
-/// D48 §5): `~/.daoris/remotes.json`, a MAP of workspace → `{ "url": "...", "key": "dk_..." }`, with
+/// D48 §5): the home's `remotes.json` (D63), a MAP of workspace → `{ "url": "...", "key": "dk_..." }`, with
 /// the environment overriding.
 /// </summary>
 /// <remarks>
@@ -35,9 +35,11 @@ public sealed record RemoteTarget(string Url, string Key)
     /// </summary>
     public const string DefaultWorkspace = "default";
 
-    /// <summary>The map's conventional home, beside the driver's own config.</summary>
-    public static string DefaultPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".daoris", "remotes.json");
+    /// <summary>
+    /// The map's conventional home, beside the driver's own config under the Daoris home (D63) — and
+    /// null where there is none: a machine with no home has no remotes, the documented default anyway.
+    /// </summary>
+    public static string? DefaultPath => DaorisHome.File("remotes.json");
 
     /// <summary>A workspace name as it is stored and compared: trimmed, and the default when unstated.</summary>
     public static string Workspace(string? name) =>
@@ -58,7 +60,7 @@ public sealed record RemoteTarget(string Url, string Key)
     /// a merge, which would let a real map leak into a process that thought it had named its only
     /// remote — the gate's hermetic guard rests on exactly that.
     /// </remarks>
-    public static IReadOnlyDictionary<string, RemoteTarget> Load(Func<string, string?> environment, string path)
+    public static IReadOnlyDictionary<string, RemoteTarget> Load(Func<string, string?> environment, string? path)
     {
         var map = new Dictionary<string, RemoteTarget>(StringComparer.OrdinalIgnoreCase);
         var url = environment(UrlVariable);

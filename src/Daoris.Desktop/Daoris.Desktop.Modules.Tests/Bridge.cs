@@ -13,9 +13,9 @@ namespace Daoris.Desktop.Modules.Tests;
 /// asserted on NEITHER side: the page's own suite mocks the bridge, and this half had no test project
 /// at all. A mock agreeing with a mock proves the two mocks agree.</para>
 ///
-/// <para><b>Hermetic by construction.</b> Every module here resolves a path under the user's profile
-/// — `~/.daoris/driver.json`, `~/.daoris/remotes.json`, the harness profile tree — so a test that did
-/// not redirect them would read, and WRITE, the developer's real machine. The environment is set
+/// <para><b>Hermetic by construction.</b> Every module here resolves a path under the Daoris home
+/// — `driver.json`, `remotes.json`, the harness profile tree — so a test that did not redirect them
+/// would read, and WRITE, the developer's real machine. The environment is set
 /// before anything is constructed, because <see cref="Daoris.Driver.HarnessRoster"/> and
 /// <see cref="Daoris.Driver.DriverConfig"/> both capture their path at construction.</para>
 /// </remarks>
@@ -29,7 +29,9 @@ public abstract class Bridge : IDisposable
             Path.GetTempPath(), "daoris-modules-tests", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(Home);
 
-        // Set BEFORE any module or loop exists — see the remarks above.
+        // Set BEFORE any module or loop exists — see the remarks above. The home first (D63): every
+        // other default derives from it, so a file added under the home later is scratch already.
+        Redirect("DAORIS_HOME", Home);
         Redirect("DAORIS_DRIVER_CONFIG", Path.Combine(Home, "driver.json"));
         Redirect("DAORIS_REMOTE_CONFIG", Path.Combine(Home, "remotes.json"));
         Redirect("DAORIS_HARNESS_CONFIG", Path.Combine(Home, "harnesses.json"));

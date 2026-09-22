@@ -18,10 +18,11 @@
  * and would still not carry WebView2. The service hosts are the opposite case and are self-contained
  * — they are what a *server* runs, possibly without .NET at all (D43).
  *
- * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it uses the
- * real `~/.daoris` — the machine's registry, quests and drivable set — and locates the HTTP host
- * through `ServiceHostLocator`, which looks beside the shell first. `--service` publishes a copy there,
- * so the folder is self-sufficient.
+ * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
+ * its own `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
+ * live there, and nothing under the user profile — and locates the HTTP host through
+ * `ServiceHostLocator`, which looks beside the shell first. `--service` publishes a copy there, so
+ * the folder is self-sufficient.
  */
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -206,16 +207,19 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 |---|---|
 | \`daoris-desktop.exe\` | **the application** — the only thing to run. One file. |
 | \`app/\` | supporting binaries, when published with \`--service\`. Nothing to open. |
-| \`data/\` | this install's own state: the WebView2 profile and the window's geometry. |
+| \`data/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the WebView2 profile and the window's geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a
 re-publish never touches it.
 
-## What it uses that is NOT here
+## Where everything lives
 
-The machine's \`~/.daoris\` — the registry, the quests, the drivable set, the harness profiles. That
-is deliberate and is the point: the desktop and the \`daoris\` CLI are **two doors onto one machine**,
-so what one sets the other sees. Deleting the four names above removes the application and none of that.
+In \`data/\`, and nowhere under your user profile. On first start the application sets
+\`DAORIS_HOME\` to that folder for itself and — once, if your account has none — for your account,
+which is how the \`daoris\` CLI on a terminal and the desktop are **two doors onto one machine**: what
+one sets the other sees. A \`.daoris\` folder under your profile from an earlier version moves in on
+that first start (its \`bin/\` stays; re-run \`publish:service --install\` to land the hosts here).
+Deleting this folder removes the application and its machine — nothing else on the machine changes.
 
 Starting it starts the driver loop, so **a drivable repository with an open quest gets a real agent
 session.** \`daoris driver list\` shows what this machine will drive.
@@ -224,7 +228,7 @@ Re-publish over this folder to update it; nothing here is edited by hand.
 `);
 
   console.log(`\ndesktop-publish: installed to ${to}`);
-  console.log('  It runs against your real ~/.daoris — starting it starts the driver loop.');
+  console.log(`  Its home is ${join(to, 'data')} (D63) — starting it starts the driver loop.`);
 }
 
 // Guarded, because the guard above is imported by a unit test — and `node --test` importing this

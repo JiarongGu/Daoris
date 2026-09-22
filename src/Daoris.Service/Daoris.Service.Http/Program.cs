@@ -7,8 +7,10 @@ using Daoris.Knowledge.Http;
 // The browser's half of the service. The MCP host serves an agent over stdio; a browser cannot speak
 // that, so this exists — the same composed service behind a read-only JSON surface.
 //
+//   DAORIS_HOME            where every machine-local file lives (D63) — the installed desktop's own
+//                          `data/`, set for the account; with neither it nor the DB named, exit 2
 //   DAORIS_KNOWLEDGE_ROOT  where the repositories are      (default: the parent of this workspace)
-//   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: ~/.daoris/knowledge.db)
+//   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: $DAORIS_HOME/knowledge.db)
 //   DAORIS_EMBED_MODEL     naming one turns semantic on    (absent: lexical only, and it says so)
 //   DAORIS_EMBED_URL       the endpoint                    (default: http://localhost:11434)
 //   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
@@ -62,7 +64,17 @@ if (workspaceError is not null)
     return 2;
 }
 
-var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), HostComposition.DefaultDatabasePath());
+// The index lives under the Daoris home (D63) unless named directly. No home and no name is a
+// refusal, not a default: an index written somewhere nobody pointed this host is the thing removed.
+var database = Environment.GetEnvironmentVariable(ServiceOptions.DatabaseVariable)
+    ?? HostComposition.DefaultDatabasePath();
+if (database is null)
+{
+    Console.Error.WriteLine(DaorisHome.Sentence);
+    return 2;
+}
+
+var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), database);
 
 // Key administration is a console verb on the serving binary — same store, no second tool, and it
 // exits without binding. Console minting is the whole story until person-auth exists (D47 §7).

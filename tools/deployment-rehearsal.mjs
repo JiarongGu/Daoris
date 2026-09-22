@@ -25,13 +25,16 @@
  *
  * WHAT THIS GATE CANNOT CONTROL, stated rather than implied:
  *
- *  - **The profile is not redirectable** — .NET resolves it from the OS token, not from
- *    `USERPROFILE` — so a machine that ran `publish:service --install` offers the deployed shell a
- *    second host under `~/.daoris/bin`. That is not a gap any more, it is the decoy: phase 4 asserts
- *    the host the shell started is the one UNDER THE INSTALL, which on such a machine is exactly the
- *    check that failed. 🔴 The first version of this header said the opposite — that `~/.daoris/bin`
- *    outranked the install deliberately — and this gate passed 32/32 for as long as it was true,
- *    naming the machine's host in its own transcript. The second deployment is what read the line.
+ *  - **The machine's own installed host used to be the decoy, and now the gate plants one.** Before
+ *    D63 a machine that had run `publish:service --install` offered the deployed shell a second host
+ *    under the profile, and phase 4 asserted the host the shell started was the one UNDER THE
+ *    INSTALL — the check that failed on this machine and could not fail on a clean one. The home is
+ *    scratch now (`DAORIS_HOME` is redirected like every other file), so nothing of the machine's
+ *    reaches the shell; the gate puts an installed-looking host under the scratch home's `bin/`
+ *    itself, so the order is asserted on every machine. 🔴 The first version of this header said the
+ *    opposite — that the installed home outranked the install deliberately — and this gate passed
+ *    32/32 for as long as it was true, naming the machine's host in its own transcript. The second
+ *    deployment is what read the line.
  *  - **A machine whose ANSI codepage is already UTF-8 cannot fail phase 5.** The mangling in 4c is a
  *    round trip through a single-byte page; with ACP 65001 there is no round trip to make. The check
  *    is still the right one — it goes red on every machine that *can* express the defect, which is
@@ -134,9 +137,13 @@ const NON_ASCII = 'stub: 道衍 — the unfolding of the way';
 const EXAMPLES = ['engine', 'game'];
 
 // Hermetic by construction, exactly as the family rehearsal is: every child points its remote and
-// harness lookups at files that do not exist, so a real ~/.daoris map can never leak a deployment or
-// a credential directory into a gate run.
+// harness lookups at files that do not exist, so the machine's real map can never leak a deployment
+// or a credential directory into a gate run.
 const HERMETIC = {
+  // 🔴 The home (D63) before anything else: an installed shell with no DAORIS_HOME would make the
+  // install's own `data/` its home, set the variable in the user's environment and move the real
+  // `~/.daoris` in — on the developer's machine, from a gate. Pointed at scratch, it does none of it.
+  DAORIS_HOME: home,
   DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
   DAORIS_HARNESS_CONFIG: join(home, 'harnesses.json'),
 };
@@ -456,7 +463,16 @@ if (!done.ok) throw new Error(done.text);
   // driven by one.
   const unredirected = REDIRECTED.filter((name) => !(name in shellEnvironment));
   check('every machine-local file this run reads points into scratch', unredirected.length === 0,
-    `${unredirected.join(', ')} would come from the real ~/.daoris`);
+    `${unredirected.join(', ')} would come from the machine's real home`);
+
+  // 🔴 The decoy, planted rather than hoped for. Before D63 it was whatever `publish:service
+  // --install` had left under the machine's profile, which a clean machine never has — so the check
+  // below was only ever a check on this machine. The home is scratch now, so the gate puts an
+  // installed-looking host where the locator's next candidate looks: an empty file, because the
+  // ORDER is the contract, and a shell that ranked it first would try to start it and fail here.
+  const installedHome = join(home, 'bin', 'daoris-knowledge-http');
+  mkdirSync(installedHome, { recursive: true });
+  writeFileSync(join(installedHome, HOST_EXE), '');
 
   const before = new Set(hostProcesses().map((host) => host.pid));
   const environment = { ...process.env, ...shellEnvironment };
@@ -468,9 +484,9 @@ if (!done.ok) throw new Error(done.text);
   check('the platform answers — the deployed shell brought a host up', await answers(base, 200));
 
   // 🔴 The install's OWN host, not merely "not this workspace's". The weaker check passed 32/32 on
-  // a machine whose `~/.daoris/bin` held an older host, while the transcript's own `located:` line
+  // a machine whose installed home held an older host, while the transcript's own `located:` line
   // named it — and the second deployment showed a window serving a bundle that existed nowhere on
-  // disk but there. On a clean machine the two checks are the same; here they are not.
+  // disk but there. The decoy above is what makes the two checks differ on every machine.
   const started = hostProcesses().filter((host) => !before.has(host.pid));
   const ownHost = join(install, ...HOST_HOME, HOST_EXE);
   check('a host was started, and it is the one published with the install',

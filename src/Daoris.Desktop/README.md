@@ -72,7 +72,7 @@ and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine 
 for the person's install, update or login, each spawning that harness's own mechanism and relaying it
 through the console under `<harness>:<action>`, never a session id, because it is not a session),
 edits the machine's wiring
-over `DAORIS.REMOTES` (the Machine view, over the same `~/.daoris/remotes.json` the CLI edits — a key
+over `DAORIS.REMOTES` (the Machine view, over the same `remotes.json` the CLI edits — a key
 goes in and only its audit prefix comes back), and takes the loop and its
 owned host down with it on close, in-flight sessions ended and recorded `stopped`. The one designed
 control not yet wired page-side is **start-now**: the host answers `NUDGE`, and no page surface calls
@@ -89,8 +89,12 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 
 `npm run publish:desktop -- --to <folder> --service` publishes the application: one
 `daoris-desktop.exe` at the folder's root, the service host with its bundle under `app/`, the
-window's own state in `data/` once it has run, and an `INSTALLED.md` saying so. It runs against the
-real `~/.daoris`, so **starting it starts the driver loop**. The publish refuses a folder it did not
+install's own `data/` once it has run, and an `INSTALLED.md` saying so. **`data/` is the Daoris
+home** (D63): on first start the shell sets `DAORIS_HOME` to it for its own process — every host and
+session it spawns inherits it — and, once, for the account when it has none, so a terminal's `daoris`
+meets the same machine. Nothing of Daoris's lives under the user profile; a `~/.daoris` from before
+the decision moves in on that first start, `bin/` excepted, and the shell says so once. **Starting it
+starts the driver loop.** The publish refuses a folder it did not
 write; `--beside` installs next to whatever is there — the repositories it drives, typically — and
 still refuses to write over a name it did not write. `npm run desktop -- run --install <folder>`
 starts that install with the debug port attached, so the instruments below reach it.
@@ -115,7 +119,7 @@ bytes. Everything this loop provides is what hid two of the first deployment's f
 | `doctor` | what is built, what is running, what a scratch run would use — and whether an installed host would be adopted instead of this workspace's |
 | `build [--release]` | the platform bundle into the host's `wwwroot`, then the host, then the shell. That order is the dependency order: a host built before the bundle serves the previous one |
 | `run [--real] [--fresh]` | start the shell **on a machine of its own**, with the debug port attached |
-| `run --install <dir>` | start the **DEPLOYED** shell in that folder, on your real `~/.daoris`, with the debug port attached. 🔴 The published application opens no port — this launch does, through the environment, which is the deliberate opt-in the first deployment asked for and did not build (case study 2d). `shot`, `eval`, `click` and `kill` then address that install, because they follow the run file rather than this checkout |
+| `run --install <dir>` | start the **DEPLOYED** shell in that folder, on its own `data/` home, with the debug port attached. 🔴 The published application opens no port — this launch does, through the environment, which is the deliberate opt-in the first deployment asked for and did not build (case study 2d). `shot`, `eval`, `click` and `kill` then address that install, because they follow the run file rather than this checkout |
 | `restart` · `kill` | stop the shell **this checkout built** — matched by executable path, never by process name |
 | `shot [name] [--theme light\|dark] [--window <name>]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it). `--theme` photographs the OTHER theme without touching the machine's setting — a media-query emulation over the debug port, which makes the page push `SET_THEME` and the **main** window repaint its native chrome (DWM border, caption buttons) for real: the only way to see that chrome in both. 🔴 A **secondary** window has no `SET_THEME` channel and follows the OS directly, so in a `--theme` capture its title bar stays in the machine's own theme — a light title bar over a dark monitor page there is the instrument, not a defect. 🔴 `--window monitor` or `--window session:<id>` since SURF8: without it the capture takes whichever window **Windows** calls main, which with a secondary window open is not the caller's choice |
 | `eval [--window <name>] "<js>"` | evaluate inside one of the running shell's pages — **the only instrument that sees the bridge-attached half** (the Machine view, the driver controls, the console, chat). `--window` picks a secondary window's page (SURF8); without it, the application's own |
@@ -123,12 +127,12 @@ bytes. Everything this loop provides is what hid two of the first deployment's f
 
 **A dev run gets its own machine, and that is a safety property rather than a convenience.** The shell
 runs the driver loop, and the driver spawns **real agent sessions in real repositories**. So `run`
-redirects every `~/.daoris` file, clears the remote environment pair (inherited, it would feed a real
-deployment from a scratch store), takes a port of its own, passes `--app-root` so the WebView2 profile
-and window state are its own too, and copies `examples/` to work over. `--real` is the person's own
-Daoris and is spelled out for that reason. A test asserts the redirect list against the sources that
-build `~/.daoris` paths, because a name missing there does not fail — it edits the person's real
-config.
+redirects the home and every machine-local file under it, clears the remote environment pair
+(inherited, it would feed a real deployment from a scratch store), takes a port of its own, passes
+`--app-root` so the WebView2 profile and window state are its own too, and copies `examples/` to work
+over. `--real` is the person's own Daoris — the home their `DAORIS_HOME` names — and is spelled out
+for that reason. A test asserts the redirect list against the sources that build paths under the
+home, because a name missing there does not fail — it edits the person's real config.
 
 Two couplings the tool holds that nothing else does, both found by running it: the debug port needs
 **`DOTNET_ENVIRONMENT=Development`** as well (the runtime sets `AdditionalBrowserArguments`, which
