@@ -3648,3 +3648,62 @@ published a folder and started a window — the same trap `tools/desktop.mjs` do
 foot, now guarded the same way. And the first version identified "the host the shell started" by
 diffing **paths**, which reports nothing new when two processes share one binary; it diffs **pids**.
 Both are in the file, where the next person meets them.
+
+## ARCH1, PLUG1, PLUG3, DEPLOY1, DEPLOY3 — moved out of the backlog (2026-09-22)
+
+These five closed on 2026-09-22 and were **ticked in place rather than moved**, which is the failure
+`task-lifecycle` names: three of them had no per-task record anywhere, and the backlog carried eight
+`[x]` rows over four sections while claiming to hold open work only. The entries below are their
+backlog text, preserved word for word; ACP3, ACP4, HELP2 and HARNESS2 were ticked in place too and
+already had entries of their own, so those rows were simply removed.
+
+- [x] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own
+  structure.** ✅ **done 2026-09-22**, widened by the owner to include a second reference
+  (*"you might check how yaorin did"*). `docs/2026-09-22-plugin-design-study.md` is the note.
+  🔴 **It reordered its own question**: Daoris already has **three** extension systems — canon packs,
+  the declared gate list, and the ACP door — and none of them is called one. So the finding is not
+  "Daoris needs plugins" but "two of the three are undocumented and one manifest is missing a
+  version field". The Cordis runtime is **declined again** on the evidence already gathered, and
+  *registrations are effects* is adopted as the rule for anything ever loaded at runtime. PLUG1–3
+  below are what it left.
+
+- [x] 🔴 **PLUG1 — a pack cannot say which canon it needs.** ✅ **done 2026-09-22.** `apiVersion` on
+  every `pack.json`, read **before a single file is planned** — taken from the neighbouring
+  application's plugin manifests, which have carried an integer all along. A pack from a newer canon
+  is refused **naming both numbers**, because "incompatible" alone sends a person to guess which side
+  is behind. **Absent means 1**, so every pack written before the field keeps working: the field is
+  how a pack opts into saying something, never a wall in front of one that never spoke. A non-integer
+  is a malformed manifest rather than an old one, and errors. Raise the number only when a pack
+  written for the new shape **cannot work** on the old one — one that goes up on every change teaches
+  people to ignore it.
+
+- [x] **PLUG3 — three extension points and nobody is told.** ✅ **done 2026-09-22.** The README has
+  an *Extending it* section naming all three — a pack, a gate row, and speaking ACP — what each may
+  add, and what is deliberately not extensible (the views, D52), pointing at the study for the
+  reasoning. 🔴 **It cost its own budget lesson**: the section put the README 225 words over, and the
+  answer was to relocate detail the design docs already hold (the harness paragraph, the `--force`
+  one) rather than raise the ceiling or shave the new section to uselessness (D28).
+
+- [x] 🔴 **DEPLOY1 — a repository cannot grant its own trust.** ✅ **the detection half is done
+  2026-09-22**, which was option (a) and the only half that is not the owner's to give. The driver now
+  reads the harness's own record before spawning and **holds** with the sentence that fixes it, instead
+  of spending nine minutes and a real login on a session that could never close its quest. Proven
+  against the real untrusted tree. `ClaudeTrust` reads and never writes: unknown is permissive (no
+  file, unreadable, a shape this build does not know), and only a definite *no* refuses.
+  **What is still open is the owner's:** whether adoption should ever *ask* and write the flag
+  (option b), or whether the pipe door stays documented as needing a human's first visit (option c).
+  🔴 **Never (d), silently.** And **measure the ACP door**: it runs the Agent SDK rather than the
+  CLI's trust flow, so it may not have this problem at all — one driven run answers it.
+
+  🔴 **The decision half stays open and is the owner's** — it is carried in the backlog's deployment
+  section, not here, because a question nobody has answered is not finished work.
+
+- [x] 🔴 **DEPLOY3 — there is no credential management surface.** ✅ **done 2026-09-22.** The Machine
+  view could list a harness's profiles and log into one, and could not **make, choose or un-point**
+  one — those three verbs existed only in the CLI, so the owner's *"there is no credential management
+  location"* was literally true. **D50 violated in the direction nothing checks**: the rule is written
+  "whatever a screen can set, a terminal can" and the converse had no test anywhere.
+  `profile-add|remove|default` over `HARNESS_ACTION`, and the roster's own form. 🔴 **"Forget", not
+  "delete"** — it stops this machine pointing at a profile and removes nothing, because the directory
+  holds a credential the harness put there; the word on the button is the word for what happens, in
+  both doors. Daoris manages directories and names, never secrets.

@@ -110,10 +110,13 @@ workspace `testbed`, each with its own `.mcp.json` and trust settings, registere
 host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
 it. Two branches there hold what the failed sessions produced.
 
-**What is open**, in the Backlog below, in the order worth doing: **SURF11** (layout
-toggles; 🔴 needs the panel and dock state hoisted out of `WorkFrame` before it needs designing),
-then HELP3, TOOL5, DEVKIT3, CANON5. **Two are decisions, not work**: PLUG2 reopens D4's *"core
-installs with no opt-out"*, and DEPLOY4 asks whether per-install UI state joins `~/.daoris` — and
+**What is open**, in the Backlog below, in the order worth doing: **HELP3, TOOL5, DEVKIT3, CANON5**.
+🔴 A *layout-toggles* item was carried in this paragraph for a while and **never existed in the
+backlog** — it was prose pretending to be work, which is exactly what the backlog is for; a surface
+item is written against `docs/2026-09-21-working-surface-design.md` when somebody wants one, and the
+panel and dock state would need hoisting out of `WorkFrame` first. **Four are decisions, not work**:
+ACP2 and DEPLOY1's second half both cost a real login to settle, PLUG2 reopens D4's *"core installs
+with no opt-out"*, and DEPLOY4 asks whether per-install UI state joins `~/.daoris` — and
 🔴 `~/.daoris` being machine-wide is load-bearing, since it is what makes the CLI and the desktop two
 doors onto one machine. Four **held** items sit at the bottom; do not pick one up until its trigger
 has arrived.
@@ -214,11 +217,13 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). The protocol items come first; the SURF items
-follow, in order; the three after them are the arc's leftovers,
-**actionable now**; the four after those are **held**, each waiting on an external trigger that has
-not arrived. Each item is one session-sized landing, TDD, gates green, moved to the archive on
-completion.
+the archive; its decision is **D53, accepted**). **Thirteen items are open** and every closed one is
+in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
+ships. Four are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
+DEPLOY1's second half, DEPLOY4, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
+last four are **held**, each waiting on an external trigger that has not arrived. That leaves
+**HELP3, TOOL5, DEVKIT3 and CANON5** actionable now, in that order. Each item is one session-sized
+landing, TDD, gates green, moved to the archive on completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -258,32 +263,6 @@ wire evidence.
   host with no root of its own indexed the machine's whole family (FIX-LOG); `connect` has no
   `--service` flag and an unknown flag is ignored in silence; and a driver that refuses a dirty tree
   was right while the fixture, which left the adoption uncommitted, was wrong.
-
-- [x] **ACP3 — dsh and codex as configurations.** ✅ **done 2026-09-22**, and **HELP2 and HARNESS2
-  close with it**. Both adapters, both toolchain entries, the profile Daoris owns, and the skills
-  root. 🔴 **The finding that shaped it: the D37 posture lives in three different places.** Claude
-  Code names it `acceptEdits` and Codex names it `agent` — both ACP modes, different ids — and dsh's
-  `session/new` carries **no modes at all**, so its posture is `DSH_PERMISSION_MODE=workspace-write`
-  in the environment. The mode was a constant inside `AcpSession`; it is the adapter's now, and null
-  means *this wire carries no posture* rather than a licence to guess a neighbouring one.
-  `docs/2026-09-22-acp3-probe-evidence.md` is the record — every claim established keylessly against
-  an installed artefact at an exact pin, and it says which facts came from a live wire and which from
-  a shipped bundle. **What waits is a driven run per harness**, exactly as ACP2's does.
-
-- [x] **ACP4 — the MCP servers the door hands over.** ✅ **done 2026-09-22.** The composed target
-  tells every session to claim and close its quest over its own connector; the pipe door leans on the
-  repository’s own `.mcp.json`, which an adopted repository may not have and which the driver may
-  never reach in and write. The protocol carries the wiring on `session/new`, so a driven session is
-  handed its voice with **nothing written anywhere**. A machine with no host still drives and says so.
-  Gated in the family rehearsal from the AGENT’s own side (180/180).
-
-- [x] **HELP2 — skills reach one harness only.** ✅ **done 2026-09-22 with ACP3.** `customSkillDirs`
-  naming `.claude/skills` in the patch layer Daoris writes into a dsh home it created — a root, not a
-  conversion, and nothing on an adopter's disk changed. 🔴 **The path is relative and that is
-  load-bearing**: dsh resolves the default project roots per session `cwd` but resolves
-  `customSkillDirs` **once, at construction, against the process's own cwd**. The driver spawns one
-  process per tree (D51), so relative lands right and an absolute path in a shared home would pin
-  every session to whichever tree was first.
 
 - [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
   Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
@@ -366,26 +345,14 @@ deployed artefact** (`npm run rehearse:deploy`, D60).
 `docs/2026-09-22-first-deployment-case-study.md` is the record. **What is left is two decisions, and
 both are the owner's.**
 
-- [x] 🔴 **DEPLOY1 — a repository cannot grant its own trust.** ✅ **the detection half is done
-  2026-09-22**, which was option (a) and the only half that is not the owner's to give. The driver now
-  reads the harness's own record before spawning and **holds** with the sentence that fixes it, instead
-  of spending nine minutes and a real login on a session that could never close its quest. Proven
-  against the real untrusted tree. `ClaudeTrust` reads and never writes: unknown is permissive (no
-  file, unreadable, a shape this build does not know), and only a definite *no* refuses.
-  **What is still open is the owner's:** whether adoption should ever *ask* and write the flag
-  (option b), or whether the pipe door stays documented as needing a human's first visit (option c).
-  🔴 **Never (d), silently.** And **measure the ACP door**: it runs the Agent SDK rather than the
-  CLI's trust flow, so it may not have this problem at all — one driven run answers it.
-
-- [x] 🔴 **DEPLOY3 — there is no credential management surface.** ✅ **done 2026-09-22.** The Machine
-  view could list a harness's profiles and log into one, and could not **make, choose or un-point**
-  one — those three verbs existed only in the CLI, so the owner's *"there is no credential management
-  location"* was literally true. **D50 violated in the direction nothing checks**: the rule is written
-  "whatever a screen can set, a terminal can" and the converse had no test anywhere.
-  `profile-add|remove|default` over `HARNESS_ACTION`, and the roster's own form. 🔴 **"Forget", not
-  "delete"** — it stops this machine pointing at a profile and removes nothing, because the directory
-  holds a credential the harness put there; the word on the button is the word for what happens, in
-  both doors. Daoris manages directories and names, never secrets.
+- [ ] 🔴 **DEPLOY1's second half — should adoption ever ASK for the trust flag?** The detection half
+  shipped 2026-09-22 and is in the archive: the driver reads the harness's own record and **holds**
+  rather than spending nine minutes and a real login on a session that could never close its quest.
+  What is left is the owner's: whether adoption should *ask* and write the flag (option b), or
+  whether the pipe door stays documented as needing a human's first visit (option c). 🔴 **Never
+  (d), silently** — that flag *is* the grant. And **measure the ACP door first**: it runs the Agent
+  SDK rather than the CLI's trust flow, so it may not have the problem at all, and one driven run
+  answers it.
 
 - [ ] **DEPLOY4 — Daoris writes in two places, and one of them is per-install.** Everything the tool
   owns is under `~/.daoris` (registry, `driver.json`, `harnesses.json`, the index, sessions, `bin/`,
@@ -400,32 +367,17 @@ both are the owner's.**
 
 ### Plugins — what the study left (owner, 2026-09-22 → ARCH1)
 
-`docs/2026-09-22-plugin-design-study.md` is the contract. **Two standing decisions are NOT reopened
-by any of these**: no adapter registry (D23/D24/TOOL5 — the ACP door is already that answer, and a
-protocol beats a binary API), and no plugin runtime for the surface (D52).
-
-- [x] 🔴 **PLUG1 — a pack cannot say which canon it needs.** ✅ **done 2026-09-22.** `apiVersion` on
-  every `pack.json`, read **before a single file is planned** — taken from the neighbouring
-  application's plugin manifests, which have carried an integer all along. A pack from a newer canon
-  is refused **naming both numbers**, because "incompatible" alone sends a person to guess which side
-  is behind. **Absent means 1**, so every pack written before the field keeps working: the field is
-  how a pack opts into saying something, never a wall in front of one that never spoke. A non-integer
-  is a malformed manifest rather than an old one, and errors. Raise the number only when a pack
-  written for the new shape **cannot work** on the old one — one that goes up on every change teaches
-  people to ignore it.
+`docs/2026-09-22-plugin-design-study.md` is the contract. **PLUG1 and PLUG3 landed 2026-09-22** and
+are in the archive — a pack declares the canon it needs, and the README names all three seams.
+**PLUG2 is the one left, and it is a decision.** **Two standing decisions are NOT reopened by it**:
+no adapter registry (D23/D24/TOOL5 — the ACP door is already that answer, and a protocol beats a
+binary API), and no plugin runtime for the surface (D52).
 
 - [ ] **PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
   ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest
   `packs: []` is a flat set with no precedence. ⛔ **Decide before building**: this reopens **D4's
   "core installs with no opt-out"**, which was a deliberate choice about doctrine rather than a
   limitation. The owner's call, and the study says so rather than assuming it.
-
-- [x] **PLUG3 — three extension points and nobody is told.** ✅ **done 2026-09-22.** The README has
-  an *Extending it* section naming all three — a pack, a gate row, and speaking ACP — what each may
-  add, and what is deliberately not extensible (the views, D52), pointing at the study for the
-  reasoning. 🔴 **It cost its own budget lesson**: the section put the README 225 words over, and the
-  answer was to relocate detail the design docs already hold (the harness paragraph, the `--force`
-  one) rather than raise the ceiling or shave the new section to uselessness (D28).
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
@@ -439,15 +391,7 @@ protocol beats a binary API), and no plugin runtime for the surface (D52).
   one object already acknowledged by sha. The work is to read and judge each — acknowledge it by sha
   or neutralise the fixture, never a path ignore (the devkit's own asymmetry argument) — then wire
   `daoris-devkit verify` into the gate list and the release workflow **as one row in both**, and
-  correct the devkit README's "it runs this repository's own gates", which today it does not.- [x] **ARCH1 — dsh's domain separation and plugin design as the example for Daoris's own
-  structure.** ✅ **done 2026-09-22**, widened by the owner to include a second reference
-  (*"you might check how yaorin did"*). `docs/2026-09-22-plugin-design-study.md` is the note.
-  🔴 **It reordered its own question**: Daoris already has **three** extension systems — canon packs,
-  the declared gate list, and the ACP door — and none of them is called one. So the finding is not
-  "Daoris needs plugins" but "two of the three are undocumented and one manifest is missing a
-  version field". The Cordis runtime is **declined again** on the evidence already gathered, and
-  *registrations are effects* is adopted as the rule for anything ever loaded at runtime. PLUG1–3
-  below are what it left.
+  correct the devkit README's "it runs this repository's own gates", which today it does not.
 
 - [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met, and the budget no longer
   blocks it** (unparked by CANON7, 2026-09-21). The bilingual sibling carries the rule and the gate;
@@ -458,14 +402,6 @@ protocol beats a binary API), and no plugin runtime for the surface (D52).
   whether this belongs in the always-loaded core at all, or as **pack knowledge for web
   repositories**, which is where it most likely belongs. A rule every repository loads on every task
   to govern a concern only some of them have is what the pack tier exists to prevent.
-
-- [x] **HARNESS2 — a `codex` session adapter.** ✅ **done 2026-09-22 with ACP3**, as
-  `@agentclientprotocol/codex-acp` on the protocol door rather than a hand-built `ISessionAdapter`.
-  The one thing the ACP route did not settle for free — **the D37 boundary in codex's own
-  vocabulary** — was **established, not guessed**: the wire offers `read-only`, `agent` and
-  `agent-full-access`, and `agent` is the posture. 🔴 It is **stricter** than `acceptEdits` rather
-  than equivalent, because it runs with `networkAccess: false`. A driven run still proves the
-  harness. **Not HARNESS1** (a second harness *layout*, a doctrine question), which stays open.
 
 ### Held — each waits on a trigger that has not arrived
 
