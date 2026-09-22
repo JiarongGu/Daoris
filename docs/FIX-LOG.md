@@ -37,7 +37,7 @@ page that decides what the window runs.** Every other fix in this area — the p
 adoption notice — reaches the browser through this file, and none of them can be seen while it is
 served from a cache.
 
-**Commit.** _pending_
+**Commit.** `94845c9`
 
 ## The deployed shell ran the machine's older host, not the one published with it (2026-09-23)
 
