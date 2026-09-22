@@ -29,7 +29,7 @@ import { useWindowChrome } from './windowChrome';
 import { commands } from './commands';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
-import { FrameMenu, FrameMenus } from './work/FrameMenu';
+import { AppMenu, AppMenuBar } from './work/AppMenu';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
@@ -241,45 +241,48 @@ export function App() {
         // Each frame as a MENU of what is inside it (VS Code's menu bar), which the two-button
         // toggle could not be: a view in the other frame was switch-then-hunt-an-unlabelled-icon,
         // and is now one click with a name on it.
+        // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE: settings, this
+        // machine's wiring, the accounts sessions run as, help. Switching frames is NOT here — that
+        // went to the rail, where switching belongs.
         menus={(
-          <FrameMenus>
-            <FrameMenu
-              label={t('work.mode.manage')}
-              trigger="manage"
-              active={frame === 'manage'}
-              current={tab}
-              items={NAV
-                .filter(({ shellOnly }) => !shellOnly || attached)
-                .map(({ tab: target, icon }) => ({
-                  id: target,
-                  label: t(`nav.${target}`),
-                  icon,
-                  badge: target === 'quests' ? (outstanding.data?.length ?? 0) : undefined,
-                }))}
-              onChoose={(_, view) => { chooseMode('manage'); setTab(view as Tab); }}
-            />
-            {/* ABSENT in a browser, never disabled — the rule the activity bar and the Machine tab
-                already follow: a greyed control implies the thing exists somewhere you could get
-                to, and over a keyed remote Work does not exist at all (D55). */}
-            {attached && (
-            <FrameMenu
-              label={t('work.mode.work')}
-              trigger="work"
-              active={frame === 'work'}
-              badge={waiting}
+          <AppMenuBar>
+            <AppMenu
+              label={t('menu.app')}
+              trigger="app"
+              active={false}
               items={[
-                { id: 'sessions', label: t('work.menu.sessions'), icon: 'inbox' },
-                { id: 'review', label: t('work.menu.review'), icon: 'diff' },
-                { id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor', separated: true },
+                { id: 'settings', label: t('menu.machine'), icon: 'settings' },
+                { id: 'harnesses', label: t('menu.harnesses'), icon: 'inbox' },
+                { id: 'remotes', label: t('menu.remotes'), icon: 'convergence' },
+                { id: 'refresh', label: t('menu.refresh'), icon: 'refresh', separated: true },
+                { id: 'language', label: t('menu.language'), icon: 'languages' },
               ]}
-              onChoose={(_, surface) => {
-                if (surface === 'monitor') { openWindow.mutate(MONITOR_WINDOW); return; }
-                chooseMode('work');
-                setWorkIntent(surface === 'review' ? 'review' : 'start');
+              onChoose={(_, item) => {
+                if (item === 'refresh') { onRefresh(); return; }
+                if (item === 'language') {
+                  void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh');
+                  return;
+                }
+                // Every configuration surface this machine has lives in one view; the menu is how
+                // you reach it by name instead of by remembering which icon it is.
+                chooseMode('manage');
+                setTab('settings');
               }}
             />
-            )}
-          </FrameMenus>
+            <AppMenu
+              label={t('menu.view')}
+              trigger="view"
+              active={false}
+              items={[
+                { id: 'palette', label: t('palette.title'), icon: 'search' },
+                { id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor', separated: true },
+              ]}
+              onChoose={(_, item) => {
+                if (item === 'palette') { setPalette(true); return; }
+                if (item === 'monitor' && attached) openWindow.mutate(MONITOR_WINDOW);
+              }}
+            />
+          </AppMenuBar>
         )}
         // The palette's way in is the command center now, not a 14px glyph wedged against the
         // caption buttons — same dialog, a target a person can find.
@@ -312,6 +315,21 @@ export function App() {
             bar, where ambient state belongs. */}
         <ActivityBar
           label={t('nav.label')}
+          // 🔴 The frames live HERE now, at the top of the rail (owner: *"those mode/tab switches
+          // can be at left menu"*). Work is ABSENT in a browser rather than disabled — the rule this
+          // bar already follows for the Machine domain.
+          frames={[
+            { id: 'manage', label: t('work.mode.manage'), icon: 'frameManage', active: frame === 'manage' },
+            ...(attached
+              ? [{
+                  id: 'work',
+                  label: t('work.mode.work'),
+                  icon: 'frameWork' as const,
+                  badge: waiting,
+                  active: frame === 'work',
+                }]
+              : []),
+          ]}
           items={NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ tab: target, icon }) => ({
             tab: target,
             label: t(`nav.${target}`),
@@ -321,6 +339,7 @@ export function App() {
           // Nothing is current in Work: the current thing is the other frame, and selecting a
           // domain here is a door back into it.
           active={frame === 'manage' ? tab : null}
+          onFrame={(id) => chooseMode(id as Mode)}
           onSelect={(target) => {
             setTab(target);
             chooseMode('manage');

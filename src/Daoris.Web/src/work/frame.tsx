@@ -125,7 +125,9 @@ export function AppStrip({
  * **Absent, never disabled** (the rule the Machine tab already followed): a browser is handed a
  * shorter `items`, because a greyed row implies the thing exists somewhere you could get to.
  */
-export function ActivityBar<T extends string>({ label, items, active, onSelect, footer }: {
+export function ActivityBar<T extends string>({
+  label, items, active, onSelect, footer, frames, onFrame,
+}: {
   /** The bar's accessible name — passed in, so this stays a molecule with no i18n of its own. */
   label: string;
   items: { tab: T; label: string; icon: IconName; badge?: number }[];
@@ -134,12 +136,63 @@ export function ActivityBar<T extends string>({ label, items, active, onSelect, 
   onSelect: (tab: T) => void;
   /** Actions, not state: refresh and language. State went to the status bar. */
   footer?: ReactNode;
+  /**
+   * The FRAMES, at the top of the rail (owner, 2026-09-22: *"those mode/tab switches can be at left
+   * menu"*).
+   *
+   * 🔴 They were a segmented toggle in the title bar, then briefly menus there — and both were the
+   * wrong home. A title bar in an IDE holds the **application's** menus (settings, configuration,
+   * help); switching what you are looking at belongs on the rail, which is exactly what an activity
+   * bar is for. Separated from the domains below, because a frame and a view inside one are not
+   * peers.
+   */
+  frames?: { id: string; label: string; icon: IconName; badge?: number; active: boolean }[];
+  /**
+   * Choosing a frame. Its own callback rather than `onSelect`, because a frame id is not a domain
+   * id — routing both through one handler needed a cast, and a cast here would be the component
+   * telling the compiler something untrue about its own contract.
+   */
+  onFrame?: (id: string) => void;
 }) {
   return (
     <nav
       aria-label={label}
       className="flex w-12 shrink-0 flex-col items-center gap-0.5 border-r border-line py-1.5"
     >
+      {frames && frames.length > 0 && (
+        <>
+          {frames.map((frame) => (
+            <Tip key={frame.id} content={frame.label}>
+              <button
+                type="button"
+                aria-label={frame.label}
+                aria-pressed={frame.active}
+                onClick={() => onFrame?.(frame.id)}
+                className={cn(
+                  'relative flex h-9 w-9 items-center justify-center rounded-control transition-colors duration-(--speed)',
+                  frame.active
+                    ? 'bg-accent text-accent-ink'
+                    : 'text-ink-faint hover:bg-raised hover:text-ink',
+                )}
+              >
+                <Icon name={frame.icon} size={17} />
+                {frame.badge !== undefined && frame.badge > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute right-0.5 top-0.5 min-w-3.5 rounded-full border border-st-open bg-page px-0.5 text-center font-mono text-meta leading-[0.95rem] tabular-nums text-st-open"
+                  >
+                    {frame.badge}
+                  </span>
+                )}
+              </button>
+            </Tip>
+          ))}
+          {/* A frame and a view inside one are not peers, and a rail with no rule between them
+              reads as one list of eight equal things. */}
+          <div aria-hidden className="my-1 h-px w-6 shrink-0 bg-line" />
+        </>
+      )}
+
       {items.map(({ tab, label: name, icon, badge }) => (
         <Tip key={tab} content={name}>
           <button

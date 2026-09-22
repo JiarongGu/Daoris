@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FrameMenu, type FrameItem } from './FrameMenu';
+import { AppMenu, type MenuItem } from './AppMenu';
 
-const MANAGE: FrameItem[] = [
+const MANAGE: MenuItem[] = [
   { id: 'overview', label: 'Overview', icon: 'overview' },
   { id: 'quests', label: 'Quests', icon: 'quests', badge: 3 },
   { id: 'settings', label: 'Machine', icon: 'settings', separated: true },
 ];
 
-describe('FrameMenu', () => {
+describe('AppMenu', () => {
   // 🔴 A fresh `setup()` per test. The shared `userEvent.*` API carries pointer state between
   // interactions, and Radix reads it — the first menu in a file opened and every one after it
   // silently did not, which reads as "the component is broken" rather than "the harness is".
@@ -22,7 +22,7 @@ describe('FrameMenu', () => {
 
   it('names its destinations, which the icon rail cannot', async () => {
     render(
-      <FrameMenu label="Manage" trigger="manage" items={MANAGE} active current="overview"
+      <AppMenu label="Manage" trigger="manage" items={MANAGE} active current="overview"
         onChoose={() => {}} />,
     );
     await open();
@@ -38,7 +38,7 @@ describe('FrameMenu', () => {
   it('says which frame as well as which view, so one click crosses the boundary', async () => {
     const onChoose = vi.fn();
     render(
-      <FrameMenu label="Manage" trigger="manage" items={MANAGE} active={false}
+      <AppMenu label="Manage" trigger="manage" items={MANAGE} active={false}
         onChoose={onChoose} />,
     );
     const user = await open();
@@ -51,7 +51,7 @@ describe('FrameMenu', () => {
 
   it('carries a count beside the destination it belongs to', async () => {
     render(
-      <FrameMenu label="Manage" trigger="manage" items={MANAGE} active current="overview"
+      <AppMenu label="Manage" trigger="manage" items={MANAGE} active current="overview"
         onChoose={() => {}} />,
     );
     await open();
@@ -61,7 +61,7 @@ describe('FrameMenu', () => {
 
   it('wears no badge for zero — a zero badge is furniture', () => {
     render(
-      <FrameMenu label="Work" trigger="work" items={MANAGE} active={false} badge={0}
+      <AppMenu label="Work" trigger="work" items={MANAGE} active={false} badge={0}
         onChoose={() => {}} />,
     );
 
@@ -70,7 +70,7 @@ describe('FrameMenu', () => {
 
   it('shows attention on the frame itself when it rides there', () => {
     render(
-      <FrameMenu label="Work" trigger="work" items={MANAGE} active={false} badge={2}
+      <AppMenu label="Work" trigger="work" items={MANAGE} active={false} badge={2}
         onChoose={() => {}} />,
     );
 
@@ -80,7 +80,7 @@ describe('FrameMenu', () => {
   /** The check follows the frame too: Manage's current view is not current while you are in Work. */
   it('marks nothing current in a frame you are not in', async () => {
     render(
-      <FrameMenu label="Manage" trigger="manage" items={MANAGE} active={false} current="overview"
+      <AppMenu label="Manage" trigger="manage" items={MANAGE} active={false} current="overview"
         onChoose={() => {}} />,
     );
     await open();

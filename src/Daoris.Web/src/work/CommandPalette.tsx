@@ -72,7 +72,7 @@ export function CommandPalette({ open, commands, onClose }: {
       <Dialog.Portal>
         {/* Below the app strip — see `ui.tsx`'s drawer scrim and `tokens.test.ts`. It is also what
             VS Code does: its title bar stays live while quick-open is up. */}
-        <Dialog.Overlay className="fixed inset-x-0 bottom-0 top-9 z-20 bg-scrim" />
+        <Dialog.Overlay className="fixed inset-y-0 bottom-0 left-12 right-0 top-9 z-20 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
           // Radix writes the role and traps focus but not this attribute (see `Drawer`).

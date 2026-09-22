@@ -4,7 +4,7 @@ import { Icon, type IconName } from '../ui';
 import { cn } from '../lib/cn';
 
 /** One destination inside a frame — a view in Manage, a surface in Work. */
-export interface FrameItem {
+export interface MenuItem {
   id: string;
   label: string;
   icon?: IconName;
@@ -15,31 +15,29 @@ export interface FrameItem {
 }
 
 /**
- * A frame, and everything inside it, as one title-bar menu.
+ * One menu in the application's menu bar — the title bar's left, as every IDE has it.
  *
  * @remarks
- * **Taken from VS Code's menu bar** (owner, 2026-09-22: *"instead manage/work we also need some
- * better design for those — a menu with sub views"*). It replaces a two-button segmented toggle
- * that could say only which frame you were in.
+ * **What it is for** (owner, 2026-09-22: *"the manage/work menu should follow the vscode or other
+ * IDE design so a lot setting config can be there, and this is not manage/work menu"*). A title-bar
+ * menu bar holds what the **application** can do and be configured to do — settings, the machine's
+ * wiring, the accounts it runs as, help. It is not where you switch what you are looking at: that
+ * went to the activity rail, which is what a rail is for.
  *
- * 🔴 **What the toggle cost, and this returns.** Reaching a view from the other frame was two moves
- * — switch frame, then find the icon — and the icon rail has carried no labels since SURF10, which
- * that item named the palette as repaying. This pays it a second way and at the point of use: the
- * destinations are **named**, they carry their own counts, and any of them is one click from either
- * frame. The rail keeps its job for the frame you are in; this is for the one you are not.
+ * 🔴 **This replaced its own predecessor twice, and the second correction is the instructive one.**
+ * It began as a segmented Manage/Work toggle, became menus *of the frames*, and is now the
+ * application's menus — because "a menu with sub-views" and "the frame switcher" were two different
+ * asks, and building the first as the second kept navigation in the one place an IDE reserves for
+ * configuration.
  *
- * **Both frames stay frames** (D55). The menu is a way in, not a nav item — choosing an item says
- * *this frame, this view*, so the frame boundary is still the thing being crossed rather than being
- * flattened into a list of seven peers.
- *
- * **Presentational, and it imports no hook** (components §3): open state, the current item, a badge,
- * an unavailable frame — every one reachable by passing props.
+ * **Presentational, and it imports no hook** (components §3): open state, the current item, a badge
+ * — every one reachable by passing props.
  */
-export function FrameMenu({
+export function AppMenu({
   label, items, current, active, badge = 0, onChoose, trigger,
 }: {
   label: string;
-  items: FrameItem[];
+  items: MenuItem[];
   /** The item showing now, when this frame is the one on screen. */
   current?: string;
   /** Whether this frame is the one on screen — what the trigger shows as selected. */
@@ -113,6 +111,6 @@ export function FrameMenu({
 }
 
 /** The two frames, side by side — what the app strip shows where the toggle used to be. */
-export function FrameMenus({ children }: { children: ReactNode }) {
+export function AppMenuBar({ children }: { children: ReactNode }) {
   return <nav className="flex items-center gap-0.5">{children}</nav>;
 }

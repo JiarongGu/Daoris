@@ -419,6 +419,29 @@ one gate.**
   and no account: bringing the window up, finding its host and writing one non-ASCII line to a
   transcript would have caught both.
 
+- [ ] 🔴 **DEPLOY3 — there is no credential management surface, and a menu now points at where it
+  should be.** Measured 2026-09-22: the Machine view **lists** a harness's profiles and can run
+  `login` into one, and there is no way to **create, remove or default** one from any screen. Those
+  three verbs exist only as `daoris harness profile add|remove|default`, so **D50 is violated in the
+  direction nobody checks** — the rule is stated as "whatever a screen can set, a terminal can", and
+  the converse failed silently because no test asserts it. It is also why the owner's *"there is no
+  credential management location"* is literally true: `~/.daoris/harnesses/<harness>/<profile>/` is
+  where one would live and nothing has ever made one.
+  The work is the three verbs through `HARNESS_ACTION` and the Machine view's own section, with the
+  refusals each already has. 🔴 **Daoris manages directories and names, never secrets** — creating a
+  profile makes a directory and runs the harness's own login into it, and reads nothing from inside.
+
+- [ ] **DEPLOY4 — Daoris writes in two places, and one of them is per-install.** Everything the tool
+  owns is under `~/.daoris` (registry, `driver.json`, `harnesses.json`, the index, sessions, `bin/`,
+  `toolchain/`, and profiles when they exist) — **except** the desktop's own `data/` beside the
+  install, which holds the WebView2 profile and the window's geometry. Two homes for one application.
+  🔴 **`~/.daoris` being machine-wide is load-bearing, not an accident**: it is what makes the CLI and
+  the desktop two doors onto one machine (D50), and moving it inside an install would give two
+  installs two registries and leave `daoris` on a terminal unable to see either. So the question is
+  narrower than it looks — whether per-install UI state should join it, and under what key, since a
+  scratch run and a real one must not contend for a window's geometry. Owner's call; measure before
+  moving anything.
+
 ### Open — the arc's leftovers, in the order they are worth doing
 
 - [ ] **DEVKIT3 — the devkit is not run over its own repository, and its scan has six findings

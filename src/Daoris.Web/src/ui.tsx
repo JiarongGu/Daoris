@@ -7,8 +7,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowLeftRight, Check, ChevronDown, ChevronRight, FileDiff, GitMerge, Inbox, Languages,
-  LayoutGrid, Layers, Monitor, Plus, RotateCw, Search, SlidersHorizontal,
-  SquareArrowOutUpRight, X,
+  LayoutDashboard, LayoutGrid, Layers, Monitor, Plus, RotateCw, Search, SlidersHorizontal,
+  SquareArrowOutUpRight, SquareTerminal, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -39,6 +39,11 @@ const ICONS = {
   // The second screen (SURF8): the monitor window, and popping one session out into its own.
   monitor: Monitor,
   external: SquareArrowOutUpRight,
+  // 🔴 The two FRAMES, and they need glyphs of their own. Manage first wore `overview` — the same
+  // grid as the Overview domain three rows below it — so the rail showed one icon twice meaning two
+  // different things, which is worse than an unlabelled icon: it is a wrong label.
+  frameManage: LayoutDashboard,
+  frameWork: SquareTerminal,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -408,7 +413,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
             caption buttons into (SURF7), and a page scrim cannot dim what the page does not draw —
             so a full-bleed one dimmed the title bar and left three bright buttons punched through
             it. Held by `tokens.test.ts`, because it is a rule about every overlay. */}
-        <Dialog.Overlay className="fixed inset-x-0 bottom-0 top-9 z-10 bg-scrim" />
+        <Dialog.Overlay className="fixed inset-y-0 bottom-0 left-12 right-0 top-9 z-10 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
           // D41 §6 says a drawer is `role="dialog"` WITH `aria-modal`, and Radix sets the role and

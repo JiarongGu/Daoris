@@ -37,7 +37,7 @@ export function rawSizes(files: [path: string, source: string][]): string[] {
  * The rule is the position, so the check is on the position: an overlay starts at `top-9` — the
  * strip's own height — not at `inset-0`.
  */
-const FULL_BLEED_SCRIM = /fixed inset-0[^"'`]*bg-scrim/g;
+const FULL_BLEED_SCRIM = /fixed inset-0[^"'`]*bg-scrim|bg-scrim[^"'`]*fixed inset-0/g;
 
 export function scrimsOverTheStrip(files: [path: string, source: string][]): string[] {
   return files.flatMap(([path, source]) =>
