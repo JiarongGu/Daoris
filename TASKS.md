@@ -110,7 +110,13 @@ workspace `testbed`, each with its own `.mcp.json` and trust settings, registere
 host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
 it. Two branches there hold what the failed sessions produced.
 
-**What is open**, in the Backlog below: **CANON5** is the one actionable item left.
+🔴 **Nothing in the backlog is actionable without a trigger or a decision**, as of 2026-09-22, and
+that is a state worth naming rather than a gap to fill. Every remaining row waits on the owner (four)
+or on something arriving (seven); the list and what each waits for is in the Backlog's own
+introduction. **A fresh session should expect a new direction rather than a next item** — and if one
+is wanted from the list, the two ripest are **DEPLOY4** and **PLUG2**, because both are decisions
+that need no login and no external event, only a call.
+
 🔴 **TOOL5 was read against what is built and is a trigger, not work** — every sentence of the
 toolchain design's §5 is realised, and what is waiting is a tool somebody names. It joins the held
 set on CANON2's bar. The reading found one real gap and it is fixed: the toolchain twin tables
@@ -208,8 +214,12 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **The held items (REH1, CANON5, CANON2, HARNESS1) still wait on their external triggers** — pick one
-  up only when its trigger has actually arrived.
+- **Every open item now waits on something**, which is new and is the honest state rather than a
+  lull. **Four are the owner's** (ACP2 and DEPLOY1's second half each cost a real login; DEPLOY4 and
+  PLUG2 are decisions). **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts, TOOL5 and CANON2
+  on a repository naming what it wants, HARNESS1 on the same, REH1 and TEST1 on a captured recurrence,
+  and HELP3 on where the guard lives being settled. Pick one up only when its trigger has actually
+  arrived — and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop now (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click`. It
   is **not a gate** — it starts the real window on a scratch machine of its own, and `eval` is the one
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
@@ -238,8 +248,13 @@ DEPLOY1's second half, DEPLOY4, PLUG2); one more (TOOL4) is held by D57 until TO
 last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
 that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
 question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
-design's §5 is realised and what waits is a tool somebody names. **That leaves CANON5** actionable
-now. Each item is one session-sized landing, TDD, gates green, moved to the archive on completion.
+design's §5 is realised and what waits is a tool somebody names.
+
+🔴 **Which leaves nothing actionable**, as of 2026-09-22. That is the first time it has been true and
+it is a result, not a stall: the D45, D47, D48–D50, D51–D56, D53, D57, D59, D60 and ARCH1 arcs are
+all closed and in the archive. **The two ripest rows are DEPLOY4 and PLUG2** — both decisions, both
+needing no login and no external event. Each item is one session-sized landing, TDD, gates green,
+moved to the archive on completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
