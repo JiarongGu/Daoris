@@ -182,7 +182,10 @@ reinstalling the service and restarting the host.
 > `~/.daoris/bin` above the host `--service` had just published beside the shell, so the shell
 > *spawned* the older one. The order is reversed now — what the install carries comes first — and
 > the deployment gate asserts the host it started is the install's own (`docs/FIX-LOG.md`). The
-> reporting half above is still not built.
+> reporting half is built in its simplest honest form the same day: the platform's page names its
+> own bundle, so on adoption the shell compares what the running host serves with what the install
+> carries and, when they differ, says so — once, naming both — and goes on, because the host works
+> (`HostSupervisor.Notice`).
 
 A smaller one beside it: both installs copy `wwwroot` **over** the existing directory without
 clearing it, so stale hashed bundles accumulate. Harmless — `index.html` names the current one — and

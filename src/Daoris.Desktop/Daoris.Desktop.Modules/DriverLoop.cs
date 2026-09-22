@@ -111,6 +111,15 @@ public sealed class DriverLoop(IEventBus eventBus, HostSupervisor supervisor, st
             return;
         }
 
+        // The host is up and it is somebody else's, serving a page that is not this install's (case
+        // study 4d). Said once, on the channel a person has to act on — like a parked session, it is
+        // waiting on them — and the loop goes on, because the host does work.
+        if (supervisor.Notice is { } notice)
+        {
+            await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = notice })
+                .ConfigureAwait(false);
+        }
+
         var home = Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         using var service = new ServiceClient(serviceUrl, key);

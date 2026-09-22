@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**282 CLI tests, 275 service, 297 driver, 77 desktop modules, 483 web unit, 14 Playwright**, 59
+**282 CLI tests, 275 service, 297 driver, 81 desktop modules, 483 web unit, 14 Playwright**, 59
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), **32/32 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -89,8 +89,9 @@ before touching the desktop — four defects were invisible from inside the work
 *because* of something the workspace provides. 🔴 **The second deployment (2026-09-23) found a
 fifth**: the shell spawned the machine's older host from `~/.daoris/bin` instead of the one
 `--service` had just published beside it, and the window showed the previous page. The locator
-now prefers what the install carries (`docs/FIX-LOG.md`). **Republish and LOOK after every
-surface change** — that is how it was found, and `document.scripts` names which bundle is live.
+now prefers what the install carries (`docs/FIX-LOG.md`), and a shell that ADOPTS a running host
+serving another page says so once, naming both bundles. **Republish and LOOK after every surface
+change** — that is how it was found, and `document.scripts` names which bundle is live.
 
 🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
 (DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that
@@ -248,7 +249,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (275),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (297), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (483 vitest + 14 Playwright),
+  (297), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (81), `npm run rehearse:family` (180/180), `npm run test:web` (483 vitest + 14 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (32/32), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Its phase 4 asserts the host the
   deployed shell started is the INSTALL's own** — on this machine `~/.daoris/bin` holds a second

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -8,7 +9,12 @@ namespace Daoris.Desktop;
 /// already answering belongs to whoever started it — another shell, a terminal, a rehearsal — and
 /// killing someone else's server on exit would be the process version of writing into their tree.
 /// </summary>
-public sealed class HostSupervisor(string serviceUrl) : IDisposable
+/// <param name="serviceUrl">Where the host answers, or should.</param>
+/// <param name="locate">
+/// Where this shell's own host is — the one it would start, and the one whose page it carries. The
+/// real answer is <see cref="ServiceHostLocator"/>'s; a test hands in a location of its own.
+/// </param>
+public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?>? locate = null) : IDisposable
 {
     private readonly HttpClient _probe = new() { Timeout = TimeSpan.FromSeconds(2) };
     private Process? _owned;
@@ -16,15 +22,29 @@ public sealed class HostSupervisor(string serviceUrl) : IDisposable
     /// <summary>Why the last <see cref="EnsureAsync"/> answered false — a sentence for the person.</summary>
     public string? Trouble { get; private set; }
 
+    /// <summary>
+    /// Information rather than trouble: the host answers, and the page it serves is not the one this
+    /// install carries. Set only on adoption, and only when both pages could be read.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 The first deployment's 4d: the shell adopted the machine's host, the window was new, the
+    /// page was old, and no surface said so. Adoption stays the rule — a running host is somebody's —
+    /// but the shell can say what it adopted, because the platform's page names its own bundle in a
+    /// script tag and the install's `index.html` names the bundle it carries. Different names are a
+    /// different page; nothing else about the host is claimed.
+    /// </remarks>
+    public string? Notice { get; private set; }
+
     /// <summary>True when the host answers — found running, or started here and now answering.</summary>
     public async Task<bool> EnsureAsync(CancellationToken ct = default)
     {
-        if (await AnswersAsync(ct).ConfigureAwait(false)) return true;
+        if (await AnswersAsync(ct).ConfigureAwait(false))
+        {
+            Notice = await AdoptionNoticeAsync(ct).ConfigureAwait(false);
+            return true;
+        }
 
-        var location = ServiceHostLocator.Locate(
-            Environment.GetEnvironmentVariable(ServiceHostLocator.PathVariable),
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            AppContext.BaseDirectory);
+        var location = Locate();
 
         if (location is null)
         {
@@ -95,6 +115,55 @@ public sealed class HostSupervisor(string serviceUrl) : IDisposable
             return false;
         }
     }
+
+    private HostLocation? Locate() =>
+        locate is not null
+            ? locate()
+            : ServiceHostLocator.Locate(
+                Environment.GetEnvironmentVariable(ServiceHostLocator.PathVariable),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                AppContext.BaseDirectory);
+
+    /// <summary>
+    /// What an adopted host serves against what this install carries — a sentence when they differ,
+    /// null when they agree or when either side cannot be read. Silence is never a claim of sameness.
+    /// </summary>
+    private async Task<string?> AdoptionNoticeAsync(CancellationToken ct)
+    {
+        var own = Locate();
+        if (own is null) return null;
+
+        // The same rule the host itself applies: the bundle lives in `wwwroot` beside the working
+        // directory, which is why HostLocation carries one.
+        var page = Path.Combine(own.WorkingDirectory, "wwwroot", "index.html");
+        if (!File.Exists(page)) return null;
+        var carried = BundleNamed(await File.ReadAllTextAsync(page, ct).ConfigureAwait(false));
+
+        string? served;
+        try
+        {
+            served = BundleNamed(await _probe.GetStringAsync($"{serviceUrl.TrimEnd('/')}/", ct).ConfigureAwait(false));
+        }
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
+        {
+            return null;
+        }
+
+        if (carried is null || served is null || carried == served) return null;
+        return $"the service already running at {serviceUrl} serves {served}, and this application carries "
+            + $"{carried} — something else started that host, and the page you are looking at is its. "
+            + "Stop it and start Daoris again to see this install's page.";
+    }
+
+    /// <summary>The hashed bundle a platform page names in its script tag, or null for any other page.</summary>
+    public static string? BundleNamed(string html)
+    {
+        var match = Bundle().Match(html);
+        return match.Success ? match.Value : null;
+    }
+
+    [GeneratedRegex(@"index-[A-Za-z0-9_-]+\.js")]
+    private static partial Regex Bundle();
 
     public void Dispose()
     {
