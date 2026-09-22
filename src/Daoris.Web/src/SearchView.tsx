@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearch } from './queries';
+import { page } from './results';
 import { CheckField, type Notify, PageHeader, useErrorNotify } from './ui';
 import { useDebounced } from './lib/useDebounced';
 
@@ -19,6 +20,8 @@ export function SearchView({ onOpen, notify }: {
 
   const hits = useSearch(debounced, localOnly);
   useErrorNotify(hits.error, notify);
+  // The service caps; the client asks for one more than it shows, so "there are more" is a fact.
+  const { shown, more } = page(hits.data ?? []);
 
   return (
     <section>
@@ -41,8 +44,18 @@ export function SearchView({ onOpen, notify }: {
         <p className="max-w-xl text-body text-ink-soft">{t('search.empty')}</p>
       )}
 
+      {/* 🔴 How many, and whether that is all of them. A broad query on a real index comes back
+          capped by the service, and a truncated list with nothing saying so is the one answer a
+          search must never give quietly — "what has the family learned about this" would be
+          answered with a number the person had no reason to doubt. */}
+      {!hits.isFetching && shown.length > 0 && (
+        <p className="mb-1 text-small text-ink-faint">
+          {more ? t('search.cappedAt', { count: shown.length }) : t('search.count', { count: shown.length })}
+        </p>
+      )}
+
       <ul className="m-0 list-none p-0">
-        {hits.data?.map((hit) => (
+        {shown.map((hit) => (
           <li key={hit.id} className="border-t border-line py-2 first:border-t-0">
             <button
               className="border-0 bg-transparent p-0 text-left text-body font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-accent"
