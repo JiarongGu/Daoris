@@ -29,6 +29,7 @@ import { useWindowChrome } from './windowChrome';
 import { commands } from './commands';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
+import { FrameMenu, FrameMenus } from './work/FrameMenu';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
@@ -237,6 +238,49 @@ export function App() {
         onDragStart={chrome.present ? chrome.onDragStart : undefined}
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
+        // Each frame as a MENU of what is inside it (VS Code's menu bar), which the two-button
+        // toggle could not be: a view in the other frame was switch-then-hunt-an-unlabelled-icon,
+        // and is now one click with a name on it.
+        menus={(
+          <FrameMenus>
+            <FrameMenu
+              label={t('work.mode.manage')}
+              trigger="manage"
+              active={frame === 'manage'}
+              current={tab}
+              items={NAV
+                .filter(({ shellOnly }) => !shellOnly || attached)
+                .map(({ tab: target, icon }) => ({
+                  id: target,
+                  label: t(`nav.${target}`),
+                  icon,
+                  badge: target === 'quests' ? (outstanding.data?.length ?? 0) : undefined,
+                }))}
+              onChoose={(_, view) => { chooseMode('manage'); setTab(view as Tab); }}
+            />
+            {/* ABSENT in a browser, never disabled — the rule the activity bar and the Machine tab
+                already follow: a greyed control implies the thing exists somewhere you could get
+                to, and over a keyed remote Work does not exist at all (D55). */}
+            {attached && (
+            <FrameMenu
+              label={t('work.mode.work')}
+              trigger="work"
+              active={frame === 'work'}
+              badge={waiting}
+              items={[
+                { id: 'sessions', label: t('work.menu.sessions'), icon: 'inbox' },
+                { id: 'review', label: t('work.menu.review'), icon: 'diff' },
+                { id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor', separated: true },
+              ]}
+              onChoose={(_, surface) => {
+                if (surface === 'monitor') { openWindow.mutate(MONITOR_WINDOW); return; }
+                chooseMode('work');
+                setWorkIntent(surface === 'review' ? 'review' : 'start');
+              }}
+            />
+            )}
+          </FrameMenus>
+        )}
         // The palette's way in is the command center now, not a 14px glyph wedged against the
         // caption buttons — same dialog, a target a person can find.
         center={(

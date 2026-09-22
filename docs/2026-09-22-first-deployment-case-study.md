@@ -166,6 +166,23 @@ decision records explaining both.
   still saying `working`. The graceful path does end sessions and record them `stopped`; a forced
   one cannot, by definition. Worth knowing before anyone kills a shell that is driving.
 
+### 4d. 🔴 A deployed shell can serve a page older than itself
+
+Re-launching the install showed the **previous** UI. Nothing had failed: the shell **adopts an HTTP
+host that is already running** rather than double-starting one (documented, and right), and the host
+running was the machine-wide one under `~/.daoris/bin`, still serving the `wwwroot` from *its* last
+install. The window was new, the page was old, and no surface said so.
+
+Adoption compares nothing about what it is adopting. The two honest answers are for the host to
+report the bundle it serves so the shell can say when they differ, or for `publish:desktop` to refuse
+quietly diverging from the machine's installed service. Neither is built; the deployment was fixed by
+reinstalling the service and restarting the host.
+
+A smaller one beside it: both installs copy `wwwroot` **over** the existing directory without
+clearing it, so stale hashed bundles accumulate. Harmless — `index.html` names the current one — and
+misleading to anybody trying to tell which is live by listing the folder, which is exactly what this
+was diagnosed by.
+
 ## 5. What this says about the next deployment
 
 - **The trust step is the blocker, and it is a decision, not a patch.** Daoris could write

@@ -30,7 +30,7 @@ export type Mode = 'manage' | 'work';
  * where there is no window to command and none of them are passed at all.
  */
 export function AppStrip({
-  mode, modeAvailable, attention = 0, onMode, scope, center, captionRoom,
+  mode, modeAvailable, attention = 0, onMode, scope, center, menus, captionRoom,
   stripRef, onDragStart, onToggleMaximize, onResizeTop,
 }: {
   mode: Mode;
@@ -41,6 +41,8 @@ export function AppStrip({
   scope?: ReactNode;
   /** The command center — where you are, and the way into everything (taken from VS Code's shape). */
   center?: ReactNode;
+  /** The frame menus, when the caller has a roster of sub-views to offer. */
+  menus?: ReactNode;
   captionRoom?: boolean;
   stripRef?: (element: HTMLElement | null) => void;
   /** Absent in a browser: there is no window to move, so the strip is simply a strip. */
@@ -82,7 +84,10 @@ export function AppStrip({
         <span className="text-small text-ink-faint">道衍</span>
       </div>
 
-      <ModeSwitch mode={mode} available={modeAvailable} attention={attention} onChange={onMode} />
+      {/* The frames, as menus of what is inside them (VS Code's menu bar). `menus` replaces the
+          two-button toggle; the toggle survives as the fallback for a caller that has no roster to
+          offer, which is what a story or a narrow test renders. */}
+      {menus ?? <ModeSwitch mode={mode} available={modeAvailable} attention={attention} onChange={onMode} />}
 
       {/* The middle, which used to be ~1,400px of nothing at any real window width. Absolutely
           positioned so it centres on the STRIP rather than on whatever is left over after the
