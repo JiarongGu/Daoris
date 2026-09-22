@@ -1,117 +1,89 @@
-import type { CommandArgs, LockLike } from './types.ts';
+import type { CommandArgs, Harness, LockLike } from './types.ts';
 import type { ExitCode } from './errors.ts';
+import type { TierDocument } from './tierrender.ts';
 import { join } from 'node:path';
-import { listMarkdown, readText, writeTextAtomic } from './fsx.ts';
-import { parseFrontmatter, stripHeader, SKILL_FIELDS } from './document.ts';
-import { lockIndex, readLock, readManifest } from './config.ts';
-import { HARNESSES, DEFAULT_HARNESS } from './harness.ts';
-
-// Kept as the default for callers that have no manifest to hand; the manifest's harness is
-// authoritative wherever one exists.
-export const INDEX_PATH = HARNESSES[DEFAULT_HARNESS]!.indexPath;
-const INDEX_FILE = 'RULES_INDEX.md';
-const TABLE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
-const SKILL_TABLE_HEAD = '| Skill | Use when |\n|---|---|';
-
-function rows(root: string, target: string, tier: string, locked: Map<string, unknown>): string[] {
-  const lines = [];
-  for (const file of listMarkdown(join(root, target, tier))) {
-    if (tier === 'rules' && file === INDEX_FILE) continue;
-    const { meta } = parseFrontmatter(stripHeader(readText(join(root, target, tier, file))));
-    const link = `[${file.replace(/\.md$/, '')}](${tier === 'rules' ? '' : `../${tier}/`}${file})`;
-    const mark = locked.has(`${tier}/${file}`) ? '' : ' _(local)_';
-    lines.push(
-      meta
-        ? `| ${link}${mark} | ${meta.applies_when} | ${meta.enforces} |`
-        : `| ${link}${mark} | ⚠ needs frontmatter | ⚠ needs frontmatter |`,
-    );
-  }
-  return lines;
-}
+import { listMarkdown, readText } from './fsx.ts';
+import { stripHeader } from './document.ts';
+import { lockIndex, readManifest } from './config.ts';
+import { renderRoster } from './tierrender.ts';
+import { DEFAULT_HARNESS, HARNESSES } from './harness.ts';
 
 /**
- * A skill is a directory, so the directory is its name and `SKILL.md` is an
- * implementation detail the roster should never show. This table is what makes
- * a hand-written "here are our skills" skill unnecessary: its content was always
- * generated (D14), and only a generated roster can be right in a repo whose
- * skill set the canon has never seen.
- */
-function skillRows(root: string, target: string, locked: Map<string, unknown>): string[] {
-  const lines = [];
-  for (const file of listMarkdown(join(root, target, 'skills'))) {
-    if (!file.endsWith('/SKILL.md')) continue;
-    const name = file.slice(0, -'/SKILL.md'.length);
-    const text = stripHeader(readText(join(root, target, 'skills', file)));
-    const { meta } = parseFrontmatter(text, SKILL_FIELDS);
-    const mark = locked.has(`skills/${file}`) ? '' : ' _(local)_';
-    lines.push(
-      `| [${name}](../skills/${file})${mark} | ${meta?.description ? summarize(meta.description) : '⚠ needs frontmatter'} |`,
-    );
-  }
-  return lines;
-}
-
-/**
- * The first sentence, capped.
+ * The on-demand tiers, as they actually are on disk.
  *
- * A skill's `description` is the harness's TRIGGER text: long by design, because it has to match
- * against however a person phrases the request. The index is a ROSTER — it answers "what is this
- * skill", not "should this skill fire" — so copying the trigger whole pays for it twice, once where
- * the harness reads it and again on every session that loads the always-loaded index. Measured on
- * the second adoption, the skills table was 46% of an index that had itself become the largest
- * always-loaded file in the repository.
+ * @remarks
+ * Read from disk rather than from the canon, and this is the whole reason the roster exists: a
+ * repository's OWN knowledge and skills are listed beside the canonical ones, marked `_(local)_`, and
+ * the canon has never seen them. An index generated from the canon would be right about the canon and
+ * wrong about the repository.
+ *
+ * Offline and canon-free, which is what lets `check` rebuild these rows to tell whether the region
+ * has gone stale (D8 — `check` sits inside build gates).
  */
-function summarize(description: string, limit = 110): string {
-  const text = description.trim();
-  if (text.length <= limit) return text;
-  // A plain cap on a word boundary, deliberately not sentence detection: "e.g." and "i.e." end a
-  // sentence as far as a regex is concerned, and the first row this shipped on was truncated at one —
-  // which reads as a complete thought that stops making sense rather than as a visible cut.
-  const cut = text.lastIndexOf(' ', limit);
-  return `${text.slice(0, cut > 40 ? cut : limit).trimEnd()}…`;
+export function readTier(
+  { root, target, tier, entryFile, lock }:
+  { root: string; target: string; tier: string; entryFile?: string; lock: LockLike | null },
+): TierDocument[] {
+  const locked = lockIndex(lock);
+  const documents: TierDocument[] = [];
+
+  for (const file of listMarkdown(join(root, target, tier))) {
+    if (entryFile && !file.endsWith(`/${entryFile}`)) continue;
+    const relative = `${tier}/${file}`;
+    documents.push({
+      // The roster renders a path and a name; which pack it came from is the lock's business, and
+      // the only thing that shows here is whether it is the repository's own.
+      file: { pack: locked.has(relative) ? 'canon' : 'local', source: relative, target: relative },
+      text: stripHeader(readText(join(root, target, tier, file))),
+      local: !locked.has(relative),
+    });
+  }
+
+  return documents;
 }
 
 /**
- * Generated from what is actually on disk, so the index can never point at a
- * file that is not there. A file without frontmatter is marked, never dropped —
- * an index that looks complete while omitting a rule is the failure to avoid.
+ * The roster as this repository's DISK says it should be — the knowledge and skills halves only.
+ *
+ * 🔴 The rules half is deliberately absent. Its rows come from frontmatter that is stripped on the way
+ * into the region (D59), so nothing offline can rebuild them; a canon change is `status`'s report and
+ * `sync`'s job. What this catches is the case that actually happens: a local document added and the
+ * region never re-synced.
  */
-export function buildIndex(
-  { root, target, lock }:
-  { root: string; target: string; lock: LockLike | null },
+export function rosterFromDisk(
+  { root, target, lock, harness = HARNESSES[DEFAULT_HARNESS]! }:
+  { root: string; target: string; lock: LockLike | null; harness?: Harness },
 ): string {
-  const locked = lockIndex(lock);
-  return [
-    '# RULES_INDEX — generated by daoris; do not hand-edit',
-    '',
-    "Rows marked _(local)_ are this repo's own and are never synced.",
-    '',
-    '## Core (always loaded)',
-    '',
-    TABLE_HEAD,
-    ...rows(root, target, 'rules', locked),
-    '',
-    '## Knowledge (read on demand)',
-    '',
-    TABLE_HEAD,
-    ...rows(root, target, 'knowledge', locked),
-    '',
-    '## Skills (invoke by name)',
-    '',
-    SKILL_TABLE_HEAD,
-    ...skillRows(root, target, locked),
-    '',
-  ].join('\n');
+  const knowledge = harness.tiers.knowledge;
+  const skills = harness.tiers.skills;
+
+  return renderRoster({
+    rules: [],
+    knowledge: knowledge?.dir ? readTier({ root, target, tier: knowledge.dir, lock }) : [],
+    skills: skills?.dir
+      ? readTier({
+        root, target, tier: skills.dir, lock, ...(skills.entryFile ? { entryFile: skills.entryFile } : {}),
+      })
+      : [],
+    version: '',
+    target,
+  });
 }
 
-export function writeIndex(root: string, target: string, text: string): void {
-  writeTextAtomic(join(root, target, INDEX_PATH), text);
-}
-
+/**
+ * `daoris index` — rebuild the region from the canon and this repository's disk.
+ *
+ * @remarks
+ * It used to write `RULES_INDEX.md`, a generated file in an always-loaded directory. The roster now
+ * lives inside the region (D59), where it is loaded rather than merely present, so regenerating it is
+ * regenerating the region — which needs the canon's rule bodies and is therefore `sync`'s own path,
+ * run with nothing else to do.
+ */
 export function commandIndex({ root, write }: Pick<CommandArgs, 'root' | 'write'>): ExitCode {
   const manifest = readManifest(root);
-  const text = buildIndex({ root, target: manifest.target, lock: readLock(root) });
-  writeIndex(root, manifest.target, text);
-  write(`daoris: wrote ${manifest.target}/${INDEX_PATH}`);
+  write('daoris: the roster is part of the doctrine region now, not a file of its own (D59).');
+  write(`  It is rebuilt with the rules it sits above, so \`daoris sync\` is what regenerates it.`);
+  write(`  ${manifest.target} still holds the on-demand tiers, and \`daoris check\` reports when`);
+  write('  their rows have gone stale.');
   return 0;
 }

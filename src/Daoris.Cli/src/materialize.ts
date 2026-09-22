@@ -8,8 +8,23 @@ import { renderCanonFile, stripHeader } from './document.ts';
 import { significantTokens, containment } from './twins.ts';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
-import { buildIndex, writeIndex } from './indexgen.ts';
+import { readTier } from './indexgen.ts';
+import { renderRoster, renderRules, tierRuleBody } from './tierrender.ts';
+import { ensureImport, findRegion, writeRegion } from './region.ts';
+import { resolveHarness } from './harness.ts';
+import { parseFrontmatter } from './document.ts';
 import { DaorisError } from './errors.ts';
+
+/** A canon document's body, with its frontmatter removed — what a span carries (D59). */
+function stripFrontmatter(text: string): string {
+  const { meta, body } = parseFrontmatter(text, []);
+  return (meta ? body : text).trim();
+}
+
+/** Which directory name a tier answers to, for matching a canon target against it. */
+function tierPrefix(tier: { region?: { name: string }; dir?: string }, _harness: unknown): string {
+  return tier.dir ?? tier.region?.name ?? '';
+}
 
 /**
  * Planning is separate from applying so the plan can be printed (--dry-run) or
@@ -28,8 +43,63 @@ export function planSync(
   const drifted: string[] = [];
   const collisions: string[] = [];
 
+  // The always-loaded tier is a SPAN in a file the repository owns, not a directory of its own
+  // (D59). Which tier that is comes from the harness descriptor, so a second harness is a descriptor
+  // rather than a branch here.
+  const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
+  const regionOf = (target: string): { file: string; name: string } | null => {
+    for (const tier of Object.values(harness.tiers)) {
+      if (tier.region && tier.dir === undefined && target.startsWith(`${tierPrefix(tier, harness)}/`)) {
+        return tier.region;
+      }
+    }
+    return null;
+  };
+
+  const regionText = new Map<string, string>();
+  const regionAt = (file: string): string => {
+    if (!regionText.has(file)) {
+      const abs = join(root, file);
+      regionText.set(file, existsSync(abs) ? readText(abs) : '');
+    }
+    return regionText.get(file)!;
+  };
+
   for (const file of selected) {
     const body = readText(join(canon.root, file.source));
+    const region = regionOf(file.target);
+
+    if (region) {
+      // A span: `content` is the rule's BODY, and the region is assembled in `applySync` from every
+      // write that names the same file. Hashed on the body alone, so drift and `upstream` stay per
+      // rule inside one span (design §4).
+      const held = findRegion(regionAt(region.file), region.name);
+      const onDisk = held.kind === 'present'
+        ? tierRuleBody(held.body, `${file.pack}/${file.source}`)
+        : null;
+      const trimmed = stripFrontmatter(body);
+      const digest = sha256(trimmed);
+      const entry = locked.get(file.target);
+
+      let state: PlannedWrite['state'] = 'create';
+      if (onDisk !== null) {
+        state = onDisk === trimmed ? 'unchanged' : 'update';
+        // The same reading as a file: against the LOCK, not against the canon (D13). A body matching
+        // the canon is never drift whatever the lock says — that is the state right after `upstream`.
+        if (entry && sha256(onDisk) !== entry.sha256 && onDisk !== trimmed) drifted.push(file.target);
+      }
+
+      writes.push({
+        ...file,
+        content: trimmed,
+        sha256: digest,
+        state,
+        in: region.file,
+        ...(parseFrontmatter(body, []).meta ? { meta: parseFrontmatter(body, []).meta! } : {}),
+      });
+      continue;
+    }
+
     const content = renderCanonFile(file, body, canon.version);
     const digest = sha256(content);
     const abs = join(root, manifest.target, file.target);
@@ -69,21 +139,75 @@ export function planSync(
     writes.push({ ...file, content, sha256: digest, state });
   }
 
+  /**
+   * What a target USED to say, before this sync rewrites anything.
+   *
+   * A span's old text lives in the region rather than at a path, so both callers below need it:
+   * rename detection pairs retirements to additions by content, and an edited retirement is refused
+   * by comparing it against the lock. A version that only stats a path finds nothing for a span and
+   * reports neither — quietly, which is the worse failure of the two.
+   */
+  const previousAt = (target: string): string | null => {
+    const entry = locked.get(target);
+    if (!entry) return null;
+    if (entry.in) {
+      const name = regionOf(target)?.name ?? harness.tiers.rules?.region?.name;
+      if (!name) return null;
+      const held = findRegion(regionAt(entry.in), name);
+      return held.kind === 'present' ? tierRuleBody(held.body, `${entry.pack}/${entry.source}`) : null;
+    }
+
+    const abs = join(root, manifest.target, target);
+    return existsSync(abs) ? readText(abs) : null;
+  };
+
   // A file that left the canon leaves every repo — the thing copy-paste can never do.
   const wanted = new Set(selected.map((file) => file.target));
   const deletes = [...locked.keys()].filter((target) => !wanted.has(target));
+
+  // 🔴 THE MIGRATION (design §5). A repository that adopted before D59 has this rule as a FILE, and
+  // its lock entry says so. The rule is still wanted — it has just moved into the region — so the
+  // retirement rule above does not catch it, and without this the adopter ends up holding it in both
+  // places: the region loads it and the stale file sits beside it looking authoritative.
+  //
+  // A moved file that DRIFTED is not deleted. `upstream` can still save that edit, which is the whole
+  // difference between this and an edited retirement, so it refuses as ordinary drift.
+  for (const write of writes) {
+    if (!write.in) continue;
+    const entry = locked.get(write.target);
+    if (!entry || entry.in) continue;
+
+    const abs = join(root, manifest.target, write.target);
+    if (!existsSync(abs)) continue;
+    if (sha256(readText(abs)) !== entry.sha256) {
+      if (!drifted.includes(write.target)) drifted.push(write.target);
+      continue;
+    }
+
+    deletes.push(write.target);
+  }
 
   // ...but not one the repo has improved. Retirement is the most destructive
   // thing sync does, and it was the least guarded: a retained file that drifted
   // refused, while a retired one was deleted silently. It is also the worst
   // moment to lose an edit, because the canonical file it belonged to is gone,
   // so `upstream` is no longer a way to save it.
+  // 🔴 Span-aware, or this silently stops working. A retired rule that lives in the REGION has no
+  // file at `target`, so a check that only stats a path finds nothing, calls it an untouched
+  // retirement, and deletes the edit without a word — which is precisely the fourth bug D19's last
+  // row was written from, reintroduced by the tier moving.
   const editedRetirements = deletes.filter((target) => {
+    const entry = locked.get(target)!;
+    if (entry.in) {
+      const was = previousAt(target);
+      return was !== null && sha256(was) !== entry.sha256;
+    }
+
     const abs = join(root, manifest.target, target);
-    return existsSync(abs) && sha256(readText(abs)) !== locked.get(target)!.sha256;
+    return existsSync(abs) && sha256(readText(abs)) !== entry.sha256;
   });
 
-  const renames = detectRenames({ root, manifest, writes, deletes });
+  const renames = detectRenames({ writes, deletes, previous: previousAt });
   return { writes, deletes, drifted, collisions, renames, editedRetirements };
 }
 
@@ -101,8 +225,8 @@ export function planSync(
 const RENAME_SIMILARITY = 0.6;
 
 function detectRenames(
-  { root, manifest, writes, deletes }:
-  { root: string; manifest: Manifest; writes: PlannedWrite[]; deletes: string[] },
+  { writes, deletes, previous }:
+  { writes: PlannedWrite[]; deletes: string[]; previous: (target: string) => string | null },
 ): Rename[] {
   const created = writes.filter((write) => write.state === 'create');
   if (!created.length || !deletes.length) return [];
@@ -110,12 +234,15 @@ function detectRenames(
   const renames: Rename[] = [];
   const claimed = new Set<string>();
   for (const from of deletes) {
-    const abs = join(root, manifest.target, from);
-    if (!existsSync(abs)) continue;
-    const old = significantTokens(readText(abs));
+    const was = previous(from);
+    if (was === null) continue;
+    const old = significantTokens(was);
 
     let best: { target: string; score: number } | null = null;
     for (const write of created) {
+      // 🔴 Never itself. A rule MIGRATING out of its old file into the region is a delete and a
+      // create at the same target, and pairing those reads as "x was renamed to x".
+      if (write.target === from) continue;
       if (claimed.has(write.target)) continue;
       const score = containment(old, significantTokens(write.content));
       if (score >= RENAME_SIMILARITY && (!best || score > best.score)) {
@@ -151,12 +278,30 @@ export function planChanges(
   const added: string[] = [];
   const changed: string[] = [];
 
+  const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
+
   for (const file of selected) {
     const entry = locked.get(file.target);
     if (!entry) {
       added.push(file.target);
       continue;
     }
+
+    if (entry.in) {
+      // A span (D59): what is held is the rule's BODY, so the comparison is body against body.
+      const tier = Object.values(harness.tiers).find((t) => t.region?.file === entry.in);
+      if (!tier?.region) continue;
+      const abs = join(root, entry.in);
+      if (!existsSync(abs)) continue;
+      const held = findRegion(readText(abs), tier.region.name);
+      if (held.kind !== 'present') continue;
+      const body = tierRuleBody(held.body, `${file.pack}/${file.source}`);
+      // Untouched here, and different from what the canon now says: an upstream improvement.
+      if (body === null || sha256(body) !== entry.sha256) continue;
+      if (body !== stripFrontmatter(readText(join(canon.root, file.source)))) changed.push(file.target);
+      continue;
+    }
+
     const abs = join(root, manifest.target, file.target);
     if (!existsSync(abs)) continue;
     const onDisk = readText(abs);
@@ -226,7 +371,10 @@ export function applySync(
 
   // Resolve every path BEFORE touching anything, so a bad entry anywhere aborts
   // the whole apply rather than half-applying it.
-  const writes = plan.writes.map((write) => ({
+  const files = plan.writes.filter((write) => !write.in);
+  const spans = plan.writes.filter((write) => write.in);
+
+  const writes = files.map((write) => ({
     write,
     abs: containedPath(root, manifest.target, write.target),
   }));
@@ -242,17 +390,96 @@ export function applySync(
   const lock = {
     canonVersion,
     source: manifest.source,
-    entries: plan.writes.map(({ pack, source, target, sha256: digest }) => ({
+    entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within }) => ({
       pack,
       source,
       target,
       canonVersion,
       sha256: digest,
+      ...(within ? { in: within } : {}),
     })),
   };
+
+  // The region LAST, after the on-demand tiers are on disk: its roster lists what is actually there,
+  // local documents included, and a roster written before the files it names would be a roster of the
+  // previous sync.
+  writeSpans({ root, manifest, spans, canonVersion, lock });
   writeLock(root, lock);
-  writeIndex(root, manifest.target, buildIndex({ root, target: manifest.target, lock }));
   return lock;
+}
+
+/**
+ * Assemble every span into its region, and point the harness's own file at it (D59).
+ *
+ * @remarks
+ * One write per region file, never one per rule: the region is a single span, and eight successive
+ * rewrites of the same file would each re-read what the last one wrote.
+ */
+function writeSpans(
+  { root, manifest, spans, canonVersion, lock }:
+  { root: string; manifest: Manifest; spans: PlannedWrite[]; canonVersion: string; lock: Lock },
+): void {
+  if (!spans.length) return;
+  const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
+
+  for (const [file, within] of groupBy(spans, (write) => write.in!)) {
+    const tier = Object.values(harness.tiers).find((candidate) => candidate.region?.file === file);
+    if (!tier?.region) continue;
+
+    const knowledge = harness.tiers.knowledge;
+    const skills = harness.tiers.skills;
+    const input = {
+      rules: within.map((write) => ({
+        file: { pack: write.pack, source: write.source, target: write.target },
+        text: write.content,
+        // Carried from `planSync`, where the canon was in hand — a span holds its body alone.
+        ...(write.meta ? { meta: write.meta } : {}),
+      })),
+      knowledge: knowledge?.dir
+        ? readTier({ root, target: manifest.target, tier: knowledge.dir, lock })
+        : [],
+      skills: skills?.dir
+        ? readTier({
+          root,
+          target: manifest.target,
+          tier: skills.dir,
+          lock,
+          ...(skills.entryFile ? { entryFile: skills.entryFile } : {}),
+        })
+        : [],
+      version: canonVersion,
+      target: manifest.target,
+    };
+
+    const abs = join(root, file);
+    const held = existsSync(abs) ? readText(abs) : '';
+    const body = [renderRoster(input), ...renderRules(input)].join('\n');
+    writeTextAtomic(abs, writeRegion(held, tier.region.name, body));
+
+    // 🔴 The migration's last piece. A repository that adopted before D59 has a generated
+    // `RULES_INDEX.md` in the directory the tier just left. It is not in the lock — generated files
+    // never were — so no retirement rule reaches it, and it would sit there as a roster that looks
+    // authoritative and is frozen at the moment the tier moved. Only ever a file daoris wrote.
+    const legacy = join(root, manifest.target, 'rules', 'RULES_INDEX.md');
+    if (existsSync(legacy)) rmSync(legacy, { force: true });
+
+    // The pointer, for the one harness that reads another file and follows imports.
+    if (harness.pointer) {
+      const pointer = join(root, harness.pointer.file);
+      const made = ensureImport(existsSync(pointer) ? readText(pointer) : null, harness.pointer.imports);
+      if (made !== null) writeTextAtomic(pointer, made);
+    }
+  }
+}
+
+function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const at = key(item);
+    if (!groups.has(at)) groups.set(at, []);
+    groups.get(at)!.push(item);
+  }
+  return groups;
 }
 
 export function commandSync({ root, argv, write, packageRoot }: CommandArgs): ExitCode {

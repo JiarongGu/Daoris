@@ -17,6 +17,9 @@ function seedCanon() {
   fx.write('core/rules/file-tool-discipline.md', doc('file-tool-discipline',
     'Inspect files with the dedicated read and search tools rather than shell equivalents. '
     + 'Reserve the shell for genuine shell work; destructive commands deserve care.'));
+  // A knowledge document too, because that tier is still files — which is where a collision can
+  // still happen now the always-loaded tier is a span (D59).
+  fx.write('core/knowledge/reaching-in.md', doc('reaching-in', 'Never repair another repository.'));
   fx.write('packs/win/pack.json', '{"name":"win","description":"Windows"}');
   fx.write('packs/win/rules/windows-machine.md', doc('windows-machine', 'PowerShell and encoding traps.'));
   return fx;
@@ -49,14 +52,19 @@ test('a repository with no doctrine reports a fresh adoption', () => {
 /**
  * The question the command exists to answer, and the one that previously took a sync to find out.
  */
+/**
+ * A collision is still a collision for every tier that is FILES. The always-loaded tier is a span
+ * now (D59), and a repository's own `.claude/rules/x.md` is no longer at a path the canon claims —
+ * `doctor` is what reports one that restates a canonical rule.
+ */
 test('a file the repository wrote at a canonical path is a collision', () => {
   const canonFx = seedCanon();
   const repoFx = makeFixture('analyze-collide');
-  repoFx.write('.claude/rules/file-tool-discipline.md', '# Ours, written first\n');
+  repoFx.write('.claude/knowledge/reaching-in.md', '# Ours, written first\n');
 
   const report = run(repoFx, canonFx);
 
-  assert.deepEqual(report.collisions, ['rules/file-tool-discipline.md']);
+  assert.deepEqual(report.collisions, ['knowledge/reaching-in.md']);
   assert.deepEqual(report.updates, []);
   canonFx.cleanup();
   repoFx.cleanup();

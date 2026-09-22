@@ -3,9 +3,11 @@ import type {
 } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync, statSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 import { listFiles, listMarkdown, readText, sha256 } from './fsx.ts';
-import { renderCanonFile } from './document.ts';
+import { parseFrontmatter, renderCanonFile } from './document.ts';
+import { findRegion } from './region.ts';
+import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, selectFiles } from './canon.ts';
 import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
 import { significantTokens, containment } from './twins.ts';
@@ -19,7 +21,10 @@ import {
 const CLAUDE = HARNESSES[DEFAULT_HARNESS]!;
 const DEFAULT_TARGET = CLAUDE.defaultTarget;
 const TIERS = tierNames(CLAUDE);
-const INDEX_FILE = basename(CLAUDE.indexPath);
+// A repository that adopted before D59 has a generated roster in its rules directory. `analyze` runs
+// on repositories that never adopted AND on ones that did, so it still skips that name rather than
+// counting a generated file as doctrine somebody wrote.
+const INDEX_FILE = 'RULES_INDEX.md';
 
 /**
  * What a repository already has, before daoris touches it.
@@ -110,11 +115,38 @@ function findCollisions(
 ): { collisions: string[]; updates: string[] } {
   const collisions: string[] = [];
   const updates: string[] = [];
+
+  const regionTier = Object.entries(CLAUDE.tiers)
+    .find(([, tier]) => tier.region)?.[1]?.region ?? null;
+  let regionRead: string | null | undefined;
+  const regionBody = (): string | null => {
+    if (regionRead === undefined) {
+      const abs = join(root, regionTier!.file);
+      const held = existsSync(abs) ? findRegion(readText(abs), regionTier!.name) : null;
+      regionRead = held && held.kind === 'present' ? held.body : null;
+    }
+    return regionRead;
+  };
   for (const file of selectFiles(canon, packs)) {
+    const body = readText(join(canon.root, file.source));
+
+    // The always-loaded tier is a span (D59), so "what is already here" is a question about the
+    // region. A repository that has no region yet simply has nothing there — which is the ordinary
+    // pre-adoption case this command exists for.
+    if (regionTier && file.target.startsWith(`${regionTier.name}/`)) {
+      const held = regionBody();
+      if (held === null) continue;
+      const already = tierRuleBody(held, `${file.pack}/${file.source}`);
+      if (already === null) continue;
+      const { meta, body: prose } = parseFrontmatter(body, []);
+      if (already === (meta ? prose : body).trim()) continue;
+      (locked.has(file.target) ? updates : collisions).push(file.target);
+      continue;
+    }
+
     const abs = join(root, target, file.target);
     if (!existsSync(abs)) continue;
 
-    const body = readText(join(canon.root, file.source));
     const content = renderCanonFile(file, body, canonVersion);
     if (sha256(readText(abs)) === sha256(content)) continue;
 

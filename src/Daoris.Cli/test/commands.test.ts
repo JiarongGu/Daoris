@@ -179,7 +179,9 @@ test('status --json emits the same facts as the text, machine-readable', () => {
   const canonFx = canonFixture();
   const repoFx = makeFixture('cmd-status-json');
   repoFx.write('daoris.json', '{"source":"s","packs":[]}');
-  repoFx.write('.claude/rules/house-style.md', '# local\n');
+  // A knowledge document, because that tier is still files. A repository's own always-loaded text
+  // lives in its instruction file outside the region now (D59) — prose, not an enumerable document.
+  repoFx.write('.claude/knowledge/house-style.md', '# local\n');
   repoFx.write(
     'daoris.lock',
     JSON.stringify({ version: 1, canonVersion: '0.0.9', source: 's', entries: [] }),
@@ -195,7 +197,7 @@ test('status --json emits the same facts as the text, machine-readable', () => {
   assert.equal(report.synced, true);
   assert.equal(report.canonVersion, '0.0.9');
   assert.deepEqual(report.packs, ['core']);
-  assert.deepEqual(report.local, ['rules/house-style.md']);
+  assert.deepEqual(report.local, ['knowledge/house-style.md']);
   assert.equal(report.update.available, '0.1.0');
   assert.equal(report.update.versionOnly, false);
   assert.ok(Array.isArray(report.drifted));
@@ -235,7 +237,7 @@ test('status reports packs, drift, and local files without failing', () => {
   const canonFx = canonFixture();
   const repoFx = makeFixture('cmd-status');
   repoFx.write('daoris.json', '{"source":"github:OWNER/daoris#v0.1.0","packs":["win"]}');
-  repoFx.write('.claude/rules/house-style.md', '# local\n');
+  repoFx.write('.claude/knowledge/house-style.md', '# local\n');
   process.env.DAORIS_CANON = canonFx.root;
 
   const out: string[] = [];

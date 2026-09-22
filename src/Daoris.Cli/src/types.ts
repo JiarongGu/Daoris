@@ -31,9 +31,26 @@ export interface Canon {
   packs: Map<string, Pack>;
 }
 
-/** What a harness expects on disk. The tier is the directory, so this describes directories (D7). */
+/**
+ * What a harness expects on disk. **The tier is the LOCATION** — a directory for the tiers a harness
+ * reaches for, and a marked REGION in a shared file for the one it loads without being asked
+ * (D7 as amended by D59).
+ *
+ * @remarks
+ * `.claude/rules/` was read by exactly one of the three harnesses this family drives, so the
+ * always-loaded tier lives where all three look. That makes it the one tier whose location is not
+ * harness-specific at all; what stays harness-specific is the POINTER, below.
+ */
 export interface HarnessTier {
-  dir: string;
+  /** Where this tier's files live under the target, for a tier that is a directory. */
+  dir?: string;
+  /** Where this tier lives when it is a span inside a file the repository owns (D59). */
+  region?: {
+    /** The file, relative to the repository root — NOT to the target directory. */
+    file: string;
+    /** The region's name, which is what its markers carry. */
+    name: string;
+  };
   /** True for the tier the harness loads into every session without being asked. */
   alwaysLoaded: boolean;
   /** Present for a tier whose unit is a directory rather than a file, e.g. skills. */
@@ -49,7 +66,11 @@ export interface Harness {
   /** Files whose presence says a repository is set up for this harness. */
   detect: readonly string[];
   defaultTarget: string;
-  indexPath: string;
+  /**
+   * The file this harness reads that others do not, and what it must import so the tier reaches it
+   * anyway. Absent for a harness that reads the tier's own file directly (D59).
+   */
+  pointer?: { file: string; imports: string };
   tiers: Record<string, HarnessTier>;
   /** Where the provenance line goes — under the frontmatter, because it is only frontmatter at byte 0 (D14). */
   headerPlacement: 'top' | 'below-frontmatter';
@@ -129,6 +150,16 @@ export interface LockEntry {
   target: string;
   canonVersion: string;
   sha256: string;
+  /**
+   * Present when this entry is a **span inside a file** rather than a file of its own (D59): the
+   * file, relative to the repository root.
+   *
+   * @remarks
+   * `target` stays the canonical identity either way — `rules/sensitive-info.md` — because that is
+   * what `upstream` names, what the canon calls it, and what a retirement matches on. What changes
+   * is where to look and what to hash: the rule's BODY inside the region, not a file's whole bytes.
+   */
+  in?: string;
 }
 
 /**
@@ -157,6 +188,21 @@ export interface PlannedWrite extends CanonFile {
   content: string;
   sha256: string;
   state: 'create' | 'update' | 'unchanged';
+  /**
+   * Present when this write is a **span inside a file** rather than a file of its own (D59): the
+   * file, relative to the repository root. `content` is then the rule's body, and the whole region is
+   * assembled from every write that names the same file.
+   */
+  in?: string;
+  /**
+   * The frontmatter a span dropped, captured where the canon was in hand.
+   *
+   * @remarks
+   * The roster's rows are built from `applies_when` and `enforces`, and a span carries the body
+   * alone — so without this the region would have to re-read the canon while assembling, which is
+   * the one place it is not holding it.
+   */
+  meta?: Record<string, string>;
 }
 
 /** A canonical file that moved rather than being retired and re-added. */

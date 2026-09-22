@@ -1,17 +1,33 @@
-import type { CommandArgs, Lock, Manifest, Twin } from './types.ts';
+import type { CommandArgs, Lock, LockEntry, Manifest, Twin } from './types.ts';
 import type { ExitCode } from './errors.ts';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listMarkdown, readText } from './fsx.ts';
 import { parseFrontmatter, stripHeader } from './document.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
+import { findRegion } from './region.ts';
+import { tierRuleBody } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES, tierNames } from './harness.ts';
-import { basename } from 'node:path';
 
-// From the default harness's descriptor — one definition of the layout, not a constant quietly
-// asserting it here a fourth time (doctor's callers always have a manifest, but its layout facts
-// must be the same ones every other command reads).
-const INDEX_FILE = basename(HARNESSES[DEFAULT_HARNESS]!.indexPath);
+// The pre-D59 generated roster. A repository that adopted before the tier moved still has one on
+// disk, and a generated file is never a twin of a canonical one.
+const INDEX_FILE = 'RULES_INDEX.md';
 const TIERS = tierNames(HARNESSES[DEFAULT_HARNESS]!);
+
+/** One canonical rule's text, out of the region its lock entry names (D59). */
+function regionRule(
+  { root, manifest, entry }: { root: string; manifest: Manifest; entry: LockEntry },
+): string | null {
+  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
+  const tier = Object.values(harness.tiers).find((candidate) => candidate.region?.file === entry.in);
+  if (!tier?.region) return null;
+
+  const abs = join(root, entry.in!);
+  if (!existsSync(abs)) return null;
+
+  const held = findRegion(readText(abs), tier.region.name);
+  return held.kind === 'present' ? tierRuleBody(held.body, `${entry.pack}/${entry.source}`) : null;
+}
 
 /** Words this common carry no signal about what a document is about. */
 const STOPWORDS = new Set([
@@ -83,6 +99,22 @@ export function findTwins(
       const tokens = significantTokens(readText(join(root, manifest.target, tier, file)));
       (locked.has(target) ? canonical : local).push({ tier, target, tokens });
     }
+  }
+
+  // 🔴 The canonical RULES live in a region now (D59), so without this the always-loaded tier has no
+  // canonical side at all and every local rule is compared against nothing. That is also exactly the
+  // case the move creates: a repository keeps its own `.claude/rules/x.md` — which is no longer a
+  // collision, because the canon does not claim that path any more — and it may well restate a rule
+  // now sitting in the region a few lines away.
+  for (const entry of lock?.entries ?? []) {
+    if (!entry.in) continue;
+    const body = regionRule({ root, manifest, entry });
+    if (body === null) continue;
+    canonical.push({
+      tier: entry.target.split('/')[0]!,
+      target: entry.target,
+      tokens: significantTokens(body),
+    });
   }
 
   // Compared WITHIN a tier. A knowledge document and a skill are different kinds of thing, so one

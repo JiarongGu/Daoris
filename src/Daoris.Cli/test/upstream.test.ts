@@ -7,7 +7,6 @@ import { readCanon } from '../src/canon.ts';
 import { readManifest, readLock } from '../src/config.ts';
 import { planSync, applySync } from '../src/materialize.ts';
 import { upstreamFile, upstreamAll } from '../src/upstream.ts';
-import { makeHeader, withHeader } from '../src/document.ts';
 import { readText } from '../src/fsx.ts';
 import { DaorisError } from '../src/errors.ts';
 
@@ -45,20 +44,32 @@ const promote = ({ canonFx, repoFx }: Seeded, file: string) =>
     file,
   });
 
-const edited = () =>
-  withHeader(
-    makeHeader('core', 'core/rules/sensitive-info.md', '0.1.0'),
-    `${doc('sensitive-info')}IMPROVED.\n`,
-  );
+/** A rule is edited where it lives now: inside the region (D59). */
+const edit = (fx: { repoFx: Fixture }, name: string, how: (body: string) => string) => {
+  const region = fx.repoFx.read('AGENTS.md');
+  fx.repoFx.write('AGENTS.md', region.replace(`Body of ${name}.`, how(`Body of ${name}.`)));
+};
 
-test('a local edit lands in the canon without the provenance header', () => {
+/**
+ * 🔴 The frontmatter stays the CANON's. A span carries prose only — the frontmatter is stripped on
+ * the way in — so promoting from a region replaces the body and leaves `name`, `applies_when` and
+ * `enforces` alone. That is the honest limit of the move, and it is asserted rather than discovered:
+ * improving an `enforces` line is a canon edit, not something a repository pushes from its
+ * instruction file.
+ */
+test('a local edit lands in the canon, keeping the canon\'s own frontmatter', () => {
   const fx = synced();
-  fx.repoFx.write('.claude/rules/sensitive-info.md', edited());
+  edit(fx, 'sensitive-info', (body) => `${body}\n\nIMPROVED.`);
+
   const result = promote(fx, 'rules/sensitive-info.md');
   const canonText = readText(join(fx.canonFx.root, 'core/rules/sensitive-info.md'));
+
   assert.equal(result.source, 'core/rules/sensitive-info.md');
   assert.match(canonText, /IMPROVED\./);
   assert.equal(canonText.startsWith('---\n'), true);
+  assert.match(canonText, /applies_when: w/);
+  // The provenance header never goes back up — it is materialization's, not the canon's.
+  assert.doesNotMatch(canonText, /<!-- daoris:/);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -106,16 +117,12 @@ test('upstreamAll promotes every drifted file and leaves clean ones alone', () =
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
 
-  // Edit two of the three.
+  // Edit two of the three, where they live now.
+  let region = repoFx.read('AGENTS.md');
   for (const name of ['one', 'three']) {
-    repoFx.write(
-      `.claude/rules/${name}.md`,
-      withHeader(
-        makeHeader('core', `core/rules/${name}.md`, '0.1.0'),
-        `${doc(name)}IMPROVED ${name}.\n`,
-      ),
-    );
+    region = region.replace(`Body of ${name}.`, `Body of ${name}.\n\nIMPROVED ${name}.`);
   }
+  repoFx.write('AGENTS.md', region);
 
   const promoted = upstreamAll({
     root: repoFx.root,
@@ -168,7 +175,7 @@ test('upstreamAll on a clean repo promotes nothing', () => {
  */
 test('a promoted edit survives a canon version bump on top of it', () => {
   const fx = synced();
-  fx.repoFx.write('.claude/rules/sensitive-info.md', edited());
+  edit(fx, 'sensitive-info', (body) => `${body}\n\nIMPROVED.`);
   promote(fx, 'rules/sensitive-info.md');
   fx.canonFx.write('canon.json', '{"version":"0.9.0"}');
 
@@ -178,7 +185,7 @@ test('a promoted edit survives a canon version bump on top of it', () => {
   assert.deepEqual(plan.drifted, [], 'the repo holds exactly what the canon says');
 
   applySync({ root: fx.repoFx.root, manifest, plan, canonVersion: canon.version, force: false });
-  const after = fx.repoFx.read('.claude/rules/sensitive-info.md');
+  const after = fx.repoFx.region()!;
   assert.match(after, /IMPROVED\./);
   assert.match(after, /@ 0\.9\.0 /);
   fx.canonFx.cleanup();
@@ -187,7 +194,7 @@ test('a promoted edit survives a canon version bump on top of it', () => {
 
 test('after upstreaming, a re-sync closes the loop without --force', () => {
   const fx = synced();
-  fx.repoFx.write('.claude/rules/sensitive-info.md', edited());
+  edit(fx, 'sensitive-info', (body) => `${body}\n\nIMPROVED.`);
   promote(fx, 'rules/sensitive-info.md');
   const canon = readCanon(fx.canonFx.root);
   const manifest = readManifest(fx.repoFx.root);

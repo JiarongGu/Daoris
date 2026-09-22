@@ -343,7 +343,12 @@ is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now
   files.
 
 
-- [ ] **CANON8b — `sync`, `check`, `upstream` and the lock over a span.** One lock entry describes a
+- [x] **CANON8b/c — `sync`, `check`, `upstream`, the lock over a span, and the migration.**
+  ✅ **done 2026-09-22.** 265 CLI tests green; this repository and both examples migrated in the same
+  commit. Always-loaded core **23,862 → 21,817 bytes**, because eight frontmatter blocks and a
+  separate roster's preamble went away. The archive carries the outcome.
+
+- [ ] **CANON8b — superseded by the row above; kept until 8d closes.** One lock entry describes a
   span inside a file rather than a file; drift is measured against the lock as ever (D13); `upstream`
   extracts one rule from the region. `index` generates the tier table into the region rather than into
   `RULES_INDEX.md`, and CANON7's budget measures the region — the footprint stays measurable, which is

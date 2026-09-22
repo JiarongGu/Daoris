@@ -21,10 +21,13 @@ const DEFAULT_TARGET = '.claude';
  */
 function localDocs(root: string, target: string, harness: Harness = HARNESSES[DEFAULT_HARNESS]!): string[] {
   const locked = lockIndex(readLock(root));
-  const indexFile = harness.indexPath.split('/').pop();
   const found = [];
 
   for (const tier of Object.values(harness.tiers)) {
+    // The always-loaded tier is a span in a file the repository owns (D59), and a repository's OWN
+    // always-loaded text lives in that same file outside the region — which is its own prose, not a
+    // document this can enumerate.
+    if (!tier.dir) continue;
     const dir = join(root, target, tier.dir);
     if (tier.entryFile) {
       const suffix = `/${tier.entryFile}`;
@@ -33,7 +36,6 @@ function localDocs(root: string, target: string, harness: Harness = HARNESSES[DE
       }
     } else {
       for (const file of listMarkdown(dir)) {
-        if (file === indexFile) continue;
         if (!locked.has(`${tier.dir}/${file}`)) found.push(`${tier.dir}/${file}`);
       }
     }

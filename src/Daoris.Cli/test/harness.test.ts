@@ -73,10 +73,14 @@ test('a skill missing name or description is reported', () => {
   fx.cleanup();
 });
 
-/** The tier is the directory (D7), so a rule filed one level down is simply never loaded. */
-test('a nested rule is reported, because only the top level is read', () => {
+/**
+ * A tier that IS a directory is read one level deep, so a document filed below that is never loaded.
+ * Knowledge, because the always-loaded tier is a span now and has no directory to nest anything in
+ * (D7 as amended by D59).
+ */
+test('a nested document is reported, because only the top level is read', () => {
   const fx = makeFixture('harness-nested');
-  fx.write('.claude/rules/area/deep.md', '# deep\n');
+  fx.write('.claude/knowledge/area/deep.md', '# deep\n');
 
   const problems = verifyHarnessContract(fx.root, '.claude');
 
@@ -104,8 +108,14 @@ test('the descriptor holds every fact that used to be a constant', () => {
   const harness = resolveHarness('claude-code');
 
   assert.equal(harness.defaultTarget, '.claude');
-  assert.equal(harness.indexPath, 'rules/RULES_INDEX.md');
   assert.equal(harness.headerPlacement, 'below-frontmatter');
+
+  // 🔴 The tier is the LOCATION (D7 as amended by D59). The always-loaded one is a REGION in the
+  // file every harness reads, because `.claude/rules/` is read by exactly one of three; the pointer
+  // is what carries it to the harness that reads another name and follows imports.
+  assert.deepEqual(harness.tiers.rules!.region, { file: 'AGENTS.md', name: 'rules' });
+  assert.equal(harness.tiers.rules!.dir, undefined);
+  assert.deepEqual(harness.pointer, { file: 'CLAUDE.md', imports: 'AGENTS.md' });
   assert.deepEqual(tierNames(harness), ['rules', 'knowledge', 'skills']);
   assert.deepEqual(alwaysLoadedTiers(harness), ['rules']);
   assert.equal(harness.tiers.skills!.entryFile, 'SKILL.md');

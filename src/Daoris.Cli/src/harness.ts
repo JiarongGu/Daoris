@@ -36,11 +36,16 @@ export const HARNESSES: Record<string, Harness> = {
     defaultTarget: '.claude',
 
     /**
-     * The tier is the directory, because this harness decides by path (D7). `alwaysLoaded` is what
-     * the byte budget measures — the context every session pays for.
+     * 🔴 **The tier is the LOCATION** (D7 as amended by D59). The on-demand tiers are directories
+     * this harness reaches for by path. The always-loaded one is a **region in `AGENTS.md`**, because
+     * `.claude/rules/` is read by exactly one of the three harnesses this family drives — measured,
+     * `docs/2026-09-21-dsh-evaluation.md` §6.5 — and `AGENTS.md` is the only file all three read.
+     *
+     * `alwaysLoaded` is still what the byte budget measures; a region has a byte count exactly as a
+     * directory did, which is the half of D7 that survives.
      */
     tiers: {
-      rules: { dir: 'rules', alwaysLoaded: true },
+      rules: { region: { file: 'AGENTS.md', name: 'rules' }, alwaysLoaded: true },
       knowledge: { dir: 'knowledge', alwaysLoaded: false },
       skills: {
         dir: 'skills',
@@ -52,8 +57,13 @@ export const HARNESSES: Record<string, Harness> = {
       },
     },
 
-    /** The generated roster, relative to the target. It sits in an always-loaded tier by design. */
-    indexPath: 'rules/RULES_INDEX.md',
+    /**
+     * This harness reads `CLAUDE.md` and not `AGENTS.md`, and it follows `@path` imports — which the
+     * other two do not (measured; §6.5). So one line here is what carries the tier to it, and every
+     * other reader ignores that line. The roster is no longer a file of its own: it is the first
+     * thing in the region, where it is loaded rather than merely present.
+     */
+    pointer: { file: 'CLAUDE.md', imports: 'AGENTS.md' },
 
     /**
      * Frontmatter must start at byte 0 or this harness does not see it, so the provenance line goes
@@ -134,7 +144,7 @@ export function verifyHarnessContract(
   const problems = [];
   const skills = harness.tiers.skills;
 
-  if (skills) {
+  if (skills?.dir) {
     const dir = join(root, target, skills.dir);
     const suffix = `/${skills.entryFile}`;
     for (const file of listFiles(dir)) {
@@ -160,9 +170,10 @@ export function verifyHarnessContract(
     }
   }
 
-  // The tier is the directory, so a document one level down is simply never read.
+  // A tier that IS a directory is read one level deep, so a document nested below that is never
+  // read. The always-loaded tier is a span (D59) and has no directory to nest anything in.
   for (const [name, tier] of Object.entries(harness.tiers)) {
-    if (tier.entryFile) continue; // skills are directories on purpose
+    if (tier.entryFile || !tier.dir) continue; // skills are directories on purpose; a region is not one
     const dir = join(root, target, tier.dir);
     if (!existsSync(dir)) continue;
     for (const file of listMarkdown(dir)) {

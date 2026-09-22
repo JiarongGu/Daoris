@@ -43,56 +43,64 @@
       "source": "core/rules/file-tool-discipline.md",
       "target": "rules/file-tool-discipline.md",
       "canonVersion": "0.0.1",
-      "sha256": "b0164ea201a1fc5cee6d18bf1f9e603f26f7fa253e6248c6c2d99f57fbf74cae"
+      "sha256": "7304353355a3d0febfd472a693507d0b521802fcd36c7f4ef6c0c451601dec18",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",
       "source": "core/rules/no-global-memory.md",
       "target": "rules/no-global-memory.md",
       "canonVersion": "0.0.1",
-      "sha256": "d481196b2751725947827ac4520927eeae4735ede19d23d0b916db0a9c5fb359"
+      "sha256": "44b81a44a8923c0b5f76f7b13251cf0bbf5743424f531d69a83c9eda58f33983",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",
       "source": "core/rules/no-tmp-for-repo-files.md",
       "target": "rules/no-tmp-for-repo-files.md",
       "canonVersion": "0.0.1",
-      "sha256": "9cf14072ceaf6519f74e3a0fc14d0095d00f8ca7ee53bc8409af44862f49504e"
+      "sha256": "eeba11e988735be8c6e4975ffbac2b9df64dcdcc2ca6dceb756bcf850a6006bf",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",
       "source": "core/rules/persist-working-state.md",
       "target": "rules/persist-working-state.md",
       "canonVersion": "0.0.1",
-      "sha256": "15636362ef404fc9d9b80745d9adf8fc598c40053c9bd89afc6632acb2f4513b"
+      "sha256": "cad00b1bb695fd5fe5ac9401736a7f7bce8288010d47f2c61730d18fbd5324e3",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",
       "source": "core/rules/repository-owns-its-work.md",
       "target": "rules/repository-owns-its-work.md",
       "canonVersion": "0.0.1",
-      "sha256": "a7c3ba79b52a4d052e166c3970b99a54c0fb3dc13bb1a1e8d5172ac8fd574a50"
+      "sha256": "b66770b103aa98371bde00c4ede53b6e3e3ff570c0522e3370f38631ac7af3bd",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",
       "source": "core/rules/sensitive-info.md",
       "target": "rules/sensitive-info.md",
       "canonVersion": "0.0.1",
-      "sha256": "c0cfd28f9275f5e7e7d25e8c30aca2d1ec784811fc9bf779db71abcfdcd1cd6e"
+      "sha256": "0966d76218c1efbeb99cf31a34d6fc1083240aaefde0f05ba8eb0075b1166bd2",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",
       "source": "core/rules/skills-workflow.md",
       "target": "rules/skills-workflow.md",
       "canonVersion": "0.0.1",
-      "sha256": "cd52b99cff12240f449936238861193c05df0c9dca32a460872624ffc2efa299"
+      "sha256": "4d8231e48066e5a6f0f2ba544d639d2e84d54cd2f56c1a9dc52757c025de8b2a",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",
       "source": "core/rules/task-lifecycle.md",
       "target": "rules/task-lifecycle.md",
       "canonVersion": "0.0.1",
-      "sha256": "fefaa9477428dd51e1c71271369790ce1636c61afa4155736db5ebc5b9df8e1a"
+      "sha256": "a66d62d7b69016a9e3852c66ac7bc0682c209b9ef5d68519132dad04b055c8d2",
+      "in": "AGENTS.md"
     },
     {
       "pack": "core",

@@ -3282,3 +3282,41 @@ a retried quest runs again and parks again at the same count.
 **One asymmetry recorded on purpose:** absent `strikes` means the **default**, where absent `notify`
 means **on**. Opposite readings, same reasoning — a `driver.json` predating the field belongs to the
 machine that has been driving unattended longest, and that is the machine that needs the protection.
+
+## CANON8a–c — the always-loaded tier moves into `AGENTS.md` (2026-09-22)
+
+The measurement is `docs/2026-09-21-dsh-evaluation.md` §6.5 and the contract is
+`docs/2026-09-22-instruction-file-design.md`; **D59** carries the four rejected alternatives.
+`.claude/rules/` was read by exactly one of the three harnesses this family drives, so Daoris was
+shipping an always-loaded tier whose always-loaded-ness belonged to one agent harness.
+
+✅ **done 2026-09-22.** The tier is a **span** in `AGENTS.md`, with `CLAUDE.md` carrying `@AGENTS.md`
+for the one harness that reads the other name and follows imports. This repository and both examples
+migrated in the same commit. **Always-loaded core 23,862 → 21,817 bytes**, because eight frontmatter
+blocks and a separate roster's preamble went away.
+
+**The descriptor absorbed it**, which is what that seam was built for: `tiers.rules.region` and
+`pointer` replace `indexPath`, and a tier is now a directory **or** a span. D7's *the tier is the
+directory* becomes **the tier is the location**, and its better half survives — no `tier:` field, and
+a region has a byte count exactly as a directory did, so CANON7's budget means the same thing.
+
+**Four things that would have failed silently, and were caught by looking for them:**
+
+- **An edited retirement of a span.** The guard stats a path; a span has none, so a retired rule the
+  repository had improved would have been deleted without a word — the fourth bug D19's last row was
+  written from, arriving again through the tier moving. Span-aware now, and asserted.
+- **Rename detection** went quiet for the same reason: the old text lives in the region, not at a
+  path. `previousAt` serves both, and a migrating rule never pairs with itself.
+- **The legacy `RULES_INDEX.md`.** Generated files were never in the lock, so no retirement rule
+  reaches one — it would have sat in the emptied directory looking authoritative and frozen.
+- **`doctor` lost its canonical side.** With the rules in a region, every local rule was compared
+  against nothing — and that is exactly the case the move creates, since a repository's own
+  `.claude/rules/x.md` is no longer a collision.
+
+**Two limits, stated rather than discovered.** A span carries **prose**: `upstream` replaces the
+body and keeps the canon's frontmatter, so improving an `enforces` line is a canon edit. And
+`check`'s staleness comparison covers the **on-demand** rows only — the rules rows come from
+frontmatter the span strips, so nothing offline can rebuild them; a canon change is `status`'s report.
+
+**A rule can no longer collide**, because the canon no longer claims a path a repository could
+already own. D12's refusal still guards every tier that is still files.

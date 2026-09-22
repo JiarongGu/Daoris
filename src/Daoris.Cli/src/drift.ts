@@ -4,8 +4,34 @@ import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { listMarkdown, readText, sha256 } from './fsx.ts';
 import { readLock, readManifest } from './config.ts';
-import { INDEX_PATH, buildIndex } from './indexgen.ts';
+import { rosterFromDisk } from './indexgen.ts';
+import { findRegion } from './region.ts';
+import { tierRuleBody } from './tierrender.ts';
 import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from './harness.ts';
+
+/**
+ * The roster's on-demand half — everything from the knowledge table to the first rule.
+ *
+ * @remarks
+ * Comparing only this half is what keeps the staleness check offline and canon-free. The rules rows
+ * above it are built from frontmatter the span strips, so nothing without the canon can say what they
+ * ought to be; the rules themselves are covered per rule by the lock.
+ */
+function onDemandHalf(text: string): string {
+  const start = text.indexOf('\n## Read on demand');
+  if (start === -1) return '';
+  const end = text.indexOf('\n<!-- daoris: ', start);
+  return (end === -1 ? text.slice(start) : text.slice(start, end)).trim();
+}
+
+/** Which region a lock entry's file belongs to, per the manifest's harness. */
+function regionNameFor(manifest: Manifest, file: string): string | null {
+  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
+  for (const tier of Object.values(harness.tiers)) {
+    if (tier.region?.file === file) return tier.region.name;
+  }
+  return null;
+}
 
 /**
  * Pure local hashing against the lock — no network, no canon, no package
@@ -18,7 +44,30 @@ export function inspect(
   const drifted: string[] = [];
   const missing: string[] = [];
 
+  // A span's region is read once, however many rules live in it.
+  const regions = new Map<string, string | null>();
+  const regionBody = (file: string, name: string): string | null => {
+    const key = `${file}\u0000${name}`;
+    if (!regions.has(key)) {
+      const abs = join(root, file);
+      const held = existsSync(abs) ? findRegion(readText(abs), name) : { kind: 'absent' as const };
+      regions.set(key, held.kind === 'present' ? held.body : null);
+    }
+    return regions.get(key)!;
+  };
+
   for (const entry of lock?.entries ?? []) {
+    if (entry.in) {
+      // A span inside a file the repository owns (D59). Its identity is still `rules/<name>.md`, and
+      // what is hashed is the rule's BODY — which is what keeps drift per rule inside one region.
+      const name = regionNameFor(manifest, entry.in);
+      const region = name === null ? null : regionBody(entry.in, name);
+      const body = region === null ? null : tierRuleBody(region, `${entry.pack}/${entry.source}`);
+      if (body === null) missing.push(entry.target);
+      else if (sha256(body) !== entry.sha256) drifted.push(entry.target);
+      continue;
+    }
+
     const abs = join(root, manifest.target, entry.target);
     if (!existsSync(abs)) missing.push(entry.target);
     else if (sha256(readText(abs)) !== entry.sha256) drifted.push(entry.target);
@@ -28,19 +77,35 @@ export function inspect(
   const syncedPacks = new Set((lock?.entries ?? []).map((entry) => entry.pack));
   const stalePacks = manifest.packs.filter((pack) => !syncedPacks.has(pack));
 
-  // The tier is the directory, so the always-loaded footprint is measurable — and WHICH tiers those
-  // are is the harness's answer, not a constant here.
-  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS];
+  // The tier is the LOCATION, so the always-loaded footprint is still measurable — a region has a
+  // byte count exactly as a directory did, which is the half of D7 that survives D59. Which tiers
+  // those are is the harness's answer, not a constant here.
+  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
   let coreBytes = 0;
-  for (const tier of alwaysLoadedTiers(harness)) {
-    const dir = join(root, manifest.target, harness.tiers[tier]!.dir);
-    coreBytes += listMarkdown(dir).reduce((sum, file) => sum + statSync(join(dir, file)).size, 0);
+  for (const name of alwaysLoadedTiers(harness)) {
+    const tier = harness.tiers[name]!;
+    if (tier.region) {
+      const body = regionBody(tier.region.file, tier.region.name);
+      coreBytes += body === null ? 0 : Buffer.byteLength(body, 'utf8');
+    } else if (tier.dir) {
+      const dir = join(root, manifest.target, tier.dir);
+      coreBytes += listMarkdown(dir).reduce((sum, file) => sum + statSync(join(dir, file)).size, 0);
+    }
   }
   const overBudget = coreBytes > manifest.coreBudgetBytes;
 
-  const indexFile = join(root, manifest.target, INDEX_PATH);
-  const expected = buildIndex({ root, target: manifest.target, lock });
-  const indexStale = !existsSync(indexFile) || readText(indexFile) !== expected;
+  // 🔴 The roster's KNOWLEDGE and SKILLS rows, rebuilt from disk and compared. Offline and canon-free,
+  // which is what `check` inside a build gate requires (D8). The rules rows are deliberately not
+  // checked: they come from frontmatter the span strips, so nothing offline can rebuild them, and a
+  // canon change is `status`'s report. What this catches is the case that actually happens — a local
+  // document added and the region never re-synced.
+  const indexStale = alwaysLoadedTiers(harness).some((name) => {
+    const tier = harness.tiers[name]!;
+    if (!tier.region) return false;
+    const body = regionBody(tier.region.file, tier.region.name);
+    if (body === null) return true;
+    return onDemandHalf(body) !== onDemandHalf(rosterFromDisk({ root, target: manifest.target, lock }));
+  });
 
   // The budget REPORTS; it does not fail (D54, the owner's call). Everything else here is a FACT the
   // tool established — a file drifted, one is missing, a pack was never synced, the index is behind.
@@ -68,7 +133,9 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
         'detail into the on-demand tier, or raise it deliberately in daoris.json',
     );
   }
-  if (report.indexStale) write(`  index     ${INDEX_PATH} is out of date — run 'daoris index'`);
+  if (report.indexStale) {
+    write("  roster    the doctrine region's on-demand tables are out of date — run 'daoris sync'");
+  }
 
   if (report.ok) {
     // "clean" would be the wrong word while the core is over its own declared budget, even though

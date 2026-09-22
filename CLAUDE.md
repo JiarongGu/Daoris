@@ -73,9 +73,9 @@ a screen can set, a terminal can.
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
 
-**Three things to know before changing anything.** The always-loaded core sits at **23,862 of 26,000
-bytes** — roughly one substantial rule of headroom (CANON7, D28 as amended: this repository's number
-caps *the canon's core*, a different question from the 30000 an adopter starts at). **The budget
+**Three things to know before changing anything.** The always-loaded core sits at **21,817 of 26,000
+bytes** (CANON7, D28 as amended: this repository's number caps *the canon's core*, a different
+question from the 30000 an adopter starts at). **The budget
 reports and never fails** (D54): a fact gates, a judgement reports. The answer to a full budget is to
 split principle from detail rather than raise the number — CANON6 did exactly that. And **never write
 into another
@@ -118,12 +118,9 @@ risk, **authorship** was.
   the literal form had drifted to fifteen values. The diagnosis was **measured**, which is how a
   design complaint became a decision. 🔴 **git walks UP** — a diff of a path that is not a
   repository answers for the one above it (FIX-LOG).
-- **The last two, and what they bind** (2026-09-22). **SURF8**: the monitor and a detached session
-  are **routes into the same bundle** on their own STA pumps, read-only — 🔴 a secondary window needs
-  its **own** WebView2 environment, and `shot`/`eval`/`click` need **`--window <monitor|session:ID>`**
-  or they address whichever window Windows calls main (FIX-LOG, three times over). **SURF5b** closed
-  the arc and driver open question 5: a park is *seen*, an end is *known*, so "never for an ending
-  the person caused" is structural; `daoris driver notify on|off` is its second door.
+- **Two traps the last surface items left** (2026-09-22). A secondary window needs its **own**
+  WebView2 environment, and `shot`/`eval`/`click` need **`--window <monitor|session:ID>`** or they
+  address whichever window Windows calls main (FIX-LOG, three times over).
 - 🔴 **Polishing the UI/UX is standing work, and it is done by LOOKING** (owner, 2026-09-22:
   *"we also need to keep polish the ui/ux you can use screenshot tool to confirm"*). Take
   `npm run desktop -- shot [--theme dark]` to any surface you change. The defects that matter are
@@ -158,9 +155,10 @@ risk, **authorship** was.
 **Core** installs into every repository with no opt-out; **packs** are named in the manifest; **local**
 documents are the repository's own and are never synced or touched. `daoris.lock` is the authority —
 anything absent from it is invisible to the tool, which is what makes a repository's own files safe.
-**The tier is the directory**: `rules/` is always-loaded context, `knowledge/` is read on demand,
-`skills/` is invoked by name, and the agent harness decides that by path — so there is no `tier` field to
-disagree with.
+**The tier is the location** (D7 as amended by **D59**): always-loaded is a **region in `AGENTS.md`**
+that Daoris owns — because `.claude/rules/` is read by one harness of three — with `CLAUDE.md`
+carrying `@AGENTS.md`; `knowledge/` is read on demand and `skills/` is invoked by name, both still
+directories. No `tier` field to disagree with, and the footprint is still measurable.
 
 Two consequences worth knowing before touching materialization: **drift is measured against the lock**,
 never against the current canon (D13) — otherwise an improved rule cannot propagate. And **a skill's
@@ -293,3 +291,7 @@ and the reason; leave the mechanism to the adopting repository's own local docum
 
 Every canon file carries frontmatter — `name` (matching the filename), `applies_when`, `enforces` — which
 generates its row in the index. Tests enforce all of it. See `.claude/knowledge/canon-authoring.md`.
+
+<!-- daoris:import — generated; edit the canon, not this -->
+@AGENTS.md
+<!-- /daoris:import -->

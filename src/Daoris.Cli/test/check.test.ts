@@ -50,7 +50,7 @@ test('check passes with the canon source completely absent', () => {
 
 test('a hand-edited vendored file is drift, named, exit 1', () => {
   const { canonFx, repoFx } = synced();
-  repoFx.write('.claude/rules/sensitive-info.md', 'hand-edited\n');
+  repoFx.write('AGENTS.md', repoFx.read('AGENTS.md').replace('Body of sensitive-info.', 'hand-edited'));
   const report = look(repoFx);
   assert.deepEqual(report.drifted, ['rules/sensitive-info.md']);
   assert.equal(report.ok, false);
@@ -63,7 +63,8 @@ test('a hand-edited vendored file is drift, named, exit 1', () => {
 
 test('a deleted vendored file is missing', () => {
   const { canonFx, repoFx } = synced();
-  rmSync(join(repoFx.root, '.claude/rules/sensitive-info.md'));
+  // The whole region gone is every rule in it missing — the span's equivalent of a deleted file.
+  rmSync(join(repoFx.root, 'AGENTS.md'));
   assert.deepEqual(look(repoFx).missing, ['rules/sensitive-info.md']);
   canonFx.cleanup();
   repoFx.cleanup();
@@ -103,16 +104,28 @@ test('an over-budget core is reported but does not fail the check', () => {
 /** The other half of the same rule: a fact the tool established still stops the run. */
 test('drift still fails the check — only the budget is advisory', () => {
   const { canonFx, repoFx } = synced();
-  repoFx.write('.claude/rules/sensitive-info.md', '# locally edited\n');
+  repoFx.write('AGENTS.md', repoFx.read('AGENTS.md').replace('Body of sensitive-info.', '# locally edited'));
   const report = look(repoFx);
   assert.equal(report.ok, false);
   canonFx.cleanup();
   repoFx.cleanup();
 });
 
-test('a stale index fails the check', () => {
+/**
+ * 🔴 The roster's on-demand rows, rebuilt from disk and compared — offline and canon-free, which is
+ * what `check` inside a build gate needs (D8). It catches the case that actually happens: a document
+ * added to a tier that IS still files, and the region never re-synced.
+ *
+ * The rules rows are deliberately not checked. They come from frontmatter the span strips on the way
+ * in, so nothing without the canon can say what they ought to be — and a canon change is `status`'s
+ * report, which is where a canon change belongs.
+ */
+test('a roster that no longer matches the on-demand tiers fails the check', () => {
   const { canonFx, repoFx } = synced();
-  repoFx.write('.claude/rules/RULES_INDEX.md', '# stale\n');
+  assert.equal(look(repoFx).indexStale, false);
+
+  repoFx.write('.claude/knowledge/ours.md', doc('ours'));
+
   assert.equal(look(repoFx).indexStale, true);
   canonFx.cleanup();
   repoFx.cleanup();

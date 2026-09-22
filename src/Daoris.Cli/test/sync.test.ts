@@ -19,6 +19,9 @@ function seed(packs: string[] = []) {
   const canonFx = makeFixture('sync-canon');
   canonFx.write('canon.json', '{"version":"0.1.0"}');
   canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info'));
+  // A knowledge document, because it is still a FILE — which is where collisions and path-level
+  // refusals still live now that the always-loaded tier is a span (D59).
+  canonFx.write('core/knowledge/storage.md', doc('storage'));
   canonFx.write('packs/win/pack.json', '{"name":"win","description":"Windows"}');
   canonFx.write('packs/win/rules/gotchas.md', doc('gotchas'));
 
@@ -35,19 +38,35 @@ function run({ canonFx, repoFx }: Seeded, force = false) {
   return applySync({ root: repoFx.root, manifest, plan, canonVersion: canon.version, force });
 }
 
-test('a fresh sync writes the tree, the header, and the lock', () => {
+/**
+ * The always-loaded tier is a SPAN in the file every harness reads (D59), so a fresh sync writes a
+ * region rather than a directory — and the pointer that carries it to the one harness reading the
+ * other name.
+ */
+test('a fresh sync writes the region, the pointer, and the lock', () => {
   const fx = seed(['win']);
   run(fx);
-  const written = fx.repoFx.read('.claude/rules/sensitive-info.md');
-  // Frontmatter first, provenance under it — never above (see document.mjs).
-  assert.equal(written.startsWith('---\n'), true);
-  assert.match(written, /---\n<!-- daoris: core\/core\/rules\/sensitive-info\.md @ 0\.1\.0 /);
-  assert.match(written, /Body of sensitive-info/);
-  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), true);
+
+  const region = fx.repoFx.region();
+  assert.ok(region, 'the region must exist');
+  // The provenance line is still per rule, which is what keeps drift and `upstream` per rule.
+  assert.match(region, /<!-- daoris: core\/core\/rules\/sensitive-info\.md @ 0\.1\.0 /);
+  assert.match(region, /Body of sensitive-info/);
+  assert.match(region, /Body of gotchas/);
+  // 🔴 No frontmatter fence: seven of them mid-document is what stripping exists to prevent.
+  assert.doesNotMatch(region, /^---\s*$/m);
+  // The rules no longer land as files of their own.
+  assert.equal(fx.repoFx.exists('.claude/rules/sensitive-info.md'), false);
+
+  assert.match(fx.repoFx.read('CLAUDE.md'), /@AGENTS\.md/);
   assert.deepEqual(
     readLock(fx.repoFx.root)!.entries.map((e) => e.target).sort(),
-    ['rules/gotchas.md', 'rules/sensitive-info.md'],
+    ['knowledge/storage.md', 'rules/gotchas.md', 'rules/sensitive-info.md'],
   );
+  // The identity stays the canonical path; `in` is what says where to look, and only rules have it.
+  const entries = readLock(fx.repoFx.root)!.entries;
+  assert.equal(entries.find((e) => e.target === 'rules/sensitive-info.md')!.in, 'AGENTS.md');
+  assert.equal(entries.find((e) => e.target === 'knowledge/storage.md')!.in, undefined);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -73,17 +92,24 @@ test('retiring a canonical file removes it from the repo on the next sync', () =
   fx.repoFx.cleanup();
 });
 
-test('a locally-drifted file is refused without --force and overwritten with it', () => {
+/** Editing a rule now means editing the region it lives in — drift is measured per rule inside it. */
+function handEdit(fx: Seeded, from: string, to: string): void {
+  fx.repoFx.write('AGENTS.md', fx.repoFx.read('AGENTS.md').replace(from, to));
+}
+
+test('a locally-drifted rule is refused without --force and overwritten with it', () => {
   const fx = seed();
   run(fx);
-  fx.repoFx.write('.claude/rules/sensitive-info.md', 'hand-edited\n');
+  handEdit(fx, 'Body of sensitive-info.', 'hand-edited');
+
   const error = captureError(() => run(fx));
   assert.ok(error instanceof DaorisError);
   assert.equal(error.exitCode, 1);
   assert.match(error.message, /sensitive-info/);
   assert.match(error.message, /--force/);
+
   run(fx, true);
-  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /Body of sensitive-info/);
+  assert.match(fx.repoFx.rule('core/core/rules/sensitive-info.md')!, /Body of sensitive-info/);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -94,7 +120,7 @@ test('a canon improvement reaches an untouched repo without --force', () => {
   // The rule got better upstream. The repo did nothing at all.
   fx.canonFx.write('core/rules/sensitive-info.md', doc('sensitive-info').replace('Body of', 'IMPROVED body of'));
   run(fx);
-  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /IMPROVED body of sensitive-info/);
+  assert.match(fx.repoFx.rule('core/core/rules/sensitive-info.md')!, /IMPROVED body of sensitive-info/);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -115,7 +141,7 @@ test('a canon version bump alone is not drift', () => {
   assert.deepEqual(plan.drifted, []);
   assert.deepEqual(plan.collisions, []);
   run(fx);
-  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /@ 0\.2\.0 /);
+  assert.match(fx.repoFx.region()!, /@ 0\.2\.0 /);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -144,8 +170,8 @@ test('a renamed canonical file is reported as a rename, not a delete plus an add
 
   // The outcome is unchanged — only the explanation improves.
   run(fx);
-  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), false);
-  assert.equal(fx.repoFx.exists('.claude/rules/windows-traps.md'), true);
+  assert.equal(fx.repoFx.rule('win/packs/win/rules/gotchas.md'), null);
+  assert.ok(fx.repoFx.rule('win/packs/win/rules/windows-traps.md'));
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -186,32 +212,37 @@ test('an unrelated retirement and addition are not called a rename', () => {
  * guard, and it destroys the edit at exactly the moment it can no longer be
  * promoted, because the canonical file it belonged to is gone.
  */
-test('retiring a file the repo edited refuses rather than destroying the edit', () => {
+/**
+ * 🔴 Span-aware, and asserted because it stops working SILENTLY otherwise. A retired rule that lives
+ * in the region has no file at its target, so a guard that only stats a path finds nothing, calls it
+ * an untouched retirement and deletes the edit without a word — which is the fourth bug D19's last
+ * row was written from, arriving again through the tier moving.
+ */
+test('retiring a rule the repo edited refuses rather than destroying the edit', () => {
   const fx = seed(['win']);
   run(fx);
-  const local = join(fx.repoFx.root, '.claude/rules/gotchas.md');
-  fx.repoFx.write('.claude/rules/gotchas.md', `${readText(local)}\nHARD-WON LOCAL IMPROVEMENT.\n`);
+  handEdit(fx, 'Body of gotchas.', 'Body of gotchas.\n\nHARD-WON LOCAL IMPROVEMENT.');
   rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
 
   const error = captureError(() => run(fx));
   assert.ok(error instanceof DaorisError);
   assert.equal(error.exitCode, 1);
   assert.match(error.message, /gotchas/);
-  assert.match(readText(local), /HARD-WON LOCAL IMPROVEMENT/, 'the edit must survive the refusal');
+  assert.match(fx.repoFx.region()!, /HARD-WON LOCAL IMPROVEMENT/, 'the edit must survive the refusal');
 
   // --force is the deliberate "yes, I have what I need; drop it".
   run(fx, true);
-  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), false);
+  assert.equal(fx.repoFx.rule('win/packs/win/rules/gotchas.md'), null);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
 
-test('retiring an untouched file needs no ceremony', () => {
+test('retiring an untouched rule needs no ceremony', () => {
   const fx = seed(['win']);
   run(fx);
   rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
   run(fx);
-  assert.equal(fx.repoFx.exists('.claude/rules/gotchas.md'), false);
+  assert.equal(fx.repoFx.rule('win/packs/win/rules/gotchas.md'), null);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -259,9 +290,9 @@ test('--force names what it destroys', () => {
   const write = (s: string) => out.push(s);
   commandSync({ root: fx.repoFx.root, argv: [], write, packageRoot: '' });
 
-  fx.repoFx.write('.claude/rules/sensitive-info.md', 'hand-edited\n');
+  handEdit(fx, 'Body of sensitive-info.', 'hand-edited');
   rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
-  fx.repoFx.write('.claude/rules/gotchas.md', 'edited, and being retired\n');
+  handEdit(fx, 'Body of gotchas.', 'edited, and being retired');
 
   out.length = 0;
   assert.equal(commandSync({ root: fx.repoFx.root, argv: ['--force'], write, packageRoot: '' }), 0);
@@ -293,18 +324,44 @@ test('an unchanged file is planned as unchanged, not rewritten', () => {
 
 test('adopting a repo that already owns a canonical filename refuses rather than clobbering', () => {
   const fx = seed();
-  // The repo wrote its own sensitive-info.md long before it ever heard of daoris.
-  fx.repoFx.write('.claude/rules/sensitive-info.md', 'our own hard-won rule\n');
+  // The repo wrote its own storage.md long before it ever heard of daoris.
+  fx.repoFx.write('.claude/knowledge/storage.md', 'our own hard-won document\n');
 
   const error = captureError(() => run(fx));
   assert.ok(error instanceof DaorisError);
   assert.equal(error.exitCode, 1);
-  assert.match(error.message, /sensitive-info/);
+  assert.match(error.message, /storage/);
   assert.match(error.message, /already/i);
-  assert.equal(fx.repoFx.read('.claude/rules/sensitive-info.md'), 'our own hard-won rule\n');
+  assert.equal(fx.repoFx.read('.claude/knowledge/storage.md'), 'our own hard-won document\n');
 
   run(fx, true); // --force is the deliberate "yes, take the canonical one"
-  assert.match(fx.repoFx.read('.claude/rules/sensitive-info.md'), /Body of sensitive-info/);
+  assert.match(fx.repoFx.read('.claude/knowledge/storage.md'), /Body of storage/);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+/**
+ * 🔴 A consequence of the move, asserted so it is a decision rather than a discovery: **a rule can no
+ * longer collide.** The canonical rules land in a region Daoris owns, so a repository's own
+ * `.claude/rules/x.md` is no longer at a path the canon claims — it is simply a local document, kept
+ * and invisible (D5), whatever it happens to be called. D12's refusal still guards every tier that is
+ * still files, and `doctor` is what reports a local rule that restates a canonical one.
+ */
+test('a rule the repo wrote itself is local now, not a collision', () => {
+  const fx = seed();
+  fx.repoFx.write('.claude/rules/sensitive-info.md', 'our own hard-won rule\n');
+
+  const plan = planSync({
+    root: fx.repoFx.root,
+    manifest: readManifest(fx.repoFx.root),
+    canon: readCanon(fx.canonFx.root),
+    lock: readLock(fx.repoFx.root),
+  });
+
+  assert.deepEqual(plan.collisions, []);
+  run(fx);
+  assert.equal(fx.repoFx.read('.claude/rules/sensitive-info.md'), 'our own hard-won rule\n');
+  assert.match(fx.repoFx.rule('core/core/rules/sensitive-info.md')!, /Body of sensitive-info/);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });
@@ -312,13 +369,13 @@ test('adopting a repo that already owns a canonical filename refuses rather than
 test('an adopted file identical to the canon is not a collision', () => {
   const fx = seed();
   run(fx);
-  const vendored = fx.repoFx.read('.claude/rules/sensitive-info.md');
+  const vendored = fx.repoFx.read('.claude/knowledge/storage.md');
   const fresh = seed();
-  fresh.repoFx.write('.claude/rules/sensitive-info.md', vendored);
+  fresh.repoFx.write('.claude/knowledge/storage.md', vendored);
   run(fresh); // byte-identical: nothing to warn about
   assert.deepEqual(
-    readLock(fresh.repoFx.root)!.entries.map((e) => e.target),
-    ['rules/sensitive-info.md'],
+    readLock(fresh.repoFx.root)!.entries.map((e) => e.target).sort(),
+    ['knowledge/storage.md', 'rules/sensitive-info.md'],
   );
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
@@ -326,12 +383,21 @@ test('an adopted file identical to the canon is not a collision', () => {
   fresh.repoFx.cleanup();
 });
 
-test('sync writes the index too, so a synced repo is immediately consistent', () => {
+/**
+ * The roster is part of the region now, not a file beside it — so it is loaded rather than merely
+ * present, which is the whole reason the tier moved.
+ */
+test('sync writes the roster into the region, so a synced repo is immediately consistent', () => {
   const fx = seed();
+  fx.repoFx.write('.claude/knowledge/ours.md', doc('ours'));
   run(fx);
-  const index = fx.repoFx.read('.claude/rules/RULES_INDEX.md');
-  assert.match(index, /sensitive-info/);
-  assert.match(index, /house-style.*\(local\)/);
+
+  const region = fx.repoFx.region()!;
+  assert.match(region, /sensitive-info/);
+  assert.match(region, /## Read on demand/);
+  assert.match(region, /storage/);
+  // A document the repository wrote itself is listed and marked, never synced.
+  assert.match(region, /ours.*\(local\)/);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

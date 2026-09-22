@@ -2,6 +2,8 @@ import type { DaorisError } from '../src/errors.ts';
 import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findRegion } from '../src/region.ts';
+import { tierRuleBody } from '../src/tierrender.ts';
 
 const FIXTURE_ROOT = join(dirname(dirname(fileURLToPath(import.meta.url))), '_fixtures');
 
@@ -11,6 +13,16 @@ export interface Fixture {
   write(rel: string, text: string): string;
   read(rel: string): string;
   exists(rel: string): boolean;
+  /**
+   * The doctrine region's body (D59), or null when this repository has none.
+   *
+   * The always-loaded tier is a span in `AGENTS.md` rather than files under `.claude/rules/`, so
+   * "what did sync write for this rule" is a question about a region now, and every test that used
+   * to read a path asks it here.
+   */
+  region(): string | null;
+  /** One rule's body inside the region — what drift and `upstream` are measured per. */
+  rule(source: string): string | null;
   cleanup(): void;
 }
 
@@ -45,6 +57,16 @@ export function makeFixture(name: string): Fixture {
     },
     read: (rel: string) => readFileSync(join(root, rel), 'utf8'),
     exists: (rel: string) => existsSync(join(root, rel)),
+    region(): string | null {
+      const file = join(root, 'AGENTS.md');
+      if (!existsSync(file)) return null;
+      const held = findRegion(readFileSync(file, 'utf8'), 'rules');
+      return held.kind === 'present' ? held.body : null;
+    },
+    rule(source: string): string | null {
+      const body = this.region();
+      return body === null ? null : tierRuleBody(body, source);
+    },
     cleanup: () => rmSync(root, { recursive: true, force: true }),
   };
 }

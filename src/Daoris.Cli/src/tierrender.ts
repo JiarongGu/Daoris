@@ -16,10 +16,17 @@
 import type { CanonFile } from './types.ts';
 import { makeHeader, parseFrontmatter, SKILL_FIELDS } from './document.ts';
 
-/** One canon document on its way into the region: where it came from, and what it says. */
+/** One document on its way into the region: where it came from, and what it says. */
 export interface TierDocument {
   file: CanonFile;
   text: string;
+  /**
+   * The frontmatter, when `text` no longer carries it — a span holds its body alone, and the roster's
+   * rows are built from `applies_when` and `enforces`.
+   */
+  meta?: Record<string, string>;
+  /** True for a document this repository wrote itself — listed in the roster, never synced. */
+  local?: boolean;
 }
 
 export interface TierInput {
@@ -47,7 +54,13 @@ function bodyOf(text: string): string {
 }
 
 function metaOf(document: TierDocument, required: readonly string[] = ['applies_when', 'enforces']) {
+  if (document.meta) return required.every((field) => document.meta![field]) ? document.meta : null;
   return parseFrontmatter(document.text, required).meta;
+}
+
+/** The roster says which rows are this repository's own, because those are never synced. */
+function mark(document: TierDocument): string {
+  return document.local ? ' _(local)_' : '';
 }
 
 /**
@@ -69,6 +82,20 @@ function summarize(description: string, limit = 110): string {
  * from the same canon makes every `sync` a diff and every drift report a lie.
  */
 export function renderTier(input: TierInput): string {
+  return [renderRoster(input), ...renderRules(input)].join('\n');
+}
+
+/**
+ * The roster half: what applies when, across all three tiers.
+ *
+ * @remarks
+ * Split out because `check` rebuilds the **knowledge and skills** rows from disk to tell whether the
+ * region has gone stale — a local document added and never synced — and it does that offline, with no
+ * canon. The rules rows are not rebuildable offline, because the frontmatter they come from is
+ * stripped on the way in; a canon change is `status`'s report and `sync`'s job, which is where a
+ * canon change belongs.
+ */
+export function renderRoster(input: TierInput): string {
   const target = input.target ?? '.claude';
   // 🔴 The region's own headings sit at the SAME level the rule bodies use, and the bodies are not
   // touched. Nesting them under a `## Doctrine` wrapper reads better in a table of contents and
@@ -101,7 +128,7 @@ export function renderTier(input: TierInput): string {
   for (const document of input.knowledge) {
     const meta = metaOf(document);
     // Linked, because these point at real files the reader has to go and open.
-    const link = `[${nameOf(document.file)}](${target}/${document.file.target})`;
+    const link = `[${nameOf(document.file)}](${target}/${document.file.target})${mark(document)}`;
     lines.push(meta
       ? `| ${link} | ${meta.applies_when} | ${meta.enforces} |`
       : `| ${link} | ⚠ needs frontmatter | ⚠ needs frontmatter |`);
@@ -112,13 +139,22 @@ export function renderTier(input: TierInput): string {
     const meta = parseFrontmatter(document.text, SKILL_FIELDS).meta;
     // A skill is a DIRECTORY; `SKILL.md` is an implementation detail no roster should show.
     const dir = document.file.target.replace(/\/[^/]+$/, '');
-    lines.push(`| [${dir.replace(/^.*\//, '')}](${target}/${dir}) | ${
+    lines.push(`| [${dir.replace(/^.*\//, '')}](${target}/${dir})${mark(document)} | ${
       meta?.description ? summarize(meta.description) : '⚠ needs frontmatter'} |`);
   }
 
-  // No separator rule between them. A `---` line is indistinguishable from a frontmatter fence — the
-  // thing this render exists to remove — and in markdown it can also turn the line above it into a
-  // heading. The provenance comment and a blank line separate them, and each rule opens with its own.
+  return lines.join('\n');
+}
+
+/**
+ * Every rule in full, each behind its own provenance line.
+ *
+ * No separator rule between them: a `---` line is indistinguishable from the frontmatter fence this
+ * render exists to remove, and in markdown it can turn the line above it into a heading. The
+ * provenance comment and a blank line separate them, and each rule opens with its own heading.
+ */
+export function renderRules(input: TierInput): string[] {
+  const lines: string[] = [];
   for (const document of input.rules) {
     lines.push(
       '',
@@ -128,7 +164,7 @@ export function renderTier(input: TierInput): string {
     );
   }
 
-  return lines.join('\n');
+  return lines;
 }
 
 /**
