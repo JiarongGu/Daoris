@@ -3388,3 +3388,66 @@ session the real machine's.
 
 **One trap, twice now:** a C# lambda parameter named `_` shadows the discard in
 `TryGetProperty("id", out _)`, and the error names neither.
+
+## CANON8d — say the new thing (2026-09-22)
+
+> **CANON8d — say the new thing.** Four sentences D59 made false, each verified stale on 2026-09-22
+> and each one edit: `analyze`'s `AGENTS.md` verdict (*"what it installs will be invisible to them"*,
+> now backwards — that file is exactly where it lands); `docs/2026-08-04-daoris-design.md:71`, **D7**,
+> *"The tier is the directory, not metadata"*; `README.md:178`, *"The tier is the directory"* in the
+> three-layer story a consumer reads first; and `.claude/knowledge/canon-authoring.md:69`,
+> *"`rules/` is always-loaded"*.
+>
+> A stale sentence is believed for exactly as long as it survives, and the confident one is what tells
+> a reader not to go and look (`claims-need-checks`).
+
+✅ **done 2026-09-22.** All four corrected — and reading around each one turned up as many again in the
+same class, including the biggest: **the release-facing changelog had no entry for D59 at all.** CLI
+**267** (was 265), `check` clean at 21,817 of 26,000, service 262/262.
+
+**The `analyze` verdict is now split, and it has a check for the first time.** It was printed prose
+with nothing asserting it, which is the failure `claims-need-checks` ends on — *a claim is only worth
+what invokes it*. Two tests over `commandAnalyze`'s real output now hold both halves: a repository on
+the `AGENTS.md` convention is told the always-loaded tier **lands in its own file**, and one showing
+only Cursor is still told what daoris installs is invisible to it. The split keys on the **evidence
+file**, not on the signal's id — it is `AGENTS.md` that decides reach, so a future signal detected by
+that same file inherits the right sentence instead of the wrong one. The assertions read a
+whitespace-collapsed copy, because the claim is the sentence and not the column it wraps at.
+
+**What reading around the four turned up:**
+
+- 🔴 **`CHANGELOG.md` did not mention the move at all.** The single most user-visible change in the arc
+  — what `sync` writes, and into whose file — was absent from the release-facing record while the
+  backlog, the archive and four design documents all discussed it. Added under *The canon*. Two more in
+  the same file: `check` was still described as *gating* on the always-loaded budget (**D54** retired
+  that), and *"syncs core into its own `.claude/`"* under **Proven**.
+- **`docs/DECISIONS.md` D7 carried no amendment at all.** D59 says *"D7 is amended"* and D7 said
+  nothing back, so the amendment existed only in the decision that made it — the one place a reader
+  checking D7 would not be. It now names D59 for the location half and **D54** for the *gate* half,
+  which a separate decision had already reversed. The back-reference convention holds everywhere else
+  in that file; this was its one miss, so it is a lapse rather than a gap needing a gate.
+- **`docs/2026-08-04-daoris-design.md` §11 still listed *"Owning regions of `CLAUDE.md`"* as out of
+  scope**, reasoning that *"partial ownership of a hand-written file is where sync tools start
+  fighting their users"*. Daoris owns a region of `AGENTS.md` **and** an import region in `CLAUDE.md`
+  today. Struck through and answered rather than deleted: the fear was right, and the answer was not
+  avoidance but **refusing with a line number** instead of guessing at a damaged marker.
+- **`README.md`'s `sync` row said it materializes into `.claude/`** — which no longer names the file
+  a consumer most needs to know gets written. And the lock is described as *one entry per materialized
+  file*; it is one per **document**, the always-loaded ones carrying `in` because they are a span
+  inside `AGENTS.md`. Both written from the lock on disk rather than from the design (`claims-need-checks`).
+- **`.claude/knowledge/adoption.md` told an adopting agent to expect the budget to *fail*** and to look
+  for a deep dive *"sitting in `rules/`"*. Both stale, from two different decisions, in the document
+  that governs the flow this most matters in.
+- **`canon-authoring.md` also claimed the core budget is *"measured and gated"***, which **D54**
+  retired before D59 existed. Corrected in the same edit: it is measured and **reported**.
+- **`CLAUDE.md` claimed 211 CLI tests**, against 265 before this item and 267 after. Byte-neutral fix,
+  which matters at 3,724 of 3,750 words.
+
+🔴 **The backlog's own note on the fourth item was wrong, and that is the reusable part.** It read
+*"a **canon** file, so it must stay project-agnostic and re-sync `examples/` in the same commit"*.
+`.claude/knowledge/canon-authoring.md` is this repository's **local** document — it has no provenance
+header, no row in `daoris.lock`, no counterpart under `canon/`, and the generated index marks it
+`(local)`. So nothing re-syncs and the project-agnostic constraint never applied. It is a document
+*about* authoring canon, and its subject matter read as its status. **The lock is the authority**
+(D5) — the check is one `grep` of `daoris.lock`, and the filename is not evidence.
+

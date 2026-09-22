@@ -78,6 +78,13 @@ only thing it could ever do is disagree.
 gate (`check` fails over a byte budget) rather than an aspiration. It caught a real 45% overage on the
 first adoption.
 
+**Amended 2026-09-22 (D59): the tier is the LOCATION.** The always-loaded tier moved out of
+`.claude/rules/` and into a region of `AGENTS.md`, because that directory is read by exactly one of the
+three harnesses this family drives and `AGENTS.md` is the only file all three read. The better half
+survives untouched: there is still no `tier:` field to disagree with, and the footprint is still
+directly measurable, since a region has a byte count exactly as a directory did. The *gate* half was
+separately amended by **D54** — the budget reports and never fails.
+
 ## D8 — `check` works offline (2026-08-04)
 
 **Decision.** `check` is pure local hashing: no network, no canon access, no package resolution.

@@ -11,8 +11,9 @@ The first version: doctrine that installs, is checked, and flows back.
 
 - **Twelve commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
-  `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness, index
-  freshness and the always-loaded budget; `upstream` promotes a locally-improved file back into the
+  `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
+  index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
+  judgement reports — D54); `upstream` promotes a locally-improved file back into the
   canon (`--all` for every edit at once); `index` regenerates `RULES_INDEX.md` from what is on disk;
   `status` summarizes — the remote disclosure declaration included, and this machine's wiring with
   `--machine` — and reports when a newer canon is available; `doctor` reports local documents that
@@ -99,6 +100,16 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The canon
 
+- **The always-loaded tier is a region of `AGENTS.md`, not a directory beside it.** Measured across the
+  three harnesses this family drives: `.claude/rules/` is read by exactly one of them, so Daoris had
+  been shipping an always-loaded tier whose always-loaded-ness belonged to one tool rather than to the
+  doctrine. `sync` now writes the core rules into a marked region of `AGENTS.md` — the only file all
+  three read — with `CLAUDE.md` carrying a one-line `@AGENTS.md` import region for the one that reads
+  the other name and follows imports. Knowledge and skills do not move. The adopter's own text in
+  either file is never touched, and a damaged marker, a reordered pair or a second region is **refused
+  with its line number** rather than guessed at, because what is on the other side of that guess is
+  their doctrine. `daoris.lock` gains one field: an entry carrying `in` is a span inside a file. See
+  `docs/DECISIONS.md` D7 (amended) and D59.
 - **Eight core rules**, each confirmed by appearing independently in multiple repositories in the family:
   `sensitive-info`, `task-lifecycle`, `no-tmp-for-repo-files`, `file-tool-discipline`,
   `persist-working-state`, `no-global-memory`, `skills-workflow` — and `repository-owns-its-work`:
@@ -406,7 +417,8 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### Proven
 
-- Daoris carries its own manifest and syncs core into its own `.claude/`; a test asserts it stays clean.
+- Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and `.claude/`; a test
+  asserts it stays clean.
 - Adopted into **Lyntai** (a released .NET library): 4 collisions surfaced and resolved deliberately, a
   renamed twin found, 3 packs installed, its own 1337 tests still green — and the budget gate immediately
   caught a real 45% overage on first contact. Lyntai has since stepped back off the tool at its owner's

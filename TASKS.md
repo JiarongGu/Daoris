@@ -25,12 +25,13 @@ toolchain** (2026-09-22 → **TOOL1/D57**): the measurement corrected a doctrine
 accounts were Daoris's and the binary was still the machine's — and **TOOL2 and TOOL3 have landed**.
 **The instruction file** (2026-09-22 → **CANON8/D59**): `.claude/rules/` is read by one harness of
 three, so the always-loaded tier lives in `AGENTS.md` — **built and migrated**, this repository and
-both examples with it. **CANON8d** is what is left of it.
+both examples with it. **The arc is closed** — CANON8a–e landed the move and CANON8d said the new
+thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**265 CLI tests, 262 service, 239 driver, 71 desktop modules, 412 web unit, 14 Playwright**, 57
+**267 CLI tests, 262 service, 239 driver, 71 desktop modules, 412 web unit, 14 Playwright**, 57
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
 core is **21,817 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -108,10 +109,9 @@ asserts DRV4's shape. **DRV6 caps it at three attempts** — the first attempt a
 sessions before anything stopped it, which is what DRV6 was written from. Until it passes, ACP2 stays
 open and `claude-code` over the pipe door remains what a machine drives with.
 
-**What else is open**, in the Backlog below: **CANON8d** (the sentences D59 made stale — `analyze`
-still says the AGENTS.md convention makes what Daoris installs *"invisible to them"*, which stopped
-being true), then ACP3, HELP2, HELP3, TOOL5, DEVKIT3, CANON5. Four **held** items sit at the bottom;
-do not pick one up until its trigger has arrived. Nothing is pushed or published.
+**What else is open**, in the Backlog below: **ACP3**, then HELP2, HELP3, TOOL5, DEVKIT3, ARCH1,
+CANON5. **CANON8d closed 2026-09-22** and the instruction-file arc with it. Four **held** items sit at
+the bottom; do not pick one up until its trigger has arrived. Nothing is pushed or published.
 
 **Start by reading the contract the item cites** — every backlog row names one. The bullets below are
 the traps that are not in any contract, because they were found rather than designed.
@@ -207,7 +207,7 @@ the traps that are not in any contract, because they were found rather than desi
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 211 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 267 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (259),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
@@ -355,19 +355,16 @@ is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now
   commit. Always-loaded core **23,862 → 21,817 bytes**, because eight frontmatter blocks and a
   separate roster's preamble went away. The archive carries the outcome.
 
-- [ ] **CANON8d — say the new thing.** Four sentences D59 made false, each verified stale on
-  2026-09-22 and each one edit:
-  - `src/Daoris.Cli/src/analyze.ts` — the `AGENTS.md` verdict still says *"what it installs will be
-    invisible to them"*, which is now backwards: that file is exactly where it lands.
-  - `docs/2026-08-04-daoris-design.md:71` — **D7**, *"The tier is the directory, not metadata"*.
-    Amend in place the way D59 states it: the tier is the **location**, and D7's better half (no
-    `tier:` field, a measurable footprint) survives untouched.
-  - `README.md:178` — *"The tier is the directory"* in the three-layer story a consumer reads first.
-  - `.claude/knowledge/canon-authoring.md:69` — *"`rules/` is always-loaded"*. 🔴 A **canon** file, so
-    it must stay project-agnostic and re-sync `examples/` in the same commit.
+- [x] **CANON8d — say the new thing.** ✅ **done 2026-09-22.** All four corrected, and reading around
+  each turned up as many again in the same class — 🔴 **`CHANGELOG.md` had no entry for D59 at all**,
+  D7 in `docs/DECISIONS.md` carried no amendment though D59 says it does, the design doc still listed
+  *"Owning regions of `CLAUDE.md`"* as out of scope, and `adoption.md` told an adopting agent to expect
+  the budget to *fail*. `analyze`'s verdict gained the check it never had. 🔴 **This item's own note
+  was wrong**: `canon-authoring.md` is a **local** document, not canon — the lock is the authority
+  (D5), and a filename is not evidence. The archive carries the outcome.
 
-  A stale sentence is believed for exactly as long as it survives, and the confident one is what tells
-  a reader not to go and look (`claims-need-checks`).
+**Nothing in this section is open.** CANON8a–e and CANON8d are all in the archive; the paragraphs
+above are kept as the contract a *new* instruction-file item would be built against.
 
 ### The next direction — the toolchain and its accounts (owner, 2026-09-22)
 

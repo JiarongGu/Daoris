@@ -6,7 +6,7 @@ import { readCanon } from '../src/canon.ts';
 import { readManifest, readLock } from '../src/config.ts';
 import { planSync, applySync } from '../src/materialize.ts';
 import type { Lock } from '../src/types.ts';
-import { analyze } from '../src/analyze.ts';
+import { analyze, commandAnalyze } from '../src/analyze.ts';
 
 const doc = (name: string, body = 'Body.') =>
   `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\n${body}\n`;
@@ -148,6 +148,56 @@ test('a repository with no manifest is analysable — that is the point', () => 
 
   assert.equal(report.existing.rules.length, 1);
   assert.equal(report.budget.projected > 0, true);
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+// The claim is the sentence, not the line breaks it wraps at, so the assertions read a
+// whitespace-collapsed copy — otherwise re-wrapping one line silently breaks a check about meaning.
+const printed = (repoFx: Fixture, canonFx: Fixture): string => {
+  process.env.DAORIS_CANON = canonFx.root;
+  const out: string[] = [];
+  commandAnalyze({ root: repoFx.root, argv: [], write: (s: string) => out.push(s), packageRoot: '' });
+  delete process.env.DAORIS_CANON;
+  return out.join('\n').replace(/\s+/g, ' ');
+};
+
+/**
+ * The verdict a person adopting reads before anything else, and the one D59 reversed: the
+ * always-loaded tier lands IN `AGENTS.md`, so a repository already on that convention shares the
+ * file rather than being blind to what daoris writes. Only the on-demand tiers stay unreachable.
+ *
+ * This is checked on the PRINTED output because that is where the claim lives — the report object
+ * carries the evidence and says nothing about reach.
+ */
+test('the AGENTS.md convention is told the always-loaded tier lands in its own file', () => {
+  const canonFx = seedCanon();
+  const repoFx = makeFixture('analyze-agents-md');
+  repoFx.write('AGENTS.md', '# house doctrine\n');
+
+  const text = printed(repoFx, canonFx);
+
+  assert.match(text, /ALSO SEEN.*AGENTS\.md convention/);
+  assert.match(text, /always-loaded tier lands IN AGENTS\.md/);
+  assert.doesNotMatch(text, /invisible to them/);
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+/**
+ * The other half, unchanged: a harness that reads neither the region's file nor the target sees
+ * nothing daoris writes, and the silence of that failure is the reason this line exists.
+ */
+test('a harness that reads neither file is still told what it installs is invisible', () => {
+  const canonFx = seedCanon();
+  const repoFx = makeFixture('analyze-cursor-only');
+  repoFx.write('.cursorrules', 'house rules\n');
+
+  const text = printed(repoFx, canonFx);
+
+  assert.match(text, /ALSO SEEN.*Cursor/);
+  assert.match(text, /invisible to them/);
+  assert.doesNotMatch(text, /always-loaded tier lands IN/);
   canonFx.cleanup();
   repoFx.cleanup();
 });

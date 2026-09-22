@@ -83,13 +83,14 @@ the hard-won specifics that were never going to be canonical.
 `--force` here means "yes, take the canonical version" — a deliberate answer to a question that was
 asked, not a way to skip it.
 
-### 6. Expect the budget to fail, and do not paper over it
+### 6. Expect the budget to be over, and do not paper over it
 
 The always-loaded core is measured for the first time at this moment, and it is usually larger than
-anyone thought. Two honest responses:
+anyone thought. It is **reported, never enforced** — a fact gates and a judgement reports — so nothing
+stops; the number is there to be answered rather than silenced. Two honest responses:
 
-- **Trim** — usually a long local rule that duplicates a canonical one, or a deep dive sitting in
-  `rules/` that belongs in `knowledge/`.
+- **Trim** — usually a long local rule that duplicates a canonical one, or a deep dive sitting in the
+  always-loaded tier that belongs in `knowledge/`.
 - **Raise the budget to the true number** and record the overlap as a task.
 
 Both are legitimate. What is not legitimate is trimming someone's doctrine as a side effect of adopting a

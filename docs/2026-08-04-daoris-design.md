@@ -68,10 +68,12 @@ exists because an agent that opens a rule file needing a tweak will simply edit 
 the divergence happened — and one line naming the canonical source at the top is the cheapest intervention at
 the only moment it matters.
 
-**D7 — The tier is the directory, not metadata.** The harness auto-loads every `.claude/rules/*.md` into
-session context and does not load `.claude/knowledge/`. Placement *is* the tier; a `tier:` field would be a
-second source of truth for something the platform already decides. It also means the always-loaded footprint
-is measurable, so "keep the core small" becomes a gate rather than an aspiration.
+**D7 — The tier is the location, not metadata** (amended by **D59**, 2026-09-22; it read *the directory*
+until the always-loaded tier moved into a region of `AGENTS.md`, the one file all three harnesses read).
+Always-loaded is that region; `.claude/knowledge/` is read on demand and `.claude/skills/` is invoked by
+name. Placement *is* the tier; a `tier:` field would be a second source of truth for something the platform
+already decides. It also means the always-loaded footprint is measurable — a region has a byte count exactly
+as a directory did — so "keep the core small" becomes a gate rather than an aspiration.
 
 **D8 — `check` works offline.** It is pure local hashing against the lock, with no network and no registry
 access, because it is meant to run inside repo build gates — including one in a .NET repo that has no node
@@ -223,8 +225,12 @@ carried files is described as a pre-wipe history backup and may be the only copy
 - **Skills.** They carry frontmatter the harness interprets and often need per-repo parameterization (a build
   command, a package layout). That is a design problem, not a copy — deferred past the initial build,
   now in scope for the first release.
-- **Owning regions of `CLAUDE.md`.** It is the most repo-specific file in every project, and partial ownership
-  of a hand-written file is where sync tools start fighting their users.
+- ~~**Owning regions of `CLAUDE.md`.** It is the most repo-specific file in every project, and partial
+  ownership of a hand-written file is where sync tools start fighting their users.~~ **Reversed by D59**
+  (2026-09-22): daoris owns a marked region of `AGENTS.md` for the always-loaded tier and a one-line
+  import region in `CLAUDE.md`. The fear was right and the answer was not avoidance — a damaged marker, a
+  reordered pair or a second region is **refused with its line number**, never guessed at, because the
+  file on the other side of that guess is the adopter's own doctrine.
 - **The centralized knowledge service (cross-repo RAG).** A separate sub-project with its own spec; it would
   build on Lyntai's semantic memory, embedder seam, vector store and MCP hosting rather than reinventing them.
 - **The harness layer — gates and devtools.** The phase after the first release, because the

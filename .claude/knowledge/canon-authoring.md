@@ -66,13 +66,18 @@ silent. Tests assert `name` matches the filename, so a rename that misses the fr
 
 ### Placement
 
-- **`rules/` is always-loaded** — every session in every adopting repository pays for it. Put a document
-  here only if nearly every task needs it. The core budget is measured and gated for this reason.
+- **`rules/` is always-loaded — and since D59 it does not land as a file.** What you write here is
+  rendered into a region of the adopter's `AGENTS.md`, the one instruction file every harness this
+  family drives actually reads; `.claude/rules/` reached exactly one of the three. Every session in
+  every adopting repository pays for it, so put a document here only if nearly every task needs it. The
+  core budget measures exactly this span and **reports** it rather than failing on it (`docs/DECISIONS.md`
+  D54) — a fact gates, a judgement reports.
 - **`knowledge/` is read on demand** — the right home for anything long, or anything that only matters
   when touching one area.
 - **`skills/` is invoked by name** — a procedure, not a rule. Only its `description` is ever loaded
   unasked, so a skill's body is cheap and its description is not.
-- There is no `tier` field; the directory *is* the tier (`docs/DECISIONS.md` D7).
+- There is no `tier` field; the **location** *is* the tier (`docs/DECISIONS.md` D7 as amended by D59) —
+  a directory for the two on-demand tiers, a region inside a file for the always-loaded one.
 
 ### Writing a skill
 

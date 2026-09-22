@@ -288,8 +288,19 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   }
   if (others.length) {
     write(`  ALSO SEEN       ${others.map((h) => `${h.name} (${h.evidence.join(', ')})`).join('; ')}`);
-    write('                  daoris does not generate those layouts. What it installs will be');
-    write('                  invisible to them — present, correct, and never loaded.');
+    // 🔴 D59 reversed half of this. The always-loaded tier is a region in `AGENTS.md`, so a
+    // repository already on that convention is not blind to what daoris writes — that file is
+    // exactly where the largest tier lands. Only the on-demand tiers stay out of its reach, and
+    // saying so is the difference between a warning and a wrong one.
+    const region = CLAUDE.tiers.rules?.region?.file;
+    if (region && others.some((h) => h.evidence.includes(region))) {
+      write('                  daoris does not generate those layouts — but the always-loaded');
+      write(`                  tier lands IN ${region} (D59), so that tier is already shared.`);
+      write(`                  Only knowledge/ and skills/ stay unread, under ${target}/.`);
+    } else {
+      write('                  daoris does not generate those layouts. What it installs will be');
+      write('                  invisible to them — present, correct, and never loaded.');
+    }
   }
   if (report.contract.length) {
     write('');

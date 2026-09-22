@@ -48,7 +48,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 |---|---|
 | `analyze` | **What adopting would do here** — collisions, duplicates, projected budget. Writes nothing |
 | `init` | Detects what the repository already has, writes `daoris.json`, reports available packs |
-| `sync` | Materializes the manifest's packs into `.claude/`, writes `daoris.lock`, regenerates the index |
+| `sync` | Materializes the manifest's packs — the rules region into `AGENTS.md`, knowledge and skills into `.claude/` — writes `daoris.lock`, regenerates the index |
 | `check` | Drift, staleness, index freshness. **Offline.** Exit 1 on any failure; the core budget is reported, never enforced |
 | `upstream <file>` | Promotes a locally-improved canonical file back into the canon |
 | `index` | Regenerates `RULES_INDEX.md` from what is on disk |
@@ -151,8 +151,10 @@ still wants a read-through by hand; `doctor` shortens that job rather than repla
 }
 ```
 
-`daoris.lock` sits beside it, generated: one entry per materialized file, recording its pack, canonical
-path, version, and content hash. Both are tracked, so a reviewer sees exactly what changed.
+`daoris.lock` sits beside it, generated: one entry per materialized document, recording its pack,
+canonical path, version, and content hash — plus, for the always-loaded ones, the file whose region
+holds it, since those are a span inside `AGENTS.md` rather than files of their own. Both are tracked, so
+a reviewer sees exactly what changed.
 
 `domain` is the repository's declaration to the family — it is what makes a quest addressable rather
 than a guess, and `daoris connect` refuses to register without one. `remote` is the one **disclosure**
@@ -175,9 +177,11 @@ a silent overwrite.
 
 ## Two things worth knowing
 
-**The tier is the directory.** Files in `rules/` are always-loaded context; files in `knowledge/` are read
-on demand; `skills/<name>/SKILL.md` is invoked by name. The agent harness decides that by path, so Daoris
-does not carry a redundant `tier` field — and because the tier is measurable, `check` reports the
+**The tier is the location.** The always-loaded rules land in a region of `AGENTS.md` that Daoris owns —
+the one file every harness this family drives actually reads — with `CLAUDE.md` carrying a one-line
+`@AGENTS.md` import; files in `knowledge/` are read on demand; `skills/<name>/SKILL.md` is invoked by
+name. The agent harness decides that by location, so Daoris does not carry a redundant `tier` field — and
+because a region has a byte count exactly as a directory did, `check` still reports the
 always-loaded footprint against the budget the manifest declares. It reports and never fails on it
 (D54): drift is a fact, size is a judgement, and a build stopped by a judgement teaches people to
 raise the number rather than read it.
