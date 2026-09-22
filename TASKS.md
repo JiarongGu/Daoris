@@ -24,8 +24,8 @@ protocol, not a product*, which put the protocol door in front of the view.
 toolchain** (2026-09-22 → **TOOL1/D57**): the measurement corrected a doctrine overclaim — the
 accounts were Daoris's and the binary was still the machine's — and **TOOL2 and TOOL3 have landed**.
 **The instruction file** (2026-09-22 → **CANON8/D59**): `.claude/rules/` is read by one harness of
-three, so the always-loaded tier moves into `AGENTS.md`. Nothing of it is built yet, and it is the
-larger of the two.
+three, so the always-loaded tier moves into `AGENTS.md`. **CANON8a has landed** — the region and its
+refusals; 8b wires it into `sync`, and it is the larger of the two directions.
 
 ## State
 
@@ -326,13 +326,22 @@ only because the paragraphs above are the contract a *new* surface item would be
 **D59** carries the four rejected alternatives. What forced it was a measurement — **`.claude/rules/`
 is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now this arc.
 
-- [ ] **CANON8a — the region, and the state space under it.** `AGENTS.md` grows a marked region
-  holding the core rules; `CLAUDE.md` grows a one-line `@AGENTS.md` import the same way. Design §4 is
-  the table and it must be implemented as a table — D19 was corrected four times before one was
-  written down, and this adds three states a file never had. 🔴 **A damaged marker, a reordered pair
-  and a second region are REFUSED, never guessed at**: the file on the other side of that boundary is
-  the adopter's own doctrine. Per rule inside the region, D19 applies unchanged, because each rule
-  keeps its provenance comment — which is what keeps drift and `upstream` per rule.
+- [x] **CANON8a — the region, and the state space under it.** ✅ **done 2026-09-22.**
+  `src/Daoris.Cli/src/region.ts`: pure, 22 tests, no disk. Design §4's table implemented as a table —
+  absent, present, and the three damage states, each **refused with the line number**. Markers are
+  matched as WHOLE LINES, so one quoted in a fenced code block (which this repository's own docs do)
+  is prose rather than a boundary. `ensureImport` is the pointer file's smaller half, and it is
+  **always a region even when Daoris creates the whole file** — a bare line is a line nothing can
+  retire, because the lock describes a file or a span and never a stray sentence.
+
+  🔴 **Two bugs the fixtures could not see, both found by running it over a real adopter's file.**
+  Its `AGENTS.md` is 133 CRLF lines, and the body came back with a carriage return on every interior
+  line because the read stripped one at the very end — correct for a one-line body and wrong for
+  every longer one (FIX-LOG). And `hasImport` rejected *"Everything is in @AGENTS.md."*, the first
+  sentence anybody would write, because it demanded whitespace after the target; the boundary is
+  about **paths**, and `@AGENTS.mdx`, `@AGENTS.md.backup` and `@AGENTS.md/nested` are three other
+  files.
+
 
 - [ ] **CANON8b — `sync`, `check`, `upstream` and the lock over a span.** One lock entry describes a
   span inside a file rather than a file; drift is measured against the lock as ever (D13); `upstream`

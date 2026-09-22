@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A single-line fixture passed the CRLF test the multi-line case fails (2026-09-22)
+
+**Symptom.** `region.ts` had fourteen green tests, including one for CRLF files. Run against a **real**
+adopter's `AGENTS.md` — 133 CRLF lines — the body written into the region did not read back. Caught
+before it landed, and only because the module was driven over real input rather than over a fifteenth
+fixture.
+
+**Root cause.** `findRegion` normalised the body with `.join('\n').replace(/\r$/, '')` — one strip, at
+the very end. That is correct for a **one-line** body and wrong for every longer one: each interior
+line came back still carrying its `\r`. The CRLF test used the body `'the tier'`, so it proved the
+file's line endings survived and never proved the body round-tripped.
+
+**Fix.** Strip per line — `.map((line) => line.replace(/\r$/, '')).join('\n')`. The line endings
+belong to the **file**, which `writeRegion` preserves by detecting and re-using them; the body is
+**content**, which is LF here like everything else. Two more tests: a multi-line body through a CRLF
+file, asserting the round trip *and* that re-writing what was read changes nothing; and the refusals
+on a CRLF file, because a marker comparison that forgot the `\r` would read every marker in a Windows
+checkout as prose and silently append to a damaged region instead of refusing.
+
+**Verify.** 17 tests, and the real file: body round-trips, idempotent, the adopter's bytes are a
+byte-for-byte prefix, and the file is still CRLF throughout.
+
+**The trap to inherit.** 🔴 **A fixture with one line proves nothing about line endings.** The bug
+lives *between* lines, so any test whose input has no interior line boundary cannot see it — and it
+will be green, which is worse than absent. This is the third line-ending assumption in this
+repository (D25 was the first; the fixture-vs-real gap is the same shape as `examples/` existing at
+all). Anything that reads or writes multi-line text gets a multi-line fixture with the other
+platform's endings, and gets run once over a real file before it is called done.
+
 ## The presence probe asked about a different binary than the spawn would run (2026-09-22)
 
 **Symptom.** ACP2's driven run refused: *"`claude-code-acp` is not installed on this machine, so there
