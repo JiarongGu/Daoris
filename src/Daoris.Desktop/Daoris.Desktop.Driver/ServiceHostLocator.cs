@@ -34,8 +34,26 @@ public static class ServiceHostLocator
             candidates.Add(new(explicitPath, Path.GetDirectoryName(Path.GetFullPath(explicitPath)) ?? "."));
         }
 
-        var installed = Path.Combine(userProfile, ".daoris", "bin", ExecutableName);
+        var bin = Path.Combine(userProfile, ".daoris", "bin");
+
+        // A binary someone placed here by hand — the most deliberate thing short of naming a path.
+        var installed = Path.Combine(bin, ExecutableName);
         candidates.Add(new(installed, Path.GetDirectoryName(installed)!));
+
+        // 🔴 Where the installer actually puts it. `service-publish --install` gives the HTTP host a
+        // directory of its own because its `wwwroot` must travel BESIDE the executable, while the MCP
+        // host installs flat. Looking only flat made a correctly installed host invisible — masked on
+        // every developer machine by the workspace candidate below, and fatal on a deployed one,
+        // which has no workspace to fall through to. Found by deploying.
+        var packaged = Path.Combine(bin, "daoris-knowledge-http", ExecutableName);
+        candidates.Add(new(packaged, Path.GetDirectoryName(packaged)!));
+
+        // A DEPLOYED shell carries its own host beside it (`desktop-publish --service`), and an
+        // install folder has no workspace below to fall through to. Ranked under the installed home
+        // on purpose: that one is the machine's and is upgraded once for every shell on it, so a
+        // deployed copy quietly outranking it would make a service upgrade invisible.
+        var beside = Path.Combine(baseDirectory, "daoris-knowledge-http", ExecutableName);
+        candidates.Add(new(beside, Path.GetDirectoryName(beside)!));
 
         // Development: walk up from the running binary to the workspace manifest, then take the HTTP
         // host's own build output — run from the PROJECT directory, where the built bundle lives.

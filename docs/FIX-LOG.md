@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The shell looked for the installed HTTP host where the installer never puts it (2026-09-22)
+
+**Symptom.** None, on any developer machine — which is the whole entry. A machine with the service
+correctly installed (`npm run publish:service -- --install`) still had `ServiceHostLocator` fail to
+find its HTTP host, and the shell silently fell through to the **workspace build** instead. Found by
+deploying the desktop to a real folder and asking what it would locate from there.
+
+**Root cause.** The installer gives the HTTP host a **directory of its own** —
+`~/.daoris/bin/daoris-knowledge-http/daoris-knowledge-http.exe` — because its `wwwroot` bundle has to
+travel beside the executable, while the MCP host installs flat as `~/.daoris/bin/daoris-knowledge.exe`.
+The locator only ever built the **flat** candidate, for both. The publish script even prints the nested
+path on success, so the two halves disagreed in writing and nothing compared them.
+
+🔴 **The fallback is what hid it.** The locator's third candidate is the workspace build, which exists
+on every machine this was ever run on, so it always found *a* host and nobody asked which. On a
+deployed machine there is no workspace to fall through to and the shell reports no host at all — the
+one place the bug is fatal is the one place it had never been run.
+
+**Fix.** `ServiceHostLocator.Candidates` gains the packaged path after the flat one (a hand-placed
+binary stays the more deliberate of the two), and a third for the copy a deployed shell carries beside
+itself — otherwise `desktop-publish --service` would publish a host nothing looks for, which is a flag
+that is a claim nothing reads.
+
+**One test had to change, and its reason is the lesson.** `No_workspace_means_no_dev_candidates_and_no_crash`
+asserted `Assert.Single(candidates)`. It said *one* while meaning *nothing from a workspace*, so every
+correct new candidate read as a regression. It now asserts the property it was always about.
+
+**Verify.** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests` — 276, with the new case
+watched failing (`Assert.NotNull() Failure: Value is null`) against the real installed layout first.
+
+**Commit.** pending.
+
 ## A single-line fixture passed the CRLF test the multi-line case fails (2026-09-22)
 
 **Symptom.** `region.ts` had fourteen green tests, including one for CRLF files. Run against a **real**

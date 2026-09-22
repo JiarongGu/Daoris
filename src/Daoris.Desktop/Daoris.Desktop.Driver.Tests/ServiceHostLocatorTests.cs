@@ -37,6 +37,81 @@ public sealed class ServiceHostLocatorTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 <b>Where the installer actually puts it.</b> `service-publish --install` lands the HTTP
+    /// host in a directory of its own — `bin/daoris-knowledge-http/daoris-knowledge-http.exe` —
+    /// because its <c>wwwroot</c> has to travel beside the executable, while the MCP host installs
+    /// flat beside it. The locator only ever looked flat, so a correctly installed host was invisible
+    /// and the shell fell through to the workspace build.
+    /// </summary>
+    /// <remarks>
+    /// On a developer machine that fallback exists, which is exactly why this survived: the shell
+    /// found *a* host every time and nobody saw which one. On a deployed machine there is no
+    /// workspace to fall through to, and the shell reports no host at all. Found by deploying.
+    /// </remarks>
+    [Fact]
+    public void The_installed_host_is_found_where_the_installer_puts_it()
+    {
+        var profile = Path.Combine(_root, "profile");
+        var nested = Path.Combine(profile, ".daoris", "bin", "daoris-knowledge-http");
+        Directory.CreateDirectory(nested);
+        var executable = Path.Combine(nested, ServiceHostLocator.ExecutableName);
+        File.WriteAllText(executable, "");
+
+        var found = ServiceHostLocator.Locate(null, profile, _root);
+
+        Assert.NotNull(found);
+        Assert.Equal(executable, found.Executable);
+        // Beside its own bundle, for the reason the dev candidate runs from its project directory:
+        // a host started elsewhere answers every API call while serving no page.
+        Assert.Equal(nested, found.WorkingDirectory);
+    }
+
+    /// <summary>
+    /// 🔴 <b>A deployed shell carries its own host beside it.</b> `desktop-publish --service` puts
+    /// one there so the install folder is self-sufficient — and an install folder has no workspace
+    /// above it to fall through to, so if this candidate did not exist the flag would be a claim
+    /// nothing reads.
+    /// </summary>
+    /// <remarks>
+    /// It ranks BELOW the installed home deliberately: `~/.daoris/bin` is the machine's, updated
+    /// once for every shell on it, and a deployed copy that quietly outranked it would make a
+    /// service upgrade invisible to whichever app was opened.
+    /// </remarks>
+    [Fact]
+    public void A_deployed_shell_finds_the_host_published_beside_it()
+    {
+        var app = Path.Combine(_root, "app");
+        var beside = Path.Combine(app, "daoris-knowledge-http");
+        Directory.CreateDirectory(beside);
+        var executable = Path.Combine(beside, ServiceHostLocator.ExecutableName);
+        File.WriteAllText(executable, "");
+
+        // An empty profile: nothing installed machine-wide, which is the deployed case.
+        var found = ServiceHostLocator.Locate(null, Path.Combine(_root, "empty-profile"), app);
+
+        Assert.NotNull(found);
+        Assert.Equal(executable, found.Executable);
+        Assert.Equal(beside, found.WorkingDirectory);
+    }
+
+    /// <summary>
+    /// A flat executable someone placed by hand still wins over the nested one — it is the more
+    /// deliberate of the two, and the order has to be predictable either way.
+    /// </summary>
+    [Fact]
+    public void A_hand_placed_flat_binary_still_comes_first()
+    {
+        var profile = Path.Combine(_root, "profile");
+        var bin = Path.Combine(profile, ".daoris", "bin");
+        Directory.CreateDirectory(Path.Combine(bin, "daoris-knowledge-http"));
+        File.WriteAllText(Path.Combine(bin, "daoris-knowledge-http", ServiceHostLocator.ExecutableName), "");
+        var flat = Path.Combine(bin, ServiceHostLocator.ExecutableName);
+        File.WriteAllText(flat, "");
+
+        Assert.Equal(flat, ServiceHostLocator.Locate(null, profile, _root)!.Executable);
+    }
+
+    /// <summary>
     /// Development: the workspace manifest anchors the walk — and the working directory is the
     /// PROJECT, not the bin: the bundle lives in the project's wwwroot, and a dev host spawned from
     /// its bin answers every API call while serving no page.
@@ -65,7 +140,12 @@ public sealed class ServiceHostLocatorTests : IDisposable
 
         var candidates = ServiceHostLocator.Candidates(null, "/home/dev", lonely);
 
-        Assert.Single(candidates); // the installed home only
+        // 🔴 Asserted by what the candidates ARE, not by counting them. The assertion here used to be
+        // `Single`, which said "one" while meaning "nothing from a workspace" — so every later
+        // candidate that was not a workspace one (the installer's own layout, then the host beside a
+        // deployed shell) read as a regression when it was the fix.
+        Assert.DoesNotContain(candidates, c => c.Executable.Contains("Daoris.Service.Http"));
+        Assert.NotEmpty(candidates);
     }
 
     [Fact]

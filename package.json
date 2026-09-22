@@ -19,6 +19,7 @@
     "desktop": "node tools/desktop.mjs",
     "testbed": "node tools/testbed.mjs",
     "publish:service": "node tools/service-publish.mjs",
+    "publish:desktop": "node tools/desktop-publish.mjs",
     "release-prep:check": "node tools/release-prep.mjs --check"
   },
   "license": "MIT"

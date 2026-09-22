@@ -23,6 +23,7 @@
  */
 import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -82,6 +83,18 @@ const service = process.env.DAORIS_SERVICE_URL ?? 'http://localhost:5177';
 const env = { ...process.env, DAORIS_SERVICE_URL: service };
 
 /**
+ * Names that may sit beside the family without making the root somebody else's.
+ *
+ * @remarks
+ * 🔴 **Only what Daoris itself puts there, and never deleted by `--reset`.** A deployed desktop lives
+ * beside the family it drives, so a root holding one is still a testbed root — but `app` is not part
+ * of the testbed, so `--reset` rebuilds the repositories around it rather than through it. The guard
+ * below is about not mistaking somebody's projects for scratch; this is about not mistaking Daoris's
+ * own install for somebody's projects.
+ */
+const OURS = new Set(['app']);
+
+/**
  * 🔴 The guard. This script deletes directories, so it refuses a root holding anything it did not
  * create — a folder of somebody's real projects and a folder of testbed repositories look identical
  * to `rmSync`, and only one of them is recoverable.
@@ -91,7 +104,8 @@ function claimRoot() {
     mkdirSync(root, { recursive: true });
     return;
   }
-  const strangers = readdirSync(root).filter((entry) => !FAMILY.some((r) => r.name === entry));
+  const strangers = readdirSync(root).filter(
+    (entry) => !FAMILY.some((r) => r.name === entry) && !OURS.has(entry));
   if (strangers.length > 0) {
     console.error(`testbed: \`${root}\` holds things this script did not create: ${strangers.join(', ')}\n`
       + '  Refusing to touch it. Point --root at an empty folder, or one holding only the testbed.');
@@ -127,6 +141,38 @@ function declare(where, repo) {
   writeFileSync(manifest, `${JSON.stringify(held, null, 2)}\n`);
 }
 
+/**
+ * The repository's own connector — the tools a driven session claims and closes its quest with.
+ *
+ * @remarks
+ * 🔴 **Without this the testbed cannot be driven over the pipe door at all.** That door leans on the
+ * repository's `.mcp.json`, and the driver may never reach in and write one (it is the very edit the
+ * whole arrangement exists to prevent) — so wiring it is the *connector's* job at adoption, which
+ * here means this script's. The protocol door carries its servers on `session/new` instead (ACP4) and
+ * needs nothing on disk; a testbed that only worked there would be proving the easier half.
+ *
+ * It names an installed binary by absolute path because that is what an adopter's own file says —
+ * `service-publish --install` prints this exact snippet. These repositories are scratch and
+ * unpublished, which is why a machine path is fine here and in nothing this repository tracks.
+ */
+function connector(where) {
+  const host = join(homedir(), '.daoris', 'bin', process.platform === 'win32'
+    ? 'daoris-knowledge.exe' : 'daoris-knowledge');
+  if (!existsSync(host)) return false;
+
+  writeFileSync(join(where, '.mcp.json'), `${JSON.stringify({
+    mcpServers: {
+      'daoris-knowledge': {
+        command: host,
+        // The same store the driver reads. Passed rather than defaulted, for the reason the driver
+        // passes it: a session that wrote to a different database would look like it worked.
+        env: { DAORIS_KNOWLEDGE_ROOT: root },
+      },
+    },
+  }, null, 2)}\n`);
+  return true;
+}
+
 if (flag('--retire')) {
   for (const repo of FAMILY) {
     try {
@@ -151,10 +197,16 @@ console.log(`testbed: workspace \`${WORKSPACE}\` in \`${root}\`\n  service: ${se
 let connected = 0;
 for (const repo of FAMILY) {
   const where = born(repo);
-  daoris(`init --name ${repo.name}`, where);
+  // 🔴 `init` REFUSES an existing manifest, by design — it is the one command that must never
+  // silently overwrite a repository's own adoption. So re-running was not idempotent at all, though
+  // the header above promised it was: the second run died on the first repository. Adopt once;
+  // everything after this line is safe to repeat.
+  if (!existsSync(join(where, 'daoris.json'))) daoris(`init --name ${repo.name}`, where);
   declare(where, repo);
   daoris('sync', where);
-  const packs = repo.packs.length > 0 ? `  + ${repo.packs.join(', ')}` : '';
+  const wired = connector(where);
+  const packs = (repo.packs.length > 0 ? `  + ${repo.packs.join(', ')}` : '')
+    + (wired ? '' : '  (no connector — install the service host)');
   try {
     // `--workspace` is the wiring, and it is a REGISTRY row rather than anything on disk (WSP1):
     // nothing in the repository records which circle it joined, which is why re-running is safe.
