@@ -79,15 +79,12 @@ export function AppStrip({
         />
       )}
 
-      <div className="pointer-events-none flex items-center gap-2">
-        {/* The mark, then the serif's one appearance and the one brand gesture beside it (D41 §1).
-            Optically aligned rather than baseline-aligned: a glyph has no baseline to share with
-            type, and `items-baseline` dropped it below the wordmark's. */}
+      {/* 🔴 The MARK alone (owner, 2026-09-22). The name was 20px of serif in every window forever,
+          and a title bar is where an IDE puts what you can DO — the application's name belongs in its
+          About, which the menu beside this now carries. D41 §1 gave the serif one appearance; this is
+          it not being spent on saying the name of the thing you are already looking at. */}
+      <div className="pointer-events-none flex items-center pl-0.5">
         <Mark size={18} className="text-accent" />
-        <span className="flex items-baseline gap-1.5">
-          <strong className="font-serif text-wordmark font-semibold tracking-[-0.01em]">Daoris</strong>
-          <span className="text-small text-ink-faint">道衍</span>
-        </span>
       </div>
 
       {/* The frames, as menus of what is inside them (VS Code's menu bar). `menus` replaces the
@@ -313,7 +310,7 @@ export type DriverPresence = 'running' | 'stopped' | 'absent';
  * screen* (D24), which a bar present on every screen by construction serves better than a sidebar
  * foot ever did. The tier's sentence stays the service's own, verbatim, in its tooltip.
  */
-export function StatusBar({ driver, sessions, workspace, remote, tier, indexed }: {
+export function StatusBar({ driver, sessions, workspace, remote, tier, indexed, scope }: {
   driver: DriverPresence;
   sessions: number;
   /** The chosen circle, or null for every circle this deployment holds (WSP5). */
@@ -324,6 +321,8 @@ export function StatusBar({ driver, sessions, workspace, remote, tier, indexed }
   tier?: { label: string; note: string; semantic: boolean };
   /** What the index holds, already worded by the caller. */
   indexed?: string;
+  /** The scope as a control, where the deployment holds more than one circle (WSP5). */
+  scope?: ReactNode;
 }) {
   const { t } = useTranslation();
   const tone = driver === 'running' ? 'live' : driver === 'stopped' ? 'parked' : 'idle';
@@ -341,11 +340,19 @@ export function StatusBar({ driver, sessions, workspace, remote, tier, indexed }
         />
       </span>
       <span>{t('work.status.sessions', { count: sessions })}</span>
-      <span>
-        {t('work.status.workspace')}
-        {' · '}
-        {workspace ?? t('work.status.everyWorkspace')}
-      </span>
+      {/* 🔴 The scope, and it is a CONTROL here (owner: *"this workspace switch can also in a better
+          location and design too"*). It had a dropdown in the app strip AND a read-only copy here,
+          which is one fact in two places — and the strip is for what you can do while this bar is
+          for what is true, which is exactly what a scope is. Clickable status items are also the
+          reference console's own pattern: its remote indicator opens a menu from this bar.
+          `scope` absent leaves it read-only, which is what a browser with one circle gets. */}
+      {scope ?? (
+        <span>
+          {t('work.status.workspace')}
+          {' · '}
+          {workspace ?? t('work.status.everyWorkspace')}
+        </span>
+      )}
       {remote !== null && (
         <span>
           {t('work.status.remote')}

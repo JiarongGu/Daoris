@@ -26,13 +26,20 @@ const DOMAINS = [
 ];
 
 describe('AppStrip', () => {
-  it('carries the wordmark, and the serif appears exactly once (D41 §1)', () => {
+  /**
+   * 🔴 The strip carries the MARK and no name (owner, 2026-09-22). The wordmark was 20px of serif in
+   * every window forever, saying the name of the thing you are already looking at; a title bar in an
+   * IDE says what you can DO, and the name moved to About.
+   *
+   * D41 §1's rule survives and is now stricter: the serif's one appearance is not spent here at all.
+   */
+  it('carries the mark and not the name — the serif is not spent on the strip', () => {
     const { container } = render(
       <AppStrip mode="manage" modeAvailable onMode={() => {}} />,
     );
-    expect(screen.getByText('Daoris')).toBeTruthy();
-    expect(screen.getByText('道衍')).toBeTruthy();
-    expect(container.querySelectorAll('.font-serif')).toHaveLength(1);
+    expect(screen.queryByText('Daoris')).toBeNull();
+    expect(container.querySelector('svg')).toBeTruthy();
+    expect(container.querySelectorAll('.font-serif')).toHaveLength(0);
   });
 
   it('offers no mode switch in a browser — absent, not disabled', () => {

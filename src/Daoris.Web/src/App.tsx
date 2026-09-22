@@ -8,8 +8,8 @@ import {
 import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
-  Button, Icon, type IconName, LanguageSwitcher, SESSION_ACTIVE, Tip, Toasts, type ToastItem,
-  useErrorNotify,
+  Button, Drawer, Icon, type IconName, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
+  type ToastItem, useErrorNotify,
 } from './ui';
 import { OverviewView } from './OverviewView';
 import { ConvergenceView } from './ConvergenceView';
@@ -100,6 +100,8 @@ export function App() {
   // The palette (SURF9), and what it asks the Work frame to do. Both are events consumed on arrival
   // rather than state, for the reason the quest composer's opening draft is.
   const [palette, setPalette] = useState(false);
+  // The application's own card. It is where the NAME lives now that the strip carries only the mark.
+  const [about, setAbout] = useState(false);
   const [workIntent, setWorkIntent] = useState<'start' | 'review' | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextToast = useRef(1);
@@ -256,8 +258,10 @@ export function App() {
                 { id: 'remotes', label: t('menu.remotes'), icon: 'convergence' },
                 { id: 'refresh', label: t('menu.refresh'), icon: 'refresh', separated: true },
                 { id: 'language', label: t('menu.language'), icon: 'languages' },
+                { id: 'about', label: t('menu.about'), icon: 'check', separated: true },
               ]}
               onChoose={(_, item) => {
+                if (item === 'about') { setAbout(true); return; }
                 if (item === 'refresh') { onRefresh(); return; }
                 if (item === 'language') {
                   void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh');
@@ -292,13 +296,6 @@ export function App() {
             shortcut="Ctrl K"
             onOpen={() => setPalette(true)}
             label={t('palette.open')}
-          />
-        )}
-        scope={(
-          <WorkspaceSwitcher
-            workspaces={workspaces.data ?? []}
-            value={scope.workspace}
-            onChange={scope.setWorkspace}
           />
         )}
       />
@@ -417,6 +414,22 @@ export function App() {
           Since D56 it also carries the tier — D24's "stated on every screen" is better served by a
           bar that is on every screen by construction — and what the index holds. */}
       <StatusBar
+        // The scope lives here now, not in the strip: this bar is what is TRUE, and a circle is a
+        // fact about what you are looking at rather than an action.
+        //
+        // 🔴 Passed ONLY when there is a choice to make. `WorkspaceSwitcher` renders null below two
+        // circles (WSP5), so handing it over unconditionally replaced the bar's sentence with
+        // nothing and the scope disappeared from the window entirely — caught by photographing the
+        // bar, which is the only place it would ever have shown.
+        scope={(workspaces.data?.length ?? 0) >= 2
+          ? (
+            <WorkspaceSwitcher
+              workspaces={workspaces.data ?? []}
+              value={scope.workspace}
+              onChange={scope.setWorkspace}
+            />
+          )
+          : undefined}
         driver={presence}
         sessions={liveSessions}
         workspace={scope.workspace}
@@ -435,6 +448,28 @@ export function App() {
       {/* Every action, by name (SURF9). The registry is a pure function of what is true right now,
           so a browser's list and a shell's list differ by OMISSION rather than by a disabled row —
           a palette is a promise that what it lists can be done. */}
+      {/* 🔴 Where the NAME lives now that the strip carries only the mark. It is also the honest
+          home for it: a title bar in an IDE says what you can do, and the one place a person looks
+          for "what is this and which version" is About. */}
+      {about && (
+        <Drawer title={t('menu.about')} onClose={() => setAbout(false)}>
+          <div className="flex items-baseline gap-2">
+            <strong className="font-serif text-wordmark font-semibold tracking-[-0.01em]">Daoris</strong>
+            <span className="text-small text-ink-faint">道衍</span>
+          </div>
+          <Prose className="mt-2">{t('about.what')}</Prose>
+          <dl className="m-0 mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-small">
+            {/* What the index can answer with, not a version number nobody serves: `Status` carries
+                the tier and no canon version, and inventing a field to fill a row is how a card
+                starts lying. */}
+            <dt className="text-ink-faint">{t('about.index')}</dt>
+            <dd className="m-0 font-mono text-meta">{status.data?.tier ?? '—'}</dd>
+            <dt className="text-ink-faint">{t('about.surface')}</dt>
+            <dd className="m-0">{attached ? t('about.shell') : t('about.browser')}</dd>
+          </dl>
+        </Drawer>
+      )}
+
       <CommandPalette
         open={palette}
         onClose={() => setPalette(false)}
