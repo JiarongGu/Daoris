@@ -386,14 +386,44 @@ test('every harness declares a real mechanism for each thing Daoris offers to do
   assert.equal(TOOLCHAINS['codex-acp']!.accountOf, 'codex');
   assert.equal(TOOLCHAINS.dsh!.profileVariable, 'DSH_HOME');
 
-  // 🔴 This table and the driver's `AdapterSet` are TWINS, and the twin risk is not membership —
-  // the two sets differ on purpose, because managing a tool and spawning sessions on it are
-  // different questions (D23). It is a shared NAME whose descriptors disagree: the CLI probing one
-  // binary while the driver spawns another is a `harness list` that reports on a program nothing
-  // runs. The binaries are pinned here and in `Acp3AdapterTests`, and the two tables move together.
-  assert.deepEqual(TOOLCHAINS['claude-code-acp']!.binary, ['claude-agent-acp']);
-  assert.deepEqual(TOOLCHAINS['codex-acp']!.binary, ['codex-acp']);
-  assert.deepEqual(TOOLCHAINS.dsh!.binary, ['dsh']);
+});
+
+/**
+ * 🔴 This table and the driver's `AdapterSet` are TWINS, and the twin risk is not membership — the
+ * two sets differ on purpose, because managing a tool and spawning sessions on it are different
+ * questions (D23). It is a shared NAME whose descriptors disagree: the CLI probing one binary while
+ * the driver spawns another is a `harness list` reporting on a program nothing runs, and it reads as
+ * correct from both sides.
+ *
+ * The binaries are pinned here and in `Acp3AdapterTests` rather than compared across the language
+ * boundary — the FILE is the contract, the same shape the remotes map's three twins use.
+ *
+ * 🔴 **And the table below covers every entry**, which it did not when it was written. It pinned the
+ * three ACP arrivals and left `claude-code` — the oldest entry, and what a machine actually drives
+ * with — asserted on neither side. Nothing was wrong with it; nothing would have said so either.
+ * Proving one row's reach proves nothing about the next one, so membership is derived.
+ */
+const TWINS: Record<string, { binary: string[]; profileVariable: string }> = {
+  'claude-code': { binary: ['claude'], profileVariable: 'CLAUDE_CONFIG_DIR' },
+  'claude-code-acp': { binary: ['claude-agent-acp'], profileVariable: 'CLAUDE_CONFIG_DIR' },
+  codex: { binary: ['codex'], profileVariable: 'CODEX_HOME' },
+  'codex-acp': { binary: ['codex-acp'], profileVariable: 'CODEX_HOME' },
+  dsh: { binary: ['dsh'], profileVariable: 'DSH_HOME' },
+};
+
+test('every declared harness is pinned by name, binary and seam', () => {
+  for (const [name, toolchain] of Object.entries(TOOLCHAINS)) {
+    const twin = TWINS[name];
+    assert.ok(twin,
+      `${name} is declared and pinned by no twin row — so the driver's AdapterSet could describe a `
+      + 'different program under the same name and both sides would read as correct');
+    assert.deepEqual(toolchain.binary, twin.binary, `${name}: the binary moved`);
+    assert.equal(toolchain.profileVariable, twin.profileVariable, `${name}: the account seam moved`);
+  }
+
+  // The protocol door borrows the pipe door's account, through the same seam (ACP2/ACP3).
+  assert.equal(TOOLCHAINS['claude-code-acp']!.accountOf, 'claude-code');
+  assert.equal(TOOLCHAINS['codex-acp']!.accountOf, 'codex');
 });
 
 /**

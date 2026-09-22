@@ -3762,3 +3762,27 @@ matches, because the workflow line contains the declared row as a substring.
 red naming the file. **What DEVKIT3 did not do**: `.githooks/` is still absent — `install-hooks`
 writes tracked hooks and sets `core.hooksPath`, which changes how a person's own commits behave, so
 it is theirs to run. The diagnosis mentioned it; the stated work did not include it.
+
+## The toolchain twins cover every shared name (2026-09-22)
+
+Found by reading **TOOL5** against what is built rather than by a failure. CLI 282 (was 281), driver
+296 (was 294).
+
+`TOOLCHAINS` (TypeScript) and `AdapterSet` (C#) are twins whose risk is **not membership** — they
+differ on purpose, because managing a tool and spawning sessions on it are different questions (D23).
+The risk is a shared NAME whose descriptors disagree: the CLI probing one binary while the driver
+spawns another is a `harness list` reporting on a program nothing runs, and it reads as correct from
+both sides. The binary is the field that has **already been wrong once** (`claude-agent-acp`, guessed
+as the adapter's Daoris name, caught by a pin reporting as not installed).
+
+🔴 **The check covered three names and left out the one a machine actually drives with.** The table
+was written during ACP3 and pinned the three arrivals; `claude-code` — the oldest entry — was
+asserted on neither side. Nothing was wrong with it, and nothing would have said so: this is the
+half of `claims-need-checks`' counting trap that has **no earlier number to fall from**, because the
+count never rose.
+
+Fixed by deriving membership rather than remembering it. Each side now iterates its own set and
+requires a pinned row for every entry that names a real binary — the stubs excluded by the only
+honest test there is, that they name none (D46 §8). Both halves were watched failing: removing
+`claude-code` from the C# table and `codex` from the TypeScript one each turns the suite red naming
+the harness and saying what the divergence would look like.

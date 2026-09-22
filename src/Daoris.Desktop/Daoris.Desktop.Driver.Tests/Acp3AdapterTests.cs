@@ -278,10 +278,16 @@ public sealed class Acp3AdapterTests : IDisposable
     /// once: `claude-agent-acp` was guessed as the adapter's Daoris name and caught by `harness list`
     /// reporting a pin that was installed as absent.
     /// </remarks>
+    public static TheoryData<string, string, string> Twins => new()
+    {
+        { "claude-code", "claude", "CLAUDE_CONFIG_DIR" },
+        { "claude-code-acp", "claude-agent-acp", "CLAUDE_CONFIG_DIR" },
+        { "codex-acp", "codex-acp", "CODEX_HOME" },
+        { "dsh", "dsh", "DSH_HOME" },
+    };
+
     [Theory]
-    [InlineData("claude-code-acp", "claude-agent-acp", "CLAUDE_CONFIG_DIR")]
-    [InlineData("codex-acp", "codex-acp", "CODEX_HOME")]
-    [InlineData("dsh", "dsh", "DSH_HOME")]
+    [MemberData(nameof(Twins))]
     public void A_shared_name_means_the_same_binary_and_seam_on_both_sides(
         string name, string binary, string seam)
     {
@@ -289,5 +295,36 @@ public sealed class Acp3AdapterTests : IDisposable
 
         Assert.Equal(binary, Assert.Single(toolchain.Binary));
         Assert.Equal(seam, toolchain.ProfileVariable);
+    }
+
+    /// <summary>
+    /// 🔴 <b>And the table covers every adapter that names a real binary</b> — because proving one
+    /// row's reach proves nothing about the next one.
+    /// </summary>
+    /// <remarks>
+    /// The table above was written during ACP3 and pinned the three arrivals, which left
+    /// <c>claude-code</c> — the oldest entry, and the one a machine actually drives with — asserted
+    /// on neither side. Nothing was wrong with it; nothing would have said so either. A count that
+    /// never <i>rose</i> is the half of this failure that has no earlier number to fall from, so the
+    /// membership is derived from the adapter set rather than remembered.
+    ///
+    /// The stubs are excluded by the only honest test there is: they name no binary, because the
+    /// "binary" is whatever a configuration says (D46 §8).
+    /// </remarks>
+    [Fact]
+    public void Every_adapter_with_a_real_binary_is_in_the_twin_table()
+    {
+        var set = AdapterSet.Built();
+        var real = set.Names
+            .Where(name => set.Resolve(name).Toolchain is { Binary.Count: > 0 })
+            .ToList();
+
+        var pinned = Twins.Select(row => (string)row[0]!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.All(real, name => Assert.True(
+            pinned.Contains(name),
+            $"`{name}` names a binary the driver spawns and is pinned by no twin row — so the CLI's "
+            + "TOOLCHAINS could describe a different program under the same name and both sides would "
+            + "read as correct."));
     }
 }

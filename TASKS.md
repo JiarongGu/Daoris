@@ -31,9 +31,9 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**274 CLI tests, 262 service, 294 driver, 77 desktop modules, 429 web unit, 14 Playwright**, 57
+**282 CLI tests, 262 service, 296 driver, 77 desktop modules, 429 web unit, 14 Playwright**, 59
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
-it), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
+it), **29/29 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
 core is **21,817 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
 principle from detail (D28).
@@ -110,7 +110,12 @@ workspace `testbed`, each with its own `.mcp.json` and trust settings, registere
 host. Quest `#7786da` sits open and parked after three strikes; `daoris driver retry 7786da` releases
 it. Two branches there hold what the failed sessions produced.
 
-**What is open**, in the Backlog below, in the order worth doing: **HELP3, TOOL5, CANON5**.
+**What is open**, in the Backlog below: **CANON5** is the one actionable item left.
+🔴 **TOOL5 was read against what is built and is a trigger, not work** — every sentence of the
+toolchain design's §5 is realised, and what is waiting is a tool somebody names. It joins the held
+set on CANON2's bar. The reading found one real gap and it is fixed: the toolchain twin tables
+pinned the three ACP arrivals and left `claude-code` — what a machine actually drives with —
+asserted on neither side.
 🔴 **HELP3 is a design question before it is a build**, and the question is *where the guard lives*.
 A hook that refuses a push lives in a repository's `.claude/settings.json`, and Daoris has exactly
 two ways to put one there — through `sync`, which means the canon grows a fourth installable kind
@@ -210,11 +215,11 @@ the traps that are not in any contract, because they were found rather than desi
   instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
   console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
   land a surface: seeing the real thing is the step that had no tooling at all.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 274 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 282 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (262),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (294), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (429 vitest + 14 Playwright),
+  (296), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (429 vitest + 14 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (29/29), which
   publishes the shell to `_fixtures/` and drives **that**.
   🔴 **Stop a running shell and its host first** — an orphaned `daoris-knowledge-http` holds the
@@ -230,10 +235,11 @@ the archive; its decision is **D53, accepted**). **Thirteen items are open** and
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Four are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, DEPLOY4, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
-last four are **held**, each waiting on an external trigger that has not arrived. That leaves
-**HELP3, TOOL5 and CANON5** actionable now, in that order — and 🔴 **HELP3 is a design question
-first**, not a build (see the handover). Each item is one session-sized landing, TDD, gates green,
-moved to the archive on completion.
+last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
+that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
+question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
+design's §5 is realised and what waits is a tool somebody names. **That leaves CANON5** actionable
+now. Each item is one session-sized landing, TDD, gates green, moved to the archive on completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -350,6 +356,15 @@ local by the profile's own rule, no price claimed, and a test asserts no currenc
   ACP door for tools that speak the protocol and a tool free to be both. **Not a registry** — the
   components plan's rejection stands and D24 with it. Largely folds into **ACP3**, which already
   brings dsh and codex as configurations of the door; this item is what remains once that lands.
+  ⛔ **Read against what is built, 2026-09-22: what remains is a TRIGGER, not work.** Every sentence
+  of §5 is realised — the adapter seam, the ACP door, a tool being both (`codex` is managed with no
+  native adapter and its sessions ride `codex-acp`, which §5 names as the sanctioned shape), the
+  declaration duplicated in two artefacts, no registry, no model named. **Nothing is waiting except a
+  tool somebody actually wants**, so this is held on the same bar CANON2 and HARNESS1 use: start it
+  when a repository names the tool, because an adapter's every field is a claim about somebody else's
+  program and a guessed one fails in a person's terminal. The reading did find one real gap, and that
+  is fixed rather than carried — the twin tables pinned the three ACP arrivals and left `claude-code`
+  asserted on neither side.
 
 ### The first deployment — what running outside a checkout found (owner, 2026-09-22)
 

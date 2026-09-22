@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fourteen commands, 274 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 262, `Daoris.Devkit` 57, and the
-driver 294. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+**Built and proven; nothing published.** Fourteen commands, 282 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 262, `Daoris.Devkit` 59, and the
+driver 296. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
