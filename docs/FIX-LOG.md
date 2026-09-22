@@ -5,6 +5,42 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The sessions frame said "nothing" over four real session records (2026-09-23)
+
+**Symptom.** The Work frame — the frame whose subject is sessions — opened on the deployed
+application with four sentences saying there was nothing: *Nothing is running*, *Nothing attended*,
+*Choose a session in the rail…*, *Attend a session and its console streams here.* The machine held
+four session records from the first deployment's driven runs, each with a transcript on disk.
+
+**Root cause.** The rail fetched closed records (`includeClosed: true`) and then filtered to
+`SESSION_ACTIVE` states, keeping a closed one only if it was **already selected** — so a session
+that ended while you watched stayed listed, and one that ended before the window opened was
+reachable exactly never. The test that held this in place asserted a finished record was absent and
+*"left to the views that review them"*; no such view existed. The rail was the only door to a
+session.
+
+🔴 **It contradicted the design it was built from.** Working-surface design §7: *"after a restart the
+records are the service's and the transcripts are on disk … read when a surface next opens."* The
+fixture never showed it because the fixture has one parked conversation and nothing that has ever
+ended.
+
+**Fix.** `partition` (`rail.ts`): live sessions grouped by repository as before; beneath them an
+**ended** section, newest first, capped at twelve with the remainder counted. No repository headers
+there — those carry live facts (drivable, held, which tree is busy) an ended session has none of.
+The full empty state appears only when both lists are empty; a machine with no live session but a
+record to read gets a one-line *Nothing is running* above the records rather than a panel saying
+the records are nothing. The attended-stays-listed rule is untouched.
+
+**Verify.** Six tests on the partition and three on the rail, including the rewritten one. On the
+deployed application: the four runs listed as `failed 1m · failed 9m · stopped 2m · failed 7m` —
+the case study's own table — and choosing one opens its record. Web 472 + 14 Playwright.
+
+**The trap to inherit.** 🔴 **An empty state rendered over existing records is a misreading, not an
+absence.** Any list that filters to "live" needs to answer what happens to the rest, and "some
+other view" is not an answer until that view exists.
+
+**Commit.** pending
+
 ## A 990-character template was "substantially the same words" as a 326 KB document (2026-09-23)
 
 **Symptom.** The Convergence view — the knowledge half's lead view — opened on the first real index

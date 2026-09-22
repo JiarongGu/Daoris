@@ -206,6 +206,8 @@
   "work.rail.moved": "变动于{{ago}}",
   "work.rail.empty.headline": "当前没有会话在运行",
   "work.rail.empty.body": "驱动接下委托、或你开启对话之后，会话会出现在这里，按各自运行所在的仓库分组。",
+  "work.rail.ended": "已结束",
+  "work.rail.endedMore": "另有 {{count}} 个更早的",
   "work.group.held": "已暂停",
   "work.group.drivable": "在此驱动",
   "work.group.busy": "占用中",

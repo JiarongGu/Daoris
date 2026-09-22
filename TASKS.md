@@ -130,9 +130,13 @@ tick, forever — a tick report is a log and a toast is an interruption, and the
 words" as a 326 KB document — containment normalised by the smaller set has no size floor, and the
 fixture has no tomes to show it; 13 of 48 groups were that shape and the floor that removes them
 was measured, not guessed — plus the same uncounted cap as search, and a gloss repeating the
-service's sentence under every card). 🔴 **Still not looked at on real data: the Work frame.** It
-is the frame with the most machinery behind it — the stream, the timeline, the review dock, the
-composer — and the fixture's one parked conversation is the only session it has ever shown.
+service's sentence under every card), and **Work** (🔴 four empty-state sentences over four real
+session records — the rail listed live sessions only, so the driver's own record was reachable after
+a restart exactly never, against §7 of the working-surface design; an *ended* section now lists
+them, newest first, counted past twelve). **The pass is complete: every surface has been read on
+real data once.** What it produced is in `docs/FIX-LOG.md` — six entries in two days, every one a
+defect the fixture structurally could not show. The next pass is the same pass after the next
+change; what remains in this file is decisions and held rows.
 
 🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
 (four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface

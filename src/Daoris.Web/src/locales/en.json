@@ -206,6 +206,8 @@
   "work.rail.moved": "moved {{ago}}",
   "work.rail.empty.headline": "Nothing is running",
   "work.rail.empty.body": "Sessions appear here as the driver takes quests and as you open conversations, grouped by the repository each one runs in.",
+  "work.rail.ended": "ended",
+  "work.rail.endedMore": "and {{count}} more, older",
   "work.group.held": "held",
   "work.group.drivable": "drives here",
   "work.group.busy": "busy",

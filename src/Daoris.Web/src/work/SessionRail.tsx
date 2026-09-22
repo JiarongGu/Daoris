@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
+import { partition } from './rail';
 import { useDriver } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { RepositoryGroup } from './RepositoryGroup';
@@ -42,8 +43,10 @@ export function SessionRail({ selected = null, onSelect, notify }: {
   const questFor = new Map((quests.data ?? []).map((quest): [string, Quest] => [quest.id, quest]));
   const registered = new Map((registry.data ?? []).map((row) => [row.repository, row]));
 
-  const shown = (sessions.data ?? [])
-    .filter((session) => SESSION_ACTIVE.has(session.state) || session.id === selected);
+  // Live sessions grouped by repository, and beneath them the ones that ended — reachable after a
+  // restart, which §7 of the working-surface design promises and which this rail did not keep until
+  // the deployed application showed four empty-state sentences over four real records (`rail.ts`).
+  const { active: shown, ended, hiddenEnded } = partition(sessions.data ?? [], selected);
 
   const groups = new Map<string, Session[]>();
   for (const session of shown) {
@@ -61,7 +64,10 @@ export function SessionRail({ selected = null, onSelect, notify }: {
 
   if (sessions.isPending) return <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>;
 
-  if (!shown.length) {
+  // The full empty state only when there is truly nothing — a machine with no live session but
+  // four ended ones is not empty, and saying so at the top of a list of records reads as "these
+  // records are nothing", which is the misreading this whole change removes.
+  if (!shown.length && !ended.length) {
     return (
       <EmptyState
         icon="inbox"
@@ -73,6 +79,9 @@ export function SessionRail({ selected = null, onSelect, notify }: {
 
   return (
     <nav aria-label={t('work.rail.label')}>
+      {!shown.length && (
+        <p className="px-3 py-2 text-small text-ink-faint">{t('work.rail.empty.headline')}</p>
+      )}
       {ordered.map(([repository, rows]) => {
         const holding = rows.find((session) => SESSION_ACTIVE.has(session.state));
         const registration = registered.get(repository);
@@ -105,6 +114,33 @@ export function SessionRail({ selected = null, onSelect, notify }: {
           </RepositoryGroup>
         );
       })}
+
+      {/* 🔴 The ended sessions — the driver's record of what it actually did. No repository group
+          headers here: those carry live facts (drivable, held, which tree is busy) and an ended
+          session has none to state; the row's own derived title already names its repository.
+          Newest first, capped, and the remainder COUNTED rather than silently cut. */}
+      {ended.length > 0 && (
+        <section aria-label={t('work.rail.ended')} className="mt-2 border-t border-line pt-2">
+          <h3 className="px-3 py-1 text-meta font-semibold uppercase tracking-wide text-ink-faint">
+            {t('work.rail.ended')}
+          </h3>
+          {ended.map((session) => (
+            <SessionRow
+              key={session.id}
+              session={session}
+              quest={session.quest ? questFor.get(session.quest) : null}
+              root={registered.get(session.repository)?.root}
+              selected={session.id === selected}
+              onSelect={onSelect}
+            />
+          ))}
+          {hiddenEnded > 0 && (
+            <p className="px-3 py-1.5 text-small text-ink-faint">
+              {t('work.rail.endedMore', { count: hiddenEnded })}
+            </p>
+          )}
+        </section>
+      )}
     </nav>
   );
 }

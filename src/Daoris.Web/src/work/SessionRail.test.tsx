@@ -82,7 +82,11 @@ describe('the session rail', () => {
   it('groups what is running by repository, in a stable order', async () => {
     show(<SessionRail notify={() => {}} />);
 
-    const headings = await screen.findAllByRole('heading', { level: 3 });
+    // The repository groups' headings — not the ended section's, which is a peer of the groups
+    // rather than one of them, and lists what is no longer running.
+    const ended = await screen.findByRole('region', { name: 'ended' });
+    const headings = screen.getAllByRole('heading', { level: 3 })
+      .filter((heading) => !ended.contains(heading));
     expect(headings.map((heading) => heading.textContent)).toEqual(['engine', 'tools']);
   });
 
@@ -107,14 +111,47 @@ describe('the session rail', () => {
     expect(within(tools).getByText('busy')).toBeInTheDocument();
   });
 
-  it('lists what is still running and leaves finished records to the views that review them', async () => {
+  /**
+   * 🔴 Rewritten after the deployed application showed four empty-state sentences on a machine with
+   * four real session records (D62). This test used to assert that a finished record was absent and
+   * "left to the views that review them" — and there was no such view: the rail was the only door
+   * to a session, and it listed live ones only, so after a restart the driver's own record was
+   * reachable exactly never. The working-surface design's §7 promises the opposite.
+   *
+   * The live groups are unchanged — engine still holds one button — and the finished record is
+   * listed beneath them, not among them, because the group headers carry live facts an ended
+   * session has none of.
+   */
+  it('lists what is still running in the groups, and what ended beneath them', async () => {
     show(<SessionRail notify={() => {}} />);
 
     await screen.findByText('engine');
-    expect(screen.queryByText('completed')).not.toBeInTheDocument();
-    // engine: the one live session. tools: two.
+    // engine: the one live session. tools: two. The completed one is not in either group…
     const engine = screen.getByText('engine').closest('section')!;
     expect(within(engine).getAllByRole('button')).toHaveLength(1);
+    // …it is in the ended section, reachable from a fresh window with nothing selected.
+    const ended = screen.getByRole('region', { name: 'ended' });
+    expect(within(ended).getByText('completed')).toBeInTheDocument();
+    expect(within(ended).getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('opens an ended session when it is chosen, like any other', async () => {
+    const onSelect = vi.fn();
+    show(<SessionRail notify={() => {}} onSelect={onSelect} />);
+
+    const ended = await screen.findByRole('region', { name: 'ended' });
+    await userEvent.click(within(ended).getByRole('button'));
+    expect(onSelect).toHaveBeenCalledWith('d4e5f6a7');
+  });
+
+  /** A machine with no live session but an ended one is not empty, and must not say it is. */
+  it('does not show the full empty state while there is a record to read', async () => {
+    SESSIONS = LIVE.filter((s) => (s as { state: string }).state === 'completed');
+    show(<SessionRail notify={() => {}} />);
+
+    await screen.findByRole('region', { name: 'ended' });
+    expect(screen.queryByText(/Sessions appear here/)).not.toBeInTheDocument();
+    expect(screen.getByText('Nothing is running')).toBeInTheDocument();
   });
 
   /**
