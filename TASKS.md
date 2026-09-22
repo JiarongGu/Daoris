@@ -119,13 +119,15 @@ app opens none by itself). The scratch loop has one circle, one account and two 
 repositories, so every UI judgement made against it is a judgement about a machine nobody has.
 
 **The looking pass, as far as it has got** (2026-09-22). On the real machine — 20 registered
-repositories, 14 with index entries, two workspaces, no named accounts — these have been reviewed
-and what they showed is fixed and landed: **Overview** (three counts reading as a contradiction, a
-card past the fold with its legend cut off, a seven-line toast over the card it described) and
-**Machine** (the accounts surface, regrouped from adapters to tools). 🔴 **Not looked at on real
-data at all: Quests, Projects, Search, Convergence, and the whole Work frame.** Those are where the
-fixture is least like a real machine, so that is where the next defects are. The fixture's two
-repositories and one quest cannot show what fourteen and a real backlog do.
+repositories, 14 with index entries, 965 entries, two workspaces, no named accounts. Reviewed, with
+what each showed fixed and landed: **Overview** (three counts reading as a contradiction, a card
+past the fold with its legend cut off, a seven-line toast over the card it described), **Machine**
+(the accounts surface, regrouped from adapters to tools), **Quests** (🔴 the same hold toast every
+tick, forever — a tick report is a log and a toast is an interruption, and they were one object),
+**Projects** (nothing filed: 20 registrations render and the not-adopted section handles 16 rows),
+and **Search** (a broad query capped at 40 with nothing saying so, and no count at all otherwise).
+🔴 **Still not looked at on real data: Convergence, and the whole Work frame.** Convergence is the
+one most likely to differ — it has 965 entries to pair up where the fixture had a handful.
 
 🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
 (four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface
