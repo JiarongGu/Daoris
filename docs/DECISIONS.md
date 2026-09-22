@@ -2132,6 +2132,15 @@ asserts the weaker, always-true thing (the located host is **not this workspace'
 which one it was. That is the assertion that goes red on a real regression and stays green on a
 legitimate machine difference.
 
+> **Amended 2026-09-23, by the second deployment.** The precedence above was wrong, and this
+> paragraph had recorded the defect as a limitation: `--service` published a newer host beside the
+> shell, the shell spawned the older machine-wide one, and the gate passed 32/32 while its own
+> transcript named `~/.daoris/bin`. **What the install carries now outranks the installed home**
+> (`ServiceHostLocator`), a shell published without `--service` still falls through to the machine's,
+> and phase 4 asserts the started host is the **install's own** — the non-redirectable profile is
+> the decoy that makes the check mean something on a developer machine. `docs/FIX-LOG.md` has the
+> mechanism. The two rejections below still stand: neither needed reopening to fix the order.
+
 **Rejected: a `DAORIS_HOME` override so the gate could redirect the profile.** It would make the
 assertion exact, and it reopens a question that is the owner's — **DEPLOY4** asks precisely whether
 per-install state should join `~/.daoris`, and `~/.daoris` being machine-wide is what makes the CLI

@@ -25,11 +25,13 @@
  *
  * WHAT THIS GATE CANNOT CONTROL, stated rather than implied:
  *
- *  - **`~/.daoris/bin` outranks the install.** The locator prefers the machine's installed host over
- *    a deployed copy, deliberately (one service, upgraded once for every shell on it), and the
- *    profile is not redirectable — .NET resolves it from the OS token, not from `USERPROFILE`. So
- *    phase 4 asserts the deployed shell found a host that is NOT this workspace's build, and NAMES
- *    which one it found; the precedence itself is `ServiceHostLocatorTests`' to hold.
+ *  - **The profile is not redirectable** — .NET resolves it from the OS token, not from
+ *    `USERPROFILE` — so a machine that ran `publish:service --install` offers the deployed shell a
+ *    second host under `~/.daoris/bin`. That is not a gap any more, it is the decoy: phase 4 asserts
+ *    the host the shell started is the one UNDER THE INSTALL, which on such a machine is exactly the
+ *    check that failed. 🔴 The first version of this header said the opposite — that `~/.daoris/bin`
+ *    outranked the install deliberately — and this gate passed 32/32 for as long as it was true,
+ *    naming the machine's host in its own transcript. The second deployment is what read the line.
  *  - **A machine whose ANSI codepage is already UTF-8 cannot fail phase 5.** The mangling in 4c is a
  *    round trip through a single-byte page; with ACP 65001 there is no round trip to make. The check
  *    is still the right one — it goes red on every machine that *can* express the defect, which is
@@ -439,9 +441,16 @@ if (!done.ok) throw new Error(done.text);
 
   check('the platform answers — the deployed shell brought a host up', await answers(base, 200));
 
+  // 🔴 The install's OWN host, not merely "not this workspace's". The weaker check passed 32/32 on
+  // a machine whose `~/.daoris/bin` held an older host, while the transcript's own `located:` line
+  // named it — and the second deployment showed a window serving a bundle that existed nowhere on
+  // disk but there. On a clean machine the two checks are the same; here they are not.
   const started = hostProcesses().filter((host) => !before.has(host.pid));
-  check('a host was started, and it is not this workspace’s build',
-    started.length > 0 && !started.some((host) => insideWorkspace(host.path, repoRoot)),
+  const ownHost = join(install, ...HOST_HOME, HOST_EXE);
+  check('a host was started, and it is the one published with the install',
+    started.length > 0
+      && started.every((host) => resolve(host.path) === resolve(ownHost))
+      && !started.some((host) => insideWorkspace(host.path, repoRoot)),
     started.length
       ? started.map((host) => host.path).join('\n          ')
       : 'no new host process appeared');

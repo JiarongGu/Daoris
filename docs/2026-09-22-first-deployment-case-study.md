@@ -178,6 +178,12 @@ report the bundle it serves so the shell can say when they differ, or for `publi
 quietly diverging from the machine's installed service. Neither is built; the deployment was fixed by
 reinstalling the service and restarting the host.
 
+> **The second deployment (2026-09-23) met the same class with nothing running**: the locator ranked
+> `~/.daoris/bin` above the host `--service` had just published beside the shell, so the shell
+> *spawned* the older one. The order is reversed now — what the install carries comes first — and
+> the deployment gate asserts the host it started is the install's own (`docs/FIX-LOG.md`). The
+> reporting half above is still not built.
+
 A smaller one beside it: both installs copy `wwwroot` **over** the existing directory without
 clearing it, so stale hashed bundles accumulate. Harmless — `index.html` names the current one — and
 misleading to anybody trying to tell which is live by listing the folder, which is exactly what this

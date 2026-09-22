@@ -240,19 +240,27 @@ describe('the shell-attached registry management', () => {
           { ...REGISTRY[0], repository: 'blank', summary: 'indexed, holding nothing' },
           { ...REGISTRY[0], repository: 'unseen', summary: 'never indexed' },
           { ...REGISTRY[0], repository: 'stranger', adopted: false },
+          { ...REGISTRY[0], repository: 'lone', adopted: false },
+          { ...REGISTRY[0], repository: 'many', adopted: false },
         ]);
       }
       if (url.startsWith('/api/repositories')) {
         return Response.json([
           ...REPOSITORIES,
           { name: 'blank', total: 0, local: 0, canonical: 0, workspace: 'default' },
+          { name: 'lone', total: 1, local: 1, canonical: 0, workspace: 'default' },
+          { name: 'many', total: 1234, local: 1234, canonical: 0, workspace: 'default' },
         ]);
       }
       return respond(url);
     }));
     show(<ProjectsView notify={() => {}} />);
 
-    expect(await screen.findByText(/^1 entries/)).toBeTruthy();
+    // A count of one is singular — "1 entries" was on the deployed page too — and a count in the
+    // thousands keeps its separator, so the plural form and the formatting are two parameters.
+    expect(await screen.findByText('1 entry · 1 local · 0 canonical')).toBeTruthy();
+    expect(screen.getByText('1 entry indexed read-only')).toBeTruthy();
+    expect(screen.getByText('1,234 entries indexed read-only')).toBeTruthy();
     expect(screen.getAllByText('nothing indexed yet')).toHaveLength(3);
     expect(screen.queryByText(/^0 entries/)).not.toBeInTheDocument();
     expect(screen.queryByText('—')).not.toBeInTheDocument();

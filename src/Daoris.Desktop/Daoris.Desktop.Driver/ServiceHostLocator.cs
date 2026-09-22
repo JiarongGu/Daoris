@@ -11,8 +11,9 @@ public sealed record HostLocation(string Executable, string WorkingDirectory);
 
 /// <summary>
 /// Where the service's HTTP host lives on this machine — the shell's question when it starts and
-/// nothing is answering yet. Ordered: what the person said, then the installed home (`~/.daoris/bin`,
-/// the publish script's landing place), then the workspace build for development.
+/// nothing is answering yet. Ordered: what the person said, then what the install carries (the host
+/// `desktop-publish --service` puts beside the shell), then the installed home (`~/.daoris/bin`, the
+/// service publish's landing place), then the workspace build for development.
 /// </summary>
 /// <remarks>
 /// Location only — spawning and probing stay with the supervisor. Kept beside the driver because it
@@ -34,6 +35,27 @@ public static class ServiceHostLocator
             candidates.Add(new(explicitPath, Path.GetDirectoryName(Path.GetFullPath(explicitPath)) ?? "."));
         }
 
+        // A DEPLOYED shell carries its own host with it (`desktop-publish --service`), and an install
+        // folder has no workspace below to fall through to.
+        //
+        // 🔴 Ranked ABOVE the machine's installed home, and it was the other way round once, with a
+        // reason: `~/.daoris/bin` is upgraded once for every shell on the machine, so a deployed copy
+        // outranking it would make a service upgrade invisible. The second deployment showed the
+        // inverse and it was worse: `--service` published a NEWER host beside the shell, the shell
+        // spawned the OLDER machine-wide one, and the window served a bundle that existed nowhere on
+        // disk but there. What the install carries is what it runs — the install's own upgrade path
+        // lands here, in one command with the shell — and a shell published without `--service` still
+        // falls through to the machine's home next.
+        //
+        // 🔴 Both shapes, because the INSTALL LAYOUT and this list are a counterpart set: an install
+        // folder shows one launcher at its root and keeps supporting binaries under `app/`, so the
+        // host is normally a level down — and a hand-assembled folder puts it beside the executable.
+        foreach (var relative in new[] { "daoris-knowledge-http", Path.Combine("app", "daoris-knowledge-http") })
+        {
+            var beside = Path.Combine(baseDirectory, relative, ExecutableName);
+            candidates.Add(new(beside, Path.GetDirectoryName(beside)!));
+        }
+
         var bin = Path.Combine(userProfile, ".daoris", "bin");
 
         // A binary someone placed here by hand — the most deliberate thing short of naming a path.
@@ -47,20 +69,6 @@ public static class ServiceHostLocator
         // which has no workspace to fall through to. Found by deploying.
         var packaged = Path.Combine(bin, "daoris-knowledge-http", ExecutableName);
         candidates.Add(new(packaged, Path.GetDirectoryName(packaged)!));
-
-        // A DEPLOYED shell carries its own host with it (`desktop-publish --service`), and an install
-        // folder has no workspace below to fall through to. Ranked under the installed home on
-        // purpose: that one is the machine's and is upgraded once for every shell on it, so a deployed
-        // copy quietly outranking it would make a service upgrade invisible.
-        //
-        // 🔴 Both shapes, because the INSTALL LAYOUT and this list are a counterpart set: an install
-        // folder shows one launcher at its root and keeps supporting binaries under `app/`, so the
-        // host is normally a level down — and a hand-assembled folder puts it beside the executable.
-        foreach (var relative in new[] { "daoris-knowledge-http", Path.Combine("app", "daoris-knowledge-http") })
-        {
-            var beside = Path.Combine(baseDirectory, relative, ExecutableName);
-            candidates.Add(new(beside, Path.GetDirectoryName(beside)!));
-        }
 
         // Development: walk up from the running binary to the workspace manifest, then take the HTTP
         // host's own build output — run from the PROJECT directory, where the built bundle lives.

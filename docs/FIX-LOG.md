@@ -5,6 +5,46 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The deployed shell ran the machine's older host, not the one published with it (2026-09-23)
+
+**Symptom.** `npm run publish:desktop -- --to <install> --service`, then start the install: the
+window showed the **previous** page. `performance.getEntries()` in the live page named a bundle
+(`index-CeYefnb-.js`) that existed nowhere on disk except under `~/.daoris/bin`; the install's own
+`wwwroot` held the new one, and the host answering on 5177 served a 404 for it. The host process
+was the shell's child and its path was `~/.daoris/bin/daoris-knowledge-http/` — not
+`<install>/app/daoris-knowledge-http/`.
+
+**Root cause.** `ServiceHostLocator` ranked the machine's installed home **above** the host beside
+the shell, deliberately, with the reason written down: *one service, upgraded once for every shell
+on it — a deployed copy outranking it would make a service upgrade invisible*. The second
+deployment produced the inverse: the **desktop** upgrade was invisible, because the install's own
+upgrade path (`publish:desktop --service`, one command, both halves) lands beside the shell and the
+shell was not looking there first. The first deployment's 4d was the same class through a different
+door (adopting a host already *running*); this one spawned the wrong host with nothing running.
+
+🔴 **The deployment gate said so and passed.** Its header listed *"`~/.daoris/bin` outranks the
+install"* under *what this gate cannot control*, and phase 4 asserted only that the host was *not
+this workspace's build* — which the machine's host satisfied — while printing
+`located: ~/.daoris/bin/…` in every transcript. 32/32, with the wrong host named on line 33.
+
+**Fix.** The order is now *what the person said → what the install carries → the machine's
+installed home → the workspace build* (`ServiceHostLocator.cs`); a shell published without
+`--service` still falls through to the machine's home. Phase 4 of the rehearsal asserts the started
+host is the one **under the install** — on a machine that ran `publish:service --install` the
+machine's copy is the decoy, and on a clean machine the check is the same as before.
+
+**Verify.** `ServiceHostLocatorTests` — two tests seen red on the old order. `npm run
+rehearse:deploy` seen red at phase 4 on this machine with the strengthened check and the old order,
+then green with the new. On the deployed application: `document.scripts` names the bundle the
+install's `index.html` names, and the Projects page renders this commit's sentences.
+
+**The trap to inherit.** 🔴 **"What this gate cannot control" is a list of things the gate is
+wrong about until proven otherwise.** A stated limitation that names the exact defect is a check
+waiting to be written, and the line that names the machine's host in every transcript was the
+evidence nobody read.
+
+**Commit.** _pending_
+
 ## The tokeniser's separators were a list, and 中文 punctuation was not on it (2026-09-23)
 
 **Symptom.** `D51：会话` tokenised to `d51：` and `会话` — a term with a fullwidth colon glued to it,

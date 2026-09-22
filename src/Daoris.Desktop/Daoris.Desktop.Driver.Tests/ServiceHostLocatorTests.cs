@@ -25,15 +25,59 @@ public sealed class ServiceHostLocatorTests : IDisposable
         Assert.Equal("D:/somewhere/host.exe", candidates[0].Executable);
     }
 
+    /// <summary>
+    /// Then what the install carries, then the machine's installed home — and the home runs beside
+    /// its bundle. Asserted as an ORDER, because the order is the contract: the second deployment
+    /// found the machine's older host outranking the one `desktop-publish --service` had just put
+    /// beside the shell, and the window showed the previous page with nothing failed.
+    /// </summary>
     [Fact]
-    public void The_installed_home_is_next_and_runs_beside_its_bundle()
+    public void What_the_install_carries_comes_next_and_then_the_installed_home_beside_its_bundle()
     {
         var profile = Path.Combine(_root, "profile");
         var candidates = ServiceHostLocator.Candidates(null, profile, _root);
 
         var home = Path.Combine(profile, ".daoris", "bin");
-        Assert.Equal(Path.Combine(home, ServiceHostLocator.ExecutableName), candidates[0].Executable);
-        Assert.Equal(home, candidates[0].WorkingDirectory);
+        Assert.Equal(
+            [
+                Path.Combine(_root, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
+                Path.Combine(_root, "app", "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
+                Path.Combine(home, ServiceHostLocator.ExecutableName),
+                Path.Combine(home, "daoris-knowledge-http", ServiceHostLocator.ExecutableName),
+            ],
+            candidates.Select(c => c.Executable).Take(4));
+        Assert.Equal(home, candidates[2].WorkingDirectory);
+    }
+
+    /// <summary>
+    /// 🔴 <b>A deployed shell runs the host it was published with, even when the machine has one of
+    /// its own.</b> The previous order ranked `~/.daoris/bin` above the install's copy so that a
+    /// service upgrade would reach every shell — and the second deployment showed the inverse:
+    /// `desktop-publish --service` put a NEWER host beside the shell, the shell spawned the OLDER
+    /// machine-wide one, and the window served a bundle that no longer existed on disk anywhere but
+    /// there. The install is self-sufficient (the deployment gate's own phase 3 says so), and what it
+    /// carries is what it runs; a shell published without `--service` still falls through to the
+    /// machine's home next.
+    /// </summary>
+    [Fact]
+    public void A_deployed_shell_prefers_the_host_published_with_it_over_the_machines_installed_home()
+    {
+        var profile = Path.Combine(_root, "profile");
+        var installedHome = Path.Combine(profile, ".daoris", "bin", "daoris-knowledge-http");
+        Directory.CreateDirectory(installedHome);
+        File.WriteAllText(Path.Combine(installedHome, ServiceHostLocator.ExecutableName), "");
+
+        var app = Path.Combine(_root, "install");
+        var beside = Path.Combine(app, "app", "daoris-knowledge-http");
+        Directory.CreateDirectory(beside);
+        var own = Path.Combine(beside, ServiceHostLocator.ExecutableName);
+        File.WriteAllText(own, "");
+
+        var found = ServiceHostLocator.Locate(null, profile, app);
+
+        Assert.NotNull(found);
+        Assert.Equal(own, found.Executable);
+        Assert.Equal(beside, found.WorkingDirectory);
     }
 
     /// <summary>
@@ -73,9 +117,8 @@ public sealed class ServiceHostLocatorTests : IDisposable
     /// nothing reads.
     /// </summary>
     /// <remarks>
-    /// It ranks BELOW the installed home deliberately: `~/.daoris/bin` is the machine's, updated
-    /// once for every shell on it, and a deployed copy that quietly outranked it would make a
-    /// service upgrade invisible to whichever app was opened.
+    /// It ranked BELOW the installed home once, so that a service upgrade would reach every shell
+    /// on the machine — see the test above for what that cost, and why it is the other way now.
     /// </remarks>
     [Theory]
     // Beside the executable — the simple case, and what a hand-assembled folder looks like.

@@ -78,6 +78,8 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                       yet" beside "—" for the same fact. */}
                   {counts && counts.total > 0
                     ? t('projects.entries', {
+                        // `count` picks the plural form; the formatted string is what is shown.
+                        count: counts.total,
                         total: counts.total.toLocaleString(),
                         local: counts.local.toLocaleString(),
                         canonical: counts.canonical.toLocaleString(),
@@ -194,7 +196,9 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                   <span>{project.repository}</span>
                   <span className="font-mono text-meta text-ink-faint">
                     {counts && counts.total > 0
-                      ? t('projects.outside.readable', { count: counts.total.toLocaleString() })
+                      ? t('projects.outside.readable', {
+                          count: counts.total, total: counts.total.toLocaleString(),
+                        })
                       : t('projects.nothingIndexed')}
                   </span>
                 </li>
