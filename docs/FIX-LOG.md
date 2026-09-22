@@ -29,7 +29,7 @@ else dirty is somebody's and stays. The row says `(committed)` when it did.
 empty in all three testbeds, the last commit *"adopted, synced and wired by tools/testbed.mjs"*,
 and no held toast on the next tick.
 
-**Commit.** pending
+**Commit.** `fe41055`
 
 ## The account a person has was invisible, and Forget forgot nothing (2026-09-23)
 
