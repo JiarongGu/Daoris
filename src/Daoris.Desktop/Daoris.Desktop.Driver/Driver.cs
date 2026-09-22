@@ -426,8 +426,22 @@ public sealed class Driver(
 
         try
         {
+            // The session's voice (ACP4). Located per run rather than once, because a machine can
+            // gain the host between ticks — and a machine that has none still drives, without a
+            // connector, exactly as it did before.
+            var connector = KnowledgeConnector.Offer(
+                Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                AppContext.BaseDirectory);
+            if (connector is null)
+            {
+                Line($"— no {KnowledgeConnector.ExecutableName} on this machine, so this session has no "
+                     + "connector: it can do the work but cannot take or close its own quest. "
+                     + "`npm run publish:service -- --install` lands one.");
+            }
+
             var outcome = await new AcpSession(process.StandardOutput, process.StandardInput, Line)
-                .RunAsync(cwd, prompt, ct).ConfigureAwait(false);
+                .RunAsync(cwd, prompt, ct, connector is null ? [] : [connector]).ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "

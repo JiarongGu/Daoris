@@ -24,17 +24,18 @@ protocol, not a product*, which put the protocol door in front of the view.
 toolchain** (2026-09-22 → **TOOL1/D57**): the measurement corrected a doctrine overclaim — the
 accounts were Daoris's and the binary was still the machine's — and **TOOL2 and TOOL3 have landed**.
 **The instruction file** (2026-09-22 → **CANON8/D59**): `.claude/rules/` is read by one harness of
-three, so the always-loaded tier moves into `AGENTS.md`. **CANON8a has landed** — the region and its
-refusals; 8b wires it into `sync`, and it is the larger of the two directions.
+three, so the always-loaded tier lives in `AGENTS.md` — **built and migrated**, this repository and
+both examples with it. **CANON8d** is what is left of it.
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**227 CLI tests, 259 service, 221 driver, 70 desktop modules, 412 web unit, 14 Playwright**, 57
-devkit, 53/53 release rehearsal, **173/173 family rehearsal** (it names its own phases when you run
+**265 CLI tests, 262 service, 239 driver, 71 desktop modules, 412 web unit, 14 Playwright**, 57
+devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
-core is **23,862 of 26,000 bytes**, and **advisory rather than enforced** (D54: a fact gates, a
-judgement reports). The answer to a full budget is still splitting principle from detail (D28).
+core is **21,817 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
+enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
+principle from detail (D28).
 
 **The remote exists** (D47/DRV5, built 2026-09-20): the same HTTP host in shared mode gates every
 route with per-person per-machine minted keys (`keys mint|list|revoke`, hashed with an audit prefix,
@@ -252,18 +253,12 @@ is the one that needs the owner: its closing step spends a real login.
   `subagent-claude-code` bundle on npm was six weeks stale when measured — a harness's own packaging is
   its own problem, but the version the toolchain installs is asserted, not assumed.
 
-- [ ] 🔴 **ACP4 — the MCP servers the door hands over. This BLOCKS ACP2, and the driven run measured
-  it** (2026-09-22). `Acp.cs:113` sends `mcpServers = Array.Empty<object>()`, and the composed target
-  instructs the session to *"respond to `#<id>` with `take`"* — a `quest_respond` call. So the session
-  came up, set `acceptEdits`, streamed *"I'll start by taking the quest"*, called `take`, had no such
-  tool, and ended its turn having touched nothing. **The pipe door only works because the repository
-  happens to declare the server in its own `.mcp.json`** — an adopted repository does not, and the
-  protocol door has no such crutch. Filling the field hands the service to *any* ACP agent with no
-  per-harness configuration anywhere; `dsh-acp` advertises honouring it. Local mode names the machine's
-  own MCP host (mirror `ServiceHostLocator`, which finds the HTTP one); a workspace wired to a remote
-  names that (D48 §5). Proof: the stub agent asserts it was offered the server, and the family rehearsal
-  drives a quest published **by** a driven session.
-
+- [x] **ACP4 — the MCP servers the door hands over.** ✅ **done 2026-09-22.** The composed target
+  tells every session to claim and close its quest over its own connector; the pipe door leans on the
+  repository’s own `.mcp.json`, which an adopted repository may not have and which the driver may
+  never reach in and write. The protocol carries the wiring on `session/new`, so a driven session is
+  handed its voice with **nothing written anywhere**. A machine with no host still drives and says so.
+  Gated in the family rehearsal from the AGENT’s own side (180/180).
 
 - [ ] **HELP2 — skills reach one harness only.** `dsh-skill-filesystem` scans `<project>/.dsh/skills`
   and `<project>/.agents/skills`, never `.claude/skills` — but its bundle format is `<name>/SKILL.md`,

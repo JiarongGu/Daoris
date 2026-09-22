@@ -513,4 +513,71 @@ public sealed class AcpTests
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Null(outcome.Usage);
     }
+
+    // ── the servers the door hands over (ACP4) ────────────────────────────────────────────────────
+    //
+    // 🔴 Measured in ACP2's first real driven run: the session came up, streamed "I'll start by
+    // taking the quest", called `take`, had no such tool, and ended its turn having touched nothing.
+    // The composed target instructs every session to claim its quest over its own connector, and the
+    // PIPE door only works because the repository's own `.mcp.json` wires that — which an adopted
+    // repository may not have, and which the driver may never reach in and write.
+    //
+    // The protocol carries the wiring instead, so this hands the session its voice with nothing
+    // written anywhere. The env shape is an ARRAY of {name,value} pairs — read from the adapter's own
+    // source, where it does `Object.fromEntries(server.env.map(e => [e.name, e.value]))`.
+
+    private static readonly AcpMcpServer Knowledge = new(
+        "daoris-knowledge",
+        "daoris-knowledge",
+        ["--stdio"],
+        new Dictionary<string, string> { ["DAORIS_KNOWLEDGE_DB"] = "D:/scratch/knowledge.db" });
+
+    [Fact]
+    public async Task The_session_is_offered_the_knowledge_server_it_is_told_to_use()
+    {
+        var agent = Simple();
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None, [Knowledge]);
+
+        var servers = agent.Frame(1).GetProperty("params").GetProperty("mcpServers");
+        var server = Assert.Single(servers.EnumerateArray());
+        Assert.Equal("daoris-knowledge", server.GetProperty("name").GetString());
+        Assert.Equal("daoris-knowledge", server.GetProperty("command").GetString());
+        Assert.Equal("--stdio", server.GetProperty("args")[0].GetString());
+
+        var env = Assert.Single(server.GetProperty("env").EnumerateArray());
+        Assert.Equal("DAORIS_KNOWLEDGE_DB", env.GetProperty("name").GetString());
+        Assert.Equal("D:/scratch/knowledge.db", env.GetProperty("value").GetString());
+    }
+
+    /// <summary>
+    /// 🔴 Offering NOTHING stays an empty array, never an absent field. A machine with no host found
+    /// still drives — the session simply has no connector, exactly as it did before ACP4 — and an
+    /// agent that reads `params.mcpServers.length` must not meet `undefined`.
+    /// </summary>
+    [Fact]
+    public async Task A_session_with_no_servers_still_sends_an_empty_list()
+    {
+        var agent = Simple();
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        var servers = agent.Frame(1).GetProperty("params").GetProperty("mcpServers");
+        Assert.Equal(JsonValueKind.Array, servers.ValueKind);
+        Assert.Empty(servers.EnumerateArray());
+    }
+
+    /// <summary>An agent that answers the three calls and nothing else — the shape most tests need.</summary>
+    // 🔴 The parameter is `self`, not `_`. A lambda parameter named `_` SHADOWS the discard in
+    // `TryGetProperty("id", out _)` below, and the error it produces names neither.
+    private static FakeAgent Simple() => new((frame, self) =>
+        frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}"""),
+            "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+            "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
 }

@@ -30,6 +30,29 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed record AcpUsage(long Used, long Size);
 
+/// <summary>
+/// One MCP server a session is handed on `session/new` (ACP4) — a local program the agent spawns.
+/// </summary>
+/// <remarks>
+/// <b>This is how a driven session gets a voice without anything being written into its repository.</b>
+/// The pipe door depends on the repository's own `.mcp.json` wiring the knowledge tools; the protocol
+/// carries them itself, which is both simpler and the only shape compatible with `reaching-in` for a
+/// repository that has not wired one.
+/// </remarks>
+/// <param name="Name">What the agent calls it — tools arrive as `mcp__&lt;name&gt;__&lt;tool&gt;`.</param>
+/// <param name="Command">The program, resolved by this side before it is named.</param>
+/// <param name="Arguments">Its arguments, as given.</param>
+/// <param name="Environment">
+/// What the server needs to find the same store this driver is using. Passed through rather than
+/// invented: a scratch run overrides these, and a session writing to the machine's real store because
+/// the overrides did not travel is the failure that would be hardest to see.
+/// </param>
+public sealed record AcpMcpServer(
+    string Name,
+    string Command,
+    IReadOnlyList<string> Arguments,
+    IReadOnlyDictionary<string, string> Environment);
+
 /// <param name="Usage">
 /// The context pressure the agent reported, or <b>null when it reported none</b> — absent, never
 /// zero. "Nothing was measured" and "it used nothing" are different claims (TOOL3).
@@ -90,7 +113,13 @@ public sealed class AcpSession(
     /// </summary>
     /// <param name="cwd">The working tree this session runs in — the registered root, or a session tree (D51).</param>
     /// <param name="prompt">The composed target, exactly as the pipe door delivers it.</param>
-    public async Task<AcpOutcome> RunAsync(string cwd, string prompt, CancellationToken ct)
+    /// <param name="servers">
+    /// The MCP servers this session is handed (ACP4) — in practice the machine's own knowledge host,
+    /// which is what makes the composed target's "respond to `#id` with `take`" a thing the session
+    /// can actually do.
+    /// </param>
+    public async Task<AcpOutcome> RunAsync(
+        string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
     {
         using var pumpStopped = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var pump = PumpAsync(pumpStopped.Token);
@@ -110,8 +139,37 @@ public sealed class AcpSession(
                 },
                 ct).ConfigureAwait(false);
 
-            var created = await RequestAsync("session/new", new { cwd, mcpServers = Array.Empty<object>() }, ct)
-                .ConfigureAwait(false);
+            // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
+            // close its quest over its own connector, and the pipe door only manages that because the
+            // repository's own `.mcp.json` wires it — which an adopted repository may not have, and
+            // which the driver may never reach in and write. The protocol carries the wiring instead,
+            // so this hands the session what it needs with nothing written anywhere.
+            //
+            // An empty list rather than an absent field when there is nothing to offer: a machine
+            // with no host found still drives, and an agent reading `mcpServers.length` must not meet
+            // `undefined`.
+            var created = await RequestAsync(
+                "session/new",
+                new
+                {
+                    cwd,
+                    // Named in lower case explicitly: this serialiser writes property names as they
+                    // are spelled, so `server.Name` would go on the wire as `Name` and the agent
+                    // would read nothing at all.
+                    mcpServers = (servers ?? []).Select(server => new
+                    {
+                        name = server.Name,
+                        command = server.Command,
+                        args = server.Arguments,
+                        // An ARRAY of {name,value}, not an object — read from the adapter's own
+                        // source, which does `Object.fromEntries(env.map(e => [e.name, e.value]))`.
+                        env = server.Environment
+                            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                            .Select(pair => new { name = pair.Key, value = pair.Value })
+                            .ToArray(),
+                    }).ToArray(),
+                },
+                ct).ConfigureAwait(false);
             _sessionId = created.TryGetProperty("sessionId", out var id) ? id.GetString() : null;
             if (string.IsNullOrEmpty(_sessionId))
             {

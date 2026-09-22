@@ -67,7 +67,9 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
 
   assert.ok(found.size >= 4, `expected to find the machine-local variables, found ${[...found]}`);
 
-  const handled = new Set([...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST']);
+  // Both host paths are pinned rather than redirected: their locators prefer an INSTALLED binary, so
+  // an unnamed host means a scratch run silently uses the real machine's (ACP4 added the second).
+  const handled = new Set([...REDIRECTED, ...CLEARED, 'DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST']);
   const missed = [...found].filter((name) => !handled.has(name));
   assert.deepEqual(missed, [], `a scratch run would inherit ${missed.join(', ')} from the real machine`);
 });

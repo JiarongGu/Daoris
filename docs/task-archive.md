@@ -3352,3 +3352,39 @@ inside `Daoris.Cli`, because that is where the type errors were. The service rea
 from another language, where **nothing breaks at compile time** — which is precisely what a twin
 contract is. Anything that moves a layout now asks: which other artefact reads this, and in what
 language?
+
+## ACP4 — the MCP servers the door hands over (2026-09-22)
+
+> 🔴 **ACP4 — the MCP servers the door hands over. This BLOCKS ACP2, and the driven run measured it.**
+> `Acp.cs:113` sent `mcpServers = Array.Empty<object>()`, and the composed target instructs the
+> session to *"respond to `#<id>` with `take`"*. So the session came up, set `acceptEdits`, streamed
+> *"I'll start by taking the quest"*, called `take`, had no such tool, and ended its turn having
+> touched nothing.
+
+✅ **done 2026-09-22.** `AcpMcpServer` on `session/new`, and `KnowledgeConnector` finds the machine's
+own MCP host the way `ServiceHostLocator` finds the HTTP one.
+
+**Why this is the right shape rather than a workaround.** The pipe door works because an adopted
+repository's own `.mcp.json` wires the knowledge tools — *"that wiring is the connector's job at
+adoption, not something the driver may reach in and write"*. A repository that has not wired one
+therefore cannot be driven over the pipe at all, and the driver may not fix that. The protocol carries
+the wiring itself, so the session gets its voice **with nothing written anywhere** — which is
+`reaching-in` satisfied rather than worked around.
+
+**Three details that are decisions.** The environment is **passed through, never invented**: a scratch
+run overrides `DAORIS_KNOWLEDGE_DB` and friends, and a session writing to the machine's real store
+because the overrides did not travel is the failure hardest to see. A machine with **no host** offers
+an **empty array, never an absent field** — it still drives, the session simply has no connector, and
+an agent reading `mcpServers.length` must not meet `undefined`. And the env is an **array of
+`{name,value}`**, read from the adapter's own source (`Object.fromEntries(env.map(...))`) rather than
+guessed.
+
+**Two gates caught things.** The family rehearsal asserts it from the **agent's own side** — the stub
+reports what it was offered and the check reads it back out of the transcript (180/180), because a
+driver asserting what it sent proves only that it sent it. And this repository's own
+`desktop-tool.test.ts` refused the new `DAORIS_MCP_HOST` until the scratch environment pinned it:
+the locator prefers an *installed* binary, so an unnamed host means a scratch run silently hands the
+session the real machine's.
+
+**One trap, twice now:** a C# lambda parameter named `_` shadows the discard in
+`TryGetProperty("id", out _)`, and the error names neither.

@@ -2093,11 +2093,18 @@ const handle = async (line) => {
     case 'initialize':
       send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
       break;
-    case 'session/new':
+    case 'session/new': {
       session = 'acp-session-1';
       say('session on', frame.params?.cwd);
+      // 🔴 ACP4, reported from the agent's own side. The composed target tells this session to take
+      // and close its quest over a connector, and the protocol is what hands it one — so the stub
+      // says what it was offered, and the gate reads it back out of the transcript. Reported rather
+      // than asserted here: a stub that refused to start would tell the gate nothing about WHY.
+      const offered = (frame.params?.mcpServers ?? []).map((s) => s.name).join(', ');
+      say('mcp servers offered:', offered || '(none)');
       send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: session } });
       break;
+    }
     case 'session/prompt': {
       const stopReason = await work(frame.params?.sessionId ?? session);
       send({ jsonrpc: '2.0', id: frame.id, result: { stopReason } });
@@ -2168,6 +2175,17 @@ check(
     && /→ write/.test(acpTranscript)
     && /t1 → completed/.test(acpTranscript)
     && !acpTranscript.includes('"jsonrpc"'),
+  acpTranscript.slice(0, 600),
+);
+
+// 🔴 ACP4, read back from what the AGENT said it received. The composed target instructs every
+// session to take and close its quest over its own connector; the pipe door leans on the repository's
+// own `.mcp.json`, which an adopted repository may not have and which the driver may never reach in
+// and write. The protocol carries it instead — measured before it was built, when a real driven
+// session called `take`, found no such tool and ended its turn having touched nothing.
+check(
+  'the session is handed the knowledge server it is told to use, over the protocol',
+  /mcp servers offered: daoris-knowledge/.test(acpTranscript),
   acpTranscript.slice(0, 600),
 );
 

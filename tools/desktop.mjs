@@ -103,7 +103,7 @@ export function debugEnvironment(cdpPort) {
   };
 }
 
-export function scratchEnvironment({ home, family, serviceUrl, httpHost, cdpPort }) {
+export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort }) {
   return {
     DAORIS_SERVICE_URL: serviceUrl,
     // The other half of the port, and it is not optional. The shell PROBES `DAORIS_SERVICE_URL` and
@@ -117,6 +117,10 @@ export function scratchEnvironment({ home, family, serviceUrl, httpHost, cdpPort
     DAORIS_REMOTE_CONFIG: join(home, 'remotes.json'),
     DAORIS_HARNESS_CONFIG: join(home, 'harnesses.json'),
     DAORIS_HTTP_HOST: httpHost,
+    // The MCP host a driven session is handed over the protocol door (ACP4). Pinned for the same
+    // reason the HTTP one is: the locator prefers an INSTALLED binary, so a scratch run would hand
+    // the session the real machine every time this one is behind it.
+    DAORIS_MCP_HOST: mcpHost,
     // Nothing in this repository reads these: the debug port is the runtime's and the loader's, which
     // is the point — the shipped app gains no debug surface, and a window nobody started this way has
     // nothing to attach to. Loopback only, on a port picked for this run.
@@ -180,6 +184,7 @@ export function prune(entries, { keep = 25, maxBytes = 150 * 1024 * 1024 } = {})
 
 const DESKTOP_PROJECT = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App');
 const HTTP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http');
+const MCP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
 const WEB = join(repoRoot, 'src', 'Daoris.Web');
 const RUN_FILE = join(scratchRoot, 'run.json');
 const SHOTS = join(scratchRoot, 'screenshots');
@@ -382,9 +387,11 @@ async function start(command, args) {
 
     const httpHost = assemblyExe(HTTP_PROJECT);
     if (!httpHost) fail('the service host is not built — `node tools/desktop.mjs build`.');
+    // Optional: a run without it drives, and a session simply has no connector (ACP4).
+    const mcpHost = assemblyExe(MCP_PROJECT) ?? '';
 
     serviceUrl = `http://127.0.0.1:${await freePort(5188)}`;
-    environment = scratchEnvironment({ home, family, serviceUrl, httpHost, cdpPort });
+    environment = scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort });
     // Its own root, so the WebView2 profile, the window geometry and the runtime's single-instance
     // scope all belong to this run — a scratch shell and a real one never contend for either.
     extra.push('--app-root', appRoot);
