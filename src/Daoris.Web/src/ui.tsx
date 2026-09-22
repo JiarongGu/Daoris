@@ -404,7 +404,11 @@ export function Drawer({ title, meta, onClose, footer, children }: {
   return (
     <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-10 bg-scrim" />
+        {/* 🔴 Below the app strip, never over it. The strip reserves slots the WINDOW paints its
+            caption buttons into (SURF7), and a page scrim cannot dim what the page does not draw —
+            so a full-bleed one dimmed the title bar and left three bright buttons punched through
+            it. Held by `tokens.test.ts`, because it is a rule about every overlay. */}
+        <Dialog.Overlay className="fixed inset-x-0 bottom-0 top-9 z-10 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
           // D41 §6 says a drawer is `role="dialog"` WITH `aria-modal`, and Radix sets the role and

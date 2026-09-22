@@ -3544,3 +3544,61 @@ caught this on its first run, which is what an invariant is for.
 
 **What waits: a driven run per harness**, exactly as ACP2's does — and for codex it is the same step
 that confirms the mode list on a live wire rather than from a bundle.
+
+## The first deployment — the desktop as an installed application (2026-09-22)
+
+> *"setup and deploy the desktop version to \<install\> and we can drive and log it properly for some
+> real case study and testing"*, then *"currently it just bit messy"* about the folder, *"the
+> application topbar you can take more example from application like vscode"*, and *"the backdrop
+> should not cover the topbar? because we do have the hole for the 3 buttons"*.
+
+✅ **done 2026-09-22.** `docs/2026-09-22-first-deployment-case-study.md` is the record. Driver 283,
+CLI 269, modules 71, web 420, family rehearsal 180/180.
+
+**The first time any of Daoris ran outside its own workspace**, and that is the whole value: four
+defects, and three of them were invisible *because* of something the workspace provides.
+
+- 🔴 **`ServiceHostLocator` never looked where the installer puts the HTTP host.** The workspace-build
+  fallback meant the shell always found *a* host and nobody asked which; a deployed machine has no
+  workspace to fall through to. FIX-LOG.
+- 🔴 **A session transcript was decoded as the machine's ANSI codepage** — an em-dash recorded as
+  `e9 88 a5 3f`. Silent and permanent: the file afterwards is valid UTF-8. A platform that ships
+  简体中文 would have lost every Chinese character in a record. FIX-LOG.
+- **There was no way to deploy at all.** `tools/desktop-publish.mjs` is now `service-publish.mjs`'s
+  sibling. Its guard is a marker file rather than an extension allowlist — the first version
+  allowlisted what a publish emits and refused its own second run over three `.xml` docs.
+- **`testbed.mjs` claimed idempotence and died on its second run**, and never wrote the two files a
+  driven repository needs.
+
+**The install folder, taken from the machine's own neighbours** (the owner pointed at one): a single
+launcher at the root, supporting binaries under `app/`, state in `data/`. A single-file publish got
+it from **24 entries to 3** — `daoris-desktop.exe` at 2.8 MB, framework-dependent because the shell
+already needs a Windows desktop runtime and WebView2 and would carry neither. The locator gained the
+`app/` shape in the same change, because the layout and that list are a counterpart set.
+
+🔴 **The finding the driving produced: a repository cannot grant its own trust.** Three real driven
+runs, all recorded `failed`, and the driver was right every time — it concluded from exit code, quest
+state and absent commits (D46 §4) while each session said a great deal about itself. The cause is one
+line the harness prints: *"Ignoring 9 permissions.allow entries from .claude/settings.json: this
+workspace has not been trusted."* Daoris can wire the connector, the allow-list and the posture and
+still be one machine-level flag short — in the person's own `~/.claude.json`, which SES3 puts out of
+bounds. **DEPLOY1** carries the decision, and it is the owner's: the flag *is* the grant.
+
+**DRV4 did not see this** because its scratch repository had been opened by hand that session, and
+the dependency lived in one parenthetical of its archive entry. Same shape as the locator: it worked
+everywhere it had been tried, because everywhere it had been tried had what the untried case lacks.
+
+**The sessions themselves are the other result.** Both followed the doctrine Daoris had synced four
+hours earlier, unsupervised: refusing to grant themselves the missing permission and **citing
+`file-tool-discipline`**; refusing to commit on ungreen gates, **citing `autonomous-development`**;
+writing claims from the implementation and **naming which no run had confirmed**; and working out
+unprompted that `.claude/knowledge/` is generated and lock-tracked, so their own documents belonged
+in `docs/`. Both trees are preserved on branches.
+
+**Two screens, both found by photographing the window rather than reasoning about it.** The app strip
+held **~1,400px of nothing** with the palette reduced to a 14px glyph beside the caption buttons —
+now a centred command center that says where you are and prints its shortcut, taken from the shape VS
+Code settled on. And a full-bleed scrim dimmed the title bar while the **natively painted** caption
+buttons stayed bright, punching a white block through it; a scrim now starts below the strip, held by
+`tokens.test.ts` as a rule about every overlay, because the next one would have inherited `inset-0`
+without anyone thinking about it.

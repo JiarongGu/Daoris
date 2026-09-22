@@ -340,46 +340,11 @@ only because the paragraphs above are the contract a *new* surface item would be
 
 ### The instruction file — where the always-loaded tier lives (owner, 2026-09-22 → D59)
 
-> *"this agent file design actually made a common management style for different agents which is good
-> to take"* — on a candidate adopter whose `CLAUDE.md` is one line, `@AGENTS.md`, over 133 lines of
-> its own doctrine.
-
-**Designed and decided the same day**: `docs/2026-09-22-instruction-file-design.md` is the contract and
-**D59** carries the four rejected alternatives. What forced it was a measurement — **`.claude/rules/`
-is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now this arc.
-
-- [x] **CANON8a — the region, and the state space under it.** ✅ **done 2026-09-22.**
-  `src/Daoris.Cli/src/region.ts`: pure, 22 tests, no disk. Design §4's table implemented as a table —
-  absent, present, and the three damage states, each **refused with the line number**. Markers are
-  matched as WHOLE LINES, so one quoted in a fenced code block (which this repository's own docs do)
-  is prose rather than a boundary. `ensureImport` is the pointer file's smaller half, and it is
-  **always a region even when Daoris creates the whole file** — a bare line is a line nothing can
-  retire, because the lock describes a file or a span and never a stray sentence.
-
-  🔴 **Two bugs the fixtures could not see, both found by running it over a real adopter's file.**
-  Its `AGENTS.md` is 133 CRLF lines, and the body came back with a carriage return on every interior
-  line because the read stripped one at the very end — correct for a one-line body and wrong for
-  every longer one (FIX-LOG). And `hasImport` rejected *"Everything is in @AGENTS.md."*, the first
-  sentence anybody would write, because it demanded whitespace after the target; the boundary is
-  about **paths**, and `@AGENTS.mdx`, `@AGENTS.md.backup` and `@AGENTS.md/nested` are three other
-  files.
-
-
-- [x] **CANON8b/c — `sync`, `check`, `upstream`, the lock over a span, and the migration.**
-  ✅ **done 2026-09-22.** 265 CLI tests green; this repository and both examples migrated in the same
-  commit. Always-loaded core **23,862 → 21,817 bytes**, because eight frontmatter blocks and a
-  separate roster's preamble went away. The archive carries the outcome.
-
-- [x] **CANON8d — say the new thing.** ✅ **done 2026-09-22.** All four corrected, and reading around
-  each turned up as many again in the same class — 🔴 **`CHANGELOG.md` had no entry for D59 at all**,
-  D7 in `docs/DECISIONS.md` carried no amendment though D59 says it does, the design doc still listed
-  *"Owning regions of `CLAUDE.md`"* as out of scope, and `adoption.md` told an adopting agent to expect
-  the budget to *fail*. `analyze`'s verdict gained the check it never had. 🔴 **This item's own note
-  was wrong**: `canon-authoring.md` is a **local** document, not canon — the lock is the authority
-  (D5), and a filename is not evidence. The archive carries the outcome.
-
-**Nothing in this section is open.** CANON8a–e and CANON8d are all in the archive; the paragraphs
-above are kept as the contract a *new* instruction-file item would be built against.
+**Closed 2026-09-22.** CANON8a–e moved the always-loaded tier into a region of `AGENTS.md` and
+CANON8d said the new thing everywhere the old one was still written. The contract is
+`docs/2026-09-22-instruction-file-design.md`, **D59** carries the four rejected alternatives, and the
+archive carries each item's outcome. Nothing here is open; a *new* instruction-file item would be
+built against that design document, not against this heading.
 
 ### The next direction — the toolchain and its accounts (owner, 2026-09-22)
 
@@ -422,6 +387,41 @@ local by the profile's own rule, no price claimed, and a test asserts no currenc
   ACP door for tools that speak the protocol and a tool free to be both. **Not a registry** — the
   components plan's rejection stands and D24 with it. Largely folds into **ACP3**, which already
   brings dsh and codex as configurations of the door; this item is what remains once that lands.
+
+### The first deployment — what running outside a checkout found (owner, 2026-09-22)
+
+> *"setup and deploy the desktop version to \<install\> and we can drive and log it properly for some
+> real case study and testing"* — and then, looking at it: *"currently it just bit messy"* about the
+> install folder, and *"the application topbar you can take more example from application like
+> vscode"*.
+
+**Done and in the archive**: the deployment itself, `tools/desktop-publish.mjs`, the install layout,
+the command center, the scrim, and four defects only deploying found.
+`docs/2026-09-22-first-deployment-case-study.md` is the record. **What is left is one decision and
+one gate.**
+
+- [ ] 🔴 **DEPLOY1 — a repository cannot grant its own trust, and the driven loop stops there.**
+  Claude Code **ignores** a repository's `permissions.allow` until the workspace has been accepted in
+  the person's own `~/.claude.json` — *"this workspace has not been trusted"*, said by the harness on
+  its first line. So Daoris can wire the connector (ACP4), the allow-list and the posture and still
+  be one machine-level flag short, in the file SES3 puts out of bounds. **Three real driven runs
+  failed on exactly this**, each doing the work and none able to take its quest.
+  **The decision is whose the grant is**, and it is the owner's: (a) the driver **detects and
+  refuses** with the one sentence that fixes it — it knows the path, so this is cheap and honest;
+  (b) adoption **asks** and writes the flag as an explicit act; (c) Daoris never touches it and the
+  pipe door is documented as needing a human's first visit. 🔴 **Not (d) write it silently** — that
+  flag *is* the person's grant, and a tool that grants trust on someone's behalf has removed the one
+  step in the chain that was theirs. **Measure the ACP door first**: the adapter runs the Agent SDK
+  rather than the CLI's trust flow, so it may not have this problem at all, and that is one driven
+  run to find out.
+
+- [ ] **DEPLOY2 — nothing gates the deployed artefact.** `rehearse` installs and drives the CLI
+  *package*; both rehearsals otherwise run inside the workspace, where the workspace build and the
+  console's own encoding paper over exactly the two defects this deployment found (the host the
+  locator could not see, the transcript that was not UTF-8). The work is a gate that **publishes the
+  shell to a scratch folder and runs it from there** — the desktop's `rehearse`. It needs no model
+  and no account: bringing the window up, finding its host and writing one non-ASCII line to a
+  transcript would have caught both.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

@@ -402,6 +402,7 @@
   "work.review.sendBack": "send it back…",
   "work.review.discard": "discard the tree",
   "work.review.discardMeanIt": "discard it anyway",
+  "palette.scope": "every workspace",
   "palette.title": "Commands",
   "palette.placeholder": "What do you want to do?",
   "palette.nothing": "Nothing matches “{{typed}}”.",

@@ -30,7 +30,7 @@ export type Mode = 'manage' | 'work';
  * where there is no window to command and none of them are passed at all.
  */
 export function AppStrip({
-  mode, modeAvailable, attention = 0, onMode, scope, captionRoom,
+  mode, modeAvailable, attention = 0, onMode, scope, center, captionRoom,
   stripRef, onDragStart, onToggleMaximize, onResizeTop,
 }: {
   mode: Mode;
@@ -39,6 +39,8 @@ export function AppStrip({
   onMode: (mode: Mode) => void;
   /** The workspace switcher, or nothing while the deployment holds one circle (WSP5). */
   scope?: ReactNode;
+  /** The command center — where you are, and the way into everything (taken from VS Code's shape). */
+  center?: ReactNode;
   captionRoom?: boolean;
   stripRef?: (element: HTMLElement | null) => void;
   /** Absent in a browser: there is no window to move, so the strip is simply a strip. */
@@ -81,6 +83,12 @@ export function AppStrip({
       </div>
 
       <ModeSwitch mode={mode} available={modeAvailable} attention={attention} onChange={onMode} />
+
+      {/* The middle, which used to be ~1,400px of nothing at any real window width. Absolutely
+          positioned so it centres on the STRIP rather than on whatever is left over after the
+          wordmark and the mode switch — a flex-centred child drifts as those change width, and the
+          mode switch changes width with its attention badge. */}
+      {center}
 
       <div className="ml-auto flex items-center gap-2">{scope}</div>
 

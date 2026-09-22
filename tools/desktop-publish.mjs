@@ -80,17 +80,56 @@ if (existsSync(to)) {
   }
 }
 
+/**
+ * 🔴 A running install holds its own executable open, and a re-publish is exactly when it is running.
+ *
+ * Without this the failure is an MSBuild stack ending in
+ * `System.UnauthorizedAccessException: Access to the path '…daoris-desktop.exe' is denied` — eleven
+ * lines of `Microsoft.NET.HostModel.Bundle` internals for "close the app". Checked before anything
+ * is built, so the answer arrives in a second rather than after the whole web bundle.
+ */
+const installed = join(to, 'daoris-desktop.exe');
+if (process.platform === 'win32' && existsSync(installed)) {
+  const held = execSync(
+    'powershell -NoProfile -Command "'
+    + `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${installed.replace(/'/g, "''")}' }`
+    + ' | Select-Object -ExpandProperty Id"',
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+  ).trim();
+
+  if (held) {
+    console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.split(/\s+/).join(', ')}).`);
+    console.error('  Close it and re-run — a running application holds its own executable open, and');
+    console.error('  publishing over it fails halfway through, leaving the folder part-written.');
+    process.exit(2);
+  }
+}
+
 // The dependency order, and it is not cosmetic: the platform builds INTO the host's wwwroot, so a
 // host published before the bundle carries the previous one — and the window shows it.
 console.log('desktop-publish: building the platform bundle…');
 run(`npm --prefix ${WEB} run build`);
 
+// 🔴 ONE executable at the root, and nothing else that looks like one.
+//
+// The first version published the default way: 24 entries, with `daoris-desktop.exe` buried
+// alphabetically among DLLs, `.pdb`s and three stray WebView2 `.xml` doc files. A person opening the
+// folder could not see what to run. A single-file publish answers it completely — 2.8 MB, one file —
+// and is framework-dependent, so it carries no .NET it did not need to.
+//
+// `AllowedReferenceRelatedFileExtensions=none` is what stops the package doc files; they come from
+// the WebView2 package rather than from this compile, so `GenerateDocumentationFile` does not reach
+// them. `DebugType=none` drops the symbols an installed app has no use for.
 console.log('desktop-publish: publishing the shell…');
-run(`dotnet publish "${APP}" -c Release -o "${to}" --nologo`);
+run(`dotnet publish "${APP}" -c Release -r win-x64 --self-contained false `
+  + '-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true '
+  + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${to}" --nologo`);
 
 if (flag('--service')) {
-  console.log('desktop-publish: publishing the HTTP host beside it…');
-  const host = join(to, 'daoris-knowledge-http');
+  // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
+  // machine use: one launcher at the root, everything it needs out of sight, runtime state in `data/`.
+  console.log('desktop-publish: publishing the HTTP host under app/…');
+  const host = join(to, 'app', 'daoris-knowledge-http');
   run(`dotnet publish "${HTTP}" -c Release -r win-x64 --self-contained `
     + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${host}"`);
 
@@ -110,11 +149,22 @@ writeFileSync(join(to, MARKER), `${MARKER_HEADER}
 
 Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 
-- \`daoris-desktop.exe\` — the shell. It brings up the local HTTP host, carries the platform in its
-  window, and runs the driver loop in-process.
-- It uses this machine's real \`~/.daoris\`: the registry, the quests, the drivable set. Starting it
-  starts the driver loop, so **a drivable repository with an open quest gets a real agent session.**
-- \`daoris driver list\` and the Machine view are two doors onto the same choices.
+## What is here
+
+| | |
+|---|---|
+| \`daoris-desktop.exe\` | **the application** — the only thing to run. One file. |
+| \`app/\` | supporting binaries, when published with \`--service\`. Nothing to open. |
+| \`data/\` | this install's own state: the WebView2 profile and the window's geometry. |
+
+## What it uses that is NOT here
+
+The machine's \`~/.daoris\` — the registry, the quests, the drivable set, the harness profiles. That
+is deliberate and is the point: the desktop and the \`daoris\` CLI are **two doors onto one machine**,
+so what one sets the other sees. Deleting this folder removes the application and none of that.
+
+Starting it starts the driver loop, so **a drivable repository with an open quest gets a real agent
+session.** \`daoris driver list\` shows what this machine will drive.
 
 Re-publish over this folder to update it; nothing here is edited by hand.
 `);

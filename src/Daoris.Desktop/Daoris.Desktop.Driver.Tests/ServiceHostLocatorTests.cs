@@ -77,11 +77,18 @@ public sealed class ServiceHostLocatorTests : IDisposable
     /// once for every shell on it, and a deployed copy that quietly outranked it would make a
     /// service upgrade invisible to whichever app was opened.
     /// </remarks>
-    [Fact]
-    public void A_deployed_shell_finds_the_host_published_beside_it()
+    [Theory]
+    // Beside the executable — the simple case, and what a hand-assembled folder looks like.
+    [InlineData("daoris-knowledge-http")]
+    // 🔴 Under `app/` — where `desktop-publish --service` actually puts it, because an install folder
+    // shows ONE launcher at its root and keeps its supporting binaries out of sight. The layout and
+    // the locator are a counterpart set: tidying the folder without this candidate would have made
+    // `--service` publish a host nothing looks for.
+    [InlineData("app/daoris-knowledge-http")]
+    public void A_deployed_shell_finds_the_host_published_with_it(string relative)
     {
-        var app = Path.Combine(_root, "app");
-        var beside = Path.Combine(app, "daoris-knowledge-http");
+        var app = Path.Combine(_root, "install");
+        var beside = Path.Combine(app, relative.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(beside);
         var executable = Path.Combine(beside, ServiceHostLocator.ExecutableName);
         File.WriteAllText(executable, "");

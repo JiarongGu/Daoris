@@ -91,6 +91,23 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   Quests had pushed the pill to the far edge — about a thousand pixels from the title it described.
 >   The secondary marks stay right; identity goes first.
 
+> **Amended again 2026-09-22, the app strip** (owner: *"the application topbar you can take more
+> example from application like vscode"*, and *"the backdrop should not cover the topbar? because we
+> do have the hole for the 3 buttons"*). Both found by photographing the real window:
+>
+> - **The strip's middle is the command center.** It held ~1,400px of nothing at any real width —
+>   wordmark and mode switch left, a lone 14px search glyph right against the caption buttons — while
+>   the palette SURF10 named as repaying the icon rail's lost discoverability was that glyph. It is
+>   now a centred, bounded, obviously-pressable pill that **says where you are** and prints its own
+>   shortcut. Taken from the shape VS Code settled on, for the reason VS Code settled on it: a title
+>   bar that carries no information is paying rent for a wordmark.
+> - 🔴 **A scrim starts BELOW the strip, never over it.** The strip reserves three 44px slots the
+>   **window** paints natively (SURF7), and a page-level backdrop cannot dim what the page does not
+>   draw — so a full-bleed scrim greyed the whole title bar and left the caption buttons as a bright
+>   block punched through it. Held by `tokens.test.ts` as a rule about every overlay, because the
+>   next overlay would have inherited `inset-0` without anyone thinking about it. It is also what VS
+>   Code does: the title bar stays live while quick-open is up.
+
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), `danger` reserved for decline confirmation.
 - **Pills** carry quest state: status text on its soft field with its hue — label always present.

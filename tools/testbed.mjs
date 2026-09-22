@@ -170,6 +170,37 @@ function connector(where) {
       },
     },
   }, null, 2)}\n`);
+
+  // 🔴 **The second half, and a connector without it is decoration.** Wiring the server only makes
+  // the tools OFFERED; the harness still refuses to call them unless the repository says it trusts
+  // them. A driven session then does the work, cannot take or close its quest, and the driver
+  // correctly records `failed — exited without touching its quest` while a tree full of good work
+  // sits uncommitted. Measured on the first real deployment; DRV4 had this file and its entry named
+  // the dependency in a parenthetical, which is where it stayed until the second deployment found it.
+  //
+  // The list is narrow on purpose and is the one DRV4 proved: the two quest verbs, and the git
+  // commands a session needs to land and describe its own work. **Nothing outward-facing** — no
+  // push, no publish, no release — so D37's boundary is exactly where it was. `Bash(node --test:*)`
+  // is this family's gate command; a real adopter names its own, which is why this belongs to the
+  // repository rather than to the canon.
+  mkdirSync(join(where, '.claude'), { recursive: true });
+  writeFileSync(join(where, '.claude', 'settings.json'), `${JSON.stringify({
+    enableAllProjectMcpServers: true,
+    permissions: {
+      allow: [
+        'mcp__daoris-knowledge__quest_list',
+        'mcp__daoris-knowledge__quest_respond',
+        'Bash(git add:*)',
+        'Bash(git commit:*)',
+        'Bash(git status:*)',
+        'Bash(git log:*)',
+        'Bash(git diff:*)',
+        'Bash(node --test:*)',
+        'Bash(npm test:*)',
+      ],
+    },
+  }, null, 2)}\n`);
+
   return true;
 }
 

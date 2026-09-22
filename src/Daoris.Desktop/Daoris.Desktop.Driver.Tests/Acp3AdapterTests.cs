@@ -200,6 +200,36 @@ public sealed class Acp3AdapterTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// 🔴 <b>A transcript is read as UTF-8 or it is not the transcript.</b> Every adapter, both doors.
+    /// </summary>
+    /// <remarks>
+    /// <para>Found on the first real deployment. A driven <c>claude-code</c> session wrote an em-dash
+    /// (<c>e2 80 94</c>) and the transcript held <c>e9 88 a5 3f</c> — that sequence decoded as the
+    /// machine's ANSI codepage (CP936 here) and re-encoded. .NET defaults a redirected stream to the
+    /// console's codepage, which on an English machine is close enough to ASCII to look fine and on
+    /// this one is not.</para>
+    ///
+    /// <para>It matters more than a mangled dash: this platform speaks <b>简体中文</b>, and a
+    /// transcript that cannot carry a dash carries no Chinese at all. The failure is also silent —
+    /// the file is still valid UTF-8 afterwards, so nothing downstream can tell it was ever wrong.</para>
+    /// </remarks>
+    [Theory]
+    [InlineData("claude-code")]
+    [InlineData("claude-code-acp")]
+    [InlineData("codex-acp")]
+    [InlineData("dsh")]
+    [InlineData("stub")]
+    [InlineData("acp-stub")]
+    public void Every_adapter_reads_its_session_as_utf8(string name)
+    {
+        var adapter = Adapter(name);
+        var info = adapter.Prepare(Target(_home), command: ["node", "agent.mjs"]);
+
+        Assert.Equal(System.Text.Encoding.UTF8, info.StandardOutputEncoding);
+        Assert.Equal(System.Text.Encoding.UTF8, info.StandardErrorEncoding);
+    }
+
     // ---- the roster -------------------------------------------------------------------------
 
     /// <summary>

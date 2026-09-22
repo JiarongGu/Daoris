@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A session transcript was decoded as the machine's ANSI codepage (2026-09-22)
+
+**Symptom.** The first real driven run's transcript held `鈥?` where every em-dash belonged. Raw
+bytes: `e9 88 a5 3f`, where the session had written `e2 80 94`.
+
+**Root cause.** `e2 80 94` read as **CP936** is `鈥` + an unmappable byte, and that is what got
+re-encoded to UTF-8 on the way to the file. .NET defaults a redirected stream to the **console's**
+codepage, and nothing in `Spawning` set `StandardOutputEncoding`. On an English machine the default
+is close enough to ASCII that a transcript looks right; on this one it is not.
+
+🔴 **The failure is silent and permanent.** The file afterwards is valid UTF-8, so nothing downstream
+can tell it was ever wrong — no parse fails, no gate trips, and the original bytes are gone. And it is
+worse than a mangled dash: this platform ships **简体中文**, so a transcript that cannot carry a dash
+carries no Chinese at all.
+
+**Fix.** `StandardOutputEncoding` and `StandardErrorEncoding` set to UTF-8 in `Spawning.Shell` — the
+one place every adapter goes through, which matters because the **protocol door parses JSON-RPC off
+the same stream**, so this was never only a cosmetic problem.
+
+**Verify.** A theory over all six adapters in `Acp3AdapterTests`, watched failing on every one first.
+
+**The trap to inherit.** 🔴 **Redirecting a stream chooses an encoding whether you say so or not.**
+Anything that reads another program's output states UTF-8 explicitly — and the check belongs on the
+`ProcessStartInfo`, not on the text, because by the time the text is wrong it is indistinguishable
+from text that was always that way.
+
+**Commit.** `bd19905`.
+
 ## The shell looked for the installed HTTP host where the installer never puts it (2026-09-22)
 
 **Symptom.** None, on any developer machine — which is the whole entry. A machine with the service
@@ -35,7 +63,7 @@ correct new candidate read as a regression. It now asserts the property it was a
 **Verify.** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests` — 276, with the new case
 watched failing (`Assert.NotNull() Failure: Value is null`) against the real installed layout first.
 
-**Commit.** pending.
+**Commit.** `5e73ce9`.
 
 ## A single-line fixture passed the CRLF test the multi-line case fails (2026-09-22)
 

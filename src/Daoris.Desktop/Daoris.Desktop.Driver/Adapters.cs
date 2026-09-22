@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 
 namespace Daoris.Driver;
 
@@ -211,6 +212,16 @@ internal static class Spawning
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+
+            // 🔴 A transcript is read as UTF-8 or it is not the transcript. .NET defaults a
+            // redirected stream to the CONSOLE's codepage; on this machine that is CP936, and the
+            // first real deployment recorded an em-dash (`e2 80 94`) as `e9 88 a5 3f` — decoded as
+            // GBK and re-encoded. The result is still valid UTF-8, so nothing downstream can tell it
+            // was ever wrong, and a platform that speaks 简体中文 loses every Chinese character in a
+            // session record. Set here, once, because every adapter goes through this shell and the
+            // protocol door parses JSON-RPC off the same stream.
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
 

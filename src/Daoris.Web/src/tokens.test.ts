@@ -22,6 +22,28 @@ export function rawSizes(files: [path: string, source: string][]): string[] {
     (source.match(RAW_SIZE) ?? []).map((hit) => `${path} hardcodes ${hit}`));
 }
 
+/**
+ * 🔴 **A scrim never covers the app strip** (owner, 2026-09-22: *"the backdrop should not cover the
+ * topbar? because we do have the hole for the 3 buttons"*).
+ *
+ * The strip reserves three 44px slots that the **window** paints natively (SURF7/D56). A page-level
+ * backdrop dims everything the page draws and cannot touch what the window draws — so opening the
+ * palette dimmed the whole title bar and left the caption buttons as a **bright white block punched
+ * through it**. Seen in a screenshot; invisible in every unit test, because there are no native
+ * buttons in jsdom and no window in a browser.
+ *
+ * It is also the behaviour VS Code has: its title bar stays live while quick-open is up.
+ *
+ * The rule is the position, so the check is on the position: an overlay starts at `top-9` — the
+ * strip's own height — not at `inset-0`.
+ */
+const FULL_BLEED_SCRIM = /fixed inset-0[^"'`]*bg-scrim/g;
+
+export function scrimsOverTheStrip(files: [path: string, source: string][]): string[] {
+  return files.flatMap(([path, source]) =>
+    (source.match(FULL_BLEED_SCRIM) ?? []).map((hit) => `${path} scrims the app strip: ${hit}`));
+}
+
 const sources = import.meta.glob('./**/*.tsx', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
@@ -57,5 +79,19 @@ describe('the type scale', () => {
     const colours = ['ink', 'accent', 'st', 'warn', 'center', 'left', 'right', 'transparent'];
     const sizes = [...used].filter((name) => !colours.includes(name));
     expect(sizes.sort()).toEqual([...STEPS].sort());
+  });
+});
+
+describe('the scrim', () => {
+  it('catches a full-bleed scrim — the check itself, in the shape the regression took', () => {
+    expect(scrimsOverTheStrip([['./ui.tsx', '<Dialog.Overlay className="fixed inset-0 z-10 bg-scrim" />']]))
+      .toHaveLength(1);
+    // And what must keep passing: a scrim that starts below the strip.
+    expect(scrimsOverTheStrip([['./ui.tsx', 'className="fixed inset-x-0 bottom-0 top-9 z-10 bg-scrim"']]))
+      .toEqual([]);
+  });
+
+  it('holds: no overlay covers the strip the window paints its buttons into', () => {
+    expect(scrimsOverTheStrip(components)).toEqual([]);
   });
 });

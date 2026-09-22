@@ -28,6 +28,7 @@ import { ActivityBar, AppStrip, type DriverPresence, type Mode, StatusBar } from
 import { useWindowChrome } from './windowChrome';
 import { commands } from './commands';
 import { CommandPalette } from './work/CommandPalette';
+import { CommandCenter } from './work/CommandCenter';
 
 type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
@@ -236,24 +237,22 @@ export function App() {
         onDragStart={chrome.present ? chrome.onDragStart : undefined}
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
+        // The palette's way in is the command center now, not a 14px glyph wedged against the
+        // caption buttons — same dialog, a target a person can find.
+        center={(
+          <CommandCenter
+            scope={scope.workspace ?? t('palette.scope')}
+            shortcut="Ctrl K"
+            onOpen={() => setPalette(true)}
+            label={t('palette.open')}
+          />
+        )}
         scope={(
-          <>
-            <Tip content={t('palette.open')}>
-              <Button
-                variant="ghost"
-                aria-label={t('palette.open')}
-                onClick={() => setPalette(true)}
-                className="h-7 w-7 justify-center px-0"
-              >
-                <Icon name="search" size={14} />
-              </Button>
-            </Tip>
           <WorkspaceSwitcher
             workspaces={workspaces.data ?? []}
             value={scope.workspace}
             onChange={scope.setWorkspace}
           />
-          </>
         )}
       />
 

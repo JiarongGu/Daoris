@@ -48,12 +48,19 @@ public static class ServiceHostLocator
         var packaged = Path.Combine(bin, "daoris-knowledge-http", ExecutableName);
         candidates.Add(new(packaged, Path.GetDirectoryName(packaged)!));
 
-        // A DEPLOYED shell carries its own host beside it (`desktop-publish --service`), and an
-        // install folder has no workspace below to fall through to. Ranked under the installed home
-        // on purpose: that one is the machine's and is upgraded once for every shell on it, so a
-        // deployed copy quietly outranking it would make a service upgrade invisible.
-        var beside = Path.Combine(baseDirectory, "daoris-knowledge-http", ExecutableName);
-        candidates.Add(new(beside, Path.GetDirectoryName(beside)!));
+        // A DEPLOYED shell carries its own host with it (`desktop-publish --service`), and an install
+        // folder has no workspace below to fall through to. Ranked under the installed home on
+        // purpose: that one is the machine's and is upgraded once for every shell on it, so a deployed
+        // copy quietly outranking it would make a service upgrade invisible.
+        //
+        // 🔴 Both shapes, because the INSTALL LAYOUT and this list are a counterpart set: an install
+        // folder shows one launcher at its root and keeps supporting binaries under `app/`, so the
+        // host is normally a level down — and a hand-assembled folder puts it beside the executable.
+        foreach (var relative in new[] { "daoris-knowledge-http", Path.Combine("app", "daoris-knowledge-http") })
+        {
+            var beside = Path.Combine(baseDirectory, relative, ExecutableName);
+            candidates.Add(new(beside, Path.GetDirectoryName(beside)!));
+        }
 
         // Development: walk up from the running binary to the workspace manifest, then take the HTTP
         // host's own build output — run from the PROJECT directory, where the built bundle lives.
