@@ -12,11 +12,17 @@ namespace Daoris.Knowledge;
 public static class Text
 {
     /// <summary>
-    /// Word separators. Hyphen included on purpose: `no-tmp-for-repo-files` should be findable by
-    /// searching for "tmp", and a reader looking for one word of a hyphenated name is the common case.
+    /// A word character is a letter or a digit, in any script; everything else separates. Hyphen and
+    /// underscore separate on purpose: `no-tmp-for-repo-files` should be findable by searching for
+    /// "tmp", and a reader looking for one word of a hyphenated name is the common case.
     /// </summary>
-    private static readonly char[] Separators =
-        " \t\r\n.,;:!?()[]{}<>\"'`|/\\*_#=+~-".ToCharArray();
+    /// <remarks>
+    /// This is the rule FTS5's <c>unicode61</c> tokeniser applies to the same text, so a query's terms
+    /// are the index's terms. It replaced a hand-listed ASCII string, which no list of characters
+    /// can be the equal of: <c>D51：会话</c> tokenised to <c>d51：</c> — the fullwidth colon was not in
+    /// the list — and no index row had ever held that term.
+    /// </remarks>
+    private static bool IsWordCharacter(char c) => char.IsLetterOrDigit(c);
 
     /// <summary>
     /// Lower-cased words worth matching on. Two characters and under are dropped: they are almost all
@@ -30,12 +36,25 @@ public static class Text
     /// rule, in the same words, lives in the platform's excerpt marker: found by its test in the
     /// other language, which is what a test in the other language is for.
     /// </remarks>
-    public static List<string> Tokenize(string? text) =>
-        Segment(text ?? string.Empty)
-            .ToLowerInvariant()
-            .Split(Separators, StringSplitOptions.RemoveEmptyEntries)
-            .Where(token => token.Length > 2 || IsShortWordScript(token))
-            .ToList();
+    public static List<string> Tokenize(string? text)
+    {
+        var lowered = Segment(text ?? string.Empty).ToLowerInvariant();
+        var tokens = new List<string>();
+        var start = -1;
+        for (var i = 0; i <= lowered.Length; i++)
+        {
+            if (i < lowered.Length && IsWordCharacter(lowered[i]))
+            {
+                if (start < 0) start = i;
+                continue;
+            }
+            if (start < 0) continue;
+            var token = lowered[start..i];
+            if (token.Length > 2 || IsShortWordScript(token)) tokens.Add(token);
+            start = -1;
+        }
+        return tokens;
+    }
 
     /// <summary>
     /// The same text with every run of ideographs cut into its overlapping two-character bigrams,

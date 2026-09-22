@@ -225,6 +225,39 @@ describe('the shell-attached registry management', () => {
     expect(screen.getByText(/c0ffee12 · /)).toBeTruthy();
   });
 
+  /**
+   * One sentence for one fact. On the deployed family, a repository present in the index with a
+   * count of zero read "0 entries · 0 local · 0 canonical", one absent from it read "nothing
+   * indexed yet", and one outside the family read "—" — three renderings of "the index holds
+   * nothing of this", on one page.
+   */
+  it('says "nothing indexed yet" the same way whether a count is zero, missing, or outside', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) {
+        return Response.json([
+          ...REGISTRY,
+          { ...REGISTRY[0], repository: 'blank', summary: 'indexed, holding nothing' },
+          { ...REGISTRY[0], repository: 'unseen', summary: 'never indexed' },
+          { ...REGISTRY[0], repository: 'stranger', adopted: false },
+        ]);
+      }
+      if (url.startsWith('/api/repositories')) {
+        return Response.json([
+          ...REPOSITORIES,
+          { name: 'blank', total: 0, local: 0, canonical: 0, workspace: 'default' },
+        ]);
+      }
+      return respond(url);
+    }));
+    show(<ProjectsView notify={() => {}} />);
+
+    expect(await screen.findByText(/^1 entries/)).toBeTruthy();
+    expect(screen.getAllByText('nothing indexed yet')).toHaveLength(3);
+    expect(screen.queryByText(/^0 entries/)).not.toBeInTheDocument();
+    expect(screen.queryByText('—')).not.toBeInTheDocument();
+  });
+
   /** Re-wiring is a row on this machine; it must not touch the repository's tracked file. */
   it('re-wiring edits one row and writes no file', async () => {
     show(<ProjectsView notify={() => {}} />);

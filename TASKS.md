@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**282 CLI tests, 274 service, 296 driver, 77 desktop modules, 482 web unit, 14 Playwright**, 59
+**282 CLI tests, 275 service, 296 driver, 77 desktop modules, 483 web unit, 14 Playwright**, 59
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), **29/29 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -242,9 +242,9 @@ the traps that are not in any contract, because they were found rather than desi
   land a surface: seeing the real thing is the step that had no tooling at all.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 282 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (262),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (275),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (296), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (429 vitest + 14 Playwright),
+  (296), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (77), `npm run rehearse:family` (180/180), `npm run test:web` (483 vitest + 14 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (29/29), which
   publishes the shell to `_fixtures/` and drives **that**.
   🔴 **Stop a running shell and its host first** — an orphaned `daoris-knowledge-http` holds the

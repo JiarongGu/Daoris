@@ -71,6 +71,20 @@ public sealed class TextTests
         Assert.Equal(["encoding", "trap"], Text.Tokenize("an encoding of a trap"));
     }
 
+    /// <summary>
+    /// A word character is a letter or a digit, in any script — the rule FTS5's <c>unicode61</c>
+    /// applies to the same text — so fullwidth punctuation separates exactly as ASCII punctuation
+    /// does. Before, the separators were a hand-listed ASCII string, and <c>D51：会话</c> tokenised to
+    /// <c>d51：</c>, a term the index never held.
+    /// </summary>
+    [Fact]
+    public void Tokenize_separates_on_fullwidth_punctuation_as_it_does_on_ascii()
+    {
+        Assert.Equal(["d51", "会话"], Text.Tokenize("D51：会话"));
+        Assert.Equal(["encoding", "the", "trap"], Text.Tokenize("“encoding”—the trap"));
+        Assert.Equal(["版本", "记录"], Text.Tokenize("版本2。记录"));
+    }
+
     /// <summary>Query and index are cut the same way, so they meet — the whole point of bigrams.</summary>
     [Fact]
     public void A_query_bigram_is_among_the_index_bigrams_of_a_body_that_contains_the_word()

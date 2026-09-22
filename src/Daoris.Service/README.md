@@ -5,7 +5,7 @@ host carries the same service for a browser or a remote deployment. The core rea
 knowledge into addressable entries, classifies each as canonical or local, stores them in SQLite,
 answers ranked queries over FTS5, and finds where repositories learned the same lesson independently.
 Quests and pushed registrations persist in the same database, so what one session publishes another
-session — or another machine's `connect` — finds waiting. **262 tests**, two of which run against the
+session — or another machine's `connect` — finds waiting. **275 tests**, two of which run against the
 real sibling repositories rather than fixtures.
 
 Since **D59** the always-loaded tier is a region of `AGENTS.md` rather than a directory, so the

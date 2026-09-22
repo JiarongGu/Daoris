@@ -72,7 +72,11 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                   {project.repository}
                 </span>
                 <span className="whitespace-nowrap font-mono text-small tabular-nums text-ink-faint">
-                  {counts
+                  {/* One sentence for "the index holds nothing of this", whether the repository is
+                      absent from the index or present with a count of zero — the deployed family
+                      had both, and read "0 entries · 0 local · 0 canonical" beside "nothing indexed
+                      yet" beside "—" for the same fact. */}
+                  {counts && counts.total > 0
                     ? t('projects.entries', {
                         total: counts.total.toLocaleString(),
                         local: counts.local.toLocaleString(),
@@ -191,7 +195,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                   <span className="font-mono text-meta text-ink-faint">
                     {counts && counts.total > 0
                       ? t('projects.outside.readable', { count: counts.total.toLocaleString() })
-                      : '—'}
+                      : t('projects.nothingIndexed')}
                   </span>
                 </li>
               );

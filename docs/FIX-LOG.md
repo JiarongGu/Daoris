@@ -5,6 +5,48 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The tokeniser's separators were a list, and 中文 punctuation was not on it (2026-09-23)
+
+**Symptom.** `D51：会话` tokenised to `d51：` and `会话` — a term with a fullwidth colon glued to it,
+which no index row has ever held. The service's own excerpt could not find it, and convergence
+counted `d51：` and `d51` as two words. Small, and the same shape as the 中文 search defect two
+entries below: a Latin assumption in a place that had just been taught the other language.
+
+**Root cause.** `Text.Separators` was a hand-listed ASCII string. Any list of characters is wrong
+the first time text arrives with a character not on it, and the file's own header already said so
+about the *three* lists it replaced — one list is the same failure with a smaller surface. FTS5's
+`unicode61` never had the problem: its rule is *a letter or a digit is a word character; everything
+else separates*, in any script.
+
+**Fix.** `Text.Tokenize` splits by that rule (`char.IsLetterOrDigit`) instead of a list — hyphen and
+underscore still separate, as the header's own example needs. The platform's `termsOf` already
+splits on `[^\p{L}\p{N}_-]`, so the two agree on punctuation; its deliberate difference (a
+hyphenated term marks as one) is held by its own test.
+
+**Verify.** `TextTests.Tokenize_separates_on_fullwidth_punctuation_as_it_does_on_ascii`, seen red on
+the list (`["d51：", "会话"]`) and green on the rule. 275 service tests.
+
+**Commit.** _pending_
+
+## The Projects page said "nothing indexed" three ways (2026-09-23)
+
+**Symptom.** On the deployed family of twenty registrations, a repository present in the index with
+a count of zero read *"0 entries · 0 local · 0 canonical"*; one the index had never seen read
+*"nothing indexed yet"*; one outside the family read *"—"*. Three renderings of one fact, on one
+page, and the first of them looked like a measurement.
+
+**Root cause.** Two branches decided by two different tests — `counts` present, then `total > 0` —
+written at different times against a fixture in which every repository had entries. The fixture
+cannot show a vocabulary drift, because it has one repository.
+
+**Fix.** `ProjectsView.tsx`: both cards render `projects.nothingIndexed` for *absent or zero*, and
+the count sentence only for a count above zero.
+
+**Verify.** A shell test with the three cases side by side, seen red (one sentence of three) before
+the change. 483 web unit tests.
+
+**Commit.** _pending_
+
 ## The status bar counted a rebuild half-fed, and kept the number (2026-09-23)
 
 **Symptom.** After the index's schema bump, the deployed application's status bar read
