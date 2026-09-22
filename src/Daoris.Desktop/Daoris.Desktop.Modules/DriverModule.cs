@@ -304,9 +304,21 @@ public sealed class DriverModule : ModuleBase
                     // `daoris harness pin|unpin`, over the same file.
                     "pin" => await PinAsync(harness, toolchain, stream, request, cancellationToken),
                     "unpin" => Unpin(harness),
+                    // 🔴 The credential profiles, from a SCREEN (DEPLOY3). They existed only as
+                    // `daoris harness profile add|remove|default`, so the Machine view could list a
+                    // profile and log into one and never make one — D50 violated in the direction
+                    // nothing tests, since the rule is written "whatever a screen can set, a
+                    // terminal can" and the converse had no check.
+                    //
+                    // Daoris manages directories and names, never secrets: adding one MAKES A
+                    // DIRECTORY and nothing else, and what lands inside it is the harness's own.
+                    "profile-add" => ProfileAdd(harness, request),
+                    "profile-remove" => ProfileRemove(harness, request),
+                    "profile-default" => ProfileDefault(harness, request),
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
-                        $"unknown harness action '{action}' — one of: install, update, login, pin, unpin",
+                        $"unknown harness action '{action}' — one of: install, update, login, pin, "
+                        + "unpin, profile-add, profile-remove, profile-default",
                         ("action", action)),
                 };
 
@@ -622,6 +634,74 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
+    /// <summary>
+    /// Make a credential profile: a directory, and nothing else (DEPLOY3).
+    /// </summary>
+    /// <remarks>
+    /// Idempotent, exactly as the CLI verb is — asking for one that exists is an answer, not a
+    /// failure. It is empty until the harness's own login flow is run into it, which is the next
+    /// thing the view offers.
+    /// </remarks>
+    private int ProfileAdd(string harness, IpcRequest request)
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, Named(request)));
+        return 0;
+    }
+
+    /// <summary>
+    /// Stop pointing at a profile — 🔴 <b>and delete nothing.</b>
+    /// </summary>
+    /// <remarks>
+    /// The directory holds a credential the harness put there, and a button that quietly destroyed
+    /// one would be the irreversible act this family never does silently. Un-defaulting is the
+    /// reversible half and is what "remove" means here, in both doors.
+    /// </remarks>
+    private int ProfileRemove(string harness, IpcRequest request)
+    {
+        var profile = Named(request);
+        var settings = _loop.Harnesses.Settings;
+
+        if (settings.Defaults.TryGetValue(harness, out var machine) && machine == profile)
+        {
+            settings = settings.WithDefault(harness, null);
+        }
+
+        foreach (var workspace in settings.Workspaces.Keys.ToList())
+        {
+            if (settings.Workspaces[workspace].TryGetValue(harness, out var held) && held == profile)
+            {
+                settings = settings.WithWorkspaceDefault(workspace, harness, null);
+            }
+        }
+
+        settings.Save(_loop.Harnesses.SettingsPath);
+        return 0;
+    }
+
+    /// <summary>Which profile this harness runs as — the machine's, or one workspace's (D49 §4).</summary>
+    private int ProfileDefault(string harness, IpcRequest request)
+    {
+        var profile = Named(request);
+        var workspace = Optional(request, "workspace");
+        var settings = _loop.Harnesses.Settings;
+
+        settings = workspace is { Length: > 0 }
+            ? settings.WithWorkspaceDefault(workspace, harness, profile)
+            : settings.WithDefault(harness, profile);
+
+        settings.Save(_loop.Harnesses.SettingsPath);
+        return 0;
+    }
+
+    /// <summary>The profile a profile verb is about. Absent is a refusal, never a guess.</summary>
+    private static string Named(IpcRequest request) =>
+        Optional(request, "profile") is { Length: > 0 } profile
+            ? profile
+            : throw Refusals.Because(
+                Refusals.HarnessActionUnknown,
+                "that action needs a profile name.",
+                ("action", "profile"));
+
     private int Unpin(string harness)
     {
         _loop.Harnesses.Settings.WithVersion(harness, null).Save(_loop.Harnesses.SettingsPath);

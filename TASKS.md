@@ -374,17 +374,15 @@ one gate.**
   and no account: bringing the window up, finding its host and writing one non-ASCII line to a
   transcript would have caught both.
 
-- [ ] 🔴 **DEPLOY3 — there is no credential management surface, and a menu now points at where it
-  should be.** Measured 2026-09-22: the Machine view **lists** a harness's profiles and can run
-  `login` into one, and there is no way to **create, remove or default** one from any screen. Those
-  three verbs exist only as `daoris harness profile add|remove|default`, so **D50 is violated in the
-  direction nobody checks** — the rule is stated as "whatever a screen can set, a terminal can", and
-  the converse failed silently because no test asserts it. It is also why the owner's *"there is no
-  credential management location"* is literally true: `~/.daoris/harnesses/<harness>/<profile>/` is
-  where one would live and nothing has ever made one.
-  The work is the three verbs through `HARNESS_ACTION` and the Machine view's own section, with the
-  refusals each already has. 🔴 **Daoris manages directories and names, never secrets** — creating a
-  profile makes a directory and runs the harness's own login into it, and reads nothing from inside.
+- [x] 🔴 **DEPLOY3 — there is no credential management surface.** ✅ **done 2026-09-22.** The Machine
+  view could list a harness's profiles and log into one, and could not **make, choose or un-point**
+  one — those three verbs existed only in the CLI, so the owner's *"there is no credential management
+  location"* was literally true. **D50 violated in the direction nothing checks**: the rule is written
+  "whatever a screen can set, a terminal can" and the converse had no test anywhere.
+  `profile-add|remove|default` over `HARNESS_ACTION`, and the roster's own form. 🔴 **"Forget", not
+  "delete"** — it stops this machine pointing at a profile and removes nothing, because the directory
+  holds a credential the harness put there; the word on the button is the word for what happens, in
+  both doors. Daoris manages directories and names, never secrets.
 
 - [ ] **DEPLOY4 — Daoris writes in two places, and one of them is per-install.** Everything the tool
   owns is under `~/.daoris` (registry, `driver.json`, `harnesses.json`, the index, sessions, `bin/`,

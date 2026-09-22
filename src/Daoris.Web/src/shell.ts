@@ -463,7 +463,8 @@ export const useHarnessAction = () => {
   return useMutation({
     mutationFn: (action: {
       harness: string;
-      action: 'install' | 'update' | 'login' | 'pin' | 'unpin';
+      action: 'install' | 'update' | 'login' | 'pin' | 'unpin'
+      | 'profile-add' | 'profile-remove' | 'profile-default';
       profile?: string;
       /** Which version to install and pin to — `pin` only (TOOL2/D57). */
       version?: string;

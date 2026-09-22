@@ -251,6 +251,10 @@ export function SettingsView({ notify }: { notify: Notify }) {
  * reads one, and there is deliberately nowhere for one to be typed.
  */
 function HarnessRoster({ notify }: { notify: Notify }) {
+  // The profile name being typed, per harness. A draft, so it lives with the roster that renders the
+  // form rather than with the view above it — and keyed by harness because two rosters are on screen
+  // at once and one shared string would type into both.
+  const [newProfile, setNewProfile] = useState<Record<string, string>>({});
   const { t } = useTranslation();
   const roster = useHarnesses();
   const refresh = useRefreshHarnesses();
@@ -268,7 +272,8 @@ function HarnessRoster({ notify }: { notify: Notify }) {
 
   const run = (
     harness: string,
-    action: 'install' | 'update' | 'login' | 'pin' | 'unpin',
+    action: 'install' | 'update' | 'login' | 'pin' | 'unpin'
+      | 'profile-add' | 'profile-remove' | 'profile-default',
     profile?: string,
     version?: string,
   ) => {
@@ -401,18 +406,69 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                   <Tip content={t('harness.homeTip')}>
                     <span className="break-all font-mono text-meta text-ink-faint">{profile.home}</span>
                   </Tip>
-                  <Button
-                    variant="ghost"
-                    className="ml-auto"
-                    disabled={act.isPending || !harness.present}
-                    onClick={() => run(harness.harness, 'login', profile.name)}
-                  >
-                    {t('harness.login.action')}
-                  </Button>
+                  <div className="ml-auto flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      disabled={act.isPending || !harness.present}
+                      onClick={() => run(harness.harness, 'login', profile.name)}
+                    >
+                      {t('harness.login.action')}
+                    </Button>
+                    {harness.machineDefault !== profile.name && (
+                      <Button
+                        variant="ghost"
+                        disabled={act.isPending}
+                        onClick={() => run(harness.harness, 'profile-default', profile.name)}
+                      >
+                        {t('harness.profile.use')}
+                      </Button>
+                    )}
+                    {/* 🔴 "Forget", not "delete". It stops this machine pointing at the profile and
+                        removes NOTHING — the directory holds a credential the harness put there, and
+                        a button that quietly destroyed one would be the irreversible act this family
+                        never does silently. The word on the button is the word for what happens. */}
+                    <Tip content={t('harness.profile.forgetTip')}>
+                      <Button
+                        variant="ghost"
+                        disabled={act.isPending}
+                        onClick={() => run(harness.harness, 'profile-remove', profile.name)}
+                      >
+                        {t('harness.profile.forget')}
+                      </Button>
+                    </Tip>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
+
+          {/* 🔴 The thing that did not exist (DEPLOY3). A screen could list profiles and log into
+              one and never MAKE one, so "there is no credential management location" was literally
+              true. Daoris manages directories and names, never secrets: this makes a directory, and
+              what lands inside it is the harness's own login flow's. */}
+          <form
+            className="mt-3 flex flex-wrap items-center gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const name = newProfile[harness.harness]?.trim();
+              if (!name) return;
+              run(harness.harness, 'profile-add', name);
+              setNewProfile((held) => ({ ...held, [harness.harness]: '' }));
+            }}
+          >
+            <input
+              value={newProfile[harness.harness] ?? ''}
+              onChange={(event) =>
+                setNewProfile((held) => ({ ...held, [harness.harness]: event.target.value }))}
+              placeholder={t('harness.profile.placeholder')}
+              aria-label={t('harness.profile.add', { harness: harness.harness })}
+              className="min-w-40 rounded-control border border-line-strong bg-sunken px-2.5 py-1 text-body text-ink outline-none placeholder:text-ink-faint"
+            />
+            <Button type="submit" disabled={act.isPending || !(newProfile[harness.harness] ?? '').trim()}>
+              {t('harness.profile.addAction')}
+            </Button>
+            <Prose className="basis-full">{t('harness.profile.note')}</Prose>
+          </form>
 
           {/* A harness action is a process like any other, so it streams through the same console
               (D49 §2). An install that printed nothing until it finished is indistinguishable from

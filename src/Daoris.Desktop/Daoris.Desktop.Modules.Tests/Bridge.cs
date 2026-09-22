@@ -68,6 +68,9 @@ public abstract class Bridge : IDisposable
 
     protected string RemotesPath => Path.Combine(Home, "remotes.json");
 
+    /// <summary>Where the harness wiring lands — which profile each harness runs as (D49 §4).</summary>
+    protected string HarnessSettingsPath => Path.Combine(Home, "harnesses.json");
+
     /// <summary>Set an environment variable for this test, restoring it afterwards.</summary>
     protected void Redirect(string name, string? value)
     {
