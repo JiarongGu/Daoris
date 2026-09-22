@@ -1,4 +1,5 @@
 {
   "name": "dotnet-library",
+  "apiVersion": 1,
   "description": "Publishing a .NET library: package boundaries, naming, DI variation points, and the registries a new package must enter."
 }

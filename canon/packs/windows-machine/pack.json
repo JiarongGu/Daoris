@@ -1,4 +1,5 @@
 {
   "name": "windows-machine",
+  "apiVersion": 1,
   "description": "Windows + PowerShell 5 + Node traps that pass silently and corrupt files or exit codes."
 }

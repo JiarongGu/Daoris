@@ -1,4 +1,5 @@
 {
   "name": "storage-sql",
+  "apiVersion": 1,
   "description": "Hand-written SQL over a micro-ORM: type-affinity traps, migration numbering, and full-text search that works for non-Latin scripts."
 }

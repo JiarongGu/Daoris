@@ -21,6 +21,8 @@ export interface CanonFile {
 export interface Pack {
   name: string;
   description: string;
+  /** The canon contract this pack was written against (PLUG1). Absent in a manifest means 1. */
+  api: number;
   files: CanonFile[];
 }
 

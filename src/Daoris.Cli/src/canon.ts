@@ -67,6 +67,24 @@ function tierFiles(canonRoot: string, pack: string, prefix: string): CanonFile[]
   return files;
 }
 
+/**
+ * The pack contract this build speaks (PLUG1).
+ *
+ * @remarks
+ * 🔴 **A pack declares the canon it was written against, and the host reads it BEFORE materializing
+ * anything.** Taken from a neighbouring application's plugin manifests, which have carried an
+ * integer `apiVersion` all along. Without it a pack from a newer canon failed at whatever it
+ * happened to touch first — a frontmatter field that did not exist yet, a tier that is now a region,
+ * a skill layout that moved — and every one of those is a confusing error about the wrong thing.
+ *
+ * **Raise this when a pack written for the new shape cannot work on the old one**, never for an
+ * addition: a number that goes up on every change teaches people to ignore it.
+ *
+ * 1 — the shape as of D59: `rules/` into the always-loaded region, `knowledge/` and `skills/` as
+ * directories, frontmatter of `name`, `applies_when`, `enforces`.
+ */
+export const PACK_API = 1;
+
 export function readCanon(canonRoot: string): Canon {
   if (!existsSync(canonRoot)) throw new DaorisError(`no canon at '${canonRoot}'`);
   const version = JSON.parse(readText(join(canonRoot, 'canon.json'))).version;
@@ -75,6 +93,9 @@ export function readCanon(canonRoot: string): Canon {
   packs.set('core', {
     name: 'core',
     description: 'Universal workflow rules and discovery skills every repo gets.',
+    // Core is not a pack somebody wrote against a contract — it IS the contract, and ships with the
+    // build that speaks it.
+    api: PACK_API,
     files: tierFiles(canonRoot, 'core', 'core'),
   });
 
@@ -83,9 +104,30 @@ export function readCanon(canonRoot: string): Canon {
     for (const entry of readdirSync(packsDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const manifest = JSON.parse(readText(join(packsDir, entry.name, 'pack.json')));
+
+      // Absent is 1, so every pack written before the field keeps working — the field is how a pack
+      // opts into SAYING something, never a wall in front of one that never spoke.
+      const declared = manifest.apiVersion ?? PACK_API;
+      if (typeof declared !== 'number' || !Number.isInteger(declared) || declared < 1) {
+        throw new DaorisError(
+          `pack '${entry.name}' declares apiVersion ${JSON.stringify(manifest.apiVersion)}, which is `
+          + 'not a whole number. It is the canon contract the pack was written against — a version, '
+          + 'not a name.');
+      }
+
+      // 🔴 Refused here, before a single file is planned: the whole value is failing at the manifest
+      // rather than three steps later at whatever the new shape happened to touch first. Both
+      // numbers named, because "incompatible" alone sends a person to guess which side is behind.
+      if (declared > PACK_API) {
+        throw new DaorisError(
+          `pack '${entry.name}' needs canon api ${declared} and this build speaks ${PACK_API}. `
+          + 'Upgrade daoris, or use a version of the pack written for this canon.');
+      }
+
       packs.set(entry.name, {
         name: entry.name,
         description: manifest.description,
+        api: declared,
         files: tierFiles(canonRoot, entry.name, `packs/${entry.name}`),
       });
     }

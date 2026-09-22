@@ -401,12 +401,15 @@ one gate.**
 by any of these**: no adapter registry (D23/D24/TOOL5 — the ACP door is already that answer, and a
 protocol beats a binary API), and no plugin runtime for the surface (D52).
 
-- [ ] 🔴 **PLUG1 — a pack cannot say which canon it needs.** `pack.json` carries `name` and
-  `description` and nothing else, so a pack written against a newer canon and installed by an older
-  CLI fails in whatever way it happens to fail. Yaorin declares an integer `apiVersion` in every
-  plugin manifest and the host reads it **before loading anything** — the cheapest and highest-value
-  idea in either reference. Add it, refuse a pack the build cannot serve **naming both numbers**, and
-  treat its absence as version 1 so every pack that exists keeps working.
+- [x] 🔴 **PLUG1 — a pack cannot say which canon it needs.** ✅ **done 2026-09-22.** `apiVersion` on
+  every `pack.json`, read **before a single file is planned** — taken from the neighbouring
+  application's plugin manifests, which have carried an integer all along. A pack from a newer canon
+  is refused **naming both numbers**, because "incompatible" alone sends a person to guess which side
+  is behind. **Absent means 1**, so every pack written before the field keeps working: the field is
+  how a pack opts into saying something, never a wall in front of one that never spoke. A non-integer
+  is a malformed manifest rather than an old one, and errors. Raise the number only when a pack
+  written for the new shape **cannot work** on the old one — one that goes up on every change teaches
+  people to ignore it.
 
 - [ ] **PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
   ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest

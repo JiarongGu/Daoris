@@ -1,4 +1,5 @@
 {
   "name": "desktop-app",
+  "apiVersion": 1,
   "description": "Verifying a real desktop application: driving the running app, what synthetic input does not prove, and attaching to the instance you meant."
 }
