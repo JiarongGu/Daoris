@@ -90,6 +90,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **Status leads.** §5 already specifies `pill · title · route · how long` for Overview's rows, and
 >   Quests had pushed the pill to the far edge — about a thousand pixels from the title it described.
 >   The secondary marks stay right; identity goes first.
+> - **A native form control carries the OS accent** (2026-09-23): `type="search"`'s built-in clear
+>   button is painted by WebView2 in Windows' accent colour — a blue ✕ in a palette with no blue.
+>   The platform draws its own affordances; a native one left showing is a defect in whichever
+>   colour the person's system happens to be.
 
 > **Amended again 2026-09-22, the app strip** (owner: *"the application topbar you can take more
 > example from application like vscode"*, and *"the backdrop should not cover the topbar? because we

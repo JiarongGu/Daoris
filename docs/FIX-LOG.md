@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A blue ✕ in a palette with no blue — the OS accent through a native control (2026-09-23)
+
+**Symptom.** The Search field on the deployed application showed a blue ✕ at its right once a
+query was typed, in both themes. Nothing in the platform is blue: D41's palette is ink, accent and
+the validated status hues, and `tokens.test.ts` holds every size to a named step — colour was not
+being watched the same way.
+
+**Root cause.** `<input type="search">` brings Chromium's native clear button, and WebView2 paints
+it with the **Windows accent colour** — the person's system setting, not a token. A browser test
+cannot see it (jsdom draws nothing), and Playwright's Chromium paints it grey, so it was invisible
+until a screenshot of the real window.
+
+**Fix.** The native button and decoration are hidden (`tokens.css`, `-webkit-appearance: none`),
+the field keeps its type, and `SearchView` draws its own clearing control in the platform's
+language — a ghost button that exists only while there is something to clear.
+
+**Verify.** `SearchView.test.tsx` (seen red without the control). On the install, in both themes:
+the field with a query shows the platform's ✕ and nothing of the accent.
+
+**The trap to inherit.** 🔴 **A native form control carries the OS accent into the page.** Any
+`type="search"`, `<select>`, checkbox or range left native is painted by the system, in the system's
+colour; the platform draws its own (D41 §4), and this one had been missed.
+
+**Commit.** _pending_
+
 ## One result, zero marks — the marker cut 中文 differently from the index (2026-09-23)
 
 **Symptom.** Searching `会话记录` on the deployed application: one result, correctly — a body that

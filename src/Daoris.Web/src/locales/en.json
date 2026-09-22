@@ -423,6 +423,7 @@
   "search.title": "Search",
   "search.description": "What has the family already learned about it — decisions, fixes, rules, outcomes, across every repository.",
   "search.placeholder": "a decision, a trap, a rule — in your own words",
+  "search.clear": "clear the query",
   "search.localOnly": "each repository's own only",
   "search.searching": "searching…",
   "search.count": "{{count}} result",

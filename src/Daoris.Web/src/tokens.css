@@ -128,4 +128,14 @@
 
   button { cursor: pointer; }
   button:disabled { cursor: default; opacity: 0.55; }
+
+  /* 🔴 The OS accent, not ours. `<input type="search">` brings Chromium's native clear button, and
+     WebView2 paints it in WINDOWS' accent colour — a blue ✕ in a palette that has no blue, seen on
+     the deployed application in both themes. The field keeps its type; the platform draws its own
+     clearing control (SearchView). */
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
 }

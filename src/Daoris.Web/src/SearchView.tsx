@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearch } from './queries';
 import { page } from './results';
 import { mark } from './highlight';
-import { CheckField, type Notify, PageHeader, useErrorNotify } from './ui';
+import { Button, CheckField, Icon, type Notify, PageHeader, useErrorNotify } from './ui';
 import { useDebounced } from './lib/useDebounced';
 
 /**
@@ -29,12 +29,29 @@ export function SearchView({ onOpen, notify }: {
       <PageHeader title={t('search.title')} description={t('search.description')} />
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
-        <input
-          type="search" value={query} autoFocus
-          placeholder={t('search.placeholder')}
-          onChange={(e) => setQuery(e.target.value)}
-          className="min-h-[2.2rem] flex-1 basis-88 rounded-control border border-line-strong bg-raised px-3 py-2 text-body text-ink"
-        />
+        {/* The clearing control is the platform's own. `type="search"` brings Chromium's native one,
+            which WebView2 paints in WINDOWS' accent colour — a blue ✕ in a palette that has no blue,
+            seen on the deployed application in both themes. The native button is hidden in
+            tokens.css; this one is drawn in the field's own language and exists only while there
+            is something to clear. */}
+        <div className="relative flex-1 basis-88">
+          <input
+            type="search" value={query} autoFocus
+            placeholder={t('search.placeholder')}
+            onChange={(e) => setQuery(e.target.value)}
+            className="min-h-[2.2rem] w-full rounded-control border border-line-strong bg-raised py-2 pl-3 pr-9 text-body text-ink"
+          />
+          {query && (
+            <Button
+              variant="ghost"
+              aria-label={t('search.clear')}
+              onClick={() => setQuery('')}
+              className="absolute right-1 top-1/2 -translate-y-1/2"
+            >
+              <Icon name="x" size={14} />
+            </Button>
+          )}
+        </div>
         {/* Local-only by default: canonical content is byte-identical in every adopter, so including
             it returns a dozen copies of one rule and calls that a corpus. */}
         <CheckField checked={localOnly} onChange={setLocalOnly} label={t('search.localOnly')} />

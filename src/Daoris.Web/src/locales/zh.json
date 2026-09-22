@@ -423,6 +423,7 @@
   "search.title": "搜索",
   "search.description": "关于这件事，家族已经学到了什么——决策、修复、规则、任务结果，遍及每个仓库。",
   "search.placeholder": "一项决策、一个陷阱、一条规则——用你自己的话",
+  "search.clear": "清除查询",
   "search.localOnly": "仅各仓库自有",
   "search.searching": "搜索中…",
   "search.count": "{{count}} 条结果",
