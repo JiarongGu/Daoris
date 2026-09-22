@@ -159,13 +159,15 @@ The first version: doctrine that installs, is checked, and flows back.
   caught 2 of 11; 0.3 catches 7 with no false positive. The threshold is asymmetric on purpose — the
   command is advisory, so a false positive costs a dismissed line and a miss costs lasting duplication.
   It also now states the duplicate it *cannot* find: word overlap detects restatement, not convergence.
-- **Six packs.** `windows-machine` (traps that succeed wrongly rather than failing),
+- **Seven packs.** `windows-machine` (traps that succeed wrongly rather than failing),
   `dotnet-library` (package boundaries, naming, DI variation points, shipping registries, and API design),
   `storage-sql` (type affinity on read, migration numbering, full-text search for scripts without word
   boundaries), `desktop-app` (verifying a real desktop application — driving the running app, what
   synthetic input does not prove), `web-webview` (a web UI inside a native shell — resource serving,
-  thread affinity, the silent failures), and `durable-jobs` (long-running work that survives a restart
-  — lanes, checkpoints, resume) — each with its reasoning in `canon/CHANGELOG.md`.
+  thread affinity, the silent failures), `durable-jobs` (long-running work that survives a restart
+  — lanes, checkpoints, resume), and `localized-ui` (an interface shipped in more than one language —
+  what belongs in a string catalogue and what must never, and the parity that stops a missing
+  translation from silently working) — each with its reasoning in `canon/CHANGELOG.md`.
 - Every canon file carries frontmatter that generates its index row; tests assert that, plus that no canon
   file contains a machine path.
 

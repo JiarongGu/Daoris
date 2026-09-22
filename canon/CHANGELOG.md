@@ -11,6 +11,15 @@ network.
 
 ## Unreleased
 
+- **`localized-ui`** (new pack) — for a repository whose interface ships in more than one language.
+  One on-demand document, `translation-parity`: every catalogue holds the same keys **both ways**,
+  keys are structural rather than the default language's text, and the three kinds of text that reach
+  a person — chrome, stored content, and a message whose exact wording *is* the contract — belong in
+  a catalogue in exactly one case. Derived independently by two repositories in this family, both of
+  which found their gaps by counting keys rather than by looking.
+  **Adopting repositories:** take this pack only if you ship a second language. It is deliberately
+  **not** core — a rule every repository loads on every task, to govern a concern only some of them
+  have, is what the pack tier exists to prevent (`docs/DECISIONS.md` D61).
 - **`claims-need-checks`** (core knowledge, extended) — the *"runner quietly saw fewer inputs"* shape
   gains its harder half: **the count that never rose.** A file-matching pattern written for a flat
   layout stops reaching once the code grows a subdirectory, and the files it now excludes have no

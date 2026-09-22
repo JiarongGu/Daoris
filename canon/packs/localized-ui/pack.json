@@ -1,0 +1,5 @@
+{
+  "name": "localized-ui",
+  "apiVersion": 1,
+  "description": "Shipping an interface in more than one language: what belongs in a string catalogue and what must never, and the parity check that stops a missing translation from silently working."
+}

@@ -2153,3 +2153,44 @@ is a developer machine's result and whether a hosted runner can bring the window
 and it turns case-study 4d into a gate — and it goes red on any machine whose installed service is
 stale, which is a true statement about that machine and not about the change under test. A gate that
 fails for the developer's machine state is one people learn to re-run.
+
+## D61 — Translation parity is a pack, not core (2026-09-22)
+
+**Decision.** The en/zh catalogue lesson enters the canon as **`localized-ui`**, a new pack holding
+one on-demand document. Not a core rule, and not a rule even inside the pack. Daoris adopts it, which
+is what validates it.
+
+**What forced the question.** CANON5 had been parked on the core budget and CANON7 unparked it —
+there is now room for roughly one substantial rule, *and this would spend exactly that room*. So the
+budget stopped being the answer and the tier question had to be asked on its merits.
+
+**The merits, and they are one sentence.** A rule every repository loads on every task, to govern a
+concern only some of them have, is what the pack tier exists to prevent. Most of this family is a
+CLI, a library and a service — **none of them has a user-facing string at all.**
+
+**Measured, because the argument is a size argument.** Adopting the pack here moved the always-loaded
+core from 21,817 to **22,171 bytes — 354 for the index row**, against roughly 3,800 had the same
+content gone into core. The pack tier is not a filing preference; it is a factor of ten.
+
+**Rejected: a core rule.** The honest version of it, and the one CANON5 named. It would have fit, and
+every repository that ships no interface at all would have carried it forever — which is precisely
+what D28's "split principle from detail" was protecting, one tier up.
+
+**Rejected: folding it into `web-webview`.** The nearest existing pack, and wrong: that one is about
+hosting a web UI inside a native shell — resource serving, thread affinity, caching. A desktop
+application with resource files has this exact parity problem and no webview, and a plain web
+application would have had to take the shell pack to get it. The concern is **a shipped interface in
+more than one language**, not the transport it arrives over.
+
+**Rejected: `rules/` inside the pack.** Narrow — it matters only while touching a catalogue — and it
+wants length, which is the on-demand tier's definition.
+
+**Rejected: restating the encoding traps.** Non-ASCII text that renders correctly can still be
+destroyed by a console or a redirected stream, and that is real — it cost this repository a defect
+the same week. It already has a home in `windows-machine`, so the new document **names the concern
+and points away from itself** rather than growing a second copy. Two copies of a rule become two
+different rules.
+
+**What it does not cover, deliberately:** choosing a library, a key-naming scheme beyond "structural,
+not the default language's text", or how any repository runs its own check. Those are mechanism, and
+mechanism belongs to the adopter.

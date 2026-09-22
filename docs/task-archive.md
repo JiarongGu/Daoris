@@ -3786,3 +3786,45 @@ requires a pinned row for every entry that names a real binary — the stubs exc
 honest test there is, that they name none (D46 §8). Both halves were watched failing: removing
 `claude-code` from the C# table and `codex` from the TypeScript one each turns the suite red naming
 the harness and saying what the divergence would look like.
+
+## CANON5 — translation parity enters the canon as a pack (2026-09-22)
+
+- [x] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met, and the budget no longer
+  blocks it** (unparked by CANON7, 2026-09-21). The bilingual sibling carries the rule and the gate;
+  Daoris carries the same gate (`scripts/i18n-check.mjs`, adopted from it deliberately — D42). Two
+  repositories, one lesson: a missing translation "works" in English and is discovered by the first
+  reader it fails. There is now room for roughly one substantial rule, **which is exactly the budget
+  this would spend** — so the question it must answer first is the one the room does not settle:
+  whether this belongs in the always-loaded core at all, or as **pack knowledge for web
+  repositories**, which is where it most likely belongs. A rule every repository loads on every task
+  to govern a concern only some of them have is what the pack tier exists to prevent.
+
+✅ **done 2026-09-22** as **`localized-ui`**, the canon's seventh pack, holding one on-demand
+document — `translation-parity`. **D61** carries the tier decision and the four it rejected. Daoris
+adopts it (`packs: ["localized-ui"]`), which is what validates it: a pack nobody installs is a draft
+that looks like doctrine.
+
+**The question it was parked on answered itself once it was measured.** Adopting the pack moved the
+always-loaded core from 21,817 to **22,171 bytes — 354 for the index row**, against roughly 3,800
+had the same content gone into core. The pack tier is a factor of ten here, not a filing preference,
+and that is the whole of the argument the item asked for.
+
+**It is not `web-webview`** — the nearest existing pack, and wrong: that one is about hosting a web UI
+inside a native shell. A desktop application with resource files has this exact parity problem and no
+webview. The concern is a shipped interface in more than one language, never the transport.
+
+**What the document carries**, all of it from what two repositories actually learned rather than from
+the shape of the subject: parity is compared **both ways**, because a key present only in a
+translation is one somebody deleted from the default and left behind; keys are **structural**, since
+with English-as-key a missing translation renders flawless English and the check cannot even exist;
+and **three kinds of text reach a person and only one belongs in a catalogue** — chrome, stored
+content, and a message whose exact wording *is* the contract. That third row is the expensive one: a
+refusal naming what to run is an instruction, and a translated instruction is a second instruction.
+Where it must still reach a reader in their own language it passes **through** an entry that is
+nothing but the placeholder — and the placeholder then needs its own assertion, because a translation
+that drops it replaces every such message with one fixed sentence.
+
+🔴 **What it deliberately does not carry.** The encoding traps — text that renders correctly and is
+then destroyed by a console or a redirected stream — are real and cost this repository a defect the
+same week, and they already live in `windows-machine`. The document names the concern and points away
+from itself. Two copies of a rule become two different rules.

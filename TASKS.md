@@ -33,8 +33,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
 **282 CLI tests, 262 service, 296 driver, 77 desktop modules, 429 web unit, 14 Playwright**, 59
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
-it), **29/29 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
-core is **21,817 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
+it), **29/29 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
+core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
 principle from detail (D28).
 
@@ -414,16 +414,6 @@ binary API), and no plugin runtime for the surface (D52).
   limitation. The owner's call, and the study says so rather than assuming it.
 
 ### Open — the arc's leftovers, in the order they are worth doing
-
-- [ ] **CANON5 — i18n en/zh parity as canon: the two-repository bar is met, and the budget no longer
-  blocks it** (unparked by CANON7, 2026-09-21). The bilingual sibling carries the rule and the gate;
-  Daoris carries the same gate (`scripts/i18n-check.mjs`, adopted from it deliberately — D42). Two
-  repositories, one lesson: a missing translation "works" in English and is discovered by the first
-  reader it fails. There is now room for roughly one substantial rule, **which is exactly the budget
-  this would spend** — so the question it must answer first is the one the room does not settle:
-  whether this belongs in the always-loaded core at all, or as **pack knowledge for web
-  repositories**, which is where it most likely belongs. A rule every repository loads on every task
-  to govern a concern only some of them have is what the pack tier exists to prevent.
 
 ### Held — each waits on a trigger that has not arrived
 

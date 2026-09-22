@@ -39,6 +39,13 @@
       "sha256": "ed1f7729783fe48b4feee772e54478262be4fe0c41eab9f5e0f62cbb52494f20"
     },
     {
+      "pack": "localized-ui",
+      "source": "packs/localized-ui/knowledge/translation-parity.md",
+      "target": "knowledge/translation-parity.md",
+      "canonVersion": "0.0.1",
+      "sha256": "21ed9f6e92790b7179655142e7bb83258241976d178ba0ea1fa5425ec72a3f66"
+    },
+    {
       "pack": "core",
       "source": "core/rules/file-tool-discipline.md",
       "target": "rules/file-tool-discipline.md",

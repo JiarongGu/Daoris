@@ -1,6 +1,6 @@
 {
   "source": "github:JiarongGu/Daoris#v0.0.1",
-  "packs": [],
+  "packs": ["localized-ui"],
   "target": ".claude",
   "coreBudgetBytes": 26000,
   "domain": {

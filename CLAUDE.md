@@ -38,7 +38,7 @@ about a neighbour could only either ignore it or trespass.
 ## Current state
 
 **Built and proven; nothing published.** Fourteen commands, 282 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 262, `Daoris.Devkit` 59, and the
+knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 262, `Daoris.Devkit` 59, and the
 driver 296. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
@@ -74,7 +74,7 @@ a screen can set, a terminal can.
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
 
-**Three things to know before changing anything.** The always-loaded core sits at **21,817 of 26,000
+**Three things to know before changing anything.** The always-loaded core sits at **22,171 of 26,000
 bytes** (CANON7, D28 as amended: this repository's number caps *the canon's core*, a different
 question from the 30000 an adopter starts at). **The budget
 reports and never fails** (D54): a fact gates, a judgement reports. The answer to a full budget is to
@@ -94,7 +94,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D59) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D61) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
