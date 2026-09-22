@@ -28,7 +28,7 @@ the field with a query shows the platform's ✕ and nothing of the accent.
 `type="search"`, `<select>`, checkbox or range left native is painted by the system, in the system's
 colour; the platform draws its own (D41 §4), and this one had been missed.
 
-**Commit.** _pending_
+**Commit.** `92afb48`
 
 ## One result, zero marks — the marker cut 中文 differently from the index (2026-09-23)
 
