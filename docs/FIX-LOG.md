@@ -5,6 +5,40 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A page seen once from a stale host was the page on every start after (2026-09-23)
+
+**Symptom.** With the host precedence fixed and the install demonstrably running its own host, the
+window still loaded `index-CeYefnb-.js` — a bundle that host does not have (its `/assets/` answers
+404 for it). `performance.getEntriesByType('navigation')` in the live page: `deliveryType: cache`,
+`transferSize: 0` — for the page, its script and its stylesheet.
+
+**Root cause.** The HTTP host serves `wwwroot` with `ETag` and `Last-Modified` and **no
+`Cache-Control`**, so the browser applies heuristic freshness to `index.html` and reuses it without
+asking. The one time the window loaded a page from the machine's older host (adopting it, the
+minute before), the WebView2 profile under `data/` kept that `index.html` **and the bundle it
+named**, and every later start was answered from there — a stale page with no request ever reaching
+the correct host. The hashed assets are the right thing to cache forever; the unhashed page that
+names them is the one thing that must never be reused without revalidation, and it was the one
+thing with no instruction at all.
+
+**Fix.** `Program.cs` (local mode): `/assets/*` is `public, max-age=31536000, immutable` — a
+hashed name is a promise — and everything else, the page above all, is `no-cache`, which with the
+ETag the host already sends is one conditional request and a 304 per start.
+
+**Verify.** The deployment rehearsal's phase 3 asserts both headers on the published host — seen
+red against the previous host (`cache-control: (none)`, 32/34), green after (34/34). On the deployed
+application, republished and started twice: the first start fetched the page from the network
+(775 B, 200); the second made a conditional request (300 B — the ETag exchange) before reusing the
+body, while the hashed bundle and stylesheet were reused at 0 B. Blind reuse is the `0 B` the
+symptom showed on the page itself, and it no longer happens to the page.
+
+**The trap to inherit.** 🔴 **A page that names hashed assets is itself unhashed, and it is the
+page that decides what the window runs.** Every other fix in this area — the precedence, the
+adoption notice — reaches the browser through this file, and none of them can be seen while it is
+served from a cache.
+
+**Commit.** _pending_
+
 ## The deployed shell ran the machine's older host, not the one published with it (2026-09-23)
 
 **Symptom.** `npm run publish:desktop -- --to <install> --service`, then start the install: the

@@ -145,7 +145,23 @@ if (!string.IsNullOrWhiteSpace(origin)) app.UseCors();
 if (mode == ServiceMode.Local)
 {
     app.UseDefaultFiles();
-    app.UseStaticFiles();
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        // 🔴 The page is UNHASHED and names the hashed assets, so it decides what the window runs —
+        // and a browser told nothing reuses it without asking. Seen on the second deployment: with
+        // no Cache-Control here, a page the window had loaded once from a stale host was answered
+        // from the WebView2 profile's cache on every start after, with the right host running and
+        // never asked. A hashed name is a promise, so an asset may be kept for good; the page must
+        // be asked about every time, which with the ETag already sent is a 304.
+        OnPrepareResponse = prepared =>
+        {
+            var path = prepared.Context.Request.Path.Value ?? string.Empty;
+            prepared.Context.Response.Headers.CacheControl =
+                path.StartsWith("/assets/", StringComparison.Ordinal)
+                    ? "public, max-age=31536000, immutable"
+                    : "no-cache";
+        },
+    });
 }
 
 // Shared mode gates EVERY route under /api, reads included (D47 §7): a remote serving the family's

@@ -185,7 +185,10 @@ reinstalling the service and restarting the host.
 > reporting half is built in its simplest honest form the same day: the platform's page names its
 > own bundle, so on adoption the shell compares what the running host serves with what the install
 > carries and, when they differ, says so — once, naming both — and goes on, because the host works
-> (`HostSupervisor.Notice`).
+> (`HostSupervisor.Notice`). And a third mechanism underneath both: the host sent no `Cache-Control`,
+> so a page loaded once from a stale host was answered from the WebView2 profile's cache on every
+> start after, with the right host running and never asked. The page is `no-cache` now and the
+> hashed assets `immutable`; the deployment gate holds both headers.
 
 A smaller one beside it: both installs copy `wwwroot` **over** the existing directory without
 clearing it, so stale hashed bundles accumulate. Harmless — `index.html` names the current one — and

@@ -163,7 +163,7 @@ async function api(method, path, base, body) {
   } catch {
     // not JSON — the text is still worth printing on a failure
   }
-  return { status: response.status, json, text };
+  return { status: response.status, json, text, headers: response.headers };
 }
 
 /** Wait for a base URL to answer, however it got there. */
@@ -340,6 +340,19 @@ async function main() {
   check('…and the bundle it names is the one in its own wwwroot',
     Boolean(asset) && existsSync(join(install, ...HOST_HOME, 'wwwroot', 'assets', asset)),
     asset);
+
+  // 🔴 The page is UNHASHED and names the hashed assets, so it is the page that decides what the
+  // window runs — and a browser told nothing reuses it without asking. Seen on the second
+  // deployment: a page loaded once from a stale host was the page on every start after, answered
+  // from the WebView2 profile's cache with the correct host running and never asked. A hashed
+  // asset may be kept for good; the page must be asked about every time (the ETag makes that a 304).
+  const pageCaching = page.headers.get('cache-control') ?? '(none)';
+  check('…and it tells the browser to ask about the page again next time',
+    pageCaching === 'no-cache', `cache-control: ${pageCaching}`);
+  const bundle = await api('GET', `/assets/${asset}`, hostBase);
+  const bundleCaching = bundle.headers.get('cache-control') ?? '(none)';
+  check('…and that the hashed bundle may be kept for good',
+    bundle.status === 200 && /immutable/.test(bundleCaching), `cache-control: ${bundleCaching}`);
 
   // Stopped BEFORE the baseline below is taken, and asserted rather than assumed: a survivor would
   // be counted as the shell's own host in phase 4 and as an orphan in phase 6.
