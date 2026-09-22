@@ -348,18 +348,6 @@ is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now
   commit. Always-loaded core **23,862 → 21,817 bytes**, because eight frontmatter blocks and a
   separate roster's preamble went away. The archive carries the outcome.
 
-- [ ] **CANON8b — superseded by the row above; kept until 8d closes.** One lock entry describes a
-  span inside a file rather than a file; drift is measured against the lock as ever (D13); `upstream`
-  extracts one rule from the region. `index` generates the tier table into the region rather than into
-  `RULES_INDEX.md`, and CANON7's budget measures the region — the footprint stays measurable, which is
-  the half of D7 that survives.
-
-- [ ] **CANON8c — migration, and the family in step.** An adopter on the old shape has
-  `.claude/rules/` in its lock: the canonical rules move into the region and the lock entries with
-  them, **a drifted rule is refused rather than moved**, and a local rule is left where it is. Then
-  this repository and `examples/` re-sync **in the same commit** — the rehearsal enforces it — and
-  Daoris's own doctrine moves with everybody else's.
-
 - [ ] 🔴 **CANON8e — the knowledge service stopped indexing the rules tier, and I did not notice.**
   Measured 2026-09-22, after the migration: `RepositoryScanner.Scan` reads `{target}/rules` as a
   directory, which is now empty, so **the eight canonical rules fell out of the index**. Searching an
