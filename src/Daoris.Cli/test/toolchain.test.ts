@@ -356,12 +356,21 @@ test('every harness declares a real mechanism for each thing Daoris offers to do
     assert.ok(toolchain.profileVariable.length > 0, `${name} has no configuration-home variable`);
     // Install is a WHOLE command, because a machine without the harness cannot run the harness.
     assert.ok(toolchain.install && toolchain.install[0] !== toolchain.binary[0], `${name}'s installer needs itself`);
-    // 🔴 A harness answers "is this profile logged in?" itself, or NAMES the harness whose account
-    // it runs as. Silence is neither: an unanswerable login question is permissive (SES3), so a
-    // harness that simply omitted the check would quietly widen what may spawn.
+    // 🔴 A harness answers "is this profile logged in?" itself, NAMES the harness whose account it
+    // runs as, or DECLARES that it has no account at all. Silence is none of the three: an
+    // unanswerable login question is permissive (SES3), so a harness that simply omitted the check
+    // would quietly widen what may spawn.
+    //
+    // The third case arrived with dsh (ACP3) and is deliberately a declaration rather than an
+    // inference. "Has no account" and "nobody wrote the check yet" are indistinguishable from
+    // outside, and they must not be: one is a fact about the harness, the other is an omission.
     assert.ok(
-      toolchain.loginCheck || toolchain.accountOf,
-      `${name} neither asks whether a profile is logged in nor names whose account it uses`);
+      toolchain.loginCheck || toolchain.accountOf || toolchain.noAccount,
+      `${name} neither asks whether a profile is logged in, nor names whose account it uses, `
+      + `nor declares that it has none`);
+    assert.ok(
+      !(toolchain.noAccount && (toolchain.loginCheck || toolchain.accountOf || toolchain.login)),
+      `${name} declares it has no account and then describes one`);
     if (toolchain.accountOf) {
       assert.ok(TOOLCHAINS[toolchain.accountOf], `${name} names an account holder that does not exist`);
       assert.equal(
@@ -372,8 +381,19 @@ test('every harness declares a real mechanism for each thing Daoris offers to do
 
   assert.equal(TOOLCHAINS['claude-code']!.profileVariable, 'CLAUDE_CONFIG_DIR');
   assert.equal(TOOLCHAINS.codex!.profileVariable, 'CODEX_HOME');
-  // The protocol door borrows the pipe door's account, through the same seam (ACP2).
+  // The protocol door borrows the pipe door's account, through the same seam (ACP2/ACP3).
   assert.equal(TOOLCHAINS['claude-code-acp']!.accountOf, 'claude-code');
+  assert.equal(TOOLCHAINS['codex-acp']!.accountOf, 'codex');
+  assert.equal(TOOLCHAINS.dsh!.profileVariable, 'DSH_HOME');
+
+  // 🔴 This table and the driver's `AdapterSet` are TWINS, and the twin risk is not membership —
+  // the two sets differ on purpose, because managing a tool and spawning sessions on it are
+  // different questions (D23). It is a shared NAME whose descriptors disagree: the CLI probing one
+  // binary while the driver spawns another is a `harness list` that reports on a program nothing
+  // runs. The binaries are pinned here and in `Acp3AdapterTests`, and the two tables move together.
+  assert.deepEqual(TOOLCHAINS['claude-code-acp']!.binary, ['claude-agent-acp']);
+  assert.deepEqual(TOOLCHAINS['codex-acp']!.binary, ['codex-acp']);
+  assert.deepEqual(TOOLCHAINS.dsh!.binary, ['dsh']);
 });
 
 /**

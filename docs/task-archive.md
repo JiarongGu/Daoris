@@ -3469,3 +3469,78 @@ header, no row in `daoris.lock`, no counterpart under `canon/`, and the generate
 *about* authoring canon, and its subject matter read as its status. **The lock is the authority**
 (D5) — the check is one `grep` of `daoris.lock`, and the filename is not evidence.
 
+
+## ACP3 — dsh and codex as configurations of the door (2026-09-22)
+
+> **ACP3 — dsh and codex as configurations.** `dsh --profile acp` with `DSH_HOME` as the profile seam
+> (it isolates credentials, settings and sessions as one directory), the model in the profile's own
+> `settings.yaml` (Daoris names none — D24), the two outbound rows (`session-telemetry-otel`,
+> `session-log-deepseek`) patched off in the profile Daoris owns the location of, and no login
+> question to ask (permissive `unknown`, SES3's rule); `@agentclientprotocol/codex-acp` likewise.
+> **HARNESS2 closes into this.** dsh pinned exact and vendored nowhere.
+
+✅ **done 2026-09-22**, with **HELP2 and HARNESS2** closing into it. Driver 270 (was 239), CLI 269,
+modules 71. `docs/2026-09-22-acp3-probe-evidence.md` is the evidence note, written before any code.
+
+🔴 **The finding the item was built around: the D37 posture lives in three different places.** Claude
+Code names it `acceptEdits`, Codex names it `agent` — both ACP modes, **different ids** — and dsh's
+`session/new` carries **no `modes` key at all**, only a `configOptions` whose single entry is the
+model catalogue D24 forbids Daoris to touch. So on dsh the wire offers exactly one knob and it is the
+one that must not be turned; its posture is `DSH_PERMISSION_MODE=workspace-write`, read at boot.
+
+**What that changed in the code.** The mode id was a `const` inside `AcpSession`, correct for exactly
+as long as one harness rode the door. It is now `ISessionAdapter.AcpPosture`, and **null means this
+wire carries no posture** rather than a licence to guess a neighbouring one. The safe direction is
+the default: every observed default is equal to or stricter than what Daoris would set, so a
+forgotten posture stalls a session rather than widening it. The old constant would have set
+`acceptEdits` on any agent that happened to offer one — a posture nobody chose, through a harness
+nobody asked.
+
+**Everything was established keylessly, against installed artefacts at exact pins**, and the note
+says which facts came from a live wire and which from a shipped bundle. Both adapter pins were still
+current a day after DSH1 recorded them, which is the first evidence that the ACP project's cadence is
+not dsh's 1,687-commit week.
+
+**Three findings that would each have failed in a way that reads as something else:**
+
+- 🔴 **`CODEX_HOME` must already exist.** Pointed at a path that is not there, codex-acp exits 1
+  before `initialize` completes — where the Claude adapter **creates** `CLAUDE_CONFIG_DIR`. The
+  driver already created profile homes unconditionally, so this was true by luck: `ProfileMustExist`
+  now names which harnesses depend on that line, and a test asserts it for every harness that
+  declares it. Watched fail by deleting the `CreateDirectory` call.
+- 🔴 **`agent` is stricter than `acceptEdits`, not equivalent** — it runs with
+  `networkAccess: false`. Recorded beside the constant, because a session that cannot reach the
+  network fails in ways that look like anything but a permission mode.
+- 🔴 **`customSkillDirs` resolves at the wrong moment.** dsh resolves its default project roots per
+  session `cwd` but resolves `customSkillDirs` **once, at construction, against the process's own
+  cwd**. The driver spawns one process per tree (D51), so a **relative** `.claude/skills` lands on
+  the right repository — and an absolute path written into a shared home would pin every session in
+  it to whichever tree happened to be first. HELP2 as filed said "naming `.claude/skills`" and did
+  not say why it must stay relative; now it does.
+
+**The profile Daoris owns, and the line it will not cross.** `DshProfile` writes
+`$DSH_HOME/cordis.patch.yml` — dsh's own home-level user patch layer, so one write reaches every
+profile in that home. It disables both outbound rows and adds the skills root. 🔴 **Only where Daoris
+made the directory.** With no named profile, `DSH_HOME` is unset and dsh uses the person's own
+`~/.dsh`, which SES3 puts out of reach — so the run proceeds and **says** that two rows are sending
+session material off the machine and that `daoris harness profile add dsh <name>` is the fix.
+Refusing would strand a capability over somebody else's default; writing there would be reaching in.
+A home already holding a **hand-written** patch layer is refused and reported rather than
+overwritten, decided by a provenance header — the same shape as the canon's region markers, for the
+same reason: what is on the other side of the guess is somebody's own configuration.
+
+**The bytes are pinned because the real dsh composed them.** Written into a scratch `DSH_HOME`,
+`dsh --profile acp --dump-config` answered with all three rows patched and **annotated each with the
+file that patched it**. The test asserts that exact text: every other test there checks a property,
+and a property-checked file can drift into something that satisfies every property and no longer
+composes.
+
+**A third login state, declared rather than inferred.** The CLI's harness invariant — *a harness
+answers the login question itself, or names whose account it uses* — refused the dsh entry, correctly:
+dsh has neither. "Has no account" and "nobody wrote the check yet" are indistinguishable from
+outside and must not be, so `noAccount: true` is a declaration, silence is still a failure, and a
+harness that declares it and then describes a login is rejected as saying two things. The invariant
+caught this on its first run, which is what an invariant is for.
+
+**What waits: a driven run per harness**, exactly as ACP2's does — and for codex it is the same step
+that confirms the mode list on a live wire rather than from a bundle.

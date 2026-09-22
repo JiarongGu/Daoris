@@ -39,7 +39,7 @@ about a neighbour could only either ignore it or trespass.
 
 **Built and proven; nothing published.** Fourteen commands, 269 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 6 packs. `Daoris.Service` adds 262, `Daoris.Devkit` 57, and the
-driver 239. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+driver 273. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -131,12 +131,13 @@ risk, **authorship** was.
 - **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
   `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface
-  stays `Daoris.Web`. **ACP1 has landed**: the seam carries a `Wire`, `AcpSession` speaks JSON-RPC
-  over a spawned process's stdio, a permission request is **refused by construction** (D52), and the
-  record still moves on the exit code and the quest — the wire flattens an aborted turn to `end_turn`,
-  so it enriches and never decides. Zed's agent panel speaks the same protocol, which is the reference
-  study's strongest validation of D53. **ACP2 is next** and its closing step spends a real login. The
-  probe instruments are tracked under `tools/dsh-probes/`.
+  stays `Daoris.Web`. **ACP1, ACP3 and ACP4 have landed** and four configurations ride the door: the
+  seam carries a `Wire`, `AcpSession` speaks JSON-RPC over stdio, a permission request is **refused by
+  construction** (D52), and the record still moves on the exit code and the quest — the wire flattens
+  an aborted turn to `end_turn`, so it enriches and never decides. 🔴 **The posture is the ADAPTER's,
+  in that harness's own words** (`docs/2026-09-22-acp3-probe-evidence.md`): null means the wire
+  carries none, and is never a licence to guess a neighbouring mode. **ACP2 is what is left** and its
+  closing step spends a real login. Probe instruments: `tools/dsh-probes/`.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - **The current direction is the toolchain** (owner, 2026-09-22 → **D57**,

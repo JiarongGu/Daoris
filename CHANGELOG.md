@@ -254,6 +254,25 @@ The first version: doctrine that installs, is checked, and flows back.
   adapter names a harness, never a model. Gate-proven with a **stub adapter** — real spawn, real claim,
   real commit, no model — and then by a **real `claude-code` run**: a quest became a session became a
   commit became `done` in 71 seconds.
+- **A second door, and four harnesses through it.** Beside the pipe the driver has always had, a
+  session may be held over the **Agent Client Protocol** — JSON-RPC over the spawned process's stdio,
+  with tool boundaries, turn boundaries, thoughts and context usage arriving *by contract* rather than
+  parsed out of another program's stdout. `claude-code-acp`, `codex-acp` and `dsh` are **configurations
+  of that one door**, not three more seams, and an `acp-stub` gates the whole of it with no model.
+  A permission request over the wire is **refused by the driver**, always. What a session did is still
+  concluded from its exit code and its quest's state, never from what it said about itself — the
+  protocol flattens an aborted or errored turn into an ordinary ending, so it enriches and never decides.
+- **The permission posture is stated per harness, in that harness's own words.** The same boundary —
+  edits inside the tree proceed, nothing outward is ever auto-approved — is `acceptEdits` to Claude
+  Code, `agent` to Codex, and to dsh is not a wire concept at all but an environment setting. Each is
+  named explicitly even where it matches a default, a mode the agent did not offer is never
+  substituted for one it did, and a harness whose wire carries no posture is left at its own.
+- **What Daoris writes into a harness home it created, and what it will not.** A dsh credential
+  profile gets a patch layer turning off the two rows that ship enabled and send session material off
+  the machine, plus a root that makes the repository's own skills reachable. Only in a directory
+  Daoris made: run without one and dsh uses *your* configuration home, which Daoris does not write to
+  — so it runs, and says what that means, and names the one command that fixes it. A home already
+  holding a hand-written patch layer is reported, never overwritten.
 - **The desktop shell.** `daoris-desktop` brings up the local host (adopting one already running rather
   than double-starting), carries the platform in its window — the same bytes a browser gets — and runs
   the driver loop in-process, re-reading the person's standing choices every tick: drivable and hold

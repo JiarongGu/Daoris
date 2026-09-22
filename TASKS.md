@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**269 CLI tests, 262 service, 239 driver, 71 desktop modules, 412 web unit, 14 Playwright**, 57
+**269 CLI tests, 262 service, 273 driver, 71 desktop modules, 412 web unit, 14 Playwright**, 57
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
 it), 9 devkit gates. Canon: 8 core rules, 5 knowledge documents, 5 skills, 6 packs. Always-loaded
 core is **21,817 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -51,7 +51,8 @@ by the rehearsal's remote phase: a quest crossed two machines and drove to done,
 losing driver observing the lock, and the remote store was scanned to hold nothing machine-local.
 
 **The driver drives** (D45/D46, built 2026-09-19): `Daoris.Desktop.Driver` (pure planner, observed
-lifecycle, adapter seam — stub + `claude-code`), the headless `daoris-driver`, and the shell
+lifecycle, adapter seam — `stub` and `claude-code` on the pipe door, `acp-stub`, `claude-code-acp`,
+`dsh` and `codex-acp` on the protocol one), the headless `daoris-driver`, and the shell
 `daoris-desktop` on released Shenora.Windows 0.16.0 — it brings up the local HTTP host, carries the
 platform, runs the loop in-process, and lands the person's controls (drivable/hold per repository,
 stop a running session) through the `DAORIS.DRIVER` IPC module, live-updating over `DRIVER_TICK`.
@@ -109,9 +110,11 @@ asserts DRV4's shape. **DRV6 caps it at three attempts** — the first attempt a
 sessions before anything stopped it, which is what DRV6 was written from. Until it passes, ACP2 stays
 open and `claude-code` over the pipe door remains what a machine drives with.
 
-**What else is open**, in the Backlog below: **ACP3**, then HELP2, HELP3, TOOL5, DEVKIT3, ARCH1,
-CANON5. **CANON8d closed 2026-09-22** and the instruction-file arc with it. Four **held** items sit at
-the bottom; do not pick one up until its trigger has arrived. Nothing is pushed or published.
+**What else is open**, in the Backlog below: **HELP3**, then TOOL5, DEVKIT3, ARCH1, CANON5.
+**CANON8d closed 2026-09-22** and the instruction-file arc with it; **ACP3 closed the same day**, and
+**HELP2 and HARNESS2 with it** — the protocol door now carries four configurations. Four **held**
+items sit at the bottom; do not pick one up until its trigger has arrived. Nothing is pushed or
+published.
 
 **Start by reading the contract the item cites** — every backlog row names one. The bullets below are
 the traps that are not in any contract, because they were found rather than designed.
@@ -211,7 +214,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (262),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (239), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (71), `npm run rehearse:family` (180/180), `npm run test:web` (412 vitest + 14 Playwright). If a `bin`-driven gate is red
+  (273), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (71), `npm run rehearse:family` (180/180), `npm run test:web` (412 vitest + 14 Playwright). If a `bin`-driven gate is red
   while `npm test` is green, suspect a stale gitignored `dist/` first (FIX-LOG) — though `postpack
   --clean` and the rehearsal's leftover check now remove and assert that case away.
 
@@ -231,8 +234,16 @@ completion.
 that holds a session over the **Agent Client Protocol** beside today's pipe, and every harness reached
 that way is a *configuration* of the door. **ACP1 has landed** (2026-09-21, in the archive): the seam
 carries a `Wire`, `AcpSession` speaks the protocol, and the rehearsal drives a quest to done over it
-with no model in the gate — including the permission refusal from both sides. **ACP2 is next**, and it
-is the one that needs the owner: its closing step spends a real login.
+with no model in the gate — including the permission refusal from both sides. **ACP4 and ACP3 have
+landed too**, so the door now carries four configurations — `acp-stub`, `claude-code-acp`, `codex-acp`
+and `dsh`. **ACP2 is the one left, and it is the owner's**: its closing step spends a real login.
+
+🔴 **The posture is the adapter's, in that adapter's own words** (ACP3): `acceptEdits` to Claude Code,
+`agent` to Codex, and to dsh not a wire concept at all — `DSH_PERMISSION_MODE=workspace-write` in the
+environment, because its `session/new` carries no modes. A new configuration of this door states its
+own, and **null means the wire carries none** rather than a licence to guess a neighbouring mode.
+`docs/2026-09-22-acp3-probe-evidence.md` is how each was established, and which are bundle rather than
+wire evidence.
 
 - [ ] **ACP2 — `claude-code` over ACP.** `@agentclientprotocol/claude-agent-acp` pinned exact as a
   managed toolchain entry (`daoris harness`: install, version, the executable seam
@@ -256,14 +267,16 @@ is the one that needs the owner: its closing step spends a real login.
   `--service` flag and an unknown flag is ignored in silence; and a driver that refuses a dirty tree
   was right while the fixture, which left the adoption uncommitted, was wrong.
 
-- [ ] **ACP3 — dsh and codex as configurations.** `dsh --profile acp` with `DSH_HOME` as the profile
-  seam (it isolates credentials, settings and sessions as one directory), the model in the profile's
-  own `settings.yaml` (Daoris names none — D24), the two outbound rows (`session-telemetry-otel`,
-  `session-log-deepseek`) patched off in the profile Daoris owns the location of, and no login question
-  to ask (permissive `unknown`, SES3's rule); `@agentclientprotocol/codex-acp` likewise. **HARNESS2
-  closes into this.** dsh pinned exact and vendored nowhere: 561 MB per machine, and the
-  `subagent-claude-code` bundle on npm was six weeks stale when measured — a harness's own packaging is
-  its own problem, but the version the toolchain installs is asserted, not assumed.
+- [x] **ACP3 — dsh and codex as configurations.** ✅ **done 2026-09-22**, and **HELP2 and HARNESS2
+  close with it**. Both adapters, both toolchain entries, the profile Daoris owns, and the skills
+  root. 🔴 **The finding that shaped it: the D37 posture lives in three different places.** Claude
+  Code names it `acceptEdits` and Codex names it `agent` — both ACP modes, different ids — and dsh's
+  `session/new` carries **no modes at all**, so its posture is `DSH_PERMISSION_MODE=workspace-write`
+  in the environment. The mode was a constant inside `AcpSession`; it is the adapter's now, and null
+  means *this wire carries no posture* rather than a licence to guess a neighbouring one.
+  `docs/2026-09-22-acp3-probe-evidence.md` is the record — every claim established keylessly against
+  an installed artefact at an exact pin, and it says which facts came from a live wire and which from
+  a shipped bundle. **What waits is a driven run per harness**, exactly as ACP2's does.
 
 - [x] **ACP4 — the MCP servers the door hands over.** ✅ **done 2026-09-22.** The composed target
   tells every session to claim and close its quest over its own connector; the pipe door leans on the
@@ -272,11 +285,13 @@ is the one that needs the owner: its closing step spends a real login.
   handed its voice with **nothing written anywhere**. A machine with no host still drives and says so.
   Gated in the family rehearsal from the AGENT’s own side (180/180).
 
-- [ ] **HELP2 — skills reach one harness only.** `dsh-skill-filesystem` scans `<project>/.dsh/skills`
-  and `<project>/.agents/skills`, never `.claude/skills` — but its bundle format is `<name>/SKILL.md`,
-  **exactly Daoris's layout**, so this is a root rather than a conversion: `customSkillDirs` naming
-  `.claude/skills`, in the profile Daoris owns the location of (SES3). Nothing on an adopter's disk
-  changes. Do it with ACP3, where the dsh profile is first written.
+- [x] **HELP2 — skills reach one harness only.** ✅ **done 2026-09-22 with ACP3.** `customSkillDirs`
+  naming `.claude/skills` in the patch layer Daoris writes into a dsh home it created — a root, not a
+  conversion, and nothing on an adopter's disk changed. 🔴 **The path is relative and that is
+  load-bearing**: dsh resolves the default project roots per session `cwd` but resolves
+  `customSkillDirs` **once, at construction, against the process's own cwd**. The driver spawns one
+  process per tree (D51), so relative lands right and an absolute path in a shared home would pin
+  every session to whichever tree was first.
 
 - [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
   Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
@@ -448,14 +463,13 @@ local by the profile's own rule, no price claimed, and a test asserts no currenc
   repositories**, which is where it most likely belongs. A rule every repository loads on every task
   to govern a concern only some of them have is what the pack tier exists to prevent.
 
-- [ ] **HARNESS2 — a `codex` session adapter. Absorbed into ACP3 by D53**, and kept here only so the
-  name resolves: it is `@agentclientprotocol/codex-acp` on the protocol door, not a hand-built
-  `ISessionAdapter`. SES3 already made codex manageable as a TOOL (`daoris harness` knows its
-  installer, its `CODEX_HOME` seam and how it reports a login, all verified against the real binary).
-  The one thing the ACP route does not settle for free is **the D37 boundary in codex's own
-  vocabulary** — its `acceptEdits` equivalent is established from what the adapter exposes as a mode,
-  never guessed. It lands the way `claude-code` did: the stub proves the loop, a real driven run
-  proves the harness. **Not HARNESS1** (a second harness *layout*, a doctrine question).
+- [x] **HARNESS2 — a `codex` session adapter.** ✅ **done 2026-09-22 with ACP3**, as
+  `@agentclientprotocol/codex-acp` on the protocol door rather than a hand-built `ISessionAdapter`.
+  The one thing the ACP route did not settle for free — **the D37 boundary in codex's own
+  vocabulary** — was **established, not guessed**: the wire offers `read-only`, `agent` and
+  `agent-full-access`, and `agent` is the posture. 🔴 It is **stricter** than `acceptEdits` rather
+  than equivalent, because it runs with `networkAccess: false`. A driven run still proves the
+  harness. **Not HARNESS1** (a second harness *layout*, a doctrine question), which stays open.
 
 ### Held — each waits on a trigger that has not arrived
 

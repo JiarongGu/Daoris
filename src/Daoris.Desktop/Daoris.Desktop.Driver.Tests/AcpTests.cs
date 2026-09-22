@@ -353,7 +353,11 @@ public sealed class AcpTests
             };
         });
 
-        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+        // 🔴 The posture comes from the ADAPTER, not from a constant in the session (ACP3) — taken
+        // here from the real one, so this test fails if the Claude adapter ever stops naming it.
+        var posture = AdapterSet.Built().Resolve("claude-code-acp").AcpPosture;
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture)
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
 
         var mode = agent.Sent
@@ -363,6 +367,74 @@ public sealed class AcpTests
         Assert.Equal("acceptEdits", mode.GetProperty("params").GetProperty("modeId").GetString());
         // 🔴 Never the one that would widen the boundary, however available the wire makes it.
         Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
+    }
+
+    /// <summary>
+    /// 🔴 <b>An agent that offers the posture is still not set to it when the ADAPTER names none</b>
+    /// (ACP3). This is dsh's shape — its wire carries no modes — and it is the case that would have
+    /// been invisible: the old constant would have set `acceptEdits` on any agent that happened to
+    /// offer one, which is a posture nobody chose arriving through a harness nobody asked.
+    /// </summary>
+    [Fact]
+    public async Task An_adapter_that_names_no_posture_sets_none_even_when_the_agent_offers_one()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return method switch
+            {
+                "session/new" => Ok(frame, """
+                    {"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[
+                      {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"}]}}
+                    """),
+                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture: null)
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("session/set_mode"));
+    }
+
+    /// <summary>
+    /// The second harness's own id goes on the wire unchanged — `agent`, not a translation of it.
+    /// Codex's vocabulary is Codex's.
+    /// </summary>
+    [Fact]
+    public async Task A_second_harness_posture_is_sent_in_that_harness_own_vocabulary()
+    {
+        var agent = new FakeAgent((frame, self) =>
+        {
+            _ = self;
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            return method switch
+            {
+                // codex-acp@1.12.0's three modes, as its own bundle defines them.
+                "session/new" => Ok(frame, """
+                    {"sessionId":"s-1","modes":{"currentModeId":"read-only","availableModes":[
+                      {"id":"read-only","name":"Ask for approval"},{"id":"agent","name":"Approve for me"},
+                      {"id":"agent-full-access","name":"Full access"}]}}
+                    """),
+                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+
+        var posture = AdapterSet.Built().Resolve("codex-acp").AcpPosture;
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture)
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+
+        var mode = agent.Sent
+            .Select(line => JsonDocument.Parse(line).RootElement)
+            .FirstOrDefault(f => f.TryGetProperty("method", out var m) && m.GetString() == "session/set_mode");
+
+        Assert.Equal("agent", mode.GetProperty("params").GetProperty("modeId").GetString());
+        // 🔴 Never the one that turns approvals off entirely, however available the wire makes it.
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("agent-full-access"));
     }
 
     /// <summary>

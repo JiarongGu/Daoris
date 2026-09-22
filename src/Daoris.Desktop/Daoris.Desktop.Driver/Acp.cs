@@ -83,17 +83,27 @@ public sealed record AcpOutcome(
 /// so this is courtesy with a bound: an agent that wedges after answering the prompt must not be able
 /// to hang a run that has finished. Found by a test that never returned.
 /// </param>
+/// <param name="posture">
+/// The mode id that expresses D37 on THIS agent's wire, or null when the agent carries no posture
+/// there (ACP3).
+/// </param>
+/// <remarks>
+/// 🔴 <b>The posture belongs to the adapter, not to this class.</b> It was a constant here while one
+/// harness rode the door, and that was wrong the moment a second arrived: Claude Code names the same
+/// boundary <c>acceptEdits</c>, Codex names it <c>agent</c>, and dsh does not express it on the wire
+/// at all. A constant would have driven two of the three at whatever mode they happened to start in,
+/// silently. Null asks for nothing, which leaves the agent at its own default — the safe direction,
+/// since every default observed is equal to or stricter than what Daoris would set.
+/// </remarks>
 public sealed class AcpSession(
-    TextReader incoming, TextWriter outgoing, Action<string> onLine, TimeSpan? closeTimeout = null)
+    TextReader incoming,
+    TextWriter outgoing,
+    Action<string> onLine,
+    TimeSpan? closeTimeout = null,
+    string? posture = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
-
-    /// <summary>
-    /// The posture D37 sanctions, in this wire's vocabulary — the same one the pipe door passes as
-    /// <c>--permission-mode acceptEdits</c>. Named once so the two doors cannot drift apart.
-    /// </summary>
-    private const string Posture = "acceptEdits";
 
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
@@ -408,6 +418,10 @@ public sealed class AcpSession(
     /// </remarks>
     private async Task SetPostureAsync(JsonElement created, CancellationToken ct)
     {
+        // An adapter that names no posture asks for none — dsh, whose wire carries no modes, and the
+        // stub, whose permissions are its own business (ACP3).
+        if (posture is not { Length: > 0 }) return;
+
         if (!created.TryGetProperty("modes", out var modes)
             || !modes.TryGetProperty("availableModes", out var available)
             || available.ValueKind != JsonValueKind.Array)
@@ -418,19 +432,19 @@ public sealed class AcpSession(
         var offered = false;
         foreach (var mode in available.EnumerateArray())
         {
-            if (mode.TryGetProperty("id", out var id) && id.GetString() == Posture) offered = true;
+            if (mode.TryGetProperty("id", out var id) && id.GetString() == posture) offered = true;
         }
 
         if (!offered) return;
 
         // Already there is nothing to ask for — and an agent that started in the posture is a fact
         // worth not overwriting with an identical call.
-        if (modes.TryGetProperty("currentModeId", out var current) && current.GetString() == Posture)
+        if (modes.TryGetProperty("currentModeId", out var current) && current.GetString() == posture)
         {
             return;
         }
 
-        await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = Posture }, ct)
+        await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = posture }, ct)
             .ConfigureAwait(false);
     }
 

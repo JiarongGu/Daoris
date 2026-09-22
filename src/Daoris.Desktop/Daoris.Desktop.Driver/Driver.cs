@@ -242,6 +242,23 @@ public sealed class Driver(
                     info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable);
             }
 
+            // What daoris writes into a dsh home it owns (ACP3): the two rows that send session
+            // material off this machine, off — and its own skills reachable. Only where daoris made
+            // the directory; the notice is what happens everywhere else, and a home holding somebody
+            // else's patch layer is reported rather than overwritten.
+            var harnessNotice = DshProfile.NoticeFor(adapter.Name, selection.ProfileHome);
+            if (harnessNotice is null && adapter is DshAdapter && selection.ProfileHome is { Length: > 0 } dshHome)
+            {
+                try
+                {
+                    DshProfile.Write(dshHome);
+                }
+                catch (DriverException refused)
+                {
+                    harnessNotice = $"— {refused.Message}";
+                }
+            }
+
             await service.AdvanceAsync(
                 sessionId, "starting",
                 // The creating sentence, on the record while the session runs (D51 rule 4): where it
@@ -263,7 +280,12 @@ public sealed class Driver(
             // 🔴 The ACP task is held AS ITS OWN TYPE. Assigning it to a bare `Task` compiles and
             // silently discards the outcome — which is where the usage measurement lives (TOOL3).
             var acp = adapter.Wire == SessionWire.Acp
-                ? CaptureAcpAsync(process, transcript, sessionId, workTree, TargetPrompt.Compose(target), ct)
+                // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses
+                // name the same D37 boundary three different ways, and one of them does not name it
+                // on the wire at all.
+                ? CaptureAcpAsync(
+                    process, transcript, sessionId, workTree, TargetPrompt.Compose(target),
+                    adapter.AcpPosture, harnessNotice, ct)
                 : null;
             Task capture = acp ?? CaptureAsync(process, transcript, sessionId, ct);
 
@@ -412,7 +434,8 @@ public sealed class Driver(
     /// by it would be a record that cannot tell a refusal from a success.</para>
     /// </remarks>
     private async Task<AcpOutcome?> CaptureAcpAsync(
-        Process process, string transcript, string sessionId, string cwd, string prompt, CancellationToken ct)
+        Process process, string transcript, string sessionId, string cwd, string prompt,
+        string? posture, string? harnessNotice, CancellationToken ct)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -426,6 +449,11 @@ public sealed class Driver(
 
         try
         {
+            // What this harness is doing that daoris has not been able to govern (ACP3). On the
+            // transcript rather than swallowed: it is a fact about how this session ran, and the
+            // person can act on it in one command.
+            if (harnessNotice is { Length: > 0 }) Line(harnessNotice);
+
             // The session's voice (ACP4). Located per run rather than once, because a machine can
             // gain the host between ticks — and a machine that has none still drives, without a
             // connector, exactly as it did before.
@@ -440,7 +468,8 @@ public sealed class Driver(
                      + "`npm run publish:service -- --install` lands one.");
             }
 
-            var outcome = await new AcpSession(process.StandardOutput, process.StandardInput, Line)
+            var outcome = await new AcpSession(
+                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture)
                 .RunAsync(cwd, prompt, ct, connector is null ? [] : [connector]).ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "

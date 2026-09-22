@@ -95,6 +95,19 @@ export interface Toolchain {
    * spawn. `daoris harness login <accountOf>` is the verb the surfaces then name.
    */
   accountOf?: string;
+  /**
+   * That this harness has **no account at all** — not one of its own, and not one borrowed (ACP3).
+   *
+   * @remarks
+   * 🔴 **The third state, and it is declared for the same reason the second one is.** dsh has no
+   * notion of being logged in or out: which model answers is a route in its own `settings.yaml`, and
+   * the credential for that route is the person's to place there. So there is nothing to ask and
+   * nobody to ask it of — which is a fact about the harness, and is indistinguishable from "nobody
+   * wrote the check yet" unless it is written down. Silence remains a failure; this is not silence.
+   *
+   * A harness declaring this must describe no login anywhere else, or it is saying two things.
+   */
+  noAccount?: boolean;
 }
 
 /**
@@ -149,6 +162,40 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     // "Not logged in" contains "logged in". An unanchored pattern reported every logged-out profile
     // as logged in — found by a test, which is the only way a thing like this is ever found.
     loginCheck: { args: ['login', 'status'], in: /^\s*logged in/im, out: /^\s*not logged in/im },
+  },
+  // Codex over the PROTOCOL door (ACP3/D53, closing HARNESS2). Its own entry beside `codex` for
+  // exactly the reason `claude-code-acp` is one beside `claude-code`: the adapter and the harness
+  // are different packages at different versions, and one pin for both installs the wrong thing
+  // under a name somebody trusted.
+  'codex-acp': {
+    // 🔴 The BINARY is `codex-acp` — the adapter's own bin, not this entry's Daoris name and not
+    // `codex`. Verified against the installed package's `bin` map.
+    binary: ['codex-acp'],
+    version: ['--version'],
+    profileVariable: 'CODEX_HOME',
+    install: ['npm', 'install', '-g', '@agentclientprotocol/codex-acp'],
+    package: '@agentclientprotocol/codex-acp',
+    // No login of its own: it runs `codex` and reads the home `codex` logged into. 🔴 Its
+    // logged-out refusal arrives from the WIRE — `session/new` answers "Authentication required" —
+    // rather than from a subcommand, so there is nothing here to ask.
+    accountOf: 'codex',
+  },
+  // dsh over the protocol door (ACP3/D53). A profile IS a home here: `dsh --profile <name>` boots a
+  // directory under `$DSH_HOME/profiles`, so one variable isolates credentials, settings and
+  // sessions together.
+  //
+  // No login flow and no login question: dsh has no account to be out of, and only a definite *out*
+  // refuses (SES3), so `unknown` is permissive and a session starts. No model is named (D24) —
+  // which model answers is the profile's own `settings.yaml`.
+  dsh: {
+    binary: ['dsh'],
+    version: ['--version'],
+    profileVariable: 'DSH_HOME',
+    // Pinned exact and vendored nowhere: 561 MB per machine, and a harness's own packaging is its
+    // own problem — but the version the toolchain installs is asserted, not assumed (D53).
+    install: ['npm', 'install', '-g', '@deepseek-ai/dsh'],
+    package: '@deepseek-ai/dsh',
+    noAccount: true,
   },
 };
 

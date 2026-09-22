@@ -100,6 +100,24 @@ public interface ISessionAdapter
     SessionWire Wire => SessionWire.Pipe;
 
     /// <summary>
+    /// The permission posture D37 sanctions, in <b>this harness's own vocabulary</b>, for adapters
+    /// whose wire carries one (ACP3/D53).
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>The posture lives in three different places across three harnesses</b>, which is
+    /// why this is a property of the adapter and not a constant in the session. Claude Code names it
+    /// <c>acceptEdits</c> and Codex names it <c>agent</c> — both ACP modes, both observed rather than
+    /// guessed (`docs/2026-09-22-acp3-probe-evidence.md`). dsh's <c>session/new</c> carries no modes
+    /// at all, so its posture is an environment variable set at spawn instead.</para>
+    ///
+    /// <para><b>Null means this wire carries no posture</b>, and the session then asks for none —
+    /// leaving the agent at its own default. That is the safe direction: every default observed is
+    /// equal to or stricter than the one Daoris would set, so a forgotten posture stalls a session
+    /// rather than widening it. It is never a licence to guess a neighbouring mode.</para>
+    /// </remarks>
+    string? AcpPosture => null;
+
+    /// <summary>
     /// The process that would be the session: spawned in the root, target delivered, output
     /// redirected so the driver can keep the transcript. Preparation only — the driver owns the
     /// process lifetime, because observing it is the driver's half of the contract (D46 §5).
@@ -306,6 +324,13 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     public SessionWire Wire => SessionWire.Acp;
 
     /// <summary>
+    /// D37 in Claude Code's vocabulary — the same posture the pipe door passes as
+    /// <c>--permission-mode acceptEdits</c>, observed on this wire in the evaluation's §1a. Never
+    /// <c>bypassPermissions</c>, however available the wire makes it.
+    /// </summary>
+    public string? AcpPosture => "acceptEdits";
+
+    /// <summary>
     /// The adapter takes turns on its own wire, which is all this seam asks of an interactive
     /// harness — a conversation over ACP is the same session entity by a different door (D49 §3).
     /// </summary>
@@ -349,6 +374,153 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : ["claude-agent-acp"];
+}
+
+/// <summary>
+/// <b>dsh over the protocol door</b> (ACP3/D53): a configuration of the door, not a second seam.
+/// </summary>
+/// <remarks>
+/// <para><b>A profile IS a home here.</b> <c>dsh --profile &lt;name&gt;</c> boots a directory under
+/// <c>$DSH_HOME/profiles</c>, so the one variable isolates credentials, settings and sessions
+/// together — which is why <c>DSH_HOME</c> is the account seam and why what Daoris writes for this
+/// harness goes inside a directory it created rather than beside one it did not.</para>
+///
+/// <para>🔴 <b>Its wire carries no posture.</b> Observed at 0.1.6-alpha.2: <c>session/new</c> answers
+/// with <c>sessionId</c> and <c>configOptions</c> and no <c>modes</c> key — and the one config option
+/// is the model catalogue, which D24 forbids Daoris to touch. So this door offers exactly one knob
+/// and it is the one that must not be turned. The posture is set in the environment instead, below.</para>
+///
+/// <para><b>No login question</b> (SES3): dsh has no account to be logged out of, and only a definite
+/// *out* refuses — so `unknown` is permissive and a session starts.</para>
+///
+/// <para><b>No model is named</b> (D24): which model answers is the profile's own `settings.yaml`.</para>
+/// </remarks>
+public sealed class DshAdapter : ISessionAdapter
+{
+    public string Name => "dsh";
+
+    public SessionWire Wire => SessionWire.Acp;
+
+    /// <summary>
+    /// The profile dsh boots for the automation surface. Its ACP server is <b>automation-only by
+    /// their own decision</b> — they removed it as an editor UI — which is exactly the half Daoris
+    /// wants and none of the product half D53 declined.
+    /// </summary>
+    public const string Profile = "acp";
+
+    /// <summary>
+    /// dsh's permission posture, as an environment variable read at boot.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>`workspace-write` is D37 in dsh's vocabulary</b>, read from its own shipped bundle: it
+    /// feeds both the sandbox policy's mode and the approval policy, which derives to <c>ask</c> for
+    /// every value except <c>danger-full-access</c>, where it becomes <c>never</c>. Writes inside the
+    /// workspace are sandbox-legal and proceed without asking; anything escalating past the sandbox
+    /// asks, which over ACP arrives as <c>session/request_permission</c> and is refused by
+    /// construction (D52). Failing closed on escalation is the behaviour, not a limitation.
+    ///
+    /// <para>It is stated even though it is <b>also dsh's default</b>. A posture that happens to match
+    /// somebody else's default is not one Daoris has set, and the default is theirs to change.</para>
+    /// </remarks>
+    public const string PermissionVariable = "DSH_PERMISSION_MODE";
+
+    /// <summary>The value that expresses D37 here. Never <c>danger-full-access</c>, which is approvals off.</summary>
+    public const string Posture = "workspace-write";
+
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
+    {
+        var resolved = Resolve(command);
+        var info = Spawning.InRoot(
+            target, resolved[0], resolved.Skip(1).Concat(["--profile", Profile]), redirectInput: true);
+
+        // Set HERE rather than in the driver's one line, because this posture is genuinely this
+        // harness's own mechanism — the other two protocol adapters express the same boundary as a
+        // mode on the wire, and a driver that applied one mechanism to all three would set nothing
+        // for two of them and report success.
+        info.Environment[PermissionVariable] = Posture;
+
+        return info;
+    }
+
+    /// <summary>
+    /// Pinned exact, and <b>vendored nowhere</b>: 561 MB per machine, and a harness's own packaging is
+    /// its own problem — but the version the toolchain installs is asserted, not assumed (D53).
+    /// </summary>
+    public HarnessToolchain? Toolchain => new(
+        Binary: ["dsh"],
+        // `-V, --version` — verified against the installed CLI, which printed its exact version.
+        VersionArguments: ["--version"],
+        ProfileVariable: "DSH_HOME",
+        Install: ["npm", "install", "-g", "@deepseek-ai/dsh"],
+        // No login flow and no login question: there is no account here to be out of.
+        Package: "@deepseek-ai/dsh");
+
+    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 } ? command : ["dsh"];
+}
+
+/// <summary>
+/// <b>Codex over the protocol door</b> (ACP3/D53, closing HARNESS2): the ACP project's Codex adapter,
+/// which drives the machine's `codex` exactly as the Claude one drives `claude`.
+/// </summary>
+/// <remarks>
+/// <para>🔴 <b>The posture is `agent`, and it was established rather than guessed</b> — the one thing
+/// HARNESS2 said the ACP route does not settle for free. Read from codex-acp@1.12.0's own bundle, the
+/// wire offers three modes: <c>read-only</c> (asks for everything, so a driven session stalls on its
+/// first edit), <c>agent</c> (workspace-write sandbox, approvals on request) and
+/// <c>agent-full-access</c> (<c>dangerFullAccess</c> with approvals <c>never</c>, which is precisely
+/// what D37 forbids). There is no third reading.</para>
+///
+/// <para>🔴 <b>It is stricter than `acceptEdits`, not equivalent.</b> `agent` runs with
+/// <c>networkAccess: false</c>, which Claude Code's posture does not — and a session that cannot
+/// reach the network fails in ways that look like something else entirely. Recorded here because the
+/// surprise belongs next to the constant.</para>
+///
+/// <para>🔴 <b>`CODEX_HOME` must already exist</b>, where the Claude adapter creates its own config
+/// directory. Pointed at a path that is not there, this adapter exits 1 before <c>initialize</c>
+/// completes, naming the directory — which is why the toolchain carries <c>ProfileMustExist</c>.</para>
+///
+/// <para><b>No model is named</b> (D24), and the account belongs to `codex`: this adapter runs the
+/// harness and reads the home the harness logged into, so it has no login flow of its own.</para>
+/// </remarks>
+public sealed class CodexAcpAdapter : ISessionAdapter
+{
+    public string Name => "codex-acp";
+
+    public SessionWire Wire => SessionWire.Acp;
+
+    public bool Interactive => true;
+
+    /// <summary>D37 in Codex's vocabulary. Never <c>agent-full-access</c>, which is approvals off.</summary>
+    public string? AcpPosture => "agent";
+
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
+    {
+        var resolved = Resolve(command);
+        return Spawning.InRoot(target, resolved[0], resolved.Skip(1), redirectInput: true);
+    }
+
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
+    {
+        var resolved = Resolve(command);
+        return Spawning.ChatInRoot(target, resolved[0], resolved.Skip(1));
+    }
+
+    public HarnessToolchain? Toolchain => new(
+        // 🔴 The BINARY is `codex-acp` — the adapter's own bin, not this adapter's Daoris name and
+        // not `codex`. Verified against the installed package's `bin` map, the same check that
+        // caught the `claude-agent-acp` guess.
+        Binary: ["codex-acp"],
+        VersionArguments: ["--version"],
+        ProfileVariable: "CODEX_HOME",
+        Install: ["npm", "install", "-g", "@agentclientprotocol/codex-acp"],
+        Package: "@agentclientprotocol/codex-acp",
+        // No login of its own: it runs `codex` and reads the home `codex` logged into.
+        AccountOf: "codex",
+        ProfileMustExist: true);
+
+    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 } ? command : ["codex-acp"];
 }
 
 /// <summary>The seam that points the Agent SDK at a <c>claude</c> Daoris chose (ACP2, §1a).</summary>
@@ -499,5 +671,10 @@ public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adap
         // rather than replacing it: D23's "on proof" means a real driven run over ACP, and until
         // that has happened `claude-code` remains what a machine drives with unless it says otherwise.
         ["claude-code-acp"] = new ClaudeAcpAdapter(),
+        // Two more CONFIGURATIONS of the same door (ACP3/D53) — not two more seams, which is the
+        // whole argument for adopting a protocol rather than a product. Each states its own posture
+        // in its own vocabulary, and each arrives beside what was already here.
+        ["dsh"] = new DshAdapter(),
+        ["codex-acp"] = new CodexAcpAdapter(),
     });
 }

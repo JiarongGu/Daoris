@@ -84,6 +84,13 @@ public sealed record LoginQuestion(IReadOnlyList<string> Arguments, string Logge
 /// "how does this tool put itself on a machine", the other is "what do I fetch into a directory I
 /// own". A harness that declares none cannot be pinned, and says so.
 /// </param>
+/// <param name="ProfileMustExist">
+/// Whether this harness demands its profile directory already be there (ACP3). 🔴 Observed, not
+/// assumed, and the two adapters disagree: <c>codex-acp</c> exits 1 before <c>initialize</c>
+/// completes when <c>CODEX_HOME</c> names a path that is not there, while the Claude adapter
+/// <b>creates</b> <c>CLAUDE_CONFIG_DIR</c> and populates it. Default false, so a harness that says
+/// nothing behaves as every harness did before the field existed.
+/// </param>
 public sealed record HarnessToolchain(
     IReadOnlyList<string> Binary,
     IReadOnlyList<string> VersionArguments,
@@ -93,7 +100,8 @@ public sealed record HarnessToolchain(
     IReadOnlyList<string>? LoginArguments = null,
     LoginQuestion? LoginCheck = null,
     string? Package = null,
-    string? AccountOf = null)
+    string? AccountOf = null,
+    bool ProfileMustExist = false)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -715,6 +723,9 @@ public static class HarnessProbe
                 + "profile. Its accounts are managed with its own tooling.");
         }
 
+        // 🔴 Created, not assumed to exist: `codex-acp` exits 1 before `initialize` completes when
+        // `CODEX_HOME` names a path that is not there, while the Claude adapter creates its own. The
+        // toolchain's `ProfileMustExist` names which harnesses depend on this line (ACP3).
         Directory.CreateDirectory(profileHome);
         info.Environment[variable] = profileHome;
     }
