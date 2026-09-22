@@ -188,7 +188,9 @@ reinstalling the service and restarting the host.
 > (`HostSupervisor.Notice`). And a third mechanism underneath both: the host sent no `Cache-Control`,
 > so a page loaded once from a stale host was answered from the WebView2 profile's cache on every
 > start after, with the right host running and never asked. The page is `no-cache` now and the
-> hashed assets `immutable`; the deployment gate holds both headers.
+> hashed assets `immutable`; the deployment gate holds both headers. The application now lives at
+> the family's root, beside the repositories it drives — the publish gained `--beside` for exactly
+> that folder, and it still refuses to write over a name it did not write.
 
 A smaller one beside it: both installs copy `wwwroot` **over** the existing directory without
 clearing it, so stale hashed bundles accumulate. Harmless — `index.html` names the current one — and

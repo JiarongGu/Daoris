@@ -33,7 +33,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
 **282 CLI tests, 275 service, 297 driver, 81 desktop modules, 483 web unit, 14 Playwright**, 59
 devkit, 56/56 release rehearsal, **180/180 family rehearsal** (it names its own phases when you run
-it), **34/34 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
+it), **36/36 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
 principle from detail (D28).
@@ -253,7 +253,7 @@ the traps that are not in any contract, because they were found rather than desi
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (275),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
   (297), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (81), `npm run rehearse:family` (180/180), `npm run test:web` (483 vitest + 14 Playwright),
-  and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (34/34), which
+  and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (36/36), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Its phase 4 asserts the host the
   deployed shell started is the INSTALL's own** — on this machine `~/.daoris/bin` holds a second
   host, which is the decoy that check exists for; a clean machine cannot express the defect.

@@ -278,6 +278,19 @@ async function main() {
   check('…and it refused BEFORE building anything',
     readdirSync(foreign).join() === 'notes.txt', readdirSync(foreign).join(', '));
 
+  // The door through the guard: `--beside` installs next to other things — the repositories the
+  // application drives, in the second deployment — and still refuses a name it would write OVER.
+  // The accepting branch is unit-tested (`desktop-publish.test.ts`) and costs a full build here; the
+  // refusing branch is free, so it is the one this gate drives.
+  mkdirSync(join(foreign, 'app'));
+  const besideRefused = run(
+    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${foreign}" --service --beside`,
+    repoRoot, {}, 60_000);
+  check('--beside still refuses a folder where `app/` is somebody else’s',
+    besideRefused.code === 2 && /\bapp\b/.test(besideRefused.out), besideRefused.out);
+  check('…and touched nothing there', readdirSync(foreign).sort().join() === 'app,notes.txt',
+    readdirSync(foreign).join(', '));
+
   /**
    * 🔴 A re-publish REPLACES the bundle rather than merging into it.
    *

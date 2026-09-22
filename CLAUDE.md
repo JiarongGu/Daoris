@@ -146,8 +146,9 @@ risk, **authorship** was.
   totalled per account, machine-local by the profile's own rule. 🔴 **Absent is never zero**, and no
   price is claimed. TOOL4 is held.
 - 🔴 **Daoris is DEPLOYED** (2026-09-22): `npm run publish:desktop -- --to <dir> --service` installs
-  it — one exe at the root, binaries under `app/`, state in `data/` — and it runs against the real
-  `~/.daoris`, so **starting it starts the driver loop**.
+  it — one exe at the root, binaries under `app/`, state in `data/`; `--beside` when the folder
+  already holds the repositories it drives — and it runs against the real `~/.daoris`, so
+  **starting it starts the driver loop**.
   `docs/2026-09-22-first-deployment-case-study.md` is the first thing to read before touching the
   desktop: four defects were invisible from inside the workspace, three *because* of what the
   workspace provides. **It has a gate now** (DEPLOY2 → **D60**). 🔴 **Stop a running

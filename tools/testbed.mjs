@@ -26,6 +26,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { OWN } from './desktop-publish.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const cli = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
@@ -87,12 +88,15 @@ const env = { ...process.env, DAORIS_SERVICE_URL: service };
  *
  * @remarks
  * 🔴 **Only what Daoris itself puts there, and never deleted by `--reset`.** A deployed desktop lives
- * beside the family it drives, so a root holding one is still a testbed root — but `app` is not part
- * of the testbed, so `--reset` rebuilds the repositories around it rather than through it. The guard
- * below is about not mistaking somebody's projects for scratch; this is about not mistaking Daoris's
- * own install for somebody's projects.
+ * beside the family it drives — the application at the root, published `--beside` the repositories —
+ * so a root holding one is still a testbed root; but none of those names is part of the testbed, so
+ * `--reset` rebuilds the repositories around them rather than through them. The names are the
+ * publish's own list, read from it rather than restated: the two scripts share the folder, and a
+ * name one writes that the other calls a stranger is a refusal nobody can get past. The guard below
+ * is about not mistaking somebody's projects for scratch; this is about not mistaking Daoris's own
+ * install for somebody's projects.
  */
-const OURS = new Set(['app']);
+const OURS = new Set(OWN);
 
 /**
  * 🔴 The guard. This script deletes directories, so it refuses a root holding anything it did not
