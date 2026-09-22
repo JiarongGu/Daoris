@@ -381,7 +381,9 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         // adapter reads the home it produced. Unknown is permissive, by SES3's rule.
         Package: "@agentclientprotocol/claude-agent-acp",
         // No login of its own: it runs `claude` and reads the home `claude` logged into.
-        AccountOf: "claude-code");
+        AccountOf: "claude-code",
+        // The same harness underneath, so the same trust record governs this door too.
+        TrustFile: ClaudeTrust.FileName);
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : ["claude-agent-acp"];
@@ -642,7 +644,12 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
             ["auth", "status"],
             LoggedIn: @"""loggedIn""\s*:\s*true",
             LoggedOut: @"""loggedIn""\s*:\s*false"),
-        Package: "@anthropic-ai/claude-code");
+        Package: "@anthropic-ai/claude-code",
+        // 🔴 Where it records the workspaces a person has accepted (DEPLOY1). Read before every
+        // driven spawn, because an untrusted tree makes the repository's own allow-list inert and
+        // the session cannot then take or close its quest — nine minutes and a real login, three
+        // times over, before this was measured rather than assumed.
+        TrustFile: ClaudeTrust.FileName);
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : ["claude"];

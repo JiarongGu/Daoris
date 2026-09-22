@@ -400,20 +400,16 @@ the command center, the scrim, and four defects only deploying found.
 `docs/2026-09-22-first-deployment-case-study.md` is the record. **What is left is one decision and
 one gate.**
 
-- [ ] 🔴 **DEPLOY1 — a repository cannot grant its own trust, and the driven loop stops there.**
-  Claude Code **ignores** a repository's `permissions.allow` until the workspace has been accepted in
-  the person's own `~/.claude.json` — *"this workspace has not been trusted"*, said by the harness on
-  its first line. So Daoris can wire the connector (ACP4), the allow-list and the posture and still
-  be one machine-level flag short, in the file SES3 puts out of bounds. **Three real driven runs
-  failed on exactly this**, each doing the work and none able to take its quest.
-  **The decision is whose the grant is**, and it is the owner's: (a) the driver **detects and
-  refuses** with the one sentence that fixes it — it knows the path, so this is cheap and honest;
-  (b) adoption **asks** and writes the flag as an explicit act; (c) Daoris never touches it and the
-  pipe door is documented as needing a human's first visit. 🔴 **Not (d) write it silently** — that
-  flag *is* the person's grant, and a tool that grants trust on someone's behalf has removed the one
-  step in the chain that was theirs. **Measure the ACP door first**: the adapter runs the Agent SDK
-  rather than the CLI's trust flow, so it may not have this problem at all, and that is one driven
-  run to find out.
+- [x] 🔴 **DEPLOY1 — a repository cannot grant its own trust.** ✅ **the detection half is done
+  2026-09-22**, which was option (a) and the only half that is not the owner's to give. The driver now
+  reads the harness's own record before spawning and **holds** with the sentence that fixes it, instead
+  of spending nine minutes and a real login on a session that could never close its quest. Proven
+  against the real untrusted tree. `ClaudeTrust` reads and never writes: unknown is permissive (no
+  file, unreadable, a shape this build does not know), and only a definite *no* refuses.
+  **What is still open is the owner's:** whether adoption should ever *ask* and write the flag
+  (option b), or whether the pipe door stays documented as needing a human's first visit (option c).
+  🔴 **Never (d), silently.** And **measure the ACP door**: it runs the Agent SDK rather than the
+  CLI's trust flow, so it may not have this problem at all — one driven run answers it.
 
 - [ ] **DEPLOY2 — nothing gates the deployed artefact.** `rehearse` installs and drives the CLI
   *package*; both rehearsals otherwise run inside the workspace, where the workspace build and the

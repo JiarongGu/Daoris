@@ -185,12 +185,25 @@ was diagnosed by.
 
 ## 5. What this says about the next deployment
 
-- **The trust step is the blocker, and it is a decision, not a patch.** Daoris could write
-  `hasTrustDialogAccepted` into the person's `~/.claude.json` and every driven run would work. It
-  should not do that silently: that flag *is* the person's grant, and a tool that grants trust on
-  someone's behalf has removed the only step in the chain that was theirs. The honest options are to
-  **detect and say so** — the driver knows the path and could refuse with the one sentence that fixes
-  it — or to make it an explicit, asked-for act of adoption. Filed rather than chosen.
+- **The trust step is the blocker, and the detection half is now built.** The driver reads the
+  harness's own record before spawning and **holds** rather than starting a session that could never
+  close its quest:
+
+  ```
+  held  #7786da → testbed-core: `<family>	estbed-core` has never been trusted by this harness on
+  this machine, so it ignores the repository's own `permissions.allow` — a session here can do the
+  work but cannot take or close its quest. Run `claude` in that directory once and accept the trust
+  prompt. Daoris does not set that flag for you: it is your grant to give.
+  ```
+
+  Nine minutes and a real login become an instant sentence. **Read, never written**, and only a
+  definite *no* refuses — no file, an unreadable one, or a harness with no notion of trust are all
+  unknown and permissive, the same rule the login question follows.
+
+  What is still a decision, and the owner's: whether adoption should ever **ask** and write the flag,
+  or whether the pipe door stays documented as needing a human's first visit. 🔴 Never silently: that
+  flag *is* the grant, and a tool that gave it on someone's behalf would have removed the only step in
+  the chain that was theirs.
 - **The protocol door may not have this problem at all**, since the ACP adapter runs the Agent SDK
   rather than the CLI's interactive trust flow. That is now a concrete reason to prefer it, and a
   cheap thing to measure — it costs one driven run.

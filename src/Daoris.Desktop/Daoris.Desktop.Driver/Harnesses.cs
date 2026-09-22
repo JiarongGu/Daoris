@@ -84,6 +84,11 @@ public sealed record LoginQuestion(IReadOnlyList<string> Arguments, string Logge
 /// "how does this tool put itself on a machine", the other is "what do I fetch into a directory I
 /// own". A harness that declares none cannot be pinned, and says so.
 /// </param>
+/// <param name="TrustFile">
+/// The file, beside this harness's configuration home, in which it records the workspaces a person
+/// has accepted — for a harness that has such a notion (DEPLOY1). Null is "no notion of trust", and
+/// that is most of them. It is READ and never written: the flag is the person's grant.
+/// </param>
 /// <param name="ProfileMustExist">
 /// Whether this harness demands its profile directory already be there (ACP3). 🔴 Observed, not
 /// assumed, and the two adapters disagree: <c>codex-acp</c> exits 1 before <c>initialize</c>
@@ -101,7 +106,8 @@ public sealed record HarnessToolchain(
     LoginQuestion? LoginCheck = null,
     string? Package = null,
     string? AccountOf = null,
-    bool ProfileMustExist = false)
+    bool ProfileMustExist = false,
+    string? TrustFile = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>

@@ -5,6 +5,40 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Three real driven runs failed on a flag the repository could not set (2026-09-22)
+
+**Symptom.** A driven session did the work — source, tests, decision records — and then recorded
+`failed — exited without touching its quest`, three times, nine minutes and a real login each. The
+repository's `.claude/settings.json` allowed exactly the tools it needed.
+
+**Root cause.** The harness said it on the transcript's first line: *"Ignoring 9 permissions.allow
+entries from .claude/settings.json: this workspace has not been trusted."* Claude Code ignores a
+repository's allow-list until a **person** has accepted that path, recorded per-path in the harness's
+own config under the profile — not in the repository, and not anywhere Daoris may write. So the chain
+was: driver instructs the session to claim its quest → ACP4 makes the tools reachable → the
+repository allows them → the harness drops the allow-list unread.
+
+🔴 **Why it had never been seen.** DRV4's scratch repository had been opened by hand during that
+session, and its archive entry names the dependency in a parenthetical — *"its own
+`.claude/settings.local.json` trusting it"*. The claim it confirmed is true **given a trusted
+workspace**, and that qualifier lived in one clause nobody was reading as a precondition.
+
+**Fix.** `ClaudeTrust` reads the record and the driver **holds** before spawning, naming the path, the
+one command, and what it costs. Not written — that flag is the person's grant, and a tool that set it
+on their behalf would remove the only step in the chain that was theirs. Declared per harness
+(`HarnessToolchain.TrustFile`), so a harness with no notion of trust is unaffected.
+
+**Verify.** Eleven tests, including the case that actually bit: a path the harness has never recorded
+is **untrusted, not unknown**, because it prompts on first visit. Then against the real tree — the
+driver held with the sentence instead of spawning.
+
+**The trap to inherit.** 🔴 **Only a definite NO refuses**, and absent is not always unknown: for a
+login the harness cannot answer, absent means unknown and is permissive; for a trust prompt that
+appears on first visit, absent means never-accepted and is a definite no. Two absences, opposite
+readings, and the difference is whether the thing records its own negatives.
+
+**Commit.** `7ff0e04`.
+
 ## A session transcript was decoded as the machine's ANSI codepage (2026-09-22)
 
 **Symptom.** The first real driven run's transcript held `鈥?` where every em-dash belonged. Raw

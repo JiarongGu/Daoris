@@ -66,7 +66,13 @@ if (argv.includes('--install')) {
   const bin = join(homedir(), '.daoris', 'bin');
   mkdirSync(bin, { recursive: true });
   cpSync(join(out, 'daoris-knowledge', exe('daoris-knowledge')), join(bin, exe('daoris-knowledge')));
-  cpSync(join(out, 'daoris-knowledge-http'), join(bin, 'daoris-knowledge-http'), { recursive: true });
+  // 🔴 REPLACED, not merged into. A copy over the old directory leaves every previous hashed bundle
+  // in `wwwroot/assets` — harmless, because `index.html` names the current one, and actively
+  // misleading to anybody trying to tell which build is live by listing the folder. That is exactly
+  // how a stale deployment was diagnosed the slow way once.
+  const installedHost = join(bin, 'daoris-knowledge-http');
+  rmSync(installedHost, { recursive: true, force: true });
+  cpSync(join(out, 'daoris-knowledge-http'), installedHost, { recursive: true });
 
   // The published binary has no workspace above it to walk to, so the root must be NAMED — this is
   // exactly the trap the README records, closed here by printing the snippet already filled in.

@@ -335,6 +335,20 @@ async function attach(window = null) {
 
 async function build(args) {
   const configuration = args.includes('--release') ? 'Release' : 'Debug';
+
+  // 🔴 An orphaned host from this checkout holds the assemblies this build has to overwrite, and
+  // MSBuild says so in eleven lines ending `MSB3027 … Exceeded retry count of 10`. The trap is
+  // already documented on `stopAll` below; naming it here is what makes the documentation reach the
+  // person who hit it. NAMED, never killed: a host this tool did not start belongs to whoever did,
+  // which is the same distinction the shell's own supervisor makes.
+  const leftovers = running(assemblyExe(HTTP_PROJECT));
+  if (leftovers.length) {
+    fail(`${leftovers.length} service host(s) from this checkout are still running `
+      + `(pid ${leftovers.join(', ')}), and they hold the assemblies this build overwrites.\n`
+      + '  Close the shell — or `node tools/desktop.mjs kill`, which closes it so its own shutdown '
+      + 'stops the host it owns.');
+  }
+
   // The order is the dependency order and is not cosmetic: the platform builds INTO the host's
   // wwwroot, so a host built before the bundle serves the previous one, and the shell shows it.
   run('npm', ['--prefix', WEB, 'run', 'build'], { shell: true });

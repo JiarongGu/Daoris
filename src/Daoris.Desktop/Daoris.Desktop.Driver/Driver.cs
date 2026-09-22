@@ -198,6 +198,28 @@ public sealed class Driver(
 
         var workTree = opened?.Path ?? root;
 
+        // 🔴 Can this harness use what the repository allows it? (DEPLOY1.) Claude Code ignores a
+        // repository's `permissions.allow` until a person has accepted that path, so a session in an
+        // untrusted tree does the work and then cannot take or close the quest it exists to serve —
+        // measured three times, nine minutes and a real login each. Asked HERE, with the other
+        // pre-spawn holds, because the whole value is not spending that.
+        //
+        // Held rather than failed: nothing is wrong with the quest, and one command fixes it.
+        // Resolved defensively: an unknown adapter name is its own error with its own sentence,
+        // reported where it already was, so this check simply does not run for one.
+        HarnessToolchain? preflight = null;
+        try { preflight = adapters.Resolve(config.Adapter).Toolchain; } catch (DriverException) { }
+
+        if (preflight is { TrustFile: { Length: > 0 } trustFile })
+        {
+            var configHome = selection.ProfileHome
+                ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (ClaudeTrust.Accepted(Path.Combine(configHome, trustFile), workTree) == false)
+            {
+                return ($"held  #{quest.Id} → {quest.To}: {ClaudeTrust.Refusal(workTree)}", false, null);
+            }
+        }
+
         // Where the tree stands BEFORE anything runs in it (SURF6). Read here rather than after the
         // spawn so it is genuinely the base: between this line and the process starting, the only
         // thing that touches the tree is the process. It goes onto the record because the review
