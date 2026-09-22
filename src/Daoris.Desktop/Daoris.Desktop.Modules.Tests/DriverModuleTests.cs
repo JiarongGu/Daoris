@@ -358,6 +358,12 @@ public sealed class DriverModuleTests : Bridge
     {
         var home = HarnessSettings.ProfileHome(Home, "stub", "work");
         Directory.CreateDirectory(home);
+        // The stub is a door on this machine only once a command names what it runs — a door with
+        // nothing to run is off the roster, which is what kept a fixture off the deployed roster.
+        File.WriteAllText(DriverConfigPath, """
+            { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
+              "commands": { "stub": ["node", "agent.mjs"] } }
+            """);
 
         var roster = await AnswerAsync(Module(), "HARNESSES");
         var stub = roster.GetProperty("harnesses").EnumerateArray().Single(h => h.GetProperty("harness").GetString() == "stub");

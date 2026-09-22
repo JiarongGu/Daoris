@@ -311,7 +311,37 @@ public sealed class HarnessProbeTests : IDisposable
 
         Assert.False(report.Present);
         Assert.Null(report.Version);
-        Assert.NotNull(report.Problem);
+        // 🔴 The whole sentence, and only it. The deployed application's roster showed this followed
+        // by the runtime's own words — "An error occurred trying to start process 'dsh' with working
+        // directory '<the probe's cwd>'. The system cannot find the file specified." — a machine
+        // path and a second, worse sentence for the one fact the first already states.
+        Assert.Equal("`daoris-no-such-binary-anywhere` is not on this machine's PATH", report.Problem);
+    }
+
+    /// <summary>
+    /// 🔴 A fixture is not a tool. The stub declares a toolchain with no binary of its own — the
+    /// "binary" is whatever `driver.json` names, which is what lets the rehearsal gate the whole
+    /// roster with no model — and the deployed application, which names nothing, listed it as an
+    /// agent tool called <c>stub</c> with an install button and nothing to install. A door with
+    /// nothing to run on this machine is off the roster; name a command and it is on it.
+    /// </summary>
+    [Fact]
+    public async Task A_door_with_nothing_to_run_on_this_machine_is_not_on_the_roster()
+    {
+        var roster = new HarnessRoster(
+            new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["stub"] = new StubAdapter(),
+            }),
+            Path.Combine(_home, "harnesses.json"));
+
+        Assert.Empty(await roster.RosterAsync(DriverConfig.Empty));
+
+        var named = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = [FakeBinary()] },
+        };
+        Assert.Equal(["stub"], (await roster.RosterAsync(named)).Select(r => r.Adapter));
     }
 
     /// <summary>

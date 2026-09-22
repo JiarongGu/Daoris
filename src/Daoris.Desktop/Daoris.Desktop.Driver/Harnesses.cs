@@ -632,6 +632,9 @@ public static class HarnessProbe
         }
     }
 
+    /// <summary>The runtime's error code for a binary that is not there — ERROR_FILE_NOT_FOUND and ENOENT alike.</summary>
+    private const int FileNotFound = 2;
+
     /// <summary>
     /// Run one of the harness's reporting commands and collect what it said. <b>Both supported
     /// harnesses exit 0 whether or not they are logged in</b>, so the exit code is deliberately not
@@ -686,6 +689,15 @@ public static class HarnessProbe
 
             // Both streams: a harness that reports its version on stderr is not an absent harness.
             return (true, $"{await stdout.ConfigureAwait(false)}\n{await stderr.ConfigureAwait(false)}", null);
+        }
+        catch (System.ComponentModel.Win32Exception error) when (error.NativeErrorCode == FileNotFound)
+        {
+            // 🔴 The sentence, and only the sentence. The runtime's own message for this case — "An
+            // error occurred trying to start process '…' with working directory '<cwd>'. The system
+            // cannot find the file specified." — restates the fact and adds a machine path, and the
+            // deployed application's roster showed both. Any OTHER failure keeps the runtime's words:
+            // a binary that exists and will not start is news the sentence alone does not carry.
+            return (false, "", $"`{resolved[0]}` is not on this machine's PATH");
         }
         catch (Exception error) when (error is System.ComponentModel.Win32Exception or IOException)
         {
@@ -839,12 +851,26 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>Every harness this build knows, probed — what a roster surface renders.</summary>
+    /// <remarks>
+    /// 🔴 <b>A door with nothing to run on this machine is not on the roster.</b> The stub's toolchain
+    /// has no binary of its own — the "binary" is whatever `driver.json` names, which is what lets
+    /// the rehearsal gate the roster with no model in it — and a deployed application names nothing,
+    /// so it listed an agent tool called <c>stub</c> with an install button and nothing to install.
+    /// Structural rather than a name: name a command for it and it is a real door again. The spawn
+    /// path is untouched — <see cref="SelectAsync"/> still answers for any adapter it is asked about.
+    /// </remarks>
     public async Task<IReadOnlyList<HarnessReport>> RosterAsync(
         DriverConfig config, bool refresh = false, CancellationToken ct = default)
     {
         var reports = new List<HarnessReport>();
         foreach (var name in Known)
         {
+            if (adapters.Resolve(name).Toolchain is { Binary.Count: 0 }
+                && config.Commands.GetValueOrDefault(name) is not { Count: > 0 })
+            {
+                continue;
+            }
+
             if (await ReportAsync(name, config, refresh, ct).ConfigureAwait(false) is { } report)
             {
                 reports.Add(report);

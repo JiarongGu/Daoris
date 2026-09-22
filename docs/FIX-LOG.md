@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The roster listed a fixture as a tool, and spoke the runtime's words (2026-09-23)
+
+**Symptom.** The Machine view on the deployed application ended with an agent tool called `stub` —
+*not installed*, an **install** button, *no command to run* — and `dsh`'s absence read *"`dsh` is
+not on this machine's PATH — An error occurred trying to start process 'dsh' with working directory
+'<the checkout>'. The system cannot find the file specified."*
+
+**Root cause.** Two. The stub adapter declares a toolchain with **no binary of its own** — the
+"binary" is whatever `driver.json` names, which is what lets the family rehearsal gate the roster
+with no model — and the roster enumerated every adapter with a toolchain; a machine that names no
+command got a fixture presented as a tool. And the probe appended the runtime's exception message to
+its own sentence for every failure alike, including the one where the sentence already says
+everything: file not found, plus a machine path the probe's working directory happened to be.
+
+**Fix.** A door whose toolchain has no binary and for which no command is configured is not on the
+roster (`HarnessRoster.RosterAsync`, structural, and the spawn path is untouched); name a command and
+it is a door again. A `Win32Exception` with `ERROR_FILE_NOT_FOUND`/`ENOENT` keeps the sentence and
+drops the message; any other start failure keeps the runtime's words, which are then news.
+
+**Verify.** `HarnessTests` — the fixture door off the roster until a command names it, and the
+absent-harness sentence exact — both seen red. On the install: no `stub` card, and `dsh`'s row
+reading the one sentence.
+
+**Commit.** _pending_
+
 ## A blue ✕ in a palette with no blue — the OS accent through a native control (2026-09-23)
 
 **Symptom.** The Search field on the deployed application showed a blue ✕ at its right once a
