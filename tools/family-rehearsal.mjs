@@ -265,6 +265,26 @@ check(
   found.text.slice(0, 300),
 );
 
+// 🔴 The gate that would have caught CANON8e. When the always-loaded tier moved out of
+// `.claude/rules/` and into a span (D59), the scanner kept reading the empty directory and every
+// canonical rule fell out of the index — silently, because nothing asserted one was in there. The
+// count is not enough: an entry that is indexed under the wrong kind, or whose body came back empty,
+// passes a count and fails a reader.
+const canonical = await api(
+  'GET', `/api/search?q=${encodeURIComponent('never write into another repository')}&localOnly=false`);
+const rule = (canonical.json ?? []).find(
+  (hit) => hit.kind === 'Rule' && hit.title === 'repository-owns-its-work');
+check(
+  'a canonical RULE is searchable, wherever the tier keeps it',
+  canonical.status === 200 && Boolean(rule),
+  canonical.text.slice(0, 300),
+);
+check(
+  '...and it is found in the file that actually holds it',
+  Boolean(rule) && /AGENTS\.md$/.test(rule.path ?? ''),
+  JSON.stringify(rule ?? null).slice(0, 200),
+);
+
 // -------------------------------------------------- 6. a newcomer joins
 
 section('6. A newcomer is born and joins (D44)');

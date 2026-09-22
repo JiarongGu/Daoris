@@ -348,24 +348,6 @@ is read by exactly one of the three harnesses** (evaluation §6.5). HELP1 is now
   commit. Always-loaded core **23,862 → 21,817 bytes**, because eight frontmatter blocks and a
   separate roster's preamble went away. The archive carries the outcome.
 
-- [ ] 🔴 **CANON8e — the knowledge service stopped indexing the rules tier, and I did not notice.**
-  Measured 2026-09-22, after the migration: `RepositoryScanner.Scan` reads `{target}/rules` as a
-  directory, which is now empty, so **the eight canonical rules fell out of the index**. Searching an
-  example family for *"never write into another repository"* returns only that repository's own local
-  rule. Cross-repository search and convergence — *the reason the service exists* — lost the
-  always-loaded tier entirely, silently, and every gate stayed green because no gate asserts that a
-  canonical RULE is searchable.
-
-  The fix is the **twin contract** again (`region.ts` has no C# counterpart yet): the scanner reads
-  the region out of the repository's instruction file and splits it per rule by provenance, exactly
-  as `tierRuleBody` does. Then a gate that would have caught this — the family rehearsal already
-  searches across projects, and asserting a *canonical* hit rather than any hit is one line.
-
-  🔴 **The lesson is the shape, not the bug.** D59 moved a tier and I traced every consumer inside
-  `Daoris.Cli` because that is where the type errors were. The service reads the same layout from
-  another language, where nothing breaks at compile time — which is what a twin contract *is*, and
-  `claims-need-checks` says the check ships in the same change.
-
 - [ ] **CANON8d — say the new thing.** `analyze` already detects the `AGENTS.md` convention and says
   *"what it installs will be invisible to them"*, which stops being true; `init`'s adoption flow, the
   README's three layers, `canon-authoring`'s "`rules/` is always-loaded", and D7 in the contract all

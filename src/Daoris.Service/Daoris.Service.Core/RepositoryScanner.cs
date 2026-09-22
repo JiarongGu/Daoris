@@ -55,7 +55,11 @@ public sealed class RepositoryScanner
         var target = ".claude";
         var entries = new List<KnowledgeEntry>();
 
+        // The always-loaded tier, wherever this repository keeps it. A repository on the old layout
+        // has files under `rules/`; one that has synced since D59 has a SPAN in the file every
+        // harness reads, and the lock is what says which — so both are read and neither is guessed at.
         entries.AddRange(ScanDocuments(repositoryRoot, name, daorisLock, $"{target}/rules", EntryKind.Rule));
+        entries.AddRange(ScanRegion(repositoryRoot, name, daorisLock));
         entries.AddRange(ScanDocuments(repositoryRoot, name, daorisLock, $"{target}/knowledge", EntryKind.Knowledge));
         entries.AddRange(ScanSkills(repositoryRoot, name, daorisLock, $"{target}/skills"));
 
@@ -76,6 +80,42 @@ public sealed class RepositoryScanner
         }
 
         return entries;
+    }
+
+    /// <summary>
+    /// The always-loaded rules, out of the region the lock points at (CANON8e / D59).
+    /// </summary>
+    /// <remarks>
+    /// <para>Each rule is its OWN entry, split by its provenance line — the same reason a decisions
+    /// log is split at its headings. Returning the whole tier for a question about one rule buries
+    /// the answer in every other rule.</para>
+    ///
+    /// <para>Provenance is <b>canonical by construction</b> here: the lock is what named this span,
+    /// and a span exists because daoris wrote it. The adopter's own text around the region is theirs
+    /// and is never swept in — the markers are the boundary, and nothing outside them is read.</para>
+    /// </remarks>
+    private static IEnumerable<KnowledgeEntry> ScanRegion(
+        string root, string repository, DaorisLock daorisLock)
+    {
+        foreach (var span in daorisLock.Spans)
+        {
+            var rules = DoctrineRegion.Read(Path.Combine(root, span.Key));
+            foreach (var entry in span.Value)
+            {
+                if (!rules.TryGetValue(entry.Source, out var body)) continue;
+
+                yield return new KnowledgeEntry(
+                    repository,
+                    EntryKind.Rule,
+                    Provenance.Canonical,
+                    Path.GetFileNameWithoutExtension(entry.Target),
+                    body,
+                    // The file it actually lives in, with the rule as the anchor: a reader following
+                    // this goes to the region and finds the rule, which is where it is.
+                    span.Key,
+                    Path.GetFileNameWithoutExtension(entry.Target));
+            }
+        }
     }
 
     private static IEnumerable<KnowledgeEntry> ScanDocuments(

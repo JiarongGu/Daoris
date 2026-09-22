@@ -3320,3 +3320,35 @@ frontmatter the span strips, so nothing offline can rebuild them; a canon change
 
 **A rule can no longer collide**, because the canon no longer claims a path a repository could
 already own. D12's refusal still guards every tier that is still files.
+
+## CANON8e — the service stopped indexing the rules tier (2026-09-22)
+
+> 🔴 **CANON8e — the knowledge service stopped indexing the rules tier, and I did not notice.**
+> Measured after the migration: `RepositoryScanner.Scan` reads `{target}/rules` as a directory, which
+> is now empty, so the eight canonical rules fell out of the index — silently, and every gate stayed
+> green because no gate asserts that a canonical RULE is searchable.
+
+✅ **done 2026-09-22.** `DoctrineRegion` is `region.ts`'s C# twin — two artefacts, no shared code, the
+**file and the layout as the contract**, exactly as the harness profiles are. `daoris.lock` is what
+says where each rule lives: an entry carrying `in` is a span, and the scanner splits the region by
+provenance line so **each rule is its own entry**, the same reason a decisions log is split at its
+headings. A repository still on files keeps working, and the adopter's text around the region is never
+swept in. Measured on the example family: **11 → 19 entries** per repository.
+
+**One correction to the report that opened this.** The evidence sentence — *"searching returns only
+that repository's own local rule"* — was misleading. Search defaults to `localOnly`, deliberately:
+canonical content is identical in every adopting repository, so returning it per repository would
+produce a dozen copies of one rule and call that a corpus. So a **default** search never returned
+canonical rules, before the move or after. What actually broke was that the rules stopped being
+**indexed at all**, which costs the repository counts, every `localOnly=false` search, and anything
+reading the corpus whole. Smaller than first stated, and still a silent regression.
+
+**The gate that would have caught it** is two checks in the family rehearsal (179/179): a canonical
+rule is searchable, and it is found in the file that actually holds it. A count alone would not do —
+an entry indexed under the wrong kind, or with an empty body, passes a count and fails a reader.
+
+🔴 **The lesson is the shape rather than the bug.** D59 moved a tier and I traced every consumer
+inside `Daoris.Cli`, because that is where the type errors were. The service reads the same layout
+from another language, where **nothing breaks at compile time** — which is precisely what a twin
+contract is. Anything that moves a layout now asks: which other artefact reads this, and in what
+language?

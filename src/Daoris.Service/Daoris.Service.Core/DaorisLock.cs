@@ -17,7 +17,27 @@ public sealed class DaorisLock
 {
     private readonly HashSet<string> _canonicalPaths;
 
-    private DaorisLock(HashSet<string> canonicalPaths) => _canonicalPaths = canonicalPaths;
+    private DaorisLock(HashSet<string> canonicalPaths, IReadOnlyDictionary<string, IReadOnlyList<Span>>? spans = null)
+    {
+        _canonicalPaths = canonicalPaths;
+        Spans = spans ?? new Dictionary<string, IReadOnlyList<Span>>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// One canonical document that lives as a SPAN inside a file rather than as a file (D59).
+    /// </summary>
+    /// <param name="Source">
+    /// <c>pack/source</c>, exactly as the provenance line inside the region spells it — which is how
+    /// the two halves of this project, sharing no code, agree on which rule is which.
+    /// </param>
+    /// <param name="Target">The canonical identity, e.g. <c>rules/sensitive-info.md</c>.</param>
+    public readonly record struct Span(string Source, string Target);
+
+    /// <summary>
+    /// Which spans live in which file, repository-relative. Empty for a repository whose doctrine is
+    /// all files — which is every repository that has not synced since the tier moved.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<Span>> Spans { get; }
 
     /// <summary>A lock claiming nothing — for a repository that has not adopted daoris.</summary>
     public static DaorisLock Empty { get; } = new(new HashSet<string>(StringComparer.OrdinalIgnoreCase));
@@ -52,14 +72,33 @@ public sealed class DaorisLock
             var target = ReadTargetDirectory(repositoryRoot);
 
             var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var spans = new Dictionary<string, List<Span>>(StringComparer.OrdinalIgnoreCase);
             foreach (var entry in entries.EnumerateArray())
             {
                 if (!entry.TryGetProperty("target", out var value)) continue;
                 if (value.GetString() is not { Length: > 0 } relative) continue;
                 paths.Add(Normalize($"{target}/{relative}"));
+
+                // `in` says this entry is a span inside a file rather than a file of its own (D59),
+                // and the file is repository-relative — NOT relative to the target directory, because
+                // the file belongs to the repository rather than to daoris.
+                if (!entry.TryGetProperty("in", out var within)) continue;
+                if (within.GetString() is not { Length: > 0 } host) continue;
+
+                var pack = entry.TryGetProperty("pack", out var p) ? p.GetString() : null;
+                var source = entry.TryGetProperty("source", out var s) ? s.GetString() : null;
+                if (pack is not { Length: > 0 } || source is not { Length: > 0 }) continue;
+
+                if (!spans.TryGetValue(host, out var held)) spans[host] = held = [];
+                held.Add(new Span($"{pack}/{source}", relative));
             }
 
-            return new DaorisLock(paths);
+            return new DaorisLock(
+                paths,
+                spans.ToDictionary(
+                    pair => pair.Key,
+                    pair => (IReadOnlyList<Span>)pair.Value,
+                    StringComparer.OrdinalIgnoreCase));
         }
         catch (JsonException)
         {

@@ -153,6 +153,84 @@ public sealed class RepositoryScannerTests : IDisposable
         Assert.Empty(new RepositoryScanner().Scan(Path.Combine(_root, "does-not-exist")));
     }
 
+    // ── the region (CANON8e / D59) ────────────────────────────────────────────────────────────────
+    //
+    // 🔴 Measured after the migration, not imagined: `.claude/rules/` is empty now, so the eight
+    // canonical rules fell straight out of the index and a search for one returned only a
+    // repository's OWN local rule. Cross-repository search and convergence are what the service
+    // exists for, and they had quietly lost the always-loaded tier — with every gate green, because
+    // none asserted that a canonical RULE was searchable.
+    //
+    // The twin contract is what failed: the CLI moved a tier, and this artefact reads the same layout
+    // from another language where nothing breaks at compile time.
+
+    /// <summary>A repository on the new layout: the rules in a region, the lock saying where.</summary>
+    private void WriteRegion(params (string Name, string Body)[] rules)
+    {
+        Write("daoris.json", """{"source":"s","packs":[],"target":".claude"}""");
+        var entries = rules.Select(r => new
+        {
+            pack = "core",
+            source = $"core/rules/{r.Name}.md",
+            target = $"rules/{r.Name}.md",
+            sha256 = "x",
+            @in = "AGENTS.md",
+        });
+        Write("daoris.lock", JsonSerializer.Serialize(new { version = 1, entries }));
+
+        var body = string.Join("\n", rules.Select(r =>
+            $"\n<!-- daoris: core/core/rules/{r.Name}.md @ 0.0.1 — canonical; edit via `daoris upstream` -->\n\n{r.Body}"));
+        Write("AGENTS.md",
+            $"# Ours\n\nOur own doctrine.\n\n<!-- daoris:rules — generated; edit the canon, not this -->\n"
+            + $"# Doctrine\n{body}\n<!-- /daoris:rules -->\n");
+    }
+
+    [Fact]
+    public void A_canonical_rule_in_the_region_is_indexed()
+    {
+        WriteRegion(
+            ("repository-owns-its-work", "# Never write into another repository\n\nPublish the request."),
+            ("sensitive-info", "# Sensitive info\n\nNo machine paths."));
+
+        var entries = new RepositoryScanner().Scan(_root);
+
+        var rule = Single(entries, "repository-owns-its-work");
+        Assert.Equal(EntryKind.Rule, rule.Kind);
+        Assert.Equal(Provenance.Canonical, rule.Provenance);
+        Assert.Contains("Never write into another repository", rule.Body);
+        // Each rule is its OWN entry, not one blob: a search that returned the whole tier for a
+        // question about one rule buries the answer in every other rule, which is the same reason
+        // the decision log is split at its headings.
+        Assert.Contains("No machine paths", Single(entries, "sensitive-info").Body);
+        Assert.DoesNotContain("No machine paths", rule.Body);
+    }
+
+    /// <summary>
+    /// The adopter's own text around the region is theirs, and is not doctrine this service indexes
+    /// as a rule. Their file, their words — only the span daoris owns is canonical.
+    /// </summary>
+    [Fact]
+    public void The_text_around_the_region_is_not_swept_in()
+    {
+        WriteRegion(("sensitive-info", "# Sensitive info\n\nNo machine paths."));
+
+        var entries = new RepositoryScanner().Scan(_root);
+
+        Assert.DoesNotContain(entries, e => e.Body.Contains("Our own doctrine"));
+    }
+
+    /// <summary>A repository still on the old layout keeps working — nothing about files changed.</summary>
+    [Fact]
+    public void A_rule_that_is_still_a_file_is_indexed_as_before()
+    {
+        WriteLock("rules/sensitive-info.md");
+        Write(".claude/rules/sensitive-info.md", "# Sensitive info\n\nNo machine paths.");
+
+        var rule = Single(new RepositoryScanner().Scan(_root), "sensitive-info");
+
+        Assert.Equal(Provenance.Canonical, rule.Provenance);
+    }
+
     private static KnowledgeEntry Single(IReadOnlyList<KnowledgeEntry> entries, string title) =>
         entries.Single(e => e.Title == title);
 }
