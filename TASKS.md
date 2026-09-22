@@ -413,6 +413,19 @@ both are the owner's.**
   narrower than it looks — whether per-install UI state should join it, and under what key, since a
   scratch run and a real one must not contend for a window's geometry. Owner's call; measure before
   moving anything.
+  ✅ **Measured 2026-09-22, against the live deployment on this machine**, which is what the item
+  asked for before anything moves. `~/.daoris` is **472 MB**: `toolchain/` 273 MB (one pinned
+  adapter), `bin/` 182 MB (two self-contained hosts), `knowledge.db` 17 MB, `sessions/` 16 KB, and
+  two config files of 1 KB each. The per-install `data/` is **21 MB and two things**: a WebView2
+  user-data folder (21 MB of browser cache, cookies and local storage) and `window-state.json` —
+  **five integers**, `Width Height X Y Placement`.
+  🔴 **So the question is smaller than the item feared, and the two homes hold different KINDS of
+  thing.** Everything in `~/.daoris` is a machine fact both doors read; everything in `data/` is one
+  window's rendering state, and 99.99% of it by size is a browser profile that a scratch run and a
+  real one must never share. **Recommendation: leave it**, and say so in the README rather than move
+  it — D50's property is already satisfied, because nothing in `data/` is a *capability* a
+  screenless machine would be denied. The five integers could move, and moving them alone would need
+  a per-install-root key for more machinery than five integers are worth. Still the owner's call.
 
 ### Plugins — what the study left (owner, 2026-09-22 → ARCH1)
 

@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A re-published install kept every bundle it had ever served (2026-09-22)
+
+**Symptom.** Listing a deployed install's `wwwroot/assets` showed **seven** hashed JS bundles. It
+produced a wrong answer about which build was live — twice: once in the first-deployment case study,
+and once while re-publishing to that same machine afterwards, by the session that had read the case
+study warning about it an hour earlier.
+
+**Root cause.** `dotnet publish` does not clear its output directory, so `desktop-publish.mjs`
+published the HTTP host *over* the previous one and every earlier hashed bundle stayed. Nothing is
+actually broken by this — `index.html` names the current bundle and the host serves it — which is
+why it survived: the folder is **correct and unreadable**, and the only thing it costs is the
+judgement of whoever reads it.
+
+🔴 **The sibling had already fixed it.** `service-publish.mjs` does `rmSync` then copy, with a
+comment naming this exact failure: *"actively misleading to anybody trying to tell which build is
+live by listing the folder. That is exactly how a stale deployment was diagnosed the slow way once."*
+Two scripts doing one job, one of which learned. That is the counterpart-set shape this repository
+keeps meeting — the install layout vs the locator's candidates (2a), the declared gates vs the
+workflow, the toolchain twins — and it is the reason the fix is a gate rather than a second comment.
+
+**Fix.** `rmSync(host, { recursive: true, force: true })` before the host publish in
+`desktop-publish.mjs`, mirroring its sibling.
+
+**Verify.** `npm run rehearse:deploy` seeds a decoy bundle into a published install, re-publishes
+into it, and asserts the decoy is gone and that `index.html` names a bundle the install actually has
+— watched failing first (`index-STALEBUNDLE.js, index-yAgtBJUV.js`), then 32/32. The machine's own
+install went from seven bundles to one on the next publish.
+
+**Commit.** pending
+
 ## Three real driven runs failed on a flag the repository could not set (2026-09-22)
 
 **Symptom.** A driven session did the work — source, tests, decision records — and then recorded

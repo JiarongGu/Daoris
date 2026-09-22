@@ -22,7 +22,7 @@
  * publishes a copy beside the shell as well, so the folder is self-sufficient.
  */
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -130,6 +130,15 @@ if (flag('--service')) {
   // machine use: one launcher at the root, everything it needs out of sight, runtime state in `data/`.
   console.log('desktop-publish: publishing the HTTP host under app/…');
   const host = join(to, 'app', 'daoris-knowledge-http');
+
+  // 🔴 REPLACED, not published over. `dotnet publish` does not clear its output, so a re-publish
+  // leaves every previous hashed bundle in `wwwroot/assets` — and `index.html` names only the
+  // current one, which makes the folder correct and unreadable. `service-publish.mjs` already does
+  // this, for this reason, and its sibling here did not: a real install reached SEVEN bundles, and
+  // listing it gave a wrong answer about which build was live twice — once in the first-deployment
+  // case study, and once while re-publishing to that same machine afterwards.
+  rmSync(host, { recursive: true, force: true });
+
   run(`dotnet publish "${HTTP}" -c Release -r win-x64 --self-contained `
     + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${host}"`);
 

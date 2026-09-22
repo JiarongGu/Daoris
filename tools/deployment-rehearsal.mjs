@@ -276,6 +276,38 @@ async function main() {
   check('…and it refused BEFORE building anything',
     readdirSync(foreign).join() === 'notes.txt', readdirSync(foreign).join(', '));
 
+  /**
+   * 🔴 A re-publish REPLACES the bundle rather than merging into it.
+   *
+   * A copy over the old directory leaves every previous hashed bundle in `wwwroot/assets`, and
+   * `index.html` names only the current one — so the folder is *correct* and unreadable. That is not
+   * a hypothetical cost: a real install reached **seven** bundles, and listing it produced a wrong
+   * answer about which build was live **twice** — once in the first-deployment case study, and once
+   * while re-publishing to this machine afterwards. `service-publish.mjs` already replaces for
+   * exactly this reason; its sibling did not, which is the whole of the bug.
+   *
+   * This also proves the marker path at the same time: a second publish into a folder this script
+   * wrote is accepted, where the phase above shows a foreign one refused.
+   */
+  const assets = join(install, ...HOST_HOME, 'wwwroot', 'assets');
+  const decoy = join(assets, 'index-STALEBUNDLE.js');
+  writeFileSync(decoy, '// a bundle from a publish that is no longer current\n');
+
+  const republished = run(
+    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${install}" --service`,
+    repoRoot, {}, 15 * 60_000);
+  check('a second publish into its own install is accepted', republished.code === 0,
+    republished.out.split('\n').slice(-8).join('\n'));
+  check('…and it left no bundle from the publish before it', !existsSync(decoy),
+    readdirSync(assets).filter((entry) => entry.endsWith('.js')).join(', '));
+
+  // Whatever survives, `index.html` has to name something that is actually there — the check that
+  // would still hold if the replacement were done some other way.
+  const indexHtml = readFileSync(join(install, ...HOST_HOME, 'wwwroot', 'index.html'), 'utf8');
+  const named = /assets\/(index-[\w.-]+\.js)/.exec(indexHtml)?.[1] ?? '';
+  check('…and the page names a bundle the install actually has',
+    Boolean(named) && existsSync(join(assets, named)), `index.html names ${named || '(nothing)'}`);
+
   // -------------------------------------------------------------- 3. the install is self-sufficient
 
   section('3. The install carries a host that serves the install’s own page');
