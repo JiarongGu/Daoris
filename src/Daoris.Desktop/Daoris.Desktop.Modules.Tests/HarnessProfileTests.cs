@@ -17,7 +17,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// a screen can set, a terminal can", and the converse had no test anywhere — so a capability
 /// stranded on a terminal was invisible to every gate.</para>
 ///
-/// <para><b>Daoris manages directories and names, never secrets.</b> Adding a profile makes a
+/// <para><b>A sign-in stays the tool's</b> (the one secret Daoris keeps is an API key, D67 §1, whose
+/// tests are below). Adding a profile makes a
 /// DIRECTORY; what lands inside it is the harness's own login flow's, and nothing here reads it.</para>
 /// </remarks>
 public sealed class HarnessProfileTests : Bridge
@@ -182,6 +183,64 @@ public sealed class HarnessProfileTests : Bridge
         Assert.False(Directory.Exists(ProfileAt("stub", "account-1")));
         Assert.Empty(HarnessSettings.Profiles(Home, "stub"));
         Assert.Contains(Raised.Select(Line), line => line.Contains("nothing was kept"));
+    }
+
+    /// <summary>
+    /// 🔴 <b>An account that is an API key</b> (AGT3, D67 §1: *"daoris can keep the key"*). The key
+    /// crosses the bridge once, inward: the answer, the roster and every event name it only by its
+    /// last four characters.
+    /// </summary>
+    [Fact]
+    public async Task Adding_an_API_key_makes_an_account_and_nothing_ever_answers_the_key()
+    {
+        const string key = "sk-ant-api03-module-test-wxyz";
+        var module = Module();
+
+        var answer = await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "key-add", key });
+
+        Assert.Equal("account-1", answer.GetProperty("profile").GetString());
+        Assert.Equal("…wxyz", answer.GetProperty("key").GetString());
+        Assert.True(Directory.Exists(ProfileAt("claude-code", "account-1")));
+        Assert.Equal(key, HarnessKeys.Of(Home, "claude-code", "account-1"));
+
+        var roster = await AnswerAsync(module, "HARNESSES");
+        var claude = roster.GetProperty("harnesses").EnumerateArray()
+            .Single(h => h.GetProperty("harness").GetString() == "claude-code");
+        Assert.True(claude.GetProperty("takesKey").GetBoolean());
+        var row = claude.GetProperty("profiles").EnumerateArray()
+            .Single(p => p.GetProperty("name").GetString() == "account-1");
+        Assert.Equal("…wxyz", row.GetProperty("key").GetString());
+
+        Assert.DoesNotContain(key, answer.GetRawText());
+        Assert.DoesNotContain(key, roster.GetRawText());
+        Assert.DoesNotContain(Raised, m => JsonSerializer.Serialize(m.Payload).Contains(key));
+    }
+
+    /// <summary>Removing a key account removes its key with its directory (D66 §3).</summary>
+    [Fact]
+    public async Task Removing_a_key_account_removes_its_key()
+    {
+        var module = Module();
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "key-add", key = "sk-ant-api03-remove-1234" });
+
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "profile-remove", profile = "account-1" });
+
+        Assert.Null(HarnessKeys.Of(Home, "claude-code", "account-1"));
+        Assert.False(Directory.Exists(ProfileAt("claude-code", "account-1")));
+    }
+
+    /// <summary>An agent whose toolchain declares no key variable takes no key, and makes nothing trying.</summary>
+    [Fact]
+    public async Task An_agent_that_takes_no_key_refuses_one_and_makes_nothing()
+    {
+        var refusal = await RefusalAsync(Module(), "HARNESS_ACTION",
+            new { harness = "dsh", action = "key-add", key = "sk-something-9999" });
+
+        Assert.Contains("takes no API key", refusal);
+        Assert.Empty(HarnessSettings.Profiles(Home, "dsh"));
     }
 
     private static async Task UntilAsync(Func<bool> condition)

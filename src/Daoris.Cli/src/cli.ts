@@ -47,7 +47,7 @@ const USAGE = `daoris <command> [options]
                          remove <workspace>        unwire it here; the
                                                    deployment is untouched
   agent [verb]         this machine's agents — Claude Code, Codex, dsh — and the
-                       accounts they run as. Directories and names, never secrets:
+                       accounts they run as. A sign-in stays the tool's:
                          list                      installed? version? accounts?
                          install|update <agent>    its OWN mechanism, never auto
                          login <agent> [--profile P]
@@ -56,6 +56,8 @@ const USAGE = `daoris <command> [options]
                          login <agent> --new       sign in to another account:
                                                    kept only if it finished;
                                                    list names who signed in
+                         key <agent>               an account that is an API key,
+                                                   read from stdin; Daoris keeps it
                          profile list|add|remove <agent> <profile>
                                                    remove deletes the account,
                                                    sign-in and all

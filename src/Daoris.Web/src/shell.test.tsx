@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -851,16 +851,78 @@ describe('the harness roster', () => {
   });
 
   /**
-   * Daoris manages directories and names, never secrets. There is no field for a token, no call
-   * carrying one, and the surface says where the credential actually lives.
+   * A sign-in is the tool's to keep (D49 §4): there is no field for a token or a password, and the
+   * surface says where a sign-in lives. An API key is the one exception (D67 §1), and it has its own
+   * test below: one field, behind a press, on an agent that takes a key.
    */
-  it('offers nowhere to put a credential, and says where one lives instead', async () => {
+  it('offers nowhere to put a sign-in, and says where one lives instead', async () => {
     const { container } = show(<SettingsView notify={() => {}} />);
     await screen.findByText('claude 9.9.9');
 
     const card = screen.getByText('Agent tools').closest('section, div')!;
-    expect(within(card as HTMLElement).queryByLabelText(/token|password|credential/i)).toBeNull();
+    expect(within(card as HTMLElement).queryByLabelText(/token|password|credential|API key/i)).toBeNull();
     expect(container.textContent).toContain('the tool stores itself');
+  });
+
+  /**
+   * 🔴 An account that is an API key (AGT3, D67 §1: *"daoris can keep the key"*). One password field,
+   * behind a press, only on an agent that takes a key; saving sends the key once and the page is
+   * told back only its last four characters.
+   */
+  it('takes an API key once, behind a press, and never shows it back', async () => {
+    const key = 'sk-ant-api03-page-test-wxyz';
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') {
+        return { harness: 'claude-code', action: 'key-add', exitCode: 0, profile: 'account-1', key: '…wxyz' };
+      }
+      return type === 'HARNESSES'
+        ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
+        : WIRING;
+    });
+    const notify = vi.fn();
+    const { container } = show(<SettingsView notify={notify} />);
+
+    // Only the agent that takes a key offers it; codex, in this roster, does not.
+    await screen.findByText('claude 9.9.9');
+    expect(screen.getAllByRole('button', { name: 'Add an API key' })).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Add an API key' }));
+    const field = screen.getByLabelText('API key for Claude Code');
+    expect(field.getAttribute('type')).toBe('password');
+
+    fireEvent.change(field, { target: { value: key } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save the key' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'key-add', key },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Added account-1, the API key …wxyz.'));
+    // The field is gone, and the key with it.
+    expect(screen.queryByLabelText('API key for Claude Code')).toBeNull();
+    expect(container.innerHTML).not.toContain(key);
+  });
+
+  /** A key account reads as its handle and offers no sign-in: it is signed in by its key. */
+  it('lists a key account by its handle, with no sign-in to offer', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{
+          ...ROSTER.harnesses[0],
+          takesKey: true,
+          profiles: [
+            { name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/claude-code/account-1', login: 'in', key: '…wxyz' },
+          ],
+        }],
+      }
+      : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    const row = (await screen.findByText('API key …wxyz')).closest('li')!;
+    expect(within(row).queryByRole('button', { name: /^Log in/ })).toBeNull();
+    // 🔴 Never "logged in": the tool says so for any key, a wrong one included (measured, AGT3).
+    expect(within(row).getByText('unchecked')).toBeTruthy();
+    expect(within(row).queryByText('logged in')).toBeNull();
+    expect(within(row).getByRole('button', { name: 'Remove' })).toBeTruthy();
   });
 
   /** A door a plugin declared says so beside its name (D64), and the build's own say nothing. */

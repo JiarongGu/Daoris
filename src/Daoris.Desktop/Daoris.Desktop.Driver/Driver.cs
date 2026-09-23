@@ -339,7 +339,8 @@ public sealed class Driver(
             if (adapter.Toolchain is { } toolchain)
             {
                 HarnessProbe.Apply(
-                    info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable);
+                    info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
+                    selection.Environment);
             }
 
             // What daoris writes into a dsh home it owns (ACP3): the two rows that send session

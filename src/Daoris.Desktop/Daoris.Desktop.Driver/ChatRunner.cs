@@ -143,7 +143,8 @@ public sealed class ChatRunner(
             if (resolved.Toolchain is { } toolchain)
             {
                 HarnessProbe.Apply(
-                    info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable);
+                    info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
+                    selection.Environment);
             }
 
             process = Process.Start(info)

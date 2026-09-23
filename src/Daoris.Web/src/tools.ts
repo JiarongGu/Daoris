@@ -33,6 +33,8 @@ export interface ToolDoor {
   pinnable?: boolean;
   /** Whether this door can run the tool's sign-in — false where it declares no login flow. Absent from an older shell. */
   signsIn?: boolean;
+  /** Whether this agent takes an API key from Daoris (AGT3) — only where its key variable was measured. */
+  takesKey?: boolean;
   pinned?: string | null;
   managed?: string | null;
   machineDefault?: string | null;
@@ -56,6 +58,8 @@ export interface Account {
   home: string;
   login: string;
   account?: string | null;
+  /** An account that is an API key (AGT3): its handle, never the key. */
+  key?: string | null;
 }
 
 /** One tool, with every door onto it and the one account list they share. */

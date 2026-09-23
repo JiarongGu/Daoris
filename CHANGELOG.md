@@ -386,6 +386,12 @@ The first version: doctrine that installs, is checked, and flows back.
   included**, after asking once — it used to keep a signed-in account on disk and on the list.
   From a terminal: `daoris harness login <harness> --new`, and `profile remove` deletes;
   `harness list` shows who is signed in to each account.
+- **An account can be an API key** (AGT3, D67 §1). *Add an API key* on an agent that takes one
+  (Claude Code today), or `daoris agent key <agent>` with the key on stdin. Daoris keeps it in the
+  home's `keys.json`, beside the account and never inside the tool's own directory, and hands it to
+  the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
+  characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
+  included. Removing the account removes its key. A sign-in stays the tool's, as before.
 - **`daoris harness` is `daoris agent` now** (AGT1). The tools a session runs are agents to a
   person: the verb, its help, the CLI's output and the driver's refusals say so. `daoris harness`
   answers with where it went. Each tool names what it is and whose: *Claude Code* (Anthropic),

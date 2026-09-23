@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**324 CLI tests, 348 service, 369 driver, 97 desktop modules, 555 web unit, 16 Playwright**, 59
-devkit, 56/56 release rehearsal, **212/212 family rehearsal** (it names its own phases when you run
+**329 CLI tests, 348 service, 378 driver, 100 desktop modules, 557 web unit, 16 Playwright**, 59
+devkit, 56/56 release rehearsal, **213/213 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT2b, AGT3, AGT6, MAP1–MAP2's designs, INT4b, INT4c.** INT3 waits on the owner's call, INT6 on the owner's presence.
+- **Actionable: AGT7, AGT3b, AGT2b, AGT6, MAP1–MAP2's designs, INT4b, INT4c.** INT3 waits on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -248,11 +248,11 @@ the traps that are not in any contract, because they were found rather than desi
   arrives — and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 324 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 329 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (348),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (369), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (97), `npm run rehearse:family` (212/212), `npm run test:web` (555 vitest + 16 Playwright),
+  (378), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (100), `npm run rehearse:family` (213/213), `npm run test:web` (557 vitest + 16 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -266,8 +266,8 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Twenty-one items are open** — six of them the
-owner's agents-and-map direction (AGT2b, AGT3, AGT6, MAP1–3; D67) — and every closed one is
+the archive; its decision is **D53, accepted**). **Twenty-two items are open** — seven of them D67's —
+and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
@@ -277,8 +277,7 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **AGT3, then AGT2b, then the MAP designs, then INT4b and INT4c** — the owner's direction (D67)
-outranks the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **D67's items (AGT7 first), then INT4b and INT4c**, outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -420,11 +419,13 @@ both are the owner's.**
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
 **D67** holds the owner's answers; `docs/2026-09-23-agents-direction.md` the asks and what was
-checked. AGT1, AGT2a and AGT4 are archived.
+checked. AGT1, AGT2a, AGT3 and AGT4 are archived.
 
 - [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
   its signed manifest; Codex's releases once Windows and versions are confirmed.
-- [ ] **AGT3 — an account that is an API key** (D67 §1). Measure each tool first.
+- [ ] **AGT3b — a refused key is news at the first 401,** not after ten retries.
+- [ ] **AGT7 — a door runs as its owner's accounts**: the driver resolves a door's accounts,
+  defaults and keys under the door's own name, not `accountOf`'s.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
 - [ ] **MAP1 — the workflow**: ask → intake → quests → sessions → `then`, each step's agent,
   account and version. Design first.

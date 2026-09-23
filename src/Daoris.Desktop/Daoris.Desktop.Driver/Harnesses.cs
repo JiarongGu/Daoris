@@ -54,9 +54,11 @@ public sealed record LoginQuestion(
 /// login flows.
 /// </summary>
 /// <remarks>
-/// <para><b>Daoris manages directories and names, never secrets.</b> Nothing here reads a credential;
-/// <see cref="Login"/> runs the harness's own flow INTO a profile directory, so whatever it stores
-/// stays in its own store, under the user's OS account, exactly where it lives without Daoris.</para>
+/// <para><b>Daoris manages directories and names, and a sign-in stays the tool's.</b> Nothing here
+/// reads a credential; <see cref="LoginArguments"/> runs the harness's own flow INTO a profile
+/// directory, so whatever it stores stays in its own store, under the user's OS account, exactly where
+/// it lives without Daoris. The one secret Daoris keeps is an API key a person gives it
+/// (<see cref="HarnessKeys"/>, D67 §1).</para>
 ///
 /// <para><b>Install and update are the harness's own mechanism</b>, never a download Daoris invents:
 /// a tool that installed its dependencies by a route their authors did not publish is a tool nobody
@@ -129,7 +131,10 @@ public sealed record HarnessToolchain(
     // owner until it said whose. A door onto a tool names that tool, not itself. Null for one that
     // declares neither — a plugin's, until it says.
     string? Product = null,
-    string? Maker = null)
+    string? Maker = null,
+    // The tool's own variable for an API key (AGT3, D67 §1) — what an account that is a key is
+    // handed at spawn. Declared only where measured; null means this agent takes no key from Daoris.
+    string? KeyVariable = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -144,7 +149,12 @@ public sealed record HarnessToolchain(
 /// Who the harness says is signed in there (D66 §3) — the name a person knows the account by, read
 /// fresh on every probe and written nowhere. Null when signed out, or when the tool does not say.
 /// </param>
-public sealed record ProfileReport(string Name, string Home, LoginState Login, string? Account = null);
+/// <param name="Key">
+/// For an account that is an API key (AGT3), the key's handle — its last four characters. Never
+/// the key. Null for a sign-in.
+/// </param>
+public sealed record ProfileReport(
+    string Name, string Home, LoginState Login, string? Account = null, string? Key = null);
 
 /// <summary>
 /// One harness as this machine has it (D49 §4): present or absent, its version, its profiles.
@@ -503,7 +513,12 @@ public sealed record HarnessSettings(
     public static bool RemoveProfile(string home, string harness, string profile)
     {
         var directory = ProfileHome(home, harness, profile);
-        if (!Directory.Exists(directory)) return false;
+        if (!Directory.Exists(directory))
+        {
+            // A key whose directory someone removed by hand still goes: nothing is left behind here.
+            HarnessKeys.Remove(home, harness, profile);
+            return false;
+        }
 
         var walk = new EnumerationOptions
         {
@@ -521,6 +536,8 @@ public sealed record HarnessSettings(
         }
 
         Directory.Delete(directory, recursive: true);
+        // An account that was a key goes with its key (AGT3): a removed account keeps nothing here.
+        HarnessKeys.Remove(home, harness, profile);
         return true;
     }
 
@@ -611,6 +628,116 @@ public sealed record HarnessSettings(
 }
 
 /// <summary>
+/// The keys of accounts that are API keys (AGT3, D67 §1) — <c>keys.json</c> under the home, keyed by
+/// agent and then account.
+/// </summary>
+/// <remarks>
+/// <para><b>Beside the account, never inside it</b>: the account's directory is the tool's (D49 §4).
+/// Plaintext at rest, as <c>remotes.json</c>'s deployment keys and the tools' own credential files
+/// are; tracked by nothing; no HTTP surface (D47 §4). A person sees a key only as its
+/// <see cref="Handle"/>. The CLI's <c>keys</c> helpers are the twin, over the same file.</para>
+/// </remarks>
+public static class HarnessKeys
+{
+    public const string FileName = "keys.json";
+
+    /// <summary>The key's last four characters — every Anthropic key begins the same way.</summary>
+    public static string Handle(string key) => key.Length > 4 ? $"…{key[^4..]}" : "…";
+
+    /// <summary>
+    /// Make an account that is this key: the next free <c>account-N</c>, its directory, and the key
+    /// kept beside it. A blank key is refused before anything is made.
+    /// </summary>
+    public static string Add(string home, string harness, string key)
+    {
+        var trimmed = key?.Trim() ?? "";
+        if (trimmed.Length == 0 || trimmed.Any(char.IsWhiteSpace))
+        {
+            throw new DriverException("that is not an API key — it is blank, or has spaces in it.");
+        }
+
+        var account = HarnessSettings.NextAccount(home, harness);
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(home, harness, account));
+
+        var keys = Read(home);
+        if (!keys.TryGetValue(harness, out var held)) keys[harness] = held = new(StringComparer.Ordinal);
+        held[account] = trimmed;
+        Write(home, keys);
+        return account;
+    }
+
+    /// <summary>The key an account is, or null for a sign-in.</summary>
+    public static string? Of(string home, string harness, string profile) =>
+        Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var key) ? key : null;
+
+    /// <summary>Forget an account's key. Nothing to forget is an answer.</summary>
+    public static void Remove(string home, string harness, string profile)
+    {
+        var keys = Read(home);
+        if (!keys.TryGetValue(harness, out var held) || !held.Remove(profile)) return;
+        if (held.Count == 0) keys.Remove(harness);
+        Write(home, keys);
+    }
+
+    private static Dictionary<string, Dictionary<string, string>> Read(string home)
+    {
+        var keys = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+        var path = Path.Combine(home, FileName);
+        if (!File.Exists(path)) return keys;
+
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return keys;
+            foreach (var agent in document.RootElement.EnumerateObject())
+            {
+                if (agent.Value.ValueKind != JsonValueKind.Object) continue;
+                var held = new Dictionary<string, string>(StringComparer.Ordinal);
+                foreach (var entry in agent.Value.EnumerateObject())
+                {
+                    if (entry.Value.GetString() is { Length: > 0 } key) held[entry.Name] = key;
+                }
+
+                keys[agent.Name] = held;
+            }
+        }
+        catch (JsonException)
+        {
+            // An unreadable file holds no key Daoris can hand anyone; the account then asks for one.
+        }
+
+        return keys;
+    }
+
+    private static void Write(string home, Dictionary<string, Dictionary<string, string>> keys)
+    {
+        Directory.CreateDirectory(home);
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+            foreach (var (agent, held) in keys.OrderBy(e => e.Key, StringComparer.Ordinal))
+            {
+                writer.WriteStartObject(agent);
+                foreach (var (account, key) in held.OrderBy(e => e.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(account, key);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
+        }
+
+        var path = Path.Combine(home, FileName);
+        var beside = path + ".writing";
+        File.WriteAllText(beside, Encoding.UTF8.GetString(stream.ToArray()) + "\n");
+        File.Move(beside, path, overwrite: true);
+    }
+}
+
+/// <summary>
 /// Detection (D49 §4): locate a harness, ask its version, and ask each profile whether it is logged
 /// in. <b>Free and read-only</b> — it runs the tool's own reporting commands and writes nothing.
 /// </summary>
@@ -676,10 +803,20 @@ public static class HarnessProbe
         foreach (var name in HarnessSettings.Profiles(home, adapter))
         {
             var profileHome = HarnessSettings.ProfileHome(home, adapter, name);
+            // An account that is a key is asked WITH its key (AGT3), as a session would run it, so
+            // the roster says what the tool says — and names it by the key's handle, never the key.
+            var key = toolchain.KeyVariable is { Length: > 0 } variable
+                && HarnessKeys.Of(home, adapter, name) is { } held
+                    ? (Variable: variable, Value: held)
+                    : ((string Variable, string Value)?)null;
             var (login, account) = present
-                ? await LoginAsync(resolved, toolchain, profileHome, isManaged, ct).ConfigureAwait(false)
+                ? await LoginAsync(
+                    resolved, toolchain, profileHome, isManaged, ct,
+                    key is { } k ? new Dictionary<string, string> { [k.Variable] = k.Value } : null)
+                    .ConfigureAwait(false)
                 : (LoginState.Unknown, null);
-            profiles.Add(new ProfileReport(name, profileHome, login, account));
+            profiles.Add(new ProfileReport(
+                name, profileHome, login, account, key is { } shown ? HarnessKeys.Handle(shown.Value) : null));
         }
 
         // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
@@ -733,11 +870,11 @@ public static class HarnessProbe
     /// </summary>
     private static async Task<(LoginState Login, string? Account)> LoginAsync(
         IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, bool managed,
-        CancellationToken ct)
+        CancellationToken ct, IReadOnlyDictionary<string, string>? account = null)
     {
         if (toolchain.LoginCheck is not { } question) return (LoginState.Unknown, null);
 
-        var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed)
+        var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)
             .ConfigureAwait(false);
         if (!answer.Ran) return (LoginState.Unknown, null);
 
@@ -792,7 +929,8 @@ public static class HarnessProbe
         string? profileHome,
         HarnessToolchain toolchain,
         CancellationToken ct,
-        bool managed = false)
+        bool managed = false,
+        IReadOnlyDictionary<string, string>? account = null)
     {
         if (resolved.Count == 0) return (false, "", "no command to run");
 
@@ -807,7 +945,7 @@ public static class HarnessProbe
         foreach (var part in resolved.Skip(1)) info.ArgumentList.Add(part);
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
-        Apply(info, toolchain, profileHome, binary: managed ? resolved[0] : null);
+        Apply(info, toolchain, profileHome, binary: managed ? resolved[0] : null, account: account);
 
         try
         {
@@ -871,8 +1009,15 @@ public static class HarnessProbe
     /// </remarks>
     internal static void Apply(
         ProcessStartInfo info, HarnessToolchain toolchain, string? profileHome, string? binary = null,
-        string? claudeExecutable = null)
+        string? claudeExecutable = null, IReadOnlyDictionary<string, string>? account = null)
     {
+        // What the account itself carries — an API key in the tool's own variable (AGT3). Set here,
+        // the one line both doors take, so no spawn of a key account can go out without its key.
+        foreach (var (name, value) in account ?? new Dictionary<string, string>())
+        {
+            info.Environment[name] = value;
+        }
+
         // The arguments the adapter built stay exactly as they are: same tool, different location.
         if (binary is { Length: > 0 })
         {
@@ -933,9 +1078,15 @@ public static class HarnessProbe
 /// <c>claude-code</c>, and the ACP adapter is a separate package that merely runs it — so a person
 /// who pinned <c>claude</c> gets that <c>claude</c> over either door, which is the point of pinning.
 /// </param>
+/// <param name="Environment">
+/// What the account itself puts on the spawn — for an account that is an API key (AGT3), the key in
+/// the tool's own variable. Machine-local like the profile home: it goes into no record and over no
+/// wire. Null for a sign-in or the tool's own home.
+/// </param>
 public sealed record HarnessSelection(
     string? Refusal, string? Profile = null, string? ProfileHome = null, string? Version = null,
-    string? Binary = null, string? ClaudeExecutable = null)
+    string? Binary = null, string? ClaudeExecutable = null,
+    IReadOnlyDictionary<string, string>? Environment = null)
 {
     public bool Allowed => Refusal is null;
 }
@@ -1164,7 +1315,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 + "credential stays in the agent's own store.");
         }
 
-        return new HarnessSelection(null, profile, home, report?.Version, managed, claude);
+        // An account that is a key is handed its key through the tool's own variable (AGT3).
+        var key = toolchain.KeyVariable is { Length: > 0 } variable
+            && HarnessKeys.Of(Home, resolved.Name, profile) is { } held
+                ? new Dictionary<string, string> { [variable] = held }
+                : null;
+
+        return new HarnessSelection(null, profile, home, report?.Version, managed, claude, key);
     }
 }
 

@@ -785,7 +785,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // the session cannot then take or close its quest — nine minutes and a real login, three
         // times over, before this was measured rather than assumed.
         TrustFile: ClaudeTrust.FileName,
-        PinnedEnvironment: StayPinned);
+        PinnedEnvironment: StayPinned,
+        // An account that is an API key (AGT3). Measured on 2.1.280 with an invalid key: `auth
+        // status` reads it (api_key, no email) and a `-p` run takes it with no prompt.
+        KeyVariable: "ANTHROPIC_API_KEY");
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

@@ -4182,6 +4182,35 @@ prints them above the version. A tool that declares neither, a plugin's, keeps i
 
 **Seen on the scratch shell**, both themes: *Claude Code* Anthropic, *Codex* OpenAI, *dsh* DeepSeek.
 
+## AGT3 — an account that is an API key (2026-09-23)
+
+> *"daoris can keep the key"* — the owner (D67 §1).
+
+- [x] **AGT3 — an account that is an API key** (D67 §1). Measure each tool first.
+
+✅ **done 2026-09-23 for Claude Code; `docs/2026-09-23-api-key-accounts.md` is the design.**
+
+**Measured first**, on 2.1.280 with an invalid key and nothing spent. `ANTHROPIC_API_KEY` alone
+makes `auth status` answer logged in by `api_key`, with no email, and a `-p` run takes it with no
+prompt. **Neither checks it**: the first request is a 401 and the tool retries ten times with
+growing delays. The measurement's own process outlived its shell, still retrying, and was stopped by
+hand.
+
+**Built.** `keys.json` under the home holds the key beside the account, never in the tool's
+directory (`HarnessKeys` / `keys` helpers, twin rule 6, both sides reading one literal). The
+toolchain's `KeyVariable` carries it at spawn on the one line both spawn paths take
+(`HarnessSelection.Environment` → `Apply`). The probe asks with it. The key is shown only as its last
+four characters, and reads *unchecked* rather than the tool's "logged in". Removing the account
+removes the key. The doors are `key-add` over the bridge, answered by the handle, and `daoris agent
+key <agent>`, which reads stdin and refuses a key given as an argument. The rehearsal drives the
+terminal door (213/213).
+
+**Seen on the scratch shell**: the form in dark; an invalid key saved; the row read *API key …wxyz*,
+then *unchecked* once the pill was corrected; the page's HTML never held the key; *Remove it* took
+the key and the directory. **Found and left as items**: the protocol door resolves accounts under
+its own name, not its owner's (AGT7), and a bad key costs a session its retries (AGT3b). Codex is
+not measured, so it takes no key yet.
+
 ## AGT4 — an API-driven agent: closed by the owner's decision (2026-09-23)
 
 - [x] ⛔ **AGT4 — an API-driven agent.** Recommended as a plugin's ACP agent; a loop of Daoris's

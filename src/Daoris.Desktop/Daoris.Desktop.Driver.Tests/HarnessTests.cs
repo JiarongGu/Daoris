@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The toolchain (D49 §4): which harnesses this machine has, and which ACCOUNT a session runs as.
 ///
 /// <para>The whole of it rests on one sentence from the design: <b>Daoris manages directories and
-/// names, never secrets.</b> A profile is a directory Daoris owns the location of; the credential
+/// names, and a sign-in stays the tool's</b> (an API key a person gives is the one secret Daoris
+/// keeps, D67 §1 — <c>ApiKeyAccountTests</c>). A profile is a directory Daoris owns the location of; the credential
 /// inside it belongs to the harness's own store, under the user's OS account, exactly where it lives
 /// today. Nothing here reads, copies, or moves one — and the tests below are written to fail if
 /// anything ever starts to.</para>

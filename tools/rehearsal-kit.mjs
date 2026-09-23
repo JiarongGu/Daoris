@@ -58,12 +58,14 @@ export function makeChecker() {
  * timeout kills the child and returns its partial output, so a hung child is a captured FAIL rather
  * than a frozen gate.
  */
-export function capture(command, cwd, { env = {}, timeout = 0 } = {}) {
+export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
   try {
     const out = execSync(command, {
       cwd,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
+      // stdin stays closed unless a check hands the command something to read (`agent key`, AGT3).
+      stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
+      ...(input === undefined ? {} : { input }),
       env: { ...process.env, ...env },
       ...(timeout ? { timeout, killSignal: 'SIGKILL' } : {}),
     });

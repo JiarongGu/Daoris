@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  TOOLCHAINS, commandHarness, harnessesPath, managedBinary, managedHome, nextAccount, profileHome,
-  profiles, probe, readHarnessSettings, removeProfile, resolveProfile, resolveVersion, signInNew,
-  writeHarnessSettings,
+  TOOLCHAINS, addKeyAccount, commandHarness, harnessesPath, keyOf, managedBinary, managedHome,
+  nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
+  resolveVersion, signInNew, writeHarnessSettings,
 } from '../src/toolchain.ts';
 import type { Toolchain } from '../src/toolchain.ts';
 import { makeFixture } from './_fixture.ts';
@@ -14,7 +14,8 @@ import { captureError } from './_fixture.ts';
 /**
  * `daoris agent` — management parity for the toolchain (D49 §4, D50).
  *
- * The whole feature rests on one sentence: **Daoris manages directories and names, never secrets.**
+ * The whole feature rests on one sentence: **Daoris manages directories and names, and a sign-in stays
+ * the tool's.** The one secret Daoris keeps is an API key a person gives it (twin rule 6, D67 §1).
  * A profile is a directory Daoris owns the location of; whatever credential ends up inside it was put
  * there by the harness's own login flow and stays in the harness's own store. These tests are written
  * to fail if that ever stops being true.
@@ -295,6 +296,78 @@ test('a remove naming somewhere else is refused before anything is deleted', () 
   fx.cleanup();
 });
 
+// ——— Twin rule 6: an account that is an API key keeps its key in `keys.json` under the home
+// (AGT3, D67 §1) — beside the account, never inside it — and shows it only by its last four.
+
+test('an API key makes an account whose key is kept beside it, in the file both twins read', () => {
+  const fx = makeFixture('harness-key');
+  const lines: string[] = [];
+
+  const account = addKeyAccount(fx.root, 'claude-code', 'sk-ant-api03-cli-test-wxyz\n', (l) => lines.push(l));
+
+  assert.equal(account, 'account-1');
+  assert.deepEqual(readdirSync(profileHome(fx.root, 'claude-code', 'account-1')), []);
+  // The file's shape is the twin contract: the driver's HarnessKeys reads exactly this.
+  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'keys.json'), 'utf8')),
+    { 'claude-code': { 'account-1': 'sk-ant-api03-cli-test-wxyz' } });
+  assert.equal(keyOf(fx.root, 'claude-code', 'account-1'), 'sk-ant-api03-cli-test-wxyz');
+  // Said back by its handle only.
+  assert.match(lines.join('\n'), /…wxyz/);
+  assert.doesNotMatch(lines.join('\n'), /sk-ant-api03-cli-test/);
+  fx.cleanup();
+});
+
+/** 🔴 A key typed as an argument is in the shell's history: refused, saying so, and nothing made. */
+test('`agent key` refuses a key on the command line', () => {
+  const fx = makeFixture('harness-key-argv');
+
+  const error = captureError(() => run(['key', 'claude-code', 'sk-ant-api03-in-history-0000'], at(fx)));
+
+  assert.match(error.message, /stdin, not on the command line/);
+  assert.doesNotMatch(error.message, /in-history/);
+  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
+  fx.cleanup();
+});
+
+test('a blank key is refused and makes nothing; an agent with no key variable takes none', () => {
+  const fx = makeFixture('harness-key-refused');
+
+  assert.match(captureError(() => addKeyAccount(fx.root, 'claude-code', '  \n', () => {})).message, /not an API key/);
+  assert.match(captureError(() => addKeyAccount(fx.root, 'dsh', 'sk-x-1234', () => {})).message, /takes no API key/);
+  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
+  assert.deepEqual(profiles(fx.root, 'dsh'), []);
+  fx.cleanup();
+});
+
+test('removing a key account removes its key, and another account keeps its own', () => {
+  const fx = makeFixture('harness-key-remove');
+  addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
+  addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
+
+  run(['profile', 'remove', 'claude-code', 'account-1'], at(fx));
+
+  assert.equal(keyOf(fx.root, 'claude-code', 'account-1'), null);
+  assert.equal(keyOf(fx.root, 'claude-code', 'account-2'), 'sk-second-2222');
+  fx.cleanup();
+});
+
+test('a key account is asked with its key, and listed by its handle', () => {
+  const fx = makeFixture('harness-key-probe');
+  const script = join(fx.root, 'keyed.mjs');
+  writeFileSync(script, [
+    "if (process.argv[2] === '--version') { console.log('keyed 1.0'); process.exit(0); }",
+    "console.log(JSON.stringify({ loggedIn: Boolean(process.env.ANTHROPIC_API_KEY), authMethod: 'api_key' }));",
+  ].join('\n'), 'utf8');
+  addKeyAccount(fx.root, 'claude-code', 'sk-probe-abcd', () => {});
+
+  const report = probe('claude-code', {
+    ...TOOLCHAINS['claude-code']!, binary: [process.execPath, script],
+  }, fx.root, readHarnessSettings(at(fx)));
+
+  assert.deepEqual(report.profiles.map((p) => [p.name, p.login, p.key]), [['account-1', 'in', '…abcd']]);
+  fx.cleanup();
+});
+
 // ——— Twin rule 5: an account made by signing in takes the first free `account-N` (D66 §3).
 
 test('a new account takes the first free number, per tool', () => {
@@ -469,7 +542,7 @@ test('an unknown verb names the ones that exist', () => {
   const error = captureError(() => run(['frobnicate'], at(fx)));
 
   assert.match(error.message, /unknown agent verb 'frobnicate'/);
-  assert.match(error.message, /list, install, update, login, pin, unpin, profile/);
+  assert.match(error.message, /list, install, update, login, key, pin, unpin, profile/);
   fx.cleanup();
 });
 

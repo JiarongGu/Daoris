@@ -26,7 +26,8 @@
 // point: install, update and login are each harness's OWN mechanism, run by Daoris rather than
 // remembered by hand. `child_process` is a Node built-in, so the zero-dependency guarantee stands.
 //
-// DAORIS NEVER SEES, STORES OR COPIES A CREDENTIAL. It manages directories and names; login runs the
+// DAORIS NEVER SEES, STORES OR COPIES A SIGN-IN. An API key is the one exception, and only when a
+// person gives one (`agent key`, D67 §1). It manages directories and names; login runs the
 // harness's own flow INTO a profile directory, and whatever that obtains the harness stores itself.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -133,6 +134,12 @@ export interface Toolchain {
    * updates. The driver's `PinnedEnvironment` is the twin.
    */
   pinnedEnv?: Record<string, string>;
+  /**
+   * The tool's own variable for an API key (AGT3, D67 §1): what an account that is a key is handed
+   * at spawn. Declared only where measured; absent means this agent takes no key from Daoris. The
+   * driver's `KeyVariable` is the twin.
+   */
+  keyVariable?: string;
 }
 
 /**
@@ -166,6 +173,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     // 🔴 A pinned 2.1.270 reported its own auto-updates ENABLED (`claude doctor`, no login); with
     // this it reported them disabled, refused `claude update`, and stayed 2.1.270.
     pinnedEnv: { DISABLE_UPDATES: '1' },
+    // Measured on 2.1.280 with an invalid key: `auth status` reads it, and `-p` takes it unprompted.
+    keyVariable: 'ANTHROPIC_API_KEY',
   },
   // The supported harness over the PROTOCOL door (ACP2/D53). A separate toolchain entry from
   // `claude-code` on purpose: the ACP adapter and `claude` are different packages at different
@@ -422,9 +431,88 @@ export function nextAccount(home: string, harness: string): string {
  */
 export function removeProfile(home: string, harness: string, profile: string): boolean {
   const where = profileHome(home, harness, profile);
+  // An account that was a key goes with its key (AGT3), even when its directory went by hand.
+  removeKey(home, harness, profile);
   if (!existsSync(where)) return false;
   rmSync(where, { recursive: true, force: true, maxRetries: 3 });
   return true;
+}
+
+// ——— Accounts that are API keys (AGT3, D67 §1). `keys.json` under the home, keyed by agent and then
+// account: beside the account, never inside the directory that is the tool's (D49 §4). Plaintext at
+// rest, like `remotes.json`'s deployment keys and the tools' own credential files. The driver's
+// `HarnessKeys` is the twin, over the same file.
+
+type Keys = Record<string, Record<string, string>>;
+
+function keysPath(home: string): string {
+  return join(home, 'keys.json');
+}
+
+function readKeys(home: string): Keys {
+  if (!existsSync(keysPath(home))) return {};
+  try {
+    const parsed = JSON.parse(readFileSync(keysPath(home), 'utf8')) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(Object.entries(parsed as Record<string, unknown>)
+      .map(([agent, held]) => [agent, stringMap(held)]));
+  } catch {
+    // An unreadable file holds no key anyone can be handed; the account then asks for one.
+    return {};
+  }
+}
+
+function writeKeys(home: string, keys: Keys): void {
+  const kept = Object.fromEntries(Object.entries(keys)
+    .filter(([, held]) => Object.keys(held).length > 0)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([agent, held]) => [agent, sorted(held)]));
+  writeTextAtomic(keysPath(home), `${JSON.stringify(kept, null, 2)}\n`);
+}
+
+/** The key's last four characters — every Anthropic key begins the same way. */
+export function keyHandle(key: string): string {
+  return key.length > 4 ? `…${key.slice(-4)}` : '…';
+}
+
+/** The key an account is, or null for a sign-in. */
+export function keyOf(home: string, harness: string, profile: string): string | null {
+  return readKeys(home)[harness]?.[profile] ?? null;
+}
+
+function removeKey(home: string, harness: string, profile: string): void {
+  const keys = readKeys(home);
+  if (!keys[harness]?.[profile]) return;
+  delete keys[harness]![profile];
+  writeKeys(home, keys);
+}
+
+/**
+ * Make an account that is this key: the next free `account-N`, its directory, and the key kept
+ * beside it. Said back by its handle only. Refused, before anything is made, for a blank key or an
+ * agent that declares no key variable.
+ */
+export function addKeyAccount(
+  home: string, harness: string, raw: string, write: (line: string) => void,
+): string {
+  const toolchain = TOOLCHAINS[harness];
+  if (!toolchain?.keyVariable) {
+    throw new DaorisError(`\`${harness}\` takes no API key from Daoris — sign in with its own login instead.`);
+  }
+
+  const key = raw.trim();
+  if (!key || /\s/.test(key)) throw new DaorisError('that is not an API key — it is blank, or has spaces in it.');
+
+  const account = nextAccount(home, harness);
+  mkdirSync(profileHome(home, harness, account), { recursive: true });
+  const keys = readKeys(home);
+  keys[harness] = { ...keys[harness], [account]: key };
+  writeKeys(home, keys);
+
+  write(`daoris: \`${harness}\` account \`${account}\` is the API key ${keyHandle(key)}.`);
+  write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
+  write(`  \`daoris agent profile default ${harness} ${account}\` makes sessions run as it.`);
+  return account;
 }
 
 /**
@@ -453,8 +541,11 @@ export interface HarnessReport {
   version: string | null;
   problem: string | null;
   machineDefault: string | null;
-  /** `account` is who the tool says is signed in there (D66 §3), or null. */
-  profiles: { name: string; home: string; login: Login; account: string | null }[];
+  /**
+   * `account` is who the tool says is signed in there (D66 §3), or null; `key` is an API-key
+   * account's handle (AGT3) — never the key — or null for a sign-in.
+   */
+  profiles: { name: string; home: string; login: Login; account: string | null; key: string | null }[];
 }
 
 type Login = 'in' | 'out' | 'unknown';
@@ -468,9 +559,11 @@ type Login = 'in' | 'out' | 'unknown';
  */
 function ask(
   command: string[], args: string[], profile: string | null, toolchain: Toolchain, managed = false,
+  account: Record<string, string> = {},
 ): { ran: boolean; output: string; problem: string | null } {
-  // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
-  const env = { ...process.env, ...(managed ? toolchain.pinnedEnv : {}) };
+  // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves; and
+  // an account that is a key is asked with its key (AGT3).
+  const env = { ...process.env, ...(managed ? toolchain.pinnedEnv : {}), ...account };
   if (profile) {
     // Created as part of selecting it: at least one supported harness refuses to start when its home
     // variable names a path that does not exist.
@@ -533,13 +626,18 @@ export function probe(
     machineDefault: settings.defaults[harness] ?? null,
     profiles: profiles(home, harness).map((name) => {
       const where = profileHome(home, harness, name);
-      if (!version.ran) return { name, home: where, login: 'unknown' as const, account: null };
+      // An account that is a key is asked WITH its key (AGT3), as a session would run it.
+      const key = toolchain.keyVariable ? keyOf(home, harness, name) : null;
+      const shown = key ? keyHandle(key) : null;
+      if (!version.ran) return { name, home: where, login: 'unknown' as const, account: null, key: shown };
 
       // The SAME binary the version came from. Asking the pin whether it runs and then asking PATH
       // whether it is logged in would answer about two different installs.
       return {
         name, home: where,
-        ...loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where, Boolean(pinned)),
+        ...loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where, Boolean(pinned),
+          key ? { [toolchain.keyVariable!]: key } : {}),
+        key: shown,
       };
     }),
   };
@@ -551,11 +649,12 @@ export function probe(
  */
 function loginAt(
   command: string[], toolchain: Toolchain, where: string, managed = false,
+  account: Record<string, string> = {},
 ): { login: Login; account: string | null } {
   const check = toolchain.loginCheck;
   if (!check) return { login: 'unknown', account: null };
 
-  const answer = ask(command, check.args, where, toolchain, managed);
+  const answer = ask(command, check.args, where, toolchain, managed, account);
   if (!answer.ran) return { login: 'unknown', account: null };
   if (check.in.test(answer.output)) {
     return { login: 'in', account: check.account?.exec(answer.output)?.[1]?.trim() || null };
@@ -725,9 +824,30 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
     case 'profile':
       return profileVerb();
 
+    // An account that is an API key (AGT3, D67 §1). 🔴 Read from STDIN, never from an argument: an
+    // argument is visible in the process list and saved in the shell's history.
+    case 'key': {
+      const { name } = required(argv, 'key');
+      const extra = argv.slice(1).filter((token) => !token.startsWith('--') && token !== name);
+      if (extra.length > 0) {
+        throw new DaorisError(
+          'the key goes on stdin, not on the command line — pipe it in, or type it and end the input. '
+          + 'One given as an argument is now in your shell history; revoke it if that matters.');
+      }
+
+      let raw = '';
+      try {
+        raw = readFileSync(0, 'utf8');
+      } catch {
+        // No stdin at all: the same as an empty one, which is refused as not a key.
+      }
+      addKeyAccount(home, name, raw, write);
+      return 0;
+    }
+
     default:
       throw new DaorisError(
-        `unknown agent verb '${verb}' — one of: list, install, update, login, pin, unpin, profile`);
+        `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile`);
   }
 
   /** Write one pin, machine-wide or for one circle. Null takes it off. */
@@ -799,9 +919,11 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
             .map(([circle]) => `default in ${circle}`),
         ].filter(Boolean);
 
+        // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
         write(
-          `  ${''.padEnd(14)} ${profile.name.padEnd(16)} ${profile.login.padEnd(8)}`
+          `  ${''.padEnd(14)} ${profile.name.padEnd(16)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
           + `${profile.account ? ` ${profile.account}` : ''}`
+          + `${profile.key ? ` API key ${profile.key}` : ''}`
           + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
       }
     }
@@ -832,7 +954,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
 
     write('');
     write('  An account is a directory Daoris owns the location of. The credential inside it belongs to');
-    write("  the agent's own store — Daoris manages directories and names, never secrets.");
+    write("  the agent's own store. An API key is the one secret Daoris keeps: `agent key`, in keys.json.");
     return 0;
   }
 

@@ -2048,6 +2048,22 @@ check(
   removedSigned.out,
 );
 
+// An account that is an API key (AGT3, D67 §1), from a terminal. The key goes in on stdin, because an
+// argument is visible in the process list and the shell's history, and it comes back only as its
+// last four characters. The file it lands in is the one the desktop's roster reads.
+const REHEARSAL_KEY = 'sk-ant-api03-rehearsal-0000-wxyz';
+const keyed = capture(`node "${cliBin}" agent key claude-code`, scratch, {
+  env: HARNESS_ENV, input: `${REHEARSAL_KEY}\n`,
+});
+const keysFile = join(toolchainHome, 'keys.json');
+check(
+  '`daoris agent key` keeps an API key as an account, and says it back only as its last four',
+  keyed.code === 0 && /…wxyz/.test(keyed.out) && !keyed.out.includes(REHEARSAL_KEY)
+    && existsSync(keysFile)
+    && Object.values(JSON.parse(readFileSync(keysFile, 'utf8'))['claude-code'] ?? {}).includes(REHEARSAL_KEY),
+  keyed.out,
+);
+
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
 const cliDriver = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });

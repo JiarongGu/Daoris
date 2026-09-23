@@ -482,10 +482,11 @@ function Plugins({ notify }: { notify: Notify }) {
  * Installing, updating and logging in each run that harness's OWN mechanism, only when pressed, and
  * never mid-session: a tool that changed under a running loop is a moving target nobody diffed.
  *
- * **Daoris manages directories and names, never secrets.** A profile is an isolated configuration
- * home whose LOCATION Daoris owns; the credential inside it is put there by the harness's own login
- * flow and stays in the harness's own store, under the person's OS account. Nothing on this surface
- * reads one, and there is deliberately nowhere for one to be typed.
+ * **A sign-in stays the tool's.** A profile is an isolated configuration home whose LOCATION Daoris
+ * owns; the credential inside it is put there by the harness's own login flow and stays in the
+ * harness's own store, under the person's OS account. Nothing on this surface reads one, and there
+ * is nowhere to type one. The single field for a secret is an API key's (D67 §1), behind a press,
+ * sent once and shown back only as its last four characters.
  */
 /** What a DOOR does, and so what streams under it. */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
@@ -517,6 +518,26 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // Which tool a sign-in to ANOTHER account is running for (D66 §3) — there is no row for it yet, so
   // it sits under the list, and it goes when the sign-in ends either way.
   const [signingInNew, setSigningInNew] = useState<string | null>(null);
+  // Which tool has its API-key field open, and what is typed in it (AGT3, D67 §1). The draft lives
+  // here only until it is sent, and is dropped the moment it is — sent or taken back.
+  const [keying, setKeying] = useState<string | null>(null);
+  const [keyDraft, setKeyDraft] = useState('');
+  // What a person calls an account: who signed in, else the key's handle, else the directory's name.
+  const named = (profile: { name: string; account?: string | null; key?: string | null }) =>
+    profile.account ?? (profile.key ? t('harness.profile.keyName', { handle: profile.key }) : profile.name);
+  const closeKey = () => {
+    setKeying(null);
+    setKeyDraft('');
+  };
+  const addKey = (harness: string) => {
+    const key = keyDraft.trim();
+    if (!key) return;
+    closeKey();
+    act.mutate({ harness, action: 'key-add', key }, {
+      onSuccess: (result) => notify(t('harness.profile.keyAdded', { profile: result.profile, handle: result.key })),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
+    });
+  };
   // The same key, readable from the event handler below without re-subscribing on every render.
   const runningRef = useRef<string | null>(null);
 
@@ -718,10 +739,19 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       {/* Who is signed in, when the tool says (D66 §3): an account made by signing
                           in is `account-2` on disk, and nobody knows it by that. The directory's
                           name is still on the line below, inside its path, for a terminal. */}
-                      <span className="text-body font-medium text-ink">{profile.account ?? profile.name}</span>
-                      <Pill tone={profile.login === 'in' ? 'done' : 'neutral'}>
-                        {t(`harness.login.${profile.login}`)}
-                      </Pill>
+                      <span className="text-body font-medium text-ink">{named(profile)}</span>
+                      {/* 🔴 A key account is never shown as "logged in" (AGT3). Measured: the tool
+                          says logged in for ANY key, a wrong one included, and the first request is
+                          where a bad key is refused. The pill says what is known. */}
+                      {profile.key ? (
+                        <Tip content={t('harness.login.keyedTip')}>
+                          <Pill tone="neutral">{t('harness.login.keyed')}</Pill>
+                        </Tip>
+                      ) : (
+                        <Pill tone={profile.login === 'in' ? 'done' : 'neutral'}>
+                          {t(`harness.login.${profile.login}`)}
+                        </Pill>
+                      )}
                       {/* States the CONSEQUENCE, not the setting: "this machine's default" is a fact
                           about a config file, and what a person wants is which account the next
                           session runs as — the same fact worded as an answer. */}
@@ -752,7 +782,8 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                     {/* Logging in is the one thing here that is a step in a task rather than a
                         preference, so it is the one that looks like a button. It runs against the
                         account-owning door, because that is the tool that HAS the login flow. */}
-                    {tool.doors[0]!.signsIn !== false && (
+                    {/* A key account is signed in by its key (AGT3): there is no sign-in to offer. */}
+                    {tool.doors[0]!.signsIn !== false && !profile.key && (
                       <Button
                         variant={profile.login === 'in' ? 'ghost' : 'default'}
                         disabled={act.isPending || !tool.present}
@@ -791,14 +822,14 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                           run(tool.doors[0]!.harness, 'profile-default', profile.name, undefined, workspace)}
                         options={workspaces.map((workspace) => ({ value: workspace, label: workspace }))}
                         placeholder={t('harness.profile.useForPlaceholder')}
-                        ariaLabel={t('harness.profile.useFor', { profile: profile.account ?? profile.name })}
+                        ariaLabel={t('harness.profile.useFor', { profile: named(profile) })}
                       />
                     )}
                   </div>
                   {removing === profile.home && (
                     <div
                       role="group"
-                      aria-label={t('harness.profile.removeTitle', { account: profile.account ?? profile.name })}
+                      aria-label={t('harness.profile.removeTitle', { account: named(profile) })}
                       className="flex basis-full flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
                     >
                       <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">
@@ -821,7 +852,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                   )}
                   {/* Signing in happens HERE, on the account it is for. */}
                   {running === `${tool.doors[0]!.harness}:login` && runningProfile === profile.name && (
-                    <SignIn id={running} harness={tool.doors[0]!.harness} profile={profile.account ?? profile.name} />
+                    <SignIn id={running} harness={tool.doors[0]!.harness} profile={named(profile)} />
                   )}
                 </li>
               ))}
@@ -832,23 +863,68 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               typed before anyone knew whose account it was — then a login as a second step. Now
               one press runs the tool's own sign-in into a fresh account, which is kept only if the
               sign-in finishes and is listed by who signed in. */}
-          {tool.doors[0]!.signsIn === false ? null : signingInNew === tool.doors[0]!.harness ? (
+          {signingInNew === tool.doors[0]!.harness && (
             <SignIn
               id={`${tool.doors[0]!.harness}:login-new`}
               harness={tool.doors[0]!.harness}
               action="login-new"
               tool={tool.product ?? tool.name}
             />
-          ) : (
-            <Button
-              variant="ghost"
-              className="mt-2"
-              disabled={act.isPending || !tool.present}
-              onClick={() => run(tool.doors[0]!.harness, 'login-new')}
+          )}
+
+          {/* 🔴 An account that is an API key (AGT3, D67 §1: *"daoris can keep the key"*). One field,
+              behind a press, only on an agent that takes a key. The draft is dropped the moment it
+              is sent, and the page is told back only the key's last four characters. */}
+          {keying === tool.name && (
+            <form
+              className="mt-2 flex flex-wrap items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                addKey(tool.doors[0]!.harness);
+              }}
             >
-              <Icon name="plus" size={13} />
-              {t('harness.profile.signInNew')}
-            </Button>
+              <input
+                autoFocus
+                type="password"
+                autoComplete="off"
+                spellCheck={false}
+                value={keyDraft}
+                onChange={(event) => setKeyDraft(event.target.value)}
+                aria-label={t('harness.profile.keyLabel', { tool: tool.product ?? tool.name })}
+                placeholder={t('harness.profile.keyPlaceholder')}
+                className="min-w-72 flex-1 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+              />
+              <Button type="submit" variant="primary" disabled={act.isPending || !keyDraft.trim()}>
+                {t('harness.profile.keySave')}
+              </Button>
+              <Button variant="ghost" onClick={closeKey}>{t('common.cancel')}</Button>
+              <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
+            </form>
+          )}
+
+          {signingInNew !== tool.doors[0]!.harness && keying !== tool.name && (
+            <div className="mt-2 flex flex-wrap items-center gap-1">
+              {tool.doors[0]!.signsIn !== false && (
+                <Button
+                  variant="ghost"
+                  disabled={act.isPending || !tool.present}
+                  onClick={() => run(tool.doors[0]!.harness, 'login-new')}
+                >
+                  <Icon name="plus" size={13} />
+                  {t('harness.profile.signInNew')}
+                </Button>
+              )}
+              {tool.doors[0]!.takesKey && (
+                <Button
+                  variant="ghost"
+                  disabled={act.isPending || !tool.present}
+                  onClick={() => setKeying(tool.name)}
+                >
+                  <Icon name="account" size={13} />
+                  {t('harness.profile.addKey')}
+                </Button>
+              )}
+            </div>
           )}
 
           {/* 🔴 The ways in, beneath the tool rather than beside it. Each is installed, versioned

@@ -58,7 +58,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `retire` | Takes a repository off this machine's registry; **no file, history or doctrine is touched** |
 | `import` | Registers a folder's subdirectories in one go; safe to re-run, and it never re-points a workspace |
 | `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits one file under the home; talks to nothing** |
-| `agent` | Agents (Claude Code, Codex, dsh) and the accounts they run as: `list`, `install`/`update`/`login <agent>`, `profile list\|add\|remove\|default …`. **Spawns each agent's own tooling; never handles a credential** |
+| `agent` | Agents (Claude Code, Codex, dsh) and the accounts they run as: `list`, `install`/`update`/`login <agent>`, `profile list\|add\|remove\|default …`. **Spawns each agent's own tooling; keeps no sign-in** |
 | `driver` | What this machine drives: `list`, `drive`/`undrive`, `hold`/`resume`, `cap <n>`, `adapter <name>`. **Edits one file under the Daoris home** |
 | `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
 
@@ -87,7 +87,7 @@ prefix.
 makes accounts **named profiles**: isolated configuration directories whose *location* Daoris owns
 (`harnesses/<agent>/<profile>/` under the home), selected at spawn through the variable that agent
 already has. Logging in runs the agent's own flow inside one, so **Daoris never
-sees, stores or copies a credential** — it manages directories and names. Pick one per machine, per
+sees, stores or copies a sign-in**; `agent key` keeps an API key. Pick one per machine, per
 workspace, or for a single conversation; the session record then names the account and tool version
 it ran as. A spawn onto a missing agent, a profile nobody signed into, or a workspace the agent
 has never been trusted in refuses **naming the action that fixes it**.

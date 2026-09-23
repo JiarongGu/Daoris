@@ -385,9 +385,10 @@ export const useStartChat = () => {
  * profile HOME is a filesystem path, which is the sharpest reason this rides the bridge and has no
  * HTTP route (D47 §4).
  *
- * **Daoris manages directories and names, never secrets.** `login` runs the harness's own flow into a
- * profile directory and streams it through the console; nothing here reads, stores or forwards a
- * credential, and `login` is only ever the person pressing something.
+ * **A sign-in stays the tool's.** `login` runs the harness's own flow into a profile directory and
+ * streams it through the console; nothing here reads, stores or forwards a sign-in, and `login` is
+ * only ever the person pressing something. The one secret that crosses this bridge is an API key a
+ * person types (`key-add`, D67 §1), once, inward — answered only by its last four characters.
  */
 export type HarnessProfile = {
   name: string;
@@ -395,6 +396,8 @@ export type HarnessProfile = {
   login: 'in' | 'out' | 'unknown';
   /** Who the tool says is signed in there (D66 §3) — the name a person knows it by; null when it does not say. */
   account?: string | null;
+  /** An account that is an API key (AGT3): the key's last four characters, never the key. */
+  key?: string | null;
 };
 export type HarnessReport = {
   harness: string;
@@ -546,14 +549,23 @@ export const useHarnessAction = () => {
   return useMutation({
     mutationFn: (action: {
       harness: string;
-      action: 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin'
+      action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'pin' | 'unpin'
       | 'profile-add' | 'profile-remove' | 'profile-default';
       profile?: string;
+      /**
+       * An API key — `key-add` only (AGT3, D67 §1). It crosses the bridge once, inward; the answer
+       * and the roster name it only by its last four characters.
+       */
+      key?: string;
       /** Which version to install and pin to — `pin` only (TOOL2/D57). */
       version?: string;
       /** Which circle a default is for — `profile-default` only (D49 §4); absent means the machine's. */
       workspace?: string;
-    }) => call<{ harness: string; action: string; exitCode?: number; started?: boolean }>('HARNESS_ACTION', action),
+    }) => call<{
+      harness: string; action: string; exitCode?: number; started?: boolean;
+      /** For `key-add`: the account made, and the key's handle. */
+      profile?: string; key?: string;
+    }>('HARNESS_ACTION', action),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
   });
 };

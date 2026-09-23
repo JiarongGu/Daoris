@@ -291,7 +291,12 @@ public sealed class DriverModule : ModuleBase
                             // Who is signed in there, by the tool's own answer (D66 §3) — the name
                             // a person knows the account by, where the directory's is `account-2`.
                             profile.Account,
+                            // An account that is a key, by its handle only (AGT3). Never the key.
+                            profile.Key,
                         }).ToArray(),
+                        // Whether this agent takes an API key at all — the control is absent where
+                        // it does not, by the rule `Pinnable` and `SignsIn` follow.
+                        TakesKey = _loop.Harnesses.Toolchain(report.Adapter)?.KeyVariable is { Length: > 0 },
                         // 🔴 The account a person actually HAS — the tool's own configuration home —
                         // answered beside the profiles rather than left out, which read as "No
                         // accounts" to an owner who was logged in.
@@ -327,6 +332,26 @@ public sealed class DriverModule : ModuleBase
                 var stream = Relay(harness, action);
                 var profile = Optional(request, "profile");
 
+                // 🔴 An account that is an API key (AGT3, D67 §1). The key crosses this bridge once,
+                // inward, and is answered only by its handle — here, on the roster, and in any event.
+                if (action == "key-add")
+                {
+                    if (toolchain.KeyVariable is not { Length: > 0 })
+                    {
+                        throw new DriverException(
+                            $"`{harness}` takes no API key from Daoris — sign in with its own login instead.");
+                    }
+
+                    var account = HarnessKeys.Add(
+                        _loop.Harnesses.Home, harness, PayloadHelper.GetRequiredValue<string>(request.Payload, "key"));
+                    await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
+                    return new
+                    {
+                        Harness = harness, Action = action, ExitCode = 0, Profile = account,
+                        Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, harness, account)!),
+                    };
+                }
+
                 // The file edits answer at once, with the exit code.
                 int? edited = action switch
                 {
@@ -337,8 +362,8 @@ public sealed class DriverModule : ModuleBase
                     // nothing tests, since the rule is written "whatever a screen can set, a
                     // terminal can" and the converse had no check.
                     //
-                    // Daoris manages directories and names, never secrets: adding one MAKES A
-                    // DIRECTORY and nothing else, and what lands inside it is the harness's own.
+                    // A sign-in stays the tool's: adding one MAKES A DIRECTORY and nothing else,
+                    // and what lands inside it is the harness's own.
                     "profile-add" => ProfileAdd(harness, request),
                     "profile-remove" => ProfileRemove(harness, request, stream),
                     "profile-default" => ProfileDefault(harness, request),
@@ -346,7 +371,7 @@ public sealed class DriverModule : ModuleBase
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
                         $"unknown agent action '{action}' — one of: install, update, login, login-new, "
-                        + "pin, unpin, profile-add, profile-remove, profile-default",
+                        + "key-add, pin, unpin, profile-add, profile-remove, profile-default",
                         ("action", action)),
                 };
                 if (edited is { } code)
