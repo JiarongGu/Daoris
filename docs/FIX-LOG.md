@@ -42,7 +42,7 @@ pressed with the old code rebuilt, and no dialog opened. With the fix rebuilt, t
 with `from` set to the session's repository. The window swallowed the failure that the test made
 loud, which is why nothing had reported it.
 
-**Commit.** pending
+**Commit.** `e11100a`
 
 ## A login from the Machine view could never finish (2026-09-23)
 
