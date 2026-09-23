@@ -553,6 +553,18 @@ The first version: doctrine that installs, is checked, and flows back.
   behind, quests in conflict, and when it last reached its remote. A pass that could not reach the
   remote keeps that time and names the wall as the last try. The status reads the machine's own
   host and never contacts the remote.
+- **The status bar shows where a circle stands** (SYNC6b). A wired circle's remote item becomes a
+  control: ↑ for work waiting to go up, ↓ for quests left behind, ⚠ for quests in conflict, `synced`
+  when level, and `unreachable` when the last try hit a wall. Pressing it shows when the circle last
+  synced, the wall in the host's own words, and the quests in conflict, each of which opens in its
+  drawer. The desktop adds *Sync now*, the same pass `daoris-driver sync` runs. A browser on this
+  machine reads the same standing and has no *Sync now*. A quest's drawer now shows each move that
+  lost the race to the remote, with that session's note.
+- **Every wired circle syncs, and a wall no longer hides itself.** A circle where nothing on this
+  machine is joined still gets its pass, so the team's repositories and quests come down to a
+  machine that has only asks to make. When the feed hits a wall, the quest pass still runs, and that
+  is where the try is recorded, so the status bar can no longer say `synced` while the sync is
+  failing.
 - **A refusal can be information.** A stale or branch feed is the rules working, not a fault, so it is
   flagged as such on the wire and the sync reports it as news rather than as a wall. Records and
   quests still travel from any checkout; only knowledge waits for the canonical line. A checkout git

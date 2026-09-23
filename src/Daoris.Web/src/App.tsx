@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import {
   useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions, useStatus,
-  useWorkspaces,
+  useSyncStanding, useWorkspaces,
 } from './queries';
 import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -20,7 +20,8 @@ import { ProjectsView } from './ProjectsView';
 import { SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
-import { useDriver, useOpenWindow, useRemotes } from './shell';
+import { useDriver, useOpenWindow, useRemotes, useSyncNow } from './shell';
+import { SyncStatus } from './work/SyncStatus';
 import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
 import type { Attention } from './work/AttentionRow';
@@ -102,6 +103,9 @@ export function App() {
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
+  // A quest a door asked Quests to open in its drawer — the sync item's conflict list (SYNC6b). An
+  // event like the opening draft: Quests consumes it and says so.
+  const [questFocus, setQuestFocus] = useState<string | null>(null);
   // The palette (SURF9), and what it asks the Work frame to do. Both are events consumed on arrival
   // rather than state, for the reason the quest composer's opening draft is.
   const [palette, setPalette] = useState(false);
@@ -182,10 +186,34 @@ export function App() {
   // "how many need me" would disagree the first time either was edited.
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? []).length;
-  // Only the machine that holds the map can answer this, so elsewhere the question is not asked.
-  const wired = remotes.data
-    ? remotes.data.remotes.some((row) => row.workspace === (scope.workspace ?? 'default'))
-    : null;
+  // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
+  // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
+  // the shell's map says; a browser with neither is not asked.
+  // 🔴 WHICH circle: the one chosen, or the only one there is. "Every circle" has no single standing,
+  // and assuming `default` both asked a door for a scope nobody chose and named the wrong circle in a
+  // family whose one circle is called something else.
+  const circle = scope.workspace ?? (workspaces.data?.length === 1 ? workspaces.data[0] : null);
+  const standing = useSyncStanding(circle);
+  const syncNow = useSyncNow();
+  // Titles for the quests in conflict, from the cache the Quests view fills anyway; one it has not
+  // loaded is named by its id alone.
+  const everything = useQuests(null, true);
+  const wired = standing.data
+    ? standing.data.wired
+    : remotes.data && circle
+      ? remotes.data.remotes.some((row) => row.workspace === circle)
+      : null;
+
+  const onSyncNow = (workspace: string) => syncNow.mutate(workspace, {
+    // The pass's own words, verbatim: the wall it hit, and what the remote understood and did not
+    // take. A clean pass that said nothing is the one sentence this page writes.
+    onSuccess: (report) => {
+      if (report.problem) notify(report.problem, 'error');
+      for (const note of report.notes) notify(note);
+      if (!report.problem && report.notes.length === 0) notify(t('work.sync.done', { workspace }));
+    },
+    onError: (e) => notify(sentence(e), 'error'),
+  });
 
   const setView = (next: Tab) => {
     setTab(next);
@@ -380,6 +408,8 @@ export function App() {
                     onAttend={attached ? openInWork : undefined}
                     opening={opening}
                     onOpened={() => setOpening(null)}
+                    focus={questFocus}
+                    onFocused={() => setQuestFocus(null)}
                   />
                 )}
                 {view === 'projects' && <ProjectsView notify={notify} />}
@@ -421,6 +451,23 @@ export function App() {
         sessions={liveSessions}
         workspace={scope.workspace}
         remote={wired}
+        sync={circle && standing.data?.wired
+          ? (
+            <SyncStatus
+              workspace={circle}
+              standing={standing.data}
+              conflicts={standing.data.conflicts.map((id) => ({
+                id, title: everything.data?.find((quest) => quest.id === id)?.title,
+              }))}
+              syncing={syncNow.isPending}
+              // The pass is the shell's (D50): a browser reads where the circle stands and is not
+              // offered a button that could not run it.
+              onSyncNow={attached ? () => onSyncNow(circle) : undefined}
+              onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+              onRemotes={attached ? () => setView('settings') : undefined}
+            />
+          )
+          : undefined}
         /* Where each fact leads, and the rule is that a status item goes where the fact is SET
            rather than where it is merely repeated (owner, 2026-09-22: *"better design with display
            and action (on click or on hover)"*). The driver and the remote are both machine wiring,

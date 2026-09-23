@@ -115,6 +115,17 @@ public sealed class DriverLoop(
     /// not leave the person watching a countdown.</summary>
     public void Nudge() => _watch?.Nudge();
 
+    /// <summary>The loop's syncs, once it is up — the ones its tick runs, and the ones *Sync now* runs.</summary>
+    private RemoteSyncSet? _sync;
+
+    /// <summary>
+    /// One circle's pass now (SYNC6b): the tick's own pass through the loop's own sync set, so the
+    /// screen's *Sync now* and `daoris-driver sync` run the same thing (D50). Null before the loop is up.
+    /// </summary>
+    /// <exception cref="DriverException">The circle has no remote on this machine.</exception>
+    public Task<SyncReport>? SyncNowAsync(string workspace, CancellationToken ct) =>
+        _sync?.RunOnceAsync(workspace, ct);
+
     public void Start()
     {
         _loop = Task.Run(RunAsync);
@@ -175,6 +186,7 @@ public sealed class DriverLoop(
         // The machine's remotes — one per workspace that has one (D47 §9, D48 §5). The syncs ride the
         // tick, in the shell exactly as in the headless host. Absence is silent and local.
         using var sync = RemoteSyncSet.FromEnvironment(service.BaseUrl, key);
+        _sync = sync;
 
         // Live console lines become IPC events, BATCHED by the library's relay (D49 §2). The shell's
         // half is only what a batch becomes: the page asks for the backlog once over `TAIL_SESSION`

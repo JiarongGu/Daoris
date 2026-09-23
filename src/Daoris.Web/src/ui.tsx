@@ -6,10 +6,10 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy, FileDiff, GitMerge,
-  Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, LogIn, Monitor,
-  Network, Paperclip, Plus, RotateCw, Search, Settings, SquareArrowOutUpRight, SquareTerminal,
-  Trash2, X,
+  ArrowDown, ArrowLeftRight, ArrowUp, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy,
+  FileDiff, GitMerge, Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link,
+  LogIn, Monitor, Network, Paperclip, Plus, RotateCw, Search, Settings, SquareArrowOutUpRight,
+  SquareTerminal, Trash2, TriangleAlert, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -53,6 +53,11 @@ const ICONS = {
   // that is a word alone reads as a caption, and the glyph is what makes it scan as an item.
   cloud: Cloud,
   cloudOff: CloudOff,
+  // Where a circle stands with its remote (SYNC6b), the way every IDE's sync item says it: what is
+  // waiting to go up, what could not come level, and what needs a person.
+  ahead: ArrowUp,
+  behind: ArrowDown,
+  conflict: TriangleAlert,
   // The accounts surface (2026-09-22): an account, signing into one, and removing one. The bin is on
   // Remove because Remove now deletes (D66 §3); it was kept off Forget while forgetting removed nothing.
   account: KeyRound,

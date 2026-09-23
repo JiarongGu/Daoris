@@ -56,6 +56,26 @@ export type Quest = {
   then?: QuestStep[];
   /** The quest whose close published this one, when it is a step of a chain. */
   parent?: string;
+  /**
+   * Moves another machine made that reached the remote second (D68 §5): kept on the quest for a
+   * person, never merged. Absent from a host older than the sync, which is the same as none.
+   */
+  conflicts?: QuestConflict[];
+};
+/** A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its own words, verbatim. */
+export type QuestConflict = { machine: string; attempted: Quest['status']; note?: string | null; at: string };
+/**
+ * Where a circle stands on this machine (SYNC6a), read from its own host without reaching the
+ * remote. A circle with no remote here answers `wired: false` and nothing else of use.
+ */
+export type SyncStanding = {
+  workspace: string; wired: boolean; ahead: number; behind: string[]; conflicts: string[];
+  /** When a pass last reached the remote; a wall does not move it. */
+  synced?: string | null;
+  /** When a pass last ran, reaching the remote or not. */
+  tried?: string | null;
+  /** The wall the last pass hit, in the host's words; null when it reached the remote. */
+  problem?: string | null;
 };
 /** One step of a chain. `{parent}` in its words becomes the id of the quest it follows. */
 export type QuestStep = { to: string; title: string; body: string };
@@ -193,6 +213,9 @@ export const api = {
   // A repository's own code map (MAP3a), read from its committed file — never written to (D32).
   codeMap: (repository: string, signal?: AbortSignal) =>
     get<CodeMapAnswer>(`/api/code-map/${encodeURIComponent(repository)}`, signal),
+  // Where a circle stands on this machine (SYNC6a) — the host's store, never the remote itself.
+  syncStanding: (workspace: string, signal?: AbortSignal) =>
+    get<SyncStanding>(`/api/sync${qs({ workspace })}`, signal),
   sessions: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Session[]>(`/api/sessions${qs({ includeClosed, repository, workspace })}`, signal),
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine

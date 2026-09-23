@@ -130,6 +130,29 @@ export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STR
 /** Let a parked quest run again, counting from where it stands — `daoris driver retry <quest>`. */
 export const useRetryQuest = () => useDriverChange<{ quest: string }>('RETRY_QUEST');
 
+/** What a pass said: the wall it hit, and what the remote understood and did not take — the driver's words. */
+export type SyncNowReport = { workspace: string; problem?: string | null; notes: string[] };
+
+/**
+ * *Sync now* (SYNC6b): the tick's own pass for one circle, through the shell's own driver loop —
+ * `daoris-driver sync --workspace <name>` is the other door to the same pass (D50). Shell-only,
+ * because the pass that feeds a checkout's registration and knowledge asks git, and only the machine
+ * with the checkout can.
+ */
+export const useSyncNow = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (workspace: string) => call<SyncNowReport>('SYNC_NOW', { workspace }),
+    onSettled: () => {
+      // A pass can move all of these, and a wall still recorded when it tried.
+      void client.invalidateQueries({ queryKey: keys.allSync });
+      void client.invalidateQueries({ queryKey: keys.allQuests });
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.allRegistry });
+    },
+  });
+};
+
 export const useSetDrivable = () => useDriverChange<{ repository: string; drivable: boolean }>('SET_DRIVABLE');
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
 /** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */

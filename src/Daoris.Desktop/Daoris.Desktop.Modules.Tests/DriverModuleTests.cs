@@ -75,6 +75,19 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains("still coming up", refusal);
     }
 
+    /// <summary>
+    /// *Sync now* (SYNC6b) runs the loop's own sync set — so before the loop is up there is no pass to
+    /// run, and the answer is the cold-start sentence rather than a pass that quietly did nothing.
+    /// </summary>
+    [Fact]
+    public async Task Syncing_now_before_the_driver_is_up_is_a_sentence()
+    {
+        var refusal = await RefusalAsync(Module(), "SYNC_NOW", new { workspace = "default" });
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+        Assert.Contains("still coming up", refusal);
+    }
+
     /// <summary>A review of nothing in particular is a malformed call, not an empty answer.</summary>
     [Fact]
     public async Task Asking_what_a_session_landed_without_naming_one_is_refused()

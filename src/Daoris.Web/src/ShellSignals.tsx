@@ -57,6 +57,8 @@ export function ShellSignals({ notify, onAttend }: {
     void client.invalidateQueries({ queryKey: keys.allSessions });
     void client.invalidateQueries({ queryKey: keys.allQuests });
     void client.invalidateQueries({ queryKey: keys.driver });
+    // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b).
+    void client.invalidateQueries({ queryKey: keys.allSync });
     // 🔴 And the index. Seen on the deployed application: the status bar read "555 entries · 7
     // repositories" for as long as the window stayed open, on an index that held 1,050 across 17 —
     // the page had asked while a schema rebuild was still feeding, cached the partial answer, and

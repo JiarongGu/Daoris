@@ -4632,3 +4632,52 @@ the wall as the last try; the losing machine lists the conflicted quest; `sync` 
 before any tick does; and a circle with no remote is refused by name.
 
 Service 424, driver 427, modules 105, web 620 + 18, family 248/248, deploy 39/39, verify green.
+
+## SYNC6b — the screen door (2026-09-24)
+
+- [x] **SYNC6b — the screen door**: the status bar's sync item, read from `GET /api/sync`; *Sync
+  now* over the bridge, running the pass `daoris-driver sync` runs; the conflict list, each quest
+  linked. Design §6, §9.
+
+✅ **done 2026-09-24**, the ninth of D68's build.
+
+**The sync item** (`work/SyncStatus.tsx`, a molecule with props only) takes the remote item's place
+in the status bar when the circle is wired. It is icon and number:
+- ↑ for work waiting to go up, ↓ for quests left behind, ⚠ for quests in conflict;
+- `synced` when level, `not synced yet` before any pass, `unreachable` after a wall.
+Pressing it opens a non-modal menu above the bar. It shows when the circle last synced, then the
+host's wall verbatim, then the quests in conflict (each opens its drawer, with its title where the
+page holds it), then *Sync now* and *Remotes…*. `STATUS_PRESSABLE` is exported from `frame.tsx`, so
+this item and the plain ones are one control.
+
+**Wiring**:
+- The standing is `useSyncStanding` over HTTP from this machine's host, so a browser here reads it.
+  Its `wired` field now decides the remote item.
+- The circle is the one chosen, or the only one there is. "Every circle" with several has no single
+  standing, so nothing is asked. `scope.workspace ?? 'default'` asked a door for a scope nobody had
+  chosen, and named the wrong circle in a family whose one circle has another name.
+- *Sync now* is `DAORIS.DRIVER` `SYNC_NOW`, which runs `DriverLoop.SyncNowAsync` through the loop's
+  own set. A browser is not given it.
+- Every tick invalidates the standing.
+- `RemoteSyncSet` takes one pass at a time, because the tick and *Sync now* share it and a pass
+  re-reads the map into its own dictionary.
+- The quest drawer shows each conflict, with the machine, what it attempted, and its note verbatim.
+  `QuestsView` takes a `focus` door, consumed by identity (frontend §4b).
+
+**Found by looking at the real window** (FIX-LOG 2026-09-24), against a throwaway shared host
+wired into the scratch machine and then stopped:
+- A wall in the driver's feed returned before the host was asked for its pass, and the host is where
+  a try is recorded. So the bar said `synced` while *Sync now* was failing. The host's pass now runs
+  whatever the feed met.
+- A circle with nothing joined got no pass at all, so *Sync now* answered Clean without contacting
+  anyone. Every wired circle now gets its pass (design §6).
+- A glyph alone did not say the remote was unreachable, and the lead-in repeated the host's sentence.
+  Both are fixed and recorded in platform UX §4.
+- My own trap: the throwaway remote runs the same host build, so it held the build's assemblies. A
+  rebuild was blocked, and a filtered build log hid it.
+
+**Found in the tests**: Radix opens a `defaultOpen` menu only once per file under jsdom, and the
+shared `userEvent` carries pointer state between tests. The tests use AppMenu's harness (a fresh
+`setup()`, then the keyboard). The stories keep `defaultOpen` for review.
+
+Service 424, driver 427, modules 106, web 639 + 18, family 248/248, deploy 39/39, verify green.

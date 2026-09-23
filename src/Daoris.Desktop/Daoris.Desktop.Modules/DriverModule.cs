@@ -604,6 +604,21 @@ public sealed class DriverModule : ModuleBase
                 await Task.CompletedTask;
                 return null;
 
+            // *Sync now* (SYNC6b): the tick's own pass for one circle, through the loop's own set —
+            // `daoris-driver sync` is the other door to the same pass (D50). What it says comes back
+            // in the driver's words; a circle with no remote is its refusal, mapped above.
+            case "SYNC_NOW":
+            {
+                var workspace = RemoteTarget.Workspace(
+                    PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace"));
+                var pass = _loop.SyncNowAsync(workspace, cancellationToken)
+                    ?? throw Refusals.Because(
+                        Refusals.DriverNotReady,
+                        "the driver is still coming up — its service is not answering yet. A moment.");
+                var report = await pass;
+                return new { Workspace = workspace, report.Problem, report.Notes };
+            }
+
             default:
                 throw UnknownType(request);
         }

@@ -119,7 +119,9 @@ processes (D47 §6 unchanged).
   rebases in one step, so nothing is ever fetched and left unapplied. *Behind* is therefore the quests
   the last pass could not bring level, because the remote moved them on every round. The time the
   circle last reached its remote says how old that knowledge is. A pass that hits a wall keeps that
-  time, and names the wall as the last try.
+  time, and names the wall as the last try. The host's half of a pass runs whatever the driver's
+  feed met, because the host is where a try is recorded. A feed that stopped the pass left the
+  standing saying *synced* while the sync was failing.
 
 ## 7. What stays, and what goes
 
@@ -230,9 +232,9 @@ tombstone (SYNC0b).
 - **Down, updated and removed.** On every pass, a row of the team's is written here when it is new
   or its declaration changed. A row held here without a root, in that circle, is retired here when
   the remote no longer lists it. A row held here with a root, in any circle, is never touched by the
-  sync. A pass runs for a circle while this machine holds a joined checkout in it, a teammate's copy
-  from it, or a retire it owes it, so a machine whose last checkout left a circle still carries that
-  retire and keeps the circle's copies current.
+  sync. A pass runs for every wired circle (§6), whether or not anything here joins it: nothing
+  leaves that no manifest declared, and a machine that joined nothing still hears the team's rows
+  and quests, and still carries a retire it owes.
 - **A retire is a tombstone that travels.** A joined row with a root can leave a circle three ways:
   it is retired, re-wired to another circle, or re-registered unjoined. Each records a tombstone for
   that circle in the store. The next pass retires the repository at that circle's deployment, then

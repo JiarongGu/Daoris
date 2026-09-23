@@ -203,6 +203,17 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   output panel and a right dock and neither can be reached from the strip — the state lives inside
 >   `WorkFrame`, so this needs hoisting before it needs designing. Filed as **SURF11**.
 
+> **Amended 2026-09-24, the sync item (SYNC6b)**, looked at on the real window against a throwaway
+> remote, in both themes. The remote item became a **control** when the circle is wired, and it is
+> **icon-and-number**: a cloud, then ↑ for work waiting to go up, ↓ for quests left behind, and ⚠
+> for quests in conflict. A level circle shows the one word `synced`. Pressing it opens a menu above
+> the bar (`AppMenu`'s rows, `modal={false}`) that says when the circle last synced, then the quests
+> in conflict, then *Sync now*. Two things only the window showed:
+> - A wall needs a **word on the bar**. The cloud-off glyph alone said nothing, so the bar now reads
+>   `unreachable` in the warn tone.
+> - A lead-in must not repeat the sentence it introduces. The host's wall already says what went
+>   wrong, so the detail's lead-in says only *when*.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

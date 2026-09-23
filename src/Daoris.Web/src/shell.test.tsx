@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -31,6 +31,7 @@ import { QuestsView } from './QuestsView';
 import { SettingsView } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from './queries';
+import { useSyncNow } from './shell';
 
 const DRIVER_STATE = { drivable: [], holds: [], running: ['s1a2b3c4'] };
 
@@ -1136,9 +1137,29 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notify).toHaveBeenCalledWith('sync  fed 2');
     // The index too: a schema rebuild is observable, and a summary cached mid-feed stayed "555 · 7"
     // on an index of 1,050 · 17 for as long as the window was open (deployed app, 2026-09-23).
-    for (const key of [keys.allSessions, keys.allQuests, keys.driver, keys.allRepositories]) {
+    // And where each circle stands with its remote (SYNC6b): every tick runs a pass.
+    for (const key of [keys.allSessions, keys.allQuests, keys.driver, keys.allRepositories, keys.allSync]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
+  });
+
+  /**
+   * *Sync now* (SYNC6b) is the tick's own pass for one circle, run by the shell's driver loop — so it
+   * lands on DAORIS.DRIVER naming the circle, and afterwards where it stands is asked again.
+   */
+  it('Sync now lands on DAORIS.DRIVER naming the circle, and the standing refetches', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    invoke.mockImplementation(async () => ({ workspace: 'aurora', problem: null, notes: [] }));
+    const { result } = renderHook(() => useSyncNow(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+
+    const report = await result.current.mutateAsync('aurora');
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYNC_NOW', { payload: { workspace: 'aurora' } });
+    expect(report.notes).toEqual([]);
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync }));
   });
 
   /**

@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The sync item said "synced" while the sync was failing: a wall stopped the pass before its record (2026-09-24)
+
+**Symptom.** Found by looking at the real window while building SYNC6b, with a throwaway remote
+wired into the scratch machine and then stopped. *Sync now* toasted the wall, while the status bar
+went on saying `synced` and the circle's standing showed no new try.
+
+**Root cause.** A driver pass runs the feed first (registrations, knowledge, retires, the team's
+rows) and then asks its host for the quest pass. `QuestSync` records every try, and the standing
+is read from that record (SYNC6a). `RemoteSync.RunOnceAsync` wrapped both halves in one `try`, so
+the first wall (the feed's GET of the remote's registry) returned before the host was asked. The
+host never tried, so nothing recorded the wall, and the standing kept its last success. A second
+cause hid the first on a machine that joins nothing, the scratch family's case. The pass returned
+early for a circle with nothing joined, so the host was never asked there either, and `sync now`
+answered Clean without contacting anyone. That contradicts design §6, which gives every wired
+circle a pass.
+
+**Fix.** The feed's wall is caught on its own, and the host's pass runs whatever the feed met. The
+problem is the first wall, named once. Every wired circle gets its pass. The bar says `unreachable`
+beside the cloud-off glyph, since a glyph alone is not a sentence. The detail's lead-in says only
+*when*, because the host's sentence already says what went wrong: "did not reach the remote: the
+remote could not be reached" read twice on the window.
+
+**Verify.** `A_wall_in_the_feed_still_asks_the_host_for_its_pass` fails against the single `try`
+and passes with the fix. `A_wired_circle_with_nothing_joined_feeds_nothing_and_still_hears_the_team`
+replaces the test that pinned the early return. On the window, a stopped remote showed
+`unreachable` and the wall, and *Sync now* after it came back said `default synced.` with the bar
+level again.
+
 ## A repository with no code map drew nothing at all: the host leaves nulls out (2026-09-23)
 
 **Symptom.** Found by the browser gate before the change landed. Opening the code map of a

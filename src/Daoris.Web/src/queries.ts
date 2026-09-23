@@ -21,6 +21,9 @@ export const keys = {
   allRegistry: ['registry'] as const,
   registry: (workspace: string | null) => ['registry', workspace ?? '*'] as const,
   codeMap: (repository: string) => ['code-map', repository] as const,
+  /** Where each circle stands with its remote (SYNC6a) — refetched by every tick, which runs a pass. */
+  allSync: ['sync'] as const,
+  sync: (workspace: string) => ['sync', workspace] as const,
   driver: ['driver'] as const,
   /** The machine's wiring — shell-only, like the driver's state (D48 §5). */
   remotes: ['remotes'] as const,
@@ -50,6 +53,18 @@ export const keys = {
 
 export const useStatus = () =>
   useQuery({ queryKey: keys.status, queryFn: ({ signal }) => api.status(signal) });
+
+/**
+ * Where one circle stands with its remote (SYNC6a): ahead, behind, in conflict, when it last synced.
+ * Over HTTP from this machine's own host, so a browser on this machine reads it too — only *Sync now*
+ * needs the shell. Null asks nothing: "every circle" has no single standing to show.
+ */
+export const useSyncStanding = (workspace: string | null) =>
+  useQuery({
+    queryKey: keys.sync(workspace ?? '*'),
+    queryFn: ({ signal }) => api.syncStanding(workspace!, signal),
+    enabled: workspace !== null,
+  });
 
 export const useRepositories = () => {
   const { workspace } = useScope();

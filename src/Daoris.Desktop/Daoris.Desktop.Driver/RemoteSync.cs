@@ -111,9 +111,28 @@ public sealed class RemoteSyncSet : IDisposable
 
     public Task<SyncReport> RunOnceAsync(CancellationToken ct = default) => RunOnceAsync(workspace: null, ct);
 
+    /// <summary>
+    /// One pass at a time through this set. The tick and *Sync now* share it (SYNC6b), and a pass
+    /// re-reads the map into the set's own dictionary, which two passes at once would corrupt.
+    /// </summary>
+    private readonly SemaphoreSlim _pass = new(1, 1);
+
     /// <summary>One pass — of every circle, or of the one <paramref name="workspace"/> names (SYNC6a).</summary>
     /// <exception cref="DriverException">A circle was named that this machine has no remote for.</exception>
     public async Task<SyncReport> RunOnceAsync(string? workspace, CancellationToken ct = default)
+    {
+        await _pass.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await RunLockedAsync(workspace, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _pass.Release();
+        }
+    }
+
+    private async Task<SyncReport> RunLockedAsync(string? workspace, CancellationToken ct)
     {
         Refresh();
         var syncs = workspace is null
@@ -191,6 +210,8 @@ public sealed class RemoteSync : IDisposable
 
     public async Task<SyncReport> RunOnceAsync(CancellationToken ct = default)
     {
+        var notes = new List<string>();
+        string? wall = null;
         try
         {
             // Read the registry UNSCOPED and filter here, deliberately. The joined half is this
@@ -202,30 +223,48 @@ public sealed class RemoteSync : IDisposable
                 _local, $"{_localBase}/api/registry/retired?workspace={Uri.EscapeDataString(_workspace)}", ct)
                 .ConfigureAwait(false));
 
-            // A circle this machine holds nothing of, and owes nothing to, hears nothing from it. The last
-            // joined checkout retired is still a retire owed, so it still goes (SYNC5b).
-            if (!RemoteSyncPayloads.Holds(registryJson, _workspace) && retired.Count == 0) return SyncReport.Clean;
-
+            // Every WIRED circle gets its pass (sync design §6), whether or not anything here joins it:
+            // nothing leaves that the manifests do not declare, while the team's rows and quests still
+            // come down — a machine that joined nothing still addresses its teammates, and *Sync now*
+            // on such a circle must do what it says.
             var joined = RemoteSyncPayloads.Joined(registryJson, _workspace);
-            var notes = new List<string>(await FeedUpAsync(joined, ct).ConfigureAwait(false));
+            notes.AddRange(await FeedUpAsync(joined, ct).ConfigureAwait(false));
             var remoteRegistryJson = await DriverHttp.GetAsync(_remote, $"{_remoteBase}/api/registry", ct).ConfigureAwait(false);
             var told = await CarryRetiresAsync(retired, remoteRegistryJson, joined, ct).ConfigureAwait(false);
             await MirrorRegistryAsync(remoteRegistryJson, registryJson, told, ct).ConfigureAwait(false);
-            notes.AddRange(await SyncQuestsAsync(ct).ConfigureAwait(false));
-
-            return notes.Count == 0 ? SyncReport.Clean : new(null, notes);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             throw; // Cancellation belongs to the caller, never converted into a sync problem.
         }
-        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or DriverException or System.Text.Json.JsonException)
+        catch (Exception error) when (IsWall(error))
         {
             // Report and carry on: records sync eventually and the next tick retries — but a feed
             // dying quietly looks exactly like a family with nothing to say, so the wall is named.
-            return new(error.Message);
+            wall = error.Message;
         }
+
+        // 🔴 The host's pass runs whatever the feed met (SYNC6b). It is where a try is RECORDED, so a
+        // feed that stopped the pass at a remote that was down left the circle's standing saying
+        // "synced" while the sync had just failed. The quests stand on their own besides.
+        try
+        {
+            notes.AddRange(await SyncQuestsAsync(ct).ConfigureAwait(false));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception error) when (IsWall(error))
+        {
+            wall ??= error.Message;
+        }
+
+        return wall is not null ? new(wall, notes) : notes.Count == 0 ? SyncReport.Clean : new(null, notes);
     }
+
+    private static bool IsWall(Exception error) =>
+        error is HttpRequestException or TaskCanceledException or DriverException or System.Text.Json.JsonException;
 
     /// <summary>
     /// Each joined repository UP: its registration, then its content — the remote must know who is

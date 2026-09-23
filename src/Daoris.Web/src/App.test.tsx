@@ -23,6 +23,8 @@ const REGISTRY = [
 /** What Overview's band is made of, when the fixtures below hand it something to show. */
 let QUESTS: unknown[] = [];
 let SESSIONS: unknown[] = [];
+/** Where a circle stands with its remote (SYNC6b) — no remote, unless a test wires one. */
+let SYNC: unknown = { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] };
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -32,6 +34,7 @@ function respond(url: string): Response {
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
+  if (url.startsWith('/api/sync')) return Response.json(SYNC);
   throw new Error(`unstubbed request: ${url}`);
 }
 
@@ -78,6 +81,40 @@ describe('the shell in a browser, over two workspaces', () => {
       expect(urls.some((url) => url.startsWith('/api/registry') && url.includes('workspace=aurora'))).toBe(true);
     });
     expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora');
+  });
+
+  /**
+   * SYNC6b: where the chosen circle stands comes from this machine's host, so a browser here reads it
+   * — and a conflict in it opens that quest. What a browser does not get is *Sync now*: the pass is
+   * the shell's.
+   */
+  it('shows where a wired circle stands, opens a conflicted quest, and offers no Sync now in a browser', async () => {
+    SYNC = {
+      workspace: 'aurora', wired: true, ahead: 2, behind: [], conflicts: ['q1a2b3'],
+      synced: '2026-09-24T10:00:00Z', tried: '2026-09-24T10:00:00Z', problem: null,
+    };
+    QUESTS = [{
+      id: 'q1a2b3', from: 'engine', to: 'studio', title: 'Lost the race', body: 'why', status: 'Taken',
+      filed: '2026-09-24T09:00:00Z', updated: '2026-09-24T10:00:00Z', workspace: 'aurora',
+      conflicts: [{ machine: 'm2', attempted: 'Taken', note: 'the other machine', at: '2026-09-24T10:00:00Z' }],
+    }];
+    try {
+      shell('aurora');
+      const user = userEvent.setup();
+      const item = await screen.findByRole('button', { name: 'sync' });
+      expect(requested()).toContain('/api/sync?workspace=aurora');
+
+      item.focus();
+      await user.keyboard('{Enter}');
+      expect(screen.queryByRole('menuitem', { name: /Sync now/ })).toBeNull();
+      await user.keyboard('{Enter}');
+
+      const drawer = await screen.findByRole('dialog');
+      expect(within(drawer).getByRole('region', { name: 'Conflicts' })).toBeInTheDocument();
+    } finally {
+      SYNC = { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] };
+      QUESTS = [];
+    }
   });
 
   it('a remembered workspace that no longer exists falls back to every, out loud', async () => {

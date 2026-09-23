@@ -261,20 +261,6 @@ public sealed class RemoteSyncTests
         Assert.Empty(mirror.Write);
     }
 
-    /// <summary>
-    /// Whether this machine holds anything of a circle: a joined checkout, a teammate's copy, or a retire
-    /// the circle is still owed. Nothing, and the pass says nothing to that deployment.
-    /// </summary>
-    [Fact]
-    public void A_circle_is_held_here_by_a_joined_checkout_or_a_teammate_s_copy()
-    {
-        Assert.True(RemoteSyncPayloads.Holds(RegistryJson, "default"));
-        Assert.True(RemoteSyncPayloads.Holds("""[{ "repository": "Teammate", "joined": true }]""", "default"));
-        Assert.False(RemoteSyncPayloads.Holds(
-            """[{ "repository": "Homebody", "root": "C:/somewhere/Homebody", "joined": false }]""", "default"));
-        Assert.False(RemoteSyncPayloads.Holds(RegistryJson, "studio"));
-    }
-
     /// <summary>The retires a host says this machine owes a circle; an answer that is not one owes none.</summary>
     [Fact]
     public void The_retires_owed_are_read_by_name()
@@ -326,7 +312,8 @@ public sealed class RemoteSyncTests
         Assert.Equal("aurora  2 ahead · 1 behind · 2 in conflict · synced 2026-09-24 10:03Z", lines[0]);
         Assert.Contains(lines, line => line.Contains("in conflict: #q1, #q3"));
         Assert.Contains(lines, line => line.Contains("behind: #q2"));
-        Assert.Contains(lines, line => line.Contains("10:05Z") && line.Contains("could not be reached"));
+        // Only WHEN leads the wall: the host's sentence already says what went wrong.
+        Assert.Contains("  the last try, 10:05Z: the remote could not be reached (connection refused)", lines);
     }
 
     /// <summary>A circle with no remote here has nothing to be ahead of, and one never synced says so rather than showing a time.</summary>
@@ -981,15 +968,33 @@ public sealed class RemoteSyncRunTests : IDisposable
         Assert.Single(report.Notes, note => note.Contains("ahead of this checkout"));
     }
 
+    /// <summary>
+    /// A WIRED circle gets its pass whether or not anything here joins it (sync design §6): nothing
+    /// leaves that no manifest declared, and the team's rows and quests still come down — a machine that
+    /// joined nothing still addresses its teammates, and *Sync now* there must do what it says.
+    /// </summary>
     [Fact]
-    public async Task A_family_with_nothing_joined_syncs_nothing()
+    public async Task A_wired_circle_with_nothing_joined_feeds_nothing_and_still_hears_the_team()
     {
         using var transport = new StubTransport
         {
-            Answer = request => Json("""
-                [{ "repository": "Homebody", "adopted": true, "registered": true, "owns": [], "accepts": [],
-                   "packs": [], "entries": 0, "root": "C:/somewhere/Homebody", "joined": false, "sharesKnowledge": false }]
-                """),
+            Answer = request =>
+            {
+                var url = request.RequestUri!.ToString();
+                return url switch
+                {
+                    _ when url.StartsWith($"{Local}/api/registry/retired") => Json("""{ "workspace": "default", "repositories": [] }"""),
+                    _ when url.StartsWith($"{Local}/api/sync") =>
+                        Json("""{ "wired": true, "conflicts": [], "refused": [], "behind": [], "problem": null }"""),
+                    _ when url.StartsWith($"{Remote}/api/registry") && request.Method == HttpMethod.Get => Json("""
+                        [{ "repository": "Teammate", "owns": [], "accepts": [], "packs": [], "joined": true, "sharesKnowledge": false }]
+                        """),
+                    _ => Json("""
+                        [{ "repository": "Homebody", "adopted": true, "registered": true, "owns": [], "accepts": [],
+                           "packs": [], "entries": 0, "root": "C:/somewhere/Homebody", "joined": false, "sharesKnowledge": false }]
+                        """),
+                };
+            },
         };
         using var sync = new RemoteSync(
             Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
@@ -997,9 +1002,38 @@ public sealed class RemoteSyncRunTests : IDisposable
         var report = await sync.RunOnceAsync();
 
         Assert.Null(report.Problem);
-        // The local registry and the retires owed are read, and nothing goes toward the remote.
-        Assert.DoesNotContain(transport.Calls, call => call.Contains(Remote));
-        Assert.DoesNotContain(transport.Calls, call => call.Contains("/api/sync"));
+        // Nothing of Homebody goes up: it declared no join.
+        Assert.DoesNotContain(transport.Calls, call => call.StartsWith($"POST {Remote}"));
+        Assert.DoesNotContain(transport.Calls, call => call.Contains("Homebody"));
+        // The team's row comes down, and the host runs its pass.
+        Assert.Contains($"POST {Local}/api/registry", transport.Calls);
+        Assert.Contains($"POST {Local}/api/sync?workspace=default", transport.Calls);
+    }
+
+    /// <summary>
+    /// 🔴 A wall in the feed does not stop the host's pass (SYNC6b). The host's pass is where a try is
+    /// RECORDED, so when the feed's first call hit a remote that was down and returned early, the
+    /// standing kept saying "synced" while *Sync now* had just failed (seen on the real window).
+    /// The wall is still the pass's problem, named once.
+    /// </summary>
+    [Fact]
+    public async Task A_wall_in_the_feed_still_asks_the_host_for_its_pass()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = request => request.RequestUri!.ToString().StartsWith(Remote)
+                ? throw new HttpRequestException("No connection could be made (remote.example.com)")
+                : request.RequestUri.ToString().StartsWith($"{Local}/api/sync")
+                    ? Json("""{ "wired": true, "problem": "the remote could not be reached (connection refused)" }""")
+                    : AnswerHealthy(request),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Contains($"POST {Local}/api/sync?workspace=default", transport.Calls);
+        Assert.Equal("No connection could be made (remote.example.com)", report.Problem);
     }
 
     /// <summary>

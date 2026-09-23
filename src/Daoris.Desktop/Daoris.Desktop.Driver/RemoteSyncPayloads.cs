@@ -31,7 +31,8 @@ public sealed record SyncStanding(
         if (Behind.Count > 0) lines.Add($"  behind: {string.Join(", ", Behind.Select(id => $"#{id}"))}");
         if (Problem is not null)
         {
-            lines.Add($"  the last try{(Tried is { } tried ? $", {tried.UtcDateTime:HH:mm}Z," : "")} did not reach the remote: {Problem}");
+            // Only WHEN: the wall is the host's own sentence and already says what went wrong.
+            lines.Add($"  the last try{(Tried is { } tried ? $", {tried.UtcDateTime:HH:mm}Z" : "")}: {Problem}");
         }
 
         return lines;
@@ -57,23 +58,6 @@ public static class RemoteSyncPayloads
     public sealed record JoinedRepository(
         string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
         IReadOnlyList<string> Packs, bool SharesKnowledge, string Root);
-
-    /// <summary>
-    /// Whether this machine holds anything of a circle: a joined checkout, or a teammate's copy it keeps
-    /// current (SYNC5b). A circle held by neither has nothing to hear from here, and nothing here to keep.
-    /// </summary>
-    public static bool Holds(string registryJson, string workspace)
-    {
-        using var document = JsonDocument.Parse(registryJson);
-        foreach (var repo in document.RootElement.EnumerateArray())
-        {
-            if (!InCircle(repo, workspace)) continue;
-            if (Text(repo, "root") is not { Length: > 0 }) return true;
-            if (repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True) return true;
-        }
-
-        return false;
-    }
 
     /// <summary>Every repository a registry answer names — joined or not, adopted or not.</summary>
     public static IReadOnlySet<string> Names(string registryJson)

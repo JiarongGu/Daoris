@@ -104,6 +104,44 @@ describe('QuestsView', () => {
     expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeEnabled();
   });
 
+  // ——— A conflict (D68 §5, SYNC6b): kept on the quest for a person, and reachable from the status bar.
+
+  it('the drawer shows each move that lost the race, in its own words', async () => {
+    const conflicted = [{
+      ...QUESTS[0], status: 'Taken',
+      conflicts: [{ machine: 'b7f2c9d1', attempted: 'Taken', note: 'machine b, offline', at: '2026-09-02T00:00:00Z' }],
+    }];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input).startsWith('/api/quests') ? Response.json(conflicted) : respond(String(input))));
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    const conflicts = within(dialog).getByRole('region', { name: 'Conflicts' });
+
+    expect(within(conflicts).getByText(/Machine b7f2c9d1 tried to mark it Taken/)).toBeInTheDocument();
+    expect(within(conflicts).getByText('machine b, offline')).toBeInTheDocument();
+    expect(within(conflicts).getByText(/nothing was merged/)).toBeInTheDocument();
+  });
+
+  /** The sync item's conflict list names a quest; Quests opens it, and the holder is told, once. */
+  it('a quest a door names opens in the drawer, once', async () => {
+    const onFocused = vi.fn();
+    function Focused() {
+      const [pending, setPending] = useState<string | null>('abc123');
+      return <QuestsView notify={() => {}} focus={pending} onFocused={() => { onFocused(); setPending(null); }} />;
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Focused /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('#abc123')).toBeInTheDocument();
+    expect(onFocused).toHaveBeenCalledTimes(1);
+  });
+
   // ——— A chain (D65 §4).
 
   it('the drawer says what a quest follows and what its close will publish next', async () => {

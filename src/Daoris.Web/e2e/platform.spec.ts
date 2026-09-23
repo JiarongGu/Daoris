@@ -445,6 +445,10 @@ test('a browser has no Sessions, and no mode to switch (D55, D66)', async ({ pag
 
   // The status bar IS here — it belongs to the application — and it says what a browser is.
   await expect(page.getByLabel('state of this machine')).toContainText('none here');
+  // …and whether this circle syncs, which this machine's host answers over HTTP (SYNC6b): the example
+  // family has no remote, so it is local — said, rather than left out for want of a bridge.
+  await expect(page.getByLabel('state of this machine')).toContainText('local only');
+  await expect(page.getByRole('button', { name: 'sync' })).toHaveCount(0);
 
   // And no review (SURF6). A diff is read off a checkout on the machine that ran the session, so a
   // browser has no door onto one — the dock that would hold it is part of Sessions, and Sessions is

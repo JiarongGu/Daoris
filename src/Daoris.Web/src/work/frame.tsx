@@ -215,7 +215,7 @@ export type DriverPresence = 'running' | 'stopped' | 'absent';
  * foot ever did. The tier's sentence stays the service's own, verbatim, in its tooltip.
  */
 export function StatusBar({
-  driver, sessions, workspace, remote, tier, indexed, scope,
+  driver, sessions, workspace, remote, sync, tier, indexed, scope,
   onDriver, onSessions, onRemote, onIndex,
 }: {
   driver: DriverPresence;
@@ -224,6 +224,11 @@ export function StatusBar({
   workspace: string | null;
   /** Whether this workspace has a deployment wired, or null where the question cannot be asked. */
   remote: boolean | null;
+  /**
+   * Where a wired circle stands, as a control (SYNC6b) — it takes the remote item's place, because
+   * "wired" is exactly what it elaborates. Absent leaves the plain remote item.
+   */
+  sync?: ReactNode;
   /** What answered — D24's tier, with the service's own note. Absent until the service says. */
   tier?: { label: string; note: string; semantic: boolean };
   /** What the index holds, already worded by the caller. */
@@ -288,7 +293,7 @@ export function StatusBar({
           </StatusItem>
         )}
 
-      {remote !== null && (
+      {sync ? <span className="hidden items-stretch sm:flex">{sync}</span> : remote !== null && (
         <StatusItem
           onPress={onRemote}
           tip={t('work.status.remoteTip')}
@@ -332,6 +337,18 @@ export function StatusBar({
 }
 
 /**
+ * What makes a status item PRESSABLE: the hover wash, the focus ring, the full-height box. Exported so
+ * an item that opens a menu rather than going somewhere (the sync item, SYNC6b) is the same control
+ * to look at and to tab to — two copies of this string would be two bars.
+ */
+export const STATUS_PRESSABLE = cn(
+  'flex items-stretch transition-colors duration-[var(--speed)]',
+  'hover:bg-accent-soft hover:text-ink',
+  'focus-visible:bg-accent-soft focus-visible:outline-none',
+  'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent',
+);
+
+/**
  * One item in the status bar — a full-height box that lights on hover when it leads somewhere.
  *
  * @remarks
@@ -373,13 +390,7 @@ function StatusItem({ children, label, tip, onPress, className }: {
         type="button"
         aria-label={label}
         onClick={onPress}
-        className={cn(
-          'flex items-stretch transition-colors duration-[var(--speed)]',
-          'hover:bg-accent-soft hover:text-ink',
-          'focus-visible:bg-accent-soft focus-visible:outline-none',
-          'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent',
-          className,
-        )}
+        className={cn(STATUS_PRESSABLE, className)}
       >
         {inner}
       </button>

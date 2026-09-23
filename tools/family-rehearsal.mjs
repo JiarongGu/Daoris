@@ -1467,7 +1467,7 @@ check(
 check(
   '`daoris-driver sync status` says where the circle stands with the remote down: ahead, and the wall as the last try',
   downStatus.code === 0 && /^default {2}[1-9]\d* ahead · \d+ behind · \d+ in conflict · synced /m.test(downStatus.out)
-    && /the last try, \d\d:\d\dZ, did not reach the remote/.test(downStatus.out),
+    && /the last try, \d\d:\d\dZ: \S/.test(downStatus.out),
   downStatus.out,
 );
 remoteHost = await startServer(remoteEnv, REMOTE_BASE);

@@ -41,8 +41,14 @@ const carriesFiles = (event: { dataTransfer: DataTransfer | null }) =>
  * other door, refusals surfaced verbatim — the service's sentence is the contract, so it is never
  * translated or rephrased here.
  */
-export function QuestsView({ notify, onAttend, opening, onOpened }: {
+export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocused }: {
   notify: Notify;
+  /**
+   * A quest a door asked to see — the status bar's conflict list (SYNC6b). An event like `opening`:
+   * the drawer opens on it once the quest is loaded, and the holder is told so it can clear it.
+   */
+  focus?: string | null;
+  onFocused?: () => void;
   /**
    * A draft handed in by a door — SURF6b's "send it back as a quest" arrives with the repository the
    * work came from already named. The composer opens on it; the person writes the rest, because the
@@ -114,6 +120,18 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
   // Every quest, closed ones included, for the chain a drawer shows (MAP1): the step before this one
   // is usually closed, and very often somebody else's.
   const everything = useQuests(null, true);
+
+  // A quest a door named (SYNC6b), consumed by identity for `opening`'s reason (frontend §4b): the
+  // last one seen is remembered, a new one opens the drawer once the quest is loaded, and the holder
+  // is told from an effect. Forgotten once the holder clears it, so the same quest asked twice opens twice.
+  const [focusSeen, setFocusSeen] = useState<string | null>(null);
+  const focused = focus ? everything.data?.find((quest) => quest.id === focus) : undefined;
+  if (focus && focused && focus !== focusSeen) {
+    setFocusSeen(focus);
+    setDetail(focused);
+  }
+  if (!focus && focusSeen) setFocusSeen(null);
+  useEffect(() => { if (focus && focusSeen === focus) onFocused?.(); }, [focus, focusSeen, onFocused]);
   const registry = useRegistry();
   const sessions = useSessions(null, true);
   const driver = useDriver();
@@ -409,6 +427,32 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
               );
             })()}
           </dl>
+          {(detail.conflicts?.length ?? 0) > 0 && (
+            /* A move that reached the remote second (D68 §5): kept on the quest for a person and
+               never merged, so it sits above the body — it is what this quest is waiting on. The
+               note is that session's own words, verbatim. */
+            <section
+              aria-label={t('quests.detail.conflicts')}
+              className="mb-4 rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5"
+            >
+              <SectionTitle>{t('quests.detail.conflicts')}</SectionTitle>
+              <p className="m-0 mb-2 text-small text-ink-soft">{t('quests.detail.conflictsHint')}</p>
+              <ul className="m-0 grid list-none gap-1.5 p-0">
+                {detail.conflicts!.map((conflict) => (
+                  <li key={`${conflict.machine}-${conflict.at}`} className="grid gap-0.5 text-body">
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      <Icon name="conflict" size={12} className="text-warn" />
+                      {t('quests.detail.conflictLine', {
+                        machine: conflict.machine, attempted: t(`status.${conflict.attempted}`),
+                      })}
+                      <span className="text-meta text-ink-faint">· {ago(conflict.at)}</span>
+                    </span>
+                    {conflict.note && <span className="text-small text-ink-soft">{conflict.note}</span>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{detail.body}</p>
           {(detail.links?.length ?? 0) > 0 && (
             /* The asker's addresses, as links — the service accepted only http and https, so each
