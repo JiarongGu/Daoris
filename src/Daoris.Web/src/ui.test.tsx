@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { SessionState } from './api';
 import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SESSION_ACTIVE, SESSION_DOT,
-  SESSION_TONE, SettingRow, Tile,
+  SESSION_TONE, SettingRow, Tile, Tip,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -203,5 +204,57 @@ describe('every modal surface says it is modal', () => {
       />,
     );
     expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('true');
+  });
+});
+
+/**
+ * A tooltip follows the editor's rules (2026-09-23): below its control, and gone on any scroll, key,
+ * click or loss of focus — not only when the pointer leaves a trigger that can still say so.
+ */
+describe('a tip', () => {
+  const show = () => render(
+    <Tooltip.Provider delayDuration={0}>
+      <div style={{ height: 400, overflow: 'auto' }} data-testid="list">
+        <Tip content="what this does">
+          <button type="button">act</button>
+        </Tip>
+      </div>
+    </Tooltip.Provider>,
+  );
+
+  it('opens below its control, aligned to its leading edge', async () => {
+    show();
+    await userEvent.hover(screen.getByRole('button', { name: 'act' }));
+
+    await screen.findByRole('tooltip');
+    const content = document.querySelector('[data-side]');
+    expect(content?.getAttribute('data-side')).toBe('bottom');
+    expect(content?.getAttribute('data-align')).toBe('start');
+  });
+
+  it('goes when the page scrolls under it', async () => {
+    show();
+    await userEvent.hover(screen.getByRole('button', { name: 'act' }));
+    await screen.findByRole('tooltip');
+
+    fireEvent.scroll(screen.getByTestId('list'));
+
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
+  });
+
+  it('goes when the window loses focus, and on a key', async () => {
+    show();
+    const act = screen.getByRole('button', { name: 'act' });
+
+    await userEvent.hover(act);
+    await screen.findByRole('tooltip');
+    fireEvent(window, new Event('blur'));
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
+
+    await userEvent.unhover(act);
+    await userEvent.hover(act);
+    await screen.findByRole('tooltip');
+    fireEvent.keyDown(document.body, { key: 'a' });
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
   });
 });

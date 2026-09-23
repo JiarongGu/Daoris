@@ -547,10 +547,54 @@ export const useHarnessAction = () => {
       version?: string;
       /** Which circle a default is for — `profile-default` only (D49 §4); absent means the machine's. */
       workspace?: string;
-    }) => call<{ harness: string; action: string; exitCode: number }>('HARNESS_ACTION', action),
+    }) => call<{ harness: string; action: string; exitCode?: number; started?: boolean }>('HARNESS_ACTION', action),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
   });
 };
+
+/** How a process action ended — as news, after the request that started it was answered. */
+export type HarnessEnded = {
+  harness: string;
+  action: string;
+  profile: string | null;
+  exitCode: number;
+  /** The driver's own sentence when the process failed after it had started; null when it simply exited. */
+  problem: string | null;
+};
+
+/**
+ * A harness action's end, as news (2026-09-23). An install waits on a network and a login on a
+ * person in a browser — longer than any request may take on the bridge — so `HARNESS_ACTION`
+ * answers `started` and the end arrives here, the same way a conversation's ending does (D49 §3).
+ * The roster is asked again when it does.
+ */
+export const useHarnessEnded = (handler: (ended: HarnessEnded) => void) => {
+  const client = useQueryClient();
+  useShenoraEvent('DAORIS', 'HARNESS_ENDED', (payload) => {
+    const ended = payload as HarnessEnded | undefined;
+    if (!ended?.harness || !ended.action) return;
+    void client.invalidateQueries({ queryKey: keys.harnesses });
+    handler(ended);
+  });
+};
+
+/**
+ * Answer the prompt a running harness action printed — the sign-in code a login asks to have pasted
+ * (2026-09-23). The host refuses it, naming the action, when nothing is running under that name, so
+ * a code pasted after the login ended never looks delivered.
+ */
+export const useHarnessInput = () =>
+  useMutation({
+    mutationFn: (input: { harness: string; action: string; text: string }) =>
+      call<{ sent: boolean }>('HARNESS_INPUT', input),
+  });
+
+/** Stop a running harness action — a login the person is not going to finish. */
+export const useHarnessCancel = () =>
+  useMutation({
+    mutationFn: (target: { harness: string; action: string }) =>
+      call<{ cancelled: boolean }>('HARNESS_CANCEL', target),
+  });
 
 /** Ask the tools again rather than answering from before — the person pressing "look again". */
 export const useRefreshHarnesses = () => {

@@ -5,6 +5,45 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A login from the Machine view could never finish (2026-09-23)
+
+**Symptom.** Pressing *Log in* on an account opened a browser and then nothing: the row kept
+reading *not logged in*, the output under the door (a card below the button) showed the sign-in
+link twice around a scatter of `]8;;`, and every control on the page stayed disabled until the
+window was closed (owner: *"the ui for login claude, during and after include the entire login
+workflow itself need better ui/ux"*).
+
+**Root cause.** Four, found by running the harness's login with no console attached and then on
+the installed shell. The flow Claude Code takes when its stdin is not a terminal is the *paste the
+code* flow: it prints the link and `Paste code here if prompted >` and waits on stdin — which the
+action never redirected, so nothing could answer it and the process waited for ever. The prompt has
+no newline, and the pump delivered whole lines only, so the one line the person had to answer never
+reached the page. The link is written as a terminal hyperlink escape (OSC 8), which a console well
+renders literally. And the request that started the login **waited for it**: the bridge times a
+request out at thirty seconds, a login waits on a person for minutes, so the page's call failed
+while the process ran on — the panel closed, the row said nothing had changed, and a `claude auth
+login` was left waiting for a browser nobody was told about (measured: the process was still alive
+after the page had given up).
+
+**Fix.** `HarnessActions.RunAsync` redirects stdin and hands a `HarnessRun` (send a line, cancel)
+to whoever asked; `PumpAsync` delivers a partial line once the stream has been quiet for 250ms;
+`Clean` strips OSC, CSI and lone escapes. `DriverModule` answers a process action once it has
+**started** and announces its end as `HARNESS_ENDED` (the shape a conversation's ending already
+took, D49 §3), keeps the running action by `harness:action`, and answers `HARNESS_INPUT` and
+`HARNESS_CANCEL`, refusing both naming the action when nothing runs. The page's `SignIn` sits on
+the account row with the three steps — the link with a copy button, the code box once asked, the
+row's own pill as the result — hears the end as news, and keeps the tool's output one disclosure
+away.
+
+**Verify.** `HarnessRunTests` drives a node stand-in through the prompt-without-newline, the answer
+and the cancel; `SignIn.test.tsx` the steps over a mocked bridge. On the installed shell, a
+throwaway profile's sign-in streamed onto its row and **completed in the browser with no code
+asked** — with a stdin present the harness takes its callback flow and prints only *Opening
+browser…* — so the first step now says the browser was opened rather than waiting for a link that
+never comes; the profile was forgotten afterwards. The paste-the-code path is held by the tests.
+
+**Commit.** _pending_
+
 ## The deployed shell flashed a console window on every tick (2026-09-23)
 
 **Symptom.** With the installed application running, a terminal window kept appearing and vanishing
@@ -26,7 +65,7 @@ spawn and the next site written will not know to.
 **Verify.** The scan failed on the four sites before the fix and passes after; the installed shell
 republished and run with the loop ticking, no window.
 
-**Commit.** _pending_
+**Commit.** `f11a3d4`
 
 ## The rehearsal's ACP stub hung the driver on its second quest (2026-09-23)
 

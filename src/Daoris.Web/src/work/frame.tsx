@@ -165,7 +165,7 @@ export function ActivityBar<T extends string>({
       {frames && frames.length > 0 && (
         <>
           {frames.map((frame) => (
-            <Tip key={frame.id} content={frame.label}>
+            <Tip key={frame.id} content={frame.label} side="right">
               <button
                 type="button"
                 aria-label={frame.label}
@@ -197,7 +197,7 @@ export function ActivityBar<T extends string>({
       )}
 
       {items.map(({ tab, label: name, icon, badge }) => (
-        <Tip key={tab} content={name}>
+        <Tip key={tab} content={name} side="right">
           <button
             type="button"
             aria-label={name}

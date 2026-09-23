@@ -332,6 +332,24 @@ The first version: doctrine that installs, is checked, and flows back.
   With no home set the management commands and the hosts refuse in a sentence naming it, rather than
   writing somewhere nobody pointed them. `publish:service --install` lands the hosts under the home's
   `bin/` and prints the `.mcp.json` snippet with the home filled in.
+- **Signing in happens on the account's row, and it can finish.** Measured on the real harness with
+  no console: its login prints a sign-in link as a terminal hyperlink, then *paste the code* with no
+  newline, and waits on stdin — which nothing held, so the flow could never complete and the page
+  stayed disabled. A harness action now has its stdin, delivers a prompt that has no end once the
+  stream goes quiet, and strips the terminal's own escapes; the page may answer it or stop it
+  (`HARNESS_INPUT`, `HARNESS_CANCEL`, each refused naming the action when nothing runs). A process
+  action is answered once it has started and **its end is news** (`HARNESS_ENDED`), because a login
+  waits on a person longer than any request may wait on the bridge — the request had timed out at
+  thirty seconds and closed the panel on a login still running. The row shows three steps — the link
+  with a copy button, the code box once asked, the row's own pill as the result — with the tool's
+  output one disclosure away, and a sentence naming the account when it ends.
+- **A tooltip follows the editor's rules.** Below its control, aligned to its leading edge, beside a
+  rail; gone on any scroll, key, click or loss of the window's focus, and the moment the pointer is
+  off its trigger — it had stayed up over a scrolled list, a blurred window and a button that disabled
+  itself on the click.
+- **No spawn opens a console window.** The installed shell flashed a terminal on every tick: git,
+  the harness probes and the sessions were started without `CreateNoWindow`, and a windowed process's
+  console child is given a console of its own. A source scan holds it for every spawn site.
 
 ### The remote
 

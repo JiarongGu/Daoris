@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -589,6 +589,35 @@ describe('the harness roster', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'codex', action: 'install' },
     });
+  });
+
+  /**
+   * 🔴 A login outlives its request (2026-09-23): the host answers `started`, the sign-in sits on the
+   * row while the person is in the browser, and the end arrives as news — the row then says what
+   * the person can do with the account, and the panel goes.
+   */
+  it('a login that has started stays on its row until its end arrives as news', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login', started: true };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+
+    const logins = await screen.findAllByRole('button', { name: /^Log in/ });
+    await userEvent.click(logins[1]!);
+
+    expect(await screen.findByText('Signing in to work')).toBeTruthy();
+    expect(notify).not.toHaveBeenCalled();
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login', profile: 'work', exitCode: 0, problem: null,
+      });
+    });
+
+    expect(notify).toHaveBeenCalledWith('work is signed in — sessions can run as it.');
+    await waitFor(() => expect(screen.queryByText('Signing in to work')).toBeNull());
   });
 
   it('each profile shows its login state, and logging in names the profile', async () => {

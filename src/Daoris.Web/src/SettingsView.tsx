@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import { useRegistry } from './queries';
 import {
-  useDriver, useHarnessAction, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
+  useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
   useRemotes, useSetNotify, useSetStrikes,
   useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { SessionConsole } from './SessionConsole';
+import { SignIn } from './SignIn';
 import { byTool, type ToolDoor } from './tools';
 import {
   Button, Card, CheckField, Chip, Icon, type Notify, PageHeader, Pill, Prose, SectionTitle,
@@ -426,6 +427,46 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // Which action is running, so its console can be shown under the harness that is doing it. One at
   // a time by construction: two installers racing over one PATH is not a thing to make easy.
   const [running, setRunning] = useState<string | null>(null);
+  // Which ACCOUNT a login is for, while it runs — so the sign-in lands on that row, not under the
+  // door a card below it (2026-09-23). Cleared when the login ends either way; the result is the
+  // row's own pill and a sentence, not a panel left open.
+  const [runningProfile, setRunningProfile] = useState<string | null>(null);
+  // The same key, readable from the event handler below without re-subscribing on every render.
+  const runningRef = useRef<string | null>(null);
+
+  /**
+   * What an action's end means to the person — said once, whether it ended inside the request (a
+   * file edit) or later as news (a process). The harness's own exit code decides which it was:
+   * Daoris ran somebody else's tool and reports what it did, rather than deciding on its behalf
+   * that it went well. A login's sentence names the account and what a person can now do with it,
+   * because that is what they came for.
+   */
+  const ended = (action: string, profile: string | undefined, exitCode: number, problem: string | null) => {
+    setRunningProfile(null);
+    if (problem) {
+      notify(problem, 'error');
+      return;
+    }
+    if (action === 'login') {
+      if (exitCode === 0) notify(t('harness.login.done', { profile }));
+      else notify(t('harness.login.failed', { code: exitCode }), 'error');
+      return;
+    }
+    if (exitCode === 0) notify(t('harness.done', { harness: runningRef.current?.split(':')[0], action: t(`harness.${action}`) }));
+    else {
+      notify(
+        t('harness.failed', { harness: runningRef.current?.split(':')[0], action: t(`harness.${action}`), code: exitCode }),
+        'error');
+    }
+  };
+
+  // 🔴 A process action ends as NEWS (2026-09-23): a login waits on a person in a browser, longer
+  // than a request may take on the bridge, and a request that waited with it timed out — the panel
+  // closed on a login that was still running. Only the action this roster started is this roster's.
+  useHarnessEnded((news) => {
+    if (runningRef.current !== `${news.harness}:${news.action}`) return;
+    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem);
+  });
   // The version being typed per harness (TOOL2). Local to the form: a pin only exists once the
   // install behind it succeeded, so there is nothing to remember until then.
   const [pinning, setPinning] = useState<Record<string, string>>({});
@@ -456,15 +497,19 @@ function HarnessRoster({ notify }: { notify: Notify }) {
     workspace?: string,
   ) => {
     setRunning(`${harness}:${action}`);
+    runningRef.current = `${harness}:${action}`;
+    setRunningProfile(action === 'login' ? profile ?? null : null);
     act.mutate({ harness, action, profile, version, workspace }, {
-      // The harness's own exit code decides which it was: Daoris ran somebody else's tool and reports
-      // what it did, rather than deciding on its behalf that it went well.
-      onSuccess: (result) => (result.exitCode === 0
-        ? notify(t('harness.done', { harness, action: t(`harness.${action}`) }))
-        : notify(
-          t('harness.failed', { harness, action: t(`harness.${action}`), code: result.exitCode }),
-          'error')),
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      // A file edit ends inside the request; a process answers `started` and ends as news, heard
+      // below. Either way the end is said once, by the same sentence.
+      onSuccess: (result) => {
+        if (result.started) return;
+        ended(action, profile, result.exitCode ?? 0, null);
+      },
+      onError: (error: unknown) => {
+        setRunningProfile(null);
+        notify(sentence(error), 'error');
+      },
     });
   };
 
@@ -647,6 +692,10 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       />
                     )}
                   </div>
+                  {/* Signing in happens HERE, on the account it is for. */}
+                  {running === `${tool.doors[0]!.harness}:login` && runningProfile === profile.name && (
+                    <SignIn id={running} harness={tool.doors[0]!.harness} profile={profile.name} />
+                  )}
                 </li>
               ))}
             </ul>
@@ -816,8 +865,10 @@ function HarnessRoster({ notify }: { notify: Notify }) {
 
               {/* A tool action is a process like any other, so it streams through the same console
                   (D49 §2). An install that printed nothing until it finished is indistinguishable
-                  from one that hung. It belongs to the DOOR that is doing it. */}
-              {running?.startsWith(`${harness.harness}:`) && <SessionConsole id={running} />}
+                  from one that hung. It belongs to the DOOR that is doing it — except a login,
+                  which belongs to the account row above and is shown there. */}
+              {running?.startsWith(`${harness.harness}:`) && !running.endsWith(':login')
+                && <SessionConsole id={running} />}
             </div>
           ))}
         </div>

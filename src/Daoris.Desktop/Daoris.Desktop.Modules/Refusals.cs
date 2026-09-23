@@ -34,6 +34,9 @@ public static class Refusals
     /// <summary>A harness action this build does not have.</summary>
     public const string HarnessActionUnknown = "HARNESS_ACTION_UNKNOWN";
 
+    /// <summary>An answer or a stop for a harness action that is not running.</summary>
+    public const string HarnessActionIdle = "HARNESS_ACTION_IDLE";
+
     /// <summary>
     /// The driver itself refused, in its own words — an unknown adapter, a harness with no toolchain,
     /// an installer that would not start.
@@ -80,7 +83,7 @@ public static class Refusals
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
-        RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, DriverRefused,
+        RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, HarnessActionIdle, DriverRefused,
         SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, WindowUnknown,
         PluginUnknown, PluginActionUnknown,
     ];

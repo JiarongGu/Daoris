@@ -329,6 +329,9 @@ async function main() {
    */
   const assets = join(install, ...HOST_HOME, 'wwwroot', 'assets');
   const decoy = join(assets, 'index-STALEBUNDLE.js');
+  // Made if missing: when the first publish failed, the folder is not there, and a gate that
+  // crashes on ENOENT here reports a stack trace instead of the publish check that already failed.
+  mkdirSync(assets, { recursive: true });
   writeFileSync(decoy, '// a bundle from a publish that is no longer current\n');
 
   const republished = run(

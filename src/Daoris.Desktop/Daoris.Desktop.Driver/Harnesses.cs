@@ -1,4 +1,6 @@
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -1017,6 +1019,45 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 }
 
 /// <summary>
+/// A harness action while it runs (D49 §4): the one thing a screen may send it, and the way it is
+/// stopped. A login prints a prompt and waits — <i>paste the code</i> — and a process nobody can
+/// answer or stop is a page with every control disabled until the window closes (owner, 2026-09-23).
+/// </summary>
+public sealed class HarnessRun
+{
+    private readonly Process _process;
+
+    internal HarnessRun(Process process) => _process = process;
+
+    /// <summary>Answer the harness's prompt — one line, as a terminal would send it.</summary>
+    public void Send(string line)
+    {
+        try
+        {
+            _process.StandardInput.WriteLine(line);
+            _process.StandardInput.Flush();
+        }
+        catch (Exception error) when (error is IOException or InvalidOperationException or ObjectDisposedException)
+        {
+            // Gone already: the answer arrived after the process stopped needing one.
+        }
+    }
+
+    /// <summary>End it, and everything it started. The browser page it opened is the browser's and stays.</summary>
+    public void Cancel()
+    {
+        try
+        {
+            if (!_process.HasExited) _process.Kill(entireProcessTree: true);
+        }
+        catch (Exception error) when (error is InvalidOperationException or Win32Exception)
+        {
+            // Ended between the look and the kill.
+        }
+    }
+}
+
+/// <summary>
 /// The person's explicit actions on a harness (D49 §4): install it, update it, log a profile in —
 /// each by <b>that harness's own official mechanism</b>, spawned as a process like any other and
 /// streamed line by line to whoever asked.
@@ -1034,9 +1075,10 @@ public static class HarnessActions
 {
     /// <summary>Install a harness with its own installer — a whole command, since it may not exist yet.</summary>
     public static Task<int> InstallAsync(
-        HarnessToolchain toolchain, Action<string> write, CancellationToken ct = default) =>
+        HarnessToolchain toolchain, Action<string> write, CancellationToken ct = default,
+        Action<HarnessRun>? started = null) =>
         toolchain.Install is { Count: > 0 } install
-            ? RunAsync(install, toolchain, profileHome: null, write, ct)
+            ? RunAsync(install, toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
                 "that harness declares no installer, so Daoris has no sanctioned way to install it. "
                 + "Install it with its own tooling; Daoris will find it on the next probe.");
@@ -1047,12 +1089,12 @@ public static class HarnessActions
     /// </summary>
     public static Task<int> PinAsync(
         HarnessToolchain toolchain, string home, string harness, string version, Action<string> write,
-        CancellationToken ct = default) =>
+        CancellationToken ct = default, Action<HarnessRun>? started = null) =>
         toolchain.Package is { Length: > 0 } package
             ? RunAsync(
                 ["npm", "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
                  $"{package}@{version}"],
-                toolchain, profileHome: null, write, ct)
+                toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
                 "that harness declares no package, so Daoris has no sanctioned way to fetch a version "
                 + "of it. Install it with its own tooling and Daoris will find it on PATH.");
@@ -1060,9 +1102,9 @@ public static class HarnessActions
     /// <summary>Update a present harness through its own updater.</summary>
     public static Task<int> UpdateAsync(
         HarnessToolchain toolchain, IReadOnlyList<string>? command, Action<string> write,
-        CancellationToken ct = default) =>
+        CancellationToken ct = default, Action<HarnessRun>? started = null) =>
         toolchain.UpdateArguments is { Count: > 0 } update
-            ? RunAsync([.. toolchain.Command(command), .. update], toolchain, profileHome: null, write, ct)
+            ? RunAsync([.. toolchain.Command(command), .. update], toolchain, profileHome: null, write, ct, started)
             : throw new DriverException("that harness declares no updater — it updates itself, or its package manager does.");
 
     /// <summary>
@@ -1071,9 +1113,9 @@ public static class HarnessActions
     /// </summary>
     public static Task<int> LoginAsync(
         HarnessToolchain toolchain, IReadOnlyList<string>? command, string profileHome,
-        Action<string> write, CancellationToken ct = default) =>
+        Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null) =>
         toolchain.LoginArguments is { Count: > 0 } login
-            ? RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct)
+            ? RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct, started)
             : throw new DriverException(
                 "that harness declares no login flow — log in with its own tooling, pointing its "
                 + "configuration-home variable at the profile directory.");
@@ -1084,15 +1126,23 @@ public static class HarnessActions
     /// </summary>
     internal static async Task<int> RunAsync(
         IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome,
-        Action<string> write, CancellationToken ct)
+        Action<string> write, CancellationToken ct, Action<HarnessRun>? started = null)
     {
         var info = new ProcessStartInfo
         {
             FileName = command[0],
+            // Its stdin is the screen's: a login asks for the code the browser shows, and a
+            // process nobody can answer waits for ever. Its output is relayed to the console
+            // below, never a window of its own — and read as UTF-8, because a harness writes it so
+            // and the console's codepage is not the transcript (the Adapters.Shell rule).
+            RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = true, // its output is relayed to the console below, never a window of its own
+            CreateNoWindow = true,
+            StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
         HarnessProbe.Apply(info, toolchain, profileHome);
@@ -1101,17 +1151,76 @@ public static class HarnessActions
 
         using var process = Process.Start(info)
             ?? throw new DriverException($"`{command[0]}` did not start");
+        started?.Invoke(new HarnessRun(process));
 
-        var pump = async (TextReader reader) =>
-        {
-            while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
-            {
-                lock (write) write(line);
-            }
-        };
-
-        await Task.WhenAll(pump(process.StandardOutput), pump(process.StandardError)).ConfigureAwait(false);
+        await Task.WhenAll(PumpAsync(process.StandardOutput, write, ct), PumpAsync(process.StandardError, write, ct))
+            .ConfigureAwait(false);
         await process.WaitForExitAsync(ct).ConfigureAwait(false);
         return process.ExitCode;
     }
+
+    /// <summary>How long a partial line may sit before it is taken for a prompt.</summary>
+    internal static readonly TimeSpan PromptQuiet = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
+    /// Relay a stream line by line — <b>and a line that has no end</b>. A harness that asks something
+    /// prints its prompt without a newline and waits; a pump that delivers only whole lines holds
+    /// back the one line the person has to answer, and a login sat on a blank console with its
+    /// <i>paste the code</i> never shown (measured on the real binary, 2026-09-23). What is buffered
+    /// when the stream goes quiet is delivered as a line of its own.
+    /// </summary>
+    internal static async Task PumpAsync(TextReader reader, Action<string> write, CancellationToken ct)
+    {
+        var buffer = new char[1024];
+        var pending = new StringBuilder();
+
+        void Deliver(bool evenEmpty)
+        {
+            if (pending.Length == 0 && !evenEmpty) return;
+            var line = Clean(pending.ToString());
+            pending.Clear();
+            lock (write) write(line);
+        }
+
+        var read = reader.ReadAsync(buffer, ct).AsTask();
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+            var quiet = Task.Delay(PromptQuiet, ct);
+            if (await Task.WhenAny(read, quiet).ConfigureAwait(false) != read)
+            {
+                Deliver(evenEmpty: false);
+                continue;
+            }
+
+            var count = await read.ConfigureAwait(false);
+            if (count == 0)
+            {
+                Deliver(evenEmpty: false);
+                return;
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                var ch = buffer[i];
+                if (ch == '\n') Deliver(evenEmpty: true);
+                else if (ch != '\r') pending.Append(ch);
+            }
+
+            read = reader.ReadAsync(buffer, ct).AsTask();
+        }
+    }
+
+    // OSC (a hyperlink, a title), then CSI (colour, cursor), then any other two-byte escape.
+    private static readonly Regex Escapes = new(
+        @"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-Z\\-_]",
+        RegexOptions.Compiled);
+
+    /// <summary>
+    /// The text without the terminal's own instructions. A harness writes for a terminal, and a
+    /// sign-in link arrives wrapped as a hyperlink escape (OSC 8) — the address, then the address
+    /// again as its own label — which a console well renders as the URL twice around a scatter of
+    /// brackets and semicolons. The label is kept; the wrapping goes, and colours with it.
+    /// </summary>
+    internal static string Clean(string text) => Escapes.Replace(text, "");
 }

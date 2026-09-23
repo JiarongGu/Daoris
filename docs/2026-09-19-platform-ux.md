@@ -102,6 +102,22 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   and the column is 72rem. A settings page laid out as an essay is read once and scrolled past
 >   every time after; a page of rows is scanned. A rarely-used form (wiring a deployment, adding an
 >   account) is one press away, not open on every visit.
+> - **A tooltip follows the editor's rules** (2026-09-23, owner: *"the tooltip not disappearing
+>   properly, the tooltip position — for those we can follow vscode"*). Below its control, aligned
+>   to its leading edge; beside a vertical rail; flipped only when there is no room. Gone on any
+>   scroll, any key, any click, when the window loses focus, and the moment the pointer is off its
+>   trigger — Radix alone closes on the trigger's own pointerleave, so a tip outlived a scrolled
+>   list, a window blurred by the browser a login opened, and a button that disabled itself on the
+>   click (a disabled control fires no pointerleave). `Tip` holds all of it; `ui.test.tsx` holds the
+>   rules.
+> - **A step in a task happens where it was started** (2026-09-23, owner: *"the ui for login claude,
+>   during and after include the entire login workflow itself need better ui/ux"*). Signing an
+>   account in streamed under the tool's DOOR, a card below the button pressed, and could not finish
+>   at all (FIX-LOG). `SignIn` sits on the account's row: numbered steps in the order the person
+>   meets them, one live control at a time (the link with a copy button, then the code box once the
+>   tool asks), a Cancel that stops the process rather than the window, the raw output one
+>   disclosure away, and the result as the row's own pill plus a sentence naming the account. The
+>   door keeps its console for the actions that are the door's — install, update, pin.
 
 > **Amended again 2026-09-22, the app strip** (owner: *"the application topbar you can take more
 > example from application like vscode"*, and *"the backdrop should not cover the topbar? because we

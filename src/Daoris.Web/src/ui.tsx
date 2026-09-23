@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, type ReactNode, useEffect, useRef } from 'react';
+import { type ButtonHTMLAttributes, type ReactNode, useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { sentence } from './format';
 import * as Toast from '@radix-ui/react-toast';
@@ -6,9 +6,9 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, FileDiff, GitMerge, Inbox,
-  Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, LogIn, Monitor, Plus, RotateCw,
-  Search, SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal, Trash2, X,
+  ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy, FileDiff, GitMerge,
+  Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, LogIn, Monitor, Plus,
+  RotateCw, Search, SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal, Trash2, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -55,6 +55,8 @@ const ICONS = {
   remove: Trash2,
   // A setting's WHY (2026-09-23): the paragraph that used to sit above every control, one hover away.
   info: Info,
+  // Signing in (2026-09-23): the link the tool printed, copied into a browser of the person's own.
+  copy: Copy,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -581,8 +583,52 @@ export function SettingRow({ label, hint, why, control, children }: {
   );
 }
 
-/** A tooltip that carries a sentence — the tier pill's note, the adopted dot's meaning. */
-export function Tip({ content, children }: { content: string; children: ReactNode }) {
+/**
+ * A tooltip that carries a sentence — the tier pill's note, the adopted dot's meaning.
+ *
+ * @remarks
+ * **Where it sits and when it goes are the editor's rules** (owner, 2026-09-23: *"the tooltip not
+ * disappearing properly, the tooltip position — for those we can follow vscode"*). It opens below
+ * the control, aligned to its leading edge, and flips only when there is no room; a rail's tips
+ * open beside the rail (`side`). And it goes on **any** scroll, key, click, or loss of the window's
+ * focus, and the moment the pointer is off its trigger — Radix alone closes on the trigger's own
+ * pointerleave and on Escape, so a tip stayed up when the list under it scrolled, when the window
+ * lost focus to the browser a login opened, and when the button it described disabled itself on
+ * the click, because a disabled control fires no pointerleave at all.
+ */
+export function Tip({ content, children, side = 'bottom' }: {
+  content: string;
+  children: ReactNode;
+  /** Which side it opens on — below by default; a vertical rail's tips open beside it. */
+  side?: 'top' | 'bottom' | 'left' | 'right';
+}) {
+  const [open, setOpen] = useState(false);
+  // Typed as the button Radix's trigger renders; with `asChild` the ref lands on whatever the child
+  // is, and only `contains` is asked of it.
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = () => setOpen(false);
+    // Off the trigger for any reason at all — a disabled control, a re-rendered row — is closed.
+    const offTrigger = (event: PointerEvent) => {
+      const at = trigger.current;
+      if (at && !at.contains(event.target as Node)) close();
+    };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('blur', close);
+    document.addEventListener('keydown', close, true);
+    document.addEventListener('pointerdown', close, true);
+    document.addEventListener('pointermove', offTrigger, true);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('blur', close);
+      document.removeEventListener('keydown', close, true);
+      document.removeEventListener('pointerdown', close, true);
+      document.removeEventListener('pointermove', offTrigger, true);
+    };
+  }, [open]);
+
   if (!content) return <>{children}</>;
   return (
     // `disableHoverableContent` is what makes the tooltip untouchable: with hoverable content on,
@@ -590,11 +636,14 @@ export function Tip({ content, children }: { content: string; children: ReactNod
     // wrapper then sits over whatever the trigger opened. That is how the workspace scope's tooltip
     // came to swallow clicks on its own options list once it moved into the app strip (D56).
     // Nothing here is meant to be hovered INTO — every Tip carries one sentence.
-    <Tooltip.Root disableHoverableContent>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+    <Tooltip.Root open={open} onOpenChange={setOpen} disableHoverableContent>
+      <Tooltip.Trigger asChild ref={trigger}>{children}</Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content
+          side={side}
+          align={side === 'top' || side === 'bottom' ? 'start' : 'center'}
           sideOffset={6}
+          collisionPadding={8}
           // A tooltip explains; it is never a pointer target. Without this it can sit over the very
           // control it describes and swallow the click — which is exactly what happened when the
           // workspace scope moved into the app strip (D56) and its tooltip landed on top of its own

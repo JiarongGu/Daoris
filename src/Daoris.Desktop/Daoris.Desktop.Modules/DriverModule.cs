@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Events;
@@ -15,6 +16,10 @@ public sealed class DriverModule : ModuleBase
 {
     private readonly IEventBus _events;
     private readonly DriverLoop _loop;
+
+    // The harness action running now, by `harness:action` — one at a time by construction, and the
+    // two things a screen may do to it while it runs: answer the prompt it printed, or stop it.
+    private readonly ConcurrentDictionary<string, HarnessRun> _actions = new();
 
     /// <remarks>
     /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
@@ -309,22 +314,11 @@ public sealed class DriverModule : ModuleBase
 
                 var command = config.Commands.GetValueOrDefault(harness);
                 var stream = Relay(harness, action);
+                var profile = Optional(request, "profile");
 
-                var code = action switch
+                // The file edits answer at once, with the exit code.
+                int? edited = action switch
                 {
-                    "install" => await HarnessActions.InstallAsync(toolchain, stream, cancellationToken),
-                    "update" => await HarnessActions.UpdateAsync(toolchain, command, stream, cancellationToken),
-                    "login" => await HarnessActions.LoginAsync(
-                        toolchain, command,
-                        HarnessSettings.ProfileHome(
-                            _loop.Harnesses.Home, harness,
-                            Optional(request, "profile")
-                            ?? _loop.Harnesses.Settings.Resolve(harness, null, null)
-                            ?? "default"),
-                        stream, cancellationToken),
-                    // The managed toolchain (TOOL2/D57) — the desktop's half of
-                    // `daoris harness pin|unpin`, over the same file.
-                    "pin" => await PinAsync(harness, toolchain, stream, request, cancellationToken),
                     "unpin" => Unpin(harness),
                     // 🔴 The credential profiles, from a SCREEN (DEPLOY3). They existed only as
                     // `daoris harness profile add|remove|default`, so the Machine view could list a
@@ -337,17 +331,70 @@ public sealed class DriverModule : ModuleBase
                     "profile-add" => ProfileAdd(harness, request),
                     "profile-remove" => await ProfileRemoveAsync(harness, request, config, stream, cancellationToken),
                     "profile-default" => ProfileDefault(harness, request),
+                    "install" or "update" or "login" or "pin" => null,
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
                         $"unknown harness action '{action}' — one of: install, update, login, pin, "
                         + "unpin, profile-add, profile-remove, profile-default",
                         ("action", action)),
                 };
+                if (edited is { } code)
+                {
+                    // Whatever it did, what this machine HAS has probably changed — so the next question
+                    // asks the tool again rather than answering from before.
+                    await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
+                    return new { Harness = harness, Action = action, ExitCode = code };
+                }
 
-                // Whatever it did, what this machine HAS has probably changed — so the next question
-                // asks the tool again rather than answering from before.
-                await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
-                return new { Harness = harness, Action = action, ExitCode = code };
+                // 🔴 A process action is answered when the process has STARTED, and its end is news
+                // (HARNESS_ENDED) — the same way a conversation's ending is (D49 §3). It waits on a
+                // network, or on a person in a browser, and a request that waited with it timed out
+                // on the bridge at thirty seconds while the login ran on: the page closed its panel,
+                // the row said nothing had changed, and the process kept waiting for a browser nobody
+                // was told about (measured on the installed shell, 2026-09-23). While it runs the
+                // page may answer it or stop it (HARNESS_INPUT, HARNESS_CANCEL).
+                var key = $"{harness}:{action}";
+                var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                Action<HarnessRun> track = run =>
+                {
+                    _actions[key] = run;
+                    started.TrySetResult();
+                };
+                var profileHome = HarnessSettings.ProfileHome(
+                    _loop.Harnesses.Home, harness,
+                    profile ?? _loop.Harnesses.Settings.Resolve(harness, null, null) ?? "default");
+                Func<Task<int>> run = action switch
+                {
+                    "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
+                    "update" => () => HarnessActions.UpdateAsync(toolchain, command, stream, CancellationToken.None, track),
+                    "login" => () => HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track),
+                    // The managed toolchain (TOOL2/D57) — the desktop's half of
+                    // `daoris harness pin|unpin`, over the same file.
+                    _ => () => PinAsync(harness, toolchain, stream, request, CancellationToken.None, track),
+                };
+                var work = RunActionAsync(key, harness, action, profile, run, started.Task, config);
+
+                await Task.WhenAny(started.Task, work);
+                // A refusal before the process started — no installer, no login flow, a binary that
+                // did not start — travels as a refusal, exactly as it did when the request waited.
+                if (work.IsCompleted) await work;
+                return new { Harness = harness, Action = action, Started = true };
+            }
+
+            // The two things a screen may do to a harness action while it runs (2026-09-23): answer
+            // the prompt it printed — a login asks for the code the browser shows, and waits — and
+            // stop it. Either is refused, naming the action, when nothing runs under that name: an
+            // answer that went nowhere must not look delivered.
+            case "HARNESS_INPUT":
+            {
+                Running(request).Send(PayloadHelper.GetRequiredValue<string>(request.Payload, "text"));
+                return new { Sent = true };
+            }
+
+            case "HARNESS_CANCEL":
+            {
+                Running(request).Cancel();
+                return new { Cancelled = true };
             }
 
             // This machine's plugins (D64): the catalogue as the driver reads it, each with what it
@@ -707,6 +754,66 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
+    /// A process action to its end, and the end announced — after the request that started it has
+    /// been answered. A failure before the process started is the caller's to refuse; one after it
+    /// is news like any other end, because nobody awaits this any more.
+    /// </summary>
+    private async Task RunActionAsync(
+        string key, string harness, string action, string? profile, Func<Task<int>> run, Task started,
+        DriverConfig config)
+    {
+        int code;
+        try
+        {
+            code = await run();
+        }
+        catch (Exception error) when (started.IsCompletedSuccessfully)
+        {
+            await AnnounceAsync(harness, action, profile, -1, error.Message, config);
+            return;
+        }
+        finally
+        {
+            _actions.TryRemove(key, out _);
+        }
+
+        await AnnounceAsync(harness, action, profile, code, null, config);
+    }
+
+    private async Task AnnounceAsync(
+        string harness, string action, string? profile, int code, string? problem, DriverConfig config)
+    {
+        // Whatever it did, what this machine HAS has probably changed — so the next question asks
+        // the tool again rather than answering from before, and the news arrives after the roster.
+        try
+        {
+            await _loop.Harnesses.RosterAsync(config, refresh: true, CancellationToken.None);
+        }
+        catch (Exception)
+        {
+            // The roster is asked again on the page's next question; the end is still news.
+        }
+
+        await _events.EmitAsync("DAORIS", "HARNESS_ENDED", new
+        {
+            Harness = harness, Action = action, Profile = profile, ExitCode = code, Problem = problem,
+        });
+    }
+
+    /// <summary>The action running under `harness:action`, or the refusal that names it.</summary>
+    private HarnessRun Running(IpcRequest request)
+    {
+        var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
+        var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
+        return _actions.TryGetValue($"{harness}:{action}", out var run)
+            ? run
+            : throw Refusals.Because(
+                Refusals.HarnessActionIdle,
+                $"nothing is running for `{harness}` {action} — it finished, or was never started.",
+                ("harness", harness), ("action", action));
+    }
+
+    /// <summary>
     /// Install a version into the directory Daoris owns, and pin to it — <b>in that order</b>
     /// (TOOL2/D57).
     /// </summary>
@@ -717,11 +824,11 @@ public sealed class DriverModule : ModuleBase
     /// </remarks>
     private async Task<int> PinAsync(
         string harness, HarnessToolchain toolchain, Action<string> stream, IpcRequest request,
-        CancellationToken ct)
+        CancellationToken ct, Action<HarnessRun> started)
     {
         var version = PayloadHelper.GetRequiredValue<string>(request.Payload, "version");
         var code = await HarnessActions.PinAsync(
-            toolchain, _loop.Harnesses.Home, harness, version, stream, ct);
+            toolchain, _loop.Harnesses.Home, harness, version, stream, ct, started);
 
         if (code == 0) _loop.Harnesses.Settings.WithVersion(harness, version).Save(_loop.Harnesses.SettingsPath);
         return code;

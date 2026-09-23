@@ -542,6 +542,80 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains("claude-code", refusal);
     }
 
+    /// <summary>
+    /// 🔴 A login outlives its request (2026-09-23). The bridge times a request out at thirty seconds
+    /// and a login waits on a person for minutes, so the request that waited with it failed while the
+    /// process ran on. It is answered once the process has STARTED; the prompt streams; the answer
+    /// reaches the process; the end is news — `HARNESS_ENDED` — and an answer after the end is refused.
+    /// </summary>
+    [Fact]
+    public async Task A_login_is_answered_when_it_has_started_and_its_end_is_news_the_page_hears()
+    {
+        // A stand-in for the harness, taking the two questions the module asks of it.
+        var fake = Path.Combine(Home, "fake-claude.mjs");
+        File.WriteAllText(fake, """
+            const args = process.argv.slice(2).join(' ');
+            if (args === 'auth status') { console.log(JSON.stringify({ loggedIn: true })); process.exit(0); }
+            if (args === 'auth login') {
+              console.log('Opening browser to sign in…');
+              process.stdout.write('Paste code here if prompted >');
+              process.stdin.once('data', (d) => { console.log('Logged in with ' + d.toString().trim()); process.exit(0); });
+              setTimeout(() => process.exit(3), 20000);
+            } else { console.log('claude 9.9.9'); }
+            """);
+        File.WriteAllText(DriverConfigPath, $$"""
+            { "drivable": [], "holds": [], "commands": { "claude-code": ["node", {{JsonSerializer.Serialize(fake)}}] } }
+            """);
+        var module = Module();
+
+        var answer = await AnswerAsync(
+            module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "work" });
+        Assert.True(answer.GetProperty("started").GetBoolean());
+        Assert.False(answer.TryGetProperty("exitCode", out _));
+
+        // The prompt with no newline reached the page under the action's own id…
+        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_OUTPUT"
+            && JsonSerializer.Serialize(m.Payload).Contains("Paste code")));
+        // …and the answer reaches the process, which ends; the end is announced, naming the account.
+        await AnswerAsync(module, "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "abc-123" });
+        await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
+
+        var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
+        Assert.Equal(0, ended.GetProperty("ExitCode").GetInt32());
+        Assert.Equal("work", ended.GetProperty("Profile").GetString());
+        Assert.Equal("login", ended.GetProperty("Action").GetString());
+        Assert.Contains(Raised, m => m.Type == "SESSION_OUTPUT" && JsonSerializer.Serialize(m.Payload).Contains("Logged in with abc-123"));
+
+        var late = await RefusalAsync(module, "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "late" });
+        Assert.Contains(Refusals.HarnessActionIdle, late);
+    }
+
+    private static async Task UntilAsync(Func<bool> condition)
+    {
+        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        while (!condition())
+        {
+            Assert.True(DateTime.UtcNow < patience, "the condition never held");
+            await Task.Delay(25);
+        }
+    }
+
+    /// <summary>
+    /// An answer or a stop for an action that is not running is refused naming it (2026-09-23): the
+    /// code a person pasted after the login already ended must not look delivered.
+    /// </summary>
+    [Theory]
+    [InlineData("HARNESS_INPUT")]
+    [InlineData("HARNESS_CANCEL")]
+    public async Task An_answer_or_a_stop_for_an_action_that_is_not_running_is_refused_naming_it(string type)
+    {
+        var refusal = await RefusalAsync(
+            Module(), type, new { harness = "claude-code", action = "login", text = "abc-123" });
+
+        Assert.Contains(Refusals.HarnessActionIdle, refusal);
+        Assert.Contains("login", refusal);
+    }
+
     [Fact]
     public async Task An_unknown_harness_action_is_refused_naming_it()
     {
