@@ -50,6 +50,36 @@ public sealed class ConfigTests
         Assert.True(DriverConfig.Parse("""{"notify":0}""").Notify);
     }
 
+    /// <summary>
+    /// 🔴 The intake is OFF until a harness is named (INT4b). An intake session spends a real login on
+    /// every ask, so silence is the no-model tier INT4a built — and a machine whose file predates the
+    /// field keeps answering asks exactly as it did.
+    /// </summary>
+    [Fact]
+    public void A_config_that_names_no_intake_harness_runs_no_intake()
+    {
+        Assert.Null(DriverConfig.Parse("{}").IntakeAdapter);
+        Assert.Null(DriverConfig.Empty.IntakeAdapter);
+        Assert.Null(DriverConfig.Parse("""{"intakeAdapter":""}""").IntakeAdapter);
+        Assert.DoesNotContain("intakeAdapter", DriverConfig.Empty.ToJson());
+    }
+
+    /// <summary>
+    /// 🔴 Written back by every edit (§1b's trap): `ToJson` writes the keys it knows, so a field this
+    /// record did not model would be deleted by the next checkbox anyone ticked.
+    /// </summary>
+    [Fact]
+    public void The_intake_harness_survives_every_other_edit_and_can_be_turned_off()
+    {
+        var on = DriverConfig.Parse("""{"intakeAdapter":"claude-code-acp","drivable":["engine"]}""");
+
+        var edited = DriverConfig.Parse(on.WithNotify(false).WithDrivable("tools", true).ToJson());
+
+        Assert.Equal("claude-code-acp", edited.IntakeAdapter);
+        Assert.Null(DriverConfig.Parse(edited.WithIntake(null).ToJson()).IntakeAdapter);
+        Assert.Equal("stub", DriverConfig.Parse(edited.WithIntake(" stub ").ToJson()).IntakeAdapter);
+    }
+
     [Fact]
     public void A_full_config_round_trips()
     {

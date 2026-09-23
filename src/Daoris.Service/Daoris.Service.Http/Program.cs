@@ -506,6 +506,12 @@ if (mode == ServiceMode.Local)
         return AskAnswer(outcome, s, http);
     });
 
+    // One ask, whole — how the driver observes what its intake made of it (D65 §1b).
+    app.MapGet("/api/asks/{id}", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
+        await s.Asks.FindAsync(id, ct) is { } ask
+            ? Results.Ok(ToAsk(ask, s.Files, MachineLocal(http)))
+            : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.")));
+
     app.MapPost("/api/asks/{id}/publish", async (
         ComposedService s, HttpContext http, string id, AskPublishRequest body, CancellationToken ct) =>
     {
@@ -514,12 +520,66 @@ if (mode == ServiceMode.Local)
             return Results.BadRequest(new ErrorResponse("to is required — the repository this ask becomes a quest for"));
         }
 
-        return AskAnswer(await s.Asks.PublishAsync(id, body.To, DateTimeOffset.UtcNow, ct), s, http);
+        var uploads = new List<QuestUpload>();
+        foreach (var file in body.Attachments ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(file.Name) || file.Content is null)
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    "every attachment needs its name and its content — an ask is made on the machine that has the file"));
+            }
+
+            uploads.Add(new QuestUpload(file.Name, file.Content));
+        }
+
+        // A person's publish names a receiver and nothing else; an intake's carries its own words (D65
+        // §1b). Anything beyond `to` makes a draft — words, links, files or a chain alone included.
+        var drafted = body.Title is not null || body.Body is not null || body.Links is { Count: > 0 }
+            || uploads.Count > 0 || body.Then is { Count: > 0 };
+        var draft = drafted
+            ? new AskDraft(body.Title, body.Body)
+            {
+                Links = body.Links ?? [],
+                Uploads = uploads,
+                Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
+            }
+            : null;
+
+        return AskAnswer(
+            await s.Asks.PublishAsync(id, body.To, DateTimeOffset.UtcNow, ct, draft, body.Session), s, http);
     });
 
     app.MapPost("/api/asks/{id}/close", async (
         ComposedService s, HttpContext http, string id, AskCloseRequest body, CancellationToken ct) =>
         AskAnswer(await s.Asks.CloseAsync(id, body.Reason ?? "", DateTimeOffset.UtcNow, ct), s, http));
+
+    // An intake (D65 §1b): the record of a conversation the driver opens for an ask, in a room under
+    // its home. Local like the asks it answers; the process is the driver's, as ever.
+    app.MapPost("/api/sessions/intake", async (
+        ComposedService s, HttpContext http, OpenIntakeRequest body, CancellationToken ct) =>
+    {
+        if (string.IsNullOrWhiteSpace(body.Ask) || string.IsNullOrWhiteSpace(body.Room))
+        {
+            return Results.BadRequest(new ErrorResponse("ask and room are required — which ask, and where its intake runs"));
+        }
+
+        var outcome = await s.Ledger.OpenIntakeAsync(
+            body.Ask,
+            // The adapter is the harness, never a model (D24). Silence takes the supported one.
+            string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
+            body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, ct);
+
+        return outcome.Refusal switch
+        {
+            SessionOpenRefusal.None => Results.Ok(
+                new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+            SessionOpenRefusal.AskNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // Answered and busy are state conflicts, the shape every open door teaches.
+            SessionOpenRefusal.AskAnswered or SessionOpenRefusal.RepositoryBusy =>
+                Results.Conflict(new ErrorResponse(outcome.Message)),
+            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
+    });
 }
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is
@@ -1071,7 +1131,7 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
             f.Name, f.Sha256, f.Bytes,
             Path: machineLocal && kept is not null && kept.Has(a.Id, f) ? kept.PathOf(a.Id, f) : null)).ToList(),
         a.Proposal.Select(m => new DeclarationMatchResponse(m.Repository, m.Score, m.Matched)).ToList(),
-        a.Quests);
+        a.Quests, a.Intake);
 }
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(
@@ -1092,7 +1152,8 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     s.HarnessVersion,
     Profile: loopback ? s.Profile : null,
     Tree: loopback ? s.Tree : null,
-    BaseCommit: loopback ? s.BaseCommit : null);
+    BaseCommit: loopback ? s.BaseCommit : null,
+    Ask: s.Ask);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

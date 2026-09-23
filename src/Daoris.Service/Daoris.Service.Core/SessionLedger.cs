@@ -20,6 +20,15 @@ public enum SessionOpenRefusal
     /// from a quest, which is why only this path can fail that way.
     /// </summary>
     RepositoryUnknown,
+
+    /// <summary>No ask under that id — an intake answers an ask, so there has to be one (D65 §1b).</summary>
+    AskNotFound,
+
+    /// <summary>
+    /// The ask is already answered — published, closed, or served by an intake before. One intake per
+    /// ask: a second would be the loop retrying a harness forever on a question it could not settle.
+    /// </summary>
+    AskAnswered,
 }
 
 /// <param name="Refusal"><see cref="SessionOpenRefusal.None"/> when a session was queued.</param>
@@ -71,8 +80,81 @@ public sealed record SessionAdvanceOutcome(SessionAdvanceRefusal Refusal, string
 /// sessions in one tree collide by construction rather than by string comparison, and what keeps
 /// behaviour identical for every caller that has not learned about trees yet.</para>
 /// </remarks>
-public sealed class SessionLedger(QuestStore quests, SessionStore sessions, KnowledgeService? registry = null)
+public sealed class SessionLedger(
+    QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null)
 {
+    /// <summary>
+    /// Open an INTAKE for an ask (D65 §1b) — a conversation Daoris opens in a room it owns, which
+    /// decides from the circle's declarations, publishes the quests itself, and asks the person where
+    /// the declarations do not settle it.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Its own open, not a chat's.</b> A chat names a registered repository and takes its
+    /// circle from the row; the room is no repository, so the circle comes from the ASK — derived,
+    /// never passed beside it, for the same reason a driven session's comes from its quest.</para>
+    ///
+    /// <para><b>Recorded as a chat</b>, serving no quest, in "repository" <c>ask #id</c> — the sender its
+    /// quests are published by. Every build already reads a chat as a session nothing plans from.</para>
+    ///
+    /// <para><b>The room's lock is the process, not the record</b>: one intake RUNNING per room, and a
+    /// parked one — which has asked the person and ended — leaves it to the next ask
+    /// (<see cref="SessionStore.RunningInTreeAsync"/>).</para>
+    /// </remarks>
+    public async Task<SessionOpenOutcome> OpenIntakeAsync(
+        string askId, string adapter, string room, DateTimeOffset now,
+        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
+    {
+        var ask = asks is null ? null : await asks.FindAsync(askId, ct).ConfigureAwait(false);
+        if (ask is null)
+        {
+            return new(SessionOpenRefusal.AskNotFound, $"No ask `#{askId.TrimStart('#')}`.", Session: null);
+        }
+
+        var served = ask.Intake is { } earlier
+            ? $"intake session `{earlier}` already served it"
+            : ask.State switch
+            {
+                AskState.Published => $"it already became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}",
+                AskState.Closed => $"it is closed ({ask.Note})",
+                _ => null,
+            };
+        if (served is not null)
+        {
+            return new(
+                SessionOpenRefusal.AskAnswered,
+                $"Ask `#{ask.Id}` is not an intake's to answer — {served}. Publish it with a receiver you "
+                + "name, or close it.",
+                Session: null);
+        }
+
+        var holding = Trees.Normalize(room)
+            ?? throw new ArgumentException("an intake runs in a room — name it", nameof(room));
+        var running = await sessions.RunningInTreeAsync(holding, ct).ConfigureAwait(false);
+        if (running is not null)
+        {
+            return new(
+                SessionOpenRefusal.RepositoryBusy,
+                $"The intake room for `{ask.Workspace}` already has a running session — `{running.Id}` "
+                + $"({Spell(running.State)}{(running.Ask is { } other ? $", ask `#{other}`" : "")}). One intake runs "
+                + "per circle at a time; the next ask is taken when it ends.",
+                Session: null);
+        }
+
+        // No base commit, deliberately: the room is no repository, and git asked about it would walk
+        // UP and answer for whatever checkout the home sits in.
+        var session = await sessions
+            .CreateAsync(
+                null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
+                harnessVersion, profile, holding, baseCommit: null, ct, ask: ask.Id)
+            .ConfigureAwait(false);
+        await asks!.SaveAsync(ask with { Intake = session.Id, Updated = now }, ct).ConfigureAwait(false);
+
+        return new(
+            SessionOpenRefusal.None,
+            $"Intake `{session.Id}` opened for ask `#{ask.Id}` in `{ask.Workspace}`, via {adapter}.",
+            session);
+    }
+
     /// <summary>
     /// Open a chat in a repository (D49 §3) — a person-initiated session serving no quest yet.
     /// </summary>

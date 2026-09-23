@@ -63,7 +63,7 @@ public sealed record TickReport(
 /// the quest's state (<see cref="Observation"/>); the evidence is what git says landed. Nothing is
 /// taken from the session's word, because outside sessions have no word to give.</para>
 /// </remarks>
-public sealed class Driver(
+public sealed partial class Driver(
     ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
     SessionProcesses? processes = null, RemoteSyncSet? sync = null, SessionOutput? output = null,
     HarnessRoster? harnesses = null,
@@ -188,6 +188,16 @@ public sealed class Driver(
             starts = allowed;
         }
 
+        // A parked intake has no process left to watch — it asked the person and ended — so its record
+        // ends when the person answers the ask (D65 §1b). Looked at every tick, whatever the intake
+        // setting says now: turning intakes off must not strand one that is waiting.
+        await ConcludeAnsweredAsync(snapshot.Active, events, concluded, ct).ConfigureAwait(false);
+
+        // The asks this machine answers with a session (D65 §1b) — only where a harness is named for
+        // it, and only in the slots the quests left: work somebody already asked for goes first.
+        var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count, events, ct)
+            .ConfigureAwait(false);
+
         var runs = starts.Select(async start =>
         {
             var (line, opened, ended, held) = await RunAsync(start, ct).ConfigureAwait(false);
@@ -199,11 +209,21 @@ public sealed class Driver(
                 if (held is not null) heldAt[start.Quest.Id] = held;
             }
         });
+        var intakeRuns = intakes.Select(async ask =>
+        {
+            var (line, opened, ended) = await RunIntakeAsync(ask, ct).ConfigureAwait(false);
+            lock (events)
+            {
+                events.Add(line);
+                progressed |= opened;
+                if (ended is not null) concluded.Add(ended);
+            }
+        });
         // The sync runs BESIDE the sessions, not only around them (D68 §6): a session no longer holds
         // it back for its whole run. Each pass is followed by a look at every session this driver is
         // running — one whose take came back LOST is stopped, because its quest is another machine's
         // and its work would double theirs (D68 §5). An unconfirmed take keeps working.
-        var all = Task.WhenAll(runs);
+        var all = Task.WhenAll(runs.Concat(intakeRuns));
         while (sync is not null && !all.IsCompleted)
         {
             if (await Task.WhenAny(all, Task.Delay(_syncBeside, ct)).ConfigureAwait(false) == all) break;
@@ -396,34 +416,7 @@ public sealed class Driver(
                 Then = quest.Then,
                 Parent = quest.Parent,
             };
-            var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
-
-            // The environment seam every harness already carries for exactly this (D49 §4). Applied
-            // by the driver rather than inside the adapter's Prepare, so one line governs both doors
-            // and no adapter can forget it.
-            if (adapter.Toolchain is { } toolchain)
-            {
-                HarnessProbe.Apply(
-                    info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
-                    selection.Environment);
-            }
-
-            // What daoris writes into a dsh home it owns (ACP3): the two rows that send session
-            // material off this machine, off — and its own skills reachable. Only where daoris made
-            // the directory; the notice is what happens everywhere else, and a home holding somebody
-            // else's patch layer is reported rather than overwritten.
-            var harnessNotice = DshProfile.NoticeFor(adapter.Name, selection.ProfileHome);
-            if (harnessNotice is null && adapter is DshAdapter && selection.ProfileHome is { Length: > 0 } dshHome)
-            {
-                try
-                {
-                    DshProfile.Write(dshHome);
-                }
-                catch (DriverException refused)
-                {
-                    harnessNotice = $"— {refused.Message}";
-                }
-            }
+            var (info, harnessNotice) = Prepare(adapter, target, selection);
 
             await service.AdvanceAsync(
                 sessionId, "starting",
@@ -496,18 +489,7 @@ public sealed class Driver(
                     ? Observation.Conclude(code, status)
                     : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
-            // 🔴 A credential its provider refused is read from the tool's own last words (AGT3b), and
-            // the account is held so no further session sits through the same minutes of retries.
-            if (conclusion.State == "failed" && adapter.Toolchain is { Refused: { Length: > 0 } refusedWords } refusing
-                && Observation.Refused(LastLines(transcript), refusedWords))
-            {
-                var owner = refusing.Owner(adapter.Name);
-                var account = selection.Profile is { } named ? $"the `{owner}` account `{named}`" : $"`{owner}`'s own sign-in";
-                var reason = $"its provider refused {account} (401). Replace the key or sign in again — "
-                    + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
-                conclusion = conclusion with { Note = $"{conclusion.Note} {char.ToUpperInvariant(reason[0])}{reason[1..]}" };
-                _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
-            }
+            conclusion = AccountRefused(conclusion, adapter, selection, transcript);
 
             var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
             await service.AdvanceAsync(
@@ -583,6 +565,68 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// The spawn, prepared for either kind of session: the adapter's process, the toolchain's
+    /// environment on it, and — for a dsh home Daoris made — its profile written. Shared by a quest's
+    /// session and an ask's intake, so neither can forget a line the other carries.
+    /// </summary>
+    /// <returns>The process to start, and what this harness is doing that Daoris could not govern.</returns>
+    private (ProcessStartInfo Info, string? Notice) Prepare(
+        ISessionAdapter adapter, SessionTarget target, HarnessSelection selection)
+    {
+        var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
+
+        // The environment seam every harness already carries for exactly this (D49 §4). Applied
+        // by the driver rather than inside the adapter's Prepare, so one line governs both doors
+        // and no adapter can forget it.
+        if (adapter.Toolchain is { } toolchain)
+        {
+            HarnessProbe.Apply(
+                info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
+                selection.Environment);
+        }
+
+        // What daoris writes into a dsh home it owns (ACP3): the two rows that send session
+        // material off this machine, off — and its own skills reachable. Only where daoris made
+        // the directory; the notice is what happens everywhere else, and a home holding somebody
+        // else's patch layer is reported rather than overwritten.
+        var harnessNotice = DshProfile.NoticeFor(adapter.Name, selection.ProfileHome);
+        if (harnessNotice is null && adapter is DshAdapter && selection.ProfileHome is { Length: > 0 } dshHome)
+        {
+            try
+            {
+                DshProfile.Write(dshHome);
+            }
+            catch (DriverException refused)
+            {
+                harnessNotice = $"— {refused.Message}";
+            }
+        }
+
+        return (info, harnessNotice);
+    }
+
+    /// <summary>
+    /// 🔴 A credential its provider refused is read from the tool's own last words (AGT3b), and the
+    /// account is held so no further session sits through the same minutes of retries.
+    /// </summary>
+    private SessionConclusion AccountRefused(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string transcript)
+    {
+        if (conclusion.State != "failed" || adapter.Toolchain is not { Refused: { Length: > 0 } refusedWords } refusing
+            || !Observation.Refused(LastLines(transcript), refusedWords))
+        {
+            return conclusion;
+        }
+
+        var owner = refusing.Owner(adapter.Name);
+        var account = selection.Profile is { } named ? $"the `{owner}` account `{named}`" : $"`{owner}`'s own sign-in";
+        var reason = $"its provider refused {account} (401). Replace the key or sign in again — "
+            + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
+        _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
+        return conclusion with { Note = $"{conclusion.Note} {char.ToUpperInvariant(reason[0])}{reason[1..]}" };
+    }
+
+    /// <summary>
     /// Exit code, or null when the timeout killed it. Either way the tree dies with it — a timeout
     /// AND a driver shutdown both end the process, because an orphaned agent session working a quest
     /// nobody is observing is the one thing worse than a failed one.
@@ -614,8 +658,9 @@ public sealed class Driver(
     /// thing that loses a line to an in-memory reader's problem. The console is optional because the
     /// headless driver has nobody to show it to — the buffer exists only where something reads it.
     /// </remarks>
-    private Task CaptureAsync(Process process, string transcript, string sessionId, CancellationToken ct) =>
-        CaptureAsync(process, transcript, sessionId, output, ct);
+    private Task CaptureAsync(
+        Process process, string transcript, string sessionId, CancellationToken ct, string? preamble = null) =>
+        CaptureAsync(process, transcript, sessionId, output, ct, preamble);
 
     /// <summary>
     /// The protocol door's capture (D53): an ACP session held over this process's stdio, with the
@@ -634,9 +679,14 @@ public sealed class Driver(
     /// the protocol flattens an aborted, blocked or errored turn into `end_turn`, so a record moved
     /// by it would be a record that cannot tell a refusal from a success.</para>
     /// </remarks>
+    /// <param name="scope">
+    /// What this session's connector carries beyond the store — an intake's ask and session (D65 §1b).
+    /// Null for a quest's session.
+    /// </param>
     private async Task<AcpOutcome?> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
-        string? posture, string? harnessNotice, CancellationToken ct)
+        string? posture, string? harnessNotice, CancellationToken ct,
+        IReadOnlyDictionary<string, string>? scope = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -658,15 +708,14 @@ public sealed class Driver(
             // The session's voice (ACP4). Located per run rather than once, because a machine can
             // gain the host between ticks — and a machine that has none still drives, without a
             // connector, exactly as it did before.
-            var connector = KnowledgeConnector.Offer(
-                Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
-                DaorisHome.Resolve(),
-                AppContext.BaseDirectory);
+            var connector = Connector(scope);
             if (connector is null)
             {
-                Line($"— no {KnowledgeConnector.ExecutableName} on this machine, so this session has no "
-                     + "connector: it can do the work but cannot take or close its own quest. "
-                     + "`npm run publish:service -- --install` lands one.");
+                Line(scope is null
+                    ? $"— no {KnowledgeConnector.ExecutableName} on this machine, so this session has no "
+                      + "connector: it can do the work but cannot take or close its own quest. "
+                      + "`npm run publish:service -- --install` lands one."
+                    : NoConnectorForIntake);
             }
 
             // The knowledge host first, then whatever the plugins hand every session (D65 §1f): a
@@ -709,10 +758,16 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// The same capture for a session this class did not spawn — a chat (D49 §3), whose process
-    /// belongs to <see cref="ChatRunner"/>. Shared rather than copied: one pump, one tee, one set of
-    /// rules about which destination is the durable one.
+    /// The knowledge server this session is offered (ACP4) — located per run, because a machine can
+    /// gain the host between ticks — carrying an intake's scope when it is one.
     /// </summary>
+    private static AcpMcpServer? Connector(IReadOnlyDictionary<string, string>? scope) =>
+        KnowledgeConnector.Offer(
+            Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
+            DaorisHome.Resolve(),
+            AppContext.BaseDirectory,
+            scope: scope);
+
     /// <summary>A finished transcript's last lines — where a tool says why it gave up. Unreadable is none.</summary>
     private static IReadOnlyList<string> LastLines(string transcript)
     {
@@ -726,10 +781,26 @@ public sealed class Driver(
         }
     }
 
+    /// <summary>
+    /// The same capture for a session this class did not spawn — a chat (D49 §3), whose process
+    /// belongs to <see cref="ChatRunner"/>. Shared rather than copied: one pump, one tee, one set of
+    /// rules about which destination is the durable one.
+    /// </summary>
+    /// <param name="preamble">
+    /// A fact about how this run was set up, written ahead of anything the process says — the pipe
+    /// door's form of the protocol door's first transcript lines.
+    /// </param>
     internal static async Task CaptureAsync(
-        Process process, string transcript, string sessionId, SessionOutput? output, CancellationToken ct)
+        Process process, string transcript, string sessionId, SessionOutput? output, CancellationToken ct,
+        string? preamble = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
+        if (preamble is { Length: > 0 })
+        {
+            lock (file) file.WriteLine(preamble);
+            output?.Append(sessionId, preamble);
+        }
+
         var stdout = PumpAsync(process.StandardOutput, file, sessionId, output, ct);
         var stderr = PumpAsync(process.StandardError, file, sessionId, output, ct);
         await Task.WhenAll(stdout, stderr).ConfigureAwait(false);

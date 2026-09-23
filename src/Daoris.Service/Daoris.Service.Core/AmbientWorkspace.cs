@@ -17,15 +17,24 @@ namespace Daoris.Knowledge;
 /// <para><b>No match is null, and null means "say so".</b> A session running somewhere unregistered has
 /// no circle to default to, and quietly picking one would be a guess presented as a scope. The caller
 /// spans everything and reports that it did — the D24 shape: name the tier that answered.</para>
+///
+/// <para><b>One session knows its circle without a row: an intake</b> (D65 §1b). Its room is under the
+/// home, never registered, and the circle is its ASK's — so the host names it here, from the ask, and
+/// the room's path is never asked.</para>
 /// </remarks>
-public sealed class AmbientWorkspace(string workingDirectory)
+public sealed class AmbientWorkspace(string workingDirectory, string? circle = null)
 {
     /// <summary>Where this process was started — for a stdio host, the repository that spawned it.</summary>
     public static AmbientWorkspace Here() => new(Directory.GetCurrentDirectory());
 
-    /// <summary>The workspace of the repository this directory sits in, or null when it sits in none.</summary>
+    /// <summary>
+    /// The circle named for this session, or the workspace of the repository this directory sits in,
+    /// or null when it sits in none.
+    /// </summary>
     public async Task<string?> ResolveAsync(KnowledgeService service, CancellationToken ct = default)
     {
+        if (circle is { Length: > 0 }) return circle;
+
         var registry = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
         return Containing(registry, workingDirectory)?.InWorkspace;
     }

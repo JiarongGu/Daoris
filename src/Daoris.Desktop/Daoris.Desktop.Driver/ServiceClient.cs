@@ -201,6 +201,119 @@ public sealed class ServiceClient : IDisposable
             if (to is not null) writer.WriteString("to", to);
         }, ct);
 
+    /// <summary>
+    /// Ask the ledger to open an INTAKE for an ask (D65 §1b), in the room this side is about to run it
+    /// in. A refusal is an answer, not an exception — usually that the ask is already answered.
+    /// </summary>
+    public async Task<(string? SessionId, string Message)> OpenIntakeAsync(
+        string ask, string adapter, string room, string? harnessVersion = null, string? profile = null,
+        CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("ask", ask);
+            writer.WriteString("adapter", adapter);
+            writer.WriteString("room", room);
+            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
+            if (profile is not null) writer.WriteString("profile", profile);
+            writer.WriteEndObject();
+        });
+
+        using var response = await _http.PostAsync(
+            $"{_base}/api/sessions/intake", new StringContent(body, Encoding.UTF8, "application/json"), ct)
+            .ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(payload);
+        }
+        catch (JsonException)
+        {
+            return (null, $"the service at {_base} has no intake door ({(int)response.StatusCode}) — is it older than this driver?");
+        }
+
+        using (document)
+        {
+            if (!response.IsSuccessStatusCode) return (null, Text(document.RootElement, "error") ?? payload);
+            return (Text(document.RootElement.GetProperty("session"), "id"), Text(document.RootElement, "message") ?? "");
+        }
+    }
+
+    /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
+    public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/asks", ct).ConfigureAwait(false));
+        return [.. document.RootElement.EnumerateArray().Select(ReadAsk)];
+    }
+
+    /// <summary>One ask as it stands — how an intake's end is observed. Null when the service has none.</summary>
+    public async Task<AskView?> FindAskAsync(string id, CancellationToken ct = default)
+    {
+        using var response = await _http.GetAsync(
+            $"{_base}/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}", ct).ConfigureAwait(false);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new DriverException($"the service would not say what became of ask `#{id}`: {payload}");
+        }
+
+        using var document = JsonDocument.Parse(payload);
+        return ReadAsk(document.RootElement);
+    }
+
+    /// <summary>
+    /// A circle's declarations — what each repository owns and accepts, and where it is (D34). The
+    /// intake's room is written from this, so it decides from the registry as it stands now.
+    /// </summary>
+    public async Task<IReadOnlyList<DeclarationView>> DeclarationsAsync(string workspace, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(
+            await GetAsync($"/api/registry?workspace={Uri.EscapeDataString(workspace)}", ct).ConfigureAwait(false));
+        return
+        [
+            .. document.RootElement.EnumerateArray().Select(repo => new DeclarationView(
+                Text(repo, "repository") ?? "",
+                repo.TryGetProperty("adopted", out var adopted) && adopted.ValueKind == JsonValueKind.True,
+                repo.TryGetProperty("registered", out var registered) && registered.ValueKind == JsonValueKind.True,
+                Text(repo, "summary"),
+                Strings(repo, "owns"),
+                Strings(repo, "accepts"),
+                Text(repo, "root"))),
+        ];
+    }
+
+    private static AskView ReadAsk(JsonElement ask) =>
+        new(
+            Text(ask, "id") ?? "", Text(ask, "workspace") ?? "", Text(ask, "sentence") ?? "",
+            Text(ask, "state") ?? "", Text(ask, "tier") ?? "")
+        {
+            Asker = Text(ask, "asker"),
+            Note = Text(ask, "note"),
+            // Absent is none: a host from before the intake answers without it.
+            Intake = Text(ask, "intake"),
+            Links = Strings(ask, "links"),
+            Attachments = ask.TryGetProperty("attachments", out var files) && files.ValueKind == JsonValueKind.Array
+                ? [.. files.EnumerateArray().Select(file => new QuestFileView(
+                    Text(file, "name") ?? "", Text(file, "sha256") ?? "",
+                    file.TryGetProperty("bytes", out var bytes) && bytes.ValueKind == JsonValueKind.Number ? bytes.GetInt64() : 0,
+                    Text(file, "path")))]
+                : [],
+            Quests = Strings(ask, "quests"),
+            Proposed = ask.TryGetProperty("proposal", out var proposal) && proposal.ValueKind == JsonValueKind.Array
+                ? [.. proposal.EnumerateArray().Select(match => Text(match, "repository")).OfType<string>()]
+                : [],
+        };
+
+    private static IReadOnlyList<string> Strings(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+            ? [.. value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
+            : [];
+
     /// <summary>A person turns an ask into a quest for <paramref name="to"/>.</summary>
     public Task<AskAnswer> PublishAskAsync(string id, string to, CancellationToken ct = default) =>
         PostAskAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}/publish", w => w.WriteString("to", to), ct);
@@ -386,7 +499,11 @@ public sealed class ServiceClient : IDisposable
                 // to see one is to look. Defaulted rather than required, because a service older
                 // than this field answers without it and the planner never needed it either way.
                 Text(session, "state") ?? "",
-                Text(session, "note")));
+                Text(session, "note"))
+            {
+                // An intake's ask (D65 §1b) — how a parked one is ended when the person answers it.
+                Ask = Text(session, "ask"),
+            });
         }
 
         return sessions;

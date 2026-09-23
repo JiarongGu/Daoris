@@ -16,9 +16,12 @@ namespace Daoris.Knowledge.Mcp;
 /// Results are markdown rather than JSON on purpose: the caller is a language model, and a table it
 /// can read beats a structure it has to re-serialise into prose.
 /// </remarks>
+/// <param name="asks">The asks, for the one session that publishes as one — an intake (D65 §1b).</param>
+/// <param name="intake">Which ask this connector speaks for, when the session is an intake; otherwise none.</param>
 [McpServerToolType]
 public sealed class KnowledgeTools(
-    KnowledgeService service, QuestStore quests, QuestExchange exchange, AmbientWorkspace ambient)
+    KnowledgeService service, QuestStore quests, QuestExchange exchange, AmbientWorkspace ambient,
+    AskDesk? asks = null, IntakeScope? intake = null)
 {
     /// <summary>
     /// Which circle this call answers from: what the caller named, or the workspace of the repository
@@ -277,7 +280,8 @@ public sealed class KnowledgeTools(
         + "is needed and why, with the evidence — not the change you would make. Use before touching "
         + "any repository that is not the one you are working in.")]
     public async Task<string> PublishQuestAsync(
-        [Description("The repository asking — the one you are working in.")] string from,
+        [Description("The repository asking — the one you are working in. An intake publishes as its ask, whatever this says.")]
+        string from,
         [Description("The repository being asked. It must have adopted Daoris, or nobody there can see it.")]
         string to,
         [Description("One line: what is wanted.")] string title,
@@ -309,6 +313,23 @@ public sealed class KnowledgeTools(
             uploads.Add(upload!);
         }
 
+        var steps = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList();
+
+        // An intake publishes AS ITS ASK (D65 §1b): the room is no repository, so `from` could name
+        // nothing addressable — the ask is the asker, in its own circle, carrying its own links and
+        // files beside these. The desk judges through the same exchange, so nothing else differs.
+        if (intake is { Active: true, Ask: { } askId } && asks is not null)
+        {
+            var answered = await asks.PublishAsync(
+                    askId, to, DateTimeOffset.UtcNow, ct,
+                    new AskDraft(title, body) { Links = links ?? [], Uploads = uploads, Then = steps },
+                    intake.Session)
+                .ConfigureAwait(false);
+            return answered.Refusal == AskRefusal.None
+                ? $"As ask `#{askId}`: {answered.Message}"
+                : answered.Message;
+        }
+
         // The judgement — who may be addressed, what a refusal says — lives in the exchange, shared
         // with the HTTP host so the same ask cannot be deliverable through one door and refused at
         // the other.
@@ -317,7 +338,7 @@ public sealed class KnowledgeTools(
                 {
                     Links = links ?? [],
                     Uploads = uploads,
-                    Then = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
+                    Then = steps,
                 },
                 DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);

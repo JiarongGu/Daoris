@@ -41,13 +41,15 @@ export interface DriverChoices {
   strikes: number;
   /** Quests the person restarted, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
+  /** The harness an ask's intake session runs on (INT4b, D65 §1b) — null, and no intake runs. */
+  intakeAdapter: string | null;
   rest: Record<string, unknown>;
 }
 
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, rest: {},
+  strikes: 3, forgiven: {}, intakeAdapter: null, rest: {},
 };
 
 /**
@@ -65,7 +67,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ...EMPTY, rest: {} };
 
-    const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, ...rest } = parsed;
+    const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, ...rest } = parsed;
     return {
       drivable: names(drivable),
       holds: names(holds),
@@ -81,6 +83,10 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
       // has this file predates the field, and taking silence for "off" would ship the feature
       // switched off on exactly the machines that have been driving longest.
       notify: typeof notify === 'boolean' ? notify : EMPTY.notify,
+      // 🔴 Absent means OFF — the opposite of `notify`, the driver's own reading (INT4b): an intake
+      // spends a real login on every ask, so it runs only where a person named the harness for it.
+      intakeAdapter: typeof intakeAdapter === 'string' && intakeAdapter.trim().length > 0
+        ? intakeAdapter.trim() : null,
       rest,
     };
   } catch {
@@ -104,6 +110,8 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     notify: choices.notify,
     strikes: choices.strikes,
     forgiven: choices.forgiven,
+    // Written only when named — absent IS off, and the driver writes it the same way.
+    ...(choices.intakeAdapter ? { intakeAdapter: choices.intakeAdapter } : {}),
   }, null, 2)}\n`);
 }
 
@@ -258,10 +266,39 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // Which harness answers an ask with an intake session (INT4b, D65 §1b), or `off`. A NAME rather
+    // than on|off: which harness answers asks and which does the work are two choices, and changing
+    // the second must not quietly move the first. The desktop's `SET_INTAKE` is the other door (D50).
+    case 'intake': {
+      const named = argv.slice(1).find((token) => !token.startsWith('--'));
+      if (!named) {
+        throw new DaorisError(
+          '`driver intake` needs <adapter>|off — e.g. `daoris driver intake claude-code-acp`, or `off` '
+          + 'to answer asks by declarations only.');
+      }
+
+      const off = named === 'off';
+      writeDriverChoices(path, { ...choices, intakeAdapter: off ? null : named });
+      if (off) {
+        write('daoris: asks on this machine are answered by declarations only — proposed, never published unasked.');
+        write('  An intake already waiting on you still waits; answering its ask ends it.');
+      } else {
+        write(`daoris: an ask the declarations do not settle opens an intake session via \`${named}\`.`);
+        write('  It reads the circle\'s declarations, publishes the quests itself, and asks you where they do not');
+        write('  settle it. 🔴 Every intake spends a real login on that harness\'s account.');
+        if (!(named in TOOLCHAINS)) {
+          write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
+        }
+      }
+
+      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+      return 0;
+    }
+
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, notify, `
-        + 'strikes, retry, cap, adapter');
+        + 'strikes, retry, cap, adapter, intake');
   }
 
   function list(): ExitCode {
@@ -277,6 +314,9 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     write(`  notify     ${choices.notify ? 'on' : 'off'}`
       + `  (a session parking, or ending without you asking${choices.notify ? '' : ' — not said'})`);
+    write(choices.intakeAdapter
+      ? `  intake     ${choices.intakeAdapter}  (an ask the declarations do not settle opens a session — a login each)`
+      : '  intake     off — asks are answered by declarations only; `daoris driver intake <adapter>` names a harness');
 
     if (choices.drivable.length === 0) {
       write('  drivable   nothing — this machine drives no repository, which is the default (D46 §2).');

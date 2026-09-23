@@ -432,6 +432,35 @@ const key = process.env.DAORIS_SERVICE_KEY;
 const id = process.env.DAORIS_QUEST_ID;
 const title = process.env.DAORIS_QUEST_TITLE ?? '';
 
+// An INTAKE (D65 §1b): the same stub spawned for an ASK rather than a quest — no quest variable, the
+// ask and its own session instead, in the circle's room under the driver's home. It decides from the
+// room's declarations and publishes onto the ask through the door its connector would use; where the
+// words do not settle it, it says what it would ask and publishes nothing — the intake asking.
+const intakeFor = process.env.DAORIS_ASK_ID;
+if (intakeFor) {
+  const session = process.env.DAORIS_SESSION_ID;
+  console.log('stub: intake for ask ' + intakeFor + ' as session ' + session + ', quest ' + (id ?? 'none'));
+  const room = existsSync('AGENTS.md') ? readFileSync('AGENTS.md', 'utf8') : '';
+  if (/unsettled/i.test(process.env.DAORIS_TARGET ?? '') || !room.includes('\`newcomer\`')) {
+    console.log('stub: the declarations do not settle this — which repository should own it?');
+    process.exit(0);
+  }
+
+  const published = await fetch(url + '/api/asks/' + intakeFor + '/publish', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(key ? { authorization: 'Bearer ' + key } : {}) },
+    body: JSON.stringify({
+      to: 'newcomer',
+      title: 'Say hello, as the intake decided',
+      body: 'The intake read the circle, and the newcomer is who this belongs to.',
+      then: [{ to: 'newcomer', title: 'Verify {parent} said hello', body: 'Check what {parent} landed.' }],
+      session,
+    }),
+  });
+  console.log('stub: intake publish answered ' + published.status);
+  process.exit(published.ok ? 0 : 1);
+}
+
 const respond = async (action, reason) => {
   const response = await fetch(url + '/api/quests/' + id + '/respond', {
     method: 'POST',
@@ -686,6 +715,80 @@ check(
   '…and the driver drives it like any quest: the ask became work, and its session read the file',
   askSession?.state === 'completed' && askSaid.includes('-ask-brief.txt reads the brief an ask carried'),
   `${askRun.out}\n${askSaid.split('\n').filter((line) => line.startsWith('stub:')).join('\n')}`,
+);
+
+// AN INTAKE (D65 §1b, INT4b): the same kind of ask, on a machine that names a harness for it. The loop
+// opens a SESSION for the ask in the circle's room under the driver's home, seeded with the
+// declarations; the stub reads them and publishes onto the ask in its own words, with a chain the loop
+// then drives like any. Where the words do not settle it, the intake publishes nothing and parks for
+// the person — and the person's answer to the ask is what ends it. The stub is the harness, as
+// everywhere here: no model, no account. The ask the refused receiver kept is closed first, so the
+// one unserved ask in the circle is the one this phase makes.
+const keptAskId = /kept as `#([0-9a-f]{6})`/.exec(refusedAsk.out)?.[1] ?? '';
+askVerb(`--close ${keptAskId} --reason "Asked again with a receiver that exists."`);
+const intakeConfig = join(scratch, 'driver-intake.json');
+writeFileSync(intakeConfig, `${JSON.stringify({
+  ...JSON.parse(readFileSync(driverConfig, 'utf8')),
+  intakeAdapter: 'stub',
+}, null, 2)}\n`);
+const intakeDrive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: intakeConfig, mode });
+const intakesOf = async (askId) =>
+  ((await api('GET', '/api/sessions?includeClosed=true')).json ?? []).filter((s) => s.ask === askId);
+
+const settledAsk = askVerb('--workspace default "the newcomer should say hello, and a check should follow"');
+const settledAskId = /ask\s+#([0-9a-f]{6})/.exec(settledAsk.out)?.[1] ?? '';
+const intakeRun = intakeDrive();
+const [intakeSession, ...extraIntakes] = await intakesOf(settledAskId);
+const intakeSaid = existsSync(intakeSession?.transcript ?? '') ? readFileSync(intakeSession.transcript, 'utf8') : '';
+check(
+  'an ask with an intake harness is answered by a SESSION — a conversation for the ask, in the circle’s room',
+  extraIntakes.length === 0 && intakeSession?.kind === 'chat' && intakeSession.repository === `ask #${settledAskId}`
+    && intakeSession.workspace === 'default' && !intakeSession.quest && intakeSession.state === 'completed'
+    && /[\\/]intake[\\/]default$/.test(intakeSession.tree ?? ''),
+  `${intakeRun.out}\n${JSON.stringify(intakeSession)}`,
+);
+const intakeRoom = join(scratch, 'intake', 'default');
+check(
+  '…its room holds the circle’s declarations, and the session saw an ask and itself — never a quest',
+  existsSync(join(intakeRoom, 'AGENTS.md')) && readFileSync(join(intakeRoom, 'AGENTS.md'), 'utf8').includes('`newcomer`')
+    && intakeSaid.includes(`stub: intake for ask ${settledAskId} as session ${intakeSession?.id}, quest none`),
+  intakeSaid,
+);
+const settled = (await api('GET', `/api/asks/${settledAskId}`)).json;
+const newcomerQuests = (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
+const intakeQuest = newcomerQuests.find((q) => q.from === `ask #${settledAskId}` && !q.parent);
+check(
+  '…it published onto the ask — asked BY the ask, in its words — and the ask says the intake answered it',
+  settled?.state === 'Published' && settled.tier === 'intake' && settled.intake === intakeSession?.id
+    && intakeQuest?.title === 'Say hello, as the intake decided' && settled.quests?.includes(intakeQuest.id),
+  JSON.stringify({ settled, intakeQuest }),
+);
+const intakeStep = newcomerQuests.find((q) => q.parent === intakeQuest?.id);
+check(
+  '…with the chain it composed, which the loop drove like any: the work, then the check',
+  intakeQuest?.status === 'Done' && intakeStep?.status === 'Done' && intakeStep.from === `ask #${settledAskId}`
+    && intakeStep.title === `Verify #${intakeQuest.id} said hello`,
+  `${intakeRun.out}\n${JSON.stringify({ intakeQuest, intakeStep })}`,
+);
+
+const unsettledAsk = askVerb('--workspace default "an unsettled question nobody has declared an answer to"');
+const unsettledAskId = /ask\s+#([0-9a-f]{6})/.exec(unsettledAsk.out)?.[1] ?? '';
+const parkRun = intakeDrive();
+const [parkedIntake] = await intakesOf(unsettledAskId);
+check(
+  'where the declarations do not settle it, the intake publishes NOTHING and parks, asking the person',
+  parkedIntake?.state === 'awaiting-person' && /asks you rather than guess/.test(parkedIntake.note ?? '')
+    && (await api('GET', `/api/asks/${unsettledAskId}`)).json?.quests?.length === 0,
+  `${parkRun.out}\n${JSON.stringify(parkedIntake)}`,
+);
+const answeredAsk = askVerb(`--close ${unsettledAskId} --reason "Not a change after all."`);
+const endRun = intakeDrive('--once');
+const endedIntakes = await intakesOf(unsettledAskId);
+check(
+  '…and the person’s answer to the ask is what ends it — one intake per ask, never a second',
+  answeredAsk.code === 0 && endedIntakes.length === 1 && endedIntakes[0].state === 'stopped'
+    && /the person closed ask/.test(endedIntakes[0].note ?? ''),
+  `${endRun.out}\n${JSON.stringify(endedIntakes)}`,
 );
 
 // Declining is a real answer, and it is the session's answer — the driver only observes it.

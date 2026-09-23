@@ -184,6 +184,29 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// The intake's harness (INT4b) over the bridge — the screen's half of `daoris driver intake`. Off
+    /// until named, and 🔴 kept by every other edit: the state is what the page shows, and a control
+    /// that deleted it would switch the intake off with nobody touching it.
+    /// </summary>
+    [Fact]
+    public async Task The_intake_harness_is_off_until_named_and_every_other_edit_keeps_it()
+    {
+        var module = Module();
+
+        Assert.Equal(JsonValueKind.Null, (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").ValueKind);
+
+        var on = await AnswerAsync(module, "SET_INTAKE", new { adapter = "claude-code-acp" });
+        Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
+
+        await AnswerAsync(module, "SET_NOTIFY", new { notify = false });
+        Assert.Equal("claude-code-acp", DriverConfig.Load(DriverConfigPath).IntakeAdapter);
+
+        var off = await AnswerAsync(module, "SET_INTAKE", new { adapter = (string?)null });
+        Assert.Equal(JsonValueKind.Null, off.GetProperty("intakeAdapter").ValueKind);
+        Assert.Null(DriverConfig.Load(DriverConfigPath).IntakeAdapter);
+    }
+
+    /// <summary>
     /// What sessions consumed (TOOL3/D57 §4), over the bridge and nowhere else. A machine that has
     /// measured nothing answers empty lists — <b>never a zero</b>, because "nothing was measured" and
     /// "it used nothing" are different claims and only one of them is true.

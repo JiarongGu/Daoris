@@ -28,7 +28,10 @@ using Daoris.Driver;
 //                 ask at a WORKSPACE (D65 §1a): the service answers with the tier that answered —
 //                 by declarations only (proposes, publishes nothing), or the receiver --to names.
 //   ask --publish <id> --to <repo> · ask --close <id> --reason "…"
-//                 turn an ask into a quest, or close it with the reason.
+//                 turn an ask into a quest, or close it with the reason. Where driver.json names an
+//                 `intakeAdapter` (`daoris driver intake <adapter>`), the loop answers an ask the
+//                 declarations left open with an INTAKE session (D65 §1b) in <home>/intake/<workspace>/:
+//                 it publishes onto the ask, or parks asking you — and ends when you answer the ask.
 //
 //   trees [list | remove <path> [--force]]
 //                 the session worktrees this machine has grown (D51): list them, or remove one —

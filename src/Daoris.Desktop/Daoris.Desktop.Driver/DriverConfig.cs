@@ -74,6 +74,24 @@ public sealed record DriverConfig(
     /// <summary>How many failures park a quest on this machine.</summary>
     public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes) };
 
+    /// <summary>
+    /// The harness an ask's INTAKE session runs on (D65 §1b) — or null, and no intake runs.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Absent means OFF</b>, the reading `notify` does not take and for the opposite reason.
+    /// An intake spends a real login on every ask a person makes; a machine whose file predates this
+    /// field has been answering asks by declarations only (INT4a), and silently starting to spend
+    /// accounts on them after an upgrade is not a default anyone chose.</para>
+    ///
+    /// <para><b>Named, never "the same as the adapter"</b>: which harness answers asks and which does
+    /// the work are two choices, and the second changing must not quietly move the first.</para>
+    /// </remarks>
+    public string? IntakeAdapter { get; init; }
+
+    /// <summary>Which harness answers asks here, or null for none — the declarations tier alone.</summary>
+    public DriverConfig WithIntake(string? adapter) =>
+        this with { IntakeAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
+
     public const string PathVariable = "DAORIS_DRIVER_CONFIG";
 
     /// <summary>
@@ -120,6 +138,8 @@ public sealed record DriverConfig(
             writer.WriteEndArray();
             writer.WriteNumber("cap", Cap);
             writer.WriteString("adapter", Adapter);
+            // Written only when named: absent IS off, and the CLI twin writes it the same way.
+            if (IntakeAdapter is not null) writer.WriteString("intakeAdapter", IntakeAdapter);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
             writer.WriteNumber("pollSeconds", PollSeconds);
@@ -198,7 +218,11 @@ public sealed record DriverConfig(
             // driving unattended longest, and reading silence as "never park" would leave it doing
             // the thing this field exists to stop.
             Strikes: Int(root, "strikes") ?? Empty.Strikes,
-            Forgiven: ForgivenMap(root));
+            Forgiven: ForgivenMap(root))
+        {
+            // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
+            IntakeAdapter = String(root, "intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
+        };
     }
 
     private static IReadOnlyDictionary<string, int> ForgivenMap(JsonElement root)

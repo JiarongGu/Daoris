@@ -60,15 +60,21 @@ public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 public sealed record AskRequestBody(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To);
-public sealed record AskPublishRequest(string? To);
+// A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
+// names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own.
+public sealed record AskPublishRequest(
+    string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
+    IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire>? Then = null,
+    string? Session = null);
 public sealed record AskCloseRequest(string? Reason);
 public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
-// `Tier` is said on every record (model-decoupling): which tier answered, never implied.
+// `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is
+// the session that served it (D65 §1b), once one opened — the record a reader follows to its question.
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
     IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
-    IReadOnlyList<string> Quests);
+    IReadOnlyList<string> Quests, string? Intake = null);
 public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(
@@ -109,7 +115,9 @@ public sealed record SessionResponse(
     // SURF6: the commit the tree stood at when the spawn began, so the review's range is a fact. It
     // is a repository fact rather than a machine one, but only the machine holding the checkout can
     // do anything with it — so it rides the same loopback gate as the tree beside it.
-    string? BaseCommit = null);
+    string? BaseCommit = null,
+    // D65 §1b: the ask an intake answers — null for every other session.
+    string? Ask = null);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
 // look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
 public sealed record OpenSessionRequest(
@@ -118,6 +126,10 @@ public sealed record OpenSessionRequest(
 public sealed record OpenChatRequest(
     string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
     string? BaseCommit = null);
+// An intake (D65 §1b): the ask it answers and the room it runs in — the driver's, which is the half
+// that is about to run a process there. The circle comes from the ask, never from the caller.
+public sealed record OpenIntakeRequest(
+    string? Ask, string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
@@ -185,6 +197,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(AskPublishRequest))]
 [JsonSerializable(typeof(AskCloseRequest))]
 [JsonSerializable(typeof(AskActionResponse))]
+[JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(IEnumerable<AskResponse>))]
 [JsonSerializable(typeof(QuestActionResponse))]
 [JsonSerializable(typeof(RefreshResponse))]
@@ -199,6 +212,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(IEnumerable<SessionResponse>))]
 [JsonSerializable(typeof(OpenSessionRequest))]
 [JsonSerializable(typeof(OpenChatRequest))]
+[JsonSerializable(typeof(OpenIntakeRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
 

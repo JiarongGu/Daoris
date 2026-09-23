@@ -215,8 +215,9 @@ public static class ServiceFactory
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
-            // repository it runs in, and therefore which circle its record belongs to (D49 §3).
-            sessions, new SessionLedger(quests, sessions, service), keys, service.SemanticEnabled)
+            // repository it runs in, and therefore which circle its record belongs to (D49 §3) — and
+            // the asks, for the one thing an intake cannot inherit from either (D65 §1b).
+            sessions, new SessionLedger(quests, sessions, service, asks), keys, service.SemanticEnabled)
         {
             Store = store,
             Files = files,

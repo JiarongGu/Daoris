@@ -47,6 +47,12 @@ public sealed record Ask(
 
     /// <summary>The quests it became, in the order they were published.</summary>
     public IReadOnlyList<string> Quests { get; init; } = [];
+
+    /// <summary>
+    /// The intake session that served it (D65 §1b), once one was opened — the record a reader follows
+    /// to what the intake read, decided and asked. Null for an ask no intake has served.
+    /// </summary>
+    public string? Intake { get; init; }
 }
 
 /// <summary>Asks, held by the service beside the quests they become — machine-local, like the intake.</summary>
@@ -79,6 +85,20 @@ public sealed class AskStore
             CREATE INDEX IF NOT EXISTS asks_workspace ON asks (workspace, state);
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+        // INT4b: which intake session served it. An ask made before the intake existed keeps every
+        // word it had — it is the record of what a person asked, and nothing re-derives it.
+        await using (var probe = connection.CreateCommand())
+        {
+            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('asks') WHERE name = 'intake'";
+            if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0)
+            {
+                await using var alter = connection.CreateCommand();
+                alter.CommandText = "ALTER TABLE asks ADD COLUMN intake TEXT NULL";
+                await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+        }
+
         return store;
     }
 
@@ -94,12 +114,13 @@ public sealed class AskStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests)
-            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests)
+            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake)
+            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake)
             ON CONFLICT (id) DO UPDATE SET
               state = $state, tier = $tier, updated = $updated, note = $note,
-              links = $links, attachments = $attachments, proposal = $proposal, quests = $quests
+              links = $links, attachments = $attachments, proposal = $proposal, quests = $quests, intake = $intake
             """;
+        command.Parameters.AddWithValue("$intake", (object?)ask.Intake ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", ask.Id);
         command.Parameters.AddWithValue("$workspace", ask.Workspace);
         command.Parameters.AddWithValue("$sentence", ask.Sentence);
@@ -178,6 +199,7 @@ public sealed class AskStore
                 e.GetProperty("repository").GetString() ?? "", e.GetProperty("score").GetInt32(),
                 e.GetProperty("matched").EnumerateArray().Select(w => w.GetString() ?? "").ToList())),
             Quests = Items(Text("quests"), e => e.GetString() ?? ""),
+            Intake = Maybe("intake"),
         };
     }
 
@@ -216,6 +238,24 @@ public sealed record AskRequest(string Workspace, string Sentence)
 
     /// <summary>Who asked, when the door knows.</summary>
     public string? Asker { get; init; }
+}
+
+/// <summary>
+/// The quest an ask becomes, in words other than the ask's own — what an intake session writes once
+/// it has read the ticket (D65 §1b). A publish with no draft uses the person's sentence, as it always has.
+/// </summary>
+/// <param name="Title">One line: what is wanted. Blank takes the ask's first line.</param>
+/// <param name="Body">Why, and the evidence, with the ask's words quoted beneath. Blank takes the ask's words alone.</param>
+public sealed record AskDraft(string? Title, string? Body)
+{
+    /// <summary>Addresses beyond the ask's own — the ask's always travel too.</summary>
+    public IReadOnlyList<string> Links { get; init; } = [];
+
+    /// <summary>Files beyond the ask's own — the ask's always travel too.</summary>
+    public IReadOnlyList<QuestUpload> Uploads { get; init; } = [];
+
+    /// <summary>What to ask next once this closes done (D65 §4) — judged by the exchange, like any chain.</summary>
+    public IReadOnlyList<QuestStep> Then { get; init; } = [];
 }
 
 /// <summary>Why an ask did not do what was asked of it — or <see cref="None"/> when it did.</summary>
@@ -268,6 +308,12 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
 
     /// <summary>The asker named the receiver — no tier had to decide.</summary>
     public const string ByName = "named";
+
+    /// <summary>
+    /// The ask's own intake session published it (D65 §1b) — a harness decided, and which harness is
+    /// on the session record. Never a model's name (D24): the harness carries the model.
+    /// </summary>
+    public const string ByIntake = "intake";
 
     /// <summary>How long a quest's title may be when an ask's first line becomes one.</summary>
     private const int TitleLength = 100;
@@ -357,9 +403,17 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
 
     /// <summary>
     /// A person turns an ask into a quest to <paramref name="to"/> — a proposal accepted, or a receiver
-    /// they chose themselves. An ask may become several quests; each is recorded on it.
+    /// they chose themselves — or the ask's intake session does, in its own words (D65 §1b). An ask may
+    /// become several quests; each is recorded on it.
     /// </summary>
-    public async Task<AskOutcome> PublishAsync(string id, string to, DateTimeOffset now, CancellationToken ct = default)
+    /// <param name="draft">The quest's words when they are not the ask's — an intake's, which read the ticket.</param>
+    /// <param name="session">
+    /// The session publishing, when it is one. Only the ask's OWN intake moves its tier to
+    /// <see cref="ByIntake"/> — a session naming itself is a claim, and the ask is what can check it.
+    /// </param>
+    public async Task<AskOutcome> PublishAsync(
+        string id, string to, DateTimeOffset now, CancellationToken ct = default,
+        AskDraft? draft = null, string? session = null)
     {
         var ask = await asks.FindAsync(id, ct).ConfigureAwait(false);
         if (ask is null)
@@ -372,12 +426,14 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
             return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is closed ({ask.Note}) — it becomes nothing more.", ask);
         }
 
-        var published = await PublishQuestAsync(ask, to, now, ct).ConfigureAwait(false);
+        var published = await PublishQuestAsync(ask, to, now, ct, draft).ConfigureAwait(false);
         if (published.Quest is null) return new(AskRefusal.QuestRefused, published.Message, ask);
 
+        var byIntake = session is { Length: > 0 } && string.Equals(session, ask.Intake, StringComparison.Ordinal);
         var took = ask with
         {
             State = AskState.Published,
+            Tier = byIntake ? ByIntake : ask.Tier,
             Updated = now,
             Quests = ask.Quests.Contains(published.Quest.Id) ? ask.Quests : [.. ask.Quests, published.Quest.Id],
         };
@@ -403,9 +459,11 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
 
     /// <summary>
     /// One quest from the ask, asked BY the ask, in its circle, carrying its links and the files it
-    /// kept. The exchange judges it — who may be asked is the exchange's answer, never this desk's.
+    /// kept — and, from an intake, its own words and chain beside them. The exchange judges it — who
+    /// may be asked is the exchange's answer, never this desk's.
     /// </summary>
-    private async Task<QuestPublishOutcome> PublishQuestAsync(Ask ask, string to, DateTimeOffset now, CancellationToken ct)
+    private async Task<QuestPublishOutcome> PublishQuestAsync(
+        Ask ask, string to, DateTimeOffset now, CancellationToken ct, AskDraft? draft = null)
     {
         var uploads = new List<QuestUpload>();
         foreach (var attachment in ask.Attachments)
@@ -418,11 +476,17 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
             }
         }
 
+        // The ask's own carry always travels: the person gave those, and whatever the intake read
+        // beside them adds to it rather than replacing it.
         return await exchange.PublishAsync(
-            new QuestAsk(SenderOf(ask.Id), to, TitleOf(ask.Sentence), BodyOf(ask))
+            new QuestAsk(
+                SenderOf(ask.Id), to,
+                draft?.Title is { } title && !string.IsNullOrWhiteSpace(title) ? title.Trim() : TitleOf(ask.Sentence),
+                string.IsNullOrWhiteSpace(draft?.Body) ? BodyOf(ask) : DraftBodyOf(ask, draft.Body))
             {
-                Links = ask.Links,
-                Uploads = uploads,
+                Links = [.. ask.Links.Concat(draft?.Links ?? []).Distinct(StringComparer.Ordinal)],
+                Uploads = [.. uploads, .. draft?.Uploads ?? []],
+                Then = draft?.Then ?? [],
                 Workspace = ask.Workspace,
             },
             now, ct).ConfigureAwait(false);
@@ -433,6 +497,10 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     {
         AskState.Published => $"it became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}.",
         AskState.Closed => $"closed: {ask.Note}",
+        // The honest sentence once a harness is on it — "no intake harness ran" would be untrue now.
+        _ when ask.Intake is { } intake =>
+            $"intake session `{intake}` is answering it: it publishes where the declarations settle it, "
+            + "and asks you where they do not.",
         _ when ask.Proposal.Count == 0 =>
             "by declarations only; no intake harness ran — and no repository's declarations share its words. "
             + "Nothing was published. Name the receiver, or declare what the owner owns and ask again.",
@@ -454,4 +522,14 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// <summary>The ask's words whole, and where they came from.</summary>
     private static string BodyOf(Ask ask) =>
         $"{ask.Sentence}\n\n— asked at workspace `{ask.Workspace}` (ask `#{ask.Id}`).";
+
+    /// <summary>
+    /// An intake's words first — it read the ticket — and the person's own beneath them, verbatim: a
+    /// receiver weighing a paraphrase deserves the words it was paraphrased from.
+    /// </summary>
+    private static string DraftBodyOf(Ask ask, string words)
+    {
+        var quoted = string.Join("\n", ask.Sentence.Split('\n').Select(line => $"> {line.TrimEnd('\r')}"));
+        return $"{words.Trim()}\n\n— asked at workspace `{ask.Workspace}` (ask `#{ask.Id}`), in the asker's words:\n\n{quoted}";
+    }
 }

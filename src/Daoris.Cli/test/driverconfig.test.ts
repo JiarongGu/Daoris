@@ -228,7 +228,48 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, notify, strikes, retry, cap, adapter/);
+    error.message, /list, drive, undrive, hold, resume, trees, notify, strikes, retry, cap, adapter, intake/);
+  fx.cleanup();
+});
+
+/**
+ * The intake's harness (INT4b, D65 §1b) — the terminal's half of the desktop's `SET_INTAKE`, one file
+ * and two doors (D50). 🔴 Off until a harness is NAMED: an intake spends a real login on every ask,
+ * and a machine whose file predates the field answers asks by declarations only, as it always has.
+ */
+test('intake names the harness that answers asks, and off turns it off again', () => {
+  const fx = makeFixture('driver-intake');
+
+  assert.match(run(['list'], at(fx)).out, /intake {5}off/);
+
+  const on = run(['intake', 'claude-code-acp'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).intakeAdapter, 'claude-code-acp');
+  assert.match(on.out, /claude-code-acp/);
+  assert.match(on.out, /login/);
+  assert.match(run(['list'], at(fx)).out, /intake {5}claude-code-acp/);
+
+  run(['intake', 'off'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).intakeAdapter, null);
+  // Absent, never null on disk: silence is what both artefacts read as off.
+  assert.equal('intakeAdapter' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+test('intake needs a harness or off, and says so', () => {
+  const fx = makeFixture('driver-intake-arg');
+  assert.match(captureError(() => run(['intake'], at(fx))).message, /<adapter>\|off/);
+  fx.cleanup();
+});
+
+/** The field the driver reads, written back by every verb that does not know it — the D50 trap in §1b. */
+test('the intake harness survives other verbs and is spelled as the driver reads it', () => {
+  const fx = makeFixture('driver-intake-preserve');
+  run(['intake', 'stub'], at(fx));
+
+  run(['drive', 'engine'], at(fx));
+  run(['notify', 'off'], at(fx));
+
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).intakeAdapter, 'stub');
   fx.cleanup();
 });
 

@@ -108,6 +108,72 @@ something the existing code assumes that an intake session breaks:
 - **`chat` and `trees` in the driver host sit outside its `try`**, so a `DriverException` there
   crashes rather than exiting 2. `ask` catches its own.
 
+*As built (INT4b, 2026-09-24; D65 as amended):* the intake is the driven loop's second kind of start,
+and each trap above is met where it lies.
+
+- **Off until a harness is named.** `intakeAdapter` in `driver.json` names the intake's harness;
+  absent is off, and the ask is the declarations tier's alone, exactly as INT4a built it. This amends
+  *"defaulting to the machine's adapter"* above. An intake spends a real login on every ask, and a
+  machine that has been answering asks by declarations must not start spending accounts on an
+  upgrade. The harness is named rather than switched on, because which harness answers asks and which
+  does the work are two choices. The two doors are `daoris driver intake <adapter>|off` and the
+  bridge's `SET_INTAKE`. The C# record, the CLI twin and `DriverModule.State` all model the field and
+  write it only when named, so no toggle deletes it.
+- **Where the loop picks asks up.** Each tick, after the quest plan and only in the slots the quests
+  left, it takes the asks that are `Proposed` and that no intake has served. It takes the oldest in
+  each circle, and one per circle per tick.
+- **How it is opened.** `POST /api/sessions/intake` goes to `SessionLedger.OpenIntakeAsync`, the
+  intake's own open. The record is a **chat** (SES2): it serves no quest, its repository is
+  `ask #<id>`, and its circle comes from the ask. Its tree is the room and it has no base commit. A
+  new `ask` field names the ask. A new kind would read as `Driven` in an older build. A chat is what
+  every build already reads as a session nothing plans from. The ask gains `intake`, the session
+  that served it. The open is refused for an ask that is gone (404), and for one that is published,
+  closed, or served before (409). One intake per ask, so the loop never retries a harness forever on
+  a question it could not settle. **The room's lock is the process**: one intake queued, starting or
+  working per room. A parked intake has asked and ended, so it leaves the room to the next ask.
+- **The room.** It is `<driver home>/intake/<circle>/`, one folder per circle, whatever the circle
+  is called. It is re-rendered at every open, because declarations change. It holds `AGENTS.md`:
+  who owns and accepts what, where each repository is, and who declared nothing or is not adopted.
+  `CLAUDE.md` carries `@AGENTS.md`. `.claude/settings.json` allows the family's read tools,
+  `quest_publish` and `WebFetch`, and nothing else. The design's *"its own web tools"* is `WebFetch`.
+  Over ACP a permission request is refused by construction (D52), so an unlisted tool is a stall. The
+  room gets the driven path's trust preflight (DEPLOY1). It is never a `SessionTree`, and git is never
+  asked about it.
+- **How it publishes as the ask.** The spawn carries `DAORIS_ASK_ID` and `DAORIS_SESSION_ID` and no
+  quest variable. The connector offered to it carries both too: on `session/new` over ACP, and first
+  in the `--mcp-config` file under the home over the pipe door. A chat is handed neither. The MCP
+  host reads them as an `IntakeScope`. `quest_publish` then publishes through
+  `AskDesk.PublishAsync` with the session's draft: its title, body, links, files and chain. The
+  quest is asked by `ask #<id>` in the ask's circle, and the ask's own links and files always travel.
+  The body is the intake's words with the asker's own quoted beneath them. The ambient workspace is
+  the ask's circle. `POST /api/asks/{id}/publish` takes the same draft and `session`, and that is the
+  stub's door. **The tier moves to `intake` only when the publishing session is the ask's own
+  intake.** A session naming itself is a claim, and the ask is what checks it.
+- **How it ends.** The ending is observed, never self-reported (D46 §4): the exit code, and what
+  became of the **ask**. If the intake published onto it, the session is `completed`. If the ask was
+  closed, or someone else published it, while the intake ran, it is `stood-down`. A non-zero exit
+  with nothing published is `failed`.
+- **How "ask the person" surfaces.** A clean exit that published nothing is the intake asking, so the
+  record parks `awaiting-person`. Its note names both answers: `ask --publish <id> --to <repository>`
+  and `ask --close <id> --reason`. The next tick sees it parked and says so once (SURF5b), as
+  *"ask #id — a session needs you"*. The question is the intake's own last words on its transcript
+  and console, and it never enters a record that travels. The person answers the **ask**, and the
+  next tick ends the parked record: `completed` for a publish, `stopped` for a close. A parked intake
+  has no process left, so its question being answered is the only thing that can close it.
+- **The HTTP answers grew two fields.** An ask answers `intake`, and a session answers `ask`. Both
+  are null for everything that is not an intake.
+
+Proven by service tests over the ledger, the desk and the MCP door. Driver tests run a real node stub
+intake through `Driver.TickAsync` against a stand-in service on loopback: it publishes a chain, and
+it parks and is ended by the person's answer. The CLI and module tests hold the switch. A
+family-rehearsal phase, written with this change and **not yet run**, drives the same over the real
+host's new doors (`/api/sessions/intake`, `GET /api/asks/{id}`, the drafted publish), which no unit
+test reaches. **Not covered by any gate:** a real harness's intake, which is the owner's to run on a
+real ask. The MCP host's publish-as-ask under a real harness's `--mcp-config` or `session/new`
+environment is built by construction and was not observed. The room's trust hold, and what the
+pipe door's servers file holds for an intake, are shared with the driven path and not asserted for
+the intake.
+
 ### 1c. Files and links on a quest
 
 A quest gains **`links`** (strings, travel with the quest, shown as links) and **`attachments`**

@@ -76,6 +76,9 @@ const USAGE = `daoris <command> [options]
                                                    root stops holding the driver
                          notify on|off             say so when a session parks,
                                                    or ends without you asking
+                         intake <adapter>|off      answer an ask the declarations
+                                                   do not settle with a session
+                                                   on that harness, a login each
                          cap <n> · adapter <name>
   plugin [verb]        this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json):
                          list                      each one, what it declares and

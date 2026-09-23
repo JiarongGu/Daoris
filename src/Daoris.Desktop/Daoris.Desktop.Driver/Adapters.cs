@@ -35,6 +35,21 @@ public sealed record SessionTarget(
     public string? Parent { get; init; }
 
     /// <summary>
+    /// The ask this session answers — an INTAKE (D65 §1b), which serves no quest: its spawn carries the
+    /// ask and its own session instead, and no quest variable at all. Null for a quest's session.
+    /// </summary>
+    public string? Ask { get; init; }
+
+    /// <summary>The session's own record — handed to an intake, whose connector names it when it publishes.</summary>
+    public string? Session { get; init; }
+
+    /// <summary>
+    /// The instruction, when it is not a quest's — an intake's job (<see cref="IntakePrompt"/>). Null
+    /// composes the claiming instruction, as every target always has.
+    /// </summary>
+    public string? Prompt { get; init; }
+
+    /// <summary>
     /// The directory the session is handed as <c>DAORIS_QUEST_ATTACHMENTS</c> — the one the service
     /// keeps this quest's files in — or null when none of them is on this machine.
     /// </summary>
@@ -52,7 +67,14 @@ public sealed record SessionTarget(
 /// </summary>
 public static class TargetPrompt
 {
-    public static string Compose(SessionTarget target) =>
+    /// <summary>
+    /// The instruction a session is handed — an intake's own where the target carries one, so every
+    /// door that delivers a target (the pipe's argument, the protocol's prompt, <c>DAORIS_TARGET</c>)
+    /// delivers the same words without knowing which kind of session it is.
+    /// </summary>
+    public static string Compose(SessionTarget target) => target.Prompt ?? Claiming(target);
+
+    private static string Claiming(SessionTarget target) =>
         $"""
         You are the agent for `{target.Repository}`, working inside its own repository and nowhere else.
 
@@ -265,6 +287,16 @@ internal static class Spawning
     {
         var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl);
         if (redirectInput) info.RedirectStandardInput = true;
+
+        // An intake (D65 §1b) serves an ask, not a quest: the ask and its own session, and the quest
+        // variables absent rather than blank — the chat rule, for the same reason.
+        if (target.Ask is { } ask)
+        {
+            info.Environment[IntakeRoom.AskVariable] = ask;
+            if (target.Session is { } session) info.Environment[IntakeRoom.SessionVariable] = session;
+            info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+            return info;
+        }
 
         info.Environment["DAORIS_QUEST_ID"] = target.QuestId;
         info.Environment["DAORIS_QUEST_TITLE"] = target.Title;

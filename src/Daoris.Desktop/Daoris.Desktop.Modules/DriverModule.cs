@@ -107,6 +107,15 @@ public sealed class DriverModule : ModuleBase
                 return State();
             }
 
+            // Which harness answers asks with an intake session (INT4b), or null for none — the same
+            // file `daoris driver intake <adapter>|off` edits: one truth, two doors (D50).
+            case "SET_INTAKE":
+            {
+                var adapter = Optional(request, "adapter");
+                Change(config => config.WithIntake(adapter));
+                return State();
+            }
+
             case "RETRY_QUEST":
             {
                 var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest");
@@ -1125,6 +1134,8 @@ public sealed class DriverModule : ModuleBase
             config.Notify,
             config.Strikes,
             config.Forgiven,
+            // 🔴 Reported so the page can show it, and modelled on the record so no toggle deletes it.
+            config.IntakeAdapter,
             Running = _loop.Processes.Running,
         };
     }

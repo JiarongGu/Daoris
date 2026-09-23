@@ -2425,6 +2425,19 @@ INT4a settled:
   meant, so the refusal arrives with the declarations' proposal as somewhere to go.
 - **Asks are local mode only**, like a quest file's bytes: the intake is this machine's.
 
+**Amended 2026-09-24, building INT4b: the intake is a chat for an ask, off until a harness is named.**
+The design's §1b *as built* has the whole of it. Four choices, each with its reason:
+- **`intakeAdapter` is off when absent**, not "the machine's adapter". An intake spends a real login
+  on every ask, and a machine answering asks by declarations must not start spending accounts on an
+  upgrade.
+- **The record is a chat**, repository `ask #<id>`, with the circle taken from the ask. An older build
+  reads an unknown kind as driven, and a chat as what it is.
+- **One intake per ask, and the room's lock is the process.** A second intake would be the loop
+  retrying a harness on a question it could not settle. A parked intake has asked and ended, so it
+  must not stop every later ask in its circle.
+- **"Ask the person" is a park that the person's answer to the ASK ends.** The question stays on the
+  transcript, and only the ask's own intake moves its tier to `intake`.
+
 ## D66 — One bar: Sessions is a view, Settings is a place, and an account is made by signing in (2026-09-23)
 
 **Decision.** The owner looked at the desktop and asked four things (UX1–UX4 in the backlog). Two of

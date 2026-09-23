@@ -51,9 +51,15 @@ public static class KnowledgeConnector
     /// without a connector. Refusing to start would make a missing optional binary fatal to a loop
     /// that has other work to do.
     /// </remarks>
+    /// <param name="scope">
+    /// What THIS session's connector carries beyond the store — an intake's ask and session (D65 §1b),
+    /// which is how a publish from a room that is no repository is asked by the ask. Null for a
+    /// quest's session, whose repository already says everything.
+    /// </param>
     public static AcpMcpServer? Offer(
         string? explicitPath, string? home, string baseDirectory,
-        IReadOnlyDictionary<string, string?>? environment = null)
+        IReadOnlyDictionary<string, string?>? environment = null,
+        IReadOnlyDictionary<string, string>? scope = null)
     {
         var located = Locate(explicitPath, home, baseDirectory);
         if (located is null) return null;
@@ -64,6 +70,11 @@ public static class KnowledgeConnector
             var value = environment is not null
                 ? (environment.TryGetValue(name, out var held) ? held : null)
                 : Environment.GetEnvironmentVariable(name);
+            if (value is { Length: > 0 }) carried[name] = value;
+        }
+
+        foreach (var (name, value) in scope ?? new Dictionary<string, string>())
+        {
             if (value is { Length: > 0 }) carried[name] = value;
         }
 

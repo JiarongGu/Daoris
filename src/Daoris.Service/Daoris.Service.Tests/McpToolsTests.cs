@@ -19,6 +19,7 @@ public sealed class McpToolsTests : IAsyncLifetime
     private SqliteConnection _connection = null!;
     private QuestStore _quests = null!;
     private QuestFiles _files = null!;
+    private KnowledgeService _service = null!;
     private KnowledgeTools _tools = null!;
 
     public async Task InitializeAsync()
@@ -41,6 +42,7 @@ public sealed class McpToolsTests : IAsyncLifetime
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, registry: new Registry());
         await service.ImportAsync(Path.Combine(_root, "family"), DateTimeOffset.UtcNow);
+        _service = service;
 
         _files = new QuestFiles(Path.Combine(_root, "home"));
         _tools = new KnowledgeTools(
@@ -71,6 +73,41 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.Equal(["https://tickets.example/T-1"], quest.Links);
         Assert.True(_files.Has(quest.Id, Assert.Single(quest.Attachments)));
         Assert.Equal("Checker", Assert.Single(quest.Then).To);
+    }
+
+    /// <summary>
+    /// An intake's connector (D65 §1b): the room is no repository, so the quest is asked BY THE ASK, in
+    /// the ask's circle — and because the session publishing is the ask's own intake, the ask says a
+    /// harness decided. The `from` an agent fills in is not what decides who asked.
+    /// </summary>
+    [Fact]
+    public async Task An_intakes_connector_publishes_as_its_ask_in_its_circle()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "the field names are hard-coded"), DateTimeOffset.UtcNow)).Ask!;
+        var room = Path.Combine(_root, "home", "intake", "default");
+        var session = (await new SessionLedger(_quests, sessions, _service, asks)
+            .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk,
+            new IntakeScope(ask.Id, session.Id));
+
+        var answer = await tools.PublishQuestAsync(
+            "intake", "Owner", "Read the field names from config", "The ticket names both fields.",
+            then: [new ChainStep("Checker", "Verify {parent}", "Look.")]);
+
+        Assert.Contains("Published quest", answer);
+        var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
+        Assert.Equal($"ask #{ask.Id}", quest.From);
+        Assert.Equal("Checker", Assert.Single(quest.Then).To);
+        var answered = (await asks.FindAsync(ask.Id))!;
+        Assert.Equal(AskDesk.ByIntake, answered.Tier);
+        Assert.Equal([quest.Id], answered.Quests);
+        // Its own circle, though nothing registered sits where it runs.
+        Assert.Contains("in workspace `default`", await tools.RegistryAsync());
     }
 
     [Fact]

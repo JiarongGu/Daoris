@@ -48,7 +48,14 @@ public sealed record RepoView(
 /// </param>
 /// <param name="Note">What the session said about that state, where it said anything.</param>
 public sealed record SessionView(
-    string Id, string Repository, string State = "", string? Note = null);
+    string Id, string Repository, string State = "", string? Note = null)
+{
+    /// <summary>
+    /// The ask an INTAKE answers (D65 §1b), or null for every other session. Its "repository" is
+    /// <c>ask #id</c>, which no quest names — so the planner never finds it busy with anything.
+    /// </summary>
+    public string? Ask { get; init; }
+}
 
 /// <summary>Everything a tick's decisions are made from, fetched once so the plan is coherent.</summary>
 /// <param name="Strikes">

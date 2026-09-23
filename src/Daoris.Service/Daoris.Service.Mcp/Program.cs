@@ -83,12 +83,20 @@ var composed = await ServiceFactory.CreateAsync(
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);
+builder.Services.AddSingleton(composed.Asks);
+
+// An intake's connector (D65 §1b): the driver that opened the session names the ask it answers, and a
+// quest published here is then asked BY that ask. Every other session names none.
+var intake = IntakeScope.FromEnvironment();
+builder.Services.AddSingleton(intake);
 
 // The ambient scope (D48 §4): this process is spawned BY a repository's session, so its working
 // directory is that repository — which is the one thing that makes "my own circle" answerable without
 // asking the agent to know wiring it has no business knowing. Captured at startup, because the
-// directory a client launched this from is the fact; anything later is drift.
-builder.Services.AddSingleton(AmbientWorkspace.Here());
+// directory a client launched this from is the fact; anything later is drift. An intake's room is no
+// repository: its circle is its ask's, read once here.
+var circle = intake.Ask is { } askId ? (await composed.Asks.FindAsync(askId).ConfigureAwait(false))?.Workspace : null;
+builder.Services.AddSingleton(new AmbientWorkspace(Directory.GetCurrentDirectory(), circle));
 
 builder.Services
     .AddMcpServer(options => options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" })

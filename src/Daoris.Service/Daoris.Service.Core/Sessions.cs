@@ -119,6 +119,17 @@ public sealed record Session(
     /// </summary>
     public string? Origin { get; init; }
 
+    /// <summary>
+    /// The ask this session was opened to answer — an INTAKE (D65 §1b), a conversation Daoris opened
+    /// for an ask in a room it owns rather than in any repository. Null for every other session.
+    /// </summary>
+    /// <remarks>
+    /// The kind stays <see cref="SessionKind.Chat"/>: an intake serves no quest and is never planned
+    /// from one, which is exactly what a build that predates it already reads a chat as. A new kind
+    /// would read as DRIVEN there — the one reading that is wrong.
+    /// </remarks>
+    public string? Ask { get; init; }
+
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson;
@@ -251,6 +262,14 @@ public sealed class SessionStore
             await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        // INT4b: the ask an intake answers. After the rebuild, like SYNC4's pair, so it cannot drop it.
+        if (!await HasColumnAsync("ask", ct).ConfigureAwait(false))
+        {
+            await using var alter = _connection.CreateCommand();
+            alter.CommandText = "ALTER TABLE sessions ADD COLUMN ask TEXT NULL";
+            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         await using (var cursor = _connection.CreateCommand())
         {
             cursor.CommandText = """
@@ -337,20 +356,24 @@ public sealed class SessionStore
         string? quest, string repository, string adapter, DateTimeOffset now,
         string? workspace = null, SessionKind kind = SessionKind.Driven,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        string? baseCommit = null, CancellationToken ct = default)
+        string? baseCommit = null, CancellationToken ct = default, string? ask = null)
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
             SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
             // Written at creation and never again: these say what the spawn ran ON, AS and IN, and a
             // later state change is about how it ended, not about what it was.
-            Blank(harnessVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit));
+            Blank(harnessVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit))
+        {
+            Ask = Blank(ask),
+        };
 
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, {NextRevision})
             """;
+        command.Parameters.AddWithValue("$ask", (object?)session.Ask ?? DBNull.Value);
         command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$kind", session.Kind.ToString());
         command.Parameters.AddWithValue("$harnessVersion", (object?)session.HarnessVersion ?? DBNull.Value);
@@ -482,6 +505,29 @@ public sealed class SessionStore
             LIMIT 1
             """;
         command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$tree", (object?)Trees.Normalize(tree) ?? DBNull.Value);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>
+    /// The session with a PROCESS in this directory, whichever record it belongs to — the intake
+    /// room's lock (D65 §1b), where every ask in a circle is a different "repository" in one room.
+    /// </summary>
+    /// <remarks>
+    /// <b>Parked does not count here</b>, unlike <see cref="ActiveForAsync"/>. The tree lock keeps a
+    /// parked session's tree because its git state is work in flight; a parked intake has no process
+    /// and no tree — it asked the person and ended — and counting it would let one unanswered question
+    /// stop every later ask in the circle.
+    /// </remarks>
+    public async Task<Session?> RunningInTreeAsync(string tree, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            SELECT * FROM sessions
+            WHERE tree = $tree AND state IN ('Queued', 'Starting', 'Working') AND origin IS NULL
+            LIMIT 1
+            """;
         command.Parameters.AddWithValue("$tree", (object?)Trees.Normalize(tree) ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
@@ -630,6 +676,7 @@ public sealed class SessionStore
             ? null : reader.GetString(reader.GetOrdinal("base_commit")))
     {
         Origin = reader.IsDBNull(reader.GetOrdinal("origin")) ? null : reader.GetString(reader.GetOrdinal("origin")),
+        Ask = reader.IsDBNull(reader.GetOrdinal("ask")) ? null : reader.GetString(reader.GetOrdinal("ask")),
     };
 
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
