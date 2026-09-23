@@ -53,6 +53,18 @@ internal static class DriverHttp
         return payload;
     }
 
+    public static async Task<string> DeleteAsync(HttpClient http, string url, CancellationToken ct)
+    {
+        using var response = await http.DeleteAsync(url, ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new DriverException($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
+        }
+
+        return payload;
+    }
+
     /// <summary>
     /// POST that tells a deliberate refusal from a wall (D48 §6).
     /// </summary>

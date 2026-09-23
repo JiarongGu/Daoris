@@ -149,56 +149,170 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// The remote's registry mirrors down as FOREIGN rows only (D47 §5): a teammate's repository
+    /// The remote's registry comes down as the TEAM's rows only (D47 §5): a teammate's repository
     /// becomes addressable here, while anything this machine holds keeps its own registration — the
     /// machine with the checkout is the authority, and its root must survive the sync untouched.
     /// </summary>
     [Fact]
-    public void The_family_mirror_takes_foreign_rows_only_and_never_writes_a_root()
+    public void The_family_mirror_takes_the_team_s_rows_only_and_never_writes_a_root()
     {
         const string remoteRegistry = """
             [
               { "repository": "Shared", "adopted": true, "registered": true, "summary": "Mine.",
                 "owns": [], "accepts": [], "packs": [], "entries": 1, "joined": true, "sharesKnowledge": true },
-              { "repository": "Teammate", "adopted": true, "registered": true, "summary": "Theirs.",
+              { "repository": "Newcomer", "adopted": true, "registered": true, "summary": "Theirs.",
                 "owns": ["their area"], "accepts": ["a quest"], "packs": [], "entries": 2,
                 "joined": true, "sharesKnowledge": false }
             ]
             """;
-        var localNames = new HashSet<string>(["Shared", "Quiet", "Homebody"], StringComparer.OrdinalIgnoreCase);
 
-        var foreign = RemoteSyncPayloads.ForeignRegistrations(remoteRegistry, localNames, "aurora");
+        var mirror = RemoteSyncPayloads.Mirror(remoteRegistry, RegistryJson, "default", retiredHere: []);
 
-        var (name, json) = Assert.Single(foreign);
-        Assert.Equal("Teammate", name);
+        var (name, json) = Assert.Single(mirror.Write);
+        Assert.Equal("Newcomer", name);
         using var document = JsonDocument.Parse(json);
         var payload = document.RootElement;
         Assert.False(payload.TryGetProperty("root", out _));
         Assert.True(payload.GetProperty("join").GetBoolean());
         Assert.False(payload.GetProperty("shareKnowledge").GetBoolean());
         Assert.Equal("Theirs.", payload.GetProperty("domain").GetProperty("summary").GetString());
-        // A row that came from aurora's deployment belongs to aurora on this machine — THIS machine's
-        // wiring deciding, not the feed naming itself (D48 §5).
-        Assert.Equal("aurora", payload.GetProperty("workspace").GetString());
+        // A row that came from this circle's deployment belongs to this circle on this machine — THIS
+        // machine's wiring deciding, not the feed naming itself (D48 §5).
+        Assert.Equal("default", payload.GetProperty("workspace").GetString());
     }
 
     /// <summary>
-    /// The names guard spans the WHOLE machine, not the synced circle. A repository this machine holds
-    /// in another workspace must keep its own registration — root included — or the mirror would
-    /// overwrite a local checkout's path with a teammate's stripped copy and re-point its circle at the
-    /// same time. The scoped half of the sync is what feeds; the unscoped half is what protects.
+    /// The guard spans the WHOLE machine, not the synced circle. A repository this machine holds with a
+    /// root in another workspace keeps its own registration, root included, or the mirror would overwrite
+    /// a local checkout's path with a teammate's stripped copy and re-point its circle at the same time.
+    /// And a copy another circle's sync keeps is that sync's: two remotes naming one repository must not
+    /// take turns re-filing it.
     /// </summary>
     [Fact]
-    public void A_name_this_machine_holds_in_another_circle_is_still_not_foreign()
+    public void A_name_this_machine_holds_elsewhere_is_never_written_or_retired_by_this_circle()
     {
+        const string local = """
+            [
+              { "repository": "Elsewhere", "owns": [], "accepts": [], "packs": [], "root": "C:/somewhere/Elsewhere",
+                "joined": true, "sharesKnowledge": true, "workspace": "tools" },
+              { "repository": "Toolmate", "owns": [], "accepts": [], "packs": [], "joined": true,
+                "sharesKnowledge": false, "workspace": "tools" }
+            ]
+            """;
         const string remoteRegistry = """
-            [{ "repository": "Elsewhere", "adopted": true, "registered": true, "summary": "Theirs.",
-               "owns": [], "accepts": [], "packs": [], "entries": 2, "joined": true, "sharesKnowledge": true }]
+            [
+              { "repository": "Elsewhere", "summary": "Theirs.", "owns": [], "accepts": [], "packs": [], "joined": true, "sharesKnowledge": true },
+              { "repository": "Toolmate", "summary": "Re-filed?", "owns": [], "accepts": [], "packs": [], "joined": true, "sharesKnowledge": false }
+            ]
             """;
 
-        var localNames = RemoteSyncPayloads.Names(RegistryJson);
+        var mirror = RemoteSyncPayloads.Mirror(remoteRegistry, local, "default", retiredHere: []);
 
-        Assert.Empty(RemoteSyncPayloads.ForeignRegistrations(remoteRegistry, localNames, "default"));
+        Assert.Empty(mirror.Write);
+        Assert.Empty(mirror.Retire);
+    }
+
+    /// <summary>
+    /// SYNC0b: a teammate's row came down once and was never touched again. It is written when its
+    /// declaration changed and left alone when it did not, and a copy of this circle's that the circle
+    /// no longer lists is retired here — the deployment said it is gone, and it is not this machine's.
+    /// </summary>
+    [Fact]
+    public void A_teammate_s_row_is_updated_when_it_changed_and_retired_when_the_circle_dropped_it()
+    {
+        const string local = """
+            [
+              { "repository": "Changed", "summary": "Before.", "owns": ["a"], "accepts": [], "packs": [],
+                "joined": true, "sharesKnowledge": false, "workspace": "default" },
+              { "repository": "Steady", "summary": "Same.", "owns": ["a"], "accepts": [], "packs": [],
+                "joined": true, "sharesKnowledge": false, "workspace": "default" },
+              { "repository": "Dropped", "summary": "Gone.", "owns": [], "accepts": [], "packs": [],
+                "joined": true, "sharesKnowledge": false }
+            ]
+            """;
+        const string remoteRegistry = """
+            [
+              { "repository": "Changed", "summary": "After.", "owns": ["a"], "accepts": [], "packs": [], "joined": true, "sharesKnowledge": false },
+              { "repository": "Steady", "summary": "Same.", "owns": ["a"], "accepts": [], "packs": [], "joined": true, "sharesKnowledge": false }
+            ]
+            """;
+
+        var mirror = RemoteSyncPayloads.Mirror(remoteRegistry, local, "default", retiredHere: []);
+
+        var (name, json) = Assert.Single(mirror.Write);
+        Assert.Equal("Changed", name);
+        Assert.Contains("After.", json);
+        Assert.Equal(["Dropped"], mirror.Retire);
+    }
+
+    /// <summary>
+    /// A repository this pass just retired at the circle is still in the list it read a moment before.
+    /// Writing it back down would undo the retire here in the same breath.
+    /// </summary>
+    [Fact]
+    public void A_repository_retired_in_this_pass_is_not_brought_back_down()
+    {
+        const string remoteRegistry = """
+            [{ "repository": "Retired", "summary": "Was mine.", "owns": [], "accepts": [], "packs": [], "joined": true, "sharesKnowledge": false }]
+            """;
+
+        var mirror = RemoteSyncPayloads.Mirror(remoteRegistry, "[]", "default", retiredHere: ["Retired"]);
+
+        Assert.Empty(mirror.Write);
+    }
+
+    /// <summary>
+    /// Whether this machine holds anything of a circle: a joined checkout, a teammate's copy, or a retire
+    /// the circle is still owed. Nothing, and the pass says nothing to that deployment.
+    /// </summary>
+    [Fact]
+    public void A_circle_is_held_here_by_a_joined_checkout_or_a_teammate_s_copy()
+    {
+        Assert.True(RemoteSyncPayloads.Holds(RegistryJson, "default"));
+        Assert.True(RemoteSyncPayloads.Holds("""[{ "repository": "Teammate", "joined": true }]""", "default"));
+        Assert.False(RemoteSyncPayloads.Holds(
+            """[{ "repository": "Homebody", "root": "C:/somewhere/Homebody", "joined": false }]""", "default"));
+        Assert.False(RemoteSyncPayloads.Holds(RegistryJson, "studio"));
+    }
+
+    /// <summary>The retires a host says this machine owes a circle; an answer that is not one owes none.</summary>
+    [Fact]
+    public void The_retires_owed_are_read_by_name()
+    {
+        Assert.Equal(
+            ["Gone", "Moved"],
+            RemoteSyncPayloads.Retired("""{ "workspace": "default", "repositories": ["Gone", "Moved"] }"""));
+        Assert.Empty(RemoteSyncPayloads.Retired("[]"));
+    }
+
+    /// <summary>
+    /// A registration names the commit its manifest stands on and the held one it descends from (SYNC5b),
+    /// exactly as a feed does; one that can name none carries no commit at all, never half of one.
+    /// </summary>
+    [Fact]
+    public void A_registration_names_the_commit_its_manifest_stands_on()
+    {
+        var repo = RemoteSyncPayloads.Joined(RegistryJson, RemoteTarget.DefaultWorkspace)[0];
+
+        using var named = JsonDocument.Parse(RemoteSyncPayloads.Registration(repo, "main", Head, onBase: "parentparent"));
+        using var unnamed = JsonDocument.Parse(RemoteSyncPayloads.Registration(repo, "main"));
+
+        Assert.Equal(Head.Commit, named.RootElement.GetProperty("commit").GetString());
+        Assert.Equal("main", named.RootElement.GetProperty("branch").GetString());
+        Assert.Equal("parentparent", named.RootElement.GetProperty("base").GetString());
+        Assert.True(named.RootElement.TryGetProperty("committedAt", out _));
+        Assert.False(named.RootElement.TryGetProperty("root", out _));
+        Assert.False(unnamed.RootElement.TryGetProperty("commit", out _));
+        Assert.False(unnamed.RootElement.TryGetProperty("base", out _));
+    }
+
+    /// <summary>What stands on one held commit is said once, naming everything that does.</summary>
+    [Fact]
+    public void Everything_waiting_on_one_commit_is_named_in_one_sentence()
+    {
+        Assert.Equal("registration", RemoteSyncPayloads.Whats(["registration"]));
+        Assert.Equal("knowledge and code map", RemoteSyncPayloads.Whats(["knowledge", "code map"]));
+        Assert.Equal("registration, knowledge and code map", RemoteSyncPayloads.Whats(["registration", "knowledge", "code map"]));
     }
 
     [Fact]
@@ -364,9 +478,9 @@ public sealed class RemoteSyncTests
     public void What_the_deployment_holds_is_read_per_feed()
     {
         Assert.Equal(
-            ("aaaa", (string?)null),
-            RemoteSyncPayloads.Held("""{ "repository": "Shared", "knowledge": "aaaa", "codeMap": null }"""));
-        Assert.Equal(((string?)null, (string?)null), RemoteSyncPayloads.Held("{}"));
+            new RemoteSyncPayloads.HeldCommits("aaaa", null, "bbbb"),
+            RemoteSyncPayloads.Held("""{ "repository": "Shared", "knowledge": "aaaa", "codeMap": null, "registration": "bbbb" }"""));
+        Assert.Equal(RemoteSyncPayloads.HeldCommits.None, RemoteSyncPayloads.Held("{}"));
     }
 
     /// <summary>Nothing held, or the very commit held: nothing for git to answer, and the feed goes.</summary>
@@ -458,6 +572,8 @@ public sealed class RemoteSyncRunTests : IDisposable
         var url = request.RequestUri!.ToString();
         return url switch
         {
+            _ when url.StartsWith($"{Local}/api/registry/retired") && request.Method == HttpMethod.Get =>
+                Json("""{ "workspace": "default", "repositories": [] }"""),
             _ when url.StartsWith($"{Local}/api/registry") && request.Method == HttpMethod.Get => Json($$"""
                 [{ "repository": "Shared", "adopted": true, "registered": true, "owns": [], "accepts": [],
                    "packs": [], "entries": 1, "root": {{System.Text.Json.JsonSerializer.Serialize(_tree.Root)}},
@@ -587,8 +703,193 @@ public sealed class RemoteSyncRunTests : IDisposable
         var report = await sync.RunOnceAsync();
 
         Assert.Null(report.Problem);
-        Assert.DoesNotContain(transport.Calls, call => call.Contains("/api/feed/"));
+        Assert.DoesNotContain(transport.Calls, call => call.Contains("/api/feed/entries") || call.Contains("/api/feed/code-map"));
         Assert.Contains(report.Notes, note => note.Contains("`Shared`") && note.Contains("uncommitted"));
+    }
+
+    /// <summary>
+    /// The declaration is the manifest (SYNC5b): while the manifest itself is committed, the registration
+    /// speaks for the commit, whatever else is in flight; once the manifest is modified, it names none.
+    /// </summary>
+    [Fact]
+    public async Task A_committed_manifest_registers_at_its_commit_and_a_modified_one_names_none()
+    {
+        _tree.Commit("daoris.json");
+        File.WriteAllText(Path.Combine(_tree.Root, "draft.md"), "work in flight\n");
+        using var transport = new StubTransport { Answer = AnswerHealthy };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        await sync.RunOnceAsync();
+        using (var committed = JsonDocument.Parse(transport.Bodies[$"{Remote}/api/registry"]))
+        {
+            Assert.Equal(_tree.Output("rev-parse HEAD"), committed.RootElement.GetProperty("commit").GetString());
+        }
+
+        File.WriteAllText(Path.Combine(_tree.Root, "daoris.json"), "{ \"edited\": true }\n");
+        await sync.RunOnceAsync();
+        using var modified = JsonDocument.Parse(transport.Bodies[$"{Remote}/api/registry"]);
+        Assert.False(modified.RootElement.TryGetProperty("commit", out _));
+    }
+
+    /// <summary>
+    /// A checkout behind the declaration held sends none, and one sentence names everything that waits on
+    /// that commit — its registration, its knowledge and its map.
+    /// </summary>
+    [Fact]
+    public async Task A_checkout_behind_the_held_declaration_sends_none_and_says_so_once()
+    {
+        var parent = _tree.Output("rev-parse HEAD");
+        _tree.Commit("second.md");
+        var ahead = _tree.Output("rev-parse HEAD");
+        _tree.Git($"reset -q --hard {parent}");
+        using var transport = new StubTransport
+        {
+            Answer = request => request.RequestUri!.ToString().StartsWith($"{Remote}/api/feed/held")
+                ? Json($$"""{ "repository": "Shared", "knowledge": "{{ahead}}", "codeMap": "{{ahead}}", "registration": "{{ahead}}" }""")
+                : AnswerHealthy(request),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.DoesNotContain($"POST {Remote}/api/registry", transport.Calls);
+        var note = Assert.Single(report.Notes);
+        Assert.Contains("registration, knowledge and code map", note);
+        Assert.Contains("ahead of this checkout", note);
+    }
+
+    /// <summary>A declaration the remote judged and did not take is news, in the remote's words — never a wall.</summary>
+    [Fact]
+    public async Task A_registration_the_remote_did_not_take_is_a_note()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = request => request.RequestUri!.ToString() == $"{Remote}/api/registry" && request.Method == HttpMethod.Post
+                ? new(System.Net.HttpStatusCode.Conflict)
+                {
+                    Content = new StringContent(
+                        """{ "error": "`Shared`'s registration came from `feature`, and its canonical line is `main`.", "information": true }""",
+                        System.Text.Encoding.UTF8, "application/json"),
+                }
+                : AnswerHealthy(request),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Null(report.Problem);
+        Assert.Contains(report.Notes, n => n.Contains("canonical line is `main`"));
+    }
+
+    // ——— The travelling retire and the team's rows (SYNC5b).
+
+    private Func<HttpRequestMessage, HttpResponseMessage> Answering(
+        string localRegistry, string retired, string remoteRegistry) => request =>
+    {
+        var url = request.RequestUri!.ToString();
+        return url switch
+        {
+            _ when url.StartsWith($"{Local}/api/registry/retired") && request.Method == HttpMethod.Get =>
+                Json($$"""{ "workspace": "default", "repositories": {{retired}} }"""),
+            _ when url.StartsWith($"{Local}/api/registry") && request.Method == HttpMethod.Get => Json(localRegistry),
+            _ when url.StartsWith($"{Remote}/api/registry") && request.Method == HttpMethod.Get => Json(remoteRegistry),
+            _ => AnswerHealthy(request),
+        };
+    };
+
+    private const string Row = """ "owns": [], "accepts": [], "packs": [], "sharesKnowledge": false """;
+
+    /// <summary>
+    /// A retire made here is carried to the circle, then cleared — and the circle's list, read a moment
+    /// before, does not bring it straight back down.
+    /// </summary>
+    [Fact]
+    public async Task A_retire_made_here_is_carried_to_the_circle_then_cleared()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = Answering(
+                "[]", """["Gone"]""",
+                $$"""[{ "repository": "Gone", "summary": "Was mine.", "joined": true, {{Row}} }]"""),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Null(report.Problem);
+        var told = transport.Calls.IndexOf($"DELETE {Remote}/api/registry/Gone");
+        var cleared = transport.Calls.IndexOf($"DELETE {Local}/api/registry/retired/Gone?workspace=default");
+        Assert.True(told >= 0 && cleared > told, string.Join("\n", transport.Calls));
+        Assert.DoesNotContain($"POST {Local}/api/registry", transport.Calls);
+    }
+
+    /// <summary>
+    /// A circle that never listed the repository is not told of its retire: there is nothing to take
+    /// back, and telling it would name a repository to a deployment that never heard of it.
+    /// </summary>
+    [Fact]
+    public async Task A_retire_the_circle_never_heard_of_is_cleared_without_telling_it()
+    {
+        using var transport = new StubTransport { Answer = Answering("[]", """["Unheard"]""", "[]") };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        await sync.RunOnceAsync();
+
+        Assert.DoesNotContain(transport.Calls, call => call.StartsWith($"DELETE {Remote}"));
+        Assert.Contains($"DELETE {Local}/api/registry/retired/Unheard?workspace=default", transport.Calls);
+    }
+
+    /// <summary>A retire owed for a repository joined here again is void: cleared, and the circle keeps it.</summary>
+    [Fact]
+    public async Task A_retire_owed_for_a_repository_joined_here_again_is_void()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = Answering(
+                $$"""[{ "repository": "Shared", "root": {{JsonSerializer.Serialize(_tree.Root)}}, "joined": true, {{Row}} }]""",
+                """["Shared"]""",
+                $$"""[{ "repository": "Shared", "joined": true, {{Row}} }]"""),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        await sync.RunOnceAsync();
+
+        Assert.DoesNotContain($"DELETE {Remote}/api/registry/Shared", transport.Calls);
+        Assert.Contains($"DELETE {Local}/api/registry/retired/Shared?workspace=default", transport.Calls);
+    }
+
+    /// <summary>
+    /// SYNC0b end to end: a teammate's copy is rewritten when the circle's declaration changed, and a
+    /// copy the circle no longer lists is retired here through the host's own door.
+    /// </summary>
+    [Fact]
+    public async Task A_teammate_s_copy_follows_the_circle_both_ways()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = Answering(
+                $$"""
+                [{ "repository": "Teammate", "summary": "Before.", "joined": true, {{Row}} },
+                 { "repository": "Dropped", "summary": "Gone.", "joined": true, {{Row}} }]
+                """,
+                "[]",
+                $$"""[{ "repository": "Teammate", "summary": "After.", "joined": true, {{Row}} }]"""),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Null(report.Problem);
+        Assert.Contains("After.", transport.Bodies[$"{Local}/api/registry"]);
+        Assert.Contains($"DELETE {Local}/api/registry/Dropped", transport.Calls);
+        Assert.DoesNotContain(transport.Calls, call => call.StartsWith($"POST {Remote}/api/registry"));
     }
 
     /// <summary>
@@ -660,7 +961,47 @@ public sealed class RemoteSyncRunTests : IDisposable
         var report = await sync.RunOnceAsync();
 
         Assert.Null(report.Problem);
-        Assert.Single(transport.Calls); // the local registry read, and nothing toward the remote
+        // The local registry and the retires owed are read, and nothing goes toward the remote.
+        Assert.DoesNotContain(transport.Calls, call => call.Contains(Remote));
+        Assert.DoesNotContain(transport.Calls, call => call.Contains("/api/sync"));
+    }
+
+    /// <summary>
+    /// The last joined checkout retired: nothing is joined here any more, and the circle is still owed
+    /// the retire. It is carried.
+    /// </summary>
+    [Fact]
+    public async Task A_machine_with_nothing_joined_still_carries_its_last_retire()
+    {
+        using var transport = new StubTransport
+        {
+            Answer = request =>
+            {
+                var url = request.RequestUri!.ToString();
+                return url switch
+                {
+                    _ when url.StartsWith($"{Local}/api/registry/retired") =>
+                        Json("""{ "workspace": "default", "repositories": ["Last"] }"""),
+                    _ when url.StartsWith($"{Remote}/api/registry") && request.Method == HttpMethod.Get => Json("""
+                        [{ "repository": "Last", "owns": [], "accepts": [], "packs": [], "joined": true, "sharesKnowledge": false }]
+                        """),
+                    _ when url.StartsWith($"{Local}/api/sync") =>
+                        Json("""{ "wired": true, "conflicts": [], "refused": [], "behind": [], "problem": null }"""),
+                    _ when url.StartsWith($"{Local}/api/registry") && request.Method == HttpMethod.Get => Json("""
+                        [{ "repository": "Homebody", "owns": [], "accepts": [], "packs": [], "root": "C:/somewhere/Homebody",
+                           "joined": false, "sharesKnowledge": false }]
+                        """),
+                    _ => Json("{}"),
+                };
+            },
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Null(report.Problem);
+        Assert.Contains($"DELETE {Remote}/api/registry/Last", transport.Calls);
     }
 }
 

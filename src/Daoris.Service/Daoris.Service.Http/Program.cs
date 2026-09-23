@@ -587,7 +587,7 @@ app.MapPost("/api/sessions/{id}/state", async (
 // repository is authoritative about — and persists it, because for a remote service the pushed
 // registrations ARE the family: one that forgot them on restart would drop every connected
 // repository off the map without anyone being told.
-app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, CancellationToken ct) =>
+app.MapPost("/api/registry", async (ComposedService s, HttpContext http, RegisterRequest body, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(body.Repository)) return Results.BadRequest(new ErrorResponse("repository is required"));
 
@@ -599,7 +599,7 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         return Results.Conflict(new ErrorResponse(foreign));
     }
 
-    var registered = await s.Service.RegisterAsync(new Registration(
+    var declared = new Registration(
         body.Repository,
         Adopted: true,
         body.Domain?.Summary,
@@ -620,7 +620,23 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
         // and says nothing about the wiring, so a null must not re-point the repository to `default`.
         Workspace: hostWorkspace ?? body.Workspace,
         // The canonical line, as the checkout that registered knows it (D48 §6) — unstated preserves.
-        DefaultBranch: body.DefaultBranch), DateTimeOffset.UtcNow, ct);
+        DefaultBranch: body.DefaultBranch);
+
+    // A SHARED deployment holds many machines' copies of one declaration, so it orders them by the
+    // commit each was read at, as it orders their knowledge (SYNC5b) — the last writer no longer wins.
+    // A LOCAL host's registration is this machine's own, from its own checkout: nothing to order.
+    Registration registered;
+    if (mode == ServiceMode.Shared)
+    {
+        var (outcome, taken) = await s.Service.RegisterFedAsync(
+            declared, FedFrom(body.Commit, body.CommittedAt, body.Branch, body.Base, http), DateTimeOffset.UtcNow, ct);
+        if (taken is null) return FeedAnswer(outcome);
+        registered = taken;
+    }
+    else
+    {
+        registered = await s.Service.RegisterAsync(declared, DateTimeOffset.UtcNow, ct);
+    }
 
     // Answered with the workspace that TOOK, not the one that was asked for — the client learns which
     // circle it is actually wired to, including when it said nothing and the existing row held.
@@ -634,13 +650,23 @@ app.MapPost("/api/registry", async (ComposedService s, RegisterRequest body, Can
 app.MapDelete("/api/registry/{repository}", async (
     ComposedService s, string repository, CancellationToken ct) =>
 {
+    // Read before it goes: a joined checkout's retire is owed to its circle (SYNC5b), and a person
+    // removing it should hear that the team's deployment will too, not only this machine.
+    var leaving = (await s.Service.RegistryAsync(ct: ct))
+        .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
     var retired = await s.Service.RetireAsync(repository, ct);
+    var circle = retired && mode == ServiceMode.Local && leaving is { Joined: true, Root: not null }
+        && s.Remotes?.For(leaving.InWorkspace) is not null
+            ? leaving.InWorkspace
+            : null;
+
     return Results.Ok(new RetiredResponse(
         repository, retired,
         retired
             ? $"`{repository}` is no longer registered here. Nothing was deleted: its files, its history "
               + "and its doctrine are its own — it has simply stopped being addressable and indexed on "
               + "this machine, and its entries leave the index on the next refresh."
+              + (circle is null ? "" : $" It leaves the `{circle}` circle's deployment too, on the next sync.")
             : $"`{repository}` was not registered here, so there was nothing to retire."));
 });
 
@@ -840,7 +866,7 @@ if (mode == ServiceMode.Shared)
         }
 
         var held = await s.Service.HeldAsync(repository, ct);
-        return Results.Ok(new FeedHeldResponse(repository, held.Knowledge, held.CodeMap));
+        return Results.Ok(new FeedHeldResponse(repository, held.Knowledge, held.CodeMap, held.Registration));
     });
 
     // The remote's quest doors (D68, sync design §8): what it accepted after a number, in its order,
@@ -898,6 +924,27 @@ else
     app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>
         Results.Ok(new QuestClaimResponse(
             id.TrimStart('#'), (await s.Quests.ClaimAsync(id.TrimStart('#'), ct)).ToString().ToLowerInvariant())));
+
+    // The retires this machine's checkouts owe a circle (SYNC5b): what the driver's pass carries to
+    // that circle's deployment, then clears. The store writes them as the row leaves, so no door that
+    // retires, re-wires or re-registers has to remember to.
+    app.MapGet("/api/registry/retired", async (ComposedService s, string? workspace, CancellationToken ct) =>
+    {
+        var circle = Workspaces.Normalize(workspace);
+        return Results.Ok(new RetiredPendingResponse(circle, await s.Service.RetiredAsync(circle, ct)));
+    });
+
+    app.MapDelete("/api/registry/retired/{repository}", async (
+        ComposedService s, string repository, string? workspace, CancellationToken ct) =>
+    {
+        var circle = Workspaces.Normalize(workspace);
+        var cleared = await s.Service.ClearRetiredAsync(repository, circle, ct);
+        return Results.Ok(new RetiredResponse(
+            repository, cleared,
+            cleared
+                ? $"`{circle}` no longer owes a retire of `{repository}`."
+                : $"`{circle}` owed no retire of `{repository}`, so there was nothing to clear."));
+    });
 }
 
 app.Run();

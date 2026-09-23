@@ -4538,3 +4538,56 @@ becomes a git argument, so the driver takes it only as a hex commit id.
 still answers "no map" for it (MAP3e).
 
 Service 408, driver 410, modules 105, web 620 + 18, family 235/235, deploy 39/39, verify green.
+
+## SYNC5b — registrations updated and removed, retire as a tombstone that travels (2026-09-24)
+
+- [x] **SYNC5b — registrations updated and removed, retire as a tombstone that travels** (fixes
+  SYNC0b). Design §8.
+
+✅ **done 2026-09-24**, the seventh of D68's build. **Up, by ancestry.** A registration names the
+commit its manifest stands on, and the held commit git said it descends from, exactly as a feed does.
+It names a commit only while `daoris.json` itself is unmodified (`WorkingTree.UnmodifiedAsync`),
+whatever else is in flight, because the declaration is the manifest. A shared deployment holds it in
+`registration_provenance` and judges it with `FeedOrder`, the digest over the declaration
+(`FeedDigest.Of(Registration)`). Three rules are the registration's own
+(`KnowledgeService.RegisterFedAsync`):
+- The first registration is taken from any line and without a commit, because nothing else of a
+  repository can travel until it is registered.
+- After that, only the line the arriving declaration calls canonical is taken, so a renamed default
+  branch does not lock the repository out.
+- One naming no commit does not replace one that did. That is the new refusal `Unordered`, reported
+  as information.
+A local host's registration is this machine's own and is never ordered. The held door answers
+`registration`. The driver asks git once per held commit, and one sentence names everything waiting
+on it: "registration, knowledge and code map are held at …".
+
+**Down, updated and removed.** `RemoteSyncPayloads.Mirror` replaces the once-only copy. A team row is
+written when it is new or its declaration changed. A copy this circle no longer lists is retired
+through the host's own door. A row held with a root in any circle is never touched, and neither is a
+copy another circle's sync keeps. A pass now runs while this machine holds a joined checkout, a
+teammate's copy, or a retire it owes, so a machine whose last checkout left still hears from its
+circle.
+
+**A retire is a tombstone that travels.** SQLite triggers on `registrations` write `registry_retired`
+in the same statement that ends the row, so no door can retire a joined checkout and forget the
+circle:
+- A joined row with a root is retired, re-wired to another circle, or re-registered unjoined.
+- Joining that circle again deletes the tombstone.
+- A rootless (teammate's) row records none.
+The driver reads `GET /api/registry/retired`, retires the repository at the circle only where the
+circle still lists it, and clears the tombstone. One owed for a repository joined here again is void.
+The deployment keeps no tombstone of its own, so another machine that still holds the checkout and
+the join registers it again. That is correct. The retire door's sentence used to say only "on this
+machine", which was no longer the whole truth. On a local host with a remote for that circle, a
+joined checkout's retire now adds that it leaves the circle's deployment too, on the next sync.
+
+**Found**: the triggers name three columns an old store only gains through the migration, so they
+are created after it. SQLite fires `AFTER UPDATE` triggers on an upsert's `DO UPDATE` path, which
+the re-wire and unjoin tests prove. **The rehearsal's two-machine phase proves it end to end**:
+- a revised declaration goes up at its commit and down to machine a's copy;
+- a declaration from an older commit is information;
+- a retire undone before any pass owes nothing;
+- a retire that stands leaves the remote and machine a;
+- joining again registers the repository afresh.
+
+Service 420, driver 424, modules 105, web 620 + 18, family 243/243, deploy 39/39, verify green.

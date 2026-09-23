@@ -23,6 +23,23 @@ public static class RemoteSyncPayloads
         string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
         IReadOnlyList<string> Packs, bool SharesKnowledge, string Root);
 
+    /// <summary>
+    /// Whether this machine holds anything of a circle: a joined checkout, or a teammate's copy it keeps
+    /// current (SYNC5b). A circle held by neither has nothing to hear from here, and nothing here to keep.
+    /// </summary>
+    public static bool Holds(string registryJson, string workspace)
+    {
+        using var document = JsonDocument.Parse(registryJson);
+        foreach (var repo in document.RootElement.EnumerateArray())
+        {
+            if (!InCircle(repo, workspace)) continue;
+            if (Text(repo, "root") is not { Length: > 0 }) return true;
+            if (repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True) return true;
+        }
+
+        return false;
+    }
+
     /// <summary>Every repository a registry answer names — joined or not, adopted or not.</summary>
     public static IReadOnlySet<string> Names(string registryJson)
     {
@@ -35,6 +52,19 @@ public static class RemoteSyncPayloads
 
         return names;
     }
+
+    /// <summary>The retires this machine owes a circle, by name, as its host answered (SYNC5b).</summary>
+    public static IReadOnlyList<string> Retired(string retiredJson)
+    {
+        using var document = JsonDocument.Parse(retiredJson);
+        return document.RootElement.ValueKind == JsonValueKind.Object ? Strings(document.RootElement, "repositories") : [];
+    }
+
+    private static bool InCircle(JsonElement repo, string workspace) =>
+        string.Equals(
+            RemoteTarget.Workspace(Text(repo, "workspace")),
+            RemoteTarget.Workspace(workspace),
+            StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// The joined repositories in a local registry answer that belong to one WORKSPACE — the only ones
@@ -57,13 +87,7 @@ public static class RemoteSyncPayloads
         {
             if (!(repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True)) continue;
             if (Text(repo, "root") is not { Length: > 0 } root) continue;
-            if (!string.Equals(
-                RemoteTarget.Workspace(Text(repo, "workspace")),
-                RemoteTarget.Workspace(workspace),
-                StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+            if (!InCircle(repo, workspace)) continue;
 
             joined.Add(new JoinedRepository(
                 Text(repo, "repository") ?? "",
@@ -79,18 +103,24 @@ public static class RemoteSyncPayloads
     }
 
     /// <summary>
-    /// One joined repository's registration, as the remote hears it: the declaration, no root.
+    /// One joined repository's registration, as the remote hears it: the declaration, no root — and the
+    /// commit its manifest stands on, so the deployment can order it against another checkout's (SYNC5b).
     /// </summary>
     /// <param name="defaultBranch">
     /// The repository's canonical line, read from this checkout (D48 §6) — the deployment cannot ask
     /// git, so the machine holding the tree tells it. Omitted when git could not say, and omission
     /// PRESERVES whatever was declared before: an unstated field must never erase one.
     /// </param>
-    public static string Registration(JoinedRepository repo, string? defaultBranch = null) => Write(writer =>
+    /// <param name="declaredAt">The commit the manifest was read at; null when it names none — a checkout
+    /// git cannot answer for, or a manifest with changes of its own not yet committed.</param>
+    /// <param name="onBase">The held declaration's commit git said this checkout descends from.</param>
+    public static string Registration(
+        JoinedRepository repo, string? defaultBranch = null, TreeProvenance? declaredAt = null, string? onBase = null) => Write(writer =>
     {
         writer.WriteStartObject();
         writer.WriteString("repository", repo.Repository);
         if (!string.IsNullOrWhiteSpace(defaultBranch)) writer.WriteString("defaultBranch", defaultBranch);
+        WriteProvenance(writer, declaredAt, onBase);
         writer.WriteStartArray("packs");
         foreach (var pack in repo.Packs) writer.WriteStringValue(pack);
         writer.WriteEndArray();
@@ -226,13 +256,29 @@ public static class RemoteSyncPayloads
         }), null);
     }
 
-    /// <summary>Which commit the deployment holds this repository's knowledge and code map at; null where nothing has fed.</summary>
-    public static (string? Knowledge, string? CodeMap) Held(string heldJson)
+    /// <summary>Which commit the deployment holds each of a repository's feeds at; null where nothing has fed.</summary>
+    public sealed record HeldCommits(string? Knowledge, string? CodeMap, string? Registration)
+    {
+        public static readonly HeldCommits None = new(null, null, null);
+    }
+
+    /// <summary>What the deployment holds for one repository, as its held door answered.</summary>
+    public static HeldCommits Held(string heldJson)
     {
         using var document = JsonDocument.Parse(heldJson);
         var root = document.RootElement;
-        return root.ValueKind == JsonValueKind.Object ? (Text(root, "knowledge"), Text(root, "codeMap")) : (null, null);
+        return root.ValueKind == JsonValueKind.Object
+            ? new HeldCommits(Text(root, "knowledge"), Text(root, "codeMap"), Text(root, "registration"))
+            : HeldCommits.None;
     }
+
+    /// <summary>Several things waiting on one commit, as one phrase: "a", "a and b", "a, b and c".</summary>
+    public static string Whats(IReadOnlyList<string> whats) => whats.Count switch
+    {
+        0 => "",
+        1 => whats[0],
+        _ => $"{string.Join(", ", whats.Take(whats.Count - 1))} and {whats[^1]}",
+    };
 
     /// <param name="Feed">Whether anything goes to the deployment.</param>
     /// <param name="Base">The held commit the feed names as its base, when git said it descends from it.</param>
@@ -253,6 +299,7 @@ public static class RemoteSyncPayloads
         if (string.Equals(held, here.Commit, StringComparison.OrdinalIgnoreCase)) return new FeedPlan(true, held, null);
 
         var shortHeld = held.Length <= 8 ? held : held[..8];
+        var are = what.Contains(" and ", StringComparison.Ordinal) ? "are" : "is";
         return relation switch
         {
             TreeRelation.Descends => new FeedPlan(true, held, null),
@@ -260,10 +307,10 @@ public static class RemoteSyncPayloads
             // commit time — the one question left that it can answer on its own.
             TreeRelation.Diverged => new FeedPlan(true, null, null),
             TreeRelation.Behind => new FeedPlan(false, null,
-                $"`{repository}`'s {what} is held at `{shortHeld}`, which is ahead of this checkout "
+                $"`{repository}`'s {what} {are} held at `{shortHeld}`, which is ahead of this checkout "
                 + $"(`{here.ShortCommit}`) — nothing fed. A pull catches this checkout up; nothing is wrong."),
             _ => new FeedPlan(false, null,
-                $"`{repository}`'s {what} is held at `{shortHeld}`, a commit this checkout does not have — "
+                $"`{repository}`'s {what} {are} held at `{shortHeld}`, a commit this checkout does not have — "
                 + "nothing fed until a fetch lets git say how the two relate."),
         };
     }
@@ -326,58 +373,92 @@ public static class RemoteSyncPayloads
 
     private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 
+    /// <param name="Write">The team's rows to write here — new, or with a declaration that changed.</param>
+    /// <param name="Retire">This circle's copies the circle no longer lists, to retire here.</param>
+    public sealed record RegistryMirror(IReadOnlyList<(string Repository, string Json)> Write, IReadOnlyList<string> Retire);
+
     /// <summary>
-    /// The remote's registry as this machine should hear of it: FOREIGN rows only, filed in the
+    /// The remote's registry as this machine should keep it (SYNC5b): the TEAM's rows, written when new
+    /// or changed, and this circle's copies retired when the circle no longer lists them — filed in the
     /// workspace whose deployment answered.
     /// </summary>
     /// <remarks>
-    /// <para>A repository this machine already has keeps its own registration — and its root — because
-    /// the machine that holds the checkout is the authority on it; re-posting the remote's stripped
-    /// copy would overwrite the one field spawning needs. What arrives makes teammates' repositories
-    /// addressable here (D47 §5): their quests home at the remote, and the relay carries the verbs.</para>
+    /// <para>A repository this machine holds with a root, in ANY circle, keeps its own registration — root
+    /// included — because the machine that holds the checkout is the authority on it; writing the
+    /// remote's stripped copy over it would erase the one field spawning needs. A copy another circle's
+    /// sync keeps is that sync's, or two remotes naming one repository would take turns re-filing it. What
+    /// arrives makes teammates' repositories addressable here (D47 §5).</para>
     ///
     /// <para>The workspace is stated rather than left silent, and that is this MACHINE's wiring
     /// speaking, not the feed: a row that came from this workspace's deployment belongs to this
     /// workspace by construction (D48 §5). Nothing in the remote's answer is consulted for it — a feed
     /// that could name its own circle could file itself into one nobody joined.</para>
     /// </remarks>
-    public static IReadOnlyList<(string Repository, string Json)> ForeignRegistrations(
-        string remoteRegistryJson, IReadOnlySet<string> localNames, string workspace)
+    /// <param name="localRegistryJson">This machine's registry, unscoped: the guard spans every circle.</param>
+    /// <param name="retiredHere">What this pass retired at the circle — still in the list it read before.</param>
+    public static RegistryMirror Mirror(
+        string remoteRegistryJson, string localRegistryJson, string workspace, IReadOnlyCollection<string> retiredHere)
     {
+        using var local = JsonDocument.Parse(localRegistryJson);
+        var copies = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+        var guarded = new HashSet<string>(retiredHere, StringComparer.OrdinalIgnoreCase);
+        foreach (var repo in local.RootElement.EnumerateArray())
+        {
+            if (Text(repo, "repository") is not { Length: > 0 } name) continue;
+            if (Text(repo, "root") is not { Length: > 0 } && InCircle(repo, workspace)) copies[name] = repo.Clone();
+            else guarded.Add(name);
+        }
+
         using var document = JsonDocument.Parse(remoteRegistryJson);
-        var foreign = new List<(string, string)>();
+        var write = new List<(string, string)>();
+        var listed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var repo in document.RootElement.EnumerateArray())
         {
             var name = Text(repo, "repository") ?? "";
-            if (name.Length == 0 || localNames.Contains(name)) continue;
+            if (name.Length == 0) continue;
+            listed.Add(name);
+            if (guarded.Contains(name)) continue;
+            if (copies.TryGetValue(name, out var copy) && Declares(copy) == Declares(repo)) continue;
 
-            var payload = Write(writer =>
-            {
-                writer.WriteStartObject();
-                writer.WriteString("repository", name);
-                writer.WriteStartArray("packs");
-                foreach (var pack in Strings(repo, "packs")) writer.WriteStringValue(pack);
-                writer.WriteEndArray();
-                writer.WriteStartObject("domain");
-                if (Text(repo, "summary") is { } summary) writer.WriteString("summary", summary);
-                writer.WriteStartArray("owns");
-                foreach (var owns in Strings(repo, "owns")) writer.WriteStringValue(owns);
-                writer.WriteEndArray();
-                writer.WriteStartArray("accepts");
-                foreach (var accepts in Strings(repo, "accepts")) writer.WriteStringValue(accepts);
-                writer.WriteEndArray();
-                writer.WriteEndObject();
-                writer.WriteBoolean("join", repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True);
-                writer.WriteBoolean("shareKnowledge",
-                    repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
-                writer.WriteString("workspace", RemoteTarget.Workspace(workspace));
-                writer.WriteEndObject();
-            });
-            foreign.Add((name, payload));
+            write.Add((name, TeamCopy(repo, name, workspace)));
         }
 
-        return foreign;
+        return new RegistryMirror(write, copies.Keys.Where(name => !listed.Contains(name)).Order(StringComparer.Ordinal).ToList());
     }
+
+    /// <summary>What a row declares, as one comparable value — the fields a copy is written from.</summary>
+    private static string Declares(JsonElement repo) => string.Join(
+        "\u001f",
+        Text(repo, "summary") ?? "\u0000",
+        string.Join("\u001e", Strings(repo, "owns")),
+        string.Join("\u001e", Strings(repo, "accepts")),
+        string.Join("\u001e", Strings(repo, "packs")),
+        repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True,
+        repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
+
+    /// <summary>A teammate's row as this machine files it: the declaration, this circle's name, no root.</summary>
+    private static string TeamCopy(JsonElement repo, string name, string workspace) => Write(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteString("repository", name);
+        writer.WriteStartArray("packs");
+        foreach (var pack in Strings(repo, "packs")) writer.WriteStringValue(pack);
+        writer.WriteEndArray();
+        writer.WriteStartObject("domain");
+        if (Text(repo, "summary") is { } summary) writer.WriteString("summary", summary);
+        writer.WriteStartArray("owns");
+        foreach (var owns in Strings(repo, "owns")) writer.WriteStringValue(owns);
+        writer.WriteEndArray();
+        writer.WriteStartArray("accepts");
+        foreach (var accepts in Strings(repo, "accepts")) writer.WriteStringValue(accepts);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+        writer.WriteBoolean("join", repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True);
+        writer.WriteBoolean("shareKnowledge",
+            repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
+        writer.WriteString("workspace", RemoteTarget.Workspace(workspace));
+        writer.WriteEndObject();
+    });
 
     private static void Copy(Utf8JsonWriter writer, JsonElement element, string name)
     {

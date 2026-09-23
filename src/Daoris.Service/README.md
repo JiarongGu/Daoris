@@ -157,7 +157,9 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | Endpoint | |
 |---|---|
 | `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
-| `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands |
+| `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands. A shared deployment orders a checkout's declaration by the commit it names, as it orders knowledge: a declaration from an older commit, another line, or no commit where one is held is not taken, as information (SYNC5b) |
+| `DELETE /api/registry/{repository}` | take a repository off the map; nothing on disk is touched. At a shared deployment it is how a machine's retire reaches the circle (SYNC5b) |
+| `GET /api/registry/retired?workspace=` · `DELETE /api/registry/retired/{repository}?workspace=` | local mode only: the retires this machine's checkouts owe a circle, written by the store as a joined checkout's row leaves it (retired, re-wired, or re-registered unjoined), and cleared once the driver's pass has carried them (SYNC5b) |
 | `GET /api/code-map/{repository}` | a repository's own code map (MAP3a), read from its committed `docs/code-map.json` and judged whole; a repository with a checkout here is read from it, and one without answers with what was fed (MAP3b), or with no file |
 | `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape |
 | `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason |
@@ -165,7 +167,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46) |
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
 | `POST /api/feed/sessions` · `/api/feed/entries` · `/api/feed/code-map` | shared mode only: what a desktop's sync feeds up (D47, MAP3b) |
-| `GET /api/feed/held?repository=` | shared mode only: the commits a repository's knowledge and code map stand on here — what a feeding machine asks git about (SYNC5a) |
+| `GET /api/feed/held?repository=` | shared mode only: the commits a repository's knowledge, code map and declaration stand on here — what a feeding machine asks git about (SYNC5a, SYNC5b) |
 | `GET /api/quests/operations?since=N` · `POST /api/quests/operations` | shared mode only: what the remote accepted after number N, in its order, and a push of a machine's quest operations rebased on N, judged quest by quest (D68) |
 | `POST /api/sync?workspace=` · `GET /api/quests/{id}/claim` | local mode only: one pass for a workspace — the quests' fetch, rebase and push, then the session records both ways — answering its conflicts, refusals, record counts and wall; and where this machine's claim on a quest stands — held, unconfirmed, lost or none (D69). A take on a shared quest runs the quest half before it answers |
 | `GET /api/sessions/since?since=N` | shared mode only: the team's session records held after revision N, in order — every origin but the caller's own (SYNC4) |

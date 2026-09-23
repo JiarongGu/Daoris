@@ -22,8 +22,8 @@ public enum FeedVerdict
     Stale,
 }
 
-/// <summary>Which commit a repository's knowledge and code map stand on at this deployment, each on its own.</summary>
-public sealed record FeedHeld(string? Knowledge, string? CodeMap);
+/// <summary>Which commit a repository's knowledge, code map and declaration stand on at this deployment, each on its own.</summary>
+public sealed record FeedHeld(string? Knowledge, string? CodeMap, string? Registration = null);
 
 /// <summary>
 /// The ordering rule for anything fed from a checkout (sync design §8): the machine with the checkout
@@ -97,6 +97,23 @@ public static class FeedDigest
         return Of(text.ToString());
     }
 
+    /// <summary>
+    /// A repository's declaration (SYNC5b): what it says about itself, and nothing the deployment
+    /// decides — the root it never keeps, the entry count it computes, the workspace its own wiring sets.
+    /// </summary>
+    public static string Of(Registration registration)
+    {
+        var text = new StringBuilder();
+        Field(text, registration.Summary);
+        List(text, registration.Owns);
+        List(text, registration.Accepts);
+        List(text, registration.Packs);
+        Field(text, registration.Joined ? "joined" : "local");
+        Field(text, registration.SharesKnowledge ? "shares" : "keeps");
+        Field(text, registration.DefaultBranch);
+        return Of(text.ToString());
+    }
+
     /// <summary>A body stored whole, such as a code map in its canonical form.</summary>
     public static string Of(string text) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
@@ -109,5 +126,12 @@ public static class FeedDigest
             .Append(':')
             .Append(value)
             .Append('|');
+    }
+
+    /// <summary>A list is its length, then its items: order is part of what a declaration says.</summary>
+    private static void List(StringBuilder text, IReadOnlyList<string> items)
+    {
+        Field(text, items.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        foreach (var item in items) Field(text, item);
     }
 }

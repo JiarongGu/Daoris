@@ -214,6 +214,35 @@ computed at the deployment, never taken from the wire.
 **Registrations and the travelling retire (SYNC5b).** The machine holding a checkout owns its row.
 Other machines' copies are updated and removed rather than mirrored once, and a retire travels as a
 tombstone (SYNC0b).
+- **Up, by ancestry.** A registration names the commit its checkout stands on, and the held commit
+  git said it descends from, exactly as a feed does. It names a commit only while the manifest file
+  itself is unmodified, because the declaration is the manifest. A shared deployment holds each
+  registration at a commit and judges it by the same `FeedOrder`, with a digest over the declaration.
+  Three rules are the registration's own. The first registration is taken from any line, since
+  nothing else of a repository can travel until it is registered. After that, one is taken only from
+  the line it declares canonical, because a declaration on a feature branch is not yet the family's.
+  And one naming no commit is taken only where none naming one is held.
+- **Down, updated and removed.** On every pass, a row of the team's is written here when it is new
+  or its declaration changed. A row held here without a root, in that circle, is retired here when
+  the remote no longer lists it. A row held here with a root, in any circle, is never touched by the
+  sync. A pass runs for a circle while this machine holds a joined checkout in it, a teammate's copy
+  from it, or a retire it owes it, so a machine whose last checkout left a circle still carries that
+  retire and keeps the circle's copies current.
+- **A retire is a tombstone that travels.** A joined row with a root can leave a circle three ways:
+  it is retired, re-wired to another circle, or re-registered unjoined. Each records a tombstone for
+  that circle in the store. The next pass retires the repository at that circle's deployment, then
+  clears the tombstone. It tells the circle only when the circle still lists the repository, so a
+  deployment never hears a name it was not given. Joining that circle again clears the tombstone
+  first, and one found for a repository joined here is void. A foreign row retired here records
+  none, because removing a teammate's repository from the team is not this machine's to do. The
+  deployment keeps no tombstone of its own. A retire names no commit to order it by, and another
+  machine that still holds the checkout still declares the join, so its next pass registers the
+  repository again. That is correct.
+- **The doors**: `GET /api/feed/held` answers `registration` beside the knowledge and the map. A
+  local host has `GET /api/registry/retired?workspace=` and
+  `DELETE /api/registry/retired/{repository}?workspace=`, which the driver reads and clears. At the
+  remote, the retire is `DELETE /api/registry/{repository}`, the same door a person retires with.
+  On a local host that door's answer says when the circle will hear of it too.
 
 ## 9. Build order
 

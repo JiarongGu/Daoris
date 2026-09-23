@@ -161,6 +161,16 @@ public static class WorkingTree
                       + "somebody's work in flight; the driver holds rather than entangling a session with it.");
     }
 
+    /// <summary>
+    /// Whether one file is exactly as HEAD has it — tracked, and nothing staged, changed or untracked
+    /// about it. What a registration asks of the manifest before it names the commit (SYNC5b).
+    /// </summary>
+    public static async Task<bool> UnmodifiedAsync(string root, string path, CancellationToken ct = default)
+    {
+        var (code, stdout, _) = await GitAsync(root, ["status", "--porcelain", "--", path], ct).ConfigureAwait(false);
+        return code == 0 && string.IsNullOrWhiteSpace(stdout);
+    }
+
     /// <summary>Where HEAD is now — the "before" a session's evidence is measured from.</summary>
     public static async Task<string?> HeadAsync(string root, CancellationToken ct = default)
     {

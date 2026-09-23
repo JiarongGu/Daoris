@@ -75,12 +75,17 @@ public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns,
 // (D48 §2). It is never null on the way out: a reader is told which circle it is looking at.
 // `DefaultBranch` is the same shape for the same reason (D48 §6): the checkout that registers knows
 // its canonical line and the deployment cannot ask git, but an ordinary registration says nothing
-// about it — so null preserves what was declared rather than erasing it.
+// about it — so null preserves what was declared rather than erasing it. The commit and its base are a
+// checkout's, read by the same rules as a feed's (SYNC5b): a shared deployment orders declarations by
+// them, and a local host, where the registration is this machine's own, reads none of them.
 public sealed record RegisterRequest(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
-    bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch);
+    bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch,
+    string? Commit = null, DateTimeOffset? CommittedAt = null, string? Branch = null, string? Base = null);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At, string Workspace);
 public sealed record RetiredResponse(string Repository, bool Retired, string Message);
+// The repositories this machine's checkouts took out of a circle, not yet told to its deployment (SYNC5b).
+public sealed record RetiredPendingResponse(string Workspace, IReadOnlyList<string> Repositories);
 public sealed record WireRequest(string? Workspace);
 public sealed record ImportRequest(string? Folder);
 public sealed record ImportedResponse(string Folder, int Imported, IReadOnlyList<string> Repositories, string Message);
@@ -127,9 +132,9 @@ public sealed record FeedEntriesRequest(
 public sealed record FeedCodeMapRequest(
     string Repository, string? File, string? Map,
     string? Commit, DateTimeOffset? CommittedAt, string? Branch, string? Base = null);
-// Which commit a repository's knowledge and code map stand on at this deployment — what a feeding
-// machine asks git about before it feeds (SYNC5a). Null where nothing has fed.
-public sealed record FeedHeldResponse(string Repository, string? Knowledge, string? CodeMap);
+// Which commit a repository's knowledge, code map and declaration stand on at this deployment — what a
+// feeding machine asks git about before it feeds (SYNC5a, SYNC5b). Null where nothing has fed.
+public sealed record FeedHeldResponse(string Repository, string? Knowledge, string? CodeMap, string? Registration);
 // A machine's sync pass (D69, SYNC4), as its driver reads it: what the quest half pushed, the moves of
 // this machine that became conflicts, what the remote would not keep, what is still behind; how many
 // session records went up and came down; and the wall, if there was one. `Machine` is this store's id.
@@ -180,6 +185,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(RegisterRequest))]
 [JsonSerializable(typeof(RegisteredResponse))]
 [JsonSerializable(typeof(RetiredResponse))]
+[JsonSerializable(typeof(RetiredPendingResponse))]
 [JsonSerializable(typeof(WireRequest))]
 [JsonSerializable(typeof(ImportRequest))]
 [JsonSerializable(typeof(ImportedResponse))]

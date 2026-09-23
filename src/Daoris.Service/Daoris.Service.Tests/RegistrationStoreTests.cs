@@ -203,6 +203,91 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         await store.RecordProvenanceAsync("Elder", held with { Digest = "d1g35t" });
         Assert.Equal("d1g35t", (await store.ProvenanceAsync("Elder"))!.Digest);
     }
+
+    // ——— A retire is a tombstone that travels (SYNC5b). The store records it in the same statement
+    // that ends the row, so no caller can retire a joined checkout and forget to tell the circle.
+
+    private static Registration Held(string name = "Yumeora", string workspace = "aurora") =>
+        Declared(name) with { Root = $"D:/repos/{name}", Joined = true, Workspace = workspace };
+
+    [Fact]
+    public async Task Retiring_a_joined_checkout_leaves_a_tombstone_for_its_circle()
+    {
+        await _store.UpsertAsync(Held(), Now);
+
+        await _store.DeleteAsync("Yumeora");
+
+        Assert.Equal(["Yumeora"], await _store.RetiredAsync("aurora"));
+        Assert.Empty(await _store.RetiredAsync("default"));
+    }
+
+    /// <summary>
+    /// Re-wired to another circle, or re-registered unjoined: either way the circle it left still
+    /// lists it, and only this machine knows it went.
+    /// </summary>
+    [Fact]
+    public async Task Leaving_a_circle_by_rewiring_or_unjoining_leaves_a_tombstone_too()
+    {
+        await _store.UpsertAsync(Held("Moved"), Now);
+        await _store.UpsertAsync(Held("Quit"), Now);
+
+        await _store.UpsertAsync(Held("Moved", "tools"), Now);
+        await _store.UpsertAsync(Held("Quit") with { Joined = false }, Now);
+
+        Assert.Equal(["Moved", "Quit"], (await _store.RetiredAsync("aurora")).Order(StringComparer.Ordinal));
+        Assert.Empty(await _store.RetiredAsync("tools"));
+    }
+
+    /// <summary>
+    /// Nothing leaves a circle it was never known in, and a teammate's copy is not this machine's to
+    /// remove from the team: a row without a root records no tombstone, and neither does one never joined.
+    /// </summary>
+    [Fact]
+    public async Task A_foreign_row_or_an_unjoined_one_retires_without_a_tombstone()
+    {
+        await _store.UpsertAsync(Held("Teammate") with { Root = null }, Now);
+        await _store.UpsertAsync(Held("Homebody") with { Joined = false }, Now);
+
+        await _store.DeleteAsync("Teammate");
+        await _store.DeleteAsync("Homebody");
+
+        Assert.Empty(await _store.RetiredAsync("aurora"));
+    }
+
+    /// <summary>Joining the same circle again takes the tombstone back before any pass could send it.</summary>
+    [Fact]
+    public async Task Joining_the_circle_again_clears_its_tombstone_and_a_cleared_one_stays_cleared()
+    {
+        await _store.UpsertAsync(Held(), Now);
+        await _store.DeleteAsync("Yumeora");
+        await _store.UpsertAsync(Held(), Now);
+        Assert.Empty(await _store.RetiredAsync("aurora"));
+
+        await _store.DeleteAsync("Yumeora");
+        Assert.True(await _store.ClearRetiredAsync("yumeora", "AURORA"));
+        Assert.False(await _store.ClearRetiredAsync("Yumeora", "aurora"));
+        Assert.Empty(await _store.RetiredAsync("aurora"));
+    }
+
+    /// <summary>
+    /// The commit a registration was declared at (SYNC5b), held like a feed's and gone with the row: a
+    /// deployment keeps no tombstone of its own, so a repository that joins again is registered afresh.
+    /// </summary>
+    [Fact]
+    public async Task A_registration_s_commit_round_trips_and_retires_with_it()
+    {
+        await _store.UpsertAsync(Declared(), Now);
+        await _store.RecordRegistrationProvenanceAsync(
+            "Yumeora", new("abc123def456", Now, "main", "person@machine-a") { Digest = "d1g35t" });
+
+        var held = await _store.RegistrationProvenanceAsync("yumeora");
+        Assert.Equal("abc123def456", held!.Commit);
+        Assert.Equal("d1g35t", held.Digest);
+
+        await _store.DeleteAsync("Yumeora");
+
+        Assert.Null(await _store.RegistrationProvenanceAsync("Yumeora"));
+    }
 }
 
 /// <summary>

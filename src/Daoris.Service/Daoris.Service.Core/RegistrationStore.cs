@@ -86,6 +86,27 @@ public sealed class RegistrationStore
                   origin       TEXT NULL,
                   digest       TEXT NOT NULL
                 );
+
+                -- Which commit a repository's declaration was registered at (SYNC5b), for the same
+                -- ordering its knowledge has. A table of its own for the reason `feed_provenance` is: a
+                -- registration that names no commit must not erase the one that did.
+                CREATE TABLE IF NOT EXISTS registration_provenance (
+                  repository   TEXT PRIMARY KEY,
+                  commit_id    TEXT NOT NULL,
+                  committed_at TEXT NOT NULL,
+                  branch       TEXT NOT NULL,
+                  origin       TEXT NULL,
+                  digest       TEXT NULL
+                );
+
+                -- A circle this machine's checkout left, not yet told (SYNC5b): the tombstone a sync
+                -- pass carries to that circle's deployment and then clears.
+                CREATE TABLE IF NOT EXISTS registry_retired (
+                  repository TEXT NOT NULL COLLATE NOCASE,
+                  workspace  TEXT NOT NULL COLLATE NOCASE,
+                  retired    TEXT NOT NULL,
+                  PRIMARY KEY (repository, workspace)
+                );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -117,6 +138,49 @@ public sealed class RegistrationStore
         })
         {
             await EnsureColumnAsync("registrations", column, definition, ct).ConfigureAwait(false);
+        }
+
+        // After the columns, because the triggers name three of them an old store only has once
+        // migrated.
+        await using (var command = _connection.CreateCommand())
+        {
+            command.CommandText = """
+                -- 🔴 The tombstone is written by the statement that ends the row, not by its callers.
+                -- A joined row with a root can leave a circle in three ways: a retire, a re-wire, or a
+                -- re-registration that no longer joins. Every door that does one of them would otherwise
+                -- have to remember the tombstone, and the one that forgot would leave the circle listing
+                -- a repository nobody holds. A row with no root is a teammate's copy and records none:
+                -- removing it from the team is not this machine's to do.
+                CREATE TRIGGER IF NOT EXISTS registration_retired AFTER DELETE ON registrations
+                WHEN OLD.root IS NOT NULL AND OLD.joined = 1
+                BEGIN
+                  INSERT OR REPLACE INTO registry_retired (repository, workspace, retired)
+                  VALUES (OLD.repository, OLD.workspace, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS registration_left AFTER UPDATE ON registrations
+                WHEN OLD.root IS NOT NULL AND OLD.joined = 1
+                  AND (NEW.joined = 0 OR NEW.workspace <> OLD.workspace COLLATE NOCASE)
+                BEGIN
+                  INSERT OR REPLACE INTO registry_retired (repository, workspace, retired)
+                  VALUES (OLD.repository, OLD.workspace, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+                END;
+
+                -- Joining a circle again takes its tombstone back, so a retire undone before any pass
+                -- ran never reaches the deployment at all.
+                CREATE TRIGGER IF NOT EXISTS registration_joined AFTER INSERT ON registrations
+                WHEN NEW.root IS NOT NULL AND NEW.joined = 1
+                BEGIN
+                  DELETE FROM registry_retired WHERE repository = NEW.repository AND workspace = NEW.workspace;
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS registration_rejoined AFTER UPDATE ON registrations
+                WHEN NEW.root IS NOT NULL AND NEW.joined = 1
+                BEGIN
+                  DELETE FROM registry_retired WHERE repository = NEW.repository AND workspace = NEW.workspace;
+                END;
+                """;
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
     }
 
@@ -302,6 +366,66 @@ public sealed class RegistrationStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>What commit a repository's declaration was registered at, or null where none named one (SYNC5b).</summary>
+    public async Task<FeedProvenance?> RegistrationProvenanceAsync(string repository, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "SELECT commit_id, committed_at, branch, origin, digest FROM registration_provenance "
+            + "WHERE repository = $repository COLLATE NOCASE";
+        command.Parameters.AddWithValue("$repository", repository);
+
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>Record the commit a repository's declaration now stands on here.</summary>
+    public async Task RecordRegistrationProvenanceAsync(
+        string repository, FeedProvenance provenance, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO registration_provenance (repository, commit_id, committed_at, branch, origin, digest)
+            VALUES ($repository, $commit, $committed_at, $branch, $origin, $digest)
+            ON CONFLICT (repository) DO UPDATE SET
+              commit_id = $commit, committed_at = $committed_at, branch = $branch, origin = $origin,
+              digest = $digest
+            """;
+        command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$commit", provenance.Commit);
+        command.Parameters.AddWithValue("$committed_at", provenance.CommittedAt.ToString("O"));
+        command.Parameters.AddWithValue("$branch", provenance.Branch);
+        command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
+        command.Parameters.AddWithValue("$digest", (object?)provenance.Digest ?? DBNull.Value);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The repositories this machine's checkouts took out of a circle that has not been told yet (SYNC5b).</summary>
+    public async Task<IReadOnlyList<string>> RetiredAsync(string workspace, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "SELECT repository FROM registry_retired WHERE workspace = $workspace ORDER BY repository";
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+
+        var retired = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) retired.Add(reader.GetString(0));
+        return retired;
+    }
+
+    /// <summary>The circle has been told, or no longer needs to be.</summary>
+    /// <returns>Whether there was a tombstone to clear; false is an answer, not a failure.</returns>
+    public async Task<bool> ClearRetiredAsync(string repository, string workspace, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "DELETE FROM registry_retired WHERE repository = $repository AND workspace = $workspace";
+        command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }
+
     /// <summary>A held commit, read as (commit, committed_at, branch, origin, digest).</summary>
     private static FeedProvenance Read(SqliteDataReader reader) => new(
         reader.GetString(0),
@@ -322,10 +446,12 @@ public sealed class RegistrationStore
         await using var command = _connection.CreateCommand();
         // The provenance goes with the registration: a repository off the map holds no position in
         // anyone's history here, and a leftover row would refuse the first feed after it re-joined as
-        // though this deployment still held a newer commit — which it would not.
+        // though this deployment still held a newer commit — which it would not. The declaration's
+        // commit goes for the same reason: a deployment keeps no tombstone of its own (SYNC5b).
         command.CommandText = """
             DELETE FROM feed_provenance WHERE repository = $repository COLLATE NOCASE;
             DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE;
+            DELETE FROM registration_provenance WHERE repository = $repository COLLATE NOCASE;
             DELETE FROM registrations WHERE repository = $repository COLLATE NOCASE;
             """;
         command.Parameters.AddWithValue("$repository", repository);

@@ -81,6 +81,13 @@ public enum FeedRefusal
 
     /// <summary>What was fed breaks the rules of its own shape — a code map judged whole at the door.</summary>
     Malformed,
+
+    /// <summary>
+    /// A declaration naming no commit, where one naming a commit is held (SYNC5b). Nothing orders the
+    /// two, so the named one stands. Information: the repository is registered either way, and its
+    /// records and quests travel.
+    /// </summary>
+    Unordered,
 }
 
 /// <param name="Refusal"><see cref="FeedRefusal.None"/> when the feed was taken.</param>
@@ -101,7 +108,8 @@ public sealed record FeedOutcome(FeedRefusal Refusal, string Message, int Entrie
     /// the person to ignore its failures, which is the one thing a report must never do.
     /// </remarks>
     public bool Information =>
-        Refusal is FeedRefusal.Stale or FeedRefusal.NotDefaultBranch or FeedRefusal.Moved or FeedRefusal.ContentDiffers;
+        Refusal is FeedRefusal.Stale or FeedRefusal.NotDefaultBranch or FeedRefusal.Moved or FeedRefusal.ContentDiffers
+            or FeedRefusal.Unordered;
 }
 
 /// <summary>
@@ -315,6 +323,110 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
+    /// A declaration arriving at a shared deployment from a checkout (SYNC5b): the manifest at a commit,
+    /// ordered as a feed is, so two checkouts of one repository stop overwriting each other.
+    /// </summary>
+    /// <remarks>
+    /// Three rules are the registration's own. The first is taken from any line and without a commit,
+    /// because nothing else of a repository can travel until it is registered. After that, a
+    /// declaration is taken only from the line it calls canonical, because one on a feature branch is
+    /// not yet the family's. And one naming no commit cannot be ordered against one that does, so it
+    /// does not replace it.
+    /// </remarks>
+    /// <param name="provenance">The commit the manifest was read at, with the held one git said it
+    /// descends from; null when the checkout could not name one.</param>
+    /// <returns>The judgement, and the registration as it now stands when it was taken or already held.</returns>
+    public async Task<(FeedOutcome Outcome, Registration? Registered)> RegisterFedAsync(
+        Registration registration, FeedProvenance? provenance, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var held = registrations
+            ?? throw new InvalidOperationException("a fed registration is held in the registration store, and this service was composed without one");
+        var existing = (await RegistryAsync(ct: ct).ConfigureAwait(false))
+            .FirstOrDefault(r => string.Equals(r.Repository, registration.Repository, StringComparison.OrdinalIgnoreCase));
+
+        await _feedGate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            var standing = await held.RegistrationProvenanceAsync(registration.Repository, ct).ConfigureAwait(false);
+
+            if (provenance is null)
+            {
+                if (standing is not null)
+                {
+                    return (new(
+                        FeedRefusal.Unordered,
+                        $"`{registration.Repository}`'s registration is held at `{standing.ShortCommit}`"
+                        + $"{(standing.Origin is null ? "" : $", from {standing.Origin}")}, and this one names no commit, "
+                        + "so nothing orders the two and the held one stands. It is registered either way: its "
+                        + "records and quests still travel.",
+                        Entries: 0), null);
+                }
+
+                return (new(FeedRefusal.None, $"Registered `{registration.Repository}`.", 0),
+                    await RegisterAsync(registration, now, ct).ConfigureAwait(false));
+            }
+
+            // The line the declaration calls canonical, so a repository that renamed its default branch
+            // is not held to the name it used before; the stored one where this declaration names none.
+            var canonical = string.IsNullOrWhiteSpace(registration.DefaultBranch)
+                ? existing?.DefaultBranch
+                : registration.DefaultBranch.Trim();
+            if (standing is not null
+                && canonical is { Length: > 0 }
+                && !string.Equals(provenance.Branch, canonical, StringComparison.Ordinal))
+            {
+                return (new(
+                    FeedRefusal.NotDefaultBranch,
+                    $"`{registration.Repository}`'s registration came from `{provenance.Branch}`, and its canonical "
+                    + $"line is `{canonical}` — a declaration on another line is not yet the family's, so the one "
+                    + $"held at `{standing.ShortCommit}` stands. Its records and quests still travel from this checkout.",
+                    Entries: 0), null);
+            }
+
+            var arriving = provenance with { Digest = FeedDigest.Of(registration) };
+            var verdict = FeedOrder.Judge(standing, arriving);
+            if (verdict == FeedVerdict.AlreadyHeld)
+            {
+                return (new(
+                    FeedRefusal.None,
+                    $"`{registration.Repository}`'s registration is already held at `{arriving.ShortCommit}` as declared.",
+                    Entries: 0), existing);
+            }
+
+            if (verdict != FeedVerdict.Take)
+            {
+                return (NotTaken(verdict, registration.Repository, "registration", standing!, arriving), null);
+            }
+
+            var registered = await RegisterAsync(registration, now, ct).ConfigureAwait(false);
+
+            // After the row, as the knowledge feed records its commit after its entries: a store that
+            // failed between the two must never claim a declaration it does not hold.
+            await held.RecordRegistrationProvenanceAsync(registration.Repository, arriving, ct).ConfigureAwait(false);
+            return (new(
+                FeedRefusal.None,
+                $"Registered `{registration.Repository}` as declared at `{arriving.ShortCommit}`.",
+                Entries: 0), registered);
+        }
+        finally
+        {
+            _feedGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// The repositories this machine's checkouts took out of a circle that has not been told yet (SYNC5b)
+    /// — what the sync carries to that circle's deployment.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> RetiredAsync(string workspace, CancellationToken ct = default) =>
+        registrations is null ? [] : await registrations.RetiredAsync(workspace, ct).ConfigureAwait(false);
+
+    /// <summary>The circle has been told, or no longer needs to be.</summary>
+    public async Task<bool> ClearRetiredAsync(string repository, string workspace, CancellationToken ct = default) =>
+        registrations is not null
+        && await registrations.ClearRetiredAsync(repository, workspace, ct).ConfigureAwait(false);
+
+    /// <summary>
     /// One repository's own knowledge, whole — what a sync loop feeds from (D47 §4). Local provenance
     /// only: canonical content is identical everywhere by construction and never feeds.
     /// </summary>
@@ -487,15 +599,16 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
-    /// Which commit this deployment holds a repository's knowledge and code map at — what a feeding
-    /// machine asks git about before it feeds (SYNC5a).
+    /// Which commit this deployment holds a repository's knowledge, code map and declaration at — what a
+    /// feeding machine asks git about before it feeds (SYNC5a, SYNC5b).
     /// </summary>
     public async Task<FeedHeld> HeldAsync(string repository, CancellationToken ct = default) =>
         registrations is null
             ? new FeedHeld(null, null)
             : new FeedHeld(
                 (await registrations.ProvenanceAsync(repository, ct).ConfigureAwait(false))?.Commit,
-                (await registrations.CodeMapProvenanceAsync(repository, ct).ConfigureAwait(false))?.Commit);
+                (await registrations.CodeMapProvenanceAsync(repository, ct).ConfigureAwait(false))?.Commit,
+                (await registrations.RegistrationProvenanceAsync(repository, ct).ConfigureAwait(false))?.Commit);
 
     /// <summary>
     /// The door every feed from a checkout passes: joined, sharing, naming a commit, on the canonical

@@ -484,6 +484,140 @@ public sealed class FeedTests : IAsyncLifetime
         Assert.Equal("knowcommit", held.Knowledge);
         Assert.Equal("mapcommit", held.CodeMap);
     }
+
+    // ——— A registration by ancestry (SYNC5b, sync design §8): the declaration is the manifest at a
+    // commit, ordered like a feed, so two checkouts of one repository stop overwriting each other.
+
+    private static Registration Declaration(string summary = "A repo.", string? defaultBranch = "main") =>
+        new("Open", Adopted: true, summary, ["x"], [], [], Entries: 0,
+            Joined: true, SharesKnowledge: true, DefaultBranch: defaultBranch);
+
+    private async Task<string?> SummaryOf(string repository) =>
+        (await _service.RegistryAsync()).Single(r => r.Repository == repository).Summary;
+
+    /// <summary>
+    /// The first registration is taken from any line, and from a checkout that names no commit: nothing
+    /// else of a repository can travel until it is registered, and nothing is held to order it against.
+    /// </summary>
+    [Fact]
+    public async Task The_first_registration_is_taken_from_any_line_or_none()
+    {
+        var branch = await _service.RegisterFedAsync(Declaration(), From(branch: "feature/x"), Now);
+        var unnamed = await _service.RegisterFedAsync(
+            Declaration() with { Repository = "Unnamed" }, provenance: null, Now);
+
+        Assert.True(branch.Outcome.Accepted);
+        Assert.True(unnamed.Outcome.Accepted);
+        Assert.Equal("aaaa1111bbbb2222", (await _service.HeldAsync("Open")).Registration);
+        Assert.Null((await _service.HeldAsync("Unnamed")).Registration);
+    }
+
+    /// <summary>
+    /// SYNC0b's last-writer-wins: a checkout behind the held commit re-sent its older declaration every
+    /// tick and overwrote the newer one. A descendant fast-forwards; an older commit keeps what is held.
+    /// </summary>
+    [Fact]
+    public async Task A_newer_declaration_fast_forwards_and_an_older_one_keeps_what_is_held()
+    {
+        await _service.RegisterFedAsync(Declaration("First."), From("parentparent", at: "2026-09-20T09:00:00Z"), Now);
+
+        var child = await _service.RegisterFedAsync(
+            Declaration("Newer."), From("childchild", at: "2026-09-20T10:00:00Z", onBase: "parentparent"), Now);
+        var older = await _service.RegisterFedAsync(
+            Declaration("Older."), From("olderolder", at: "2026-09-20T08:00:00Z"), Now);
+
+        Assert.True(child.Outcome.Accepted);
+        Assert.Equal(FeedRefusal.Stale, older.Outcome.Refusal);
+        Assert.True(older.Outcome.Information);
+        Assert.Contains("registration", older.Outcome.Message);
+        Assert.Equal("Newer.", await SummaryOf("Open"));
+        Assert.Equal("childchild", (await _service.HeldAsync("Open")).Registration);
+    }
+
+    /// <summary>The same commit declared the same way is held already; declared otherwise, the first reading stands.</summary>
+    [Fact]
+    public async Task The_same_commit_is_held_once_and_a_second_reading_of_it_is_information()
+    {
+        await _service.RegisterFedAsync(Declaration("As read first."), From(origin: "person@machine-a"), Now);
+
+        var same = await _service.RegisterFedAsync(Declaration("As read first."), From(origin: "person@machine-b"), Now);
+        var other = await _service.RegisterFedAsync(Declaration("Read otherwise."), From(origin: "person@machine-b"), Now);
+
+        Assert.True(same.Outcome.Accepted);
+        Assert.Contains("already", same.Outcome.Message);
+        Assert.Equal(FeedRefusal.ContentDiffers, other.Outcome.Refusal);
+        Assert.True(other.Outcome.Information);
+        Assert.Equal("As read first.", await SummaryOf("Open"));
+    }
+
+    /// <summary>
+    /// Once a repository is registered, a declaration from a line it does not call canonical is not yet
+    /// the family's. The line is the one the arriving declaration names, so a repository that renamed
+    /// its default branch is not locked out by the name it used before.
+    /// </summary>
+    [Fact]
+    public async Task Once_registered_a_declaration_is_taken_only_from_the_line_it_calls_canonical()
+    {
+        await _service.RegisterFedAsync(Declaration("Main."), From("mainmain", at: "2026-09-20T09:00:00Z"), Now);
+
+        var feature = await _service.RegisterFedAsync(
+            Declaration("Feature."), From("featfeat", branch: "feature/x", at: "2026-09-20T10:00:00Z", onBase: "mainmain"), Now);
+        var renamed = await _service.RegisterFedAsync(
+            Declaration("Trunk.", defaultBranch: "trunk"),
+            From("trunktrunk", branch: "trunk", at: "2026-09-20T11:00:00Z", onBase: "mainmain"), Now);
+
+        Assert.Equal(FeedRefusal.NotDefaultBranch, feature.Outcome.Refusal);
+        Assert.True(feature.Outcome.Information);
+        Assert.Contains("feature/x", feature.Outcome.Message);
+        Assert.True(renamed.Outcome.Accepted);
+        Assert.Equal("Trunk.", await SummaryOf("Open"));
+    }
+
+    /// <summary>
+    /// A declaration naming no commit cannot be ordered against one that names one, so it does not
+    /// replace it: information, and the repository stays registered as held.
+    /// </summary>
+    [Fact]
+    public async Task A_declaration_naming_no_commit_does_not_replace_one_that_names_one()
+    {
+        await _service.RegisterFedAsync(Declaration("Committed."), From(), Now);
+
+        var unnamed = await _service.RegisterFedAsync(Declaration("Uncommitted."), provenance: null, Now);
+
+        Assert.Equal(FeedRefusal.Unordered, unnamed.Outcome.Refusal);
+        Assert.True(unnamed.Outcome.Information);
+        Assert.Contains("aaaa1111", unnamed.Outcome.Message);
+        Assert.Equal("Committed.", await SummaryOf("Open"));
+    }
+
+    /// <summary>The digest is over the whole declaration: the flags and the canonical line are part of what it says.</summary>
+    [Fact]
+    public void A_declaration_s_digest_hears_every_field_it_stores()
+    {
+        var one = Declaration();
+
+        Assert.Equal(FeedDigest.Of(one), FeedDigest.Of(one with { Entries = 7, Root = "ignored" }));
+        Assert.NotEqual(FeedDigest.Of(one), FeedDigest.Of(one with { SharesKnowledge = false }));
+        Assert.NotEqual(FeedDigest.Of(one), FeedDigest.Of(one with { DefaultBranch = "trunk" }));
+        Assert.NotEqual(FeedDigest.Of(one), FeedDigest.Of(one with { Owns = ["x", "y"] }));
+        Assert.NotEqual(
+            FeedDigest.Of(one with { Owns = ["ab"], Accepts = ["c"] }),
+            FeedDigest.Of(one with { Owns = ["a"], Accepts = ["bc"] }));
+    }
+
+    /// <summary>The retire the deployment is told of forgets the declaration's commit with the row: it keeps no tombstone.</summary>
+    [Fact]
+    public async Task A_retired_registration_is_registered_afresh_by_whoever_holds_the_checkout()
+    {
+        await _service.RegisterFedAsync(Declaration("Newer."), From("newernewer", at: "2026-09-20T10:00:00Z"), Now);
+        await _service.RetireAsync("Open");
+
+        var again = await _service.RegisterFedAsync(
+            Declaration("From an older checkout."), From("olderolder", at: "2026-09-20T08:00:00Z"), Now);
+
+        Assert.True(again.Outcome.Accepted);
+        Assert.Equal("From an older checkout.", await SummaryOf("Open"));
+    }
 }
 
 /// <summary>

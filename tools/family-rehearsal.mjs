@@ -1231,8 +1231,9 @@ check(
 const newcomerHead = run('git rev-parse HEAD', newcomer).out.trim();
 const heldNewcomer = await api('GET', '/api/feed/held?repository=newcomer', { base: REMOTE_BASE, key: keyA });
 check(
-  'the remote holds the newcomer’s knowledge and code map at the commit its checkout stands on',
-  heldNewcomer.json?.knowledge === newcomerHead && heldNewcomer.json?.codeMap === newcomerHead,
+  'the remote holds the newcomer’s registration, knowledge and code map at the commit its checkout stands on',
+  heldNewcomer.json?.knowledge === newcomerHead && heldNewcomer.json?.codeMap === newcomerHead
+    && heldNewcomer.json?.registration === newcomerHead,
   `${newcomerHead}\n${heldNewcomer.text}`,
 );
 const withheld = await api('GET', `/api/search?q=${encodeURIComponent('keeps this lesson at home')}`, {
@@ -1569,6 +1570,98 @@ check(
     && fedRecords.every((s) => !s.profile && !s.tree),
   remoteSessions.text,
 );
+
+// REGISTRATIONS FOLLOW THEIR CHECKOUT, BOTH WAYS (SYNC5b). The mirror used to copy a teammate's row
+// once and never again (SYNC0b): a revised declaration never came down, and a retire went nowhere.
+// Machine b holds borealis for these ticks, so no session moves its history underneath them.
+bConfig({ holds: ['borealis'] });
+const revised = JSON.parse(readFileSync(join(borealis, 'daoris.json'), 'utf8'));
+revised.domain = { ...revised.domain, summary: 'Machine B revised this declaration.' };
+writeFileSync(join(borealis, 'daoris.json'), `${JSON.stringify(revised, null, 2)}\n`);
+run(`git ${GIT_ID} add daoris.json`, borealis);
+run(`git ${GIT_ID} commit -q -m "borealis revises its declaration"`, borealis);
+run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+driveB('--once');
+driveA('--once');
+const revisedHead = run('git rev-parse HEAD', borealis).out.trim();
+const heldRevised = await api('GET', '/api/feed/held?repository=borealis', { base: REMOTE_BASE, key: keyA });
+const remoteBorealis = ((await api('GET', '/api/registry', { base: REMOTE_BASE, key: keyA })).json ?? [])
+  .find((r) => r.repository === 'borealis');
+check(
+  'a revised declaration is registered at the remote, at the commit that made it',
+  heldRevised.json?.registration === revisedHead && remoteBorealis?.summary === 'Machine B revised this declaration.',
+  `${revisedHead}\n${heldRevised.text}\n${JSON.stringify(remoteBorealis)}`,
+);
+const revisedOnA = ((await api('GET', '/api/registry')).json ?? []).find((r) => r.repository === 'borealis');
+check(
+  '…and machine a’s copy follows it, where it used to stay as first copied (SYNC0b) — and still no root',
+  revisedOnA?.summary === 'Machine B revised this declaration.' && !('root' in revisedOnA),
+  JSON.stringify(revisedOnA),
+);
+
+// A second checkout behind the first: its older declaration used to win by arriving last.
+const staleDeclaration = await api('POST', '/api/registry', {
+  base: REMOTE_BASE, key: keyA,
+  body: {
+    repository: 'borealis', packs: [], join: true, shareKnowledge: false,
+    domain: { summary: 'An older checkout’s declaration.', owns: [], accepts: [] },
+    commit: run('git rev-parse HEAD~1', borealis).out.trim(), committedAt: '2000-01-01T00:00:00Z',
+    branch: run('git rev-parse --abbrev-ref HEAD', borealis).out.trim(),
+  },
+});
+check(
+  'a declaration from an older commit does not replace the held one — information, not a wall',
+  staleDeclaration.status === 409 && staleDeclaration.json?.information === true
+    && ((await api('GET', '/api/registry', { base: REMOTE_BASE, key: keyA })).json ?? [])
+      .some((r) => r.repository === 'borealis' && r.summary === 'Machine B revised this declaration.'),
+  staleDeclaration.text,
+);
+
+// A retire undone before any pass ran never reaches the circle: joining again takes the tombstone back.
+run(`node "${cliBin}" retire`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+const owedAfterUndo = await api('GET', '/api/registry/retired?workspace=default', { base: HOST_B_BASE });
+check(
+  'a retire undone by joining again before any pass owes the circle nothing',
+  Array.isArray(owedAfterUndo.json?.repositories) && owedAfterUndo.json.repositories.length === 0,
+  owedAfterUndo.text,
+);
+
+// A retire that stands travels: b owes it, the next pass carries it, and a's copy goes with it.
+const retiredOnB = run(`node "${cliBin}" retire`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+const retireOwed = await api('GET', '/api/registry/retired?workspace=default', { base: HOST_B_BASE });
+check(
+  'retiring a joined checkout on machine b leaves a retire owed to its circle, and the sentence says so',
+  retiredOnB.code === 0 && (retireOwed.json?.repositories ?? []).includes('borealis')
+    && /leaves the `default` circle's deployment too/.test(retiredOnB.out),
+  `${retiredOnB.out}\n${retireOwed.text}`,
+);
+driveB('--once');
+const owedAfterPass = await api('GET', '/api/registry/retired?workspace=default', { base: HOST_B_BASE });
+check(
+  '…the next pass carries it: the remote no longer lists borealis, and machine b owes nothing',
+  !((await api('GET', '/api/registry', { base: REMOTE_BASE, key: keyA })).json ?? []).some((r) => r.repository === 'borealis')
+    && (owedAfterPass.json?.repositories ?? ['?']).length === 0,
+  owedAfterPass.text,
+);
+driveA('--once');
+check(
+  '…and machine a’s copy goes with it — the circle said it is gone, and it was never a’s',
+  !((await api('GET', '/api/registry')).json ?? []).some((r) => r.repository === 'borealis'),
+  (await api('GET', '/api/registry')).text,
+);
+
+// Joining again registers it afresh — the deployment keeps no tombstone of its own — and it comes back down.
+run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
+driveB('--once');
+driveA('--once');
+check(
+  'joining again registers borealis afresh at the remote, and machine a has its copy back',
+  ((await api('GET', '/api/registry', { base: REMOTE_BASE, key: keyA })).json ?? []).some((r) => r.repository === 'borealis')
+    && ((await api('GET', '/api/registry')).json ?? []).some((r) => r.repository === 'borealis' && !('root' in r)),
+  (await api('GET', '/api/registry')).text,
+);
+bConfig({});
 
 const revoke = run(`dotnet "${httpDll}" keys revoke ${keyB.slice(3, 11)}`, repoRoot, {
   DAORIS_KNOWLEDGE_DB: remoteDb,

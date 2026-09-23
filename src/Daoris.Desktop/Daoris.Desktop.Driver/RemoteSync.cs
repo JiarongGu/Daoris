@@ -132,8 +132,9 @@ public sealed class RemoteSyncSet : IDisposable
 
 /// <summary>
 /// One pass of ONE WORKSPACE's local↔remote sync (D47 §9, D48 §5): feed that circle's joined
-/// registrations, this machine's session records, and each sharing repository's content UP; pull the
-/// remote's registry (foreign rows only) DOWN; then fetch, rebase and push the circle's quests (D68).
+/// registrations and each sharing repository's content UP, each ordered by the commit it speaks for;
+/// carry the retires this machine owes the circle; keep the team's rows here current, updated and
+/// removed (SYNC5b); then ask the host to fetch, rebase and push the circle's quests and records (D68).
 /// Registrations go first, so the remote knows who is joined before their records and quests arrive.
 /// Runs on the driver's own tick — a server machine running `daoris-driver` with a key is just another
 /// machine, not a special deployment.
@@ -179,15 +180,23 @@ public sealed class RemoteSync : IDisposable
         try
         {
             // Read the registry UNSCOPED and filter here, deliberately. The joined half is this
-            // workspace's alone (§5) — but the names half must span the whole machine, because it is
-            // what stops a foreign row overwriting a local registration that happens to share a name
-            // in another circle, root and all. A scoped read would make that guard blind by half.
+            // workspace's alone (§5) — but the guard half must span the whole machine, because it is
+            // what stops a teammate's row overwriting a local registration that happens to share a
+            // name in another circle, root and all. A scoped read would make that guard blind by half.
             var registryJson = await DriverHttp.GetAsync(_local, $"{_localBase}/api/registry", ct).ConfigureAwait(false);
-            var joined = RemoteSyncPayloads.Joined(registryJson, _workspace);
-            if (joined.Count == 0) return SyncReport.Clean;
+            var retired = RemoteSyncPayloads.Retired(await DriverHttp.GetAsync(
+                _local, $"{_localBase}/api/registry/retired?workspace={Uri.EscapeDataString(_workspace)}", ct)
+                .ConfigureAwait(false));
 
+            // A circle this machine holds nothing of, and owes nothing to, hears nothing from it. The last
+            // joined checkout retired is still a retire owed, so it still goes (SYNC5b).
+            if (!RemoteSyncPayloads.Holds(registryJson, _workspace) && retired.Count == 0) return SyncReport.Clean;
+
+            var joined = RemoteSyncPayloads.Joined(registryJson, _workspace);
             var notes = new List<string>(await FeedUpAsync(joined, ct).ConfigureAwait(false));
-            await MirrorRegistryAsync(RemoteSyncPayloads.Names(registryJson), ct).ConfigureAwait(false);
+            var remoteRegistryJson = await DriverHttp.GetAsync(_remote, $"{_remoteBase}/api/registry", ct).ConfigureAwait(false);
+            var told = await CarryRetiresAsync(retired, remoteRegistryJson, joined, ct).ConfigureAwait(false);
+            await MirrorRegistryAsync(remoteRegistryJson, registryJson, told, ct).ConfigureAwait(false);
             notes.AddRange(await SyncQuestsAsync(ct).ConfigureAwait(false));
 
             return notes.Count == 0 ? SyncReport.Clean : new(null, notes);
@@ -204,127 +213,215 @@ public sealed class RemoteSync : IDisposable
         }
     }
 
-    /// <summary>Registrations, then content — the remote must know who is joined before their records
-    /// and content arrive (D47 §9). Session records ride the host's pass with the quests (SYNC4).</summary>
-    /// <returns>What the remote deliberately did not take, in its own words.</returns>
+    /// <summary>
+    /// Each joined repository UP: its registration, then its content — the remote must know who is
+    /// joined before their records and content arrive (D47 §9). Session records ride the host's pass
+    /// with the quests (SYNC4).
+    /// </summary>
+    /// <returns>What the remote deliberately did not take, and what waits on a commit, in one sentence each.</returns>
     private async Task<IReadOnlyList<string>> FeedUpAsync(
         IReadOnlyList<RemoteSyncPayloads.JoinedRepository> joined, CancellationToken ct)
     {
         var notes = new List<string>();
-
-        foreach (var repo in joined)
-        {
-            // The canonical line rides the registration, because the deployment cannot ask git and
-            // this machine can (D48 §6). Read per tick rather than cached: a repository's default
-            // branch changes about once in its life, and the tick that follows should know.
-            var defaultBranch = await WorkingTree.DefaultBranchAsync(repo.Root, ct).ConfigureAwait(false);
-            await DriverHttp.PostAsync(
-                _remote, $"{_remoteBase}/api/registry",
-                RemoteSyncPayloads.Registration(repo, defaultBranch), ct)
-                .ConfigureAwait(false);
-        }
-
-        foreach (var repo in joined.Where(r => r.SharesKnowledge))
-        {
-            // Where this checkout stands, asked of git at the moment of feeding — the claim the
-            // deployment will compare against what it holds (D48 §6). A tree git cannot answer for
-            // feeds nothing: the door refuses a feed that names no commit, and that refusal arrives
-            // here as a note rather than as a wall.
-            var provenance = await WorkingTree.ProvenanceAsync(repo.Root, ct).ConfigureAwait(false);
-            if (provenance is null)
-            {
-                // The door would refuse this feed, and rightly — but only THIS side knows why, because
-                // only this side has the tree. Saying it here turns "the deployment refused something"
-                // into "that checkout has no history to speak from", which is the actionable sentence.
-                notes.Add(
-                    $"`{repo.Repository}` fed no knowledge: git could not say where this checkout stands, "
-                    + "and a deployment takes knowledge only from a named commit. Its records still travel.");
-                continue;
-            }
-
-            // A feed speaks for a commit, and the host's index and map are read from the working tree —
-            // so a tree with work in flight would send that work under the commit's name (SYNC5a).
-            var (clean, _) = await WorkingTree.CleanAsync(repo.Root, ct).ConfigureAwait(false);
-            if (!clean)
-            {
-                notes.Add(
-                    $"`{repo.Repository}` fed no knowledge and no code map: its checkout has uncommitted changes, "
-                    + $"and a feed speaks for a commit (`{provenance.ShortCommit}`) — what is uncommitted is not yet "
-                    + "that commit's. Its records still travel.");
-                continue;
-            }
-
-            var name = Uri.EscapeDataString(repo.Repository);
-            var (heldKnowledge, heldMap) = RemoteSyncPayloads.Held(await DriverHttp.GetAsync(
-                _remote, $"{_remoteBase}/api/feed/held?repository={name}", ct).ConfigureAwait(false));
-
-            var knowledge = await PlanAsync(repo, provenance, heldKnowledge, "knowledge", ct).ConfigureAwait(false);
-            if (knowledge.Note is { } knowledgeNote) notes.Add(knowledgeNote);
-            if (knowledge.Feed)
-            {
-                var content = RemoteSyncPayloads.Entries(repo.Repository, await DriverHttp.GetAsync(
-                    _local, $"{_localBase}/api/entries?repository={name}", ct)
-                    .ConfigureAwait(false), provenance, knowledge.Base);
-
-                if (await DriverHttp.PostInformableAsync(
-                        _remote, $"{_remoteBase}/api/feed/entries", content.Json, ct).ConfigureAwait(false)
-                    is { } note)
-                {
-                    notes.Add(note);
-                }
-            }
-
-            // Held at the same commit, the map's answer is the knowledge's — said once, not twice.
-            var map = string.Equals(heldMap, heldKnowledge, StringComparison.OrdinalIgnoreCase)
-                ? knowledge with { Note = null }
-                : await PlanAsync(repo, provenance, heldMap, "code map", ct).ConfigureAwait(false);
-            if (map.Note is { } mapNote) notes.Add(mapNote);
-            if (map.Feed)
-            {
-                var feed = RemoteSyncPayloads.CodeMap(repo.Repository, await DriverHttp.GetAsync(
-                    _local, $"{_localBase}/api/code-map/{name}", ct).ConfigureAwait(false), provenance, map.Base);
-
-                if (feed.Problem is { } problem)
-                {
-                    notes.Add($"`{repo.Repository}`'s code map was not fed: {problem}");
-                }
-                else if (await DriverHttp.PostInformableAsync(
-                        _remote, $"{_remoteBase}/api/feed/code-map", feed.Json!, ct).ConfigureAwait(false)
-                    is { } note)
-                {
-                    notes.Add(note);
-                }
-            }
-        }
-
+        foreach (var repo in joined) notes.AddRange(await FeedAsync(repo, ct).ConfigureAwait(false));
         return notes;
     }
 
-    /// <summary>Ask git how this checkout stands to what is held — only when there is something to ask.</summary>
-    private static async Task<RemoteSyncPayloads.FeedPlan> PlanAsync(
-        RemoteSyncPayloads.JoinedRepository repo, TreeProvenance here, string? held, string what, CancellationToken ct) =>
-        RemoteSyncPayloads.Order(
-            repo.Repository, what, here, held,
-            held is null || string.Equals(held, here.Commit, StringComparison.OrdinalIgnoreCase)
-                ? null
-                : await WorkingTree.RelationAsync(repo.Root, held, here.Commit, ct).ConfigureAwait(false));
+    /// <summary>The file a registration is read from: the declaration IS the manifest.</summary>
+    private const string Manifest = "daoris.json";
 
-    /// <summary>The remote's registry comes down as foreign rows only — teammates' repositories become
-    /// addressable here, while everything this machine holds keeps its own registration.</summary>
-    /// <remarks>
-    /// The mirrored rows are filed in THIS sync's workspace. That is not a feed naming its own circle
-    /// (which WSP1 forbids, and still does — the remote's answer carries no workspace anyone reads):
-    /// it is the receiving machine's own wiring deciding, since a row arriving from this workspace's
-    /// deployment belongs to this workspace by construction (D48 §2/§5).
-    /// </remarks>
-    private async Task MirrorRegistryAsync(IReadOnlySet<string> localNames, CancellationToken ct)
+    private async Task<IReadOnlyList<string>> FeedAsync(RemoteSyncPayloads.JoinedRepository repo, CancellationToken ct)
     {
-        foreach (var (_, payload) in RemoteSyncPayloads.ForeignRegistrations(
-            await DriverHttp.GetAsync(_remote, $"{_remoteBase}/api/registry", ct).ConfigureAwait(false),
-            localNames,
-            _workspace))
+        var notes = new List<string>();
+        var name = Uri.EscapeDataString(repo.Repository);
+
+        // The canonical line rides the registration, because the deployment cannot ask git and this
+        // machine can (D48 §6). Read per tick rather than cached: a repository's default branch changes
+        // about once in its life, and the tick that follows should know.
+        var defaultBranch = await WorkingTree.DefaultBranchAsync(repo.Root, ct).ConfigureAwait(false);
+
+        // Where this checkout stands, asked of git at the moment of feeding — the claim the deployment
+        // will compare against what it holds (D48 §6).
+        var provenance = await WorkingTree.ProvenanceAsync(repo.Root, ct).ConfigureAwait(false);
+        var clean = provenance is not null && (await WorkingTree.CleanAsync(repo.Root, ct).ConfigureAwait(false)).Clean;
+
+        // The declaration is the manifest, so a registration speaks for the commit while the manifest is
+        // as that commit has it — whatever else is in flight (SYNC5b). A modified manifest names none,
+        // and the deployment keeps a declaration that named one over it.
+        var declaredAt = provenance is not null
+            && (clean || await WorkingTree.UnmodifiedAsync(repo.Root, Manifest, ct).ConfigureAwait(false))
+                ? provenance
+                : null;
+        var held = declaredAt is null
+            ? RemoteSyncPayloads.HeldCommits.None
+            : RemoteSyncPayloads.Held(await DriverHttp.GetAsync(
+                _remote, $"{_remoteBase}/api/feed/held?repository={name}", ct).ConfigureAwait(false));
+        var ordering = declaredAt is null ? null : new Ordering(repo, declaredAt);
+
+        var registration = ordering is null
+            ? RemoteSyncPayloads.Registration(repo, defaultBranch)
+            : await ordering.PlanAsync("registration", held.Registration, ct).ConfigureAwait(false) is { Feed: true } declared
+                ? RemoteSyncPayloads.Registration(repo, defaultBranch, declaredAt, declared.Base)
+                : null;
+        if (registration is not null
+            && await DriverHttp.PostInformableAsync(_remote, $"{_remoteBase}/api/registry", registration, ct)
+                .ConfigureAwait(false) is { } registered)
+        {
+            notes.Add(registered);
+        }
+
+        if (!repo.SharesKnowledge) return [.. notes, .. ordering?.Waiting() ?? []];
+
+        if (provenance is null)
+        {
+            // The door would refuse this feed, and rightly — but only THIS side knows why, because only
+            // this side has the tree. Saying it here turns "the deployment refused something" into "that
+            // checkout has no history to speak from", which is the actionable sentence.
+            notes.Add(
+                $"`{repo.Repository}` fed no knowledge: git could not say where this checkout stands, "
+                + "and a deployment takes knowledge only from a named commit. Its records still travel.");
+            return notes;
+        }
+
+        // A feed speaks for a commit, and the host's index and map are read from the working tree — so
+        // a tree with work in flight would send that work under the commit's name (SYNC5a).
+        if (!clean)
+        {
+            notes.Add(
+                $"`{repo.Repository}` fed no knowledge and no code map: its checkout has uncommitted changes, "
+                + $"and a feed speaks for a commit (`{provenance.ShortCommit}`) — what is uncommitted is not yet "
+                + "that commit's. Its records still travel.");
+            return [.. notes, .. ordering?.Waiting() ?? []];
+        }
+
+        var knowledge = await ordering!.PlanAsync("knowledge", held.Knowledge, ct).ConfigureAwait(false);
+        if (knowledge.Feed)
+        {
+            var content = RemoteSyncPayloads.Entries(repo.Repository, await DriverHttp.GetAsync(
+                _local, $"{_localBase}/api/entries?repository={name}", ct)
+                .ConfigureAwait(false), provenance, knowledge.Base);
+
+            if (await DriverHttp.PostInformableAsync(
+                    _remote, $"{_remoteBase}/api/feed/entries", content.Json, ct).ConfigureAwait(false)
+                is { } note)
+            {
+                notes.Add(note);
+            }
+        }
+
+        var map = await ordering.PlanAsync("code map", held.CodeMap, ct).ConfigureAwait(false);
+        if (map.Feed)
+        {
+            var feed = RemoteSyncPayloads.CodeMap(repo.Repository, await DriverHttp.GetAsync(
+                _local, $"{_localBase}/api/code-map/{name}", ct).ConfigureAwait(false), provenance, map.Base);
+
+            if (feed.Problem is { } problem)
+            {
+                notes.Add($"`{repo.Repository}`'s code map was not fed: {problem}");
+            }
+            else if (await DriverHttp.PostInformableAsync(
+                    _remote, $"{_remoteBase}/api/feed/code-map", feed.Json!, ct).ConfigureAwait(false)
+                is { } note)
+            {
+                notes.Add(note);
+            }
+        }
+
+        return [.. notes, .. ordering.Waiting()];
+    }
+
+    /// <summary>
+    /// One checkout's feeds, ordered against what the deployment holds (SYNC5a, SYNC5b): git is asked
+    /// once per held commit, and what waits on one commit is said once, naming everything that does.
+    /// </summary>
+    private sealed class Ordering(RemoteSyncPayloads.JoinedRepository repo, TreeProvenance here)
+    {
+        private readonly Dictionary<string, TreeRelation?> _asked = new(StringComparer.OrdinalIgnoreCase);
+        private readonly List<(string What, string Held)> _waiting = [];
+
+        /// <summary>Ask git how this checkout stands to what is held — only when there is something to ask.</summary>
+        public async Task<RemoteSyncPayloads.FeedPlan> PlanAsync(string what, string? held, CancellationToken ct)
+        {
+            TreeRelation? relation = null;
+            if (held is not null
+                && !string.Equals(held, here.Commit, StringComparison.OrdinalIgnoreCase)
+                && !_asked.TryGetValue(held, out relation))
+            {
+                _asked[held] = relation = await WorkingTree.RelationAsync(repo.Root, held, here.Commit, ct).ConfigureAwait(false);
+            }
+
+            var plan = RemoteSyncPayloads.Order(repo.Repository, what, here, held, relation);
+            if (!plan.Feed) _waiting.Add((what, held!));
+            return plan;
+        }
+
+        /// <summary>What is not fed, one sentence per held commit.</summary>
+        public IEnumerable<string> Waiting() => _waiting
+            .GroupBy(wait => wait.Held, StringComparer.OrdinalIgnoreCase)
+            .Select(group => RemoteSyncPayloads.Order(
+                repo.Repository, RemoteSyncPayloads.Whats(group.Select(wait => wait.What).ToList()),
+                here, group.Key, _asked[group.Key]).Note!);
+    }
+
+    /// <summary>
+    /// The retires this machine owes the circle, carried to its deployment and then cleared (SYNC5b).
+    /// </summary>
+    /// <remarks>
+    /// A retire goes only where the circle still lists the repository: a circle that never heard of it
+    /// has nothing to take back, and telling it would name a repository to a deployment that was never
+    /// told of it. One owed for a repository joined here again is void — the store clears those as the
+    /// row rejoins, and this is the same rule said once more where it is spent.
+    /// </remarks>
+    /// <returns>What this pass retired at the circle — still in the list it read, and not to come back down.</returns>
+    private async Task<IReadOnlyList<string>> CarryRetiresAsync(
+        IReadOnlyList<string> retired, string remoteRegistryJson,
+        IReadOnlyList<RemoteSyncPayloads.JoinedRepository> joined, CancellationToken ct)
+    {
+        if (retired.Count == 0) return [];
+
+        var listed = RemoteSyncPayloads.Names(remoteRegistryJson);
+        var joinedHere = joined.Select(repo => repo.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var told = new List<string>();
+        foreach (var repository in retired)
+        {
+            var name = Uri.EscapeDataString(repository);
+            if (listed.Contains(repository) && !joinedHere.Contains(repository))
+            {
+                await DriverHttp.DeleteAsync(_remote, $"{_remoteBase}/api/registry/{name}", ct).ConfigureAwait(false);
+                told.Add(repository);
+            }
+
+            await DriverHttp.DeleteAsync(
+                _local, $"{_localBase}/api/registry/retired/{name}?workspace={Uri.EscapeDataString(_workspace)}", ct)
+                .ConfigureAwait(false);
+        }
+
+        return told;
+    }
+
+    /// <summary>
+    /// The remote's registry kept current here (SYNC5b): the team's rows written when new or changed, and
+    /// this circle's copies retired when the circle no longer lists them. Everything this machine holds
+    /// with a root keeps its own registration.
+    /// </summary>
+    /// <remarks>
+    /// The rows are filed in THIS sync's workspace. That is not a feed naming its own circle (which WSP1
+    /// forbids, and still does — the remote's answer carries no workspace anyone reads): it is the
+    /// receiving machine's own wiring deciding, since a row arriving from this workspace's deployment
+    /// belongs to this workspace by construction (D48 §2/§5).
+    /// </remarks>
+    private async Task MirrorRegistryAsync(
+        string remoteRegistryJson, string localRegistryJson, IReadOnlyList<string> retiredHere, CancellationToken ct)
+    {
+        var mirror = RemoteSyncPayloads.Mirror(remoteRegistryJson, localRegistryJson, _workspace, retiredHere);
+        foreach (var (_, payload) in mirror.Write)
         {
             await DriverHttp.PostAsync(_local, $"{_localBase}/api/registry", payload, ct).ConfigureAwait(false);
+        }
+
+        foreach (var gone in mirror.Retire)
+        {
+            await DriverHttp.DeleteAsync(_local, $"{_localBase}/api/registry/{Uri.EscapeDataString(gone)}", ct).ConfigureAwait(false);
         }
     }
 

@@ -537,6 +537,16 @@ The first version: doctrine that installs, is checked, and flows back.
   the same content is already held; read differently, the first reading stands and the second
   machine hears why, instead of the two replacing each other on every tick. And only a clean
   checkout feeds, because a feed speaks for a commit and work in flight is not yet that commit's.
+- **A declaration is ordered the same way** (SYNC5b). A registration names the commit its manifest
+  stands on, and a shared deployment orders it like knowledge. Before, the last machine to register
+  won, so a checkout that was behind put its older declaration back on every tick. The first
+  registration is taken from any line. After that, only the line the declaration calls canonical is
+  taken, and a manifest with uncommitted changes names no commit and does not replace one that did.
+- **Teammates' repositories stay current, and a retire travels.** The desktop used to copy a
+  teammate's registration once and never again, and a retire reached no other machine. Now each pass
+  rewrites a copy whose declaration changed, and removes a copy the circle no longer lists. A joined
+  checkout that leaves a circle owes that circle a retire: removed, moved to another circle, or no
+  longer joined. The store records the retire when the row changes, and the next pass carries it.
 - **A refusal can be information.** A stale or branch feed is the rules working, not a fault, so it is
   flagged as such on the wire and the sync reports it as news rather than as a wall. Records and
   quests still travel from any checkout; only knowledge waits for the canonical line. A checkout git
