@@ -308,8 +308,9 @@ wire evidence.
   passes.
 
   ⏸ **Driven for real 2026-09-22 to 11 of 13 checks**; the two missing were ACP4 (no MCP server
-  handed over), which has since landed. What is left is `node tools/acp2-proof.mjs --drive` passing
-  13/13 on the owner's login. The run's four other defects are fixed and archived under ACP4.
+  handed over), which has since landed. Re-run 2026-09-23: readiness 6/6, then the drive was held by
+  the trust preflight, because Claude has never trusted the proof's scratch repository. The owner
+  accepts that prompt once, and `--drive` should then pass 13/13.
 
 - [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
   Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
