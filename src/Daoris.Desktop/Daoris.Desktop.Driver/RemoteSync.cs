@@ -30,30 +30,91 @@ public sealed record SyncReport(string? Problem, IReadOnlyList<string> Notes)
 /// whatever trouble there was with the workspace's name on it — "the sync is failing" is not a useful
 /// sentence on a machine that holds two deployments' keys.
 /// </remarks>
-public sealed class RemoteSyncSet(IReadOnlyList<RemoteSync> syncs) : IDisposable
+public sealed class RemoteSyncSet : IDisposable
 {
-    /// <summary>The machine's syncs, when it has any remote at all — null otherwise, silently (D21).
-    /// The local key arrives from the caller, which has already read it for its own client — a second
-    /// ambient environment read here would be a hidden input the caller cannot see or test.</summary>
-    public static RemoteSyncSet? FromEnvironment(string localUrl, string? localKey)
+    private readonly Func<IReadOnlyDictionary<string, RemoteTarget>>? _load;
+    private readonly string _localUrl = "";
+    private readonly string? _localKey;
+    private readonly HttpMessageHandler? _handler;
+    private readonly Dictionary<string, (RemoteTarget Target, RemoteSync Sync)> _watched =
+        new(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyList<RemoteSync> _syncs;
+
+    /// <summary>A fixed set — what a test composes. The machine's own set watches the map instead.</summary>
+    public RemoteSyncSet(IReadOnlyList<RemoteSync> syncs) => _syncs = syncs;
+
+    private RemoteSyncSet(
+        string localUrl, string? localKey, Func<IReadOnlyDictionary<string, RemoteTarget>> load,
+        HttpMessageHandler? handler)
     {
-        var remotes = RemoteTarget.Load();
-        return remotes.Count == 0
-            ? null
-            : new RemoteSyncSet(remotes
-                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
-                .Select(entry => new RemoteSync(localUrl, localKey, entry.Key, entry.Value))
-                .ToList());
+        _localUrl = localUrl;
+        _localKey = localKey;
+        _load = load;
+        _handler = handler;
+        _syncs = [];
+        Refresh();
     }
 
-    /// <summary>The circles this machine syncs — what the driver announces when it comes up.</summary>
-    public IReadOnlyList<string> Workspaces => syncs.Select(sync => sync.Workspace).ToList();
+    /// <summary>
+    /// This machine's syncs, re-read from the remotes map on every pass (SYNC0d). An empty map is an
+    /// empty set that syncs nowhere, silently (D21) — never a null the loop holds for good.
+    /// </summary>
+    /// <remarks>
+    /// The local key arrives from the caller, which has already read it for its own client: a second
+    /// ambient environment read here would be a hidden input the caller cannot see or test.
+    /// </remarks>
+    public static RemoteSyncSet FromEnvironment(string localUrl, string? localKey) =>
+        Watching(localUrl, localKey, RemoteTarget.Load);
+
+    /// <summary>
+    /// A set that reads the map it is given on every pass: a circle wired since the last pass syncs
+    /// on this one, a changed key is used, and a removed circle stops.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Built once, the set synced nothing a person wired after the loop started until a restart,
+    /// while the remotes editor told them the loop re-reads the map on its next pass. A circle whose
+    /// url and key are unchanged keeps its sync, clients and all, so a steady map costs one file read.
+    /// </remarks>
+    /// <param name="handler">The test seam, as on <see cref="RemoteSync"/>.</param>
+    public static RemoteSyncSet Watching(
+        string localUrl, string? localKey, Func<IReadOnlyDictionary<string, RemoteTarget>> load,
+        HttpMessageHandler? handler = null) =>
+        new(localUrl, localKey, load, handler);
+
+    /// <summary>The circles this machine syncs as of the last pass — what the driver announces.</summary>
+    public IReadOnlyList<string> Workspaces => _syncs.Select(sync => sync.Workspace).ToList();
+
+    /// <summary>Bring the set in line with the map: keep what is unchanged, rebuild what changed.</summary>
+    private void Refresh()
+    {
+        if (_load is null) return;
+
+        var map = _load();
+        foreach (var gone in _watched.Keys.Where(name => !map.ContainsKey(name)).ToList())
+        {
+            _watched[gone].Sync.Dispose();
+            _watched.Remove(gone);
+        }
+
+        foreach (var (name, target) in map)
+        {
+            if (_watched.TryGetValue(name, out var held) && held.Target == target) continue;
+            if (held.Sync is not null) held.Sync.Dispose();
+            _watched[name] = (target, new RemoteSync(_localUrl, _localKey, name, target, _handler));
+        }
+
+        _syncs = _watched
+            .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+            .Select(entry => entry.Value.Sync)
+            .ToList();
+    }
 
     public async Task<SyncReport> RunOnceAsync(CancellationToken ct = default)
     {
+        Refresh();
         var problems = new List<string>();
         var notes = new List<string>();
-        foreach (var sync in syncs)
+        foreach (var sync in _syncs)
         {
             var report = await sync.RunOnceAsync(ct).ConfigureAwait(false);
             if (report.Problem is not null) problems.Add($"{sync.Workspace}: {report.Problem}");
@@ -65,7 +126,7 @@ public sealed class RemoteSyncSet(IReadOnlyList<RemoteSync> syncs) : IDisposable
 
     public void Dispose()
     {
-        foreach (var sync in syncs) sync.Dispose();
+        foreach (var sync in _syncs) sync.Dispose();
     }
 }
 

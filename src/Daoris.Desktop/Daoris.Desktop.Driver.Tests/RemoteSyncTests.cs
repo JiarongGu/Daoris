@@ -637,6 +637,67 @@ public sealed class RemoteSyncSetTests
         Assert.DoesNotContain("aurora:", report.Problem);
         Assert.Contains(transport.Calls, c => c.Call == $"POST {Aurora}/api/registry");
     }
+
+    // ——— SYNC0d: the map is re-read on every pass, so wiring a remote needs no restart.
+
+    /// <summary>Which key each call to a host carried — the header is what a rotated key changes.</summary>
+    private sealed class KeyedTransport : HttpMessageHandler
+    {
+        public List<(string Call, string? Key)> Calls { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Calls.Add(($"{request.Method} {request.RequestUri}", request.Headers.Authorization?.Parameter));
+            return Task.FromResult(Answer(request));
+        }
+    }
+
+    /// <summary>
+    /// 🔴 The set was built once when the loop started, so a remote wired afterwards synced nothing
+    /// until a restart — though the remotes editor says the loop re-reads the map on its next pass.
+    /// </summary>
+    [Fact]
+    public async Task A_remote_wired_after_the_loop_started_syncs_on_the_next_pass()
+    {
+        var map = new Dictionary<string, RemoteTarget>(StringComparer.OrdinalIgnoreCase);
+        using var transport = new KeyedTransport();
+        using var set = RemoteSyncSet.Watching(Local, null, () => map, transport);
+
+        await set.RunOnceAsync();
+        Assert.DoesNotContain(transport.Calls, c => c.Call.StartsWith($"POST {Aurora}"));
+        Assert.Empty(set.Workspaces);
+
+        map["aurora"] = new RemoteTarget(Aurora, "dk_aurora");
+        await set.RunOnceAsync();
+
+        Assert.Contains(transport.Calls, c => c.Call == $"POST {Aurora}/api/registry");
+        Assert.Equal(["aurora"], set.Workspaces);
+    }
+
+    [Fact]
+    public async Task A_changed_key_is_used_on_the_next_pass_and_a_removed_remote_stops()
+    {
+        var map = new Dictionary<string, RemoteTarget>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["aurora"] = new RemoteTarget(Aurora, "dk_old"),
+        };
+        using var transport = new KeyedTransport();
+        using var set = RemoteSyncSet.Watching(Local, null, () => map, transport);
+
+        await set.RunOnceAsync();
+        map["aurora"] = new RemoteTarget(Aurora, "dk_new");
+        transport.Calls.Clear();
+        await set.RunOnceAsync();
+
+        Assert.All(transport.Calls.Where(c => c.Call.StartsWith($"POST {Aurora}")), c => Assert.Equal("dk_new", c.Key));
+
+        map.Clear();
+        transport.Calls.Clear();
+        await set.RunOnceAsync();
+
+        Assert.DoesNotContain(transport.Calls, c => c.Call.Contains(Aurora));
+        Assert.Empty(set.Workspaces);
+    }
 }
 
 /// <summary>

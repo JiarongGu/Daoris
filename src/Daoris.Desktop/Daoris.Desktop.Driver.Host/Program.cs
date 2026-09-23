@@ -78,10 +78,11 @@ try
 
     // The machine's remotes, one per workspace that has one ($DAORIS_HOME/remotes.json, environment
     // overriding — D47 §9, D48 §5): the syncs ride the tick, so a headless driver on a server machine
-    // feeds and mirrors exactly as the desktop does. Absence is silent and local.
+    // feeds and mirrors exactly as the desktop does. Absence is silent and local, and the map is
+    // re-read every pass, so a remote wired later syncs without a restart (SYNC0d).
     using var sync = RemoteSyncSet.FromEnvironment(
         service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
-    if (sync is not null)
+    if (sync.Workspaces.Count > 0)
     {
         Console.WriteLine(
             $"driver: syncing each tick with the remotes for {string.Join(", ", sync.Workspaces)}");

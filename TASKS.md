@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: SYNC0d, then SYNC1–6 (D68); MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: SYNC1–6 (D68); MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -252,7 +252,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (361),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (396), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (105), `npm run rehearse:family` (214/214), `npm run test:web` (619 vitest + 18 Playwright),
+  (398), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (105), `npm run rehearse:family` (214/214), `npm run test:web` (619 vitest + 18 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -266,7 +266,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Thirty items are open** — eleven of them D68's and four D67's —
+the archive; its decision is **D53, accepted**). **Twenty-nine items are open** — ten of them D68's and four D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
@@ -277,7 +277,7 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D68's SYNC arc first, the owner's newest direction (SYNC0d, then SYNC1–6 in order); then D67's
+🔴 **D68's SYNC arc first, the owner's newest direction (SYNC1–6 in order); then D67's
 remaining items (AGT2b last — npm already installs the native build), then INT4b and INT4c.** They
 outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
@@ -452,8 +452,6 @@ screen.
 `docs/2026-09-23-sync-design.md`: every verb commits locally; sync is fetch, rebase, push. Today's
 five defects (SYNC0a–e) are in its §0. In order:
 
-- [ ] **SYNC0d — a newly wired remote takes effect without a restart** (`RemoteSyncSet` and
-  `RemoteQuestRoutes` are built once, though `RemotesModule` says the loop re-reads the map).
 - [ ] **SYNC1 — quests as history, locally**: the operation log, replayed through the transition
   table; the status table as its cache; 48-bit ids.
 - [ ] **SYNC2 — fetch, rebase, push for quests**, conflicts recorded; replaces the mirror and the

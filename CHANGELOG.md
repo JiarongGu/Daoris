@@ -392,6 +392,9 @@ The first version: doctrine that installs, is checked, and flows back.
   the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
   characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
   included. Removing the account removes its key. A sign-in stays the tool's, as before.
+- **A remote wired while the driver runs syncs on its next pass** (SYNC0d). It used to need a
+  restart, although the remotes editor said the loop re-reads the map. A changed key is used, and a
+  removed remote stops, the same way.
 - **A repository's own code map** (MAP3a). A repository that keeps a `docs/code-map.json`, listing
   its modules and what each depends on, can be opened from its node on the Map. The modules are
   drawn in layers, with what uses a module above it; choose one to see its path, its summary, what

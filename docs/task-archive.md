@@ -4332,3 +4332,16 @@ that skips a layer out past the column. The example engine keeps a map and the g
 a null field out and the view tested `=== null` (FIX-LOG). The window showed the skip-layer arrow
 hidden behind the box between, and lit arrows ending in grey heads. Service 361, web 619 + 18,
 family 214/214.
+
+## SYNC0d — a newly wired remote syncs without a restart (2026-09-23)
+
+- [x] **SYNC0d — a newly wired remote takes effect without a restart** (`RemoteSyncSet` and
+  `RemoteQuestRoutes` are built once, though `RemotesModule` says the loop re-reads the map).
+
+✅ **done 2026-09-23**, the first of D68's build. `RemoteSyncSet.Watching` reads the map on every
+pass. A circle whose url and key are unchanged keeps its sync, a changed one is rebuilt with its new
+key, a removed one stops, and an empty map is an empty set rather than a null the loop held for good.
+Both hosts (the shell's loop and the headless driver) take it through `FromEnvironment`. The two new
+tests failed with the per-pass read removed. **Left to SYNC2**: the service's quest relay
+(`RemoteQuestRoutes`) is still built once, and SYNC2 replaces that relay rather than mending it.
+Driver 398, modules 105, family 214/214.
