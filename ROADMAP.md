@@ -135,8 +135,8 @@ keep an API key; the wiring is a **map**. The asks are in `docs/2026-09-23-agent
 |---|---|---|
 | **AGT · Agents and accounts** | *agent* as the word, with each tool's maker; pins that stay pinned; vendor-channel installs; API-key accounts | AGT1, AGT2a, AGT3, AGT3b, AGT7 **built**; AGT2b last |
 | **MAP2 · The workspace topology** | A circle's repositories, the quests and the shared knowledge between them; no model | **Built** — the Map view (`docs/2026-09-23-map-design.md` §1) |
-| **MAP1 · The workflow** | ask → intake → quests → sessions → `then`, each step's agent, account and version | The chain strip **built** (MAP1a); the wiring panel (MAP1b) next |
-| **MAP3 · A repository's code** | The same map inside one repository, fed by it (D32): **repository intelligence**'s first consumer | After MAP1; fed by a tool where one exists, the agent elsewhere |
+| **MAP1 · The workflow** | ask → intake → quests → sessions → `then`, each step's agent, account and version | **Built**: the chain strip (MAP1a) and the wiring panel (MAP1b); the intake joins with INT4b |
+| **MAP3 · A repository's code** | The same map inside one repository, fed by it (D32): **repository intelligence**'s first consumer | Next; fed by a tool where one exists, the agent elsewhere |
 
 **What else is open is decisions and triggers**, not work: ACP2 and DEPLOY1's second half each spend
 a real login; PLUG2 reopens D4; the held rows wait on something arriving. Surface work comes from

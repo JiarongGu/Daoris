@@ -6,6 +6,7 @@ import type { Consideration } from './signals';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
+import type { WiringAnswer } from './map/wiring';
 
 export type { DiffFile, SessionDiff } from './work/diff';
 
@@ -623,7 +624,21 @@ export const useRefreshHarnesses = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => call<HarnessRoster>('HARNESSES', { refresh: true }),
-    onSuccess: (roster) => client.setQueryData(keys.harnesses, roster),
+    onSuccess: (roster) => {
+      client.setQueryData(keys.harnesses, roster);
+      // Looking again also lets a refused account through (AGT3b), which changes what a start takes.
+      void client.invalidateQueries({ queryKey: ['harnesses', 'starts'] });
+    },
+  });
+};
+
+/** What a start in each of these workspaces would take (MAP1b). Desktop-only: it is this machine's. */
+export const useStarts = (workspaces: string[]) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.starts(workspaces),
+    queryFn: () => call<WiringAnswer>('STARTS', { workspaces }),
+    enabled: isAvailable && workspaces.length > 0,
   });
 };
 

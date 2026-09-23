@@ -88,6 +88,16 @@ Both only when there is a chain. The drawer's own session section still shows wh
 now. The ask is shown by its handle: which tier answered is on the ask's record, which INT4c puts
 on screen.
 
+**The wiring is built (MAP1b, 2026-09-23).** `HarnessRoster.WiringAsync` answers for one workspace:
+the adapter, whose accounts it runs as, the account and which rung chose it, the version and which
+rung pinned it (or that `driver.json` names the command), and the refusal. The account comes from
+`HarnessSettings.ResolveFrom`, which is what `Resolve` now is. Whether the start happens, and at
+which version, is `SelectAsync` itself, and a test holds the two to the same answer for every shape
+of the wiring file. The bridge's `STARTS` route answers for the workspaces the page names, as
+names only: no home, no binary path and no key. Settings shows it as *What a start runs on*, after
+the agents. The one job is the work: a driven session, which is also what a conversation started
+without a pick takes. The intake joins with INT4b.
+
 ## 3. MAP3 — a repository's code (after MAP2)
 
 **What it answers.** Inside one node, what the repository is made of: its modules and how they

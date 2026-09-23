@@ -5,8 +5,9 @@ import { useRegistry } from './queries';
 import {
   useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
   useRemotes, useSetNotify, useSetStrikes,
-  useUnwireRemote, useUsage, useWireRemote,
+  useStarts, useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
+import { StartWiringList } from './map/StartWiring';
 import { SessionConsole } from './SessionConsole';
 import { SignIn } from './SignIn';
 import { byTool, type ToolDoor } from './tools';
@@ -371,8 +372,46 @@ function MachineSettings({ notify }: { notify: Notify }) {
       </Card>
 
       <HarnessRoster notify={notify} />
+      <Starts notify={notify} />
       <Plugins notify={notify} />
     </section>
+  );
+}
+
+/**
+ * What a start in each workspace would run on (MAP1b) — beside the agents, because it is their
+ * accounts and pins resolved: the workspace's default, then the machine's, then the agent's own.
+ *
+ * **Read from the driver, never recomputed here.** The answer is `SelectAsync`'s, so the page cannot
+ * show an account the loop would not take; this organism only names the circles and the accounts.
+ */
+function Starts({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const registry = useRegistry();
+  const roster = useHarnesses();
+  const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace ?? 'default'))].sort();
+  const answer = useStarts(workspaces);
+  useErrorNotify(answer.error, notify);
+
+  // An older shell has never heard of the question: the card is absent rather than the page blank.
+  const starts = Array.isArray(answer.data?.starts) ? answer.data.starts : null;
+  if (!starts || starts.length === 0) return null;
+
+  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  // What a person calls an account — the roster's own rule (who signed in, a key's handle, the name),
+  // looked up on the TOOL, because a door's accounts are its owner's (AGT7).
+  const tools = byTool(harnesses as ToolDoor[]);
+  const nameOf = (owner: string, profile: string) => {
+    const row = tools.find((tool) => tool.name === owner)?.accounts.find((account) => account.name === profile);
+    return row?.account ?? (row?.key ? t('harness.profile.keyName', { handle: row.key }) : profile);
+  };
+
+  return (
+    <Card className="mt-3.5">
+      <SectionTitle>{t('wiring.title')}</SectionTitle>
+      <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('wiring.body')}</Prose>
+      <StartWiringList starts={starts} nameOf={nameOf} />
+    </Card>
   );
 }
 

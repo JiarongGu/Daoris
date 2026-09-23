@@ -25,6 +25,9 @@ export const keys = {
   remotes: ['remotes'] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */
   harnesses: ['harnesses'] as const,
+  // Under the roster's key, so everything that invalidates the roster asks the wiring again: an
+  // account added, removed or chosen changes what a start would take (MAP1b).
+  starts: (workspaces: string[]) => ['harnesses', 'starts', ...workspaces] as const,
   /** What sessions consumed — shell-only, because per-account usage names a profile (TOOL3). */
   usage: ['usage'] as const,
   /** This machine's plugins — shell-only, since a plugin's folder is a machine path (D64). */

@@ -331,21 +331,35 @@ public sealed record HarnessSettings(
     /// Which profile a spawn runs as: the person's pick, then the workspace's default, then the
     /// machine's, then <b>none at all</b> — and none means the harness's own configuration home.
     /// </summary>
-    public string? Resolve(string harness, string? workspace, string? chosen)
+    public string? Resolve(string harness, string? workspace, string? chosen) =>
+        ResolveFrom(harness, workspace, chosen).Value;
+
+    /// <summary>
+    /// <see cref="Resolve"/>, saying which rung answered (MAP1b) — the one function both the spawn and
+    /// the wiring panel read, so the panel cannot show an account a start would not take.
+    /// </summary>
+    public (string? Value, ChoiceFrom From) ResolveFrom(string harness, string? workspace, string? chosen) =>
+        Choose(harness, workspace, chosen, Workspaces, Defaults);
+
+    /// <summary>The resolution order both twins share: pick, workspace, machine, unset.</summary>
+    private static (string? Value, ChoiceFrom From) Choose(
+        string harness, string? workspace, string? chosen,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> circles,
+        IReadOnlyDictionary<string, string> machine)
     {
-        if (!string.IsNullOrWhiteSpace(chosen)) return chosen.Trim();
+        if (!string.IsNullOrWhiteSpace(chosen)) return (chosen.Trim(), ChoiceFrom.Picked);
 
         if (!string.IsNullOrWhiteSpace(workspace)
-            && Workspaces.TryGetValue(workspace.Trim(), out var circle)
+            && circles.TryGetValue(workspace.Trim(), out var circle)
             && circle.TryGetValue(harness, out var perCircle)
             && !string.IsNullOrWhiteSpace(perCircle))
         {
-            return perCircle;
+            return (perCircle, ChoiceFrom.Workspace);
         }
 
-        return Defaults.TryGetValue(harness, out var machine) && !string.IsNullOrWhiteSpace(machine)
-            ? machine
-            : null;
+        return machine.TryGetValue(harness, out var held) && !string.IsNullOrWhiteSpace(held)
+            ? (held, ChoiceFrom.Machine)
+            : (null, ChoiceFrom.Unset);
     }
 
     /// <summary>Set or clear this machine's default profile for a harness. Null clears.</summary>
@@ -385,22 +399,12 @@ public sealed record HarnessSettings(
     /// installed the harness itself, and a contributor who never ran Daoris, both keep working
     /// (D48 §2a) — which is why nothing pinned may ever come to mean an empty managed directory.
     /// </remarks>
-    public string? ResolveVersion(string harness, string? workspace, string? chosen)
-    {
-        if (!string.IsNullOrWhiteSpace(chosen)) return chosen.Trim();
+    public string? ResolveVersion(string harness, string? workspace, string? chosen) =>
+        ResolveVersionFrom(harness, workspace, chosen).Value;
 
-        if (!string.IsNullOrWhiteSpace(workspace)
-            && WorkspaceVersions.TryGetValue(workspace.Trim(), out var circle)
-            && circle.TryGetValue(harness, out var perCircle)
-            && !string.IsNullOrWhiteSpace(perCircle))
-        {
-            return perCircle;
-        }
-
-        return Versions.TryGetValue(harness, out var machine) && !string.IsNullOrWhiteSpace(machine)
-            ? machine
-            : null;
-    }
+    /// <summary><see cref="ResolveVersion"/>, saying which rung answered — unset is <c>PATH</c>.</summary>
+    public (string? Value, ChoiceFrom From) ResolveVersionFrom(string harness, string? workspace, string? chosen) =>
+        Choose(harness, workspace, chosen, WorkspaceVersions, Versions);
 
     /// <summary>Set or clear this machine's pinned version for a harness. Null clears.</summary>
     public HarnessSettings WithVersion(string harness, string? version)
@@ -1099,6 +1103,39 @@ public sealed record HarnessSelection(
     public bool Allowed => Refusal is null;
 }
 
+/// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
+public enum ChoiceFrom
+{
+    /// <summary>The person picked it for this one session.</summary>
+    Picked,
+
+    /// <summary>This workspace's default.</summary>
+    Workspace,
+
+    /// <summary>This machine's default.</summary>
+    Machine,
+
+    /// <summary>Nothing set: the agent's own sign-in for an account, <c>PATH</c> for a version.</summary>
+    Unset,
+}
+
+/// <summary>
+/// What a start in one workspace would run on, and where each part came from (MAP1b) — the wiring
+/// panel's answer, never a second judgement. Carries names and versions only: no home, no binary path
+/// and no key, so it is safe on any surface the roster already reaches.
+/// </summary>
+/// <param name="Adapter">The adapter a start spawns — `driver.json`'s choice.</param>
+/// <param name="Owner">Whose accounts it runs as (AGT7): the adapter itself, or the tool a door opens onto.</param>
+/// <param name="Profile">The account, by its directory name; null is the agent's own sign-in.</param>
+/// <param name="ProfileFrom">Which rung chose it.</param>
+/// <param name="Version">The version it would run: the probed one, else the pin that was asked for.</param>
+/// <param name="VersionFrom">Which rung pinned it; unset is <c>PATH</c>.</param>
+/// <param name="Commanded">`driver.json` names the command outright, which outranks any pin.</param>
+/// <param name="Refusal">Why a start would be held, in the driver's own words; null when it would run.</param>
+public sealed record StartWiring(
+    string Adapter, string Owner, string? Profile, ChoiceFrom ProfileFrom,
+    string? Version, ChoiceFrom VersionFrom, bool Commanded, string? Refusal);
+
 /// <summary>
 /// What this machine's harnesses are, and which account a spawn runs as (D49 §4) — <b>one judgement
 /// for both doors</b>, driven and chat, for the same reason <see cref="Planner"/> is pure and the
@@ -1396,6 +1433,40 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 : null;
 
         return new HarnessSelection(null, profile, home, report?.Version, managed, claude, key);
+    }
+
+    /// <summary>
+    /// What a start in this workspace would run on, and where each part came from (MAP1b, D67 §3).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Read through <see cref="SelectAsync"/>, never beside it.</b> The design's rule is that the
+    /// picture cannot disagree with the loop, and a second resolution is exactly how it would: the
+    /// account is <see cref="HarnessSettings.ResolveFrom"/> — the function <see cref="SelectAsync"/>'s
+    /// <c>Resolve</c> is — and whether the start happens, and at which version, is the selection itself.
+    /// Nothing from the selection's machine-local half (the home, the binary, the key) is kept.
+    /// </remarks>
+    public async Task<StartWiring> WiringAsync(
+        string adapter, DriverConfig config, string? workspace, CancellationToken ct = default)
+    {
+        var resolved = adapters.Resolve(adapter);
+        var toolchain = resolved.Toolchain;
+        var owner = toolchain?.Owner(resolved.Name) ?? resolved.Name;
+        var settings = Settings;
+
+        var (profile, profileFrom) = toolchain is null
+            ? (null, ChoiceFrom.Unset)
+            : settings.ResolveFrom(owner, workspace, chosen: null);
+        // The same precedence `SelectAsync` applies: a command `driver.json` names has the last word.
+        var commanded = config.Commands.GetValueOrDefault(resolved.Name) is { Count: > 0 };
+        var (pinned, versionFrom) = commanded || toolchain is null
+            ? (null, ChoiceFrom.Unset)
+            : settings.ResolveVersionFrom(resolved.Name, workspace, chosen: null);
+
+        var selection = await SelectAsync(adapter, config, workspace, chosen: null, ct).ConfigureAwait(false);
+
+        return new StartWiring(
+            resolved.Name, owner, profile, profileFrom,
+            selection.Version ?? pinned, versionFrom, commanded, selection.Refusal);
     }
 }
 

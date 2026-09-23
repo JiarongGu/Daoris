@@ -583,6 +583,30 @@ describe('the harness roster', () => {
     expect(serviceCalls()).toEqual([]);
   });
 
+  /**
+   * MAP1b: what a start in each workspace would run on, beside the agents. The circles are the
+   * registry's, the answer is the driver's, and the account is named the way the roster names it.
+   */
+  it('says what a start in each workspace would run on, asking the driver for the registry\'s circles', async () => {
+    const STARTS = {
+      adapter: 'claude-code',
+      starts: [{
+        job: 'work', workspace: 'default', adapter: 'claude-code', owner: 'claude-code', product: 'Claude Code',
+        profile: 'personal', profileFrom: 'machine', version: 'claude 9.9.9', versionFrom: 'unset',
+        commanded: false, refusal: null,
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'HARNESSES' ? ROSTER : type === 'STARTS' ? STARTS : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    const row = await screen.findByRole('listitem', { name: 'a start in default' });
+    expect(within(row).getByText('personal')).toBeTruthy();
+    expect(within(row).getByText("this machine's default")).toBeTruthy();
+    expect(within(row).getByText('from PATH')).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STARTS', { payload: { workspaces: ['default'] } });
+  });
+
   /** An absent harness names what it is and offers the action, rather than leaving a blank row. */
   it('an absent tool says so and offers its own installer', async () => {
     show(<SettingsView notify={() => {}} />);

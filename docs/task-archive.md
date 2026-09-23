@@ -4287,3 +4287,22 @@ hollow ring. "No session yet" under a closed quest promised a session that would
 now reads *closed without a session*, with a test. The earlier quest's title was a door with no sign
 of one, so it is now faintly underlined. **Split off as MAP1b**: the wiring panel, which needs the
 driver. Web 591 + 17.
+
+## MAP1b — what a start runs on (2026-09-23)
+
+- [x] **MAP1b — the wiring a start would take** (`docs/2026-09-23-map-design.md` §2): per workspace
+  and job, the agent, account and version, and where each came from, through the driver's own
+  `SelectAsync`; desktop-only, on Settings. The intake job joins with INT4b.
+
+✅ **done 2026-09-23.** `HarnessSettings.ResolveFrom` and `ResolveVersionFrom` say which rung
+answered, and `Resolve` and `ResolveVersion` are now those, through one shared order.
+`HarnessRoster.WiringAsync` reads the account from the first and asks `SelectAsync` itself whether
+the start happens and at which version. A test holds the two to the same answer across four shapes
+of the wiring file. The bridge route is `STARTS`, named so the page's *Wiring* (the remotes map)
+keeps its name. It answers as names only, and a test checks that the answer holds neither the key
+nor the home. The answer's type lives in `map/wiring.ts`, beside what draws it, as `work/diff.ts`
+does: a molecule may not import the shell module, types included.
+
+**Seen on the window**: ready and held, both themes. *Look again* refreshes the card too. A held
+start's sentence ran 190 characters a line across the card, and is now capped at a reading measure.
+Driver 396, modules 105, web 601 + 17, family 214/214, deploy 39/39.

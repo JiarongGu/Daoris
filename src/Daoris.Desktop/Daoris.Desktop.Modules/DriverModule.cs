@@ -317,6 +317,50 @@ public sealed class DriverModule : ModuleBase
                 };
             }
 
+            // What a driven start in each workspace would run on, and where each part came from
+            // (MAP1b): the driver's own `SelectAsync`, read through `WiringAsync`, so the panel cannot
+            // show a start the loop would not make. The page names the circles it shows; this answers
+            // for those and no others. Names and versions only — no home, no binary, no key. Named
+            // for what it answers rather than "wiring", which the page already calls the remotes map.
+            case "STARTS":
+            {
+                var config = DriverConfig.Load(_loop.ConfigPath);
+                var named = new List<string>();
+                if (request.Payload is { } payload
+                    && payload.TryGetProperty("workspaces", out var circles)
+                    && circles.ValueKind == JsonValueKind.Array)
+                {
+                    named.AddRange(circles.EnumerateArray()
+                        .Where(circle => circle.ValueKind == JsonValueKind.String)
+                        .Select(circle => circle.GetString()!)
+                        .Where(circle => circle.Length > 0));
+                }
+
+                var starts = new List<object>();
+                foreach (var workspace in named.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal))
+                {
+                    var wiring = await _loop.Harnesses.WiringAsync(config.Adapter, config, workspace, cancellationToken);
+                    starts.Add(new
+                    {
+                        // The one job the loop runs today: a driven session, which is also what a
+                        // conversation started without a pick takes. The intake joins with INT4b.
+                        Job = "work",
+                        Workspace = workspace,
+                        wiring.Adapter,
+                        wiring.Owner,
+                        _loop.Harnesses.Toolchain(wiring.Adapter)?.Product,
+                        wiring.Profile,
+                        ProfileFrom = wiring.ProfileFrom.ToString().ToLowerInvariant(),
+                        wiring.Version,
+                        VersionFrom = wiring.VersionFrom.ToString().ToLowerInvariant(),
+                        wiring.Commanded,
+                        wiring.Refusal,
+                    });
+                }
+
+                return new { Adapter = config.Adapter, Starts = starts };
+            }
+
             // The person's explicit action on a harness (D49 §4): its own installer, its own updater,
             // its own login flow. Never automatic, never mid-session, never unasked — and streamed
             // line by line through the console, because it is a process like any other.

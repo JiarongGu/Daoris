@@ -392,6 +392,11 @@ The first version: doctrine that installs, is checked, and flows back.
   the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
   characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
   included. Removing the account removes its key. A sign-in stays the tool's, as before.
+- **What a start runs on** (MAP1b). Settings shows, for each workspace, the agent, account and
+  version a driven session would start with, and which setting chose each: this workspace's
+  default, this machine's, or the agent's own sign-in; a pin, or PATH. A start the driver would
+  hold says why in the driver's own words. It is the driver's own answer, so it cannot disagree
+  with what the loop does. Desktop only.
 - **How this work ran** (MAP1a). A quest in a chain shows the whole chain in its drawer: the ask it
   came from, the quests before and after it, the steps still to come, and every session that ran
   each one, with its agent, version and account. Press a quest to open it, or a session to attend

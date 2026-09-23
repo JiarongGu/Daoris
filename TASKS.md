@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: MAP1b, MAP3, AGT6, INT4b, INT4c, AGT2b.** INT3 waits on the owner's call, INT6 on the owner's presence.
+- **Actionable: MAP3, AGT6, INT4b, INT4c, AGT2b.** INT3 waits on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -252,7 +252,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (348),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (387), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (101), `npm run rehearse:family` (214/214), `npm run test:web` (591 vitest + 17 Playwright),
+  (396), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (105), `npm run rehearse:family` (214/214), `npm run test:web` (601 vitest + 17 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -266,7 +266,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Nineteen items are open** — four of them D67's —
+the archive; its decision is **D53, accepted**). **Eighteen items are open** — three of them D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
@@ -277,7 +277,7 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D67's items (MAP1b next; AGT2b last — npm already installs the native build), then INT4b and
+🔴 **D67's items (MAP3 next; AGT2b last — npm already installs the native build), then INT4b and
 INT4c**, outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
@@ -420,14 +420,11 @@ both are the owner's.**
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
 **D67** holds the owner's answers; `docs/2026-09-23-agents-direction.md` the asks and what was
-checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2 and MAP1a are archived.
+checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a and MAP1b are archived.
 
 - [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
   its signed manifest; Codex's releases once Windows and versions are confirmed.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
-- [ ] **MAP1b — the wiring a start would take** (`docs/2026-09-23-map-design.md` §2): per workspace
-  and job, the agent, account and version, and where each came from, through the driver's own
-  `SelectAsync`; desktop-only, on Settings. The intake job joins with INT4b.
 - [ ] **MAP3 — a repository's code** (design §3): a tool where one exists, the agent's file
   elsewhere, one small file either way.
 
