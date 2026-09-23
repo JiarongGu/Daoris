@@ -205,6 +205,22 @@ function hostProcesses() {
     });
 }
 
+/**
+ * Every hook process a plugin has up, by command line — the plugin's own program, which the shell
+ * starts with its loop and must stop with it (D64 §4: registrations are effects). Matched on the
+ * script's name because a plugin process is `node <script>`, and `node` alone is everybody's.
+ */
+function hookProcesses() {
+  // 🔴 `node.exe` only: the PowerShell process running this very query carries the pattern in its
+  // own command line and matched itself — one phantom hook process while the shell ran, and one
+  // "orphan" after it closed. Found by the first run of this check.
+  return powershell(
+    "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" -ErrorAction SilentlyContinue | "
+    + "Where-Object { $_.CommandLine -like '*hold-by-title*hooks.mjs*' } | "
+    + 'ForEach-Object { "$($_.ProcessId)" }')
+    .split('\n').map((line) => Number(line.trim())).filter(Boolean);
+}
+
 function stopEverything() {
   if (shell) {
     // Closed, never killed: the shell's own shutdown is what ends the driver loop and the host it
@@ -426,6 +442,12 @@ const done = await respond('done', 'Landed by the stub session.');
 if (!done.ok) throw new Error(done.text);
 `);
 
+  // A plugin that SPEAKS (D64), in the scratch home before the shell starts — the tracked example,
+  // as a person would have added it. The family rehearsal drives the headless host's loop with it;
+  // this is the only gate that drives the SHELL's, which owns the processes differently (it starts
+  // them in its loop and stops them in its Stop), and is what a deployed machine actually runs.
+  copyTree(join(examplesRoot, 'plugins', 'hold-by-title'), join(home, 'plugins', 'hold-by-title'));
+
   // The person's standing choices, scratch-local. Written BEFORE the shell starts: the loop begins
   // with the app, and a config arriving late makes the first ticks say "nothing is opted in".
   writeFileSync(join(home, 'driver.json'), `${JSON.stringify({
@@ -509,6 +531,16 @@ if (!done.ok) throw new Error(done.text);
   check('the install keeps its own state in data/', existsSync(join(install, 'data')),
     readdirSync(install).join(', '));
 
+  // The plugin's process, started by the DEPLOYED shell's own loop from the home it was told. The
+  // loop reconciles on its first tick, which follows the host coming up; waited for, never poked.
+  let hooks = [];
+  for (let attempt = 0; attempt < 30 && hooks.length === 0; attempt += 1) {
+    await sleep(1000);
+    hooks = hookProcesses();
+  }
+  check('the deployed shell started the plugin it found under its home', hooks.length === 1,
+    `${hooks.length} hook process(es) named hold-by-title/hooks.mjs`);
+
   // -------------------------------------------------------------- 5. a session, and its transcript
 
   section('5. A session the DEPLOYED shell spawned, and what reached its transcript');
@@ -576,6 +608,18 @@ if (!done.ok) throw new Error(done.text);
     `${record?.transcript}\n          it decodes to: ${bytes.toString('utf8').split('\n')
       .find((line) => line.includes('stub:')) ?? '(no stub line at all)'}`);
 
+  // The plugin was asked before the start (it allowed — the title carries no `[hold]`) and told of
+  // the ending, by the shell's loop; what it kept landed beside its install, in ITS data folder.
+  const endedLog = join(home, 'plugins', '.data', 'hold-by-title', 'ended.log');
+  let ended = '';
+  for (let attempt = 0; attempt < 15 && !ended.includes(record?.id ?? '\0'); attempt += 1) {
+    await sleep(1000);
+    ended = existsSync(endedLog) ? readFileSync(endedLog, 'utf8') : '';
+  }
+  check('the plugin was told of the ending by the deployed shell’s loop, and kept it in its data folder',
+    Boolean(record?.id) && new RegExp(`${record.id} ${questId} newcomer completed stub`).test(ended),
+    ended || '(no ended.log)');
+
   // -------------------------------------------------------------- 6. it stops without orphaning
 
   section('6. Closing the shell stops what the shell owns');
@@ -587,6 +631,10 @@ if (!done.ok) throw new Error(done.text);
   const orphans = hostProcesses().filter((host) => !before.has(host.pid));
   check('and no host it started is orphaned', orphans.length === 0,
     orphans.map((host) => `pid ${host.pid} ${host.path}`).join(', '));
+  // Registrations are effects (D64 §4): the plugin's process is exactly as alive as the loop.
+  const hooksLeft = hookProcesses();
+  check('and the plugin’s process went with the loop', hooksLeft.length === 0,
+    hooksLeft.map((pid) => `pid ${pid}`).join(', '));
 
   // -------------------------------------------------------------- 7. report
 
@@ -609,8 +657,10 @@ if (!done.ok) throw new Error(done.text);
   console.log('  this workspace’s build and keeping its state in data/ beside itself. Then a quest:');
   console.log('  spawned by the installed application’s own driver loop, carried to done through the');
   console.log('  session’s own door, and its transcript holding an em-dash and 道衍 BYTE FOR BYTE —');
-  console.log('  which is the defect a console codepage hid behind valid UTF-8. Closed, not killed,');
-  console.log('  and the host it owned went with it.');
+  console.log('  which is the defect a console codepage hid behind valid UTF-8. A plugin found under');
+  console.log('  the install’s own home was started by that loop, asked before the start, told of the');
+  console.log('  ending, and kept it beside itself. Closed, not killed, and the host it owned and the');
+  console.log('  plugin’s process went with it.');
   rmSync(scratch, { recursive: true, force: true });
 }
 
