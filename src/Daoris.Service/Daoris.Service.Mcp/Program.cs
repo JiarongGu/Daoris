@@ -11,10 +11,8 @@ using ModelContextProtocol.Server;
 //
 // Local-first, and local means local: it reads repositories on this machine and writes one SQLite
 // file under the user's profile. Nothing here needs a URL, a key or an account — that is the shared
-// mode, and it is the HTTP host's job, not this one's. The one exception is the write-through relay
-// (D47 §5): where the person has wired a workspace to a deployment, a verb on a quest that lives
-// there goes to its home rather than being decided twice. A machine that has wired nothing — the
-// default — opens no socket at all.
+// mode, and it is the HTTP host's job, not this one's. A quest shared with a team is committed here
+// like any other and carried by the driver's sync (D68), so this host opens no socket at all.
 //
 // This process is spawned by its client and lives for the session; the DATABASE is what persists.
 // Every session in every repository on this machine spawns over the same file, which is how a quest
@@ -26,8 +24,7 @@ using ModelContextProtocol.Server;
 //   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: $DAORIS_HOME/knowledge.db)
 //   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: $DAORIS_HOME/remotes.json —
 //                          D48 §5; DAORIS_REMOTE_URL/_KEY/_WORKSPACE override it whole). Read only to
-//                          relay verbs on remote-homed quests; a machine with no remote — the
-//                          default — never opens a socket at all.
+//                          know whether a circle is wired, which composing a chain asks.
 
 // JSON-RPC over stdio is UTF-8, and on Windows the console defaults to the system ANSI codepage —
 // so without this every em dash and every CJK character in the corpus arrives as mojibake. This
@@ -74,16 +71,14 @@ var serviceOptions = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), dat
 // with the HTTP host so the two cannot disagree about whether semantic recall is on.
 var embedder = HostComposition.BuildEmbedder(serviceOptions);
 
-// The write-through relay (D47 §5/§9): a verb on a remote-homed quest goes to the remote serving that
-// quest's WORKSPACE (D48 §5), when this machine has one — the same seam, the same map, the same
-// exchange the HTTP host composes, so an agent's door and a browser's door cannot disagree about
-// where a quest lives. The MCP host is always a LOCAL door; a shared deployment has no stdio.
-var remoteQuests = RemoteQuestRoutes.From(RemoteConfig.Load());
-
+// Every verb commits in this machine's store and the driver's sync carries it (D68); what a door
+// needs of the remotes map is only whether a circle is wired, which a chain's composition asks — read
+// from the map when asked, the same as the HTTP host. The MCP host is always a LOCAL door; a shared
+// deployment has no stdio.
 // A quest's files are kept under the home of the machine that has them (D65 §2) — this one, always:
 // the MCP host is a local door. No home, no keeper, and a publish carrying files is refused (D63).
 var composed = await ServiceFactory.CreateAsync(
-    serviceOptions, embedder, remoteQuests: remoteQuests, files: QuestFiles.FromEnvironment());
+    serviceOptions, embedder, wired: RemoteConfig.IsWired, files: QuestFiles.FromEnvironment());
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);

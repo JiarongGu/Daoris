@@ -13,8 +13,8 @@ public sealed record QuestUpload(string Name, byte[] Content);
 /// </summary>
 /// <remarks>
 /// <para><b>Machine-local, the transcript's boundary</b> (D47 §4). A remote keeps the record's names
-/// and hashes and never the bytes; a machine the quest was mirrored to learns a file exists and that
-/// it is not here — which <see cref="Has"/> answers, and which every reader says rather than hides.</para>
+/// and hashes and never the bytes; a machine the quest synced to learns a file exists and that it is
+/// not here — which <see cref="Has"/> answers, and which every reader says rather than hides.</para>
 ///
 /// <para><b>The layout is this class's alone</b>: <c>quests/&lt;id&gt;/attachments/&lt;first 12 of the
 /// hash&gt;-&lt;name&gt;</c> under the home. Nobody else derives it — the driver's home is not always this
@@ -56,7 +56,7 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
     public static string FileName(QuestAttachment attachment) =>
         $"{attachment.Sha256[..Math.Min(HashInName, attachment.Sha256.Length)]}-{attachment.Name}";
 
-    /// <summary>Whether this machine has the bytes — false for a mirrored quest's file, honestly.</summary>
+    /// <summary>Whether this machine has the bytes — false for a file of a quest published elsewhere, honestly.</summary>
     public bool Has(string questId, QuestAttachment attachment) => File.Exists(PathOf(questId, attachment));
 
     /// <summary>What the record will carry for an upload: a safe name, the content's hash, its size.</summary>

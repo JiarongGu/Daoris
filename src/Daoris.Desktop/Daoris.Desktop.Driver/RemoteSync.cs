@@ -133,9 +133,9 @@ public sealed class RemoteSyncSet : IDisposable
 /// <summary>
 /// One pass of ONE WORKSPACE's local↔remote sync (D47 §9, D48 §5): feed that circle's joined
 /// registrations, this machine's session records, and each sharing repository's content UP; pull the
-/// remote's registry (foreign rows only) and the quests touching this family DOWN into the local
-/// mirror. Registrations go first, so the remote knows who is joined before their records arrive. Runs
-/// on the driver's own tick — a server machine running `daoris-driver` with a key is just another
+/// remote's registry (foreign rows only) DOWN; then fetch, rebase and push the circle's quests (D68).
+/// Registrations go first, so the remote knows who is joined before their records and quests arrive.
+/// Runs on the driver's own tick — a server machine running `daoris-driver` with a key is just another
 /// machine, not a special deployment.
 /// </summary>
 /// <remarks>
@@ -186,11 +186,9 @@ public sealed class RemoteSync : IDisposable
             var joined = RemoteSyncPayloads.Joined(registryJson, _workspace);
             if (joined.Count == 0) return SyncReport.Clean;
 
-            var notes = await FeedUpAsync(joined, ct).ConfigureAwait(false);
-            await MirrorDownAsync(
-                RemoteSyncPayloads.Names(registryJson),
-                joined.Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase),
-                ct).ConfigureAwait(false);
+            var notes = new List<string>(await FeedUpAsync(joined, ct).ConfigureAwait(false));
+            await MirrorRegistryAsync(RemoteSyncPayloads.Names(registryJson), ct).ConfigureAwait(false);
+            notes.AddRange(await SyncQuestsAsync(ct).ConfigureAwait(false));
 
             return notes.Count == 0 ? SyncReport.Clean : new(null, notes);
         }
@@ -269,16 +267,14 @@ public sealed class RemoteSync : IDisposable
     }
 
     /// <summary>The remote's registry comes down as foreign rows only — teammates' repositories become
-    /// addressable here, while everything this machine holds keeps its own registration — and then the
-    /// quests touching this machine's own joined repositories.</summary>
+    /// addressable here, while everything this machine holds keeps its own registration.</summary>
     /// <remarks>
     /// The mirrored rows are filed in THIS sync's workspace. That is not a feed naming its own circle
     /// (which WSP1 forbids, and still does — the remote's answer carries no workspace anyone reads):
     /// it is the receiving machine's own wiring deciding, since a row arriving from this workspace's
     /// deployment belongs to this workspace by construction (D48 §2/§5).
     /// </remarks>
-    private async Task MirrorDownAsync(
-        IReadOnlySet<string> localNames, IReadOnlySet<string> joinedNames, CancellationToken ct)
+    private async Task MirrorRegistryAsync(IReadOnlySet<string> localNames, CancellationToken ct)
     {
         foreach (var (_, payload) in RemoteSyncPayloads.ForeignRegistrations(
             await DriverHttp.GetAsync(_remote, $"{_remoteBase}/api/registry", ct).ConfigureAwait(false),
@@ -287,13 +283,68 @@ public sealed class RemoteSync : IDisposable
         {
             await DriverHttp.PostAsync(_local, $"{_localBase}/api/registry", payload, ct).ConfigureAwait(false);
         }
+    }
 
-        var mirror = RemoteSyncPayloads.Quests(
-            await DriverHttp.GetAsync(_remote, $"{_remoteBase}/api/quests?includeClosed=true", ct).ConfigureAwait(false),
-            joinedNames);
-        if (mirror is { } pull)
+    /// <summary>How many times one pass goes round when the remote says a quest moved first.</summary>
+    public const int QuestRounds = 3;
+
+    /// <summary>
+    /// Fetch, rebase, push for this circle's quests (D68 §3, sync design §8): what the remote accepted
+    /// since this machine's cursor comes down and is integrated — the host rebases what is pending on
+    /// top — and what is still pending goes up, rebased on that cursor. A quest the remote finds behind
+    /// sends the pass round again, a bounded number of times.
+    /// </summary>
+    /// <returns>
+    /// What a person should hear: a move of this machine's that became a conflict, and a quest the
+    /// remote would not take, in its own words. Neither is a failure of the sync, which worked.
+    /// </returns>
+    private async Task<IReadOnlyList<string>> SyncQuestsAsync(CancellationToken ct)
+    {
+        var notes = new List<string>();
+        var circle = Uri.EscapeDataString(_workspace);
+        for (var round = 1; round <= QuestRounds; round++)
         {
-            await DriverHttp.PostAsync(_local, $"{_localBase}/api/feed/quests", pull.Json, ct).ConfigureAwait(false);
+            var cursor = RemoteSyncPayloads.Cursor(await DriverHttp.GetAsync(
+                _local, $"{_localBase}/api/quests/sync?workspace={circle}", ct).ConfigureAwait(false));
+
+            var fetched = new List<string>();
+            var through = cursor;
+            while (true)
+            {
+                var page = RemoteSyncPayloads.Page(await DriverHttp.GetAsync(
+                    _remote, $"{_remoteBase}/api/quests/operations?since={through}", ct).ConfigureAwait(false));
+                fetched.AddRange(page.Operations);
+                through = Math.Max(through, page.Through);
+                if (!page.More) break;
+            }
+
+            var integrated = RemoteSyncPayloads.Integrated(await DriverHttp.PostAsync(
+                _local, $"{_localBase}/api/quests/sync",
+                RemoteSyncPayloads.Integrate(_workspace, fetched, through), ct).ConfigureAwait(false));
+            notes.AddRange(integrated.Conflicts.Select(conflict =>
+                $"quest `#{conflict.Quest}`: this machine's `{conflict.Attempted}` reached the remote after "
+                + "another machine's move, and is kept on the quest as a conflict."));
+            if (integrated.Pending.Count == 0) break;
+
+            var pushed = RemoteSyncPayloads.Pushed(await DriverHttp.PostAsync(
+                _remote, $"{_remoteBase}/api/quests/operations",
+                RemoteSyncPayloads.Push(integrated.Cursor, integrated.Pending), ct).ConfigureAwait(false));
+            if (pushed.Accepted > 0)
+            {
+                await DriverHttp.PostAsync(
+                    _local, $"{_localBase}/api/quests/sync/accepted", pushed.AcceptedJson, ct).ConfigureAwait(false);
+            }
+
+            notes.AddRange(pushed.Refused);
+            if (pushed.Behind.Count == 0) break;
+            if (round == QuestRounds)
+            {
+                notes.Add(
+                    $"{pushed.Behind.Count} quest(s) moved at the remote on every one of {QuestRounds} rounds; "
+                    + "what is pending stays pending, and the next pass goes round again.");
+            }
         }
+
+        return notes;
     }
 }

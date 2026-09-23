@@ -5,6 +5,10 @@
 > `docs/DECISIONS.md` D45/D46 (the direction and the driver), D21 (local-first, sharing as
 > configuration), the service design §§4–6/8 (`docs/2026-08-05-knowledge-service-design.md`), and the
 > driver design §§4/7/9 (`docs/2026-09-19-driver-design.md`).
+>
+> 🔴 **§2's first rule, §5 and the quest half of §9 are superseded by D68**
+> (`docs/2026-09-23-sync-design.md`). A quest has no home and its verbs do not write through: every
+> machine commits locally, and sync is fetch, rebase, push. The rest of this document stands.
 
 ## 1. What it is for
 

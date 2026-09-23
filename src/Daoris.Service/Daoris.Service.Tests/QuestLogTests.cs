@@ -32,7 +32,8 @@ public sealed class QuestLogTests : IAsyncLifetime
     /// </summary>
     private static string Shape(Quest quest) => string.Join(" | ",
         quest.Id, quest.From, quest.To, quest.Title, quest.Body, quest.Status, quest.Note ?? "-",
-        quest.Filed.ToString("O"), quest.Updated.ToString("O"), quest.Home ?? "-", quest.Workspace,
+        quest.Filed.ToString("O"), quest.Updated.ToString("O"), quest.Workspace,
+        string.Join(",", quest.Conflicts.Select(c => $"{c.Machine}:{c.Attempted}:{c.Note}:{c.At:O}")),
         string.Join(",", quest.Links),
         string.Join(",", quest.Attachments.Select(a => $"{a.Name}:{a.Sha256}:{a.Bytes}")),
         string.Join(",", quest.Then.Select(s => $"{s.To}:{s.Title}:{s.Body}")),
@@ -191,18 +192,6 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal(parent.Id, published.Published!.Parent);
     }
 
-    /// <summary>A mirror row is its home's record (D47 §5): nothing happened to it here.</summary>
-    [Fact]
-    public async Task A_mirrored_quest_writes_no_history_here()
-    {
-        await _quests.MirrorAsync(new Quest(
-            "abc123", "Asker", "Owner", "Do it", "why", QuestStatus.Open, null, Now, Now, Home: "remote"));
-
-        await _quests.MoveAsync("abc123", QuestStatus.Taken, null, Now.AddHours(1));
-
-        Assert.Empty(await _quests.HistoryAsync("abc123"));
-    }
-
     // ——— The replay and the table, pure.
 
     private static QuestOperation Op(
@@ -355,8 +344,9 @@ public sealed class QuestLogTests : IAsyncLifetime
 
     /// <summary>
     /// Quests are not derivable from anything, so a store from before the log is given each local
-    /// quest's history from what its row says — once, however many hosts open it — and a mirror row
-    /// is left to its home. After that the old quests move exactly as new ones do.
+    /// quest's history from what its row says — once, however many hosts open it. A mirror row was a
+    /// copy of a remote's quest, so it is dropped rather than migrated (design §8): the first fetch
+    /// brings it back as history. After that the old quests move exactly as new ones do.
     /// </summary>
     [Fact]
     public async Task A_store_from_before_the_log_gains_each_local_quests_history_once()
@@ -377,8 +367,9 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal("landed", done[1].Note);
         Assert.Equal("circle", done[0].Published!.Workspace);
         Assert.Empty(await store.HistoryAsync("e1de14"));
+        Assert.Null(await store.FindAsync("e1de14"));
 
-        foreach (var quest in (await store.ListAsync(includeClosed: true)).Where(q => q.Home is null))
+        foreach (var quest in await store.ListAsync(includeClosed: true))
         {
             Assert.Equal(Shape(quest), Shape(QuestLog.Replay(await store.HistoryAsync(quest.Id))!));
         }

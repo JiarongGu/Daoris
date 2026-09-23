@@ -165,31 +165,7 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Equal("Still open", listed[0].Title);
     }
 
-    /// <summary>
-    /// A mirror row copies its home's state (D47 §5): one home per quest means local verbs cannot move
-    /// it — only the next mirror can, because only the home decided anything. This is what keeps two
-    /// stores from ever holding two opinions about one quest.
-    /// </summary>
-    [Fact]
-    public async Task A_mirrored_quest_is_immovable_locally_and_updated_by_the_next_mirror()
-    {
-        var remote = new Quest(
-            "abc123", "Asker", "Owner", "Do it", "why", QuestStatus.Open, null, Now, Now, Home: "remote");
-        await _quests.MirrorAsync(remote);
-
-        var moved = await _quests.MoveAsync("abc123", QuestStatus.Taken, null, Now.AddHours(1));
-
-        Assert.False(moved.Moved);
-        Assert.Equal(QuestStatus.Open, moved.Quest!.Status);
-        Assert.Equal("remote", moved.Quest.Home);
-
-        await _quests.MirrorAsync(remote with { Status = QuestStatus.Taken, Updated = Now.AddHours(2) });
-
-        Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync("abc123"))!.Status);
-        Assert.Single(await _quests.ListAsync());
-    }
-
-    /// <summary>A store created before the remote existed has no home column and must survive the upgrade.</summary>
+    /// <summary>A store created before the remote existed must survive the upgrade.</summary>
     [Fact]
     public async Task An_existing_store_without_the_home_column_is_migrated_in_place()
     {
@@ -210,7 +186,7 @@ public sealed class QuestStoreTests : IAsyncLifetime
         var store = await QuestStore.OpenAsync(old);
         var elder = (await store.ListAsync()).Single();
 
-        Assert.Null(elder.Home);
+        Assert.Equal("e1de11", elder.Id);
         Assert.True((await store.MoveAsync("e1de11", QuestStatus.Taken, null, Now)).Moved);
     }
 
@@ -242,27 +218,6 @@ public sealed class QuestStoreTests : IAsyncLifetime
 
         Assert.Empty(found.Links);
         Assert.Empty(found.Attachments);
-    }
-
-    /// <summary>
-    /// A mirror keeps what its home's quest carries — the NAMES of its attachments, never their bytes
-    /// (D65 §2): the remote's record is where another machine learns a file exists at all.
-    /// </summary>
-    [Fact]
-    public async Task A_mirror_carries_the_links_and_attachment_names()
-    {
-        var remote = new Quest(
-            "abc124", "Asker", "Owner", "Do it", "why", QuestStatus.Open, null, Now, Now, Home: "remote")
-        {
-            Links = ["https://tickets.example/T-2"],
-            Attachments = [new("trace.log", new string('2', 64), 300)],
-        };
-        await _quests.MirrorAsync(remote);
-
-        var found = (await _quests.FindAsync("abc124"))!;
-
-        Assert.Equal(["https://tickets.example/T-2"], found.Links);
-        Assert.Equal("trace.log", Assert.Single(found.Attachments).Name);
     }
 
     /// <summary>A store from before quests carried anything must survive the upgrade, carrying nothing.</summary>
@@ -390,26 +345,6 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Open, next.Status);
         Assert.Equal("The new one.", next.Body);
         Assert.Equal(elder.Id, (await _quests.PublishAsync("Intake", "Owner", "Verify in the browser", "x", Now)).Id);
-    }
-
-    /// <summary>A mirror row never moves here, so it never publishes here: its home closes it and chains it.</summary>
-    [Fact]
-    public async Task A_mirrored_chain_is_moved_and_chained_only_at_its_home()
-    {
-        await _quests.MirrorAsync(new Quest(
-            "abc125", "Intake", "Owner", "Do it", "why", QuestStatus.Open, null, Now, Now, Home: "remote")
-        {
-            Then = [new QuestStep("Owner", "Then this", "b")],
-            Parent = "fff000",
-        });
-
-        var move = await _quests.MoveAsync("abc125", QuestStatus.Done, null, Now);
-
-        Assert.False(move.Moved);
-        Assert.Null(move.FollowUp);
-        var mirrored = (await _quests.FindAsync("abc125"))!;
-        Assert.Equal("Then this", Assert.Single(mirrored.Then).Title);
-        Assert.Equal("fff000", mirrored.Parent);
     }
 
     [Fact]

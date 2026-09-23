@@ -39,15 +39,18 @@ internal static class DriverHttp
         return payload;
     }
 
-    public static async Task PostAsync(HttpClient http, string url, string json, CancellationToken ct)
+    /// <returns>What the host answered — the quest sync reads it; a feed ignores it.</returns>
+    public static async Task<string> PostAsync(HttpClient http, string url, string json, CancellationToken ct)
     {
         using var response = await http.PostAsync(
             url, new StringContent(json, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
             throw new DriverException($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
         }
+
+        return payload;
     }
 
     /// <summary>

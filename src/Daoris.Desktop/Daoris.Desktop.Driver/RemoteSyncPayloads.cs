@@ -203,92 +203,216 @@ public static class RemoteSyncPayloads
         return (json, count);
     }
 
-    /// <summary>
-    /// The remote quests this machine mirrors: those touching its joined repositories, as sender or
-    /// receiver. Everything else on the remote is other people's business. Null when nothing qualifies.
-    /// </summary>
-    public static (string Json, int Count)? Quests(string remoteQuestsJson, IReadOnlySet<string> joined)
+    // ——— The quest sync (D68, sync design §8). The driver moves operations between two hosts and
+    // judges nothing; replaying and rebasing are the store's. Every operation is copied FIELD BY FIELD,
+    // like every other payload here, so nothing a host answered beyond the contract rides along.
+
+    /// <summary>The cursor this machine's host answered for a workspace.</summary>
+    public static long Cursor(string cursorJson)
     {
-        using var document = JsonDocument.Parse(remoteQuestsJson);
+        using var document = JsonDocument.Parse(cursorJson);
+        return Answer(document, "a cursor").TryGetProperty("cursor", out var cursor) && cursor.ValueKind == JsonValueKind.Number
+            ? cursor.GetInt64()
+            : 0;
+    }
+
+    /// <summary>One page of what the remote accepted: its operations, the number it covers through, and whether more follow.</summary>
+    public static (IReadOnlyList<string> Operations, long Through, bool More) Page(string pageJson)
+    {
+        using var document = JsonDocument.Parse(pageJson);
+        var root = Answer(document, "a page of operations");
+        return (
+            Operations(root, "operations"),
+            root.TryGetProperty("through", out var through) && through.ValueKind == JsonValueKind.Number ? through.GetInt64() : 0,
+            root.TryGetProperty("more", out var more) && more.ValueKind == JsonValueKind.True);
+    }
+
+    /// <summary>What the machine's host integrates: the fetched operations of one workspace, and how far they reach.</summary>
+    public static string Integrate(string workspace, IReadOnlyList<string> operations, long through) => Write(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteString("workspace", workspace);
+        writer.WriteNumber("through", through);
+        writer.WriteStartArray("operations");
+        foreach (var operation in operations) writer.WriteRawValue(operation);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    });
+
+    /// <summary>What integrating answered: the cursor, what is pending to push, and the moves that became conflicts.</summary>
+    public static (long Cursor, IReadOnlyList<string> Pending, IReadOnlyList<(string Quest, string Attempted)> Conflicts) Integrated(
+        string integratedJson)
+    {
+        using var document = JsonDocument.Parse(integratedJson);
+        var root = Answer(document, "an integration");
+        var conflicts = new List<(string, string)>();
+        if (root.TryGetProperty("conflicts", out var lost) && lost.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var conflict in lost.EnumerateArray())
+            {
+                conflicts.Add((Text(conflict, "quest") ?? "", Text(conflict, "attempted") ?? ""));
+            }
+        }
+
+        return (
+            root.TryGetProperty("cursor", out var cursor) && cursor.ValueKind == JsonValueKind.Number ? cursor.GetInt64() : 0,
+            Operations(root, "pending"),
+            conflicts);
+    }
+
+    /// <summary>A push: the pending operations, rebased on <paramref name="base"/>.</summary>
+    public static string Push(long @base, IReadOnlyList<string> operations) => Write(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteNumber("base", @base);
+        writer.WriteStartArray("operations");
+        foreach (var operation in operations) writer.WriteRawValue(operation);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    });
+
+    /// <summary>
+    /// What the remote answered a push: the numbers it gave, as the body the machine's host records them
+    /// from; the quests it found behind; and its refusals, each in its own words.
+    /// </summary>
+    public static (string AcceptedJson, int Accepted, IReadOnlyList<string> Behind, IReadOnlyList<string> Refused) Pushed(
+        string pushedJson)
+    {
+        using var document = JsonDocument.Parse(pushedJson);
+        var root = Answer(document, "a push's answer");
         var count = 0;
-        var json = Write(writer =>
+        var accepted = Write(writer =>
         {
             writer.WriteStartObject();
-            writer.WriteStartArray("quests");
-            foreach (var quest in document.RootElement.EnumerateArray())
+            writer.WriteStartArray("accepted");
+            if (root.TryGetProperty("accepted", out var numbered) && numbered.ValueKind == JsonValueKind.Array)
             {
-                var from = Text(quest, "from") ?? "";
-                var to = Text(quest, "to") ?? "";
-                if (!joined.Contains(from) && !joined.Contains(to)) continue;
-
-                count++;
-                writer.WriteStartObject();
-                writer.WriteString("id", Text(quest, "id"));
-                writer.WriteString("from", from);
-                writer.WriteString("to", to);
-                writer.WriteString("title", Text(quest, "title"));
-                writer.WriteString("body", Text(quest, "body"));
-                writer.WriteString("status", Text(quest, "status"));
-                Copy(writer, quest, "note");
-                writer.WriteString("filed", Text(quest, "filed"));
-                writer.WriteString("updated", Text(quest, "updated"));
-
-                // What the quest carries (D65 §2): links whole, files BY NAME — field by field, so a
-                // path another machine answered can never ride along into this one's mirror.
-                writer.WriteStartArray("links");
-                if (quest.TryGetProperty("links", out var links) && links.ValueKind == JsonValueKind.Array)
+                foreach (var acceptance in numbered.EnumerateArray())
                 {
-                    foreach (var link in links.EnumerateArray())
-                    {
-                        if (link.ValueKind == JsonValueKind.String) writer.WriteStringValue(link.GetString());
-                    }
+                    count++;
+                    writer.WriteStartObject();
+                    writer.WriteString("machine", Text(acceptance, "machine"));
+                    CopyNumber(writer, acceptance, "sequence");
+                    CopyNumber(writer, acceptance, "number");
+                    writer.WriteEndObject();
                 }
-
-                writer.WriteEndArray();
-                writer.WriteStartArray("attachments");
-                if (quest.TryGetProperty("attachments", out var files) && files.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var file in files.EnumerateArray())
-                    {
-                        writer.WriteStartObject();
-                        writer.WriteString("name", Text(file, "name"));
-                        writer.WriteString("sha256", Text(file, "sha256"));
-                        if (file.TryGetProperty("bytes", out var bytes) && bytes.ValueKind == JsonValueKind.Number)
-                        {
-                            writer.WriteNumber("bytes", bytes.GetInt64());
-                        }
-
-                        writer.WriteEndObject();
-                    }
-                }
-
-                writer.WriteEndArray();
-
-                // The chain as its home holds it (D65 §4): the home closes each step and publishes
-                // the next; the mirror only shows what follows and what a quest follows.
-                Copy(writer, quest, "parent");
-                writer.WriteStartArray("then");
-                if (quest.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var step in then.EnumerateArray())
-                    {
-                        writer.WriteStartObject();
-                        writer.WriteString("to", Text(step, "to"));
-                        writer.WriteString("title", Text(step, "title"));
-                        writer.WriteString("body", Text(step, "body"));
-                        writer.WriteEndObject();
-                    }
-                }
-
-                writer.WriteEndArray();
-                writer.WriteEndObject();
             }
 
             writer.WriteEndArray();
             writer.WriteEndObject();
         });
 
-        return count == 0 ? null : (json, count);
+        var refused = new List<string>();
+        if (root.TryGetProperty("refused", out var no) && no.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var refusal in no.EnumerateArray())
+            {
+                refused.Add($"quest `#{Text(refusal, "quest")}` was not taken by the remote: {Text(refusal, "reason")}");
+            }
+        }
+
+        return (accepted, count, Strings(root, "behind"), refused);
+    }
+
+    /// <summary>
+    /// A host's answer, which must be an object: anything else is a wall the sync NAMES, never an
+    /// exception that takes the tick down with it, and never an empty answer that looks like nothing to do.
+    /// </summary>
+    private static JsonElement Answer(JsonDocument document, string what) =>
+        document.RootElement.ValueKind == JsonValueKind.Object
+            ? document.RootElement
+            : throw new DriverException($"a host answered something that is not {what}: {Clip(document.RootElement.GetRawText())}");
+
+    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
+
+    /// <summary>The operations under <paramref name="name"/>, each rewritten field by field.</summary>
+    private static IReadOnlyList<string> Operations(JsonElement root, string name)
+    {
+        var operations = new List<string>();
+        if (!root.TryGetProperty(name, out var list) || list.ValueKind != JsonValueKind.Array) return operations;
+
+        foreach (var operation in list.EnumerateArray())
+        {
+            operations.Add(Write(writer => Operation(writer, operation)));
+        }
+
+        return operations;
+    }
+
+    /// <summary>
+    /// One operation, the contract's fields and no others: who made it, where it stands, and — for a
+    /// publish — the ask, with its files BY NAME. There is no workspace field: the receiving side files
+    /// a publish by its own wiring (SYNC0a).
+    /// </summary>
+    private static void Operation(Utf8JsonWriter writer, JsonElement operation)
+    {
+        writer.WriteStartObject();
+        CopyNumber(writer, operation, "number");
+        Copy(writer, operation, "machine");
+        CopyNumber(writer, operation, "sequence");
+        Copy(writer, operation, "quest");
+        Copy(writer, operation, "kind");
+        Copy(writer, operation, "at");
+        Copy(writer, operation, "note");
+        Copy(writer, operation, "attempted");
+        if (operation.TryGetProperty("asked", out var asked) && asked.ValueKind == JsonValueKind.Object)
+        {
+            writer.WriteStartObject("asked");
+            Copy(writer, asked, "from");
+            Copy(writer, asked, "to");
+            Copy(writer, asked, "title");
+            Copy(writer, asked, "body");
+            Copy(writer, asked, "parent");
+            writer.WriteStartArray("links");
+            if (asked.TryGetProperty("links", out var links) && links.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var link in links.EnumerateArray())
+                {
+                    if (link.ValueKind == JsonValueKind.String) writer.WriteStringValue(link.GetString());
+                }
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("attachments");
+            if (asked.TryGetProperty("attachments", out var files) && files.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var file in files.EnumerateArray())
+                {
+                    writer.WriteStartObject();
+                    Copy(writer, file, "name");
+                    Copy(writer, file, "sha256");
+                    CopyNumber(writer, file, "bytes");
+                    writer.WriteEndObject();
+                }
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("then");
+            if (asked.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var step in then.EnumerateArray())
+                {
+                    writer.WriteStartObject();
+                    Copy(writer, step, "to");
+                    Copy(writer, step, "title");
+                    Copy(writer, step, "body");
+                    writer.WriteEndObject();
+                }
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+    }
+
+    private static void CopyNumber(Utf8JsonWriter writer, JsonElement from, string name)
+    {
+        if (from.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number)
+        {
+            writer.WriteNumber(name, value.GetInt64());
+        }
     }
 
     /// <summary>

@@ -4380,3 +4380,44 @@ planted file. A second probe showed that on this driver, a statement run *outsid
 while one is open **joins it** rather than failing. So every path that wrote nothing commits instead
 of rolling back, which would have undone another request's write, and a test pins that driver
 behaviour. Service 388, driver 398, modules 105, web 619 + 18, family 214/214, verify green.
+
+## SYNC2 — fetch, rebase, push for quests (2026-09-24)
+
+- [x] **SYNC2 — fetch, rebase, push for quests**, conflicts recorded; replaces the mirror and the
+  write-through (fixes SYNC0a, SYNC0e); the rehearsal's two-machine phase rewritten.
+
+✅ **done 2026-09-24**, the third of D68's build. **Every verb commits locally now**: the exchange
+lost its relay, `HomeUnreachable` is gone from both refusal enums, and `IRemoteQuestClient`,
+`RemoteQuestRoutes` and `HttpRemoteQuests` went with it. The store gained both halves of the sync.
+A machine has a cursor, `IntegrateAsync` (which keeps what was fetched, then rebases) and
+`PendingAsync`/`AcceptedAsync`. A remote has `OperationsSinceAsync` and `ReceiveAsync`, which judges
+each quest on its own: behind, refused or accepted. The remote's number is its log position. A
+history replays in the remote's order, then this machine's. A pending move that no longer applies is
+rewritten into a `conflict`: what was attempted and its note, carried on the quest in
+`Quest.Conflicts`, and pushed like anything else. The replay learned `Applies` and `Step` so the
+rebase and the remote judge exactly as it does. The driver moves bytes between five doors, three on
+the machine and two on the remote. It copies each operation field by field, goes round at most three
+times when a quest is behind, and reports conflicts and refusals as notes. A tick syncs again after
+anything concluded. The contract is sync design §8.
+
+**Decided while building** (design §8 says each): **what is pushed follows the receiver.** A quest
+leaves a machine only when its `to` is joined in that circle, locally or as a teammate's rootless
+row. That is D47's *home follows the receiver*, kept as a disclosure rule, and it fixes SYNC0e,
+because an ask has no row and pushes by its receiver. **Neither door carries a workspace**: the
+receiving side files a publish by its own wiring, which dissolves SYNC0a. **Two things a rebase
+drops**: a second publish of an ask the remote already holds, and a follow-up that only a lost close
+published. **The mirror is gone**: its rows are deleted on open and `home` is dropped, so the first
+fetch rebuilds them from cursor zero. **The chain rule stays under a new reason**: a chain is all
+shared or all local, because a step is published on whichever machine closes the one before it.
+
+**Found**: the table allows done from taken whoever took the quest. A machine whose take lost can
+still close the quest over the winner's take, and the remote accepts that as a fast-forward. It is
+SYNC3's ("a losing session stopped"), and the SYNC3 row now says so. Phase 12 of the rehearsal also
+leaned on the relay (a deployment holding a quest the instant it was published), and now syncs
+first. **The rehearsal's phase 11** proves the online race (a machine seeing a take first spawns
+nothing), the offline race (the same ask published on both machines is one quest, and the second
+take becomes a conflict every machine holds), and a remote that is down (verbs commit, the tick
+names the wall, and the next tick pushes). It also proves the closure reaches the remote within the
+tick that made it, which is the only check on the tick's second sync. Service 381 (28 relay and
+mirror tests removed, 21 added), driver 400, modules 105, web 619 + 18, family 220/220, deploy 39/39,
+verify green.

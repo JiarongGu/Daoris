@@ -129,11 +129,11 @@ public static class ServiceFactory
         IVectorProvider? embedder = null,
         IVectorStore? vectors = null,
         IDisclosurePolicy? disclosure = null,
-        // The write-through relay (D47 §5/§9), when this machine has a remote — one per workspace
-        // (D48 §5), resolved by the quest's own circle. Passed in like the embedder: the deployment
-        // decides, the composition carries it, and both doors get the same exchange so neither can
-        // drift. A shared host passes nothing — it IS the home.
-        IRemoteQuestRoutes? remoteQuests = null,
+        // Whether a workspace has a remote on this machine (D48 §5) — what a chain's composition asks,
+        // because a chain is all shared or all local (D68). Passed in like the embedder: the deployment
+        // decides, and both doors get the same exchange so neither can drift. A shared host passes
+        // nothing — it is the remote.
+        Func<string, bool>? wired = null,
         // What the index reads from, when the deployment is not the usual scan-this-folder one. A
         // shared host passes EmptyKnowledgeSource, because it is fed and never scans (D47 §4) — the
         // route refusal alone would leave the index-on-first-use path free to scan the server's disk.
@@ -208,7 +208,7 @@ public static class ServiceFactory
             }
         }
 
-        var exchange = new QuestExchange(service, quests, remoteQuests, files);
+        var exchange = new QuestExchange(service, quests, wired, files);
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which

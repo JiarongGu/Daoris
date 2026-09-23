@@ -27,12 +27,6 @@ public enum QuestStatus
 /// <param name="Note">The reason, when declined or finished.</param>
 /// <param name="Filed">When it was published.</param>
 /// <param name="Updated">When its status last moved.</param>
-/// <param name="Home">
-/// Where this quest LIVES, when that is not here (D47 §5). Null is the normal case: a quest of this
-/// store's own. Non-null marks a mirror row — a copy of another store's authority, kept for reading
-/// and planning — and a mirror never moves locally: transitions happen at the home, and the next
-/// mirror carries the result back. One home per quest is what makes reconciliation a non-problem.
-/// </param>
 /// <param name="Workspace">
 /// The circle this quest belongs to (D48). Both sides share it by construction — the exchange refuses
 /// a publish that would cross — so one field, not two, and a scoped list can trust it.
@@ -47,9 +41,14 @@ public sealed record Quest(
     string? Note,
     DateTimeOffset Filed,
     DateTimeOffset Updated,
-    string? Home = null,
     string Workspace = Workspaces.Default)
 {
+    /// <summary>
+    /// Moves that lost to another machine's (D68 §5), in the order they were recorded — kept, not
+    /// dropped, until a person acts. Empty for a quest nobody raced.
+    /// </summary>
+    public IReadOnlyList<QuestConflict> Conflicts { get; init; } = [];
+
     /// <summary>
     /// Addresses the quest carries — a ticket, a page, a document (D65 §2). They travel with it
     /// everywhere the quest does, and are given in the order the asker gave them.
@@ -114,8 +113,14 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
 /// <c>quest_log</c>, stamped with this store's machine and that machine's next sequence number, and
 /// the <c>quests</c> table is rewritten from replaying the quest's history through
 /// <see cref="QuestTransitions"/> in the same transaction — so what the platform reads is a cache of
-/// the replay, never a second truth beside it. A mirror row is the one exception: it is another
-/// store's record, and nothing happened to it here.</para>
+/// the replay, never a second truth beside it.</para>
+///
+/// <para><b>A remote is where histories meet</b> (D68 §3, design §8): a machine fetches what the
+/// remote accepted, rebases what it has not pushed on top, and pushes; the remote accepts a quest's
+/// operations only when nothing reached that quest since the push was rebased. Both halves live here,
+/// behind the same table: <see cref="IntegrateAsync"/>, <see cref="PendingAsync"/> and
+/// <see cref="AcceptedAsync"/> for a machine, <see cref="OperationsSinceAsync"/> and
+/// <see cref="ReceiveAsync"/> for a remote.</para>
 /// </remarks>
 public sealed class QuestStore
 {
@@ -161,8 +166,9 @@ public sealed class QuestStore
     {
         await using (var command = _connection.CreateCommand())
         {
-            // The log's position is this store's order of appending, and so the order a history
-            // replays in. Machine + sequence names one operation anywhere; position names it here.
+            // The log's position is this store's order of appending — and, on a remote, the NUMBER it
+            // gives what it accepts (design §8). Machine + sequence names one operation anywhere;
+            // position names it here; `remote` is where the remote placed it, null while pending.
             command.CommandText = """
                 CREATE TABLE IF NOT EXISTS quest_log (
                   position  INTEGER PRIMARY KEY,
@@ -172,12 +178,17 @@ public sealed class QuestStore
                   sequence  INTEGER NOT NULL,
                   at        TEXT NOT NULL,
                   payload   TEXT NOT NULL,
+                  remote    INTEGER NULL,
                   UNIQUE (machine, sequence)
                 );
                 CREATE INDEX IF NOT EXISTS quest_log_quest ON quest_log (quest, position);
                 CREATE TABLE IF NOT EXISTS quest_machine (
                   one INTEGER PRIMARY KEY CHECK (one = 1),
                   id  TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS quest_cursor (
+                  workspace TEXT PRIMARY KEY COLLATE NOCASE,
+                  number    INTEGER NOT NULL
                 );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -196,44 +207,62 @@ public sealed class QuestStore
                   note      TEXT NULL,
                   filed     TEXT NOT NULL,
                   updated   TEXT NOT NULL,
-                  home        TEXT NULL,
                   workspace   TEXT NOT NULL DEFAULT '{Workspaces.Default}',
                   links       TEXT NOT NULL DEFAULT '[]',
                   attachments TEXT NOT NULL DEFAULT '[]',
                   then_steps  TEXT NOT NULL DEFAULT '[]',
-                  parent      TEXT NULL
+                  parent      TEXT NULL,
+                  conflicts   TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // A store created before the remote existed has no home column; one from before workspaces has
-        // no workspace; one from before quests carried anything (D65) has neither list. Their quests
-        // must survive the upgrade — home NULL, the one workspace there was, and nothing carried, which
-        // is exactly right, because everything in them was its own and carried nothing.
-        foreach (var (column, definition) in new[]
+        // A store from before workspaces has no workspace; one from before quests carried anything
+        // (D65) has neither list; one from before sync has no conflicts, and a log with no numbers.
+        // Their quests survive the upgrade — the one workspace there was, and nothing carried or
+        // raced, which is exactly right, because everything in them was its own.
+        foreach (var (table, column, definition) in new[]
         {
-            ("home", "home TEXT NULL"),
-            ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
-            ("links", "links TEXT NOT NULL DEFAULT '[]'"),
-            ("attachments", "attachments TEXT NOT NULL DEFAULT '[]'"),
+            ("quests", "workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
+            ("quests", "links", "links TEXT NOT NULL DEFAULT '[]'"),
+            ("quests", "attachments", "attachments TEXT NOT NULL DEFAULT '[]'"),
             // A chain (D65 §4): `then` is an SQL keyword, so the column says what it holds.
-            ("then_steps", "then_steps TEXT NOT NULL DEFAULT '[]'"),
-            ("parent", "parent TEXT NULL"),
+            ("quests", "then_steps", "then_steps TEXT NOT NULL DEFAULT '[]'"),
+            ("quests", "parent", "parent TEXT NULL"),
+            ("quests", "conflicts", "conflicts TEXT NOT NULL DEFAULT '[]'"),
+            ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
-            await using var probe = _connection.CreateCommand();
-            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('quests') WHERE name = $name";
-            probe.Parameters.AddWithValue("$name", column);
-            var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
-            if (present == 0)
+            if (!await HasColumnAsync(table, column, ct).ConfigureAwait(false))
             {
                 await using var alter = _connection.CreateCommand();
-                alter.CommandText = $"ALTER TABLE quests ADD COLUMN {definition}";
+                alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {definition}";
                 await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
         }
+
+        // The mirror is gone (design §8). Its rows were copies of a remote's quests, so they are
+        // dropped rather than migrated: this machine's cursor starts at zero, and its first fetch
+        // brings every one of them back as history. The column that marked them goes with them.
+        if (await HasColumnAsync("quests", "home", ct).ConfigureAwait(false))
+        {
+            await using var drop = _connection.CreateCommand();
+            drop.CommandText = """
+                DELETE FROM quests WHERE home IS NOT NULL;
+                ALTER TABLE quests DROP COLUMN home;
+                """;
+            await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<bool> HasColumnAsync(string table, string column, CancellationToken ct)
+    {
+        await using var probe = _connection.CreateCommand();
+        probe.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $name";
+        probe.Parameters.AddWithValue("$name", column);
+        return Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
     }
 
     /// <summary>
@@ -260,14 +289,13 @@ public sealed class QuestStore
     /// <remarks>
     /// A quest is not derivable from anything, so a store from before the log is migrated rather than
     /// rebuilt (the index's rule is for what can be re-read). Checked again inside the transaction,
-    /// because two hosts open one store and only one of them may write the histories. A mirror row is
-    /// left alone: it is its home's record, and nothing happened to it here.
+    /// because two hosts open one store and only one of them may write the histories.
     /// </remarks>
     private async Task GiveHistoriesAsync(CancellationToken ct)
     {
         const string Unlogged = """
             SELECT * FROM quests
-            WHERE home IS NULL AND NOT EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id)
+            WHERE NOT EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id)
             ORDER BY filed, id
             """;
 
@@ -427,13 +455,54 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$kind", KindText(kind));
         command.Parameters.AddWithValue("$machine", Machine);
         command.Parameters.AddWithValue("$at", at.ToString("O"));
-        command.Parameters.AddWithValue("$payload", PayloadJson(note, published));
+        command.Parameters.AddWithValue("$payload", PayloadJson(note, published, attempted: null));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
         return new QuestOperation(
             quest, kind, Machine, sequence, at, note,
-            published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Home = null });
+            published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Conflicts = [] });
+    }
+
+    /// <summary>
+    /// Keep an operation another machine made, under ITS machine and sequence — what a remote receives
+    /// and what a machine fetches. <paramref name="number"/> is where a remote placed it; a remote
+    /// itself keeps none, because its own position is the number.
+    /// </summary>
+    /// <returns>The position it was kept at — on a remote, the number it was given.</returns>
+    private async Task<long> KeepAsync(
+        QuestOperation operation, long? number, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            INSERT INTO quest_log (quest, kind, machine, sequence, at, payload, remote)
+            VALUES ($quest, $kind, $machine, $sequence, $at, $payload, $remote)
+            RETURNING position
+            """;
+        command.Parameters.AddWithValue("$quest", operation.Quest);
+        command.Parameters.AddWithValue("$kind", KindText(operation.Kind));
+        command.Parameters.AddWithValue("$machine", operation.Machine);
+        command.Parameters.AddWithValue("$sequence", operation.Sequence);
+        command.Parameters.AddWithValue("$at", operation.At.ToString("O"));
+        command.Parameters.AddWithValue(
+            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted));
+        command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
+        return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
+    }
+
+    /// <summary>Where this store keeps an operation, by the machine and sequence that name it anywhere.</summary>
+    private async Task<long?> PositionOfAsync(
+        string machine, long sequence, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "SELECT position FROM quest_log WHERE machine = $machine AND sequence = $sequence";
+        command.Parameters.AddWithValue("$machine", machine);
+        command.Parameters.AddWithValue("$sequence", sequence);
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is { } position and not DBNull
+            ? Convert.ToInt64(position)
+            : null;
     }
 
     /// <summary>
@@ -445,14 +514,15 @@ public sealed class QuestStore
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace, links, attachments, then_steps, parent)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, NULL, $workspace, $links, $attachments, $then, $parent)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
-              home = NULL, workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
-              then_steps = excluded.then_steps, parent = excluded.parent
+              workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
+              then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts
             """;
+        command.Parameters.AddWithValue("$conflicts", ConflictsJson(quest.Conflicts));
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
         command.Parameters.AddWithValue("$then", StepsJson(quest.Then));
@@ -470,17 +540,22 @@ public sealed class QuestStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
-    /// <summary>A quest's history, in the order it replays — empty for a mirror row or an unknown id.</summary>
+    /// <summary>
+    /// A quest's history, in the order it replays (design §8): what a remote accepted, by its number,
+    /// then what this machine has not pushed, in the order it was made. Empty for an unknown id.
+    /// </summary>
     public Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, CancellationToken ct = default) =>
-        HistoryAsync(id, transaction: null, ct);
+        InGateAsync(() => HistoryAsync(id, transaction: null, ct), ct);
 
     private async Task<IReadOnlyList<QuestOperation>> HistoryAsync(
         string id, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
-        command.CommandText =
-            "SELECT quest, kind, machine, sequence, at, payload FROM quest_log WHERE quest = $id ORDER BY position";
+        command.CommandText = $"""
+            SELECT {OperationColumns} FROM quest_log WHERE quest = $id
+            ORDER BY remote IS NULL, remote, position
+            """;
         command.Parameters.AddWithValue("$id", id);
 
         var history = new List<QuestOperation>();
@@ -525,9 +600,9 @@ public sealed class QuestStore
         {
             var held = await FindAsync(id, transaction, ct).ConfigureAwait(false);
 
-            // A mirror row never moves here at all: its transitions happen at its home, and only the
-            // next mirror writes the result back (D47 §5). And nothing moves TO open.
-            if (held is null || held.Home is not null || QuestTransitions.KindFor(status) is not { } kind)
+            // Every verb commits here, whichever machines share the quest (D68 §1) — and nothing moves
+            // TO open.
+            if (held is null || QuestTransitions.KindFor(status) is not { } kind)
             {
                 return new QuestMove(held, Moved: false);
             }
@@ -564,40 +639,392 @@ public sealed class QuestStore
             return new QuestMove(moved, Moved: true, followUp);
         }, ct);
 
-    /// <summary>
-    /// Copy another store's quest into this one, whole. The row is marked with its home, which is what
-    /// makes it immovable locally — a mirror renders and plans; it never decides (D47 §5). Idempotent
-    /// by the content-derived id: mirroring the same quest again is an update, never a duplicate.
-    /// </summary>
-    public async Task MirrorAsync(Quest quest, CancellationToken ct = default)
+    // ——— A machine's half of the sync (D68 §3, design §8).
+
+    /// <summary>The last number this machine fetched from a workspace's remote — zero before its first fetch.</summary>
+    public Task<long> CursorAsync(string workspace, CancellationToken ct = default) =>
+        InGateAsync(() => CursorAsync(workspace, transaction: null, ct), ct);
+
+    private async Task<long> CursorAsync(string workspace, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _connection.CreateCommand();
-        // What a quest carries is fixed at publish, like its words — but a mirror row written by a
-        // version that did not know about carrying has nothing, so the home's record overwrites it.
-        command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace, links, attachments, then_steps, parent)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $home, $workspace, $links, $attachments, $then, $parent)
-            ON CONFLICT (id) DO UPDATE SET
-              status = $status, note = $note, updated = $updated, home = $home, workspace = $workspace,
-              links = $links, attachments = $attachments, then_steps = $then, parent = $parent
-            """;
-        command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
-        command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
-        command.Parameters.AddWithValue("$then", StepsJson(quest.Then));
-        command.Parameters.AddWithValue("$parent", (object?)quest.Parent ?? DBNull.Value);
-        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(quest.Workspace));
-        command.Parameters.AddWithValue("$id", quest.Id);
-        command.Parameters.AddWithValue("$sender", quest.From);
-        command.Parameters.AddWithValue("$receiver", quest.To);
-        command.Parameters.AddWithValue("$title", quest.Title);
-        command.Parameters.AddWithValue("$body", quest.Body);
-        command.Parameters.AddWithValue("$status", quest.Status.ToString());
-        command.Parameters.AddWithValue("$note", (object?)quest.Note ?? DBNull.Value);
-        command.Parameters.AddWithValue("$filed", quest.Filed.ToString("O"));
-        command.Parameters.AddWithValue("$updated", quest.Updated.ToString("O"));
-        command.Parameters.AddWithValue("$home", (object?)quest.Home ?? "remote");
+        command.Transaction = transaction;
+        command.CommandText = "SELECT number FROM quest_cursor WHERE workspace = $workspace";
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is { } number and not DBNull
+            ? Convert.ToInt64(number)
+            : 0;
+    }
+
+    /// <summary>
+    /// Take what a workspace's remote accepted, in its order, and rebase what this machine has not
+    /// pushed on top — through the one table. Answers the cursor it now stands at and every move that
+    /// became a conflict on the way.
+    /// </summary>
+    /// <param name="workspace">The circle whose remote these came from: what a publish among them is filed under here (SYNC0a).</param>
+    /// <param name="fetched">The remote's operations, each carrying its number.</param>
+    /// <param name="through">The last number the fetch covered; the cursor moves there.</param>
+    /// <remarks>
+    /// An operation this machine already holds — its own, pushed and fetched back — takes the number it
+    /// was given; any other is kept under the machine that made it. Then every quest the fetch touched
+    /// is replayed: accepted operations by number, then pending ones. A pending move that no longer
+    /// applies becomes a <see cref="QuestOperationKind.Conflict"/> and is never dropped (design §5).
+    /// </remarks>
+    public Task<QuestIntegration> IntegrateAsync(
+        string workspace, IReadOnlyList<QuestOperation> fetched, long through, CancellationToken ct = default) =>
+        InTransactionAsync(async transaction =>
+        {
+            var circle = Workspaces.Normalize(workspace);
+            var touched = new List<string>();
+            foreach (var operation in fetched.Where(o => o.Number is not null).OrderBy(o => o.Number))
+            {
+                if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false)
+                    is { } held)
+                {
+                    await NumberAsync(held, operation.Number!.Value, transaction, ct).ConfigureAwait(false);
+                }
+                else
+                {
+                    var filed = operation.Published is null
+                        ? operation
+                        : operation with { Published = operation.Published with { Workspace = circle } };
+                    await KeepAsync(filed, operation.Number, transaction, ct).ConfigureAwait(false);
+                }
+
+                if (!touched.Contains(operation.Quest, StringComparer.Ordinal)) touched.Add(operation.Quest);
+            }
+
+            var conflicts = new List<QuestOperation>();
+            foreach (var quest in touched)
+            {
+                conflicts.AddRange(await RebaseAsync(quest, transaction, ct).ConfigureAwait(false));
+            }
+
+            var cursor = Math.Max(await CursorAsync(circle, transaction, ct).ConfigureAwait(false), through);
+            await using (var command = _connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandText = """
+                    INSERT INTO quest_cursor (workspace, number) VALUES ($workspace, $number)
+                    ON CONFLICT (workspace) DO UPDATE SET number = excluded.number
+                    """;
+                command.Parameters.AddWithValue("$workspace", circle);
+                command.Parameters.AddWithValue("$number", cursor);
+                await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+
+            return new QuestIntegration(cursor, conflicts);
+        }, ct);
+
+    /// <summary>
+    /// Replay one quest — accepted first, pending on top — and rewrite what did not survive: a move
+    /// becomes a conflict, a publish of an ask already held is the same ask again, and a follow-up
+    /// that only a lost close published goes with it. Answers the conflicts made.
+    /// </summary>
+    private async Task<IReadOnlyList<QuestOperation>> RebaseAsync(
+        string id, SqliteTransaction transaction, CancellationToken ct)
+    {
+        var conflicts = new List<QuestOperation>();
+        Quest? quest = null;
+        foreach (var operation in await HistoryAsync(id, transaction, ct).ConfigureAwait(false))
+        {
+            if (operation.Number is not null || QuestLog.Applies(quest, operation))
+            {
+                quest = QuestLog.Applies(quest, operation) ? QuestLog.Step(quest, operation) : quest;
+                continue;
+            }
+
+            var position = (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct)
+                .ConfigureAwait(false))!.Value;
+            if (operation.Kind == QuestOperationKind.Published)
+            {
+                // The same ask, published first elsewhere: the first publish is the quest, as it
+                // always was, and a second copy was never anybody's decision.
+                await ForgetAsync(position, transaction, ct).ConfigureAwait(false);
+                continue;
+            }
+
+            var lost = operation with
+            {
+                Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind),
+            };
+            await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
+            quest = QuestLog.Step(quest, lost);
+            conflicts.Add(lost);
+
+            if (operation.Kind == QuestOperationKind.Done)
+            {
+                await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+            }
+        }
+
+        if (quest is not null) await WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
+        return conflicts;
+    }
+
+    /// <summary>
+    /// A follow-up published only by a close that has now lost (D65 §4): it was the chain moving on,
+    /// and the chain did not move. Forgotten only while nothing else has happened to it — a follow-up
+    /// somebody has acted on, or that another machine holds, stays.
+    /// </summary>
+    private async Task ForgetFollowUpsAsync(string parent, SqliteTransaction transaction, CancellationToken ct)
+    {
+        var children = new List<string>();
+        await using (var command = _connection.CreateCommand())
+        {
+            command.Transaction = transaction;
+            command.CommandText = "SELECT id FROM quests WHERE parent = $parent";
+            command.Parameters.AddWithValue("$parent", parent);
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) children.Add(reader.GetString(0));
+        }
+
+        foreach (var child in children)
+        {
+            var history = await HistoryAsync(child, transaction, ct).ConfigureAwait(false);
+            if (history is not [{ Kind: QuestOperationKind.Published, Number: null } only]) continue;
+
+            await ForgetAsync(
+                (await PositionOfAsync(only.Machine, only.Sequence, transaction, ct).ConfigureAwait(false))!.Value,
+                transaction, ct).ConfigureAwait(false);
+            await using var drop = _connection.CreateCommand();
+            drop.Transaction = transaction;
+            drop.CommandText = "DELETE FROM quests WHERE id = $id";
+            drop.Parameters.AddWithValue("$id", child);
+            await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+    }
+
+    private async Task NumberAsync(long position, long number, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "UPDATE quest_log SET remote = $number WHERE position = $position";
+        command.Parameters.AddWithValue("$number", number);
+        command.Parameters.AddWithValue("$position", position);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
+
+    private async Task ForgetAsync(long position, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "DELETE FROM quest_log WHERE position = $position AND remote IS NULL";
+        command.Parameters.AddWithValue("$position", position);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Rewrite a pending operation in place — a rebase rewriting a commit nobody else has seen.</summary>
+    private async Task RewriteAsync(
+        long position, QuestOperation operation, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            "UPDATE quest_log SET kind = $kind, payload = $payload WHERE position = $position AND remote IS NULL";
+        command.Parameters.AddWithValue("$kind", KindText(operation.Kind));
+        command.Parameters.AddWithValue(
+            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted));
+        command.Parameters.AddWithValue("$position", position);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What this machine has not pushed for a workspace's quests, in the order it was made — only for
+    /// quests whose receiver <paramref name="shared"/> says may leave the machine (design §8).
+    /// </summary>
+    /// <param name="shared">
+    /// Whether a receiver is joined in this workspace — here or on a teammate's machine. Silence means
+    /// local: a quest to anything else never appears here, however long it waits.
+    /// </param>
+    public Task<IReadOnlyList<QuestOperation>> PendingAsync(
+        string workspace, Func<string, bool> shared, CancellationToken ct = default) =>
+        InGateAsync<IReadOnlyList<QuestOperation>>(async () =>
+        {
+            await using var command = _connection.CreateCommand();
+            command.CommandText = $"""
+                SELECT {OperationColumns}, quests.receiver FROM quest_log
+                JOIN quests ON quests.id = quest_log.quest
+                WHERE quest_log.remote IS NULL AND quests.workspace = $workspace COLLATE NOCASE
+                ORDER BY quest_log.position
+                """;
+            command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+
+            var pending = new List<QuestOperation>();
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                if (shared(reader.GetString(7))) pending.Add(ReadOperation(reader));
+            }
+
+            return pending;
+        }, ct);
+
+    /// <summary>Record the numbers a push was given — the operations stop being pending.</summary>
+    public Task AcceptedAsync(IReadOnlyList<QuestAcceptance> accepted, CancellationToken ct = default) =>
+        InTransactionAsync(async transaction =>
+        {
+            foreach (var acceptance in accepted)
+            {
+                if (await PositionOfAsync(acceptance.Machine, acceptance.Sequence, transaction, ct).ConfigureAwait(false)
+                    is { } position)
+                {
+                    await NumberAsync(position, acceptance.Number, transaction, ct).ConfigureAwait(false);
+                }
+            }
+
+            return accepted.Count;
+        }, ct);
+
+    // ——— A remote's half.
+
+    /// <summary>What this store accepted after <paramref name="since"/>, in order — numbered by position.</summary>
+    /// <param name="limit">A page; <see cref="QuestFetch.More"/> says whether another follows.</param>
+    public Task<QuestFetch> OperationsSinceAsync(long since, int limit = 500, CancellationToken ct = default) =>
+        InGateAsync(async () =>
+        {
+            await using var command = _connection.CreateCommand();
+            command.CommandText = $"""
+                SELECT {OperationColumns}, position FROM quest_log
+                WHERE position > $since ORDER BY position LIMIT $take
+                """;
+            command.Parameters.AddWithValue("$since", since);
+            command.Parameters.AddWithValue("$take", limit + 1);
+
+            var operations = new List<QuestOperation>();
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                operations.Add(ReadOperation(reader) with { Number = reader.GetInt64(7) });
+            }
+
+            var more = operations.Count > limit;
+            var page = more ? operations[..limit] : operations;
+            return new QuestFetch(page, page.Count == 0 ? since : page[^1].Number!.Value, more);
+        }, ct);
+
+    /// <summary>
+    /// Judge a push, quest by quest (design §8): <b>behind</b> when anything reached the quest after
+    /// <paramref name="base"/> that this push did not carry; <b>refused</b> when an operation does not
+    /// apply through the table or a publish fails <paramref name="judge"/>; otherwise every operation is
+    /// kept under the machine that made it and numbered.
+    /// </summary>
+    /// <param name="base">The number the pushing machine rebased on — its cursor.</param>
+    /// <param name="judge">The exchange's say over a publish, null when it is fit.</param>
+    /// <param name="workspaceOf">Where a publish is filed HERE — the receiving side's wiring, never the push's (SYNC0a).</param>
+    public Task<QuestPush> ReceiveAsync(
+        long @base, IReadOnlyList<QuestOperation> pushed, Func<Quest, string?> judge, Func<Quest, string> workspaceOf,
+        CancellationToken ct = default) =>
+        InTransactionAsync(async transaction =>
+        {
+            var accepted = new List<QuestAcceptance>();
+            var behind = new List<string>();
+            var refused = new List<QuestPushRefusal>();
+            var carried = pushed.Select(o => (o.Machine, o.Sequence)).ToHashSet();
+
+            foreach (var group in pushed.GroupBy(o => o.Quest, StringComparer.Ordinal))
+            {
+                var fresh = new List<QuestOperation>();
+                foreach (var operation in group)
+                {
+                    // Already here — a push retried after its answer was lost: the number it was given.
+                    if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false)
+                        is { } held)
+                    {
+                        accepted.Add(new(operation.Machine, operation.Sequence, held));
+                    }
+                    else
+                    {
+                        fresh.Add(operation);
+                    }
+                }
+
+                if (fresh.Count == 0) continue;
+                if (await MovedSinceAsync(group.Key, @base, carried, transaction, ct).ConfigureAwait(false))
+                {
+                    behind.Add(group.Key);
+                    continue;
+                }
+
+                var quest = QuestLog.Replay(await HistoryAsync(group.Key, transaction, ct).ConfigureAwait(false));
+                string? why = null;
+                var staged = new List<QuestOperation>();
+                foreach (var operation in fresh)
+                {
+                    var filed = operation.Published is null
+                        ? operation
+                        : operation with { Published = operation.Published with { Workspace = workspaceOf(operation.Published) } };
+                    why = filed.Published is { } asked ? judge(asked) : null;
+                    if (why is null && !QuestLog.Applies(quest, filed))
+                    {
+                        why = quest is null
+                            ? $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which this deployment has never had published."
+                            : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
+                    }
+
+                    if (why is not null) break;
+                    quest = QuestLog.Step(quest, filed);
+                    staged.Add(filed);
+                }
+
+                if (why is not null)
+                {
+                    refused.Add(new(group.Key, why));
+                    continue;
+                }
+
+                foreach (var operation in staged)
+                {
+                    var number = await KeepAsync(operation, number: null, transaction, ct).ConfigureAwait(false);
+                    accepted.Add(new(operation.Machine, operation.Sequence, number));
+                }
+
+                await WriteCacheAsync(quest!, transaction, ct).ConfigureAwait(false);
+            }
+
+            return new QuestPush(accepted, behind, refused);
+        }, ct);
+
+    /// <summary>Whether anything this push did not carry reached a quest after <paramref name="base"/>.</summary>
+    private async Task<bool> MovedSinceAsync(
+        string quest, long @base, IReadOnlySet<(string Machine, long Sequence)> carried,
+        SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "SELECT machine, sequence FROM quest_log WHERE quest = $quest AND position > $base";
+        command.Parameters.AddWithValue("$quest", quest);
+        command.Parameters.AddWithValue("$base", @base);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            if (!carried.Contains((reader.GetString(0), reader.GetInt64(1)))) return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A read the sync depends on, taken inside the connection's gate: a statement run while another
+    /// request's transaction is open joins it (<see cref="InTransactionAsync{T}"/>), and a pending
+    /// operation read from a transaction that then rolled back would be pushed as if it existed.
+    /// </summary>
+    private async Task<T> InGateAsync<T>(Func<Task<T>> read, CancellationToken ct)
+    {
+        await _gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await read().ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>The columns <see cref="ReadOperation"/> reads, in its order.</summary>
+    private const string OperationColumns =
+        "quest_log.quest, quest_log.kind, quest_log.machine, quest_log.sequence, quest_log.at, quest_log.payload, quest_log.remote";
 
     public Task<Quest?> FindAsync(string id, CancellationToken ct = default) =>
         FindAsync(id, transaction: null, ct);
@@ -651,16 +1078,16 @@ public sealed class QuestStore
         reader.IsDBNull(reader.GetOrdinal("note")) ? null : reader.GetString(reader.GetOrdinal("note")),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("filed"))),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
-        reader.IsDBNull(reader.GetOrdinal("home")) ? null : reader.GetString(reader.GetOrdinal("home")),
         Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))))
     {
         Links = ReadLinks(reader.GetString(reader.GetOrdinal("links"))),
         Attachments = ReadAttachments(reader.GetString(reader.GetOrdinal("attachments"))),
         Then = ReadSteps(reader.GetString(reader.GetOrdinal("then_steps"))),
         Parent = reader.IsDBNull(reader.GetOrdinal("parent")) ? null : reader.GetString(reader.GetOrdinal("parent")),
+        Conflicts = ReadConflicts(reader.GetString(reader.GetOrdinal("conflicts"))),
     };
 
-    /// <summary>An operation as its log row holds it — a publish's payload is the quest as asked.</summary>
+    /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>
     private static QuestOperation ReadOperation(SqliteDataReader reader)
     {
         var quest = reader.GetString(0);
@@ -670,6 +1097,9 @@ public sealed class QuestStore
         using var document = System.Text.Json.JsonDocument.Parse(reader.GetString(5));
         var payload = document.RootElement;
         var note = payload.TryGetProperty("note", out var said) ? said.GetString() : null;
+        QuestStatus? attempted = payload.TryGetProperty("attempted", out var tried)
+            ? Enum.Parse<QuestStatus>(tried.GetString()!, ignoreCase: true)
+            : null;
         var published = kind != QuestOperationKind.Published
             ? null
             : new Quest(
@@ -687,7 +1117,9 @@ public sealed class QuestStore
                 Parent = payload.TryGetProperty("parent", out var parent) ? parent.GetString() : null,
             };
 
-        return new QuestOperation(quest, kind, reader.GetString(2), reader.GetInt64(3), at, note, published);
+        return new QuestOperation(
+            quest, kind, reader.GetString(2), reader.GetInt64(3), at, note, published, attempted,
+            reader.IsDBNull(6) ? null : reader.GetInt64(6));
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
@@ -697,8 +1129,17 @@ public sealed class QuestStore
     /// What an operation carries. A publish carries the quest's words and everything it carries — all
     /// a replay needs to make the quest, on this machine or another — and a move carries its note.
     /// </summary>
-    private static string PayloadJson(string? note, Quest? published) => Json(writer =>
+    private static string PayloadJson(string? note, Quest? published, QuestStatus? attempted) => Json(writer =>
     {
+        if (attempted is { } lost)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("attempted", lost.ToString());
+            if (note is not null) writer.WriteString("note", note);
+            writer.WriteEndObject();
+            return;
+        }
+
         writer.WriteStartObject();
         if (published is not null)
         {
@@ -719,6 +1160,34 @@ public sealed class QuestStore
         if (note is not null) writer.WriteString("note", note);
         writer.WriteEndObject();
     });
+
+    private static string ConflictsJson(IReadOnlyList<QuestConflict> conflicts) => Json(writer =>
+    {
+        writer.WriteStartArray();
+        foreach (var conflict in conflicts)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("machine", conflict.Machine);
+            writer.WriteString("attempted", conflict.Attempted.ToString());
+            if (conflict.Note is not null) writer.WriteString("note", conflict.Note);
+            writer.WriteString("at", conflict.At.ToString("O"));
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    });
+
+    private static IReadOnlyList<QuestConflict> ReadConflicts(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.EnumerateArray()
+            .Select(item => new QuestConflict(
+                item.GetProperty("machine").GetString() ?? "",
+                Enum.Parse<QuestStatus>(item.GetProperty("attempted").GetString()!, ignoreCase: true),
+                item.TryGetProperty("note", out var note) ? note.GetString() : null,
+                DateTimeOffset.Parse(item.GetProperty("at").GetString()!)))
+            .ToList();
+    }
 
     private static string StepsJson(IReadOnlyList<QuestStep> steps) => Json(writer => WriteSteps(writer, steps));
 

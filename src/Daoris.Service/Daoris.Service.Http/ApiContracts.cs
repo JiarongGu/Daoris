@@ -29,18 +29,20 @@ public sealed record ConvergenceResponse(
     IReadOnlyList<ConvergenceEntryResponse> Entries, string Suggestion);
 // What a quest carries (D65 §2) travels on every read: links whole, files by name. `Path` is where
 // THIS machine keeps a file — answered only to a caller on this machine, like a transcript (D47 §4),
-// and only when the bytes are actually here: a mirrored quest's file is named and not held, and a
-// null path is how a reader, and the driver, learn that rather than guess it.
+// and only when the bytes are actually here: a file of a quest published on another machine is named
+// and not held, and a null path is how a reader, and the driver, learn that rather than guess it.
 public sealed record QuestAttachmentResponse(string Name, string Sha256, long Bytes, string? Path);
 // A chain's step (D65 §4), the same shape both ways. Nullable on the way in and judged by the
 // exchange, which refuses a step without its words naming which step it was.
 public sealed record QuestStepWire(string? To, string? Title, string? Body);
-// `Then` is what this quest's close will publish next; `Parent` the quest whose close published it.
+// `Then` is what this quest's close will publish next; `Parent` the quest whose close published it;
+// `Conflicts` the moves that lost to another machine's (D68 §5), kept for a person.
+public sealed record QuestConflictResponse(string Machine, string Attempted, string? Note, DateTimeOffset At);
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
     string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
     IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments,
-    IReadOnlyList<QuestStepWire> Then, string? Parent);
+    IReadOnlyList<QuestStepWire> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -127,15 +129,32 @@ public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, 
 public sealed record FeedEntriesRequest(
     string Repository, IReadOnlyList<FeedEntryRecord>? Entries,
     string? Commit, DateTimeOffset? CommittedAt, string? Branch);
-// A mirrored quest carries what its home's record carries — links, and files BY NAME: the bytes are
-// on the machine that published them, and a mirror is exactly where a file is named and not held.
-public sealed record FeedQuestAttachment(string? Name, string? Sha256, long? Bytes);
-public sealed record FeedQuestRecord(
-    string Id, string From, string To, string Title, string Body, string? Status, string? Note,
-    DateTimeOffset Filed, DateTimeOffset Updated,
-    IReadOnlyList<string>? Links = null, IReadOnlyList<FeedQuestAttachment>? Attachments = null,
-    IReadOnlyList<QuestStepWire>? Then = null, string? Parent = null);
-public sealed record FeedQuestsRequest(IReadOnlyList<FeedQuestRecord>? Quests);
+// One operation on the wire (D68, sync design §8), the same shape through both doors. Machine and
+// sequence name it anywhere; `Number` is where the remote placed it, absent while it is pending. A
+// publish carries the ask and NO workspace, because the receiving side files it by its own wiring
+// (SYNC0a). Files travel BY NAME: there is no field for bytes, a root or a transcript. Absent, not
+// policed (D47 §4). Nullable on the way in, because a door judges what arrived.
+public sealed record QuestFileWire(string? Name, string? Sha256, long? Bytes);
+public sealed record QuestAskedWire(
+    string? From, string? To, string? Title, string? Body, IReadOnlyList<string>? Links,
+    IReadOnlyList<QuestFileWire>? Attachments, IReadOnlyList<QuestStepWire>? Then, string? Parent);
+public sealed record QuestOperationWire(
+    long? Number, string? Machine, long? Sequence, string? Quest, string? Kind, DateTimeOffset? At,
+    string? Note = null, string? Attempted = null, QuestAskedWire? Asked = null);
+// The remote's doors: what it accepted after a number, and a push rebased on one.
+public sealed record QuestOperationsResponse(IReadOnlyList<QuestOperationWire> Operations, long Through, bool More);
+public sealed record QuestPushRequest(long? Base, IReadOnlyList<QuestOperationWire>? Operations);
+public sealed record QuestAcceptanceWire(string? Machine, long? Sequence, long? Number);
+public sealed record QuestPushRefusalWire(string Quest, string Reason);
+public sealed record QuestPushResponse(
+    IReadOnlyList<QuestAcceptanceWire> Accepted, IReadOnlyList<string> Behind, IReadOnlyList<QuestPushRefusalWire> Refused);
+// The machine's doors: its cursor, what a fetch integrates (answering what is pending), and the
+// numbers a push was given.
+public sealed record QuestCursorResponse(string Workspace, long Cursor);
+public sealed record QuestIntegrateRequest(string? Workspace, IReadOnlyList<QuestOperationWire>? Operations, long? Through);
+public sealed record QuestIntegrateResponse(
+    long Cursor, IReadOnlyList<QuestOperationWire> Pending, IReadOnlyList<QuestOperationWire> Conflicts);
+public sealed record QuestAcceptedRequest(IReadOnlyList<QuestAcceptanceWire>? Accepted);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map (MAP3a). `File` is which candidate was read, and null when the repository
 // keeps none; `Problem` is why a file was refused whole, verbatim — and then both lists are empty,
@@ -184,7 +203,13 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(SessionActionResponse))]
 [JsonSerializable(typeof(FeedSessionsRequest))]
 [JsonSerializable(typeof(FeedEntriesRequest))]
-[JsonSerializable(typeof(FeedQuestsRequest))]
+[JsonSerializable(typeof(QuestOperationsResponse))]
+[JsonSerializable(typeof(QuestPushRequest))]
+[JsonSerializable(typeof(QuestPushResponse))]
+[JsonSerializable(typeof(QuestCursorResponse))]
+[JsonSerializable(typeof(QuestIntegrateRequest))]
+[JsonSerializable(typeof(QuestIntegrateResponse))]
+[JsonSerializable(typeof(QuestAcceptedRequest))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(CodeMapResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]

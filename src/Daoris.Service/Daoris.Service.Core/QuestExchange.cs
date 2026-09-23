@@ -18,12 +18,6 @@ public enum QuestPublishRefusal
     /// </summary>
     CrossWorkspace,
 
-    /// <summary>
-    /// The receiver is joined to a remote that did not answer, so the quest could not be given its one
-    /// home (D47 §5). Nothing was published anywhere — a half-published quest would be two opinions.
-    /// </summary>
-    HomeUnreachable,
-
     /// <summary>A link that is not an absolute http or https address — shown as a link, it would be something else.</summary>
     BadLink,
 
@@ -35,7 +29,8 @@ public enum QuestPublishRefusal
 
     /// <summary>
     /// A chain (D65 §4) with a step that cannot be published when its turn comes: nobody there can see
-    /// it, it asks the asker, it has no words, it would live in another home, or there are too many.
+    /// it, it asks the asker, it has no words, it is shared where the chain is local or local where it
+    /// is shared, or there are too many.
     /// </summary>
     BadChain,
 }
@@ -98,13 +93,6 @@ public enum QuestRespondRefusal
 
     /// <summary>Done and Declined are terminal: one title is one quest forever (D46 §3).</summary>
     Closed,
-
-    /// <summary>
-    /// The quest lives at a remote that did not answer — or at one this machine cannot resolve, which
-    /// is the same outcome for the asker. Nothing was changed and nothing was queued: a transition
-    /// either writes through or fails plainly (D47 §2).
-    /// </summary>
-    HomeUnreachable,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -124,9 +112,17 @@ public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Mes
 ///
 /// <para>The messages are composed here too, not only the verdicts. They are what an agent acts on, so
 /// two hosts phrasing them differently is two behaviours in all the ways that matter.</para>
+///
+/// <para><b>Every verb commits here</b> (D68): a quest shared with a team is published, taken and
+/// closed on this machine like any other, and reaches the remote on the next sync. Nothing waits on a
+/// remote, and nothing fails because one is down.</para>
 /// </remarks>
+/// <param name="wired">
+/// Whether a workspace has a remote on this machine — read when a chain is composed, because a chain's
+/// steps must all be shared or all be local. Null on a machine with none, and on a remote itself.
+/// </param>
 public sealed class QuestExchange(
-    KnowledgeService service, QuestStore quests, IRemoteQuestRoutes? remotes = null, QuestFiles? files = null)
+    KnowledgeService service, QuestStore quests, Func<string, bool>? wired = null, QuestFiles? files = null)
 {
     /// <summary>How many links a quest carries — a ticket and its neighbours, not a bibliography.</summary>
     public const int MaxLinks = 20;
@@ -156,10 +152,10 @@ public sealed class QuestExchange(
 
     /// <summary>
     /// Publish a quest to another repository. Refuses a self-addressed quest and a target that has not
-    /// adopted; warns when the target has declared nothing about itself (D34). A quest for a JOINED
-    /// receiver homes at the remote (D47 §5) — the publish writes through and the mirror keeps a copy.
+    /// adopted; warns when the target has declared nothing about itself (D34). It is published HERE,
+    /// whoever the receiver is (D68), and a joined receiver's quest reaches the remote on the next sync.
     /// What it carries is judged before anything is written anywhere, and its files are kept HERE —
-    /// under this machine's home — whichever deployment the record lives at (D65 §2).
+    /// under this machine's home — wherever the record travels (D65 §2).
     /// </summary>
     public async Task<QuestPublishOutcome> PublishAsync(QuestAsk ask, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -226,49 +222,13 @@ public sealed class QuestExchange(
             return new(unfit, carried.Message, Quest: null, addressable);
         }
 
-        // Home follows the receiver, decided at publish and never migrated (D47 §5): a joined
-        // receiver's quests live at the remote, because other machines may be drivable for it and the
-        // one lock must sit where every taker can reach it. WHICH remote is the workspace's (D48 §5)
-        // — both sides share it by now — and a circle this machine has no entry for stays local,
-        // silently: a joined repository in an unwired workspace is a declaration with nowhere to go.
-        var remote = remotes?.For(home);
-        var homedRemotely = remote is not null && target.Joined;
-
         // A chain is judged now, while the person or the intake composing it can still act on the
-        // answer — not at a close nobody is watching (D65 §4).
-        if (JudgeChain(ask, registered, home, remote is not null, homedRemotely, addressable) is { } unfitChain)
+        // answer — not at a close nobody is watching (D65 §4). Whether this circle shares with a team
+        // is this machine's wiring; whether a receiver is shared is its registration (design §8).
+        var circleWired = wired?.Invoke(home) ?? false;
+        if (JudgeChain(ask, registered, home, circleWired, circleWired && target.Joined, addressable) is { } unfitChain)
         {
             return new(QuestPublishRefusal.BadChain, unfitChain, Quest: null, addressable);
-        }
-
-        if (homedRemotely)
-        {
-            // Names and hashes cross; bytes never do — the relay's signature has no field for them.
-            // The chain crosses whole: its home is the one that closes each step and publishes the next.
-            var answer = await remote!.PublishAsync(
-                from, to, title, body, carried.Links, carried.Attachments, ask.Then, ct).ConfigureAwait(false);
-            if (answer.Status == 0)
-            {
-                return new(
-                    QuestPublishRefusal.HomeUnreachable,
-                    $"`{target.Repository}` is joined to a remote that is not answering ({answer.Message}) — "
-                    + "nothing was published. Publish again when it is reachable.",
-                    Quest: null, addressable);
-            }
-
-            if (answer.Status != 200 || answer.Quest is null)
-            {
-                // The remote's own judgement said no — its registry, not ours, knows who is
-                // addressable there. Its message travels verbatim so the two doors cannot drift.
-                return new(QuestPublishRefusal.NotAddressable, answer.Message, Quest: null, addressable);
-            }
-
-            var homed = answer.Quest with { Home = "remote", Workspace = home };
-            await quests.MirrorAsync(homed, ct).ConfigureAwait(false);
-            return new(
-                QuestPublishRefusal.None,
-                answer.Message + await KeepAsync(homed, ask, carried, ct).ConfigureAwait(false),
-                homed, addressable);
         }
 
         var quest = await quests.PublishAsync(
@@ -290,17 +250,18 @@ public sealed class QuestExchange(
 
     /// <summary>
     /// Every step of a chain must be publishable when its turn comes — so each is judged as its own
-    /// publish would be, asked on behalf of the chain's asker, and each must live in the same home as
-    /// the quest it follows. Null when the chain is fit (or there is none).
+    /// publish would be, asked on behalf of the chain's asker, and each must be shared exactly when the
+    /// quest it follows is. Null when the chain is fit (or there is none).
     /// </summary>
     /// <remarks>
-    /// <b>One home per chain</b> (D47 §5): a step is published by the close of the one before it, at
-    /// whichever store closed it. A remote could not publish into this machine's store, and a quest for
-    /// a local-only repository homed at the remote is exactly the disclosure the boundary forbids — so
-    /// a chain that straddles the two is refused rather than homed wrongly.
+    /// <b>All shared or all local</b> (D65 §4, D68): a step is published by the close of the one before
+    /// it, on whichever machine closed it. A shared quest may be closed on a teammate's machine, which
+    /// cannot see a repository local to this one; and a local quest's step to a shared receiver would
+    /// publish only here, where no teammate's driver can see it close. A chain that straddles the two is
+    /// refused when composed rather than stranded later.
     /// </remarks>
     private static string? JudgeChain(
-        QuestAsk ask, IReadOnlyList<Registration> registered, string home, bool hasRemote, bool homedRemotely,
+        QuestAsk ask, IReadOnlyList<Registration> registered, string home, bool circleWired, bool shared,
         IReadOnlyList<string> addressable)
     {
         if (ask.Then.Count > MaxChain)
@@ -330,17 +291,47 @@ public sealed class QuestExchange(
                        + $"when its turn came. Addressable: {string.Join(", ", addressable)}.";
             }
 
-            var stepRemotely = hasRemote && receiver.Joined;
-            if (stepRemotely != homedRemotely)
+            var stepShared = circleWired && receiver.Joined;
+            if (stepShared != shared)
             {
-                return $"Step {index} asks `{step.To}`, which lives {(stepRemotely ? "at the remote" : "on this machine")}, "
-                       + $"and the chain starts at `{ask.To}`, which lives {(homedRemotely ? "at the remote" : "on this machine")}. "
-                       + "A chain has one home: each step is published where the one before it closes. Publish the "
-                       + "other half as its own quest when this one is done.";
+                return $"Step {index} asks `{step.To}`, which is {(stepShared ? "shared with the team" : "local to this machine")}, "
+                       + $"and the chain starts at `{ask.To}`, which is {(shared ? "shared with the team" : "local to this machine")}. "
+                       + "Each step is published on the machine that closes the one before it, so a chain is all "
+                       + "shared or all local. Publish the other half as its own quest when this one is done.";
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// A remote's say over a publish a machine pushed (design §8) — the judgement the machine's own
+    /// exchange already ran, run again where it lands, because a remote takes nobody's word for it.
+    /// Null when the quest is fit to keep here.
+    /// </summary>
+    /// <remarks>
+    /// The receiver must be registered here, since a quest nobody here can see has nobody to answer it.
+    /// What it carries must be what a record may name: links, and files by name. There are no bytes to
+    /// judge, because a pushed operation has no field for them.
+    /// </remarks>
+    public string? JudgeReceived(Quest asked, IReadOnlyList<Registration> registered)
+    {
+        if (!registered.Any(r => r.Adopted && string.Equals(r.Repository, asked.To, StringComparison.OrdinalIgnoreCase)))
+        {
+            return $"`{asked.To}` is not registered at this deployment, so nobody here could answer quest "
+                   + $"`#{asked.Id}`. Its registration travels first; the next sync tries again.";
+        }
+
+        var carried = Judge(new QuestAsk(asked.From, asked.To, asked.Title, asked.Body)
+        {
+            Links = asked.Links,
+            Named = asked.Attachments,
+        });
+        if (carried.Refusal is not null) return carried.Message;
+
+        return carried.Links.Count == asked.Links.Count && carried.Attachments.Count == asked.Attachments.Count
+            ? null
+            : $"Quest `#{asked.Id}` carries a link or a file twice, which a publish here would not have kept.";
     }
 
     /// <summary>
@@ -530,63 +521,8 @@ public sealed class QuestExchange(
                 Quest: null);
         }
 
-        // A verb on a remote-homed quest writes through to its home's judgement — the one lock — and
-        // the mirror takes the result (D47 §5). An id we do not hold at all is also tried remotely
-        // when a remote exists: the mirror may simply not have caught up to a quest that lives there.
-        var local = await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false);
-
-        // WHICH remote is the quest's own workspace's (D48 §5). A quest this machine does not hold
-        // names no workspace — so it resolves only when there is exactly one circle it could mean; with
-        // several, guessing would post a `take` at the wrong deployment, which is a lock broken rather
-        // than a question unanswered.
-        var remote = local is not null
-            ? remotes?.For(local.Workspace)
-            : remotes is { Workspaces.Count: 1 } single ? single.For(single.Workspaces.First()) : null;
-
-        if (local is { Home: not null } || (local is null && remotes is not null))
-        {
-            if (remote is null)
-            {
-                return new(
-                    QuestRespondRefusal.HomeUnreachable,
-                    local is not null
-                        ? $"Quest `#{id.TrimStart('#')}` lives at workspace `{Workspaces.Normalize(local.Workspace)}`'s "
-                          + "remote, and this machine has none wired for that circle — nothing was changed. "
-                          + $"`daoris remote add {Workspaces.Normalize(local.Workspace)} --url <url>` wires one."
-                        : $"Quest `#{id.TrimStart('#')}` is not mirrored here, so its workspace is unknown — and a "
-                          + "verb resolves its remote by the quest's workspace (D48 §5). This machine has remotes "
-                          + $"for: {string.Join(", ", remotes!.Workspaces)}. Nothing was changed; the next sync "
-                          + "mirrors the quest and names its circle.",
-                    Quest: null);
-            }
-
-            var answer = await remote.RespondAsync(id.TrimStart('#'), action, reason, ct).ConfigureAwait(false);
-            switch (answer.Status)
-            {
-                case 0:
-                    return new(
-                        QuestRespondRefusal.HomeUnreachable,
-                        $"Quest `#{id.TrimStart('#')}` lives at a remote that is not answering "
-                        + $"({answer.Message}) — nothing was changed. A transition writes through or fails; it never queues.",
-                        Quest: null);
-                case 200 when answer.Quest is not null:
-                    var mirrored = answer.Quest with { Home = "remote" };
-                    await quests.MirrorAsync(mirrored, ct).ConfigureAwait(false);
-                    return new(QuestRespondRefusal.None, answer.Message, mirrored);
-                case 404:
-                    return new(QuestRespondRefusal.NotFound, answer.Message, Quest: null);
-                case 409:
-                    // The race, resolved at the home. For a take that reads as "someone got there
-                    // first"; for anything else the quest is closed. Either way the remote's own
-                    // message travels verbatim.
-                    return new(
-                        status == QuestStatus.Taken ? QuestRespondRefusal.AlreadyTaken : QuestRespondRefusal.Closed,
-                        answer.Message, Quest: null);
-                default:
-                    return new(QuestRespondRefusal.UnknownAction, answer.Message, Quest: null);
-            }
-        }
-
+        // Every verb commits here, shared or not (D68): the next sync carries it to the remote, where the
+        // first push wins and a later one is kept as a conflict rather than lost (design §5).
         var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct)
             .ConfigureAwait(false);
 

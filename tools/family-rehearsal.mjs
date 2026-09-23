@@ -983,7 +983,7 @@ run(`node "${cliBin}" retire uninvited`, scratch, { DAORIS_SERVICE_URL: BASE });
 
 // -------------------------------------------------- 11. the remote
 
-section('11. The remote: two machines, one lock (D47)');
+section('11. The remote: two machines, one order (D47, D68)');
 
 const remoteDb = join(scratch, 'remote.db');
 const remoteRoot = join(scratch, 'remote-root');
@@ -1011,12 +1011,15 @@ const mintB = mint('person@machine-b');
 const keyB = (mintB.out.split('\n')[0] ?? '').trim();
 check('a second key for machine b', mintB.code === 0 && keyB.startsWith('dk_') && keyB !== keyA, mintB.out);
 
-const remoteHost = await startServer({
+// Kept whole so the remote can be stopped and started again over the same store: a remote that is
+// DOWN is a case this phase proves (D68 §1), not only one it survives.
+const remoteEnv = {
   DAORIS_MODE: 'shared',
   DAORIS_KNOWLEDGE_DB: remoteDb,
   DAORIS_KNOWLEDGE_ROOT: remoteRoot,
   ASPNETCORE_URLS: REMOTE_BASE,
-}, REMOTE_BASE);
+};
+let remoteHost = await startServer(remoteEnv, REMOTE_BASE);
 check('the shared host is up', remoteHost !== null);
 
 // The gate: every route, reads included (D47 §7) — and a refusal never echoes what was presented.
@@ -1185,8 +1188,8 @@ check(
   withheld.text.slice(0, 300),
 );
 
-// The crossing: published on machine a through its own local door, homed at the remote, driven to
-// done on machine b — the loop D45's part 3 exists for.
+// The crossing: published on machine a through its own local door, committed there, pushed by a's
+// next sync, fetched and driven to done on machine b — the loop D45's part 3 exists for (D68).
 // It carries a file (D65 §2), and the file is the boundary under test: machine a keeps the bytes,
 // the remote and machine b learn the NAME, and the session on b is told the file is elsewhere.
 const CROSSING_BYTES = 'the crossing marker bytes, which never leave machine a';
@@ -1195,21 +1198,23 @@ const crossing = await api('POST', '/api/quests', {
     from: 'newcomer',
     to: 'borealis',
     title: 'Cross the machines',
-    body: 'Published on machine a, driven on machine b: the write-through and the mirror, end to end.',
+    body: 'Published on machine a, driven on machine b: fetch, rebase and push, end to end.',
     attachments: [{ name: 'crossing.txt', content: Buffer.from(CROSSING_BYTES).toString('base64') }],
   },
 });
 check(
-  'a quest crosses machines through the ordinary local door',
+  'a quest crosses machines through the ordinary local door, committed on machine a',
   crossing.status === 200 && crossing.json?.quest?.status === 'Open',
   crossing.text,
 );
 const crossingId = crossing.json?.quest?.id ?? '';
+const pushA = driveA('--once');
 const onRemote = await api('GET', '/api/quests', { base: REMOTE_BASE, key: keyA });
 check(
-  '…and lives at the remote — one home per quest',
-  (onRemote.json ?? []).some((q) => q.id === crossingId && q.status === 'Open'),
-  onRemote.text,
+  '…and reaches the remote on machine a’s next sync',
+  pushA.code === 0 && !/sync {2}/.test(pushA.out)
+    && (onRemote.json ?? []).some((q) => q.id === crossingId && q.status === 'Open'),
+  `${pushA.out}\n${onRemote.text}`,
 );
 const crossingAtRemote = (onRemote.json ?? []).find((q) => q.id === crossingId);
 check(
@@ -1254,28 +1259,27 @@ check(
   new RegExp(`stub: answer quest ${crossingId}`).test(landedB.out),
   landedB.out,
 );
+// The closure reached the remote WITHIN b's tick: the session's done committed on b as it happened,
+// and the tick synced again after it concluded (sync design §8), rather than a tick later.
 const closedOnRemote = await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA });
 check(
-  'the remote holds the closure',
+  'the remote holds the closure, pushed within the tick that made it',
   (closedOnRemote.json ?? []).some((q) => q.id === crossingId && q.status === 'Done'),
   closedOnRemote.text,
 );
 const tickBack = driveA('--once');
 const closureOnA = await api('GET', '/api/quests?repository=borealis&includeClosed=true');
 check(
-  'the closure crossed back to machine a’s mirror',
+  'the closure crossed back to machine a',
   tickBack.code === 0 && (closureOnA.json ?? []).some((q) => q.id === crossingId && q.status === 'Done'),
   closureOnA.text,
 );
 
-// The race (D47 §5): two machines both believe they can drive one quest, and exactly one may. The
-// quest is published on machine a, homed at the remote; an outside taker (standing in for another
-// machine's session) claims it there. Machine b then drives — its tick syncs first, sees the quest
-// already Taken at the one home, and LEAVES IT ALONE: the driver observes the lock and never starts
-// what someone else holds (D46 §2). No session is spawned, and the newcomer's checkout is untouched.
-// (The other resolution — a session that spawned before the mirror caught up, whose own take loses
-// 409 at the home and stands down — is unit-proven in QuestRelayTests; here the deterministic,
-// sync-first path is the driver-level guarantee.)
+// The ONLINE race (D46 §2, D68): two machines both believe they can drive one quest. The quest is
+// published on machine a and pushed; an outside taker (standing in for another machine whose take
+// reached the remote first) claims it there. Machine b then drives — its tick syncs first, sees the
+// quest already Taken in the remote's order, and LEAVES IT ALONE: the driver observes the lock and
+// never starts what someone else holds. No session is spawned.
 const raced = await api('POST', '/api/quests', {
   body: {
     from: 'newcomer',
@@ -1285,10 +1289,11 @@ const raced = await api('POST', '/api/quests', {
   },
 });
 const racedId = raced.json?.quest?.id ?? '';
+driveA('--once');
 const winner = await api('POST', `/api/quests/${racedId}/respond`, {
   base: REMOTE_BASE, key: keyA, body: { action: 'take', reason: null },
 });
-check('an outside winner takes the quest at its home', winner.status === 200, winner.text);
+check('an outside winner takes the quest at the remote', winner.status === 200, winner.text);
 
 const sessionsBeforeRace = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true',
   { base: HOST_B_BASE })).json ?? []).length;
@@ -1305,6 +1310,78 @@ check(
   'the winner keeps the quest',
   (stillTheirs.json ?? []).some((q) => q.id === racedId && q.status === 'Taken'),
   stillTheirs.text,
+);
+
+// The OFFLINE race (D68 §5): both machines act before either pushes — the same ask published on each,
+// and each takes it through its own door. Machine a pushes first and wins. Machine b's push is behind;
+// it fetches, rebases — its copy of the ask is the same ask again and goes, its take becomes a
+// CONFLICT on the quest — and pushes that. Nothing is dropped and nothing is merged: every machine
+// shows the winner's state and the loser's attempt.
+const contested = {
+  from: 'newcomer', to: 'borealis', title: 'Both machines took this', body: 'The loser is kept, not lost.',
+};
+const contestedOnA = await api('POST', '/api/quests', { body: contested });
+const contestedOnB = await api('POST', '/api/quests', { base: HOST_B_BASE, body: contested });
+const contestedId = contestedOnA.json?.quest?.id ?? '';
+check(
+  'the same ask published on both machines is one quest, by its id',
+  contestedId !== '' && contestedOnB.json?.quest?.id === contestedId,
+  `${contestedOnA.text}\n${contestedOnB.text}`,
+);
+const takeOnA = await api('POST', `/api/quests/${contestedId}/respond`, { body: { action: 'take', reason: null } });
+const takeOnB = await api('POST', `/api/quests/${contestedId}/respond`, {
+  base: HOST_B_BASE, body: { action: 'take', reason: 'machine b’s own session' },
+});
+check(
+  'each machine’s take commits on its own machine — no remote is asked',
+  takeOnA.status === 200 && takeOnB.status === 200,
+  `${takeOnA.text}\n${takeOnB.text}`,
+);
+driveA('--once');
+const losingTick = driveB('--once');
+const conflictOnB = ((await api('GET', '/api/quests?includeClosed=true', { base: HOST_B_BASE })).json ?? [])
+  .find((q) => q.id === contestedId);
+check(
+  'the losing take is rebased into a conflict on the quest, and the tick says so',
+  losingTick.code === 0 && /kept on the quest as a conflict/.test(losingTick.out)
+    && conflictOnB?.status === 'Taken' && conflictOnB.conflicts?.length === 1
+    && conflictOnB.conflicts[0].attempted === 'Taken' && conflictOnB.conflicts[0].note === 'machine b’s own session',
+  `${losingTick.out}\n${JSON.stringify(conflictOnB)}`,
+);
+driveA('--once');
+const conflictAtRemote = ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
+  .find((q) => q.id === contestedId);
+const conflictOnA = ((await api('GET', '/api/quests?includeClosed=true')).json ?? []).find((q) => q.id === contestedId);
+check(
+  '…and the conflict travels: the remote and the winning machine hold it too',
+  conflictAtRemote?.conflicts?.length === 1 && conflictOnA?.conflicts?.length === 1,
+  `${JSON.stringify(conflictAtRemote)}\n${JSON.stringify(conflictOnA)}`,
+);
+
+// A remote that is DOWN (D68 §1): every verb commits locally and always succeeds locally. The tick
+// names the wall and carries on, and the first tick after the remote returns pushes what waited. (A machine with NO remote at all is
+// phases 1–10: nothing in them changed for this.)
+if (remoteHost && !remoteHost.killed) remoteHost.kill();
+await sleep(700);
+const whileDown = await api('POST', '/api/quests', {
+  body: { from: 'newcomer', to: 'borealis', title: 'Published while the remote was down', body: 'It waits, committed.' },
+});
+const whileDownId = whileDown.json?.quest?.id ?? '';
+const takenWhileDown = await api('POST', `/api/quests/${whileDownId}/respond`, { body: { action: 'take', reason: null } });
+const downTick = driveA('--once');
+check(
+  'with the remote down, a shared quest is published and taken locally, and the tick names the wall',
+  whileDown.status === 200 && takenWhileDown.status === 200 && downTick.code === 0 && /sync {2}/.test(downTick.out),
+  `${whileDown.text}\n${takenWhileDown.text}\n${downTick.out}`,
+);
+remoteHost = await startServer(remoteEnv, REMOTE_BASE);
+const backTick = driveA('--once');
+const caughtUp = ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
+  .find((q) => q.id === whileDownId);
+check(
+  '…and the first tick after it returns pushes what waited',
+  remoteHost !== null && backTick.code === 0 && caughtUp?.status === 'Taken',
+  `${backTick.out}\n${JSON.stringify(caughtUp)}`,
 );
 
 const remoteSessions = await api('GET', '/api/sessions?includeClosed=true', { base: REMOTE_BASE, key: keyA });
@@ -1527,13 +1604,13 @@ check(
   auroraLesson.text.slice(0, 300),
 );
 
-// The relay resolves by the quest's workspace: an aurora quest homes at aurora's deployment.
+// The sync resolves by the quest's workspace: an aurora quest is pushed to aurora's deployment.
 const auroraQuest = await api('POST', '/api/quests', {
   body: {
     from: 'lantern',
     to: 'atelier',
     title: 'A quest inside the wired circle',
-    body: 'Published on this machine, homed at the deployment its workspace names.',
+    body: 'Committed on this machine, pushed to the deployment its workspace names.',
   },
 });
 check(
@@ -1542,10 +1619,11 @@ check(
   auroraQuest.text,
 );
 const auroraQuestId = auroraQuest.json?.quest?.id ?? '';
+driver({ serviceUrl: BASE, config: driverConfig, mode: '--once', remote: { DAORIS_REMOTE_CONFIG: remotesFile } });
 const atAurora = await api('GET', '/api/quests', { base: AURORA_BASE, key: keyC });
 check(
-  '…and it lives at that workspace’s deployment',
-  (atAurora.json ?? []).some((q) => q.id === auroraQuestId),
+  '…and the next sync pushes it to that workspace’s deployment',
+  (atAurora.json ?? []).some((q) => q.id === auroraQuestId && q.workspace === 'aurora'),
   atAurora.text,
 );
 
@@ -2639,11 +2717,13 @@ if (totals.failures) {
   console.log('  a quest carrying a link and a file became a session that read both, became a commit');
   console.log('  became done, a chain of two ran as one loop with no engine, a dirty tree held, a decline');
   console.log('  carried its reason, and outside work was left entirely alone (D46, D65). Then REMOTE');
-  console.log('  (D47): two machines and a shared host with');
-  console.log('  minted keys — a quest published on one machine, driven to done on the other under a');
-  console.log('  named account, its file known there by name and its bytes kept home, the closure');
-  console.log('  crossing back with the tool version but never the account name; a raced take standing');
-  console.log('  down; knowledge crossing only where declared; and the remote store scanned to hold no');
+  console.log('  (D47, D68): two machines and a shared host with');
+  console.log('  minted keys — a quest committed on one machine, pushed, fetched and driven to done on the');
+  console.log('  other under a named account, its file known there by name and its bytes kept home, the');
+  console.log('  closure crossing back with the tool version but never the account name; a machine that');
+  console.log('  saw the quest taken first leaving it alone; both machines taking one quest offline, the');
+  console.log('  second rebased into a conflict every machine holds; verbs committing while the remote');
+  console.log('  was down and pushed when it returned; knowledge crossing only where declared; and the remote store scanned to hold no');
   console.log('  machine path, no transcript, no file’s bytes, and nothing a repository kept home. And WORKSPACES');
   console.log('  (D48): two circles on one machine, wired by `connect --workspace` and written into no');
   console.log('  tracked file — a search answering from one circle while the other held the same');

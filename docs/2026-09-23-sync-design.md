@@ -125,7 +125,55 @@ characters (48 bits) and stays content-derived. The same ask from two machines i
 The hash did not change, so a quest from before keeps the six characters it was quoted by, and the
 same ask finds it as the first six of today's id.
 
-## 8. Build order
+## 8. The quest doors (SYNC2)
+
+**The number is the remote's log position.** A remote numbers an operation by appending it: its
+own log's position is the number, gap-free and only ever growing. A machine keeps, per operation,
+the number the remote gave it (none while it is pending), and per workspace, a **cursor**: the last
+number it fetched. The cursor is not the highest number it holds. An operation this machine pushed
+may be numbered past operations on other quests that it has not fetched yet.
+
+**A history replays in the remote's order, then this machine's.** Accepted operations go by
+number. Pending ones follow, in the order they were made. On a machine with no remote, nothing is
+ever numbered, so the order is simply the order the operations were made.
+
+**The remote's doors** (shared mode only):
+- `GET /api/quests/operations?since=N` returns what it accepted after N, in order.
+- `POST /api/quests/operations {base, operations}` judges each quest on its own. It is **behind** if
+  anything reached that quest after `base`. It is **refused** if an operation does not apply through
+  the table, or a publish fails the exchange's judgement (a receiver not registered there, a link
+  or a file name no record keeps). Otherwise it is **accepted** and numbered. An operation the
+  remote already holds, by machine and sequence, is answered with its number, so a retried push is
+  harmless.
+
+**The machine's doors** (local mode only): `GET /api/quests/sync?workspace=` answers the cursor.
+`POST /api/quests/sync` integrates what was fetched, rebases, and answers what is pending.
+`POST /api/quests/sync/accepted` records the numbers a push was given. The driver moves bytes
+between the two hosts and judges nothing. Replaying and rebasing happen in the store, through the
+one table.
+
+**What is pushed: quests whose receiver is joined** in that workspace, whether the joined
+repository is on this machine or is a teammate's registered here without a root. Silence means
+local. This is D47's *home follows the receiver*, kept as a disclosure rule now that a quest has no
+home. A quest to a local-only repository never leaves the machine, even if its asker is joined. An
+ask is not a repository and has no row, so its quests are pushed by their receiver alone (SYNC0e).
+
+**Neither door carries a workspace.** A published operation arrives without one, and the receiving
+side files it by its own wiring: at the remote, by the receiver's registration; on a machine, by the
+sync it came through (SYNC0a).
+
+**A rebase never drops a loser.** A pending take, done or decline that no longer applies becomes a
+`conflict` on the quest. A conflict carries what was attempted and its note, and changes no status.
+Two things are dropped, because neither was ever anyone's decision. One is a pending publish of an
+ask the remote already holds, since the first publish wins, as it always has. The other is a
+follow-up that was published only by a close that has now lost, when nothing else has happened to it.
+
+**The mirror is gone.** Its rows are dropped when the store opens, and so is the `home` column. The
+first fetch runs from cursor zero, so it brings every row back as history. A tick syncs before it
+plans and again after any session concludes, so a closure reaches the remote within the tick that
+made it.
+
+## 9. Build order
 
 - **SYNC0d first**, on its own: a newly wired remote takes effect without a restart. It stands under
   any design.

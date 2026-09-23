@@ -456,18 +456,24 @@ The first version: doctrine that installs, is checked, and flows back.
   a short non-secret audit prefix, shown once, expiring by default). It serves no page and answers no
   machine path, and a host asked to bind beyond loopback without shared mode refuses to start.
 - **The quest lock is code.** A quest's transition table is enforced in the store itself — `Taken` only
-  from `Open` as one atomic guarded write, closed quests immovable — so two machines' drivers racing one
-  quest resolve to a single taker, and the loser stands down. The same hardening runs in local mode.
-- **One home per quest, decided at publish.** A quest to a joined repository lives at the remote; verbs
-  on it write through synchronously or fail plainly — a lock that queued would not be a lock. The
-  desktop's sync loop rides the driver tick: it feeds registrations, session records (keyed by origin),
-  and opted-in knowledge content **up**, and mirrors the family's quests and teammates' registrations
-  **down**. What may leave a machine is two manifest declarations — **join** and **share knowledge** —
-  and silence means local; roots and transcripts have no field in anything fed.
+  from `Open`, closed quests immovable — and the same table is replayed wherever a quest's history is,
+  on every machine and at the remote. The same hardening runs in local mode.
+- **A quest is its history, and the remote is where histories meet** (D68). Every verb — publish,
+  take, done, decline — commits on the machine where it was made and always succeeds there, whether
+  or not a remote is wired, reachable or down. Quest ids are twelve hex characters. The desktop's
+  sync rides the driver tick. It feeds registrations, session records (keyed by origin) and opted-in
+  knowledge content **up**, and mirrors teammates' registrations **down**. For quests it runs
+  **fetch, rebase, push**: the remote orders what it accepts, the first push wins, and a move that
+  lost is kept on the quest as a **conflict** rather than dropped. A quest leaves a machine only when
+  its receiver is joined. What may leave a machine at all is two manifest declarations — **join**
+  and **share knowledge** — and silence means local. Roots, transcripts and a file's bytes have no
+  field in anything fed.
 - **Proven by a two-machine rehearsal.** The family rehearsal grows a remote phase with a shared host
-  and two simulated machines: a quest published on one is driven to done on the other, the closure
-  crosses back, a raced take stands down, knowledge crosses only where declared, keys are refused
-  without being echoed, and the remote store is scanned to hold no machine path — no model in the gate.
+  and two simulated machines. A quest published on one is driven to done on the other and the closure
+  crosses back. A machine that sees a quest already taken leaves it alone. Both machines taking one
+  quest offline end with the second's take kept as a conflict everywhere. Verbs made while the remote
+  is down are pushed when it returns. Knowledge crosses only where declared, keys are refused without
+  being echoed, and the remote store is scanned to hold no machine path — no model in the gate.
   A two-workspace phase joins it: two circles on one machine, a search answering from one while the
   other holds the same lesson word for word, and a quest across the boundary refused with both sides
   named.

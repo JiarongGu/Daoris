@@ -14,6 +14,12 @@ public enum QuestOperationKind
 
     /// <summary>Turned down, with the reason.</summary>
     Declined,
+
+    /// <summary>
+    /// A move another machine's reached the remote before (D68 §5): what was attempted, kept rather
+    /// than dropped, and shown on the quest until a person acts. It moves no status.
+    /// </summary>
+    Conflict,
 }
 
 /// <summary>One operation in a quest's history.</summary>
@@ -29,6 +35,11 @@ public enum QuestOperationKind
 /// <param name="At">When it happened, on the machine that made it.</param>
 /// <param name="Note">The note on a close, or the reason for a decline. Null for a publish or a take.</param>
 /// <param name="Published">The quest as asked, for a <see cref="QuestOperationKind.Published"/> — open, filed and updated at <paramref name="At"/>.</param>
+/// <param name="Attempted">For a <see cref="QuestOperationKind.Conflict"/>: the move that lost.</param>
+/// <param name="Number">
+/// Where the remote placed it in its order (design §8) — null while it is pending, and always on a
+/// machine with no remote.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -36,7 +47,37 @@ public sealed record QuestOperation(
     long Sequence,
     DateTimeOffset At,
     string? Note = null,
-    Quest? Published = null);
+    Quest? Published = null,
+    QuestStatus? Attempted = null,
+    long? Number = null);
+
+/// <summary>A number a remote gave one operation, named by the machine and sequence that made it.</summary>
+public sealed record QuestAcceptance(string Machine, long Sequence, long Number);
+
+/// <summary>A quest a remote would not take, and why, in its own words.</summary>
+public sealed record QuestPushRefusal(string Quest, string Reason);
+
+/// <param name="Accepted">Every operation now numbered — including any the remote already held.</param>
+/// <param name="Behind">Quests something else reached first: fetch, rebase, and push again.</param>
+/// <param name="Refused">Quests whose operations do not apply, or whose publish the exchange refused.</param>
+public sealed record QuestPush(
+    IReadOnlyList<QuestAcceptance> Accepted, IReadOnlyList<string> Behind, IReadOnlyList<QuestPushRefusal> Refused);
+
+/// <param name="Operations">A page of what a remote accepted, in its order, each carrying its number.</param>
+/// <param name="Through">The last number the page covers — where the fetching machine's cursor moves.</param>
+/// <param name="More">Whether another page follows.</param>
+public sealed record QuestFetch(IReadOnlyList<QuestOperation> Operations, long Through, bool More);
+
+/// <param name="Cursor">The number this machine has now fetched through.</param>
+/// <param name="Conflicts">The moves the rebase turned into conflicts, as they now stand in the log.</param>
+public sealed record QuestIntegration(long Cursor, IReadOnlyList<QuestOperation> Conflicts);
+
+/// <summary>A move that lost to another machine's (D68 §5) — kept on the quest, for a person.</summary>
+/// <param name="Machine">The machine whose move it was.</param>
+/// <param name="Attempted">What it tried to move the quest to.</param>
+/// <param name="Note">Its note or reason, as it was given.</param>
+/// <param name="At">When it was made.</param>
+public sealed record QuestConflict(string Machine, QuestStatus Attempted, string? Note, DateTimeOffset At);
 
 /// <summary>
 /// The one transition table (D47 §5, kept by D68): judged by the store before an operation is written,
@@ -56,7 +97,7 @@ public static class QuestTransitions
         _ => false,
     };
 
-    /// <summary>The status an operation moves a quest to. A publish moves nothing; it begins.</summary>
+    /// <summary>The status an operation moves a quest to. A publish begins one and a conflict moves nothing.</summary>
     public static QuestStatus? Target(QuestOperationKind kind) => kind switch
     {
         QuestOperationKind.Taken => QuestStatus.Taken,
@@ -79,34 +120,41 @@ public static class QuestTransitions
 public static class QuestLog
 {
     /// <summary>
-    /// Fold a history, in order, through the transition table. An operation the table refuses is not
-    /// a move and changes nothing — so no order of operations, from whichever machines, can reach a
-    /// state the table forbids. The first publish is the quest; a later one is the same ask again.
+    /// Fold a history, in order, through the transition table. An operation that does not apply is
+    /// not a move and changes nothing — so no order of operations, from whichever machines, can reach
+    /// a state the table forbids. The first publish is the quest; a later one is the same ask again.
     /// </summary>
     /// <returns>The quest as it stands, or null when nothing in the history published it.</returns>
-    public static Quest? Replay(IEnumerable<QuestOperation> history)
+    public static Quest? Replay(IEnumerable<QuestOperation> history) =>
+        history.Aggregate((Quest?)null, (quest, operation) => Applies(quest, operation) ? Step(quest, operation) : quest);
+
+    /// <summary>
+    /// Whether an operation moves a quest standing at <paramref name="quest"/>: a publish only begins
+    /// one, a move goes only where the table allows, and a conflict is recorded on any quest there is.
+    /// </summary>
+    public static bool Applies(Quest? quest, QuestOperation operation) => operation.Kind switch
     {
-        Quest? quest = null;
-        foreach (var operation in history)
+        QuestOperationKind.Published => quest is null,
+        QuestOperationKind.Conflict => quest is not null,
+        _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
+             && QuestTransitions.Allows(quest.Status, target),
+    };
+
+    /// <summary>The quest after an operation that <see cref="Applies"/>.</summary>
+    public static Quest Step(Quest? quest, QuestOperation operation) => operation.Kind switch
+    {
+        QuestOperationKind.Published => operation.Published! with
         {
-            if (operation.Kind == QuestOperationKind.Published)
-            {
-                quest ??= operation.Published! with
-                {
-                    Status = QuestStatus.Open, Note = null, Filed = operation.At, Updated = operation.At, Home = null,
-                };
-                continue;
-            }
-
-            if (quest is null || QuestTransitions.Target(operation.Kind) is not { } target
-                || !QuestTransitions.Allows(quest.Status, target))
-            {
-                continue;
-            }
-
-            quest = quest with { Status = target, Note = operation.Note, Updated = operation.At };
-        }
-
-        return quest;
-    }
+            Status = QuestStatus.Open, Note = null, Filed = operation.At, Updated = operation.At, Conflicts = [],
+        },
+        QuestOperationKind.Conflict => quest! with
+        {
+            Conflicts =
+            [
+                .. quest.Conflicts,
+                new QuestConflict(operation.Machine, operation.Attempted ?? QuestStatus.Open, operation.Note, operation.At),
+            ],
+        },
+        _ => quest! with { Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, Updated = operation.At },
+    };
 }

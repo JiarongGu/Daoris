@@ -99,22 +99,26 @@ public sealed class Driver(
     {
         var events = new List<string>();
 
-        // The sync runs before the snapshot, so this tick plans over a fresh mirror (D47 §9). Its
-        // failure is an event, never a dead tick: records sync eventually and the next tick retries —
-        // but a feed dying quietly looks exactly like a family with nothing to say, so the wall is named.
-        if (sync is not null)
+        // The sync runs before the snapshot, so this tick plans over what the team has done (D68). Its
+        // failure is an event, never a dead tick: the next tick retries, and every verb has already
+        // committed here — but a sync dying quietly looks exactly like a family with nothing to say,
+        // so the wall is named.
+        async Task SyncAsync()
         {
+            if (sync is null) return;
             var synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
             if (synced.Problem is not null)
             {
                 events.Add($"sync  {synced.Problem}");
             }
 
-            // What the remote understood and deliberately did not take (D48 §6) — a stale or
-            // branch feed. Reported as its own kind of line, because "the deployment kept a newer
-            // view" is news about the family, not a fault in this machine.
+            // What the remote understood and deliberately did not take (D48 §6) — a stale or branch
+            // feed, a quest it would not keep, a move that lost to another machine's. Reported as its
+            // own kind of line, because each is news about the family, not a fault in this machine.
             foreach (var note in synced.Notes) events.Add($"held  {note}");
         }
+
+        await SyncAsync().ConfigureAwait(false);
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process
@@ -188,6 +192,11 @@ public sealed class Driver(
                 events.AddRange(await hooks.EndedAsync(ended, ct).ConfigureAwait(false));
             }
         }
+
+        // What a session did — its take, its close, the next step of a chain — committed here as it
+        // happened; syncing again now carries it within the tick that made it, rather than a tick later
+        // (sync design §8). Nothing concluded, nothing new to carry.
+        if (concluded.Count > 0) await SyncAsync().ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded);
     }
