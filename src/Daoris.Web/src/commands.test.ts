@@ -17,6 +17,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<t
   startSession: vi.fn(),
   review: vi.fn(),
   monitor: vi.fn(),
+  ask: vi.fn(),
   ...over,
 });
 
@@ -47,6 +48,21 @@ describe('the command registry', () => {
     expect(list).not.toContain('work.review');
     // Nothing sneaks in under another name either.
     expect(list.some((id) => id.startsWith('work.'))).toBe(false);
+  });
+
+  /**
+   * An ask (INT4c) is a local host's HTTP door, so a browser on this machine can make one as well as
+   * the shell can — offered from anywhere, whatever view is in front, even Quests where its button is.
+   */
+  it('offers asking the circle everywhere, a browser included', () => {
+    const run = vi.fn();
+    const browser = commands(world({ attached: false, current: 'quests', ask: run }));
+
+    const ask = browser.find((command) => command.id === 'do.ask');
+    expect(ask).toBeDefined();
+    ask!.run();
+    expect(run).toHaveBeenCalledOnce();
+    expect(ids(commands(world()))).toContain('do.ask');
   });
 
   it('offers Sessions and the session actions where a shell is here', () => {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from './api';
+import { api, type AskAction } from './api';
 import { useScope } from './scope';
 
 // The console is a cache over a service; TanStack Query is that cache done correctly (D42):
@@ -45,6 +45,8 @@ export const keys = {
     ['search', q, localOnly, workspace ?? '*'] as const,
   allQuests: ['quests'] as const,
   allSessions: ['sessions'] as const,
+  allAsks: ['asks'] as const,
+  asks: (includeClosed: boolean, workspace: string | null) => ['asks', includeClosed, workspace ?? '*'] as const,
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null) =>
     ['quests', repository ?? 'all', includeClosed, workspace ?? '*'] as const,
   sessions: (repository: string | null, includeClosed: boolean, workspace: string | null) =>
@@ -101,6 +103,37 @@ export const useWorkspaces = () =>
     queryFn: ({ signal }) => api.registry(null, signal),
     select: (rows) => [...new Set(rows.map((row) => row.workspace ?? 'default'))].sort(),
   });
+
+/** Asks (D65 §1a), scoped like every other cross-repository read — an ask is made in a circle. */
+export const useAsks = (includeClosed: boolean) => {
+  const { workspace } = useScope();
+  return useQuery({
+    queryKey: keys.asks(includeClosed, workspace),
+    queryFn: ({ signal }) => api.asks(includeClosed, workspace, signal),
+  });
+};
+
+/**
+ * Asking, publishing an ask and closing one. Each can publish a quest, so the quests move with the
+ * asks — and they are asked again whether or not the door said yes: a named receiver that refused
+ * still leaves the ask kept, with its proposal (INT4a), which the list must then show.
+ */
+function useAskChange<TVariables>(fn: (variables: TVariables) => Promise<AskAction>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.allAsks });
+      void client.invalidateQueries({ queryKey: keys.allQuests });
+    },
+  });
+}
+
+export const useAsk = () => useAskChange((body: Parameters<typeof api.ask>[0]) => api.ask(body));
+export const usePublishAsk = () =>
+  useAskChange(({ id, to }: { id: string; to: string }) => api.publishAsk(id, to));
+export const useCloseAsk = () =>
+  useAskChange(({ id, reason }: { id: string; reason: string }) => api.closeAsk(id, reason));
 
 export const useQuests = (repository: string | null, includeClosed: boolean) => {
   const { workspace } = useScope();

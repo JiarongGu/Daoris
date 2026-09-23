@@ -106,6 +106,8 @@ export function App() {
   // A quest a door asked Quests to open in its drawer — the sync item's conflict list (SYNC6b). An
   // event like the opening draft: Quests consumes it and says so.
   const [questFocus, setQuestFocus] = useState<string | null>(null);
+  // The palette asked for the ask composer (INT4c) — an event Quests consumes, like the two above.
+  const [asking, setAsking] = useState(false);
   // The palette (SURF9), and what it asks the Work frame to do. Both are events consumed on arrival
   // rather than state, for the reason the quest composer's opening draft is.
   const [palette, setPalette] = useState(false);
@@ -410,6 +412,8 @@ export function App() {
                     onOpened={() => setOpening(null)}
                     focus={questFocus}
                     onFocused={() => setQuestFocus(null)}
+                    asking={asking}
+                    onAsked={() => setAsking(false)}
                   />
                 )}
                 {view === 'projects' && <ProjectsView notify={notify} />}
@@ -538,6 +542,8 @@ export function App() {
           detach: attending
             ? () => openWindow.mutate(sessionWindowName(attending))
             : undefined,
+          // Asking lives at the head of Quests (INT4c); the palette goes there and opens the composer.
+          ask: () => { setView('quests'); setAsking(true); },
         })}
       />
 

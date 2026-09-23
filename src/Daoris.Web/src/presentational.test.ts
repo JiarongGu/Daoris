@@ -34,6 +34,8 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
  */
 const ORGANISMS = new Set<string>([
   './SessionConsole.tsx',
+  // The asks' organism (INT4c): it holds the queries so the card, the record and the composer do not.
+  './asks/AsksSection.tsx',
   './work/AttentionBand.tsx',
   './work/DetachedSession.tsx',
   './work/DiffPane.tsx',
@@ -48,7 +50,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 }
 
 // `map/` since MAP2: the map's drawing and detail are molecules, and MapView above them is the view.
-const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx}}', {
+// `asks/` and `compose/` since INT4c: the ask's molecules, and the carry fields both composers share.
+const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

@@ -100,6 +100,30 @@ export type CodeMapAnswer = {
   fed?: Provenance;
 };
 export type QuestAction = { quest: Quest; message: string };
+/**
+ * An ask (D65 §1a): a sentence entered at a WORKSPACE rather than at a repository, held as a record of
+ * what became of it. `tier` names what answered it, on every record (`model-decoupling`); a tier this
+ * page has no word for is shown as the service wrote it. Optional fields are absent rather than null
+ * on the wire — the host leaves nulls out.
+ */
+export type AskState = 'Open' | 'Proposed' | 'Published' | 'Closed';
+/** A repository the declarations tier proposed, with the words its declarations share with the ask. */
+export type DeclarationMatch = { repository: string; score: number; matched: string[] };
+export type Ask = {
+  id: string; workspace: string; sentence: string; state: AskState; tier: string;
+  asked: string; updated: string;
+  /** Who asked, when the door knows; absent is this machine's person. */
+  asker?: string | null;
+  /** Why it was closed, or the service's sentence about the receiver it named — verbatim. */
+  note?: string | null;
+  links: string[];
+  /** Its files, by name — kept on this machine until the ask becomes quests. `path` is never shown. */
+  attachments: QuestAttachment[];
+  proposal: DeclarationMatch[];
+  /** The quests it became, in the order they were published. */
+  quests: string[];
+};
+export type AskAction = { ask: Ask; message: string; quest?: Quest | null };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
   owns: string[]; accepts: string[]; packs: string[]; entries: number; workspace?: string;
@@ -215,6 +239,18 @@ export const api = {
     get<Convergence[]>(`/api/convergence${qs({ minimumSimilarity, limit: PAGE_SHOWN + 1, workspace })}`, signal),
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
+  // Asks (D65 §1a), a local host's doors: the screen twin of `daoris-driver ask` (INT4c, D50). Files
+  // travel whole, as a quest's do, because the host keeps them until the ask becomes quests.
+  asks: (includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
+    get<Ask[]>(`/api/asks${qs({ includeClosed, workspace })}`, signal),
+  ask: (body: {
+    workspace: string; sentence: string; links?: string[]; attachments?: { name: string; content: string }[];
+    to?: string;
+  }) => post<AskAction>('/api/asks', body),
+  publishAsk: (id: string, to: string) =>
+    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/publish`, { to }),
+  closeAsk: (id: string, reason: string) =>
+    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/close`, { reason }),
   registry: (workspace: string | null, signal?: AbortSignal) =>
     get<Registration[]>(`/api/registry${qs({ workspace })}`, signal),
   // A repository's own code map (MAP3a), read from its committed file — never written to (D32).

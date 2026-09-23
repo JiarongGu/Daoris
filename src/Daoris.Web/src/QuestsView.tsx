@@ -1,4 +1,4 @@
-import { type ClipboardEvent, type DragEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type Quest, type QuestStep, type Session } from './api';
 import {
@@ -6,7 +6,9 @@ import {
 } from './queries';
 import { useConsidered, useDriver, useStopSession } from './shell';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
-import { admit, isImage, linksOf, MAX_FILE_BYTES, MAX_FILES, toUpload } from './attachments';
+import { isImage, linksOf, toUpload } from './attachments';
+import { CarryFields, useCarry } from './compose/carry';
+import { AsksSection } from './asks/AsksSection';
 import { sittingBecause } from './signals';
 import { buildChain } from './map/chain';
 import { ChainStrip } from './map/ChainStrip';
@@ -30,10 +32,6 @@ type Draft = {
 };
 const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '', links: '', files: [], step: null };
 
-/** Whether a drag carries files — a dragged selection of text is the body's business, not ours. */
-const carriesFiles = (event: { dataTransfer: DataTransfer | null }) =>
-  Array.from(event.dataTransfer?.types ?? []).includes('Files');
-
 /**
  * The task half of the platform (D38, D40): the list is for reading — a card is a summary and a
  * door — and the acting happens in the detail drawer, where there is room to act deliberately.
@@ -43,8 +41,14 @@ const carriesFiles = (event: { dataTransfer: DataTransfer | null }) =>
  * other door, refusals surfaced verbatim — the service's sentence is the contract, so it is never
  * translated or rephrased here.
  */
-export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocused }: {
+export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocused, asking, onAsked }: {
   notify: Notify;
+  /**
+   * The palette asked for the ask composer (INT4c) — an event like `opening`, consumed by identity and
+   * cleared by its holder, so asking twice opens it twice.
+   */
+  asking?: boolean;
+  onAsked?: () => void;
   /**
    * A quest a door asked to see — the status bar's conflict list (SYNC6b). An event like `opening`:
    * the drawer opens on it once the quest is loaded, and the holder is told so it can clear it.
@@ -73,34 +77,13 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState('');
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  // What the composer left off a drop, and why — said while the person is still choosing, because
-  // the service's own refusal would only arrive after a publish that read every byte first.
-  const [leftOff, setLeftOff] = useState<'tooMany' | 'tooLarge' | null>(null);
-  const [dragging, setDragging] = useState(false);
   const [reading, setReading] = useState(false);
-  const chooser = useRef<HTMLInputElement>(null);
-
-  // 🔴 A file dropped anywhere but the composer must not become the page. A browser — and the
-  // desktop's webview — answers an unhandled file drop by NAVIGATING to the file, which in the
-  // desktop replaces the whole application with a picture. While the composer is open, a stray drop
-  // is absorbed; the composer's own drop handler is what attaches.
-  useEffect(() => {
-    if (!composing) return;
-    const absorb = (event: globalThis.DragEvent) => { if (carriesFiles(event)) event.preventDefault(); };
-    window.addEventListener('dragover', absorb);
-    window.addEventListener('drop', absorb);
-    return () => {
-      window.removeEventListener('dragover', absorb);
-      window.removeEventListener('drop', absorb);
-    };
-  }, [composing]);
-
-  const attach = (incoming: File[]) => {
-    if (incoming.length === 0) return;
-    const { files, refused } = admit(draft.files, incoming);
-    setDraft({ ...draft, files });
-    setLeftOff(refused);
-  };
+  // What the draft carries (D65 §2) — the drop, the paste and the chooser are shared with the ask
+  // composer (INT4c), and so is absorbing a stray drop while the composer is open.
+  const carry = useCarry(
+    { links: draft.links, files: draft.files },
+    ({ links, files }) => setDraft({ ...draft, links, files }),
+    composing);
 
   // A door asked for the composer, pre-filled. Consumed on arrival: this is an event, not a state,
   // and leaving it set would reopen the drawer every time anything else here re-rendered.
@@ -113,10 +96,21 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
   if (opening && opening !== arrived) {
     setArrived(opening);
     setDraft({ ...EMPTY_DRAFT, from: opening.from ?? '', to: opening.to ?? '' });
-    setLeftOff(null);
+    carry.forget();
     setComposing(true);
   }
   useEffect(() => { if (opening) onOpened?.(); }, [opening, onOpened]);
+
+  // The ask composer (INT4c), opened by the header's button or by the palette's event — consumed by
+  // identity for `opening`'s reason, and forgotten once the holder clears it.
+  const [askComposing, setAskComposing] = useState(false);
+  const [askSeen, setAskSeen] = useState(false);
+  if (asking && !askSeen) {
+    setAskSeen(true);
+    setAskComposing(true);
+  }
+  if (!asking && askSeen) setAskSeen(false);
+  useEffect(() => { if (asking) onAsked?.(); }, [asking, onAsked]);
 
   const quests = useQuests(repository === EVERYONE ? null : repository, includeClosed);
   // Every quest, closed ones included, for the chain a drawer shows (MAP1): the step before this one
@@ -183,27 +177,11 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
       onSuccess: (result) => {
         notify(result.message);
         setDraft(EMPTY_DRAFT);
-        setLeftOff(null);
+        carry.forget();
         setComposing(false);
       },
       onError: (e) => notify(sentence(e), 'error'),
     });
-  };
-
-  const onDrop = (event: DragEvent) => {
-    if (!carriesFiles(event)) return;
-    event.preventDefault();
-    setDragging(false);
-    attach(Array.from(event.dataTransfer.files));
-  };
-
-  // A screenshot on the clipboard is a file, not text: attached, and kept out of the field it was
-  // pasted into. A paste of text goes where it was pasted, as ever.
-  const onPaste = (event: ClipboardEvent) => {
-    const pasted = Array.from(event.clipboardData?.files ?? []);
-    if (pasted.length === 0) return;
-    event.preventDefault();
-    attach(pasted);
   };
 
   const onRespond = (quest: Quest, action: 'take' | 'done' | 'decline', why: string | null = null) =>
@@ -320,9 +298,16 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
         title={t('quests.title')}
         description={t('quests.description')}
         action={
-          <Button variant="primary" onClick={() => setComposing(true)}>
-            <Icon name="plus" size={14} />{t('quests.new')}
-          </Button>
+          // Asking leads (D65): the regular task enters at the circle, and the declarations say where
+          // it belongs. A quest to a repository the person already knows is the second door.
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="primary" onClick={() => setAskComposing(true)}>
+              <Icon name="plus" size={14} />{t('asks.ask')}
+            </Button>
+            <Button onClick={() => setComposing(true)}>
+              <Icon name="plus" size={14} />{t('quests.new')}
+            </Button>
+          </div>
         }
       />
 
@@ -338,6 +323,18 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
         </label>
         <CheckField checked={includeClosed} onChange={setIncludeClosed} label={t('quests.includeClosed')} />
       </div>
+
+      {/* Asks first: they are where quests come from, and a proposal waits on a person (INT4a). */}
+      <AsksSection
+        notify={notify}
+        includeClosed={includeClosed}
+        composing={askComposing}
+        onComposingChange={setAskComposing}
+        onOpenQuest={(id) => {
+          const quest = everything.data?.find((candidate) => candidate.id === id);
+          if (quest) openDetail(quest);
+        }}
+      />
 
       {quests.isPending && <SkeletonRows rows={4} />}
 
@@ -641,10 +638,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
             onSubmit={(e) => { e.preventDefault(); void onPublish(); }}
             // The whole composer takes a drop and a paste (D65 §2) — aiming at a box inside a drawer
             // is a chore, and the box below lights up to say where the file went.
-            onDragOver={(e) => { if (carriesFiles(e)) { e.preventDefault(); setDragging(true); } }}
-            onDragLeave={(e) => { if (e.currentTarget === e.target) setDragging(false); }}
-            onDrop={onDrop}
-            onPaste={onPaste}
+            {...carry.handlers}
           >
             <p className="m-0 text-body text-ink-soft">{t('quests.compose.hint')}</p>
             <div className="grid grid-cols-2 gap-2.5 max-md:grid-cols-1">
@@ -691,65 +685,16 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
                 className="min-h-28 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
               />
             </label>
-            <label className="grid gap-1 text-small text-ink-soft">
-              {t('quests.compose.linksLabel')}
-              <textarea
-                rows={2} value={draft.links} spellCheck={false}
-                placeholder="https://…"
-                onChange={(e) => setDraft({ ...draft, links: e.target.value })}
-                className="resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-small text-ink"
-              />
-            </label>
-            <div className="grid gap-1.5 text-small text-ink-soft">
-              {t('quests.compose.filesLabel')}
-              <div
-                className={cn(
-                  'flex flex-wrap items-center gap-2.5 rounded-control border border-dashed px-3 py-2.5 transition-colors duration-(--speed)',
-                  dragging ? 'border-accent bg-accent-soft' : 'border-line-strong',
-                )}
-              >
-                <Icon name="attach" size={14} className="text-ink-faint" />
-                <span className="flex-1 text-body text-ink-soft">{t('quests.compose.drop')}</span>
-                <Button type="button" disabled={busy} onClick={() => chooser.current?.click()}>
-                  {t('quests.compose.choose')}
-                </Button>
-                <input
-                  ref={chooser} type="file" multiple className="sr-only" tabIndex={-1}
-                  aria-label={t('quests.compose.choose')}
-                  onChange={(e) => {
-                    attach(Array.from(e.target.files ?? []));
-                    // Cleared, so choosing the same file again after removing it is a change.
-                    e.target.value = '';
-                  }}
-                />
-              </div>
-              {leftOff && (
-                <p role="status" className="m-0 text-body text-st-declined">
-                  {t(`quests.compose.${leftOff}`, { max: MAX_FILES, size: size(MAX_FILE_BYTES) })}
-                </p>
-              )}
-              {draft.files.length > 0 && (
-                <ul className="m-0 grid list-none gap-1 p-0">
-                  {draft.files.map((file, index) => (
-                    <li key={`${index}:${file.name}`} className="flex min-w-0 items-center gap-2 text-body text-ink">
-                      <Icon name="attach" size={12} className="text-ink-faint" />
-                      <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                      <span className="shrink-0 font-mono text-meta text-ink-faint">{size(file.size)}</span>
-                      <Button
-                        type="button" variant="ghost" disabled={busy}
-                        aria-label={t('quests.compose.remove', { name: file.name })}
-                        onClick={() => {
-                          setDraft({ ...draft, files: draft.files.filter((_, at) => at !== index) });
-                          setLeftOff(null);
-                        }}
-                      >
-                        <Icon name="x" size={12} />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <CarryFields
+              carry={{ links: draft.links, files: draft.files }}
+              filesLabel={t('quests.compose.filesLabel')}
+              leftOff={carry.leftOff}
+              dragging={carry.dragging}
+              busy={busy}
+              onLinks={(links) => setDraft({ ...draft, links })}
+              onAttach={carry.attach}
+              onRemove={carry.remove}
+            />
             {/* The chain (D65 §4): one next step, published by the service when this closes done.
                 Behind a press, because most asks are one quest and the form should not say otherwise. */}
             {draft.step === null ? (

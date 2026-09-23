@@ -56,6 +56,11 @@ export function commands(world: {
   /** Open the monitor window on a second screen (SURF8). Shell-only: a page cannot open a window. */
   monitor: () => void;
   /**
+   * Open the ask composer (INT4c) — anywhere, a browser included: an ask is a local host's HTTP door,
+   * so it needs no shell, only this machine.
+   */
+  ask: () => void;
+  /**
    * Detach the attended session into a window of its own (SURF8) — absent when nothing is attended,
    * for the reason every other absence here is: a palette is a promise that what it lists can be
    * done, and "detach" with nothing to detach is a row that does nothing.
@@ -130,6 +135,14 @@ export function commands(world: {
   }
 
   list.push(
+    {
+      id: 'do.ask',
+      icon: 'plus',
+      group: world.group('do'),
+      title: world.label('do.ask'),
+      keywords: 'ask request ticket intake circle workspace new quest 请求',
+      run: world.ask,
+    },
     {
       id: 'do.refresh',
       icon: 'refresh',

@@ -49,6 +49,23 @@ publishes nothing, and says *by declarations only; no intake harness ran*. `--to
 it. An ask's quests are asked by `ask #<id>`, in its circle. The intake session (§1b) is INT4b; the
 desktop composer is INT4c.
 
+*As built (INT4c, 2026-09-24):* an ask is made at the scope the status bar names. Its door lives in
+**Quests**, not on the bar: the bar says what is true, and an ask is an action. *Ask* is the Quests
+header's primary action and the palette's *Ask the circle…*. The asks sit above the quests as a group
+of their own, because quests come from them and a proposal waits on a person. **The circle is the
+scope, or the only circle held**. Scoped to none of several, the composer asks which, and never
+assumes `default`. The record shows:
+- the words;
+- the tier, in words (a tier this page does not know is shown raw);
+- each proposal as *publish to …*, and any other adopter in the circle;
+- the quests it became, as doors;
+- its links, and its files by name and size, never where they lie;
+- *close* with a reason.
+
+A browser on this machine has the same door, because an ask is the local host's HTTP, not the shell's
+bridge. The links, drop, paste and chooser are one molecule both composers share (`compose/carry`), so
+the two cannot disagree about how a file arrives.
+
 ### 1b. The intake session — the driver's brain is a session, not a model
 
 Daoris opens a **conversation** (SES2) for the ask, in a working tree it owns: `<home>/intake/

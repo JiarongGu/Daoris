@@ -221,6 +221,74 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
   await expect(page.getByText('a quest is work for someone else', { exact: false }).first()).toBeVisible();
 });
 
+/**
+ * **An ask, from the screen** (INT4c) — the twin of `daoris-driver ask` (D50), over the real host.
+ * Opened from the palette, made in the family's one circle without being asked which, answered by the
+ * declarations tier in the service's own words; a proposal accepted is a quest asked BY the ask,
+ * carrying its link and its file; and the person closes it with the reason. The kept file is named
+ * and never located (D47 §4, D65 §2).
+ */
+test('an ask is proposed by declarations, published by a person, and closed with its reason (INT4c)', async ({ page }) => {
+  const sentence = 'the rendering of the asset pipeline stalls whenever the simulation runs';
+
+  await page.goto('/');
+  // A browser on this machine has this door: an ask is this host's HTTP, not the shell's bridge.
+  await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
+  await page.getByRole('dialog').getByRole('option', { name: /Ask the circle/ }).click();
+
+  // Every drawer is addressed by its title: one closes as the next opens, and "the dialog" is ambiguous
+  // for that moment.
+  const composer = page.getByRole('dialog', { name: 'Ask the circle' });
+  await expect(composer).toBeVisible();
+  // One circle held, so it is the circle — said, and not asked.
+  await expect(composer.getByText('Asked in default')).toBeVisible();
+  await expect(composer.getByRole('combobox', { name: 'circle' })).toHaveCount(0);
+  await composer.getByLabel('what is wanted, and why').fill(sentence);
+  await composer.getByLabel(/^links/).fill('https://tickets.example/T-8');
+  await composer.getByLabel('choose files…').setInputFiles([
+    { name: 'trace.log', mimeType: 'text/plain', buffer: Buffer.from('frame 212: hydrate stalls 38ms\n') },
+  ]);
+  await composer.getByRole('button', { name: 'ask', exact: true }).click();
+
+  // The service's sentence, verbatim: which tier answered, what it proposed, and that nothing went out.
+  await expect(page.getByText(/Asked as `#[0-9a-f]{6}` in `default` — by declarations only; no intake harness ran — proposed, best first: `engine`/).first()).toBeVisible();
+
+  // The record opens on the answer: the tier in words, the proposal as a verb, the file by name only.
+  // (The quest it becomes takes the same words for its title, so each drawer is told apart by what it holds.)
+  const record = page.getByRole('dialog', { name: sentence });
+  await expect(record.getByRole('region', { name: 'Where it belongs' })).toBeVisible();
+  await expect(record.getByText('by declarations only; no intake harness ran')).toBeVisible();
+  await expect(record.getByText('trace.log')).toBeVisible();
+  await expect(record).not.toContainText('_fixtures');
+
+  await record.getByRole('button', { name: 'publish to engine' }).click();
+  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
+
+  // The quest it became is a door into the quest's own drawer — once the page holds it — asked BY the
+  // ask, carrying its link and its file.
+  await record.getByRole('region', { name: 'Became' }).getByRole('button', { name: new RegExp(sentence) }).click();
+  const quest = page.getByRole('dialog', { name: sentence });
+  await expect(quest.getByRole('region', { name: 'Where it belongs' })).toHaveCount(0);
+  await expect(quest.getByText(/^ask #[0-9a-f]{6}$/).first()).toBeVisible();
+  await expect(quest.getByRole('link', { name: /tickets\.example\/T-8/ })).toBeVisible();
+  await expect(quest.getByRole('link', { name: /trace\.log/ })).toBeVisible();
+
+  // Leave the family as it was found: the quest done, and the ask closed with what became of it.
+  await quest.getByRole('button', { name: 'done', exact: true }).click();
+  await expect(page.getByText(/is now Done/).first()).toBeVisible();
+
+  // The ask's card: the one button left that carries its words, now its quest has left the open list.
+  await page.getByRole('button', { name: new RegExp(sentence) }).click();
+  await record.getByRole('button', { name: 'close the ask' }).click();
+  await record.getByLabel('why — what became of it').fill('It became the engine quest, now done.');
+  await record.getByRole('button', { name: 'close with this reason' }).click();
+  await expect(page.getByText(/Ask `#[0-9a-f]{6}` is closed: It became the engine quest, now done\./).first()).toBeVisible();
+
+  // Closed asks leave the list, as closed quests do.
+  await record.getByRole('button', { name: 'close', exact: true }).click();
+  await expect(page.getByText(/^Asks · /)).toHaveCount(0);
+});
+
 test('a project created mid-run joins, and the platform shows it (D44)', async ({ page }) => {
   // The lifecycle the next real family needs proven: a project that did not exist when the host
   // started is born, joins through the REAL CLI — init, declare, sync, check, connect — and becomes a

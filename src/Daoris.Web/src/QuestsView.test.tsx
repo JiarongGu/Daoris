@@ -43,10 +43,14 @@ const SESSIONS = [{
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 }];
 
+/** The asks the service holds (INT4c) — none, unless a test puts some there. */
+let ASKS: unknown[] = [];
+
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
+  if (url.startsWith('/api/asks')) return Response.json(ASKS);
   throw new Error(`unstubbed request: ${url}`);
 }
 
@@ -178,6 +182,102 @@ describe('QuestsView', () => {
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('#abc123')).toBeInTheDocument();
     expect(onFocused).toHaveBeenCalledTimes(1);
+  });
+
+  // ——— Asks (INT4c): the screen twin of `daoris-driver ask`, at the head of the view that holds what
+  // they become. The family here is one circle (no row names a workspace), so an ask is made there.
+
+  describe('asks', () => {
+    const PROPOSED = {
+      id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.\n\nThe trace is attached.',
+      state: 'Proposed', tier: 'declarations', asked: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:00:00Z',
+      links: [], attachments: [], quests: [],
+      proposal: [{ repository: 'engine', score: 3, matched: ['frame', 'hydration'] }],
+    };
+    let posted: { url: string; body: unknown }[] = [];
+
+    beforeEach(() => {
+      posted = [];
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (init?.method === 'POST' && url.startsWith('/api/asks')) {
+          posted.push({ url, body: JSON.parse(String(init.body)) });
+          const ask = url.endsWith('/publish')
+            ? { ...PROPOSED, state: 'Published', quests: ['abc123'] }
+            : PROPOSED;
+          return Response.json({ ask, message: url.endsWith('/publish')
+            ? 'Published quest `#abc123` to `engine` — Open.'
+            : 'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake harness ran.' });
+        }
+        return respond(url);
+      }));
+    });
+    afterEach(() => { ASKS = []; });
+
+    it('the Ask button opens the composer in the one circle there is, and the ask is sent whole', async () => {
+      const notify = vi.fn();
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider><QuestsView notify={notify} /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+
+      await userEvent.click(await screen.findByRole('button', { name: 'ask' }));
+      const composer = await screen.findByRole('dialog', { name: 'Ask the circle' });
+      expect(within(composer).getByText('Asked in default')).toBeInTheDocument();
+      await userEvent.type(within(composer).getByLabelText('what is wanted, and why'), 'Cap the hydration per frame.');
+      fireEvent.change(within(composer).getByLabelText(/links — a ticket/), { target: { value: 'https://tickets.example/T-42' } });
+      await userEvent.upload(within(composer).getByLabelText('choose files…'), new File(['pixels'], 'trace.log'));
+      await userEvent.click(within(composer).getByRole('button', { name: 'ask' }));
+
+      await waitFor(() => expect(posted).toHaveLength(1));
+      expect(posted[0]).toEqual({
+        url: '/api/asks',
+        body: {
+          workspace: 'default', sentence: 'Cap the hydration per frame.', links: ['https://tickets.example/T-42'],
+          attachments: [{ name: 'trace.log', content: btoa('pixels') }],
+        },
+      });
+      // The service's sentence, verbatim — and the record opens on what it proposed.
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(
+        'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake harness ran.'));
+      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
+      expect(within(record).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+    });
+
+    it('lists the asks above the quests, and publishing a proposal goes through the ask\'s own door', async () => {
+      ASKS = [PROPOSED];
+      view();
+
+      expect(await screen.findByText('Asks · 1')).toBeInTheDocument();
+      await userEvent.click(screen.getByText('Cap the hydration per frame.'));
+      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
+      await userEvent.click(within(record).getByRole('button', { name: 'publish to engine' }));
+
+      await waitFor(() => expect(posted).toEqual([{ url: '/api/asks/7c1e9a04b2d5/publish', body: { to: 'engine' } }]));
+      // The quest it became is a door into the quest's own drawer.
+      await userEvent.click(await within(record).findByRole('button', { name: /#abc123/ }));
+      expect(await screen.findByRole('dialog', { name: 'Expose a streaming budget' })).toBeInTheDocument();
+    });
+
+    /** The palette's "Ask the circle…" is an event, consumed by identity and cleared by its holder (frontend §4b). */
+    it('a palette request opens the composer, once', async () => {
+      const onAsked = vi.fn();
+      function Asking() {
+        const [pending, setPending] = useState(true);
+        return <QuestsView notify={() => {}} asking={pending} onAsked={() => { onAsked(); setPending(false); }} />;
+      }
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider><Asking /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+
+      expect(await screen.findByRole('dialog', { name: 'Ask the circle' })).toBeInTheDocument();
+      expect(onAsked).toHaveBeenCalledTimes(1);
+    });
   });
 
   // ——— A chain (D65 §4).
@@ -320,7 +420,7 @@ describe('QuestsView', () => {
 
     await userEvent.upload(within(dialog).getByLabelText('choose files…'), eleven);
 
-    expect(within(dialog).getByText('A quest carries at most 10 files.')).toBeInTheDocument();
+    expect(within(dialog).getByText('At most 10 files travel together.')).toBeInTheDocument();
     expect(within(dialog).queryByText('f10.txt')).not.toBeInTheDocument();
   });
 

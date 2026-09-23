@@ -18,6 +18,7 @@ const LABELS: Record<string, string> = {
   'work.review': 'Review what this session landed',
   'work.monitor': 'Open the monitor window',
   'work.detach': 'Open this session in its own window',
+  'do.ask': 'Ask the circle…',
   'do.refresh': 'Refresh the index',
   'do.language': 'Switch language',
 };
@@ -37,6 +38,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => commands({
   review: () => {},
   monitor: () => {},
   detach: () => {},
+  ask: () => {},
   ...over,
 });
 

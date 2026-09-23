@@ -214,6 +214,21 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - A lead-in must not repeat the sentence it introduces. The host's wall already says what went
 >   wrong, so the detail's lead-in says only *when*.
 
+> **Amended 2026-09-24, the asks (INT4c).** Held by vitest and a Playwright check, and **not yet
+> looked at on the real window** — the pass the other amendments here came from is still owed.
+>
+> - **An action goes with what it makes, not on the status bar.** The bar states facts, and its one
+>   control (SYNC6b) acts on the bar's own fact. An ask makes quests, so its door heads Quests.
+> - **Asking leads.** *Ask* is the view's one primary control, and *new quest* steps down to default:
+>   the regular task enters at the circle (D65), and a quest to a repository the person already
+>   knows is the second door.
+> - **One carry, two composers.** The links, drop, paste and chooser are one molecule
+>   (`compose/carry`). INT2's rules hold for both because there is one copy of them: a stray drop is
+>   absorbed, the whole composer is the target, and a pasted screenshot is a file.
+> - **A door opens something, or it is not a door.** Just after a publish, the answer names the
+>   quest before the list holds it. So the record names it by id, and makes it a door only once the
+>   page can open it. A button that closes one drawer and opens nothing is a dead click.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*
@@ -221,7 +236,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
   quest drawer; repository rows go to Projects.
-- **Quests** — page action opens the **compose drawer**; the list stays scannable (pill, title, route,
+- **Quests** — the primary page action is *Ask* (INT4c): its composer and each ask's record are
+  drawers, and the asks sit above the quests as a group of their own, a card per ask. *New quest*
+  opens the **compose drawer**; the list stays scannable (pill, title, route,
   age, first line of the ask) grouped Open / In progress / Closed; **clicking a card opens the detail
   drawer**: the whole ask, the meta, the note, and the actions — take, done, decline-with-reason —
   where there is room to act deliberately. Quick actions leave the cards; a card is for reading.
