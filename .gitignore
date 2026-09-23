@@ -7,6 +7,9 @@ node_modules/
 # Scratch: fixtures, probes, dumps. Never OS temp (see the doctrine's no-tmp rule).
 _fixtures/
 
+# Agents' git worktrees — each is a checkout of its own branch, merged back by commit, never tracked.
+.claude/worktrees/
+
 # Published binaries (tools/service-publish.mjs, and the release workflow's staging dir).
 publish/
 
