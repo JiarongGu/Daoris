@@ -33,10 +33,10 @@ agent measured so far.
   (`KeyVariable`: `ANTHROPIC_API_KEY` for Claude Code). The probe asks `auth status` with the key
   set. 🔴 **The roster does not show the tool's "logged in" for a key account.** The tool says it for
   any key, so the account reads *unchecked* on the page and in `agent list`.
-- 🔴 **Only the direct door, for now.** The protocol door resolves accounts under its own name
-  (`harnesses/claude-code-acp/…`), not under the agent whose account it declares it runs as
-  (`accountOf`). That predates this design, and a key follows the account, so a key account reaches
-  Claude Code over the direct door only until AGT7 routes a door to its owner's accounts.
+- **Both doors, since AGT7.** A door runs as its owner's accounts, so the protocol door is handed
+  the owner's key variable too. The Agent SDK runs its `claude` with the door's environment. That is
+  the same inheritance `CLAUDE_CONFIG_DIR` was verified keylessly to have (ACP2 §1a). A key over the
+  protocol door is not itself measured: its adapter is not installed on this machine.
 - **Removing the account removes the key** with the directory (D66 §3).
 - **Two doors.** The desktop has *Add an API key* beside *Sign in to another account*: a password
   field, and a save that answers with the new account's handle. The terminal has
@@ -62,7 +62,3 @@ agent measured so far.
   sentence naming the account, saves the minutes the retries cost. Expired sign-ins would benefit
   from it too.
 - **Codex key accounts**, once measured.
-- **A door runs as its owner's accounts** (AGT7). `accountOf` is declared and the page groups by
-  it, but the driver resolves a door's accounts, defaults and keys under the door's own name.
-  So an account made for Claude Code is invisible to Claude Code over the protocol door, and a
-  Codex account never reaches `codex-acp`.

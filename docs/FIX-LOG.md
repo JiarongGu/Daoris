@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A door ran in its own accounts, not the agent's it declares (2026-09-23)
+
+**Symptom.** Found by reading while designing API-key accounts, not by a person. An account made
+for Claude Code, whether by sign-in, by key, or as a default, never reached a session held over the
+protocol door. `claude-code-acp` resolved its default under its own name, found none, and ran in the
+tool's own home. A Codex account could never reach `codex-acp` at all: the driver carries no `codex`
+adapter, so nothing ever made an account under the door's name that it could sign into.
+
+**Root cause.** `accountOf` (ACP2) was declared as *the harness whose ACCOUNT this one runs as*, and
+the page grouped a tool's doors on it (D66). But `HarnessRoster.SelectAsync` and `HarnessProbe`
+resolved accounts, defaults and directories with the adapter's own name. The field was read for its
+login refusal sentence and for grouping, never for the account itself. Tests asserted the door's
+seam, `CLAUDE_CONFIG_DIR` set to *a* profile home, and none asserted *whose*.
+
+**Fix.** `HarnessToolchain.Owner` (`ownerOf` in the CLI, twin rule 7). The selection resolves the
+owner's default and directory. It asks the owner's login question and takes the owner's key
+variable when this build carries the owner, and otherwise stays permissive (SES3). The probe lists
+the owner's accounts, so one tool shows one list. Account actions on a door, from either twin, land
+on the owner's accounts and say so. The door's pin stays its own, because it is a different package.
+
+**Verify.** `DoorAccountTests` (driver): the owner's default and directory, a workspace's choice,
+the owner's key variable, a refusal naming the owner's login, the roster's rows, an owner with no
+adapter, and the pin still the door's. A module test and two CLI tests cover the account actions.
+
+**Commit.** pending
+
 ## A pinned Claude Code could update itself out of its pin (2026-09-23)
 
 **Symptom.** No run had moved one yet; the tool's own report said it could. Measured with no login

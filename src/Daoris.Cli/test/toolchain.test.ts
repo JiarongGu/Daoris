@@ -368,6 +368,36 @@ test('a key account is asked with its key, and listed by its handle', () => {
   fx.cleanup();
 });
 
+// ——— Twin rule 7: a door's accounts are its owner's (AGT7). `accountOf` says whose account a door
+// runs as; its accounts, defaults and keys live under that name. Its pin stays its own.
+
+test('an account verb on a door acts on its owner’s accounts, and says so', () => {
+  const fx = makeFixture('harness-door');
+
+  const added = run(['profile', 'add', 'claude-code-acp', 'work'], at(fx));
+  run(['profile', 'default', 'claude-code-acp', 'work'], at(fx));
+
+  assert.ok(existsSync(profileHome(fx.root, 'claude-code', 'work')));
+  assert.ok(!existsSync(join(fx.root, 'harnesses', 'claude-code-acp')));
+  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], 'work');
+  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code-acp'], undefined);
+  assert.match(added.out, /runs as `claude-code`/);
+  fx.cleanup();
+});
+
+test('a door lists its owner’s accounts, and a key given for it is the owner’s', () => {
+  const fx = makeFixture('harness-door-list');
+  mkdirSync(profileHome(fx.root, 'claude-code', 'work'), { recursive: true });
+
+  const account = addKeyAccount(fx.root, 'claude-code-acp', 'sk-door-9999', () => {});
+  const report = probe('claude-code-acp', TOOLCHAINS['claude-code-acp']!, fx.root, readHarnessSettings(at(fx)));
+
+  assert.equal(keyOf(fx.root, 'claude-code', account), 'sk-door-9999');
+  assert.deepEqual(report.profiles.map((p) => p.home).sort(),
+    [profileHome(fx.root, 'claude-code', account), profileHome(fx.root, 'claude-code', 'work')].sort());
+  fx.cleanup();
+});
+
 // ——— Twin rule 5: an account made by signing in takes the first free `account-N` (D66 §3).
 
 test('a new account takes the first free number, per tool', () => {

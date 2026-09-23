@@ -139,6 +139,12 @@ public sealed record HarnessToolchain(
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
         configured is { Count: > 0 } ? configured : Binary;
+
+    /// <summary>
+    /// Whose accounts this runs as (AGT7): <see cref="AccountOf"/> for a door onto another agent,
+    /// else itself. Accounts, their defaults and their keys live under this name; a pin does not.
+    /// </summary>
+    public string Owner(string name) => AccountOf is { Length: > 0 } owner ? owner : name;
 }
 
 /// <summary>
@@ -787,7 +793,7 @@ public static class HarnessProbe
                     + $"`daoris agent pin {adapter} {pinned}` installs it, and "
                     + $"`daoris agent unpin {adapter}` goes back to PATH",
                     toolchain.ProfileVariable,
-                    settings.Defaults.TryGetValue(adapter, out var pinnedDefault) ? pinnedDefault : null,
+                    settings.Defaults.TryGetValue(toolchain.Owner(adapter), out var pinnedDefault) ? pinnedDefault : null,
                     []);
             }
         }
@@ -800,23 +806,22 @@ public static class HarnessProbe
         var present = version.Ran;
         var profiles = new List<ProfileReport>();
 
-        foreach (var name in HarnessSettings.Profiles(home, adapter))
+        // A door lists its OWNER's accounts (AGT7): the same directories, so one tool shows one list.
+        var owner = toolchain.Owner(adapter);
+        foreach (var name in HarnessSettings.Profiles(home, owner))
         {
-            var profileHome = HarnessSettings.ProfileHome(home, adapter, name);
+            var profileHome = HarnessSettings.ProfileHome(home, owner, name);
+            var held = HarnessKeys.Of(home, owner, name);
             // An account that is a key is asked WITH its key (AGT3), as a session would run it, so
             // the roster says what the tool says — and names it by the key's handle, never the key.
-            var key = toolchain.KeyVariable is { Length: > 0 } variable
-                && HarnessKeys.Of(home, adapter, name) is { } held
-                    ? (Variable: variable, Value: held)
-                    : ((string Variable, string Value)?)null;
+            var key = toolchain.KeyVariable is { Length: > 0 } variable && held is not null
+                ? new Dictionary<string, string> { [variable] = held }
+                : null;
             var (login, account) = present
-                ? await LoginAsync(
-                    resolved, toolchain, profileHome, isManaged, ct,
-                    key is { } k ? new Dictionary<string, string> { [k.Variable] = k.Value } : null)
-                    .ConfigureAwait(false)
+                ? await LoginAsync(resolved, toolchain, profileHome, isManaged, ct, key).ConfigureAwait(false)
                 : (LoginState.Unknown, null);
             profiles.Add(new ProfileReport(
-                name, profileHome, login, account, key is { } shown ? HarnessKeys.Handle(shown.Value) : null));
+                name, profileHome, login, account, held is null ? null : HarnessKeys.Handle(held)));
         }
 
         // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
@@ -831,7 +836,7 @@ public static class HarnessProbe
             present ? FirstLine(version.Output) : null,
             present ? null : version.Problem,
             toolchain.ProfileVariable,
-            settings.Defaults.TryGetValue(adapter, out var machine) ? machine : null,
+            settings.Defaults.TryGetValue(owner, out var machine) ? machine : null,
             profiles,
             own,
             ownAccount);
@@ -1180,9 +1185,30 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var resolved = adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain) return (LoginState.Unknown, null);
 
+        // A door's account is its owner's (AGT7), asked the way the owner asks when this build has it.
+        var owner = toolchain.Owner(resolved.Name);
+        var asker = AccountAgent(resolved.Name, toolchain);
         return await HarnessProbe.AskLoginAsync(
-            resolved.Name, toolchain, config.Commands.GetValueOrDefault(resolved.Name), Settings, Home,
-            HarnessSettings.ProfileHome(Home, resolved.Name, profile), ct).ConfigureAwait(false);
+            asker.Name, asker.Toolchain, config.Commands.GetValueOrDefault(asker.Name), Settings, Home,
+            HarnessSettings.ProfileHome(Home, owner, profile), ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried.</summary>
+    public HarnessToolchain? AccountToolchain(string adapter) =>
+        Toolchain(adapter) is { } toolchain ? AccountAgent(adapters.Resolve(adapter).Name, toolchain).Toolchain : null;
+
+    /// <summary>
+    /// Which adapter answers for a door's ACCOUNTS (AGT7): its owner when this build carries one — the
+    /// owner has the login question and the key variable — else the door itself.
+    /// </summary>
+    private (string Name, HarnessToolchain Toolchain) AccountAgent(string name, HarnessToolchain toolchain)
+    {
+        var owner = toolchain.Owner(name);
+        return !string.Equals(owner, name, StringComparison.OrdinalIgnoreCase)
+            && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
+            && adapters.Resolve(owner).Toolchain is { } ownerToolchain
+                ? (adapters.Resolve(owner).Name, ownerToolchain)
+                : (name, toolchain);
     }
 
     /// <summary>Every harness this build knows, probed — what a roster surface renders.</summary>
@@ -1237,7 +1263,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         }
 
         var settings = Settings;
-        var profile = settings.Resolve(resolved.Name, workspace, chosen);
+        // 🔴 A door runs as its OWNER's accounts (AGT7): the owner's default, the owner's directory,
+        // the owner's login question and key. The pin below stays the door's own — a door is a
+        // different package at a different version (ACP2).
+        var owner = toolchain.Owner(resolved.Name);
+        var profile = settings.Resolve(owner, workspace, chosen);
 
         // Which binary this spawn runs (TOOL2/D57): the explicit command, then the managed pin, then
         // PATH. An explicit `commands` entry is the person naming exactly what to run and has the
@@ -1292,16 +1322,22 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             return new HarnessSelection(null, null, null, report?.Version, managed, claude);
         }
 
-        var home = HarnessSettings.ProfileHome(Home, resolved.Name, profile);
-        var login = report?.Profiles.FirstOrDefault(
+        var home = HarnessSettings.ProfileHome(Home, owner, profile);
+        // The account's state is its owner's answer when this build carries the owner — a door
+        // declares no login question of its own, which is what `accountOf` says.
+        var asker = AccountAgent(resolved.Name, toolchain);
+        var accounts = asker.Name == resolved.Name
+            ? report
+            : await ReportAsync(asker.Name, config, refresh: false, ct).ConfigureAwait(false);
+        var login = accounts?.Profiles.FirstOrDefault(
             p => string.Equals(p.Name, profile, StringComparison.OrdinalIgnoreCase))?.Login
             ?? LoginState.Unknown;
 
         if (login == LoginState.Out)
         {
             // Same re-ask as above, and for the same reason: the person may have just logged in.
-            report = await ReportAsync(resolved.Name, config, refresh: true, ct).ConfigureAwait(false);
-            login = report?.Profiles.FirstOrDefault(
+            accounts = await ReportAsync(asker.Name, config, refresh: true, ct).ConfigureAwait(false);
+            login = accounts?.Profiles.FirstOrDefault(
                 p => string.Equals(p.Name, profile, StringComparison.OrdinalIgnoreCase))?.Login
                 ?? LoginState.Unknown;
         }
@@ -1309,15 +1345,16 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (login == LoginState.Out)
         {
             return new HarnessSelection(
-                $"the `{resolved.Name}` profile `{profile}` is not logged in, so a session would have "
-                + $"nothing to run as — `daoris agent login {resolved.Name} --profile {profile}` runs "
+                $"the `{owner}` profile `{profile}` is not logged in, so a session would have "
+                + $"nothing to run as — `daoris agent login {owner} --profile {profile}` runs "
                 + "the agent's own login flow into it. Daoris manages the directory and the name; the "
                 + "credential stays in the agent's own store.");
         }
 
-        // An account that is a key is handed its key through the tool's own variable (AGT3).
-        var key = toolchain.KeyVariable is { Length: > 0 } variable
-            && HarnessKeys.Of(Home, resolved.Name, profile) is { } held
+        // An account that is a key is handed its key through the tool's own variable (AGT3) — the
+        // owner's variable, for a door, since the door runs the owner's tool.
+        var key = asker.Toolchain.KeyVariable is { Length: > 0 } variable
+            && HarnessKeys.Of(Home, owner, profile) is { } held
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
 

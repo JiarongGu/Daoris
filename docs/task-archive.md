@@ -4211,6 +4211,19 @@ the key and the directory. **Found and left as items**: the protocol door resolv
 its own name, not its owner's (AGT7), and a bad key costs a session its retries (AGT3b). Codex is
 not measured, so it takes no key yet.
 
+## AGT7 — a door runs as its owner's accounts (2026-09-23)
+
+- [x] **AGT7 — a door runs as its owner's accounts**: the driver resolves a door's accounts,
+  defaults and keys under the door's own name, not `accountOf`'s.
+
+✅ **done 2026-09-23.** Found while designing AGT3. `accountOf` had been read for grouping and for
+a refusal's wording, and never for the account itself, so a Claude Code account never reached
+`claude-code-acp` and a Codex account never reached `codex-acp`. `HarnessToolchain.Owner` and
+`ownerOf` (twin rule 7) now route the selection, the probe and every account action on a door to
+its owner. The selection asks the owner's login question and takes the owner's key variable when
+this build carries the owner; the door's pin stays its own. FIX-LOG has the entry. Driver 385,
+modules 101, CLI 43 in the toolchain file.
+
 ## AGT4 — an API-driven agent: closed by the owner's decision (2026-09-23)
 
 - [x] ⛔ **AGT4 — an API-driven agent.** Recommended as a plugin's ACP agent; a loop of Daoris's

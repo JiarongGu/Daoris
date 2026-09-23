@@ -211,7 +211,9 @@ choices the building settled:
   sign-in finished; the roster names it by who the harness says is signed in there, read fresh on
   every probe and written nowhere. `profile remove` deletes the directory, sign-in included, and
   every default naming it — the screen asks twice first. The harness's own configuration home is not
-  under Daoris's directory, and no name reaches it.
+  under Daoris's directory, and no name reaches it. **A door's accounts are its owner's** (AGT7): a
+  harness that declares `accountOf` runs in, defaults to and takes keys from that agent's accounts,
+  and keeps only its pin to itself.
 - **Install is a whole command; update and login are the harness's own subcommands.** A machine without
   the harness cannot run the harness, so installing is that harness's package manager; a harness that
   is present updates and authenticates itself. The shapes differ because the meanings do.

@@ -232,6 +232,30 @@ public sealed class HarnessProfileTests : Bridge
         Assert.False(Directory.Exists(ProfileAt("claude-code", "account-1")));
     }
 
+    /// <summary>
+    /// 🔴 A door's accounts are its owner's (AGT7): an account action on `claude-code-acp` lands on
+    /// `claude-code`'s accounts — its defaults, its directories, its keys — and makes nothing under
+    /// the door's own name.
+    /// </summary>
+    [Fact]
+    public async Task An_account_action_on_a_door_lands_on_the_owner_s_accounts()
+    {
+        var module = Module();
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code-acp", action = "profile-add", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code-acp", action = "profile-default", profile = "work" });
+        var keyed = await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code-acp", action = "key-add", key = "sk-ant-api03-door-5678" });
+
+        Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
+        Assert.Equal("work", HarnessSettings.Load(HarnessSettingsPath).Defaults["claude-code"]);
+        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("claude-code-acp"));
+        Assert.Equal("sk-ant-api03-door-5678",
+            HarnessKeys.Of(Home, "claude-code", keyed.GetProperty("profile").GetString()!));
+        Assert.False(Directory.Exists(Path.Combine(Home, "harnesses", "claude-code-acp")));
+    }
+
     /// <summary>An agent whose toolchain declares no key variable takes no key, and makes nothing trying.</summary>
     [Fact]
     public async Task An_agent_that_takes_no_key_refuses_one_and_makes_nothing()

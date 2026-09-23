@@ -133,7 +133,7 @@ keep an API key; the wiring is a **map**. The asks are in `docs/2026-09-23-agent
 
 | Step | What | State |
 |---|---|---|
-| **AGT · Agents and accounts** | *agent* as the word, with each tool's maker; pins that stay pinned; vendor-channel installs; API-key accounts | AGT1, AGT2a, AGT3 **built**; AGT7, AGT3b, AGT2b next |
+| **AGT · Agents and accounts** | *agent* as the word, with each tool's maker; pins that stay pinned; vendor-channel installs; API-key accounts | AGT1, AGT2a, AGT3, AGT7 **built**; AGT3b, AGT2b next |
 | **MAP1 · The workflow** | ask → intake → quests → sessions → `then`, each step's agent, account and version | To design |
 | **MAP2 · The workspace topology** | A circle's repositories: what each owns and accepts, the quests between them, what drives each; no model | To design |
 | **MAP3 · A repository's code** | The same map inside one repository, fed by it (D32): **repository intelligence**'s first consumer | After MAP2 |

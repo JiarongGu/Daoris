@@ -392,6 +392,10 @@ The first version: doctrine that installs, is checked, and flows back.
   the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
   characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
   included. Removing the account removes its key. A sign-in stays the tool's, as before.
+- **The protocol door runs as the agent's accounts** (AGT7). Claude Code over the protocol door
+  (`claude-code-acp`) used to look for accounts under its own name, so an account made for
+  Claude Code, a key account included, never reached it. Codex's never reached `codex-acp`. A door's
+  accounts, defaults and keys are now the agent's; only its pinned version stays its own.
 - **`daoris harness` is `daoris agent` now** (AGT1). The tools a session runs are agents to a
   person: the verb, its help, the CLI's output and the driver's refusals say so. `daoris harness`
   answers with where it went. Each tool names what it is and whose: *Claude Code* (Anthropic),

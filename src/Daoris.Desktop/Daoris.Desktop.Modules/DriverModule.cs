@@ -296,19 +296,22 @@ public sealed class DriverModule : ModuleBase
                         }).ToArray(),
                         // Whether this agent takes an API key at all — the control is absent where
                         // it does not, by the rule `Pinnable` and `SignsIn` follow.
-                        TakesKey = _loop.Harnesses.Toolchain(report.Adapter)?.KeyVariable is { Length: > 0 },
+                        TakesKey = _loop.Harnesses.AccountToolchain(report.Adapter)?.KeyVariable is { Length: > 0 },
                         // 🔴 The account a person actually HAS — the tool's own configuration home —
                         // answered beside the profiles rather than left out, which read as "No
                         // accounts" to an owner who was logged in.
                         OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
                         report.OwnAccount,
                         // Which circles run this harness as which account (D49 §4): the terminal
-                        // could set it and the page could not even see it.
+                        // could set it and the page could not even see it. A door's are its
+                        // owner's (AGT7).
                         WorkspaceDefaults = settings.Workspaces
-                            .Where(circle => circle.Value.TryGetValue(report.Adapter, out var chosen)
+                            .Select(circle => (Workspace: circle.Key, Map: circle.Value,
+                                Owner: _loop.Harnesses.Toolchain(report.Adapter)?.Owner(report.Adapter) ?? report.Adapter))
+                            .Where(circle => circle.Map.TryGetValue(circle.Owner, out var chosen)
                                 && !string.IsNullOrWhiteSpace(chosen))
-                            .OrderBy(circle => circle.Key, StringComparer.Ordinal)
-                            .Select(circle => new { Workspace = circle.Key, Profile = circle.Value[report.Adapter] })
+                            .OrderBy(circle => circle.Workspace, StringComparer.Ordinal)
+                            .Select(circle => new { circle.Workspace, Profile = circle.Map[circle.Owner] })
                             .ToArray(),
                     }).ToArray(),
                 };
@@ -331,24 +334,27 @@ public sealed class DriverModule : ModuleBase
                 var command = config.Commands.GetValueOrDefault(harness);
                 var stream = Relay(harness, action);
                 var profile = Optional(request, "profile");
+                // 🔴 Whose accounts an action on this door touches (AGT7): a door's accounts, defaults
+                // and keys are its OWNER's. Its pin and its installer stay its own.
+                var owner = toolchain.Owner(harness);
 
                 // 🔴 An account that is an API key (AGT3, D67 §1). The key crosses this bridge once,
                 // inward, and is answered only by its handle — here, on the roster, and in any event.
                 if (action == "key-add")
                 {
-                    if (toolchain.KeyVariable is not { Length: > 0 })
+                    if (_loop.Harnesses.AccountToolchain(harness)?.KeyVariable is not { Length: > 0 })
                     {
                         throw new DriverException(
                             $"`{harness}` takes no API key from Daoris — sign in with its own login instead.");
                     }
 
                     var account = HarnessKeys.Add(
-                        _loop.Harnesses.Home, harness, PayloadHelper.GetRequiredValue<string>(request.Payload, "key"));
+                        _loop.Harnesses.Home, owner, PayloadHelper.GetRequiredValue<string>(request.Payload, "key"));
                     await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
                     return new
                     {
                         Harness = harness, Action = action, ExitCode = 0, Profile = account,
-                        Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, harness, account)!),
+                        Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, owner, account)!),
                     };
                 }
 
@@ -364,9 +370,9 @@ public sealed class DriverModule : ModuleBase
                     //
                     // A sign-in stays the tool's: adding one MAKES A DIRECTORY and nothing else,
                     // and what lands inside it is the harness's own.
-                    "profile-add" => ProfileAdd(harness, request),
-                    "profile-remove" => ProfileRemove(harness, request, stream),
-                    "profile-default" => ProfileDefault(harness, request),
+                    "profile-add" => ProfileAdd(owner, request),
+                    "profile-remove" => ProfileRemove(owner, request, stream),
+                    "profile-default" => ProfileDefault(owner, request),
                     "install" or "update" or "login" or "login-new" or "pin" => null,
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
@@ -400,11 +406,11 @@ public sealed class DriverModule : ModuleBase
                 // named before it. It opens under the next free `account-N` — nobody knows whose it
                 // is yet — and the tool's own answer names who, on the roster, once it ends.
                 var fresh = action == "login-new"
-                    ? HarnessSettings.NextAccount(_loop.Harnesses.Home, harness)
+                    ? HarnessSettings.NextAccount(_loop.Harnesses.Home, owner)
                     : null;
                 var profileHome = HarnessSettings.ProfileHome(
-                    _loop.Harnesses.Home, harness,
-                    fresh ?? profile ?? _loop.Harnesses.Settings.Resolve(harness, null, null) ?? "default");
+                    _loop.Harnesses.Home, owner,
+                    fresh ?? profile ?? _loop.Harnesses.Settings.Resolve(owner, null, null) ?? "default");
                 Func<Task<int>> run = action switch
                 {
                     "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
@@ -850,7 +856,8 @@ public sealed class DriverModule : ModuleBase
                 : null,
             // Whether a sign-in to another account left one behind: it does only when it finished.
             Kept = action == "login-new" && profile is not null
-                ? Directory.Exists(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, profile))
+                ? Directory.Exists(HarnessSettings.ProfileHome(
+                    _loop.Harnesses.Home, _loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness, profile))
                 : (bool?)null,
         });
     }
@@ -888,7 +895,7 @@ public sealed class DriverModule : ModuleBase
             {
                 try
                 {
-                    HarnessSettings.RemoveProfile(_loop.Harnesses.Home, harness, fresh);
+                    HarnessSettings.RemoveProfile(_loop.Harnesses.Home, toolchain.Owner(harness), fresh);
                     stream("nothing was signed in, so nothing was kept — the account opened for it is gone again.");
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)

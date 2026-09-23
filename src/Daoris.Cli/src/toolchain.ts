@@ -21,6 +21,8 @@
 //   3. None means the harness's OWN configuration home — the environment seam is not set at all.
 //   (4 is the binary — see `resolveVersion`.)
 //   5. An account made by signing in takes the first free `account-N`; who it is, is the tool's answer.
+//   6. An account that is an API key keeps its key in `keys.json` under the home, beside the account.
+//   7. A door's accounts, defaults and keys are its owner's (`accountOf`); its pin is its own.
 //
 // It is a MANAGEMENT command and it opens no socket. It does spawn processes — that is the whole
 // point: install, update and login are each harness's OWN mechanism, run by Daoris rather than
@@ -395,6 +397,14 @@ export function managedBinary(
   return null;
 }
 
+/**
+ * Whose accounts an agent runs as (AGT7, twin rule 7): `accountOf` for a door onto another agent,
+ * else itself. Accounts, their defaults and their keys live under this name; a pin does not.
+ */
+export function ownerOf(harness: string): string {
+  return TOOLCHAINS[harness]?.accountOf ?? harness;
+}
+
 /** The profiles that exist — the directories that exist, sorted. There is no second register. */
 export function profiles(home: string, harness: string): string[] {
   const root = join(home, 'harnesses', safeName(harness, 'agent name'));
@@ -493,11 +503,13 @@ function removeKey(home: string, harness: string, profile: string): void {
  * agent that declares no key variable.
  */
 export function addKeyAccount(
-  home: string, harness: string, raw: string, write: (line: string) => void,
+  home: string, door: string, raw: string, write: (line: string) => void,
 ): string {
+  // A key given for a door is its owner's account (AGT7), and it takes the owner's variable.
+  const harness = ownerOf(door);
   const toolchain = TOOLCHAINS[harness];
   if (!toolchain?.keyVariable) {
-    throw new DaorisError(`\`${harness}\` takes no API key from Daoris — sign in with its own login instead.`);
+    throw new DaorisError(`\`${door}\` takes no API key from Daoris — sign in with its own login instead.`);
   }
 
   const key = raw.trim();
@@ -623,12 +635,15 @@ export function probe(
     present: version.ran,
     version: version.ran ? firstLine(version.output) : null,
     problem: version.problem,
-    machineDefault: settings.defaults[harness] ?? null,
-    profiles: profiles(home, harness).map((name) => {
-      const where = profileHome(home, harness, name);
+    // A door's accounts and default are its owner's (AGT7, twin rule 7).
+    machineDefault: settings.defaults[toolchain.accountOf ?? harness] ?? null,
+    profiles: profiles(home, toolchain.accountOf ?? harness).map((name) => {
+      const owner = toolchain.accountOf ?? harness;
+      const where = profileHome(home, owner, name);
       // An account that is a key is asked WITH its key (AGT3), as a session would run it.
-      const key = toolchain.keyVariable ? keyOf(home, harness, name) : null;
-      const shown = key ? keyHandle(key) : null;
+      const held = keyOf(home, owner, name);
+      const key = toolchain.keyVariable ? held : null;
+      const shown = held ? keyHandle(held) : null;
       if (!version.ran) return { name, home: where, login: 'unknown' as const, account: null, key: shown };
 
       // The SAME binary the version came from. Asking the pin whether it runs and then asking PATH
@@ -973,7 +988,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       }
 
       case 'add': {
-        const { name } = namedHarness(argv[2], 'profile add');
+        const name = accountsOf(argv[2], 'profile add');
         const profile = bare(argv, 3, 'profile add', '<agent> <profile>');
         const where = profileHome(home, name, profile);
         const existed = existsSync(where);
@@ -987,7 +1002,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       }
 
       case 'remove': {
-        const { name } = namedHarness(argv[2], 'profile remove');
+        const name = accountsOf(argv[2], 'profile remove');
         const profile = bare(argv, 3, 'profile remove', '<agent> <profile>');
         const where = profileHome(home, name, profile);
 
@@ -1015,7 +1030,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       }
 
       case 'default': {
-        const { name } = namedHarness(argv[2], 'profile default');
+        const name = accountsOf(argv[2], 'profile default');
         const profile = bare(argv, 3, 'profile default', '<agent> <profile> [--workspace <name>]');
         const workspace = flagValue(argv, '--workspace');
         // Refused rather than created: naming a default that does not exist is a typo with a silent
@@ -1051,6 +1066,17 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         throw new DaorisError(
           `unknown agent profile verb '${action}' — one of: list, add, remove, default`);
     }
+  }
+
+  /**
+   * The agent whose ACCOUNTS a verb on this name touches (AGT7): a door's are its owner's, and the
+   * verb says so rather than quietly landing somewhere else than was typed.
+   */
+  function accountsOf(value: string | undefined, verb: string): string {
+    const { name } = namedHarness(value, verb);
+    const owner = ownerOf(name);
+    if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
+    return owner;
   }
 
   /** The agent named after the verb, refused rather than defaulted. */
