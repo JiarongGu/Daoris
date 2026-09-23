@@ -46,6 +46,16 @@ export const Held: Story = {
   },
 };
 
+/** An agent named for the intake (AGT6): the circle has two jobs, and each row says which it is. */
+export const WithAnIntake: Story = {
+  args: {
+    starts: [
+      start({}),
+      start({ job: 'intake', adapter: 'claude-code-acp', version: '0.9.1' }),
+    ],
+  },
+};
+
 /** A door onto the tool (AGT7): the account is the tool's, the adapter is the door. */
 export const ThroughTheProtocolDoor: Story = {
   args: { starts: [start({ adapter: 'claude-code-acp', version: '0.9.1' })] },

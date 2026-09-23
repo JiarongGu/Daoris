@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
-import { useRegistry } from './queries';
+import { useRegistry, useStatus } from './queries';
 import {
   useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
-  useRemotes, useSetNotify, useSetStrikes,
+  useRemotes, useSetIntake, useSetNotify, useSetStrikes,
   useStarts, useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { StartWiringList } from './map/StartWiring';
 import { SessionConsole } from './SessionConsole';
+import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { SignIn } from './SignIn';
 import { byTool, type ToolDoor } from './tools';
 import {
@@ -40,9 +41,92 @@ export function SettingsView({ notify }: { notify: Notify }) {
         description={t(attached ? 'settings.description' : 'settings.descriptionBrowser')}
       />
       <Appearance />
+      <OwnAi attached={attached} notify={notify} />
       {attached && <MachineSettings notify={notify} />}
     </section>
   );
+}
+
+/**
+ * Daoris's own AI (AGT6): the jobs it may use a model for, the tier answering each, and how to
+ * change it — between Appearance and the machine, because it is for everyone.
+ *
+ * @remarks
+ * Which tier answers search is the service's answer over HTTP, the one every browser is given and
+ * the status bar already states (D24), so a browser sees that job too. The intake is this machine's
+ * `driver.json`, so its half — and every query it needs — exists only with a shell (D47 §4): a
+ * browser is given no intake at all, never a disabled one.
+ */
+function OwnAi({ attached, notify }: { attached: boolean; notify: Notify }) {
+  const status = useStatus();
+  const search: SearchTier | undefined = status.data
+    ? { tier: status.data.tier, note: status.data.note, semantic: status.data.semantic }
+    : undefined;
+
+  return attached ? <MachineAi search={search} notify={notify} /> : <AiJobs search={search} />;
+}
+
+function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) {
+  const { t } = useTranslation();
+  const driver = useDriver();
+  const roster = useHarnesses();
+  const registry = useRegistry();
+  const setIntake = useSetIntake();
+  // The circles *What a start runs on* names, spelled the same way — so both cards read one answer.
+  const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace ?? 'default'))].sort();
+  const answer = useStarts(workspaces);
+
+  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  // An agent a person can name here is a way in this machine HAS: one not installed would hold every
+  // intake, and a choice whose only outcome is a hold is worse than none.
+  const agents = (harnesses as ToolDoor[])
+    .filter((door) => door.present)
+    .map((door) => ({
+      value: door.harness,
+      label: door.product
+        ? t('settings.ai.intake.choice', {
+          product: door.product,
+          door: t(door.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe'),
+          agent: door.harness,
+        })
+        : door.harness,
+    }));
+  const starts = Array.isArray(answer.data?.starts) ? answer.data.starts : [];
+
+  return (
+    <AiJobs
+      search={search}
+      // An older shell has never heard of the intake: its STATE carries no field, and it gets no row.
+      intake={driver.data && 'intakeAdapter' in driver.data
+        ? {
+          adapter: driver.data.intakeAdapter ?? null,
+          agents,
+          starts: starts.filter((start) => start.job === 'intake'),
+          nameOf: namer(t, harnesses as ToolDoor[]),
+          busy: setIntake.isPending,
+          onChange: (adapter) => setIntake.mutate({ adapter }, {
+            onSuccess: () => notify(adapter
+              ? t('settings.ai.intake.named', { agent: adapter })
+              : t('settings.ai.intake.cleared')),
+            onError: (error: unknown) => notify(sentence(error), 'error'),
+          }),
+        }
+        : undefined}
+    />
+  );
+}
+
+/**
+ * What a person calls an account — the roster's own rule (who signed in, a key's handle, the name),
+ * looked up on the TOOL, because a door's accounts are its owner's (AGT7). One copy, for every card
+ * that names an account from the driver's answer.
+ */
+function namer(t: ReturnType<typeof useTranslation>['t'], harnesses: ToolDoor[]) {
+  const tools = byTool(harnesses);
+  return (owner: string, profile: string) => {
+    const row = tools.find((tool) => tool.name === owner)?.accounts.find((account) => account.name === profile);
+    return row?.account ?? (row?.key ? t('harness.profile.keyName', { handle: row.key }) : profile);
+  };
 }
 
 /**
@@ -398,19 +482,12 @@ function Starts({ notify }: { notify: Notify }) {
   if (!starts || starts.length === 0) return null;
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  // What a person calls an account — the roster's own rule (who signed in, a key's handle, the name),
-  // looked up on the TOOL, because a door's accounts are its owner's (AGT7).
-  const tools = byTool(harnesses as ToolDoor[]);
-  const nameOf = (owner: string, profile: string) => {
-    const row = tools.find((tool) => tool.name === owner)?.accounts.find((account) => account.name === profile);
-    return row?.account ?? (row?.key ? t('harness.profile.keyName', { handle: row.key }) : profile);
-  };
 
   return (
     <Card className="mt-3.5">
       <SectionTitle>{t('wiring.title')}</SectionTitle>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('wiring.body')}</Prose>
-      <StartWiringList starts={starts} nameOf={nameOf} />
+      <StartWiringList starts={starts} nameOf={namer(t, harnesses as ToolDoor[])} />
     </Card>
   );
 }

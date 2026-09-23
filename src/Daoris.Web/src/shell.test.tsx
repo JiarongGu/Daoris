@@ -67,7 +67,14 @@ const REPOSITORIES = [{
   },
 }];
 
+/** What the service says answers search (D24) — the same answer every browser is given. */
+const STATUS = {
+  semantic: false, tier: 'lexical only',
+  note: 'Set DAORIS_EMBED_MODEL to enable semantic recall — it is what finds two repositories that reached the same conclusion in different words.',
+};
+
 function respond(url: string): Response {
+  if (url.startsWith('/api/status')) return Response.json(STATUS);
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
@@ -76,12 +83,14 @@ function respond(url: string): Response {
 }
 
 /**
- * What went over the SERVICE while a shell-only surface rendered. The registry is the one thing
- * these surfaces may read from it — which circles this machine has, for choosing an account per
- * workspace — and it is public, non-sensitive data every view reads. Everything else must be absent.
+ * What went over the SERVICE while a shell-only surface rendered. The registry and the status are
+ * the two things these surfaces may read from it — which circles this machine has, for choosing an
+ * account per workspace, and which tier answers search, for Daoris's own AI (AGT6) — and both are
+ * public, non-sensitive answers every browser is given. Everything else must be absent.
  */
 const serviceCalls = () =>
-  vi.mocked(fetch).mock.calls.map((call) => String(call[0])).filter((url) => !url.startsWith('/api/registry'));
+  vi.mocked(fetch).mock.calls.map((call) => String(call[0]))
+    .filter((url) => !url.startsWith('/api/registry') && !url.startsWith('/api/status'));
 
 function show(node: React.ReactElement, client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
@@ -525,6 +534,123 @@ describe('the plugins card', () => {
 
     expect(await screen.findByText(/daoris plugin add/)).toBeTruthy();
     expect(screen.getByText('C:/somewhere/data/plugins')).toBeTruthy();
+  });
+});
+
+/**
+ * Daoris's own AI (AGT6): the jobs it may use a model for, the tier answering each, and how to change
+ * it. The search tier is the service's answer, over HTTP like every browser's; the intake is this
+ * machine's `driver.json`, and its control is the screen's half of `daoris driver intake` (D50).
+ */
+describe("Daoris's own AI on Settings", () => {
+  const ROSTER = {
+    settingsPath: 'C:/somewhere/.daoris/harnesses.json',
+    adapter: 'claude-code',
+    harnesses: [
+      {
+        harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', wire: 'pipe',
+        present: true, version: 'claude 9.9.9', problem: null, machineDefault: 'personal',
+        pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [],
+        profiles: [{ name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' }],
+      },
+      {
+        harness: 'claude-code-acp', product: 'Claude Code', maker: 'Anthropic', wire: 'acp', accountOf: 'claude-code',
+        present: true, version: '0.9.1', problem: null, machineDefault: 'personal',
+        pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
+      },
+      {
+        harness: 'codex', product: 'Codex', maker: 'OpenAI', present: false, version: null,
+        problem: '`codex` is not on this machine\'s PATH', machineDefault: null,
+        pinned: null, managed: null, pinnable: false, profiles: [],
+      },
+    ],
+  };
+  const start = (job: 'work' | 'intake', adapter: string) => ({
+    job, workspace: 'default', adapter, owner: 'claude-code', product: 'Claude Code',
+    profile: 'personal', profileFrom: 'machine', version: '0.9.1', versionFrom: 'unset',
+    commanded: false, refusal: null,
+  });
+
+  let intakeAdapter: string | null = null;
+  beforeEach(() => {
+    intakeAdapter = null;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { adapter?: string | null } }) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'SET_INTAKE') intakeAdapter = request?.payload?.adapter ?? null;
+      if (type === 'STATE' || type === 'SET_INTAKE') return { ...DRIVER_STATE, intakeAdapter };
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'STARTS') {
+        return {
+          adapter: 'claude-code',
+          starts: [start('work', 'claude-code'), ...(intakeAdapter ? [start('intake', intakeAdapter)] : [])],
+        };
+      }
+      return undefined;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it("states the service's own tier, verbatim, and how the model is chosen", async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('lexical only')).toBeTruthy();
+    expect(screen.getByText(STATUS.note)).toBeTruthy();
+    expect(screen.getByText(/DAORIS_EMBED_MODEL \(a model's name\)/)).toBeTruthy();
+  });
+
+  /**
+   * D50: the screen's half of `daoris driver intake <agent>|off`. It offers the ways in this machine
+   * HAS — an agent that is not installed is not a choice — and lands on the same file.
+   */
+  it('names an agent this machine has for the intake, over SET_INTAKE, and says what that does', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+
+    const user = userEvent.setup();
+    const trigger = await screen.findByRole('combobox', { name: 'the intake agent' });
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    expect(screen.queryByRole('option', { name: /codex/i })).toBeNull();
+    await user.click(await screen.findByRole('option', { name: /claude-code-acp/ }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_INTAKE', { payload: { adapter: 'claude-code-acp' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('intake session on claude-code-acp')));
+  });
+
+  /**
+   * As whom: the driver's own answer for the intake, per circle — the same rows *What a start runs
+   * on* draws, so the two cards cannot disagree about one account.
+   */
+  it('says which account an intake runs as, from the driver\'s answer, in both places it is drawn', async () => {
+    intakeAdapter = 'claude-code-acp';
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText(/opens a session on claude-code-acp/)).toBeTruthy();
+    // Awaited as a pair: the machine's half mounts after the driver answers, a beat behind this card.
+    await waitFor(() => expect(screen.getAllByRole('listitem', { name: 'an intake in default' })).toHaveLength(2));
+    for (const row of screen.getAllByRole('listitem', { name: 'an intake in default' })) {
+      expect(within(row).getByText('personal')).toBeTruthy();
+    }
+  });
+
+  it('turns the intake off as the terminal does — no agent named', async () => {
+    intakeAdapter = 'claude-code-acp';
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+
+    const user = userEvent.setup();
+    const trigger = await screen.findByRole('combobox', { name: 'the intake agent' });
+    await waitFor(() => expect(trigger).toHaveTextContent('claude-code-acp'));
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('option', { name: 'Off — declarations only' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_INTAKE', { payload: { adapter: null } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('declarations only')));
   });
 });
 

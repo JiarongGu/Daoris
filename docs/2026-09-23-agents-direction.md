@@ -51,7 +51,8 @@ From the vendors' own documents, not from memory:
   embedding endpoint (`DAORIS_EMBED_MODEL`, `DAORIS_EMBED_URL`, Ollama by default); unset, it is
   lexical only, and the status bar says *lexical only*. Intake answers from declarations with no
   model (INT4a), and INT4b makes it a **session** on a harness rather than a model call. Every
-  model-backed feature works with none and names the tier that answered (`model-decoupling`).
+  model-backed feature works with none and names the tier that answered (`model-decoupling`). Both
+  jobs are on Settings since AGT6 (§3).
 
 **Checked again for AGT2b (2026-09-24)**: `docs/2026-09-24-agt2b-channel-evidence.md` records each
 channel's layout, how the signature works, what the official installers verify, and what is not
@@ -87,6 +88,34 @@ confirmed.
   endpoint, today environment-only), and intake (which agent and account runs it, once INT4b lands).
   Candidates to add later, each specified without naming a model: a quest drafted from an ask, a
   session's summary for the record, a second look at a diff before *accept*.
+
+  *As built (2026-09-24):* a card of its own, **Daoris's own AI**, between *Appearance* and *This
+  machine*, because it is for everyone. It has one row per job:
+  - **Search and convergence** shows the tier in the service's own words: `/api/status`'s `tier` as
+    the pill and its `note` beneath, verbatim. Before the service answers, the row claims nothing.
+    How to change it is a sentence, not a control. The service reads `DAORIS_EMBED_MODEL` and
+    `DAORIS_EMBED_URL` from its environment when it starts, so a change takes a restart of the
+    service. On the desktop that is the host the shell started, which inherits the shell's
+    environment. An adopted host belongs to whoever started it.
+  - **Intake** is on the desktop only, because it is `driver.json` (D47 §4). A browser gets no row,
+    not a disabled one. The control is the screen's half of `daoris driver intake <agent>|off`
+    over `SET_INTAKE` (D50). It offers *Off — declarations only* and each way in this machine has
+    installed, by product, door and id. An agent named from a terminal that the list would not offer
+    is still shown as what is in effect. Beneath the control is the tier the job answers with
+    (declarations only, or declarations and then a session on the named agent), then one line per
+    circle with the account an intake there runs as. That line comes from the driver's answer, not
+    a second resolution: `STARTS` gained an `intake` row per circle (map design §2), which
+    *What a start runs on* also draws.
+  - The status bar's tier now leads to this card in a browser and on the desktop, by the bar's rule
+    that an item goes where its fact is set.
+
+  **Rejected:** a settable home file for the embedding endpoint. The model is the deployment's
+  choice, made at its composition root (`model-decoupling`), and a shared deployment is set the same
+  way. A file would be a second source whose precedence over the environment every surface would have
+  to explain, and a screen control would promise a browser something it cannot do. If the owner
+  wants it settable from the screen, that is its own item, with both doors and the host reading the
+  file. **Not shown on the screen:** the later candidates above. A screen says what runs, not what
+  might.
 
 ## 4. Order
 

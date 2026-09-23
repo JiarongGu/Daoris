@@ -96,7 +96,14 @@ which version, is `SelectAsync` itself, and a test holds the two to the same ans
 of the wiring file. The bridge's `STARTS` route answers for the workspaces the page names, as
 names only: no home, no binary path and no key. Settings shows it as *What a start runs on*, after
 the agents. The one job is the work: a driven session, which is also what a conversation started
-without a pick takes. The intake joins with INT4b.
+without a pick takes.
+
+**The intake joined as a second job (AGT6, 2026-09-24).** With an agent named in `intakeAdapter`,
+`STARTS` answers an `intake` row after each circle's `work` row, from the same `WiringAsync`, which is
+the `SelectAsync` an intake takes for an ask in that circle. An agent this build has no adapter for is
+a held row carrying the driver's own sentence, not a refusal of the whole answer. The list names each
+row's job once there are two. Settings' *Daoris's own AI* reads the same rows for its one-line
+"runs as" per circle.
 
 ## 3. MAP3 — a repository's code (after MAP2)
 

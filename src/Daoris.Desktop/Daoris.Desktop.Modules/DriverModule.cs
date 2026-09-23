@@ -350,26 +350,61 @@ public sealed class DriverModule : ModuleBase
                 var starts = new List<object>();
                 foreach (var workspace in named.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal))
                 {
-                    var wiring = await _loop.Harnesses.WiringAsync(config.Adapter, config, workspace, cancellationToken);
-                    starts.Add(new
+                    // The work: a driven session, which is also what a conversation started without a
+                    // pick takes.
+                    starts.Add(Start("work", workspace,
+                        await _loop.Harnesses.WiringAsync(config.Adapter, config, workspace, cancellationToken)));
+
+                    // The intake (INT4b, AGT6), once an agent is named for it: the same `SelectAsync`
+                    // the intake takes for an ask in this circle. 🔴 An agent this build has no adapter
+                    // for is a held row in the driver's own sentence — the one the intake would hold
+                    // with — never a refusal of the whole answer, which would take the work's rows too.
+                    if (config.IntakeAdapter is { Length: > 0 } intake)
                     {
-                        // The one job the loop runs today: a driven session, which is also what a
-                        // conversation started without a pick takes. The intake joins with INT4b.
-                        Job = "work",
-                        Workspace = workspace,
-                        wiring.Adapter,
-                        wiring.Owner,
-                        _loop.Harnesses.Toolchain(wiring.Adapter)?.Product,
-                        wiring.Profile,
-                        ProfileFrom = wiring.ProfileFrom.ToString().ToLowerInvariant(),
-                        wiring.Version,
-                        VersionFrom = wiring.VersionFrom.ToString().ToLowerInvariant(),
-                        wiring.Commanded,
-                        wiring.Refusal,
-                    });
+                        StartWiring wiring;
+                        try
+                        {
+                            wiring = await _loop.Harnesses.WiringAsync(intake, config, workspace, cancellationToken);
+                        }
+                        catch (DriverException error)
+                        {
+                            wiring = new StartWiring(
+                                intake, intake, null, ChoiceFrom.Unset, null, ChoiceFrom.Unset, false, error.Message);
+                        }
+
+                        starts.Add(Start("intake", workspace, wiring));
+                    }
                 }
 
                 return new { Adapter = config.Adapter, Starts = starts };
+
+                object Start(string job, string workspace, StartWiring wiring) => new
+                {
+                    Job = job,
+                    Workspace = workspace,
+                    wiring.Adapter,
+                    wiring.Owner,
+                    // Asked defensively: a held row may be held BECAUSE the name resolves to nothing.
+                    Known(wiring.Adapter)?.Product,
+                    wiring.Profile,
+                    ProfileFrom = wiring.ProfileFrom.ToString().ToLowerInvariant(),
+                    wiring.Version,
+                    VersionFrom = wiring.VersionFrom.ToString().ToLowerInvariant(),
+                    wiring.Commanded,
+                    wiring.Refusal,
+                };
+
+                HarnessToolchain? Known(string adapter)
+                {
+                    try
+                    {
+                        return _loop.Harnesses.Toolchain(adapter);
+                    }
+                    catch (DriverException)
+                    {
+                        return null;
+                    }
+                }
             }
 
             // The person's explicit action on a harness (D49 §4): its own installer, its own updater,

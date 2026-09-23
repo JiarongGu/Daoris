@@ -61,5 +61,25 @@ describe('what a start runs on', () => {
 
     expect(screen.getAllByRole('listitem').map((row) => row.getAttribute('aria-label')))
       .toEqual(['a start in aurora', 'a start in default']);
+    // One job is no job to tell apart: the rows do not name it.
+    expect(screen.queryByText('sessions')).toBeNull();
+  });
+
+  /**
+   * AGT6: once an agent is named for the intake, a circle has two jobs, and each row says which it
+   * is — two rows reading "a start in aurora" with different agents would be one fact contradicting
+   * itself.
+   */
+  it('names each row\'s job once the intake is one of them', () => {
+    render(<StartWiringList
+      starts={[start(), start({ job: 'intake', adapter: 'claude-code-acp' })]}
+      nameOf={nameOf}
+    />);
+
+    const work = screen.getByRole('listitem', { name: 'a start in aurora' });
+    const intake = screen.getByRole('listitem', { name: 'an intake in aurora' });
+    expect(within(work).getByText('sessions')).toBeInTheDocument();
+    expect(within(intake).getByText('intake')).toBeInTheDocument();
+    expect(within(intake).getByText('claude-code-acp')).toBeInTheDocument();
   });
 });

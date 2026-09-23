@@ -545,6 +545,29 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
 });
 
 /**
+ * Daoris's own AI (AGT6): a browser is told which tier answers its search — the service's own words,
+ * over the real bundle and the real host — and nothing of the intake, which is a machine's
+ * `driver.json` (D47 §4). The tier on the status bar leads there.
+ */
+test('a browser is told which tier answers search, and nothing of the intake (AGT6)', async ({ page, request }) => {
+  // Whatever this host answers, asked first: the page must say THAT, verbatim, not a tier of its own.
+  const status = await (await request.get('/api/status')).json() as { tier: string; note?: string | null };
+  await page.goto('/');
+
+  await page.getByLabel('state of this machine').getByRole('button', { name: 'recall' }).click();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.getByText('Daoris\'s own AI')).toBeVisible();
+  await expect(page.getByText('Search and convergence')).toBeVisible();
+  await expect(page.getByText(status.tier, { exact: true }).first()).toBeVisible();
+  if (status.note) await expect(page.getByText(status.note, { exact: true })).toBeVisible();
+  await expect(page.getByText(/DAORIS_EMBED_MODEL \(a model's name\)/)).toBeVisible();
+
+  // The intake is absent, not disabled: no row, no control, no agent named.
+  await expect(page.getByText('Intake', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'the intake agent' })).toHaveCount(0);
+});
+
+/**
  * The Work frame is not rendered in a browser at all (D55), which is the strongest form the
  * disclosure rule takes: its centre is a stream, its rows carry tree paths, and its panel is a
  * transcript — none of which may leave the machine that produced them (D47 §4). Playwright holds

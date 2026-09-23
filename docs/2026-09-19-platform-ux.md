@@ -242,6 +242,27 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **A record says who answered.** The tier is in words, and an intake session is a line of the
 >   record: its state, then its tool. The tool is a door into Sessions wherever Sessions exists.
 
+> **Amended 2026-09-24, Daoris's own AI (AGT6).** Held by vitest and a Playwright check. **Not yet
+> looked at on the real window.**
+>
+> - **A section goes where its audience is.** *Daoris's own AI* sits between *Appearance* and *This
+>   machine*: which tier answers search is the service's answer, given to every browser, so the
+>   card is for everyone. Its intake row is `driver.json` and appears only with a shell. The card
+>   is not moved under the machine's heading for the row it holds there.
+> - **A tier is the service's sentence, and how to change it is ours.** The pill and the note are
+>   `/api/status`'s, verbatim. The hint beside them is the page's own words: which variables, and
+>   that the service reads them when it starts. A setting read from the environment gets a
+>   sentence, never a control: a control would be a second source for a choice the deployment makes.
+> - **A choice offers what can happen.** The intake's select lists the ways in this machine has
+>   installed, because a named agent that is not installed only produces holds. What is in effect
+>   is always shown, even when the list would not offer it.
+> - **A status item that can be explained is a door.** The tier on the bar was text while nothing
+>   explained it. It now leads to this card, by the bar's own rule that an item goes where its fact
+>   is set.
+> - **Two jobs in one list are named.** *What a start runs on* marks each row's job only once a
+>   circle has two. Two rows called "a start in aurora" naming different agents would read as one
+>   fact stated twice, and wrongly.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*
@@ -279,11 +300,13 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   page one level in: modules as boxes in layers, what uses a module above it, an arrow that skips a
   layer bowed out past the column, and *Back to the workspace* where the page action goes.
 - **Settings** (D66) — *Appearance* first, for everyone: the theme and the language, each a
-  segmented choice. Then, on the desktop only, **This machine**: the home's path under its heading,
+  segmented choice. Then, also for everyone, **Daoris's own AI** (AGT6): search and convergence with
+  the service's tier and note verbatim and the variables that choose the model, and on the desktop
+  the intake's agent with the account an intake in each circle runs as. Then, on the desktop only, **This machine**: the home's path under its heading,
   then cards that are *sections of one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,
   the wired rows, *Wire a workspace* behind a press), Agent tools (one row per tool, its accounts
   leading, its ways in beneath — a declared door wearing the plugin it came from), usage, *What a
-  start runs on* (MAP1b: one row per workspace, each part with the setting that chose it, a held
+  start runs on* (MAP1b: one row per workspace and job, each part with the setting that chose it, a held
   start's sentence at a reading measure), and
   Plugins (a row per folder: what it declares and speaks on, running or off, the driver's own
   sentence under a refused one, the switch and Remove). Every setting is a `SettingRow`; its

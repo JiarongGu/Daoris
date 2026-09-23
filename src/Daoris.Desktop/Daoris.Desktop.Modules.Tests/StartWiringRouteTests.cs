@@ -66,6 +66,56 @@ public sealed class StartWiringRouteTests : Bridge
             (starts[1].GetProperty("profile").GetString(), starts[1].GetProperty("profileFrom").GetString()));
     }
 
+    /// <summary>
+    /// The intake is a job too (AGT6, MAP1): with an agent named for it, each workspace also answers
+    /// what an intake there would run on — the resolution the intake itself takes, beside the work's.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_agent_named_adds_what_an_intake_in_each_workspace_would_run_on()
+    {
+        SignedIn("work");
+        SignedIn("office");
+        new HarnessSettings().WithDefault("stub", "work").WithWorkspaceDefault("aurora", "stub", "office")
+            .Save(HarnessSettingsPath);
+        var module = Module();
+        DriverConfig.Load(DriverConfigPath).WithIntake("stub").Save(DriverConfigPath);
+
+        var answer = await AnswerAsync(module, "STARTS", new { workspaces = new[] { "default", "aurora" } });
+
+        var starts = answer.GetProperty("starts").EnumerateArray().ToList();
+        // Each circle's jobs together, the work first: the order a person reads a circle in.
+        Assert.Equal(
+            [("aurora", "work"), ("aurora", "intake"), ("default", "work"), ("default", "intake")],
+            starts.Select(s => (s.GetProperty("workspace").GetString(), s.GetProperty("job").GetString())));
+
+        var aurora = starts[1];
+        Assert.Equal("stub", aurora.GetProperty("adapter").GetString());
+        Assert.Equal(("office", "workspace"),
+            (aurora.GetProperty("profile").GetString(), aurora.GetProperty("profileFrom").GetString()));
+        Assert.Equal(JsonValueKind.Null, aurora.GetProperty("refusal").ValueKind);
+        Assert.Equal(("work", "machine"),
+            (starts[3].GetProperty("profile").GetString(), starts[3].GetProperty("profileFrom").GetString()));
+    }
+
+    /// <summary>
+    /// 🔴 An intake agent this build has no adapter for is a HELD row in the driver's own sentence —
+    /// the one the intake would hold with — never a refusal of the whole answer, which would take the
+    /// work's rows off the page with it.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_agent_the_driver_does_not_know_is_held_in_its_own_words()
+    {
+        var module = Module();
+        DriverConfig.Load(DriverConfigPath).WithIntake("nobody-knows").Save(DriverConfigPath);
+
+        var answer = await AnswerAsync(module, "STARTS", new { workspaces = new[] { "default" } });
+
+        var starts = answer.GetProperty("starts").EnumerateArray().ToList();
+        Assert.Equal(["work", "intake"], starts.Select(s => s.GetProperty("job").GetString()));
+        Assert.Equal("nobody-knows", starts[1].GetProperty("adapter").GetString());
+        Assert.StartsWith("unknown adapter 'nobody-knows'", starts[1].GetProperty("refusal").GetString());
+    }
+
     /// <summary>A start that would be held says so in the driver's own words.</summary>
     [Fact]
     public async Task A_start_that_would_be_held_carries_the_driver_s_sentence()

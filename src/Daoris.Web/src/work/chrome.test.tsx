@@ -232,6 +232,28 @@ describe('StatusBar', () => {
     expect(screen.getByText('none here')).toBeTruthy();
   });
 
+  /**
+   * AGT6: the tier leads where it is explained and changed — Daoris's own AI, on Settings — and its
+   * words stay the service's, verbatim, with the note one hover away (D24).
+   */
+  it('lets the tier lead to where it is changed, in the service\'s own words', async () => {
+    const onTier = vi.fn();
+    render(
+      <StatusBar
+        driver="absent"
+        sessions={0}
+        workspace={null}
+        remote={null}
+        tier={{ label: 'lexical only', note: 'Set DAORIS_EMBED_MODEL to enable semantic recall.', semantic: false }}
+        onTier={onTier}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'recall' }));
+    expect(onTier).toHaveBeenCalled();
+    expect(screen.getByText('lexical only')).toBeTruthy();
+  });
+
   /** The scope is a control in its own right (WSP5) and replaces the read-only circle entirely. */
   it('gives the scope control the workspace slot rather than sitting beside it', () => {
     render(

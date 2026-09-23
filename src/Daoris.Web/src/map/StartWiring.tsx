@@ -4,7 +4,8 @@ import type { ChoiceFrom, StartWiring } from './wiring';
 
 /**
  * What a start in each workspace would run on, and where each part came from (MAP1b, D67 §3) — the
- * wiring half of the workflow map, drawn in the order the driver resolves it.
+ * wiring half of the workflow map, drawn in the order the driver resolves it. Each job a circle has
+ * is a row: the work, and the intake once an agent is named for it (AGT6).
  *
  * @remarks
  * A molecule: the answer arrives as props, and what a person calls an account arrives as a function,
@@ -19,17 +20,21 @@ export function StartWiringList({ starts, nameOf }: {
   nameOf: (owner: string, profile: string) => string;
 }) {
   const { t } = useTranslation();
+  // One job is no job to tell apart. Once the intake is one (AGT6), every row says which it is:
+  // two rows called "a start in aurora" naming different agents would read as one fact twice, wrong.
+  const jobs = starts.some((start) => start.job !== 'work');
 
   return (
     <ul className="m-0 grid list-none gap-3 p-0">
       {starts.map((start) => (
         <li
           key={`${start.job}-${start.workspace}`}
-          aria-label={t('wiring.row', { workspace: start.workspace })}
+          aria-label={t(start.job === 'intake' ? 'wiring.rowIntake' : 'wiring.row', { workspace: start.workspace })}
           className="grid gap-1.5 rounded-control border border-line bg-raised px-3 py-2.5"
         >
           <p className="m-0 flex flex-wrap items-center gap-2">
             <span className="font-mono text-small font-semibold text-ink">{start.workspace}</span>
+            {jobs && <span className="text-small text-ink-soft">{t(`wiring.job.${start.job}`)}</span>}
             {/* Held is not a quest state, so it borrows none of their hues: a neutral word, and the
                 driver's sentence below it on the warning rule the page uses for standing notices. */}
             {start.refusal

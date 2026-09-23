@@ -216,7 +216,7 @@ export type DriverPresence = 'running' | 'stopped' | 'absent';
  */
 export function StatusBar({
   driver, sessions, workspace, remote, sync, tier, indexed, scope,
-  onDriver, onSessions, onRemote, onIndex,
+  onDriver, onSessions, onRemote, onIndex, onTier,
 }: {
   driver: DriverPresence;
   sessions: number;
@@ -240,6 +240,8 @@ export function StatusBar({
   onSessions?: () => void;
   onRemote?: () => void;
   onIndex?: () => void;
+  /** Where the tier is explained and changed — Daoris's own AI, on Settings (AGT6). */
+  onTier?: () => void;
 }) {
   const { t } = useTranslation();
   const tone = driver === 'running' ? 'live' : driver === 'stopped' ? 'parked' : 'idle';
@@ -322,10 +324,12 @@ export function StatusBar({
             <span className="tabular-nums">{indexed}</span>
           </StatusItem>
         )}
-        {/* The tier's sentence stays the service's own, verbatim (D24) — so this one is a TIP and
-            never a target: there is nothing to go to, only something to understand. */}
+        {/* The tier's sentence stays the service's own, verbatim (D24), in the tip. It was text
+            alone while there was nothing to go to; since AGT6 it leads where the tier is explained
+            and how to change it is said — Daoris's own AI, on Settings — by the bar's own rule that
+            an item goes where its fact is set. */}
         {tier && (
-          <StatusItem tip={tier.note} label={t('work.status.tierLabel')}>
+          <StatusItem onPress={onTier} tip={tier.note} label={t('work.status.tierLabel')}>
             <span className={cn('font-mono', tier.semantic ? 'text-accent' : 'text-warn')}>
               {tier.label}
             </span>

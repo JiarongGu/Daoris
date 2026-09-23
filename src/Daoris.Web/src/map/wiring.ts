@@ -11,8 +11,11 @@ export type ChoiceFrom = 'picked' | 'workspace' | 'machine' | 'unset';
  * own `SelectAsync`, read as names. No home, no binary path and no key ever arrive here.
  */
 export type StartWiring = {
-  /** The job this start is for. The loop runs one today; the intake joins with INT4b. */
-  job: 'work';
+  /**
+   * The job this start is for: a driven session's work, or — once an agent is named for it — the
+   * intake an ask in this circle opens (INT4b, AGT6). Each circle's jobs arrive together, work first.
+   */
+  job: 'work' | 'intake';
   workspace: string;
   adapter: string;
   /** Whose accounts it runs as (AGT7): the adapter itself, or the tool a door opens onto. */

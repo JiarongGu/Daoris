@@ -495,6 +495,8 @@ export function App() {
         onRemote={() => setView('settings')}
         onSessions={attached ? () => setView('sessions') : undefined}
         onIndex={() => setView('projects')}
+        // Settings holds Daoris's own AI (AGT6) in a browser too, so the tier leads there everywhere.
+        onTier={() => setView('settings')}
         tier={status.data
           ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
           : undefined}

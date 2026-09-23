@@ -118,7 +118,8 @@ and each trap above is met where it lies.
   upgrade. The harness is named rather than switched on, because which harness answers asks and which
   does the work are two choices. The two doors are `daoris driver intake <adapter>|off` and the
   bridge's `SET_INTAKE`. The C# record, the CLI twin and `DriverModule.State` all model the field and
-  write it only when named, so no toggle deletes it.
+  write it only when named, so no toggle deletes it. The screen's control is on Settings, under
+  *Daoris's own AI* (AGT6), with the account an intake in each circle runs as.
 - **Where the loop picks asks up.** Each tick, after the quest plan and only in the slots the quests
   left, it takes the asks that are `Proposed` and that no intake has served. It takes the oldest in
   each circle, and one per circle per tick.

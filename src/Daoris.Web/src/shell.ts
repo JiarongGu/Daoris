@@ -31,6 +31,11 @@ export type DriverState = {
   strikes: number;
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
+  /**
+   * The agent an ask the declarations leave opens an intake session on (INT4b), or null — asks are
+   * answered by declarations only. Absent on a shell older than the intake.
+   */
+  intakeAdapter?: string | null;
   /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
   home?: string;
   /**
@@ -129,6 +134,22 @@ export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STR
 
 /** Let a parked quest run again, counting from where it stands — `daoris driver retry <quest>`. */
 export const useRetryQuest = () => useDriverChange<{ quest: string }>('RETRY_QUEST');
+
+/**
+ * Which agent answers an ask the declarations leave (INT4b), or null for none — the field `daoris
+ * driver intake <agent>|off` edits (D50). What an intake in each circle would run on moves with it,
+ * so that answer is asked again rather than left naming the agent before.
+ */
+export const useSetIntake = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: { adapter: string | null }) => call<DriverState>('SET_INTAKE', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: ['harnesses', 'starts'] });
+    },
+  });
+};
 
 /** What a pass said: the wall it hit, and what the remote understood and did not take — the driver's words. */
 export type SyncNowReport = { workspace: string; problem?: string | null; notes: string[] };
