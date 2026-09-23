@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**313 CLI tests, 278 service, 340 driver, 93 desktop modules, 507 web unit, 14 Playwright**, 59
-devkit, 56/56 release rehearsal, **193/193 family rehearsal** (it names its own phases when you run
+**317 CLI tests, 278 service, 350 driver, 96 desktop modules, 514 web unit, 14 Playwright**, 59
+devkit, 56/56 release rehearsal, **195/195 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -89,18 +89,25 @@ starts the driver loop.**
 `docs/2026-09-22-first-deployment-case-study.md` is the record, and it is the first document to read
 before touching the desktop — four defects were invisible from inside the workspace, three of them
 *because* of something the workspace provides. 🔴 **The second deployment (2026-09-23) found
-thirteen more, every one in `docs/FIX-LOG.md` under that date** — the three that hid the page
-itself (the machine's older host spawned over the install's own, a stale page reused from the
-WebView2 cache, an adopted host serving another page and nobody told), then what looking at each
-surface on real data turned up: why a quest sits, a drawer under the caption buttons, the OS accent
-through a native control, a fixture on the tool roster. A notice that outlived a toast was the one
-surface item left unfiled, and it is filed now: the home's and the adopted host's sentences ride the
-driver STATE and stand on the Machine view. **Republish and LOOK after every surface change, in both
-themes** — that is how all thirteen were found, and `document.scripts` names which bundle is live.
+thirteen more, every one in `docs/FIX-LOG.md` under that date** — three that hid the page itself
+(an older host spawned over the install's own, a stale page from the WebView2 cache, an adopted
+host serving another page), then what looking at each surface on real data turned up. **Republish
+and LOOK after every surface change, in both themes** — that is how all of them were found, and
+`document.scripts` names which bundle is live.
 🔴 **Plugins exist** (D64, 2026-09-23, `docs/2026-09-23-plugin-design.md`): a folder under the
-home's `plugins/` that declares harnesses on the ACP door and may speak from a process of its own;
-`daoris plugin` and the Machine view's Plugins card are the two doors, and the family rehearsal's
-phase 18 drives one. No code from a plugin loads into any host, ever.
+home's `plugins/` that declares harnesses on the ACP door, **hands every session its MCP servers**
+(INT1 — `examples/plugins/browser` declares the Playwright MCP, beside the knowledge host, never in
+its place), and may speak from a process of its own; `daoris plugin` and the Machine view's Plugins
+card are the two doors, and the family rehearsal's phase 18 drives all three. No code from a plugin
+loads into any host, ever.
+
+🔴 **A harness action's end is news** (2026-09-23, `HARNESS_ENDED`): a login waits on a person in a
+browser and an install on a network, longer than the bridge's thirty-second request — the request
+that waited with it had timed out and closed the panel on a login still running. The request now
+answers once the process has started; `HARNESS_INPUT` answers its prompt and `HARNESS_CANCEL` stops
+it. Signing in sits on the account's row (`SignIn`), tooltips follow the editor's rules (`Tip`), and
+no spawn opens a console window — all three were the owner's asks that day, all three seen on the
+installed shell, all three in `docs/FIX-LOG.md` or `docs/2026-09-19-platform-ux.md` §4.
 
 🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
 (DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that

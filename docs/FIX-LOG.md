@@ -42,7 +42,7 @@ asked** — with a stdin present the harness takes its callback flow and prints 
 browser…* — so the first step now says the browser was opened rather than waiting for a link that
 never comes; the profile was forgotten afterwards. The paste-the-code path is held by the tests.
 
-**Commit.** _pending_
+**Commit.** `84c4111`
 
 ## The deployed shell flashed a console window on every tick (2026-09-23)
 
