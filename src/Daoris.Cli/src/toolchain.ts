@@ -18,6 +18,8 @@
 //   1. A profile is a directory; the directories that exist are the profiles that exist.
 //   2. Resolution is: the person's pick, then the workspace's default, then the machine's, then NONE.
 //   3. None means the harness's OWN configuration home — the environment seam is not set at all.
+//   (4 is the binary — see `resolveVersion`.)
+//   5. An account made by signing in takes the first free `account-N`; who it is, is the tool's answer.
 //
 // It is a MANAGEMENT command and it opens no socket. It does spawn processes — that is the whole
 // point: install, update and login are each harness's OWN mechanism, run by Daoris rather than
@@ -87,8 +89,12 @@ export interface Toolchain {
    * How it answers "is this configuration home logged in?" — and the two shapes that answer takes.
    * Both supported harnesses EXIT 0 EITHER WAY, so the output is the answer and the exit code is
    * deliberately not consulted. Neither pattern matching means unknown, never logged-out.
+   *
+   * `account`, when given, is a pattern whose first group is WHO is signed in there (D66 §3) — the
+   * name a person knows the account by. Read only on a yes, and the one thing besides the boolean
+   * taken from the answer.
    */
-  loginCheck?: { args: string[]; in: RegExp; out: RegExp };
+  loginCheck?: { args: string[]; in: RegExp; out: RegExp; account?: RegExp };
   /**
    * The harness whose ACCOUNT this one runs as, when it has none of its own (ACP2).
    *
@@ -134,8 +140,13 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     update: ['update'],
     login: ['auth', 'login'],
     // It answers JSON — and volunteers an email, an organisation and a subscription tier with it.
-    // Daoris reads the boolean and keeps nothing else.
-    loginCheck: { args: ['auth', 'status'], in: /"loggedIn"\s*:\s*true/i, out: /"loggedIn"\s*:\s*false/i },
+    // Daoris reads the boolean and the email (who signed in, D66 §3), and keeps neither of the rest.
+    loginCheck: {
+      args: ['auth', 'status'],
+      in: /"loggedIn"\s*:\s*true/i,
+      out: /"loggedIn"\s*:\s*false/i,
+      account: /"email"\s*:\s*"([^"]+)"/i,
+    },
   },
   // The supported harness over the PROTOCOL door (ACP2/D53). A separate toolchain entry from
   // `claude-code` on purpose: the ACP adapter and `claude` are different packages at different
@@ -360,6 +371,36 @@ export function profiles(home: string, harness: string): string[] {
 }
 
 /**
+ * The name an account made by signing in gets (D66 §3): the first free `account-N`. Twin rule 5.
+ *
+ * @remarks
+ * 🔴 **A neutral name, never who signed in.** It is needed before the sign-in starts, when nobody knows
+ * whose it is; and renaming the directory afterwards would move a home a harness may have keyed its
+ * credential to. Who it is stays the tool's answer, read by `list`.
+ */
+export function nextAccount(home: string, harness: string): string {
+  const taken = new Set(profiles(home, harness).map((name) => name.toLowerCase()));
+  let number = 1;
+  while (taken.has(`account-${number}`)) number += 1;
+  return `account-${number}`;
+}
+
+/**
+ * Delete an account: its directory, credentials included (D66 §3). True when there was one.
+ *
+ * @remarks
+ * The name is judged first (`profileHome`), so a name pointing anywhere else is refused before
+ * anything is touched — the tool's own configuration home is not under here and no name reaches it.
+ * Node's own recursive remove clears a read-only file on Windows and does not follow links.
+ */
+export function removeProfile(home: string, harness: string, profile: string): boolean {
+  const where = profileHome(home, harness, profile);
+  if (!existsSync(where)) return false;
+  rmSync(where, { recursive: true, force: true, maxRetries: 3 });
+  return true;
+}
+
+/**
  * A name that will become a directory. Refused rather than normalized: a name carrying a separator or
  * a traversal is a request to own a location somewhere else, and quietly rewriting it would put a
  * profile where nobody would look for it.
@@ -385,8 +426,11 @@ export interface HarnessReport {
   version: string | null;
   problem: string | null;
   machineDefault: string | null;
-  profiles: { name: string; home: string; login: 'in' | 'out' | 'unknown' }[];
+  /** `account` is who the tool says is signed in there (D66 §3), or null. */
+  profiles: { name: string; home: string; login: Login; account: string | null }[];
 }
+
+type Login = 'in' | 'out' | 'unknown';
 
 /**
  * Run one of the harness's own reporting commands and collect what it said.
@@ -461,21 +505,75 @@ export function probe(
     machineDefault: settings.defaults[harness] ?? null,
     profiles: profiles(home, harness).map((name) => {
       const where = profileHome(home, harness, name);
-      if (!version.ran || !toolchain.loginCheck) return { name, home: where, login: 'unknown' as const };
+      if (!version.ran) return { name, home: where, login: 'unknown' as const, account: null };
 
       // The SAME binary the version came from. Asking the pin whether it runs and then asking PATH
       // whether it is logged in would answer about two different installs.
-      const answer = ask(
-        [command!, ...toolchain.binary.slice(1)], toolchain.loginCheck.args, where, toolchain);
-      if (!answer.ran) return { name, home: where, login: 'unknown' as const };
-      if (toolchain.loginCheck.in.test(answer.output)) return { name, home: where, login: 'in' as const };
-      return {
-        name,
-        home: where,
-        login: toolchain.loginCheck.out.test(answer.output) ? ('out' as const) : ('unknown' as const),
-      };
+      return { name, home: where, ...loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where) };
     }),
   };
+}
+
+/**
+ * What the harness says about logging in to one home: the boolean, and — when the toolchain asks and
+ * the answer is yes — who (D66 §3). Nothing else it volunteers is kept.
+ */
+function loginAt(
+  command: string[], toolchain: Toolchain, where: string,
+): { login: Login; account: string | null } {
+  const check = toolchain.loginCheck;
+  if (!check) return { login: 'unknown', account: null };
+
+  const answer = ask(command, check.args, where, toolchain);
+  if (!answer.ran) return { login: 'unknown', account: null };
+  if (check.in.test(answer.output)) {
+    return { login: 'in', account: check.account?.exec(answer.output)?.[1]?.trim() || null };
+  }
+  return { login: check.out.test(answer.output) ? 'out' : 'unknown', account: null };
+}
+
+/**
+ * Sign in to another account (D66 §3): the tool's own login flow into the next free `account-N`,
+ * kept only when the sign-in finished — the tool exited 0 and does not call that home signed out.
+ *
+ * @remarks
+ * The spawn is a parameter so the judgement around it is testable with no account: `run` is the
+ * relay in the verb, and a fixture in the tests. A sign-in that did not finish leaves nothing behind.
+ */
+export function signInNew(
+  harness: string, toolchain: Toolchain, home: string,
+  run: (where: string) => ExitCode, write: (line: string) => void,
+): ExitCode {
+  const name = nextAccount(home, harness);
+  const where = profileHome(home, harness, name);
+  // Opened for the sign-in, and gone again below unless the sign-in finished.
+  mkdirSync(where, { recursive: true });
+  write(`daoris: signing in to another \`${harness}\` account, with its own login flow.`);
+  write(`  ${where}`);
+  write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by the');
+  write('  harness, in its own store, under your OS account — Daoris never sees it.');
+
+  let code: ExitCode = 2;
+  try {
+    code = run(where);
+  } finally {
+    // Asked of the binary the login ran, so the answer is about the sign-in that just happened.
+    const said = code === 0
+      ? loginAt(toolchain.binary, toolchain, where)
+      : { login: 'out' as const, account: null };
+
+    if (code !== 0 || said.login === 'out') {
+      removeProfile(home, harness, name);
+      write('daoris: nothing was signed in, so nothing was kept — the account opened for it is gone again.');
+    } else {
+      write(said.account
+        ? `daoris: signed in as ${said.account} — this machine lists it as \`${name}\`.`
+        : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${name}\`.`);
+      write(`  \`daoris harness profile default ${harness} ${name}\` makes sessions run as it.`);
+    }
+  }
+
+  return code === 0 ? 0 : 2;
 }
 
 /**
@@ -519,10 +617,20 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
 
     case 'login': {
       const { name, toolchain } = required(argv, 'login');
-      if (!toolchain.login) {
+      const login = toolchain.login;
+      if (!login) {
         throw new DaorisError(
           `\`${name}\` declares no login flow — log in with its own tooling, pointing `
           + `${toolchain.profileVariable} at the profile directory.`);
+      }
+
+      // Another account (D66 §3): made by the sign-in, named by who signed in — the desktop's
+      // "Sign in to another account", from a terminal (D50).
+      if (argv.includes('--new')) {
+        return signInNew(
+          name, toolchain, home,
+          (where) => relay([...toolchain.binary, ...login], where, toolchain, write),
+          write);
       }
 
       const profile = flagValue(argv, '--profile')
@@ -534,7 +642,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       write(`  ${where}`);
       write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by');
       write('  the harness, in its own store, under your OS account — Daoris never sees it.');
-      return relay([...toolchain.binary, ...toolchain.login], where, toolchain, write);
+      return relay([...toolchain.binary, ...login], where, toolchain, write);
     }
 
     // The managed toolchain (TOOL2/D57): Daoris owns where this version lives and which one runs.
@@ -656,6 +764,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
 
         write(
           `  ${''.padEnd(14)} ${profile.name.padEnd(16)} ${profile.login.padEnd(8)}`
+          + `${profile.account ? ` ${profile.account}` : ''}`
           + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
       }
     }
@@ -723,21 +832,11 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         const profile = bare(argv, 3, 'profile remove', '<harness> <profile>');
         const where = profileHome(home, name, profile);
 
-        // Never a credential. Un-defaulting is the reversible half and is what "remove" means; a
-        // verb that quietly destroyed a credential would be the irreversible act this family never
-        // does silently.
-        //
-        // 🔴 But "deletes nothing" made a remove nobody could see: the directory IS the profile, so
-        // a profile stayed listed after being removed — and a harness scaffolds a fresh home the
-        // first time it is asked about it, so "empty" alone did not cover a real one. The directory
-        // goes when there is nothing signed-in to destroy, by the only evidence Daoris takes: it is
-        // empty, or the harness itself, asked as `list` asks, reports that profile signed OUT.
-        // Signed in, or unanswerable, and it stays — said out loud, with the path. The desktop's
-        // Forget draws the same line.
-        const empty = existsSync(where) && readdirSync(where).length === 0;
-        const login = !existsSync(where) || empty
-          ? 'unknown'
-          : probe(name, TOOLCHAINS[name]!, home, settings).profiles.find((p) => p.name === profile)?.login ?? 'unknown';
+        // 🔴 The account goes, directory and sign-in both (D66 §3, amending SES3's "deletes
+        // nothing"): an account a person removes should not still be signed in on disk. The old
+        // rule kept any directory the harness would not call signed out, so a removed account
+        // stayed listed and signed in. The desktop's Remove is the same verb.
+        const removed = removeProfile(home, name, profile);
         const cleared = { ...settings, defaults: { ...settings.defaults } };
         if (cleared.defaults[name] === profile) delete cleared.defaults[name];
         cleared.workspaces = Object.fromEntries(
@@ -749,26 +848,10 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
           }));
         writeHarnessSettings(path, cleared);
 
-        write(`daoris: \`${profile}\` is no longer a default for \`${name}\` anywhere on this machine.`);
-        if (empty) {
-          rmSync(where, { recursive: true, force: true });
-          write(`  The empty directory Daoris made is gone with it — nothing was ever put in it: ${where}`);
-          return 0;
-        }
-        if (login === 'out') {
-          rmSync(where, { recursive: true, force: true });
-          write(`  The directory is gone with it — \`${name}\` reports that profile signed out, so nothing`);
-          write(`  signed-in was in it: ${where}`);
-          return 0;
-        }
-
-        write(`  The directory is untouched — ${where}`);
-        write(login === 'in'
-          ? `  \`${name}\` reports it signed in, and Daoris never deletes a credential: sign out with the`
-          : `  \`${name}\` could not say whether it is signed in, so Daoris leaves it: remove the`);
-        write(login === 'in'
-          ? '  tool, then remove it — or delete the directory yourself, deliberately.'
-          : '  directory yourself if you are sure.');
+        write(removed
+          ? `daoris: removed the \`${name}\` account \`${profile}\` — the directory and the sign-in in it are gone: ${where}`
+          : `daoris: \`${name}\` has no account \`${profile}\` on this machine — there was nothing to remove.`);
+        write(`  It is no longer a default for \`${name}\` anywhere on this machine.`);
         return 0;
       }
 

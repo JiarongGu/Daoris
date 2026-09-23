@@ -53,7 +53,12 @@ const USAGE = `daoris <command> [options]
                          login <harness> [--profile P]
                                                    its own login flow, run INTO
                                                    a profile directory
+                         login <harness> --new     sign in to another account:
+                                                   kept only if it finished;
+                                                   list names who signed in
                          profile list|add|remove <harness> <profile>
+                                                   remove deletes the account,
+                                                   sign-in and all
                          profile default <harness> <profile> [--workspace W]
                          pin <harness> <version> [--workspace W]
                                                    install that version somewhere

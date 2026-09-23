@@ -379,6 +379,13 @@ The first version: doctrine that installs, is checked, and flows back.
   Settings is appearance alone.
 - **The activity bar's counts are circles.** Measured on the window: 14 × 17.2px before, 16 × 16
   after. Waiting sessions wear the status hue, and outstanding quests the accent.
+- **An account is made by signing in, and Remove removes it** (D66 §3). *Sign in to another
+  account* runs the tool's own sign-in into a fresh account and keeps it only if the sign-in
+  finished; the name box that came first is gone. Accounts are listed by who is signed in (the email
+  `claude auth status` reports), the tool's own included. **Remove deletes the account, sign-in
+  included**, after asking once — it used to keep a signed-in account on disk and on the list.
+  From a terminal: `daoris harness login <harness> --new`, and `profile remove` deletes;
+  `harness list` shows who is signed in to each account.
 - **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
   [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
   and files, who asked, and what became of it, naming the tier that answered on every record. With

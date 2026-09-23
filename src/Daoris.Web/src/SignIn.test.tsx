@@ -107,6 +107,28 @@ describe('signing in on the row', () => {
     });
   });
 
+  /**
+   * Signing in to ANOTHER account (D66 §3): the same three steps, with no account to name yet — and
+   * the stop reaches the sign-in that is actually running, under its own action.
+   */
+  it('signs in to another account under its own action, naming the tool rather than an account', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <SignIn id="claude-code:login-new" harness="claude-code" action="login-new" />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText('Signing in to another claude-code account')).toBeTruthy();
+    expect(screen.getByText(/under who signed in/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: /Cancel/ }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_CANCEL', {
+      payload: { harness: 'claude-code', action: 'login-new' },
+    });
+  });
+
   /** The tool's own words are one disclosure away, never the surface. */
   it('keeps the raw output behind a disclosure', async () => {
     show();

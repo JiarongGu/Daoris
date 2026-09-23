@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  TOOLCHAINS, commandHarness, harnessesPath, managedBinary, managedHome, profileHome, profiles,
-  probe, readHarnessSettings, resolveProfile, resolveVersion, writeHarnessSettings,
+  TOOLCHAINS, commandHarness, harnessesPath, managedBinary, managedHome, nextAccount, profileHome,
+  profiles, probe, readHarnessSettings, removeProfile, resolveProfile, resolveVersion, signInNew,
+  writeHarnessSettings,
 } from '../src/toolchain.ts';
+import type { Toolchain } from '../src/toolchain.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
 
@@ -246,46 +248,150 @@ test('`profile default` sets the machine’s, and `--workspace` sets one circle�
 });
 
 /**
- * The directory holds what the harness put there. Removing a profile clears the WIRING and, unless
- * the harness itself says the profile is signed out, says out loud that it deleted nothing — an
- * irreversible act is never a side effect here. `dsh` declares no login question, so its answer is
- * always "could not say", on every machine: the case that must keep the directory.
+ * 🔴 Removing an account removes it (D66 §3, amending SES3's "deletes nothing"). The owner's report
+ * was that Forget did not delete the account: the old rule kept any directory the harness would not
+ * call signed out, so a removed account stayed listed and signed in. Now the directory goes with the
+ * sign-in in it — read-only files too, which a tool that clones into its home leaves behind — and
+ * every default naming it goes with it.
  */
-test('`profile remove` un-defaults it everywhere and keeps a directory it cannot vouch for', () => {
+test('`profile remove` deletes the account, sign-in and all, and un-defaults it everywhere', () => {
   const fx = makeFixture('harness-remove');
   run(['profile', 'add', 'dsh', 'work'], at(fx));
   run(['profile', 'default', 'dsh', 'work'], at(fx));
   run(['profile', 'default', 'dsh', 'work', '--workspace', 'aurora'], at(fx));
   writeFileSync(join(profileHome(fx.root, 'dsh', 'work'), 'credentials.json'), '{}', 'utf8');
+  const cloned = join(profileHome(fx.root, 'dsh', 'work'), 'plugins', '.git');
+  mkdirSync(cloned, { recursive: true });
+  writeFileSync(join(cloned, 'pack.idx'), 'x', 'utf8');
+  chmodSync(join(cloned, 'pack.idx'), 0o444);
 
   const result = run(['profile', 'remove', 'dsh', 'work'], at(fx));
 
   assert.equal(result.code, 0);
-  assert.match(result.out, /directory is untouched/);
-  assert.match(result.out, /could not say/);
-  assert.ok(existsSync(join(profileHome(fx.root, 'dsh', 'work'), 'credentials.json')));
+  assert.match(result.out, /the sign-in in it are gone/);
+  assert.ok(!existsSync(profileHome(fx.root, 'dsh', 'work')));
   const settings = readHarnessSettings(at(fx));
   assert.equal(resolveProfile(settings, 'dsh', 'aurora', null), null);
   assert.equal(resolveProfile(settings, 'dsh', null, null), null);
   fx.cleanup();
 });
 
-/**
- * 🔴 The other half of the same rule. A profile the harness never wrote into is an empty directory
- * Daoris made; removing THAT destroys nothing, and leaving it was a "remove" nobody could see —
- * the directory is the account, so the account stayed listed after being forgotten. (A signed-out
- * but scaffolded profile goes the same way on the harness's own word; the family rehearsal's stub
- * harness is where that answer can be given with no account on any machine.)
- */
-test('`profile remove` takes an empty directory with it', () => {
-  const fx = makeFixture('harness-remove-empty');
-  run(['profile', 'add', 'claude-code', 'fresh'], at(fx));
+test('`profile remove` of an account that is not there is an answer, not a failure', () => {
+  const fx = makeFixture('harness-remove-absent');
 
-  const result = run(['profile', 'remove', 'claude-code', 'fresh'], at(fx));
+  const result = run(['profile', 'remove', 'claude-code', 'nobody'], at(fx));
 
   assert.equal(result.code, 0);
-  assert.match(result.out, /empty directory/);
-  assert.ok(!existsSync(profileHome(fx.root, 'claude-code', 'fresh')));
+  assert.match(result.out, /nothing to remove/);
+  fx.cleanup();
+});
+
+test('a remove naming somewhere else is refused before anything is deleted', () => {
+  const fx = makeFixture('harness-remove-escape');
+  writeFileSync(join(fx.root, 'keep.txt'), 'mine', 'utf8');
+
+  assert.match(captureError(() => removeProfile(fx.root, 'claude-code', '..')).message, /profile name/);
+  assert.ok(existsSync(join(fx.root, 'keep.txt')));
+  fx.cleanup();
+});
+
+// ——— Twin rule 5: an account made by signing in takes the first free `account-N` (D66 §3).
+
+test('a new account takes the first free number, per tool', () => {
+  const fx = makeFixture('harness-next');
+
+  assert.equal(nextAccount(fx.root, 'claude-code'), 'account-1');
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
+  mkdirSync(profileHome(fx.root, 'claude-code', 'work'), { recursive: true });
+  assert.equal(nextAccount(fx.root, 'claude-code'), 'account-3');
+  assert.equal(nextAccount(fx.root, 'codex'), 'account-1');
+  fx.cleanup();
+});
+
+/**
+ * A stand-in harness whose login question reads the home it is asked about: signed in exactly when
+ * the home holds `credentials.json`, and it says WHO by that file's contents — the way `claude auth
+ * status` names an email beside an organisation Daoris must not keep.
+ */
+function fakeHarness(fx: { root: string }): Toolchain {
+  const script = join(fx.root, 'fake-harness.mjs');
+  writeFileSync(script, [
+    "import { existsSync, readFileSync } from 'node:fs';",
+    'const home = process.env.FAKE_HARNESS_HOME;',
+    "if (process.argv[2] === '--version') { console.log('fake 1.0'); process.exit(0); }",
+    "const signed = home && existsSync(home + '/credentials.json');",
+    "console.log(JSON.stringify({ loggedIn: Boolean(signed), email: signed ? readFileSync(home + '/credentials.json', 'utf8').trim() : null, orgName: 'Secretive' }));",
+  ].join('\n'), 'utf8');
+
+  return {
+    binary: [process.execPath, script],
+    version: ['--version'],
+    profileVariable: 'FAKE_HARNESS_HOME',
+    login: ['login'],
+    loginCheck: { ...TOOLCHAINS['claude-code']!.loginCheck!, args: ['status'] },
+  };
+}
+
+/**
+ * 🔴 An account is made by signing in (D66 §3) — the terminal's half of the desktop's "Sign in to
+ * another account" (D50). The sign-in runs into the next free `account-N`, and the end names who
+ * signed in by the tool's own answer, keeping neither the organisation nor anything else it said.
+ */
+test('`login --new` keeps a finished sign-in and names who signed in', () => {
+  const fx = makeFixture('harness-sign-in');
+  const toolchain = fakeHarness(fx);
+  const lines: string[] = [];
+
+  const code = signInNew('fake', toolchain, fx.root, (where) => {
+    writeFileSync(join(where, 'credentials.json'), 'someone@example.invalid', 'utf8');
+    return 0;
+  }, (line) => lines.push(line));
+
+  assert.equal(code, 0);
+  assert.ok(existsSync(join(profileHome(fx.root, 'fake', 'account-1'), 'credentials.json')));
+  assert.match(lines.join('\n'), /signed in as someone@example\.invalid/);
+  assert.match(lines.join('\n'), /account-1/);
+  assert.doesNotMatch(lines.join('\n'), /Secretive/);
+
+  const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
+  assert.equal(listed.profiles[0]!.account, 'someone@example.invalid');
+  fx.cleanup();
+});
+
+/** A sign-in that did not finish — failed, or ended signed out — leaves nothing behind. */
+test('`login --new` that does not finish leaves nothing behind', () => {
+  const fx = makeFixture('harness-sign-in-unfinished');
+  const toolchain = fakeHarness(fx);
+
+  for (const outcome of [2, 0] as const) {
+    const lines: string[] = [];
+    const code = signInNew('fake', toolchain, fx.root, () => outcome, (line) => lines.push(line));
+
+    assert.equal(code, outcome);
+    assert.deepEqual(profiles(fx.root, 'fake'), []);
+    assert.match(lines.join('\n'), /nothing was kept/);
+  }
+  fx.cleanup();
+});
+
+test('a signed-out home names nobody, and a toolchain that does not ask keeps no name', () => {
+  const fx = makeFixture('harness-who');
+  const toolchain = fakeHarness(fx);
+  mkdirSync(profileHome(fx.root, 'fake', 'out'), { recursive: true });
+  mkdirSync(profileHome(fx.root, 'fake', 'in'), { recursive: true });
+  writeFileSync(join(profileHome(fx.root, 'fake', 'in'), 'credentials.json'), 'someone@example.invalid', 'utf8');
+  const settings = readHarnessSettings(at(fx));
+
+  const asked = probe('fake', toolchain, fx.root, settings).profiles;
+  assert.deepEqual(asked.map((p) => [p.name, p.login, p.account]), [
+    ['in', 'in', 'someone@example.invalid'],
+    ['out', 'out', null],
+  ]);
+
+  const { args, in: yes, out } = toolchain.loginCheck!;
+  const silent = probe('fake', { ...toolchain, loginCheck: { args, in: yes, out } }, fx.root, settings).profiles;
+  assert.deepEqual(silent.map((p) => p.account), [null, null]);
   fx.cleanup();
 });
 
@@ -459,6 +565,10 @@ test('the login questions read the answers the real harnesses give', () => {
   assert.ok(claude.in.test('{\n  "loggedIn": true,\n  "authMethod": "claude.ai"\n}'));
   assert.ok(claude.out.test('{\n  "loggedIn": false,\n  "authMethod": "none"\n}'));
   assert.ok(!claude.in.test('{\n  "loggedIn": false\n}'));
+  // Who signed in (D66 §3) — the email, from the keys measured on the real binary; values invented.
+  assert.equal(
+    claude.account!.exec('{\n  "loggedIn": true,\n  "email": "someone@example.invalid",\n  "orgName": "x"\n}')?.[1],
+    'someone@example.invalid');
 
   const codex = TOOLCHAINS.codex!.loginCheck!;
   assert.ok(codex.in.test('Logged in using ChatGPT'));

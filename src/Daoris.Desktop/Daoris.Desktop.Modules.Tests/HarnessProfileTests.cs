@@ -75,22 +75,25 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// A harness for the remove tests: real spawn, real answers, no account. Signed in exactly when
-    /// the profile holds a `credentials.json` — which is what a real login leaves behind — and the
-    /// stub adapter's own toolchain asks it with <c>--login-state</c>. Machine-independent: the
-    /// first version of these tests asked the machine's own `claude`, whose answer is the machine's.
+    /// A harness with real spawns, real answers and no account. Signed in exactly when the profile
+    /// holds a `credentials.json` — what a real login leaves behind — and it says WHO by that file's
+    /// contents, the way `claude auth status` names an email. The stub adapter's own toolchain asks
+    /// with <c>--login-state</c> and signs in with <c>--login</c>, whose body is each test's own.
+    /// Machine-independent: the first version of these tests asked the machine's own `claude`.
     /// </summary>
-    private DriverModule ModuleWithStubHarness()
+    private DriverModule ModuleWithStubHarness(string login = "process.exit(1);")
     {
         var script = Path.Combine(Home, "harness.mjs");
-        File.WriteAllText(script, """
-            import { existsSync } from 'node:fs';
+        File.WriteAllText(script, $$"""
+            import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+            const home = process.env.DAORIS_STUB_CONFIG_DIR;
             if (process.argv[2] === '--version') { console.log('stub-harness 1.0.0'); process.exit(0); }
             if (process.argv[2] === '--login-state') {
-              const home = process.env.DAORIS_STUB_CONFIG_DIR;
-              console.log(home && existsSync(home + '/credentials.json') ? 'logged-in' : 'logged-out');
+              const signed = home && existsSync(home + '/credentials.json');
+              console.log(signed ? 'logged-in as ' + readFileSync(home + '/credentials.json', 'utf8').trim() : 'logged-out');
               process.exit(0);
             }
+            if (process.argv[2] === '--login') { {{login}} }
             """);
         File.WriteAllText(DriverConfigPath, $$"""
             { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
@@ -100,64 +103,95 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>Remove un-points and never deletes a credential.</b> A signed-in account stays, every
-    /// file with it, and the console says so and where: a button that quietly destroyed a credential
-    /// would be the irreversible act this family never does silently.
+    /// 🔴 <b>Removing an account removes it</b> (D66 §3, amending SES3's "deletes nothing"). The
+    /// owner's report: Forget did not delete the account. The old rule kept a signed-in directory
+    /// and un-pointed it, so the account stayed listed and signed in — the leftover the person
+    /// pressed the button to be rid of. Now the directory goes, credentials included, and every
+    /// default naming it goes with it.
     /// </summary>
     [Fact]
-    public async Task Removing_a_signed_in_profile_stops_pointing_at_it_and_keeps_every_file()
+    public async Task Removing_an_account_deletes_it_signed_in_or_not_and_un_points_it_everywhere()
     {
         var module = ModuleWithStubHarness();
         await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "stub", action = "profile-add", profile = "work" });
-        File.WriteAllText(Path.Combine(ProfileAt("stub", "work"), "credentials.json"), "{}");
+        File.WriteAllText(Path.Combine(ProfileAt("stub", "work"), "credentials.json"), "someone@example.invalid");
         await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "stub", action = "profile-default", profile = "work" });
-
         await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" });
+
+        var answer = await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "stub", action = "profile-remove", profile = "work" });
 
-        Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("stub"));
-        Assert.True(File.Exists(Path.Combine(ProfileAt("stub", "work"), "credentials.json")));
-        Assert.Contains(Raised.Select(Line), line => line.Contains("kept") && line.Contains("signed in"));
+        Assert.Equal(0, answer.GetProperty("exitCode").GetInt32());
+        Assert.False(Directory.Exists(ProfileAt("stub", "work")));
+        var settings = HarnessSettings.Load(HarnessSettingsPath);
+        Assert.False(settings.Defaults.ContainsKey("stub"));
+        Assert.Null(settings.Resolve("stub", "aurora", null));
+        Assert.Contains(Raised.Select(Line), line => line.Contains("removed") && line.Contains("sign-in"));
     }
 
     /// <summary>
-    /// 🔴 "Deletes nothing" made Forget on a fresh account do nothing anyone could see: the directory
-    /// is the account, the roster lists directories, and the harness scaffolds a fresh home the first
-    /// time it is asked about it — so a forgotten account stayed on the list, unpointed, forever
-    /// (deployed application, 2026-09-23). The harness's own word that the account is signed OUT is
-    /// the evidence there is nothing signed-in to destroy, and the directory goes with the forget.
+    /// 🔴 <b>An account is made by signing in</b> (D66 §3). The owner: *"we probably should just
+    /// allow to login and create account based on login"*. One press opens a fresh account, runs the
+    /// tool's own sign-in into it, and keeps it — under a neutral name, because nobody knows whose it
+    /// is until the tool says — and the end names who signed in, by the tool's own answer.
     /// </summary>
     [Fact]
-    public async Task Forgetting_a_signed_out_profile_removes_its_directory_scaffolding_and_all()
+    public async Task Signing_in_to_another_account_keeps_it_and_the_end_names_who()
     {
-        var module = ModuleWithStubHarness();
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-add", profile = "stale" });
-        // What a harness leaves in a home it was merely asked about — settings, never a credential.
-        File.WriteAllText(Path.Combine(ProfileAt("stub", "stale"), "settings.json"), "{}");
+        var module = ModuleWithStubHarness("""
+            writeFileSync(home + '/credentials.json', 'someone@example.invalid');
+            console.log('signed in');
+            process.exit(0);
+            """);
+        // Someone already has the first number: the new account takes the next free one.
+        Directory.CreateDirectory(ProfileAt("stub", "account-1"));
 
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-remove", profile = "stale" });
+        var answer = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login-new" });
+        Assert.True(answer.GetProperty("started").GetBoolean());
+        await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
-        Assert.False(Directory.Exists(ProfileAt("stub", "stale")));
-        Assert.Contains(Raised.Select(Line), line => line.Contains("removed") && line.Contains("signed out"));
+        var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
+        Assert.Equal(0, ended.GetProperty("ExitCode").GetInt32());
+        Assert.Equal("login-new", ended.GetProperty("Action").GetString());
+        Assert.Equal("account-2", ended.GetProperty("Profile").GetString());
+        Assert.Equal("someone@example.invalid", ended.GetProperty("Account").GetString());
+        Assert.True(ended.GetProperty("Kept").GetBoolean());
+        Assert.True(File.Exists(Path.Combine(ProfileAt("stub", "account-2"), "credentials.json")));
     }
 
-    /// <summary>An empty directory is the same answer with nothing to ask: it goes.</summary>
-    [Fact]
-    public async Task Forgetting_a_profile_nobody_ever_wrote_into_removes_the_empty_directory()
+    /// <summary>
+    /// A sign-in that does not finish leaves nothing behind (D66 §3) — the tool failed, was
+    /// stopped, or ended without signing anyone in. The account existed only for the sign-in, so
+    /// the list is exactly what it was before the press.
+    /// </summary>
+    [Theory]
+    [InlineData("process.exit(1);")]
+    [InlineData("console.log('closed without signing in'); process.exit(0);")]
+    public async Task A_sign_in_that_does_not_finish_leaves_nothing_behind(string login)
     {
-        var module = ModuleWithStubHarness();
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-add", profile = "fresh" });
-        Assert.True(Directory.Exists(ProfileAt("stub", "fresh")));
+        var module = ModuleWithStubHarness(login);
 
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "stub", action = "profile-remove", profile = "fresh" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login-new" });
+        await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
-        Assert.False(Directory.Exists(ProfileAt("stub", "fresh")));
+        var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
+        Assert.False(ended.GetProperty("Kept").GetBoolean());
+        Assert.False(Directory.Exists(ProfileAt("stub", "account-1")));
+        Assert.Empty(HarnessSettings.Profiles(Home, "stub"));
+        Assert.Contains(Raised.Select(Line), line => line.Contains("nothing was kept"));
+    }
+
+    private static async Task UntilAsync(Func<bool> condition)
+    {
+        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        while (!condition())
+        {
+            Assert.True(DateTime.UtcNow < patience, "the condition never held");
+            await Task.Delay(25);
+        }
     }
 
     /// <summary>The text of one relayed console line, or empty for any other event.</summary>
@@ -190,5 +224,6 @@ public sealed class HarnessProfileTests : Bridge
 
         Assert.Contains("profile-add", refusal);
         Assert.Contains("profile-default", refusal);
+        Assert.Contains("login-new", refusal);
     }
 }

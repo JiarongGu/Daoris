@@ -263,6 +263,9 @@ public sealed class DriverModule : ModuleBase
                         // package has no version for Daoris to fetch, and a surface offering the
                         // control anyway would be a button whose only outcome is a refusal.
                         Pinnable = _loop.Harnesses.Toolchain(report.Adapter)?.Package is { Length: > 0 },
+                        // Whether this door can run a sign-in at all — the same rule: a harness that
+                        // declares no login flow gets no "Sign in" whose only outcome is a refusal.
+                        SignsIn = _loop.Harnesses.Toolchain(report.Adapter)?.LoginArguments is { Count: > 0 },
                         // 🔴 Which TOOL's account this entry runs as, and which door it holds a
                         // session over. Both were already declared and neither reached the page,
                         // which is why the surface listed `claude-code` and `claude-code-acp` as two
@@ -281,11 +284,15 @@ public sealed class DriverModule : ModuleBase
                             profile.Name,
                             profile.Home,
                             Login = profile.Login.ToString().ToLowerInvariant(),
+                            // Who is signed in there, by the tool's own answer (D66 §3) — the name
+                            // a person knows the account by, where the directory's is `account-2`.
+                            profile.Account,
                         }).ToArray(),
                         // 🔴 The account a person actually HAS — the tool's own configuration home —
                         // answered beside the profiles rather than left out, which read as "No
                         // accounts" to an owner who was logged in.
                         OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
+                        report.OwnAccount,
                         // Which circles run this harness as which account (D49 §4): the terminal
                         // could set it and the page could not even see it.
                         WorkspaceDefaults = settings.Workspaces
@@ -329,13 +336,13 @@ public sealed class DriverModule : ModuleBase
                     // Daoris manages directories and names, never secrets: adding one MAKES A
                     // DIRECTORY and nothing else, and what lands inside it is the harness's own.
                     "profile-add" => ProfileAdd(harness, request),
-                    "profile-remove" => await ProfileRemoveAsync(harness, request, config, stream, cancellationToken),
+                    "profile-remove" => ProfileRemove(harness, request, stream),
                     "profile-default" => ProfileDefault(harness, request),
-                    "install" or "update" or "login" or "pin" => null,
+                    "install" or "update" or "login" or "login-new" or "pin" => null,
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
-                        $"unknown harness action '{action}' — one of: install, update, login, pin, "
-                        + "unpin, profile-add, profile-remove, profile-default",
+                        $"unknown harness action '{action}' — one of: install, update, login, login-new, "
+                        + "pin, unpin, profile-add, profile-remove, profile-default",
                         ("action", action)),
                 };
                 if (edited is { } code)
@@ -360,19 +367,26 @@ public sealed class DriverModule : ModuleBase
                     _actions[key] = run;
                     started.TrySetResult();
                 };
+                // 🔴 Signing in to ANOTHER account (D66 §3): the account is made by the sign-in, not
+                // named before it. It opens under the next free `account-N` — nobody knows whose it
+                // is yet — and the tool's own answer names who, on the roster, once it ends.
+                var fresh = action == "login-new"
+                    ? HarnessSettings.NextAccount(_loop.Harnesses.Home, harness)
+                    : null;
                 var profileHome = HarnessSettings.ProfileHome(
                     _loop.Harnesses.Home, harness,
-                    profile ?? _loop.Harnesses.Settings.Resolve(harness, null, null) ?? "default");
+                    fresh ?? profile ?? _loop.Harnesses.Settings.Resolve(harness, null, null) ?? "default");
                 Func<Task<int>> run = action switch
                 {
                     "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
                     "update" => () => HarnessActions.UpdateAsync(toolchain, command, stream, CancellationToken.None, track),
                     "login" => () => HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track),
+                    "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track),
                     // The managed toolchain (TOOL2/D57) — the desktop's half of
                     // `daoris harness pin|unpin`, over the same file.
                     _ => () => PinAsync(harness, toolchain, stream, request, CancellationToken.None, track),
                 };
-                var work = RunActionAsync(key, harness, action, profile, run, started.Task, config);
+                var work = RunActionAsync(key, harness, action, fresh ?? profile, run, started.Task, config);
 
                 await Task.WhenAny(started.Task, work);
                 // A refusal before the process started — no installer, no login flow, a binary that
@@ -785,19 +799,81 @@ public sealed class DriverModule : ModuleBase
     {
         // Whatever it did, what this machine HAS has probably changed — so the next question asks
         // the tool again rather than answering from before, and the news arrives after the roster.
+        IReadOnlyList<HarnessReport> roster = [];
         try
         {
-            await _loop.Harnesses.RosterAsync(config, refresh: true, CancellationToken.None);
+            roster = await _loop.Harnesses.RosterAsync(config, refresh: true, CancellationToken.None);
         }
         catch (Exception)
         {
             // The roster is asked again on the page's next question; the end is still news.
         }
 
+        var signingIn = action is "login" or "login-new" && profile is not null;
         await _events.EmitAsync("DAORIS", "HARNESS_ENDED", new
         {
             Harness = harness, Action = action, Profile = profile, ExitCode = code, Problem = problem,
+            // Who signed in (D66 §3) — the tool's own answer, from the roster just read, so the
+            // sentence a person hears names the account the way they know it.
+            Account = signingIn
+                ? roster.FirstOrDefault(report => report.Adapter == harness)?.Profiles
+                    .FirstOrDefault(each => each.Name == profile)?.Account
+                : null,
+            // Whether a sign-in to another account left one behind: it does only when it finished.
+            Kept = action == "login-new" && profile is not null
+                ? Directory.Exists(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, profile))
+                : (bool?)null,
         });
+    }
+
+    /// <summary>
+    /// Sign in to another account (D66 §3): the tool's own login flow into a fresh directory, kept
+    /// only when the sign-in finished.
+    /// </summary>
+    /// <remarks>
+    /// "Finished" is the tool's exit code and then the tool's own word, asked of that one home: a
+    /// zero exit whose home still reports signed OUT signed nobody in. An answer it cannot give is
+    /// kept, by the rule every unknown login state follows (SES3) — the person watched the sign-in
+    /// and can remove it. Otherwise the directory existed only for this sign-in, and goes: the list
+    /// is exactly what it was before the press, whether the tool failed, was stopped, or never
+    /// started.
+    /// </remarks>
+    private async Task<int> SignInAsync(
+        string harness, string fresh, HarnessToolchain toolchain, IReadOnlyList<string>? command,
+        string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track)
+    {
+        var code = -1;
+        try
+        {
+            code = await HarnessActions.LoginAsync(
+                toolchain, command, profileHome, stream, CancellationToken.None, track);
+            return code;
+        }
+        finally
+        {
+            var (login, account) = code == 0
+                ? await _loop.Harnesses.LoginOfAsync(harness, config, fresh, CancellationToken.None)
+                : (LoginState.Out, null);
+
+            if (code != 0 || login == LoginState.Out)
+            {
+                try
+                {
+                    HarnessSettings.RemoveProfile(_loop.Harnesses.Home, harness, fresh);
+                    stream("nothing was signed in, so nothing was kept — the account opened for it is gone again.");
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    stream($"nothing was signed in, and {profileHome} could not be removed — {error.Message}");
+                }
+            }
+            else
+            {
+                stream(account is { Length: > 0 }
+                    ? $"signed in as {account} — this machine lists it as `{fresh}`."
+                    : $"signed in — `{harness}` did not say who, so this machine lists it as `{fresh}`.");
+            }
+        }
     }
 
     /// <summary>The action running under `harness:action`, or the refusal that names it.</summary>
@@ -834,14 +910,13 @@ public sealed class DriverModule : ModuleBase
         return code;
     }
 
-    /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
     /// <summary>
-    /// Make a credential profile: a directory, and nothing else (DEPLOY3).
+    /// Make a credential profile under a name the caller chose: a directory, and nothing else (DEPLOY3).
     /// </summary>
     /// <remarks>
     /// Idempotent, exactly as the CLI verb is — asking for one that exists is an answer, not a
-    /// failure. It is empty until the harness's own login flow is run into it, which is the next
-    /// thing the view offers.
+    /// failure. The page makes accounts by signing in (<c>login-new</c>, D66 §3); this is the
+    /// bridge's half of <c>daoris harness profile add</c>, for a name a person picks before signing in.
     /// </remarks>
     private int ProfileAdd(string harness, IpcRequest request)
     {
@@ -850,54 +925,39 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
-    /// Stop pointing at a profile — 🔴 <b>and never delete a credential.</b>
+    /// Remove an account — 🔴 <b>its directory with it, credentials included</b> (D66 §3).
     /// </summary>
     /// <remarks>
-    /// <para>Un-defaulting is the reversible half and is what "remove" means, in both doors. What the
-    /// directory holds is the harness's own, and a button that quietly destroyed a credential would
-    /// be the irreversible act this family never does silently.</para>
+    /// <para>This amends SES3's "removing one deletes nothing", on the owner's word: Forget did not
+    /// delete the account. The old rule un-pointed it and kept any directory the tool would not
+    /// call signed out, so a removed account stayed listed and signed in — the leftover the person
+    /// pressed the button to be rid of. The page asks twice before it sends this; the terminal twin
+    /// is <c>daoris harness profile remove</c>.</para>
     ///
-    /// <para>🔴 But "deletes nothing" made Forget on a fresh account do nothing anyone could see: the
-    /// directory IS the account, the roster lists directories, and the harness scaffolds a fresh
-    /// home the first time it is asked about it — so a forgotten account stayed on the list,
-    /// unpointed, forever (deployed application, 2026-09-23). The directory goes when there is
-    /// nothing signed-in to destroy, by the only evidence Daoris will take: it is EMPTY, or the
-    /// harness itself, asked as the roster asks, reports that account signed OUT. Signed in, or
-    /// unanswerable, and it stays — and the console says which, and where. The CLI's
-    /// <c>profile remove</c> draws the same line.</para>
+    /// <para>Only ever a profile: the tool's own configuration home is not under Daoris's directory,
+    /// and no name reaches it.</para>
+    ///
+    /// <para>A delete that fails — a running session holding a file open in it — says so and leaves
+    /// the wiring as it was, because the account is still there to point at.</para>
     /// </remarks>
-    private async Task<int> ProfileRemoveAsync(
-        string harness, IpcRequest request, DriverConfig config, Action<string> stream, CancellationToken ct)
+    private int ProfileRemove(string harness, IpcRequest request, Action<string> stream)
     {
         var profile = Named(request);
-        var settings = _loop.Harnesses.Settings;
-
         var directory = HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, profile);
-        if (Directory.Exists(directory))
+        try
         {
-            var empty = !Directory.EnumerateFileSystemEntries(directory).Any();
-            var login = LoginState.Unknown;
-            if (!empty)
-            {
-                var report = await _loop.Harnesses.ReportAsync(harness, config, refresh: true, ct).ConfigureAwait(false);
-                login = report?.Profiles.FirstOrDefault(p => p.Name == profile)?.Login ?? LoginState.Unknown;
-            }
-
-            if (empty || login == LoginState.Out)
-            {
-                Directory.Delete(directory, recursive: true);
-                stream(empty
-                    ? $"removed the empty directory Daoris made — nothing was ever put in it: {directory}"
-                    : $"removed {directory} — `{harness}` reports that account signed out, so nothing signed-in was in it.");
-            }
-            else
-            {
-                stream(login == LoginState.In
-                    ? $"kept {directory} — `{harness}` reports that account signed in, and Daoris never deletes a credential. Sign out with the tool, then forget it; or remove the directory yourself."
-                    : $"kept {directory} — `{harness}` could not say whether that account is signed in, so Daoris leaves it. Remove the directory yourself if you are sure.");
-            }
+            stream(HarnessSettings.RemoveProfile(_loop.Harnesses.Home, harness, profile)
+                ? $"removed {directory} — the account and its sign-in are gone from this machine."
+                : $"`{profile}` is not on this machine — there was nothing to remove.");
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            stream($"could not remove {directory} — {error.Message} A session running as this "
+                + "account may hold a file open in it; stop it and remove again. Part of it may already be gone.");
+            return 1;
         }
 
+        var settings = _loop.Harnesses.Settings;
         if (settings.Defaults.TryGetValue(harness, out var machine) && machine == profile)
         {
             settings = settings.WithDefault(harness, null);
@@ -943,6 +1003,7 @@ public sealed class DriverModule : ModuleBase
                 "that action needs a profile name.",
                 ("action", "profile"));
 
+    /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
     private int Unpin(string harness)
     {
         _loop.Harnesses.Settings.WithVersion(harness, null).Save(_loop.Harnesses.SettingsPath);

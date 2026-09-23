@@ -134,6 +134,12 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **The theme is the viewer's to choose** (D66): *System · Light · Dark* on Settings, applied as
 >   `data-theme` before the first paint, pushed to the window's native chrome, and held by two
 >   forced blocks in `tokens.css` that a test keeps equal to their system twins.
+> - **An account reads as who is signed in, and a destructive edit asks once** (D66 §3). A row's
+>   name is the tool's answer (`account-2` is only on disk). *Sign in to another account* is one
+>   press with no name first. Remove wears the bin because it deletes, and its first press opens a
+>   sentence saying what the second will do, beside *Remove it* and *never mind*. Only a door's own
+>   work (install, update, pin) streams under *Ways in*: seen on the window, a removal's one line
+>   sat there as a live console.
 > - **A page never prints a machine path it was answered.** A local host answers this machine where
 >   a kept file lies (a quest's attachment, D65 §2), and the drawer reads that path's *presence* as
 >   "can be opened" and opens the file through the host's own route. A file the record names and

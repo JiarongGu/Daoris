@@ -39,7 +39,14 @@ public enum LoginState
 /// <param name="Arguments">What to run, under the profile's configuration home.</param>
 /// <param name="LoggedIn">A pattern whose presence means yes.</param>
 /// <param name="LoggedOut">A pattern whose presence means no.</param>
-public sealed record LoginQuestion(IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut);
+/// <param name="Account">
+/// A pattern whose first group is <b>who</b> is signed in there, read from the same answer (D66 §3):
+/// an account is named by who signed in rather than by a name typed before anyone knew. Taken only on
+/// a yes, and it is the one thing besides the boolean the probe takes — a harness that volunteers an
+/// organisation and a tier beside it still has neither kept. Null asks nobody's name.
+/// </param>
+public sealed record LoginQuestion(
+    IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null);
 
 /// <summary>
 /// What Daoris knows about a harness AS A TOOL (D49 §4) — where its binary is, how to ask its version,
@@ -124,7 +131,11 @@ public sealed record HarnessToolchain(
 /// One profile as it stands: its name, the directory Daoris owns the location of, and what the harness
 /// says about logging in there. <b>Never anything from inside it.</b>
 /// </summary>
-public sealed record ProfileReport(string Name, string Home, LoginState Login);
+/// <param name="Account">
+/// Who the harness says is signed in there (D66 §3) — the name a person knows the account by, read
+/// fresh on every probe and written nowhere. Null when signed out, or when the tool does not say.
+/// </param>
+public sealed record ProfileReport(string Name, string Home, LoginState Login, string? Account = null);
 
 /// <summary>
 /// One harness as this machine has it (D49 §4): present or absent, its version, its profiles.
@@ -135,6 +146,7 @@ public sealed record ProfileReport(string Name, string Home, LoginState Login);
 /// actually has before naming any profile, asked the same read-only way. Unknown when absent.
 /// 🔴 The roster called a machine with no named profile "No accounts" while its owner was logged in.
 /// </param>
+/// <param name="OwnAccount">Who is signed in to the tool's own home, asked the way a profile is.</param>
 public sealed record HarnessReport(
     string Adapter,
     bool Present,
@@ -143,7 +155,8 @@ public sealed record HarnessReport(
     string? ProfileVariable,
     string? MachineDefault,
     IReadOnlyList<ProfileReport> Profiles,
-    LoginState OwnLogin = LoginState.Unknown);
+    LoginState OwnLogin = LoginState.Unknown,
+    string? OwnAccount = null);
 
 /// <summary>
 /// The person's harness wiring: which named profile each harness runs as, per machine and optionally
@@ -448,6 +461,61 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
+    /// The name an account made by signing in gets (D66 §3): the first free <c>account-N</c>.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>A neutral name, never who signed in.</b> The name is needed before the sign-in starts,
+    /// when nobody knows whose it is; and renaming the directory afterwards would move a home a
+    /// harness may have keyed its credential to. Who it is stays the TOOL's answer, read by the
+    /// roster (<see cref="ProfileReport.Account"/>). Twin rule 5: the CLI's <c>login --new</c> counts
+    /// the same way.
+    /// </remarks>
+    public static string NextAccount(string home, string harness)
+    {
+        var taken = Profiles(home, harness).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var number = 1;
+        while (taken.Contains($"account-{number}")) number++;
+        return $"account-{number}";
+    }
+
+    /// <summary>
+    /// Delete an account: its directory, credentials included (D66 §3). True when there was one.
+    /// </summary>
+    /// <remarks>
+    /// <para>The name is judged first (<see cref="ProfileHome"/>), so a name pointing anywhere else is
+    /// refused before anything is touched — the tool's own configuration home is not under here and
+    /// can never be named.</para>
+    ///
+    /// <para>🔴 <b>Read-only files are cleared first.</b> A harness that clones into its home leaves
+    /// read-only git objects there, and a recursive delete refuses them on Windows — an account
+    /// removed on screen would stay on disk because of an attribute. Links are not followed: a
+    /// directory link inside is removed as a link, and what it points at is not Daoris's.</para>
+    /// </remarks>
+    public static bool RemoveProfile(string home, string harness, string profile)
+    {
+        var directory = ProfileHome(home, harness, profile);
+        if (!Directory.Exists(directory)) return false;
+
+        var walk = new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            AttributesToSkip = FileAttributes.ReparsePoint,
+            IgnoreInaccessible = true,
+        };
+        foreach (var file in Directory.EnumerateFiles(directory, "*", walk))
+        {
+            var attributes = File.GetAttributes(file);
+            if (attributes.HasFlag(FileAttributes.ReadOnly))
+            {
+                File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
+            }
+        }
+
+        Directory.Delete(directory, recursive: true);
+        return true;
+    }
+
+    /// <summary>
     /// A name that will become a directory. Refused rather than normalised: a name carrying a
     /// separator or a traversal is a request to own a location somewhere else, and quietly rewriting
     /// it would put a profile where nobody would look for it.
@@ -597,18 +665,17 @@ public static class HarnessProbe
         foreach (var name in HarnessSettings.Profiles(home, adapter))
         {
             var profileHome = HarnessSettings.ProfileHome(home, adapter, name);
-            profiles.Add(new ProfileReport(
-                name,
-                profileHome,
-                present ? await LoginAsync(resolved, toolchain, profileHome, ct).ConfigureAwait(false)
-                        : LoginState.Unknown));
+            var (login, account) = present
+                ? await LoginAsync(resolved, toolchain, profileHome, ct).ConfigureAwait(false)
+                : (LoginState.Unknown, null);
+            profiles.Add(new ProfileReport(name, profileHome, login, account));
         }
 
         // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
         // answers about wherever it keeps its own credential. Read-only; Daoris never logs into it.
-        var own = present
+        var (own, ownAccount) = present
             ? await LoginAsync(resolved, toolchain, profileHome: null, ct).ConfigureAwait(false)
-            : LoginState.Unknown;
+            : (LoginState.Unknown, null);
 
         return new HarnessReport(
             adapter,
@@ -618,28 +685,71 @@ public static class HarnessProbe
             toolchain.ProfileVariable,
             settings.Defaults.TryGetValue(adapter, out var machine) ? machine : null,
             profiles,
-            own);
+            own,
+            ownAccount);
     }
 
     /// <summary>
-    /// What the harness says about logging in here. <b>One boolean is taken and nothing else</b> — a
-    /// real harness volunteers an email, an organisation and a subscription tier alongside it, and
-    /// none of that is Daoris's to hold, log, or put on a roster.
+    /// What the harness says about logging in to ONE home — a profile's, or its own when
+    /// <paramref name="profileHome"/> is null — asked of the binary a spawn would run. What a sign-in
+    /// asks when it ends (D66 §3), without probing every other account on the machine to learn it.
     /// </summary>
-    private static async Task<LoginState> LoginAsync(
+    public static async Task<(LoginState Login, string? Account)> AskLoginAsync(
+        string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command,
+        HarnessSettings settings, string home, string? profileHome, CancellationToken ct = default)
+    {
+        var resolved = toolchain.Command(command);
+        if (command is not { Count: > 0 }
+            && settings.ResolveVersion(adapter, workspace: null, chosen: null) is { } pinned)
+        {
+            // The pin, as the probe resolves it; nothing installed at it is nobody to ask.
+            if (HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Binary) is not { } managed)
+            {
+                return (LoginState.Unknown, null);
+            }
+
+            resolved = [managed, .. toolchain.Binary.Skip(1)];
+        }
+
+        return await LoginAsync(resolved, toolchain, profileHome, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What the harness says about logging in here: the boolean, and — when the toolchain asks and the
+    /// answer is yes — <b>who</b> (D66 §3). A real harness volunteers an organisation and a
+    /// subscription tier alongside both, and neither is Daoris's to hold, log, or put on a roster.
+    /// </summary>
+    private static async Task<(LoginState Login, string? Account)> LoginAsync(
         IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, CancellationToken ct)
     {
-        if (toolchain.LoginCheck is not { } question) return LoginState.Unknown;
+        if (toolchain.LoginCheck is not { } question) return (LoginState.Unknown, null);
 
         var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct)
             .ConfigureAwait(false);
-        if (!answer.Ran) return LoginState.Unknown;
+        if (!answer.Ran) return (LoginState.Unknown, null);
 
         // Matched in this order because a "logged in" pattern is the specific one; and neither
         // matching leaves it unknown rather than out, which is what keeps a reworded status line from
         // refusing a spawn that would have worked.
-        if (Matches(answer.Output, question.LoggedIn)) return LoginState.In;
-        return Matches(answer.Output, question.LoggedOut) ? LoginState.Out : LoginState.Unknown;
+        if (Matches(answer.Output, question.LoggedIn)) return (LoginState.In, Who(answer.Output, question.Account));
+        return (Matches(answer.Output, question.LoggedOut) ? LoginState.Out : LoginState.Unknown, null);
+    }
+
+    /// <summary>The first group of the account pattern, trimmed — or null when there is none to read.</summary>
+    private static string? Who(string output, string? pattern)
+    {
+        if (pattern is null) return null;
+        try
+        {
+            var match = Regex.Match(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
+            return match.Success && match.Groups.Count > 1 && match.Groups[1].Value.Trim() is { Length: > 0 } who
+                ? who
+                : null;
+        }
+        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
+        {
+            return null;
+        }
     }
 
     private static bool Matches(string output, string pattern)
@@ -882,6 +992,21 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         _seen[resolved.Name] = report;
         return report;
+    }
+
+    /// <summary>
+    /// What the harness says about ONE of its profiles — the question a sign-in asks as it ends
+    /// (D66 §3), answered without probing every other account to learn it.
+    /// </summary>
+    public async Task<(LoginState Login, string? Account)> LoginOfAsync(
+        string adapter, DriverConfig config, string profile, CancellationToken ct = default)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (resolved.Toolchain is not { } toolchain) return (LoginState.Unknown, null);
+
+        return await HarnessProbe.AskLoginAsync(
+            resolved.Name, toolchain, config.Commands.GetValueOrDefault(resolved.Name), Settings, Home,
+            HarnessSettings.ProfileHome(Home, resolved.Name, profile), ct).ConfigureAwait(false);
     }
 
     /// <summary>Every harness this build knows, probed — what a roster surface renders.</summary>

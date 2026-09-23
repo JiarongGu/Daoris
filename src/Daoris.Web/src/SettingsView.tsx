@@ -487,11 +487,13 @@ function Plugins({ notify }: { notify: Notify }) {
  * flow and stays in the harness's own store, under the person's OS account. Nothing on this surface
  * reads one, and there is deliberately nowhere for one to be typed.
  */
+/** What a DOOR does, and so what streams under it. */
+const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
+
 function HarnessRoster({ notify }: { notify: Notify }) {
-  // The profile name being typed, per harness. A draft, so it lives with the roster that renders the
-  // form rather than with the view above it — and keyed by harness because two rosters are on screen
-  // at once and one shared string would type into both.
-  const [newProfile, setNewProfile] = useState<Record<string, string>>({});
+  // The account a Remove has been pressed on once, by its directory — the second press is what
+  // deletes it (D66 §3), and only on the row that asked.
+  const [removing, setRemoving] = useState<string | null>(null);
   const { t } = useTranslation();
   const roster = useHarnesses();
   const refresh = useRefreshHarnesses();
@@ -512,6 +514,9 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // door a card below it (2026-09-23). Cleared when the login ends either way; the result is the
   // row's own pill and a sentence, not a panel left open.
   const [runningProfile, setRunningProfile] = useState<string | null>(null);
+  // Which tool a sign-in to ANOTHER account is running for (D66 §3) — there is no row for it yet, so
+  // it sits under the list, and it goes when the sign-in ends either way.
+  const [signingInNew, setSigningInNew] = useState<string | null>(null);
   // The same key, readable from the event handler below without re-subscribing on every render.
   const runningRef = useRef<string | null>(null);
 
@@ -522,14 +527,26 @@ function HarnessRoster({ notify }: { notify: Notify }) {
    * that it went well. A login's sentence names the account and what a person can now do with it,
    * because that is what they came for.
    */
-  const ended = (action: string, profile: string | undefined, exitCode: number, problem: string | null) => {
+  const ended = (
+    action: string, profile: string | undefined, exitCode: number, problem: string | null,
+    account?: string | null, kept?: boolean | null,
+  ) => {
     setRunningProfile(null);
+    setSigningInNew(null);
     if (problem) {
       notify(problem, 'error');
       return;
     }
+    // Another account (D66 §3): kept only when the sign-in finished, and named by who signed in.
+    if (action === 'login-new') {
+      if (exitCode !== 0) notify(t('harness.loginNew.failed', { code: exitCode }), 'error');
+      else if (!kept) notify(t('harness.loginNew.nobody'), 'error');
+      else if (account) notify(t('harness.loginNew.done', { account }));
+      else notify(t('harness.loginNew.unnamed', { profile }));
+      return;
+    }
     if (action === 'login') {
-      if (exitCode === 0) notify(t('harness.login.done', { profile }));
+      if (exitCode === 0) notify(t('harness.login.done', { profile: account ?? profile }));
       else notify(t('harness.login.failed', { code: exitCode }), 'error');
       return;
     }
@@ -546,33 +563,29 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // closed on a login that was still running. Only the action this roster started is this roster's.
   useHarnessEnded((news) => {
     if (runningRef.current !== `${news.harness}:${news.action}`) return;
-    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem);
+    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept);
   });
   // The version being typed per harness (TOOL2). Local to the form: a pin only exists once the
   // install behind it succeeded, so there is nothing to remember until then.
   const [pinning, setPinning] = useState<Record<string, string>>({});
 
   /**
-   * Which rare control a harness has open — `'account'`, `'pin'`, or nothing.
+   * Whether a harness has its version form open.
    *
    * @remarks
    * 🔴 Written from the owner's *"the crediental managment / account login still not really looking
-   * nice and easy to understand"* (2026-09-22), and the screenshot said why: **both rare forms were
-   * always open, on every harness.** Five harnesses meant five empty name boxes, five version
-   * boxes and five copies of the same paragraph, so the surface was mostly controls nobody was
-   * using and the accounts — the thing a person actually came for — were a thin row between them.
-   *
-   * One at a time per harness, because the two are alternatives in practice and two open forms is
-   * the crowding this removes coming back.
+   * nice and easy to understand"* (2026-09-22), and the screenshot said why: **the rare forms were
+   * always open, on every harness** — five harnesses meant five empty boxes and five copies of the
+   * same paragraph, and the accounts, the thing a person came for, were a thin row between them.
    */
-  const [opened, setOpened] = useState<Record<string, 'account' | 'pin' | null>>({});
-  const open = (harness: string, which: 'account' | 'pin') =>
+  const [opened, setOpened] = useState<Record<string, 'pin' | null>>({});
+  const open = (harness: string, which: 'pin') =>
     setOpened((held) => ({ ...held, [harness]: held[harness] === which ? null : which }));
 
   const run = (
     harness: string,
-    action: 'install' | 'update' | 'login' | 'pin' | 'unpin'
-      | 'profile-add' | 'profile-remove' | 'profile-default',
+    action: 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin'
+      | 'profile-remove' | 'profile-default',
     profile?: string,
     version?: string,
     workspace?: string,
@@ -580,6 +593,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
     setRunning(`${harness}:${action}`);
     runningRef.current = `${harness}:${action}`;
     setRunningProfile(action === 'login' ? profile ?? null : null);
+    setSigningInNew(action === 'login-new' ? harness : null);
     act.mutate({ harness, action, profile, version, workspace }, {
       // A file edit ends inside the request; a process answers `started` and ends as news, heard
       // below. Either way the end is said once, by the same sentence.
@@ -589,6 +603,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
       },
       onError: (error: unknown) => {
         setRunningProfile(null);
+        setSigningInNew(null);
         notify(sentence(error), 'error');
       },
     });
@@ -653,7 +668,8 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               <span className="flex min-w-0 flex-1 basis-56 flex-col gap-0.5">
                 <span className="flex flex-wrap items-center gap-2">
                   <Icon name="account" size={13} className="text-ink-faint" />
-                  <span className="text-body font-medium text-ink">{t('harness.own')}</span>
+                  {/* Who, when the tool says (D66 §3) — a person knows an account by who it is. */}
+                  <span className="text-body font-medium text-ink">{tool.ownAccount ?? t('harness.own')}</span>
                   {tool.present && tool.ownLogin !== 'unknown' && (
                     <Pill tone={tool.ownLogin === 'in' ? 'done' : 'neutral'}>
                       {t(`harness.login.${tool.ownLogin}`)}
@@ -696,7 +712,10 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                   <span className="flex min-w-0 flex-1 basis-56 flex-col gap-0.5">
                     <span className="flex flex-wrap items-center gap-2">
                       <Icon name="account" size={13} className="text-ink-faint" />
-                      <span className="text-body font-medium text-ink">{profile.name}</span>
+                      {/* Who is signed in, when the tool says (D66 §3): an account made by signing
+                          in is `account-2` on disk, and nobody knows it by that. The directory's
+                          name is still on the line below, inside its path, for a terminal. */}
+                      <span className="text-body font-medium text-ink">{profile.account ?? profile.name}</span>
                       <Pill tone={profile.login === 'in' ? 'done' : 'neutral'}>
                         {t(`harness.login.${profile.login}`)}
                       </Pill>
@@ -730,13 +749,15 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                     {/* Logging in is the one thing here that is a step in a task rather than a
                         preference, so it is the one that looks like a button. It runs against the
                         account-owning door, because that is the tool that HAS the login flow. */}
-                    <Button
-                      variant={profile.login === 'in' ? 'ghost' : 'default'}
-                      disabled={act.isPending || !tool.present}
-                      onClick={() => run(tool.doors[0]!.harness, 'login', profile.name)}
-                    >
-                      {t(profile.login === 'in' ? 'harness.login.again' : 'harness.login.action')}
-                    </Button>
+                    {tool.doors[0]!.signsIn !== false && (
+                      <Button
+                        variant={profile.login === 'in' ? 'ghost' : 'default'}
+                        disabled={act.isPending || !tool.present}
+                        onClick={() => run(tool.doors[0]!.harness, 'login', profile.name)}
+                      >
+                        {t(profile.login === 'in' ? 'harness.login.again' : 'harness.login.action')}
+                      </Button>
+                    )}
                     {tool.machineDefault !== profile.name && (
                       <Button
                         variant="ghost"
@@ -746,22 +767,20 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                         {t('harness.profile.use')}
                       </Button>
                     )}
-                    {/* 🔴 "Forget", not "delete". It stops this machine pointing at the account and
-                        never deletes a credential — a button that quietly destroyed one would be the
-                        irreversible act this family never does silently. The directory goes only on
-                        the tool's own word that the account is signed out (or when it is empty);
-                        "deletes nothing" had left a forgotten account on the list forever, because
-                        the directory IS the account. The word on the button is the word for what
-                        happens, and the console says which it was. */}
-                    <Tip content={t('harness.profile.forgetTip')}>
+                    {/* 🔴 Remove REMOVES (D66 §3). "Forget" un-pointed the account and kept any
+                        directory the tool would not call signed out, so a removed account stayed
+                        listed and signed in — the owner's report. It deletes the account's
+                        directory, sign-in and all, so the first press only asks. */}
+                    {removing !== profile.home && (
                       <Button
                         variant="ghost"
                         disabled={act.isPending}
-                        onClick={() => run(tool.doors[0]!.harness, 'profile-remove', profile.name)}
+                        onClick={() => setRemoving(profile.home)}
                       >
-                        {t('harness.profile.forget')}
+                        <Icon name="remove" size={13} />
+                        {t('harness.profile.remove')}
                       </Button>
-                    </Tip>
+                    )}
                     {workspaces.length > 0 && (
                       <SelectField
                         value=""
@@ -769,56 +788,62 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                           run(tool.doors[0]!.harness, 'profile-default', profile.name, undefined, workspace)}
                         options={workspaces.map((workspace) => ({ value: workspace, label: workspace }))}
                         placeholder={t('harness.profile.useForPlaceholder')}
-                        ariaLabel={t('harness.profile.useFor', { profile: profile.name })}
+                        ariaLabel={t('harness.profile.useFor', { profile: profile.account ?? profile.name })}
                       />
                     )}
                   </div>
+                  {removing === profile.home && (
+                    <div
+                      role="group"
+                      aria-label={t('harness.profile.removeTitle', { account: profile.account ?? profile.name })}
+                      className="flex basis-full flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+                    >
+                      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">
+                        {t('harness.profile.removeConfirm')}
+                      </span>
+                      <Button
+                        variant="danger"
+                        disabled={act.isPending}
+                        onClick={() => {
+                          setRemoving(null);
+                          run(tool.doors[0]!.harness, 'profile-remove', profile.name);
+                        }}
+                      >
+                        {t('harness.profile.removeMeanIt')}
+                      </Button>
+                      <Button variant="ghost" onClick={() => setRemoving(null)}>
+                        {t('common.cancel')}
+                      </Button>
+                    </div>
+                  )}
                   {/* Signing in happens HERE, on the account it is for. */}
                   {running === `${tool.doors[0]!.harness}:login` && runningProfile === profile.name && (
-                    <SignIn id={running} harness={tool.doors[0]!.harness} profile={profile.name} />
+                    <SignIn id={running} harness={tool.doors[0]!.harness} profile={profile.account ?? profile.name} />
                   )}
                 </li>
               ))}
             </ul>
 
-          {opened[tool.name] === 'account' ? (
-            <form
-              className="mt-2 flex flex-wrap items-center gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const name = newProfile[tool.name]?.trim();
-                if (!name) return;
-                run(tool.doors[0]!.harness, 'profile-add', name);
-                setNewProfile((held) => ({ ...held, [tool.name]: '' }));
-                setOpened((held) => ({ ...held, [tool.name]: null }));
-              }}
-            >
-              <input
-                autoFocus
-                value={newProfile[tool.name] ?? ''}
-                onChange={(event) =>
-                  setNewProfile((held) => ({ ...held, [tool.name]: event.target.value }))}
-                placeholder={t('harness.profile.placeholder')}
-                aria-label={t('harness.profile.add', { harness: tool.name })}
-                className="min-w-40 rounded-control border border-line-strong bg-sunken px-2.5 py-1 text-body text-ink outline-none placeholder:text-ink-faint"
-              />
-              <Button type="submit" disabled={act.isPending || !(newProfile[tool.name] ?? '').trim()}>
-                {t('harness.profile.addAction')}
-              </Button>
-            </form>
+          {/* 🔴 An account is made by SIGNING IN (D66 §3; the owner: *"we probably should just allow
+              to login and create account based on login"*). There was a name box first — a name
+              typed before anyone knew whose account it was — then a login as a second step. Now
+              one press runs the tool's own sign-in into a fresh account, which is kept only if the
+              sign-in finishes and is listed by who signed in. */}
+          {tool.doors[0]!.signsIn === false ? null : signingInNew === tool.doors[0]!.harness ? (
+            <SignIn
+              id={`${tool.doors[0]!.harness}:login-new`}
+              harness={tool.doors[0]!.harness}
+              action="login-new"
+            />
           ) : (
-            /* 🔴 The thing that did not exist (DEPLOY3) — a screen could list accounts and log into
-               one and never MAKE one. It still exists; it is one press away instead of an open box
-               on every row, and the paragraph explaining what an account IS moved to the card's
-               body, where it is read once rather than once per tool. */
             <Button
               variant="ghost"
               className="mt-2"
-              disabled={act.isPending}
-              onClick={() => open(tool.name, 'account')}
+              disabled={act.isPending || !tool.present}
+              onClick={() => run(tool.doors[0]!.harness, 'login-new')}
             >
               <Icon name="plus" size={13} />
-              {t('harness.profile.addOpen')}
+              {t('harness.profile.signInNew')}
             </Button>
           )}
 
@@ -946,10 +971,11 @@ function HarnessRoster({ notify }: { notify: Notify }) {
 
               {/* A tool action is a process like any other, so it streams through the same console
                   (D49 §2). An install that printed nothing until it finished is indistinguishable
-                  from one that hung. It belongs to the DOOR that is doing it — except a login,
-                  which belongs to the account row above and is shown there. */}
-              {running?.startsWith(`${harness.harness}:`) && !running.endsWith(':login')
-                && <SessionConsole id={running} />}
+                  from one that hung. It belongs to the DOOR that is doing it — and only what a door
+                  does: a sign-in streams inside its own panel above, and an account edit ends in
+                  its sentence, so neither is shown here under "Ways in" (D66). */}
+              {DOOR_ACTIONS.some((action) => running === `${harness.harness}:${action}`)
+                && <SessionConsole id={running!} />}
             </div>
           ))}
         </div>

@@ -4109,3 +4109,38 @@ alone overran), then 16 × 16.
 
 **Seen on the scratch shell:** the bar in light, Settings in light, Dark chosen from the page
 (caption buttons included), and Sessions from the bar.
+
+## UX1 — an account is made by signing in, and removing it removes it (2026-09-23)
+
+> *"1 forget account does not delete the account (we probably should just allow to login and create
+> account based on login? this ui/ux need to be updated)"* — the owner, looking at the desktop.
+
+- [x] **UX1 — an account is made by signing in, and removing it removes it** (D66 §3).
+  `claude auth status` names who signed in; `daoris harness` is the terminal twin (D50).
+
+✅ **done 2026-09-23 (D66 §3, "as built").**
+
+**Signing in makes the account.** `HARNESS_ACTION login-new` opens the next free `account-N`
+(`HarnessSettings.NextAccount`), runs the tool's own login into it, and keeps it only when the tool
+exits 0 and does not call that home signed out (`HarnessRoster.LoginOfAsync` asks the one home).
+Otherwise the directory goes: failed, stopped, or never started. `HARNESS_ENDED` carries `account`
+and `kept`. The terminal twin is `daoris harness login <harness> --new` (`signInNew`, with the
+spawn injected so the judgement is tested with no account).
+
+**Who, not the directory's name.** `LoginQuestion.Account` is a pattern whose first group is who is
+signed in: the email, for `claude auth status`. It is read only on a yes, on every probe, and
+written nowhere. `ProfileReport.Account` and `HarnessReport.OwnAccount` carry it, and the roster,
+the start form and `harness list` show it. The directory is never renamed, because a harness may key
+its credential to the home's path.
+
+**Remove removes.** `HarnessSettings.RemoveProfile` and the CLI's `removeProfile` delete the
+directory, sign-in included, clearing read-only files first. A name that points elsewhere is refused
+before anything is touched. A delete that fails says so and leaves the wiring standing. On the page,
+the first press only asks; the second deletes.
+
+**Seen on the scratch shell:** the tool's own account named by its email; the confirm in both
+themes; *Remove it* on the fixture's `owner` took the directory and the row. Seen there, and fixed:
+the removal's console line sat under the *direct* door as a live console. Only install, update and
+pin stream under *Ways in* now, and a test that was red under the old gate holds it. The real sign-in
+was not run on the window. It would open a browser and spend a login, so the stub harness covers the
+flow in the module tests.

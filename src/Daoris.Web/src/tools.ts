@@ -28,16 +28,31 @@ export interface ToolDoor {
   wire?: string | null;
   accountOf?: string | null;
   pinnable?: boolean;
+  /** Whether this door can run the tool's sign-in — false where it declares no login flow. Absent from an older shell. */
+  signsIn?: boolean;
   pinned?: string | null;
   managed?: string | null;
   machineDefault?: string | null;
-  profiles?: { name: string; home: string; login: string }[];
+  profiles?: Account[];
   /** What the tool says about logging in to its OWN configuration home — the account a person has before naming any. */
   ownLogin?: string | null;
+  /** Who is signed in to that home, when the tool says (D66 §3). */
+  ownAccount?: string | null;
   /** Which circles run this door as which account (D49 §4). */
   workspaceDefaults?: { workspace: string; profile: string }[];
   /** The plugin this door was declared by (D64), or null for one the build carries. */
   plugin?: string | null;
+}
+
+/**
+ * One account: the directory's name, where it is, its state — and who is signed in there, by the
+ * tool's own answer (D66 §3). A person knows an account by who; `name` is what a terminal types.
+ */
+export interface Account {
+  name: string;
+  home: string;
+  login: string;
+  account?: string | null;
 }
 
 /** One tool, with every door onto it and the one account list they share. */
@@ -47,7 +62,7 @@ export interface Tool {
   /** Its doors, the one that owns the account first. */
   doors: ToolDoor[];
   /** The accounts, deduplicated: every door onto one tool reads one configuration home. */
-  accounts: { name: string; home: string; login: string }[];
+  accounts: Account[];
   /** Which account the next session runs as, where any door says so. */
   machineDefault: string | null;
   /** Whether any door onto this tool is installed — "have I got this tool" in one word. */
@@ -57,6 +72,8 @@ export interface Tool {
    * has: a machine with no named profile read "No accounts" while its owner was logged in.
    */
   ownLogin: string;
+  /** Who is signed in to the tool's own home, where any door says. */
+  ownAccount: string | null;
   /** Which circles use which account, once per circle however many doors report it. */
   workspaceDefaults: { workspace: string; profile: string }[];
 }
@@ -130,6 +147,7 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
       // The account-owning door's word; any door's definite answer beats every door's silence.
       ownLogin: doorsInOrder.map((door) => door.ownLogin).find((state) => state && state !== 'unknown')
         ?? 'unknown',
+      ownAccount: doorsInOrder.map((door) => door.ownAccount).find(Boolean) ?? null,
       workspaceDefaults,
     };
   });

@@ -672,6 +672,138 @@ describe('the harness roster', () => {
     expect(screen.queryByText(/^No accounts/)).toBeNull();
   });
 
+  /**
+   * 🔴 An account is made by SIGNING IN (D66 §3; the owner: *"we probably should just allow to login
+   * and create account based on login"*). One press, no name typed first; the sign-in shows where
+   * the new account will be, and the end names who signed in.
+   */
+  it('an account is made by signing in, and the end names who signed in', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+
+    // No name box anywhere: the account is named by who signs in.
+    await screen.findByText('claude 9.9.9');
+    expect(screen.queryByPlaceholderText(/a name/)).toBeNull();
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Sign in to another account' })[0]!);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'login-new' },
+    });
+    expect(await screen.findByText('Signing in to another claude-code account')).toBeTruthy();
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login-new', profile: 'account-1', exitCode: 0, problem: null,
+        account: 'someone@example.invalid', kept: true,
+      });
+    });
+
+    expect(notify).toHaveBeenCalledWith('Signed in as someone@example.invalid — sessions can run as it.');
+    await waitFor(() => expect(screen.queryByText('Signing in to another claude-code account')).toBeNull());
+  });
+
+  /** A sign-in that did not finish keeps nothing, and says so rather than going quiet. */
+  it('a sign-in that kept nothing says so', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Sign in to another account' }))[0]!);
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login-new', profile: 'account-1', exitCode: 0, problem: null,
+        account: null, kept: false,
+      });
+    });
+
+    expect(notify).toHaveBeenCalledWith('Nobody was signed in, so nothing was kept.', 'error');
+  });
+
+  /** A person knows an account by who is signed in there, not by `account-2`. */
+  it('lists each account by who is signed in, where the tool says', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{
+          ...ROSTER.harnesses[0],
+          ownAccount: 'owner@example.invalid',
+          profiles: [
+            { name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/claude-code/account-1', login: 'in', account: 'someone@example.invalid' },
+          ],
+        }],
+      }
+      : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    const row = (await screen.findByText('someone@example.invalid')).closest('li')!;
+    // The directory's name is still there, inside its path, for a terminal.
+    expect(within(row).getByText(/account-1$/)).toBeTruthy();
+    expect(screen.getByText('owner@example.invalid')).toBeTruthy();
+  });
+
+  /**
+   * 🔴 Remove REMOVES (D66 §3) — Forget had kept a signed-in account on disk and on the list. It
+   * deletes the sign-in, so the first press only asks, and says what the second will do.
+   */
+  it('Remove asks once, then deletes the account', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'profile-remove', exitCode: 0 };
+      // The one line the host streams for it — which a console would render, were one shown.
+      if (type === 'TAIL_SESSION') {
+        return {
+          session: 'claude-code:profile-remove', sequence: 1, live: false, dropped: 0,
+          lines: [{ sequence: 1, text: 'removed … — the account and its sign-in are gone from this machine.' }],
+        };
+      }
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    show(<SettingsView notify={() => {}} />);
+
+    const work = (await screen.findByText('work')).closest('li')!;
+    await userEvent.click(within(work).getByRole('button', { name: 'Remove' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
+    expect(within(work).getByText(/deletes the account from this machine, sign-in included/)).toBeTruthy();
+
+    await userEvent.click(within(work).getByRole('button', { name: 'Remove it' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-remove', profile: 'work' },
+    });
+    // An account edit is not a door's work: nothing streams under "Ways in" for it (seen on the
+    // window, where the removal's one line sat under the direct door as a live console).
+    await new Promise((settle) => setTimeout(settle, 50));
+    expect(screen.queryByText(/its sign-in are gone/)).toBeNull();
+  });
+
+  it('Remove can be taken back before it deletes anything', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    const work = (await screen.findByText('work')).closest('li')!;
+    await userEvent.click(within(work).getByRole('button', { name: 'Remove' }));
+    await userEvent.click(within(work).getByRole('button', { name: 'never mind' }));
+
+    expect(within(work).queryByRole('button', { name: 'Remove it' })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
+  });
+
+  /** A tool with no sign-in of its own offers neither sign-in button — the pin's rule. */
+  it('a tool that cannot sign in offers no sign-in at all', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], signsIn: false }] }
+      : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    await screen.findByText('claude 9.9.9');
+    expect(screen.queryByRole('button', { name: 'Sign in to another account' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Log in/ })).toBeNull();
+  });
+
   /** After "Add", the next step and what it does were nowhere: the logged-out row says both. */
   it('a logged-out account says what Log in will do', async () => {
     show(<SettingsView notify={() => {}} />);

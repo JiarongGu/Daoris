@@ -95,6 +95,69 @@ public sealed class HarnessSettingsTests : IDisposable
         Assert.Equal(["work"], HarnessSettings.Profiles(_home, "codex"));
     }
 
+    /// <summary>
+    /// An account made by signing in (D66 §3) is named before anyone knows whose it is, so it takes
+    /// the first free <c>account-N</c> — twin rule 5, and the CLI's <c>login --new</c> counts the
+    /// same way. Who signed in is the TOOL's answer, read by the roster, never the directory's name.
+    /// </summary>
+    [Fact]
+    public void A_new_account_takes_the_first_free_number()
+    {
+        Assert.Equal("account-1", HarnessSettings.NextAccount(_home, "claude-code"));
+
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "account-1"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "account-2"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "work"));
+        Assert.Equal("account-3", HarnessSettings.NextAccount(_home, "claude-code"));
+
+        // Another tool's accounts are its own count.
+        Assert.Equal("account-1", HarnessSettings.NextAccount(_home, "codex"));
+    }
+
+    /// <summary>
+    /// 🔴 Removing an account deletes its directory, credentials and all (D66 §3) — and a tool that
+    /// clones into its home leaves READ-ONLY files there, which a plain recursive delete refuses on
+    /// Windows. The account the person removed must not survive on disk because of an attribute.
+    /// </summary>
+    [Fact]
+    public void Removing_an_account_deletes_its_directory_read_only_files_and_all()
+    {
+        var account = HarnessSettings.ProfileHome(_home, "claude-code", "work");
+        var nested = System.IO.Path.Combine(account, "plugins", "cloned", ".git", "objects");
+        Directory.CreateDirectory(nested);
+        File.WriteAllText(System.IO.Path.Combine(account, ".credentials.json"), "{}");
+        var locked = System.IO.Path.Combine(nested, "pack.idx");
+        File.WriteAllText(locked, "x");
+        File.SetAttributes(locked, FileAttributes.ReadOnly);
+
+        Assert.True(HarnessSettings.RemoveProfile(_home, "claude-code", "work"));
+
+        Assert.False(Directory.Exists(account));
+        Assert.Empty(HarnessSettings.Profiles(_home, "claude-code"));
+    }
+
+    /// <summary>Removing one that is not there is an answer, not a failure — and says so.</summary>
+    [Fact]
+    public void Removing_an_account_that_is_not_there_is_an_answer()
+    {
+        Assert.False(HarnessSettings.RemoveProfile(_home, "claude-code", "nobody"));
+    }
+
+    /// <summary>
+    /// The name is refused before anything is deleted: a remove is the one verb here where a name
+    /// that points somewhere else would destroy something that is not Daoris's.
+    /// </summary>
+    [Fact]
+    public void A_remove_naming_somewhere_else_is_refused_before_it_deletes_anything()
+    {
+        Directory.CreateDirectory(_home);
+        var outside = System.IO.Path.Combine(_home, "keep.txt");
+        File.WriteAllText(outside, "mine");
+
+        Assert.Throws<DriverException>(() => HarnessSettings.RemoveProfile(_home, "claude-code", ".."));
+        Assert.True(File.Exists(outside));
+    }
+
     /// <summary>The file is the API and this is an editor over it (D50) — written, read back, unchanged.</summary>
     [Fact]
     public void The_defaults_round_trip_through_the_file()
@@ -430,35 +493,106 @@ public sealed class HarnessProbeTests : IDisposable
     }
 
     /// <summary>
-    /// <b>The probe takes one fact and keeps nothing else.</b> A real harness volunteers an email, an
-    /// organisation and a subscription tier when asked whether it is logged in; Daoris reads the
-    /// boolean. This is the test that fails the day somebody decides the roster would look nicer with
-    /// the account name on it.
+    /// A harness that volunteers an email, an organisation and a subscription tier when asked whether
+    /// it is logged in — the shape <c>claude auth status</c> answers in. <paramref name="signedIn"/>
+    /// flips only the boolean; the rest is printed either way.
     /// </summary>
-    [Fact]
-    public async Task Nothing_the_harness_volunteers_beyond_the_answer_is_kept()
+    private HarnessToolchain Chatty(bool signedIn, string? account)
     {
         Directory.CreateDirectory(_home);
-        var script = Path.Combine(_home, "chatty-harness.mjs");
-        File.WriteAllText(script, """
+        var script = Path.Combine(_home, $"chatty-{signedIn}.mjs");
+        File.WriteAllText(script, $$"""
             if (process.argv[2] === '--version') { console.log('chatty 1.0'); process.exit(0); }
-            console.log(JSON.stringify({ loggedIn: true, email: 'someone@example.invalid', orgName: 'Secretive' }));
+            console.log(JSON.stringify({ loggedIn: {{(signedIn ? "true" : "false")}}, email: 'someone@example.invalid', orgName: 'Secretive', subscriptionType: 'max' }));
             """);
+        return new HarnessToolchain(
+            Binary: ["node", script], VersionArguments: ["--version"],
+            ProfileVariable: "CHATTY_HOME",
+            LoginCheck: new LoginQuestion(
+                ["auth"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false", account));
+    }
+
+    private static string Everything(HarnessReport report) =>
+        string.Join("|", report.Profiles.Select(p => $"{p.Name}:{p.Home}:{p.Login}:{p.Account}"))
+        + $"|{report.Version}|{report.Problem}|{report.OwnLogin}|{report.OwnAccount}";
+
+    /// <summary>
+    /// 🔴 <b>Who is signed in, and nothing else</b> (D66 §3). The owner asked for an account to be
+    /// named by who signed in rather than by a name typed before anyone knew — so the one thing
+    /// besides the boolean the probe now takes is the name the tool gives, when its toolchain asks
+    /// for it and the answer is yes. The organisation and the tier are still never kept.
+    /// </summary>
+    [Fact]
+    public async Task Who_is_signed_in_is_taken_when_the_toolchain_asks_and_nothing_else_is()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "account-1"));
+
+        var report = await HarnessProbe.ProbeAsync(
+            "fake", Chatty(signedIn: true, account: @"""email""\s*:\s*""([^""]+)"""),
+            command: null, new HarnessSettings(), _home);
+
+        Assert.Equal(LoginState.In, report.Profiles.Single().Login);
+        Assert.Equal("someone@example.invalid", report.Profiles.Single().Account);
+        // The tool's own home is asked the same way, so it is named the same way.
+        Assert.Equal("someone@example.invalid", report.OwnAccount);
+        Assert.DoesNotContain("Secretive", Everything(report));
+        Assert.DoesNotContain("max", Everything(report));
+    }
+
+    /// <summary>
+    /// The real declaration, against the shape <c>claude auth status</c> answers in — keys measured
+    /// on the real binary (2026-09-23), values invented here.
+    /// </summary>
+    [Fact]
+    public void Claude_code_names_who_signed_in_by_the_email_it_reports()
+    {
+        var question = new ClaudeCodeAdapter().Toolchain!.LoginCheck!;
+        const string answer = """
+            {
+              "loggedIn": true,
+              "authMethod": "claude.ai",
+              "email": "someone@example.invalid",
+              "orgName": "Secretive",
+              "subscriptionType": "max"
+            }
+            """;
+
+        var match = System.Text.RegularExpressions.Regex.Match(answer, question.Account!);
+
+        Assert.True(match.Success);
+        Assert.Equal("someone@example.invalid", match.Groups[1].Value);
+    }
+
+    /// <summary>A toolchain that does not ask who is signed in keeps no name at all.</summary>
+    [Fact]
+    public async Task A_toolchain_that_does_not_ask_who_keeps_no_name()
+    {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "work"));
 
         var report = await HarnessProbe.ProbeAsync(
-            "fake",
-            new HarnessToolchain(
-                Binary: ["node", script], VersionArguments: ["--version"],
-                ProfileVariable: "CHATTY_HOME",
-                LoginCheck: new LoginQuestion(["auth"], @"""loggedIn""\s*:\s*true", @"""loggedIn""\s*:\s*false")),
+            "fake", Chatty(signedIn: true, account: null), command: null, new HarnessSettings(), _home);
+
+        Assert.Equal(LoginState.In, report.Profiles.Single().Login);
+        Assert.Null(report.Profiles.Single().Account);
+        Assert.DoesNotContain("example.invalid", Everything(report));
+    }
+
+    /// <summary>
+    /// A signed-OUT home names nobody, whatever the tool prints beside its "no": the name is who is
+    /// signed in there, and nobody is.
+    /// </summary>
+    [Fact]
+    public async Task A_signed_out_home_names_nobody()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", "stale"));
+
+        var report = await HarnessProbe.ProbeAsync(
+            "fake", Chatty(signedIn: false, account: @"""email""\s*:\s*""([^""]+)"""),
             command: null, new HarnessSettings(), _home);
 
-        var serialised = string.Join("|", report.Profiles.Select(p => $"{p.Name}:{p.Home}:{p.Login}"))
-            + $"|{report.Version}|{report.Problem}";
-        Assert.DoesNotContain("example.invalid", serialised);
-        Assert.DoesNotContain("Secretive", serialised);
-        Assert.Equal(LoginState.In, report.Profiles.Single().Login);
+        Assert.Equal(LoginState.Out, report.Profiles.Single().Login);
+        Assert.Null(report.Profiles.Single().Account);
+        Assert.Null(report.OwnAccount);
     }
 
     /// <summary>The configured command wins over the declared one — a machine's shim, as ever.</summary>

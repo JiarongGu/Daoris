@@ -35,7 +35,7 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
   /** The harnesses this machine has; the first is the driver's own, and empty offers no choice. */
   harnesses: string[];
   /** The accounts the chosen harness holds, with their login state (D49 §4). */
-  profiles: { name: string; login: 'in' | 'out' | 'unknown' }[];
+  profiles: { name: string; login: 'in' | 'out' | 'unknown'; account?: string | null }[];
   pending?: boolean;
   onStart: (choice: StartChoice) => void;
 }) {
@@ -90,8 +90,12 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
             {profiles.map((choice) => (
               // A logged-out profile is offered and labelled rather than hidden: the spawn refuses
               // with the sentence that names the login action, which teaches more than a missing row.
+              // Named by who is signed in, where the tool says (D66 §3) — the same name the
+              // settings page gives it; the value is still the directory's, which the spawn takes.
               <option key={choice.name} value={choice.name}>
-                {choice.login === 'out' ? t('harness.profileOut', { name: choice.name }) : choice.name}
+                {choice.login === 'out'
+                  ? t('harness.profileOut', { name: choice.account ?? choice.name })
+                  : choice.account ?? choice.name}
               </option>
             ))}
           </select>

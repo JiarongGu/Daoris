@@ -368,8 +368,12 @@ public sealed class StubAdapter : ISessionAdapter
         Binary: [],
         VersionArguments: ["--version"],
         ProfileVariable: "DAORIS_STUB_CONFIG_DIR",
+        // A login flow too, so signing in to another account (D66 §3) can be gated with no account:
+        // whatever the configured command does with `--login` is the stub's sign-in.
+        LoginArguments: ["--login"],
         LoginCheck: new LoginQuestion(
-            ["--login-state"], LoggedIn: @"logged-in", LoggedOut: @"logged-out"));
+            ["--login-state"], LoggedIn: @"logged-in", LoggedOut: @"logged-out",
+            Account: @"logged-in as (\S+)"));
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -743,9 +747,9 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     ///
     /// <para><b>The login question answers JSON with a boolean, and the binary exits 0 either way</b> —
     /// so the output is the answer and the exit code is deliberately not consulted. It also volunteers
-    /// an email, an organisation and a subscription tier; Daoris reads the boolean and keeps nothing
-    /// else. That is `Daoris manages directories and names, never secrets` meeting a harness that
-    /// offers more than it was asked for.</para>
+    /// an email, an organisation and a subscription tier; Daoris reads the boolean and the email —
+    /// who signed in, which is what a person names an account by (D66 §3) — and keeps neither the
+    /// organisation nor the tier.</para>
     ///
     /// <para><c>CLAUDE_CONFIG_DIR</c> is the environment seam: a spawn under it is genuinely a separate
     /// account — a fresh directory reports logged out while the machine's own home reports logged in.</para>
@@ -760,7 +764,8 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         LoginCheck: new LoginQuestion(
             ["auth", "status"],
             LoggedIn: @"""loggedIn""\s*:\s*true",
-            LoggedOut: @"""loggedIn""\s*:\s*false"),
+            LoggedOut: @"""loggedIn""\s*:\s*false",
+            Account: @"""email""\s*:\s*""([^""]+)"""),
         Package: "@anthropic-ai/claude-code",
         // 🔴 Where it records the workspaces a person has accepted (DEPLOY1). Read before every
         // driven spawn, because an untrusted tree makes the repository's own allow-list inert and

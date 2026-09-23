@@ -51,8 +51,8 @@ const ICONS = {
   // that is a word alone reads as a caption, and the glyph is what makes it scan as an item.
   cloud: Cloud,
   cloudOff: CloudOff,
-  // The accounts surface (2026-09-22): an account, signing into one, and letting one go. `Trash2`
-  // 🔴 is deliberately NOT on Forget — forgetting removes nothing, and a bin says it does.
+  // The accounts surface (2026-09-22): an account, signing into one, and removing one. The bin is on
+  // Remove because Remove now deletes (D66 §3); it was kept off Forget while forgetting removed nothing.
   account: KeyRound,
   login: LogIn,
   remove: Trash2,

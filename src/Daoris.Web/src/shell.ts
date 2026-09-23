@@ -389,7 +389,13 @@ export const useStartChat = () => {
  * profile directory and streams it through the console; nothing here reads, stores or forwards a
  * credential, and `login` is only ever the person pressing something.
  */
-export type HarnessProfile = { name: string; home: string; login: 'in' | 'out' | 'unknown' };
+export type HarnessProfile = {
+  name: string;
+  home: string;
+  login: 'in' | 'out' | 'unknown';
+  /** Who the tool says is signed in there (D66 §3) — the name a person knows it by; null when it does not say. */
+  account?: string | null;
+};
 export type HarnessReport = {
   harness: string;
   present: boolean;
@@ -540,7 +546,7 @@ export const useHarnessAction = () => {
   return useMutation({
     mutationFn: (action: {
       harness: string;
-      action: 'install' | 'update' | 'login' | 'pin' | 'unpin'
+      action: 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin'
       | 'profile-add' | 'profile-remove' | 'profile-default';
       profile?: string;
       /** Which version to install and pin to — `pin` only (TOOL2/D57). */
@@ -560,6 +566,10 @@ export type HarnessEnded = {
   exitCode: number;
   /** The driver's own sentence when the process failed after it had started; null when it simply exited. */
   problem: string | null;
+  /** Who signed in, for a sign-in — the tool's own answer (D66 §3); null when it did not say. */
+  account?: string | null;
+  /** For a sign-in to another account: whether it left one behind — only when it finished. */
+  kept?: boolean | null;
 };
 
 /**

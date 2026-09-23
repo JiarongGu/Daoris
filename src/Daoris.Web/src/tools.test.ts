@@ -114,6 +114,32 @@ describe('byTool', () => {
     expect(tools[0]!.workspaceDefaults).toEqual([{ workspace: 'work', profile: 'office' }]);
   });
 
+  /**
+   * Who is signed in (D66 §3) is the account-owning door's answer — the protocol door asks nobody —
+   * so the account keeps that door's name for it, and the tool's own home is named the same way.
+   */
+  it('carries who is signed in, from the door that can ask', () => {
+    const tools = byTool([
+      door({
+        harness: 'claude-code',
+        ownAccount: 'owner@example.invalid',
+        profiles: [{ name: 'account-1', home: '/p/one', login: 'in', account: 'someone@example.invalid' }],
+      }),
+      door({
+        harness: 'claude-code-acp',
+        accountOf: 'claude-code',
+        ownAccount: null,
+        profiles: [{ name: 'account-1', home: '/p/one', login: 'unknown', account: null }],
+      }),
+    ]);
+
+    expect(tools[0]!.accounts).toEqual([
+      { name: 'account-1', home: '/p/one', login: 'in', account: 'someone@example.invalid' },
+    ]);
+    expect(tools[0]!.ownAccount).toBe('owner@example.invalid');
+    expect(byTool([door({ harness: 'dsh' })])[0]!.ownAccount).toBeNull();
+  });
+
   it('answers unknown for a tool whose doors say nothing about their own home', () => {
     expect(byTool([door({ harness: 'dsh' })])[0]!.ownLogin).toBe('unknown');
     expect(byTool([door({ harness: 'dsh' })])[0]!.workspaceDefaults).toEqual([]);

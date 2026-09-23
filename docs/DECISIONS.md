@@ -2446,6 +2446,14 @@ them change a standing decision, and the owner chose the shape of the larger one
    email); a sign-in that does not finish leaves nothing behind. **Removing an account deletes its
    directory**, credentials included — the owner's call: an account a person removes should not
    still be signed in on disk. The tool's own configuration home is never Daoris's to remove.
+   **As built (UX1):** the directory keeps a neutral name, the first free `account-N` — it is needed
+   before anyone knows whose account it is, and renaming it afterwards would move a home a harness
+   may have keyed its credential to. *Who* is the tool's own answer: the login question gained an
+   account pattern (the email, for `claude auth status`), read fresh on every probe, taken only on a
+   yes, and written nowhere — which amends the probe's "one boolean and nothing else" to "the boolean
+   and who"; the organisation and the tier are still never kept. A sign-in is kept when the tool
+   exits 0 and does not call that home signed out. A number freed by a removal is reused, so the
+   usage ledger, keyed on the name, can total two accounts under one; it is measured, never billed.
 
 **Why.** The frame switch cost a click and a concept for every move between reading and working,
 and the bar beside it already did the navigating. The theme was the OS's alone. And an account
@@ -2463,6 +2471,9 @@ two steps and a leftover where the person meant one act.
   palette block by block, and would buy nothing the equality test does not already guarantee.
 - **Removing an account's record and keeping its directory** (the SES3 rule). The owner's call: a
   removed account still signed in on disk is the leftover the person meant to remove.
+- **Naming the directory by who signed in** (renaming it once the sign-in ends). A harness may key
+  its stored credential to the home's path, so the rename could leave the account signed out; the
+  name a person reads is the tool's answer, which needs no second copy to go stale.
 
 **What does not move.** D41's language and D56's density; the status bar; the palette; D47 §4 (a
 browser still learns nothing about this machine — Settings in a browser is appearance only); D49 §4

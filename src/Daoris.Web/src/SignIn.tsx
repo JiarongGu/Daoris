@@ -24,8 +24,13 @@ import { Button, Dot, Icon, MonoWell } from './ui';
  * An organism: it holds the console hook ONCE — the steps read the stream and the disclosure shows
  * it, from one subscription rather than two — and the two mutations, and renders only where a shell
  * is attached, because only a driver has a process to answer.
+ *
+ * `login-new` is signing in to ANOTHER account (D66 §3): the same three steps, with no account to
+ * name yet — who it is, is what the sign-in finds out.
  */
-export function SignIn({ id, harness, profile }: { id: string; harness: string; profile: string }) {
+export function SignIn({
+  id, harness, profile, action = 'login',
+}: { id: string; harness: string; profile?: string; action?: 'login' | 'login-new' }) {
   const { t } = useTranslation();
   const { lines, live, dropped } = useSessionConsole(id);
   const input = useHarnessInput();
@@ -59,22 +64,24 @@ export function SignIn({ id, harness, profile }: { id: string; harness: string; 
     event.preventDefault();
     const text = code.trim();
     if (!text) return;
-    input.mutate({ harness, action: 'login', text });
+    input.mutate({ harness, action, text });
   };
+
+  const title = profile ? t('signin.title', { profile }) : t('signin.titleNew', { harness });
 
   return (
     <section
-      aria-label={t('signin.title', { profile })}
+      aria-label={title}
       className="mt-2 basis-full rounded-card border border-line bg-raised p-3"
     >
       <header className="flex items-center gap-2">
         <Dot tone="live" label={t('console.live')} />
-        <span className="text-body font-semibold text-ink">{t('signin.title', { profile })}</span>
+        <span className="text-body font-semibold text-ink">{title}</span>
         <Button
           variant="ghost"
           className="ml-auto"
           disabled={cancel.isPending}
-          onClick={() => cancel.mutate({ harness, action: 'login' })}
+          onClick={() => cancel.mutate({ harness, action })}
         >
           <Icon name="x" size={13} />
           {t('signin.cancel')}
@@ -142,7 +149,9 @@ export function SignIn({ id, harness, profile }: { id: string; harness: string; 
 
         <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
           <span className="text-small font-semibold text-ink-faint">3</span>
-          <p className="m-0 text-small text-ink-soft">{t('signin.ready')}</p>
+          <p className="m-0 text-small text-ink-soft">
+            {t(action === 'login-new' ? 'signin.readyNew' : 'signin.ready')}
+          </p>
         </li>
       </ol>
 

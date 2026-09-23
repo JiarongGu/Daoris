@@ -2026,29 +2026,26 @@ check(
   typo.code !== 0 && /has no profile `typo`/.test(typo.out) && /work/.test(typo.out),
   typo.out,
 );
-// `work` was added and never signed into: an empty directory Daoris made. Removing the profile
-// un-points it everywhere AND takes the directory — 🔴 leaving it was a remove nobody could see,
-// because the directory IS the profile and it stayed listed (deployed application, 2026-09-23).
+// Removing an account removes it (D66 §3): un-pointed everywhere, and the directory gone with it.
 const removed = cliHarness('profile remove claude-code work');
 check(
-  '`profile remove` un-defaults it everywhere, and an empty directory Daoris made goes with it',
-  removed.code === 0 && /empty directory/.test(removed.out)
+  '`profile remove` un-defaults it everywhere, and the directory goes with it',
+  removed.code === 0 && /are gone/.test(removed.out)
     && !existsSync(profileAt('claude-code', 'work'))
     && !JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'],
   removed.out,
 );
-// The other half of the rule, on a harness whose word this machine cannot get — `dsh` declares no
-// login question, so its answer is "could not say" everywhere — with something in the directory:
-// kept, untouched, and the sentence says why. Never a credential, on any evidence short of the
-// harness's own word that there is none.
-cliHarness('profile add dsh kept');
-writeFileSync(join(profileAt('dsh', 'kept'), 'credentials.json'), '{}\n');
-const removedKept = cliHarness('profile remove dsh kept');
+// 🔴 A signed-in one too, sign-in and all — amending SES3's "deletes nothing", on the owner's word
+// that Forget did not delete the account: the old rule kept any directory the harness would not call
+// signed out, so a removed account stayed listed and signed in.
+cliHarness('profile add dsh signed');
+writeFileSync(join(profileAt('dsh', 'signed'), 'credentials.json'), '{}\n');
+const removedSigned = cliHarness('profile remove dsh signed');
 check(
-  '…while a directory the harness cannot vouch for is untouched, and the sentence says why',
-  removedKept.code === 0 && /directory is untouched/.test(removedKept.out) && /could not say/.test(removedKept.out)
-    && existsSync(join(profileAt('dsh', 'kept'), 'credentials.json')),
-  removedKept.out,
+  '…and so does one holding a sign-in — the account a person removes is not left on disk',
+  removedSigned.code === 0 && /the sign-in in it are gone/.test(removedSigned.out)
+    && !existsSync(profileAt('dsh', 'signed')),
+  removedSigned.out,
 );
 
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
