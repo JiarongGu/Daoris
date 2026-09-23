@@ -94,7 +94,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D61) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D67) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,

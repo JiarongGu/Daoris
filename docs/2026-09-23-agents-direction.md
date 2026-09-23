@@ -67,21 +67,17 @@ From the vendors' own documents, not from memory:
 - **AGT3 — an account that is an API key.** Each tool has its own way: Claude Code reads
   `ANTHROPIC_API_KEY` or a cloud provider's credentials; Codex signs in with one read from stdin
   (`codex login --with-api-key`, [auth](https://developers.openai.com/codex/auth)) and stores it in
-  its own home; dsh names a provider route in its profile. ⛔ **The owner decides how the key is
-  held first** — D49 §4 says Daoris never reads a credential. The options are the tool's own key
-  login writing into the account's directory (the key crosses Daoris once, as a sign-in code already
-  does, and is kept by the tool), a reference to the OS credential store, or amending D49 §4.
-- **AGT4 — an API-driven agent.** Recommended: it arrives as an ACP agent a plugin declares (D64),
-  so Daoris still makes no model call of its own (D24, D53) and the agent is one more door.
-  ⛔ **The owner's call** if Daoris should instead run its own agent loop against a model API: that
-  reopens D24.
-- **AGT5 — the wiring, seen and set in one place.** Today it is four files: `driver.json` (which
-  agent, what is driven, what is held, the cap, trees), `harnesses.json` (which account and which
-  version, per machine and per workspace), `plugins/` and `remotes.json`. The ask is a picture: per
-  workspace, each job — intake, the work, and later review — with the agent, account and version
-  that does it, and the fallbacks drawn as the resolution actually runs them. It gets a design
-  before it is built, and a terminal twin (D50). ⛔ **One open question for that design**: draw the
-  files as they are, or fold them into one per-workspace wiring.
+  its own home; dsh names a provider route in its profile. **Decided (D67 §1): Daoris keeps the
+  key**, machine-local, never over HTTP, printed back only as an audit prefix, and handed to the
+  agent at spawn through the tool's own variable.
+- **AGT4 — an API-driven agent.** **Closed by D67 §2**: an agent keeps its own loop and reaches
+  Daoris over MCP, so Daoris runs no model loop. An API-driven agent is an existing one on an
+  API-key account (AGT3), or one a plugin declares.
+- **AGT5 — the wiring.** **Became the MAP arc (D67 §3)**: the *workflow* (MAP1: how Daoris's loop
+  chains an ask through the intake, quests, sessions and `then`, each step's agent, account and
+  version), the *workspace topology* (MAP2: which repositories there are and how they are wired),
+  and *a repository's code* on the same map (MAP3). Today's four files — `driver.json`,
+  `harnesses.json`, `plugins/`, `remotes.json` — are what MAP1 reads.
 - **AGT6 — Daoris's own AI, on the Settings page.** The jobs Daoris may use a model for, each with
   the tier that answers now and how to change it: semantic search and convergence (the embedding
   endpoint, today environment-only), and intake (which agent and account runs it, once INT4b lands).
@@ -90,6 +86,6 @@ From the vendors' own documents, not from memory:
 
 ## 4. Order
 
-AGT1 and AGT2's measurement are small and unblock nothing else, so they go first. AGT5's design and
-AGT6 follow, and they meet: intake is a job on the wiring picture. AGT3 and AGT4 wait on the
-owner's two decisions. INT4b is not displaced: it is the first job AGT5 will draw.
+AGT1 and AGT2a landed first. Then AGT3 (the key, now decided), AGT2b, and the MAP designs; AGT6
+meets MAP1, because intake is a job on the workflow. INT4b is not displaced: it is the first job
+MAP1 will draw.

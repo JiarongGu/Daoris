@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT2b, INT4b, INT4c.** AGT3/AGT4 and INT3 wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: AGT2b, AGT3, AGT6, MAP1–MAP2's designs, INT4b, INT4c.** INT3 waits on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -266,8 +266,8 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Twenty items are open** — five of them the
-owner's agents direction (AGT2b–AGT6, two waiting on the owner's call) — and every closed one is
+the archive; its decision is **D53, accepted**). **Twenty-one items are open** — six of them the
+owner's agents-and-map direction (AGT2b, AGT3, AGT6, MAP1–3; D67) — and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
@@ -277,8 +277,8 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **AGT2b, then INT4b and INT4c, are next** — the owner's agents direction outranks the rest; AGT5's
-design waits on the owner's answer to its one open question. Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **AGT3, then AGT2b, then the MAP designs, then INT4b and INT4c** — the owner's direction (D67)
+outranks the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -417,18 +417,20 @@ both are the owner's.**
   SDK rather than the CLI's trust flow, so it may not have the problem at all, and one driven run
   answers it.
 
-### Agents, their accounts and their wiring (owner, 2026-09-23)
+### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
-`docs/2026-09-23-agents-direction.md` holds the owner's words, what was checked against the vendors'
-own documents, and the order. Nothing here is designed yet.
+**D67** holds the owner's answers; `docs/2026-09-23-agents-direction.md` the asks and what was
+checked. AGT1, AGT2a and AGT4 are archived.
 
 - [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
-  its signed manifest; Codex's releases once Windows and versions are confirmed. AGT2a is archived.
-- [ ] ⛔ **AGT3 — an API-key account.** The owner decides how the key is held (D49 §4).
-- [ ] ⛔ **AGT4 — an API-driven agent.** Recommended as a plugin's ACP agent; a loop of Daoris's
-  own reopens D24, the owner's call.
-- [ ] **AGT5 — the wiring, seen and set in one place,** per workspace and per job. Design first.
+  its signed manifest; Codex's releases once Windows and versions are confirmed.
+- [ ] **AGT3 — an account that is an API key** (D67 §1). Measure each tool first.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
+- [ ] **MAP1 — the workflow**: ask → intake → quests → sessions → `then`, each step's agent,
+  account and version. Design first.
+- [ ] **MAP2 — the workspace topology**: the circle's repositories, what each owns and accepts, the
+  quests between them. From the registry and the quest store, no model. Design first.
+- [ ] **MAP3 — a repository's code on the map**, fed by that repository (D32). After MAP2.
 
 ### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
 

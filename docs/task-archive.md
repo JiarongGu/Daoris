@@ -4181,6 +4181,17 @@ The Settings card leads with them, the new-account sign-in names the product, an
 prints them above the version. A tool that declares neither, a plugin's, keeps its id.
 
 **Seen on the scratch shell**, both themes: *Claude Code* Anthropic, *Codex* OpenAI, *dsh* DeepSeek.
+
+## AGT4 — an API-driven agent: closed by the owner's decision (2026-09-23)
+
+- [x] ⛔ **AGT4 — an API-driven agent.** Recommended as a plugin's ACP agent; a loop of Daoris's
+  own reopens D24, the owner's call.
+
+✅ **closed 2026-09-23 by D67 §2, with nothing to build.** The owner: *"daoris already should have a
+loop but not more like higher level, and agent itself should remine its own and access other things
+from daoris via mcp"*. Daoris runs no model loop. An API-driven agent is an existing agent on an
+API-key account (AGT3), or an agent a plugin declares (D64), and it reaches Daoris over MCP. The same
+answers turned AGT5 (the wiring) into the roadmap's MAP arc (MAP1–MAP3).
 Dated studies and evidence (the dsh evaluation, the plugin study, the ACP3 probe) keep the old verb,
 because they record what was run. CLI 324, driver 369, modules 97, web 555 + 16, family 212/212,
 deploy 39/39.
