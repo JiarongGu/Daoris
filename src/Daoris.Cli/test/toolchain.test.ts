@@ -616,6 +616,40 @@ test('a pinned harness probes as present, on the pin rather than on PATH', () =>
 });
 
 /**
+ * 🔴 A pin stays the version pinned (AGT2): a pinned Claude Code reported its own auto-updates
+ * enabled, so the pinned binary is asked with the tool's own switch — and the machine's own binary,
+ * off `PATH`, is asked exactly as before. The driver's `PinnedUpdatesTests` is the twin.
+ */
+test('a pinned binary is asked with its updates off, and the machine’s own is not', () => {
+  const fx = makeFixture('harness-probe-pin-updates');
+  const home = join(fx.root, 'home');
+  const bin = join(managedHome(home, 'claude-code', '1.2.3'), 'node_modules', '.bin');
+  mkdirSync(bin, { recursive: true });
+  const windows = process.platform === 'win32';
+  writeFileSync(
+    join(bin, windows ? 'claude.cmd' : 'claude'),
+    windows ? '@echo updates:%DISABLE_UPDATES%\r\n' : '#!/bin/sh\necho "updates:$DISABLE_UPDATES"\n',
+    'utf8');
+  if (!windows) chmodSync(join(bin, 'claude'), 0o755);
+
+  assert.deepEqual(TOOLCHAINS['claude-code']!.pinnedEnv, { DISABLE_UPDATES: '1' });
+
+  const settings = {
+    defaults: {}, workspaces: {}, versions: { 'claude-code': '1.2.3' }, workspaceVersions: {}, rest: {},
+  };
+  assert.match(probe('claude-code', TOOLCHAINS['claude-code']!, home, settings).version ?? '', /updates:1/);
+
+  // Unpinned, the same toolchain asks whatever is on PATH, and hands it nothing new.
+  const script = join(fx.root, 'machine.mjs');
+  writeFileSync(script, "console.log('updates:' + (process.env.DISABLE_UPDATES ?? 'on'));\n", 'utf8');
+  const machine = probe('fake', {
+    ...TOOLCHAINS['claude-code']!, binary: [process.execPath, script],
+  }, home, { ...settings, versions: {} });
+  assert.match(machine.version ?? '', /updates:on/);
+  fx.cleanup();
+});
+
+/**
  * The other side of the same rule: a pin that names a version nothing is installed at must NOT quietly
  * fall back to `PATH`. The driver already refuses this by name; the probe has to agree, or the roster
  * would show the machine's own `claude` and call it the pinned one.

@@ -40,9 +40,9 @@ From the vendors' own documents, not from memory:
   release bucket instead would drop npm and verify against the signed manifest.
   ([setup](https://code.claude.com/docs/en/setup))
 - 🔴 **Native and npm installs update themselves in the background** unless `DISABLE_AUTOUPDATER=1`
-  is set (or `DISABLE_UPDATES=1`, which blocks every path). Daoris sets neither anywhere. Whether a
-  pinned copy moves itself — or updates some other install — is **not measured**; a pin that drifts
-  silently is the failure D57 exists to prevent, so AGT2 starts by measuring it.
+  is set (or `DISABLE_UPDATES=1`, which blocks every path). **Measured the same day (AGT2a):** a
+  pinned 2.1.270 reported its own auto-updates enabled and called itself npm-global; every pinned
+  spawn now runs with `DISABLE_UPDATES=1` (FIX-LOG).
 - **Codex ships standalone too**: npm, Homebrew, per-platform archives on its GitHub releases (the
   README names macOS and Linux ones), and a PowerShell installer for Windows. Not yet checked: a
   Windows archive on the release page, and whether a version can be chosen.
@@ -58,10 +58,11 @@ From the vendors' own documents, not from memory:
 - **AGT1 — one word a person reads: *agent*.** The CLI verb, its help, the roster's rows and the
   refusals say *agent* and name the maker beside the tool (dsh reads as DeepSeek's). `harness` and
   `adapter` stay the code's words. Nothing is published, so the verb can move.
-- **AGT2 — a managed install from the vendor's own channel.** First measure whether a pinned spawn
-  updates itself, and set the tool's own switch if it does. Then fetch Claude Code from its release
-  bucket at the pinned version, checked against the signed manifest; Codex from its releases once
-  the Windows archive and version choice are confirmed. npm stays for what ships only there.
+- **AGT2 — a managed install from the vendor's own channel.** AGT2a measured whether a pinned spawn
+  updates itself, and it could, so the tool's own switch is now set. AGT2b fetches Claude Code from
+  its release bucket at the pinned version, checked against the signed manifest, and Codex from its
+  releases once the Windows archive and version choice are confirmed. npm stays for what ships
+  only there.
 - **AGT3 — an account that is an API key.** Each tool has its own way: Claude Code reads
   `ANTHROPIC_API_KEY` or a cloud provider's credentials; Codex signs in with one read from stdin
   (`codex login --with-api-key`, [auth](https://developers.openai.com/codex/auth)) and stores it in

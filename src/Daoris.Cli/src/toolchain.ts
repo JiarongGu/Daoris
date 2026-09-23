@@ -119,6 +119,12 @@ export interface Toolchain {
    * A harness declaring this must describe no login anywhere else, or it is saying two things.
    */
   noAccount?: boolean;
+  /**
+   * What a PINNED binary runs with so it stays the version pinned (AGT2) — the tool's own switch,
+   * measured, and applied to a managed binary only: one off `PATH` is the machine's, and so are its
+   * updates. The driver's `PinnedEnvironment` is the twin.
+   */
+  pinnedEnv?: Record<string, string>;
 }
 
 /**
@@ -147,6 +153,9 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
       out: /"loggedIn"\s*:\s*false/i,
       account: /"email"\s*:\s*"([^"]+)"/i,
     },
+    // 🔴 A pinned 2.1.270 reported its own auto-updates ENABLED (`claude doctor`, no login); with
+    // this it reported them disabled, refused `claude update`, and stayed 2.1.270.
+    pinnedEnv: { DISABLE_UPDATES: '1' },
   },
   // The supported harness over the PROTOCOL door (ACP2/D53). A separate toolchain entry from
   // `claude-code` on purpose: the ACP adapter and `claude` are different packages at different
@@ -440,9 +449,10 @@ type Login = 'in' | 'out' | 'unknown';
  * keeps the whole command a straight line with no lifetime to get wrong.
  */
 function ask(
-  command: string[], args: string[], profile: string | null, toolchain: Toolchain,
+  command: string[], args: string[], profile: string | null, toolchain: Toolchain, managed = false,
 ): { ran: boolean; output: string; problem: string | null } {
-  const env = { ...process.env };
+  // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
+  const env = { ...process.env, ...(managed ? toolchain.pinnedEnv : {}) };
   if (profile) {
     // Created as part of selecting it: at least one supported harness refuses to start when its home
     // variable names a path that does not exist.
@@ -495,7 +505,7 @@ export function probe(
         + `\`daoris harness pin ${harness} ${pinned}\` installs it, and \`daoris harness unpin `
         + `${harness}\` goes back to PATH`,
     }
-    : ask([command, ...toolchain.binary.slice(1)], toolchain.version, null, toolchain);
+    : ask([command, ...toolchain.binary.slice(1)], toolchain.version, null, toolchain, Boolean(pinned));
 
   return {
     harness,
@@ -509,7 +519,10 @@ export function probe(
 
       // The SAME binary the version came from. Asking the pin whether it runs and then asking PATH
       // whether it is logged in would answer about two different installs.
-      return { name, home: where, ...loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where) };
+      return {
+        name, home: where,
+        ...loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where, Boolean(pinned)),
+      };
     }),
   };
 }
@@ -519,12 +532,12 @@ export function probe(
  * the answer is yes — who (D66 §3). Nothing else it volunteers is kept.
  */
 function loginAt(
-  command: string[], toolchain: Toolchain, where: string,
+  command: string[], toolchain: Toolchain, where: string, managed = false,
 ): { login: Login; account: string | null } {
   const check = toolchain.loginCheck;
   if (!check) return { login: 'unknown', account: null };
 
-  const answer = ask(command, check.args, where, toolchain);
+  const answer = ask(command, check.args, where, toolchain, managed);
   if (!answer.ran) return { login: 'unknown', account: null };
   if (check.in.test(answer.output)) {
     return { login: 'in', account: check.account?.exec(answer.output)?.[1]?.trim() || null };

@@ -66,6 +66,10 @@ seam. Building them together would mean one change that cannot be reviewed.
   this — which is **today's behaviour byte for byte**, and is the point: this is additive, like
   session trees and credential profiles before it (D48 §2a — a machine that installed `claude` itself
   keeps working, and so does a contributor who never ran Daoris).
+- **A pinned binary runs with the tool's own no-update switch** (AGT2), on every spawn Daoris makes
+  of it: a session over either door, and the probe. Claude Code updates itself by default, npm copy
+  included; a pinned copy under this directory reported its auto-updates enabled until it ran with
+  `DISABLE_UPDATES=1`. A binary off `PATH` gains nothing: its updates are the machine's.
 - **The pin resolves exactly as a profile does**: the person's pick, the workspace's default, the
   machine's, then none. One resolution rule, already written and tested in both artefacts, rather
   than a second rule that drifts from it.

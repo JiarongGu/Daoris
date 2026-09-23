@@ -660,7 +660,12 @@ public static class ClaudeAcp
     /// </remarks>
     public static void PointAtClaude(ProcessStartInfo info, string? managedClaude)
     {
-        if (managedClaude is { Length: > 0 }) info.Environment[ExecutableVariable] = managedClaude;
+        if (managedClaude is not { Length: > 0 }) return;
+
+        info.Environment[ExecutableVariable] = managedClaude;
+        // 🔴 The SDK runs that `claude` with this process's environment, so the pin's own switch
+        // travels here (AGT2) — the same one the pipe door's spawn of the same binary carries.
+        foreach (var (name, value) in ClaudeCodeAdapter.StayPinned) info.Environment[name] = value;
     }
 }
 
@@ -771,7 +776,18 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // driven spawn, because an untrusted tree makes the repository's own allow-list inert and
         // the session cannot then take or close its quest — nine minutes and a real login, three
         // times over, before this was measured rather than assumed.
-        TrustFile: ClaudeTrust.FileName);
+        TrustFile: ClaudeTrust.FileName,
+        PinnedEnvironment: StayPinned);
+
+    /// <summary>
+    /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a
+    /// pinned 2.1.270 with no login: its own <c>claude doctor</c> read <i>Auto-updates: enabled</i> and
+    /// called a copy in Daoris's folder an npm-global install; with <c>DISABLE_UPDATES=1</c> it read
+    /// disabled, refused <c>claude update</c>, and stayed 2.1.270. <c>DISABLE_AUTOUPDATER</c> stops
+    /// only the background check, and a pin is every path.
+    /// </summary>
+    internal static readonly IReadOnlyDictionary<string, string> StayPinned =
+        new Dictionary<string, string> { ["DISABLE_UPDATES"] = "1" };
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : ["claude"];

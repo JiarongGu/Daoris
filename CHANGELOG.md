@@ -386,6 +386,10 @@ The first version: doctrine that installs, is checked, and flows back.
   included**, after asking once — it used to keep a signed-in account on disk and on the list.
   From a terminal: `daoris harness login <harness> --new`, and `profile remove` deletes;
   `harness list` shows who is signed in to each account.
+- **A pinned Claude Code stays the version you pinned.** Claude Code updates itself by default, and
+  a pinned copy reported exactly that. Every spawn of a pinned binary now runs with
+  `DISABLE_UPDATES=1`: sessions and chats over either door, and the version and sign-in questions.
+  A `claude` from `PATH` is left as the machine has it.
 - **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
   [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
   and files, who asked, and what became of it, naming the tier that answered on every record. With

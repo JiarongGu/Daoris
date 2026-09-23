@@ -120,7 +120,11 @@ public sealed record HarnessToolchain(
     // A harness with no version question (a plugin-declared one, D64) is asked whether it is THERE
     // rather than run: an ACP agent started with no arguments waits on its stdin, and twenty seconds
     // of that per roster refresh is not a probe, it is a stall.
-    bool ProbeByPresence = false)
+    bool ProbeByPresence = false,
+    // What a PINNED binary runs with so it stays the version pinned (AGT2) — the tool's own switch,
+    // measured rather than assumed, and applied to a managed binary only: a binary off PATH is the
+    // machine's, and its updates are the machine's business (D48 §2a). Null declares none.
+    IReadOnlyDictionary<string, string>? PinnedEnvironment = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -630,6 +634,7 @@ public static class HarnessProbe
         // installed", and the CLI twin reported the machine's own binary as the pinned one.
         var resolved = toolchain.Command(command);
         string? pinned = null;
+        var isManaged = false;
         if (command is not { Count: > 0 }
             && settings.ResolveVersion(adapter, workspace: null, chosen: null) is { } version_)
         {
@@ -637,6 +642,7 @@ public static class HarnessProbe
             if (HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Binary) is { } managed)
             {
                 resolved = [managed, .. toolchain.Binary.Skip(1)];
+                isManaged = true;
             }
             else
             {
@@ -656,7 +662,7 @@ public static class HarnessProbe
 
         var version = toolchain.ProbeByPresence
             ? (Ran: resolved.Count > 0 && CommandPresence.Resolvable(resolved[0]), Output: "", Problem: (string?)null)
-            : await AskAsync(resolved, toolchain.VersionArguments, profileHome: null, toolchain, ct)
+            : await AskAsync(resolved, toolchain.VersionArguments, profileHome: null, toolchain, ct, isManaged)
                 .ConfigureAwait(false);
 
         var present = version.Ran;
@@ -666,7 +672,7 @@ public static class HarnessProbe
         {
             var profileHome = HarnessSettings.ProfileHome(home, adapter, name);
             var (login, account) = present
-                ? await LoginAsync(resolved, toolchain, profileHome, ct).ConfigureAwait(false)
+                ? await LoginAsync(resolved, toolchain, profileHome, isManaged, ct).ConfigureAwait(false)
                 : (LoginState.Unknown, null);
             profiles.Add(new ProfileReport(name, profileHome, login, account));
         }
@@ -674,7 +680,7 @@ public static class HarnessProbe
         // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
         // answers about wherever it keeps its own credential. Read-only; Daoris never logs into it.
         var (own, ownAccount) = present
-            ? await LoginAsync(resolved, toolchain, profileHome: null, ct).ConfigureAwait(false)
+            ? await LoginAsync(resolved, toolchain, profileHome: null, isManaged, ct).ConfigureAwait(false)
             : (LoginState.Unknown, null);
 
         return new HarnessReport(
@@ -709,9 +715,10 @@ public static class HarnessProbe
             }
 
             resolved = [managed, .. toolchain.Binary.Skip(1)];
+            return await LoginAsync(resolved, toolchain, profileHome, managed: true, ct).ConfigureAwait(false);
         }
 
-        return await LoginAsync(resolved, toolchain, profileHome, ct).ConfigureAwait(false);
+        return await LoginAsync(resolved, toolchain, profileHome, managed: false, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -720,11 +727,12 @@ public static class HarnessProbe
     /// subscription tier alongside both, and neither is Daoris's to hold, log, or put on a roster.
     /// </summary>
     private static async Task<(LoginState Login, string? Account)> LoginAsync(
-        IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, CancellationToken ct)
+        IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, bool managed,
+        CancellationToken ct)
     {
         if (toolchain.LoginCheck is not { } question) return (LoginState.Unknown, null);
 
-        var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct)
+        var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed)
             .ConfigureAwait(false);
         if (!answer.Ran) return (LoginState.Unknown, null);
 
@@ -778,7 +786,8 @@ public static class HarnessProbe
         IReadOnlyList<string> arguments,
         string? profileHome,
         HarnessToolchain toolchain,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool managed = false)
     {
         if (resolved.Count == 0) return (false, "", "no command to run");
 
@@ -792,7 +801,8 @@ public static class HarnessProbe
         };
         foreach (var part in resolved.Skip(1)) info.ArgumentList.Add(part);
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        Apply(info, toolchain, profileHome);
+        // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
+        Apply(info, toolchain, profileHome, binary: managed ? resolved[0] : null);
 
         try
         {
@@ -859,7 +869,17 @@ public static class HarnessProbe
         string? claudeExecutable = null)
     {
         // The arguments the adapter built stay exactly as they are: same tool, different location.
-        if (binary is { Length: > 0 }) info.FileName = binary;
+        if (binary is { Length: > 0 })
+        {
+            info.FileName = binary;
+
+            // 🔴 And the version it was pinned at (AGT2): a pinned Claude Code reported its own
+            // auto-updates enabled, and would have moved itself under the pin.
+            foreach (var (name, value) in toolchain.PinnedEnvironment ?? new Dictionary<string, string>())
+            {
+                info.Environment[name] = value;
+            }
+        }
 
         // The ACP adapter runs the Agent SDK, which finds its CLI through its own seam (ACP2, §1a).
         // Applied here for the reason everything else here is: one line, both doors, no adapter that

@@ -4144,3 +4144,18 @@ the removal's console line sat under the *direct* door as a live console. Only i
 pin stream under *Ways in* now, and a test that was red under the old gate holds it. The real sign-in
 was not run on the window. It would open a browser and spend a login, so the stub harness covers the
 flow in the module tests.
+
+## AGT2a — does a pinned spawn update itself? It could (2026-09-23)
+
+- [x] **AGT2 — a managed install from the vendor's channel.** 🔴 First measure whether a pinned
+  spawn updates itself: Daoris sets no `DISABLE_AUTOUPDATER`.
+
+✅ **done 2026-09-23 — the measurement half; AGT2b (the vendor's channel) stays open.**
+
+Measured with no login and no model: Claude Code 2.1.270, pinned into a scratch toolchain
+directory by TOOL2's own `npm install --prefix`, answered `claude doctor` with *Auto-updates:
+enabled* and called itself *npm-global*. With `DISABLE_UPDATES=1` it read disabled, refused `claude
+update`, and stayed 2.1.270. So a toolchain now declares what a pinned binary runs with
+(`PinnedEnvironment` / `pinnedEnv`), and every spawn of the managed binary carries it: sessions and
+chats on the pipe door, the SDK's `claude` on the ACP door, and the probe. A binary off `PATH` gains
+nothing. FIX-LOG has the entry. Driver 369, CLI 323, modules 97, family 212/212, deploy 39/39.

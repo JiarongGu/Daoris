@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A pinned Claude Code could update itself out of its pin (2026-09-23)
+
+**Symptom.** No run had moved one yet; the tool's own report said it could. Measured with no login
+and no model: Claude Code 2.1.270, pinned into a scratch toolchain directory with the same
+`npm install --prefix` TOOL2 uses, answered `claude doctor` with *Auto-updates: enabled*, channel
+*latest*, and called itself an *npm-global* install, which a copy in Daoris's own folder is not.
+
+**Root cause.** A pin was only a choice of file to run. Claude Code updates itself in the background
+by default, on native and npm installs alike, and nothing Daoris spawned said otherwise. TOOL2
+(D57) asserted the version it installed and never asked whether that version would stay. An update
+from a copy that misreads its own install type would either move the pin or reach for an install
+that is not the pin's.
+
+**Fix.** A toolchain declares the environment a pinned binary runs with (`PinnedEnvironment`, and
+`pinnedEnv` in the CLI twin). For `claude-code` that is `DISABLE_UPDATES=1`, which blocks every
+update path; `DISABLE_AUTOUPDATER` stops only the background check. `HarnessProbe.Apply` sets it
+whenever the binary is the managed one, which covers the pipe door's sessions and chats. On the ACP
+door, `ClaudeAcp.PointAtClaude` sets it beside `CLAUDE_CODE_EXECUTABLE`, because the SDK runs that
+`claude` with the adapter's environment. The probe asks a pinned binary with the same switch. A
+binary off `PATH` gains nothing: its updates are the machine's (D48 §2a).
+
+**Verify.** The same pinned copy with `DISABLE_UPDATES=1`: *Auto-updates: disabled (set by env:
+DISABLE_UPDATES)*, `claude update` refused, still 2.1.270. `PinnedUpdatesTests` (driver) and the
+CLI's pinned-probe test hold both doors, the probe, and the untouched `PATH` case.
+
+**Commit.** pending
+
 ## INT5 landed with the desktop's palette test red (2026-09-23)
 
 **Symptom.** Running the modules suite for INT4a failed
