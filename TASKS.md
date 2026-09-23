@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT2b, AGT6, MAP1–MAP2's designs, INT4b, INT4c.** INT3 waits on the owner's call, INT6 on the owner's presence.
+- **Actionable: MAP2 (once placed), AGT6, INT4b, INT4c, AGT2b.** INT3 waits on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -277,7 +277,8 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D67's items (AGT2b first), then INT4b and INT4c**, outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **D67's items (MAP2 first; AGT2b last — npm already installs the native build), then INT4b and
+INT4c**, outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -424,11 +425,9 @@ checked. AGT1, AGT2a, AGT3, AGT3b, AGT4 and AGT7 are archived.
 - [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
   its signed manifest; Codex's releases once Windows and versions are confirmed.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
-- [ ] **MAP1 — the workflow**: ask → intake → quests → sessions → `then`, each step's agent,
-  account and version. Design first.
-- [ ] **MAP2 — the workspace topology**: the circle's repositories, what each owns and accepts, the
-  quests between them. From the registry and the quest store, no model. Design first.
-- [ ] **MAP3 — a repository's code on the map**, fed by that repository (D32). After MAP2.
+- [ ] **MAP2 — the workspace topology.** `docs/2026-09-23-map-design.md` §1. ⛔ Where it lives.
+- [ ] **MAP1 — the workflow**, after MAP2 (design §2).
+- [ ] **MAP3 — a repository's code**, after MAP2 (design §3). ⛔ Who produces the feed.
 
 ### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
 
