@@ -24,6 +24,8 @@ The comment on the type says the host omits nulls.
 `=== null` comparison put back, one test red, and passes with the fix. The browser gate opens the
 game's missing map over the real host (18/18).
 
+**Commit.** `5f7ecf0`
+
 ## A door ran in its own accounts, not the agent's it declares (2026-09-23)
 
 **Symptom.** Found by reading while designing API-key accounts, not by a person. An account made
