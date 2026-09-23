@@ -29,7 +29,7 @@ on the owner's accounts and say so. The door's pin stays its own, because it is 
 the owner's key variable, a refusal naming the owner's login, the roster's rows, an owner with no
 adapter, and the pin still the door's. A module test and two CLI tests cover the account actions.
 
-**Commit.** pending
+**Commit.** `09300bc`
 
 ## A pinned Claude Code could update itself out of its pin (2026-09-23)
 
