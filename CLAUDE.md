@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 334 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fifteen commands, 382 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 448, `Daoris.Devkit` 73, and the
-driver 447. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+driver 462. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -211,9 +211,8 @@ Run every command from the **workspace root**, not from a package directory.
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
   **artefact**. Run before tagging.
-- **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
-  driver drive?" gate, since D47 the "does the remote cross?" gate, and since D48 the "does the
-  boundary hold?" gate. 214 checks over the example family, from both examples current and clean
+- **`npm run rehearse:family`** — the "does the router work?" gate (D39), and since D46–D48 the
+  driver's, the remote's and the boundary's. 256 checks over the example family, from both examples current and clean
   through a quest's whole life, the workspace boundary refused naming both sides, two simulated
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to
@@ -269,8 +268,8 @@ Run every command from the **workspace root**, not from a package directory.
   echoing through the console.
 - **Exit codes are the contract:** `0` clean · `1` policy failure · `2` tool error.
 - **`check` works offline, and so does every doctrine command.** The exceptions are the **management
-  class** — `connect`, `retire`, `import` talk to a service; `remote`, `agent` and `driver` edit
-  files under the profile — all opt-in and never run by a gate (D35, D50). Three tests hold the line:
+  class** — `connect`, `retire`, `import` talk to a service and `agent pin` to a maker's release
+  channel; `remote`, `agent` and `driver` edit files under the home — all opt-in and never run by a gate (D35, D50). Three tests hold the line:
   only `service.ts` may contain a network primitive, only `toolchain.ts` may spawn a harness, and
   nothing
   any doctrine command transitively imports may reach either — the last is the one that matters, because

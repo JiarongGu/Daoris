@@ -241,19 +241,19 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT6, INT4d, AGT2b, SEN1.** INT3 and MAP3d wait on the owner's call, INT4f and INT6 on the owner's presence.
-  **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
-  decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
+- **Actionable: AGT6, INT4d, SEN1.** INT3 and MAP3d wait on the owner's call, INT4f and INT6 on the owner's presence.
+  **Four are the owner's** (ACP2 and DEPLOY1's second half each cost a login, AGT2c two downloads;
+  PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
   guard lives; PLUG7 on a plugin asking for a service-side point. Take one only when its trigger
   arrives — and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 334 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 382 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (448),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (447), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (107), `npm run rehearse:family` (256/256), `npm run test:web` (684 vitest + 19 Playwright),
+  (462), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (107), `npm run rehearse:family` (256/256), `npm run test:web` (684 vitest + 19 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -270,17 +270,16 @@ them. **SURF1 designed the next direction and is in the archive too**, and **DSH
 the archive; its decision is **D53, accepted**). **Nineteen items are open** — three of them D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
-DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
+ships. Four are **the owner's** to make or spend rather than work anyone can pick up (ACP2,
+DEPLOY1's second half, PLUG2, AGT2c); one more (TOOL4) is held by D57 until TOOL3 has run; and the
 last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
 that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
 question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **Next: D67's remaining
-items (AGT2b last — npm already installs the native build), then INT4d.** They outrank the
-rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **Next: AGT6, D67's last
+buildable item, and INT4d.** They outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -414,11 +413,12 @@ both are the owner's.**
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
 **D67** holds the owner's answers; `docs/2026-09-23-agents-direction.md` the asks and what was
-checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b and MAP3a are archived.
+checked. AGT1, AGT2a, AGT2b, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b, MAP3a, MAP3c and MAP3e
+are archived.
 
-- [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
-  its signed manifest; Codex's package at an exact version, by its published hashes. The channels
-  were checked on 2026-09-24: `docs/2026-09-24-agt2b-channel-evidence.md`.
+- [ ] **AGT2c — one real vendor-channel pin of each, observed:** that Claude Code stays at its version
+  under `DISABLE_UPDATES`, and that a pinned Codex outside its own layout takes no update action (the
+  evidence says so; nothing measured it). Spends two real downloads — the owner's call.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
   The intake is one job since INT4b. `daoris driver intake <adapter>|off` and the bridge's
   `SET_INTAKE` both exist, but no screen control does (D50).

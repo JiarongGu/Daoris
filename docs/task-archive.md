@@ -4873,3 +4873,33 @@ session are INT4d.
 
 Service 448, driver 447, modules 107, CLI 334, web 684 + 19, family 256/256, deploy 39/39, verify
 green.
+
+## AGT2b — a managed install from the vendor's channel (2026-09-24)
+
+- [x] ~~**AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
+  its signed manifest; Codex's package at an exact version, by its published hashes. The channels
+  were checked on 2026-09-24: `docs/2026-09-24-agt2b-channel-evidence.md`.~~
+✅ **done 2026-09-24** — `agent pin` fetches Claude Code from the release bucket (a manifest verified
+against its detached OpenPGP signature under the pinned key, its signed version read, then the
+binary's SHA-256) and Codex from its release package (the SUMS file against the metadata, two
+published hashes that must agree, unpacked whole); npm stays for the ACP adapters and dsh. Before
+2.1.89 is refused by name with no npm fallback. The verifier and the tar reader have no dependency and
+are tested against the vendors' own files. The desktop pins Claude Code the same way. Design as built:
+toolchain design §3a. Not covered: a real download (no test touches the network) — AGT2c.
+
+**Built in a parallel worktree and cherry-picked.** The order of trust is the point: the signature
+under the key Daoris carries, then the version the manifest signed (a real old manifest served as a
+new one fails here), and only then the hash the manifest names. Codex has no signature to check, so
+its two published hashes must agree with each other before either is trusted for the download. An
+install is staged beside its version and moved into place once verified, so `bin/<binary>` existing
+is the proof and a re-pin downloads nothing. The network stays in `service.ts`: the dispatcher hands
+`agent pin` a fetcher, and a dogfood test holds that nothing judging a download imports a network
+module. Codex gets no update switch because the evidence says a binary outside its own layout takes
+no update action — measured by nobody yet, which is AGT2c.
+
+🔴 **Its red phase ran the real installer**: before the channel route existed, the failing tests sent
+`pin claude-code|codex` down the old npm route, which ran `npm install` three times from a unit test
+(~0.9 GB in `_fixtures/`, deleted; the packages remain in the machine's npm cache). FIX-LOG has the
+trap. Integrated here: CLI 382 (was 334), driver 462 (was 447), modules 107, release rehearsal 56/56,
+family 256/256, deploy 39/39, and the universal gates with the private list saw the five vendor files
+clean.

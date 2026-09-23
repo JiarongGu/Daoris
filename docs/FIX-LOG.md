@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A red test for a verb that installs ran the real installer (2026-09-24)
+
+**Symptom.** While AGT2b's tests were being watched fail, `_fixtures/` grew by about 0.9 GB: three
+real `npm install --prefix` runs, Claude Code 2.1.87 once and Codex 0.156.1 twice.
+
+**Root cause.** TDD's red phase drove `agent pin claude-code|codex` through the dispatcher before the
+channel route existed. The OLD route took the call and did its job, which was to spawn npm's
+installer, so a unit test reached the registry. A failing test for a verb that spawns an installer
+does not fail by asserting. It fails by running the installer.
+
+**Fix.** The channel route now takes those two agents, and every channel test hands in its own
+fetcher. The installs were deleted. The packages are still in the machine's npm cache, which is the
+installer's and not the repository's. Before watching such a test fail, stub the spawn, or write the
+test against the new seam so the red is a missing export rather than a live call.
+
+**Verify.** CLI 379/379 in the worktree with no npm process started; 382 once integrated.
+
 ## The sync item said "synced" while the sync was failing: a wall stopped the pass before its record (2026-09-24)
 
 **Symptom.** Found by looking at the real window while building SYNC6b, with a throwaway remote

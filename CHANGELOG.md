@@ -443,6 +443,11 @@ The first version: doctrine that installs, is checked, and flows back.
   a pinned copy reported exactly that. Every spawn of a pinned binary now runs with
   `DISABLE_UPDATES=1`: sessions and chats over either door, and the version and sign-in questions.
   A `claude` from `PATH` is left as the machine has it.
+- **`daoris agent pin` installs Claude Code and Codex from their makers' own channels, verified**
+  (AGT2b). Claude Code's release manifest must carry Anthropic's signature before its SHA-256 is
+  trusted for the binary; a version before 2.1.89, which has none, is refused. Codex's package must
+  match both of its published hashes. Nothing is pinned unless everything verified. The Machine
+  view's pin does the same for Claude Code. npm still installs the ACP adapters and dsh.
 - **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
   [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
   and files, who asked, and what became of it, naming the tier that answered on every record. With
