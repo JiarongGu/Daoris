@@ -38,7 +38,7 @@ about a neighbour could only either ignore it or trespass.
 ## Current state
 
 **Built and proven; nothing published.** Fifteen commands, 331 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 431, `Daoris.Devkit` 73, and the
+knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 439, `Daoris.Devkit` 73, and the
 driver 427. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
@@ -52,7 +52,7 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
 quest lock hardened into code, and the desktop's sync feeding up and rebasing quests (D68). **The family
-rehearsal gates all of it with no model, no account and no credential** (249/249) — it names its own
+rehearsal gates all of it with no model, no account and no credential** (250/250) — it names its own
 phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
 **The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`

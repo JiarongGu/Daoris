@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**331 CLI tests, 431 service, 427 driver, 106 desktop modules, 640 web unit, 18 Playwright**, 73
-devkit, 56/56 release rehearsal, **249/249 family rehearsal** (it names its own phases when you run
+**331 CLI tests, 439 service, 427 driver, 106 desktop modules, 643 web unit, 18 Playwright**, 73
+devkit, 56/56 release rehearsal, **250/250 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: MAP3e, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -251,9 +251,9 @@ the traps that are not in any contract, because they were found rather than desi
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 331 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (431),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (439),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (427), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (106), `npm run rehearse:family` (249/249), `npm run test:web` (640 vitest + 18 Playwright),
+  (427), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (106), `npm run rehearse:family` (250/250), `npm run test:web` (643 vitest + 18 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -267,7 +267,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Nineteen items are open** — four of them D67's —
+the archive; its decision is **D53, accepted**). **Eighteen items are open** — three of them D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
@@ -420,9 +420,6 @@ checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b and MAP3a are 
   its signed manifest; Codex's package at an exact version, by its published hashes. The channels
   were checked on 2026-09-24: `docs/2026-09-24-agt2b-channel-evidence.md`.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
-- [ ] **MAP3e — a teammate's code map on this machine.** MAP3b holds a fed map at the remote only, so
-  a machine without the checkout answers "no map" for a teammate's repository that keeps one. Bring
-  it down with the sync, or say where it lives.
 - [ ] ⛔ **MAP3d — the agent producer.** The owner's call first (design §3): canon skill, or the
   session prompt (recommended).
 
@@ -474,6 +471,13 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
   limitation. The owner's call, and the study says so rather than assuming it.
 
 ### Open — the arc's leftovers, in the order they are worth doing
+
+- [ ] **SEN1 — the devkit's `sensitive` gate is red on this repository.** `daoris-devkit verify
+  --universal-only` flags placeholder home paths (`/home/…`, `/Users/…`) in five test fixtures:
+  `home.test.ts`, `AdapterTests.cs`, `HookTests.cs`, `QuestExchangeTests.cs` and
+  `QuestsView.test.tsx`. Use the neutral `C:/somewhere/…` convention, then find which gate list let a
+  red universal gate pass, since the release workflow is meant to run them. Found by MAP3c,
+  2026-09-24. Held until the parallel INT4b/INT4c branches merge, because both may touch these files.
 
 ### Held — each waits on a trigger that has not arrived
 

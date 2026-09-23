@@ -410,6 +410,10 @@ The first version: doctrine that installs, is checked, and flows back.
   compiler. A summary or a dependency the files cannot say (a service called over HTTP) is written
   once by a person and kept. `daoris-devkit map --check` is the gate a repository declares, and Daoris
   keeps its own map with it.
+- **A teammate's code map, on this machine** (MAP3e). A repository whose checkout is on another
+  machine used to answer "no map" here even when it keeps one. Each sync now brings its map down as
+  the circle's deployment holds it, only when it moved, and the Map view says where it came from:
+  the commit, its line and whose key fed it. A commit that keeps no map says so by that commit.
 - **What a start runs on** (MAP1b). Settings shows, for each workspace, the agent, account and
   version a driven session would start with, and which setting chose each: this workspace's
   default, this machine's, or the agent's own sign-in; a pin, or PATH. A start the driver would

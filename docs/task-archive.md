@@ -4755,3 +4755,42 @@ has merged.
 
 Devkit 73 (was 59), service 431, the code-map gate fresh, verify green. Nothing here binds a port,
 so no rehearsal moved.
+
+## MAP3e — a teammate's code map on this machine (2026-09-24)
+
+- [x] **MAP3e — a teammate's code map on this machine.** MAP3b holds a fed map at the remote only, so
+  a machine without the checkout answers "no map" for a teammate's repository that keeps one. Bring
+  it down with the sync, or say where it lives.
+
+✅ **done 2026-09-24**: the map is brought down, not pointed at. It was built by a parallel agent in
+its own worktree and integrated here.
+
+**The host's pass carries it** (`CodeMapSync`), beside the quests and the records. It covers each
+repository of the circle this machine holds only a teammate's copy of. Pulling a map needs no git, so
+it is the host's (D69), and the host is what answers the page.
+
+**The remote's holding is the order.** A shared deployment already took each map by ancestry, so this
+machine holds what the remote holds, at the commit it holds it:
+- a newer commit replaces the map here;
+- a commit that keeps none is held with none;
+- a map the remote no longer holds is forgotten.
+
+The commit is asked first (`GET /api/feed/held`), so an unmoved map is not fetched again. A checkout
+here is the authority on its own map and is never asked for, and another circle's copy is that
+circle's.
+
+**One wire.** The code-map door answers in Core's `CodeMapWire`, which the host writes and the pass
+reads, as the quest doors have `QuestWire`. It leaves out what it does not have, as the host always
+did, and carries `fed` (the commit, its line, the key that fed it) when no checkout was read. The pass
+judges what it reads whole again before holding it. The page says where a teammate's map came from,
+and a held commit that keeps none says so by that commit.
+
+**Rejected**: saying where the map lives instead of bringing it. A machine would stop answering for
+its circle whenever it is offline, while the team's rows and quests already come down.
+
+**The rehearsal** gives the newcomer a code map and checks that machine b answers it, fed at the
+commit the remote holds, with no path in the answer. The attribution line on the page is covered by
+its story and its unit tests. It was not looked at on the real window, because the scratch machine
+has no teammate.
+
+Service 439, web 643 + 18, family 250/250, deploy 39/39, verify green.
