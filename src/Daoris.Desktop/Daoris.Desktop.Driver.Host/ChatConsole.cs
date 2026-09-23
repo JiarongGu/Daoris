@@ -51,7 +51,11 @@ internal static class ChatConsole
         output.Lined += (_, line) => Console.WriteLine(line.Text);
 
         var ended = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var runner = new ChatRunner(service, AdapterSet.Built(), home, processes, output);
+        // The build's adapters plus whatever the home's plugins declare (D64): a harness a plugin
+        // declared is one a conversation from a terminal can run on, the same as from the desktop.
+        var built = AdapterSet.Built();
+        var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
+        var runner = new ChatRunner(service, adapters, home, processes, output);
 
         var start = await runner.StartAsync(
             repository, adapter, config,

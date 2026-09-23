@@ -303,6 +303,10 @@ The first version: doctrine that installs, is checked, and flows back.
   the plugin kept; a declared harness on the roster wears the plugin it came from.
   `examples/plugins/hold-by-title` is the tracked example of a plugin that speaks — the one the
   family rehearsal installs with the real `daoris plugin add` and drives.
+- **A conversation can run on a declared harness.** Both chat doors resolve the harness through the
+  live adapter set — the desktop's through the roster the driver's tick updates, the terminal's by
+  reading the home's plugins — so a plugin added after the shell started is a harness a chat can
+  use now, without a restart.
 - **What the shell adopted stands on the Machine view.** A host already running and serving another
   install's page was said once, as a toast raised before the page existed to hear it; the sentence
   now rides the driver state beside the home's, and stands for as long as it is true.

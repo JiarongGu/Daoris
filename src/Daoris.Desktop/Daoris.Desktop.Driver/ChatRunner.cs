@@ -59,7 +59,10 @@ public sealed class ChatRunner(
         Func<string, string, Task>? onEnded = null, string? profile = null, bool ownTree = false,
         CancellationToken ct = default)
     {
-        var resolved = adapters.Resolve(adapter);
+        // Through the roster's LIVE set, not the one this runner was built with: the driver's tick
+        // hands the roster the build's adapters plus whatever the plugins declare (D64), so a harness
+        // declared since the shell started is a harness a conversation can run on now.
+        var resolved = _harnesses.Adapters.Resolve(adapter);
         if (!resolved.Interactive)
         {
             // Asked BEFORE the record is opened: a session record for a conversation that could never
