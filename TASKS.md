@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: INT4b, INT4c.** INT3 waits on the owner's yes, INT6 on the owner's presence.
+- **Actionable: AGT1, AGT2, INT4b, INT4c.** AGT3/AGT4 and INT3 wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -266,7 +266,8 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Fifteen items are open** and every closed one is
+the archive; its decision is **D53, accepted**). **Twenty-one items are open** — six of them the
+owner's agents direction (AGT1–AGT6, two waiting on the owner's call) — and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
@@ -276,8 +277,8 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **INT4b, then INT4c, are next.** Each is one session-sized landing, TDD, gates green, moved to
-the archive on completion.
+🔴 **AGT1 and AGT2's measurement, then INT4b and INT4c, are next** — the owner's agents direction
+outranks the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -369,20 +370,8 @@ answers narrowed the rest: **usage is measured before it is managed**, and bread
 adapters plus the ACP door, not a registry**. So **D49 §4 and D24 both stand**, which is why none of
 the items below needs a credential or a model name. Take them in order.
 
-**TOOL2 landed 2026-09-22** (in the archive): `daoris harness pin|unpin` plus the Machine view's
-half, and a pin that decides what a session actually spawns. It became the **fourth rule of the twin
-contract** — *the binary is the explicit command, then the managed pin, then `PATH`* — and 🔴 **absent
-still means `PATH`, byte for byte**. A pin nobody installed **refuses** rather than falling back,
-because running a different tool than the one that was pinned and recording the pinned version beside
-it is worse than not supporting pins.
-
-**TOOL3 landed 2026-09-22** (in the archive): ACP's `usage_update` is parsed structurally instead of
-rendered away, recorded per session at its **high-water mark** (context drops when a session
-compacts, so the last reading would report a nearly-full window as nearly empty) and totalled per
-account. 🔴 **Absent is never zero** — an agent that reports nothing, a pipe-door session, and a
-machine that has measured nothing are three different absences and none of them renders a 0. Machine-
-local by the profile's own rule, no price claimed, and a test asserts no currency symbol renders.
-**TOOL4 can now be written against observed behaviour**, which was the point of the ordering.
+**TOOL2 and TOOL3 are in the archive**: the pin (*explicit command → managed pin → `PATH`*; a pin
+nobody installed refuses) and usage at each session's high-water mark (🔴 absent is never zero).
 
 - [ ] **TOOL4 — rotation.** ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
   questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off
@@ -427,6 +416,20 @@ both are the owner's.**
   (d), silently** — that flag *is* the grant. And **measure the ACP door first**: it runs the Agent
   SDK rather than the CLI's trust flow, so it may not have the problem at all, and one driven run
   answers it.
+
+### Agents, their accounts and their wiring (owner, 2026-09-23)
+
+`docs/2026-09-23-agents-direction.md` holds the owner's words, what was checked against the vendors'
+own documents, and the order. Nothing here is designed yet.
+
+- [ ] **AGT1 — one word a person reads: *agent*,** with the maker named beside each tool.
+- [ ] **AGT2 — a managed install from the vendor's channel.** 🔴 First measure whether a pinned
+  spawn updates itself: Daoris sets no `DISABLE_AUTOUPDATER`.
+- [ ] ⛔ **AGT3 — an API-key account.** The owner decides how the key is held (D49 §4).
+- [ ] ⛔ **AGT4 — an API-driven agent.** Recommended as a plugin's ACP agent; a loop of Daoris's
+  own reopens D24, the owner's call.
+- [ ] **AGT5 — the wiring, seen and set in one place,** per workspace and per job. Design first.
+- [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
 
 ### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
 
