@@ -7,8 +7,9 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy, FileDiff, GitMerge,
-  Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, LogIn, Monitor, Plus,
-  RotateCw, Search, SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal, Trash2, X,
+  Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, LogIn, Monitor,
+  Paperclip, Plus, RotateCw, Search, SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal,
+  Trash2, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -57,6 +58,9 @@ const ICONS = {
   info: Info,
   // Signing in (2026-09-23): the link the tool printed, copied into a browser of the person's own.
   copy: Copy,
+  // What a quest carries (D65 §2): an address, and a file.
+  link: Link,
+  attach: Paperclip,
 } as const;
 
 export type IconName = keyof typeof ICONS;

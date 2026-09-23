@@ -29,6 +29,66 @@ test('projects lists both members with their declarations', async ({ page }) => 
   await expect(page.getByText('a playtest finding, with the reproduction')).toBeVisible();
 });
 
+/**
+ * **A quest carries a link and files, and the files stay on this machine** (D65 §2). Composed through
+ * the real drawer, kept by the real host under its home, opened through the host's own route — and
+ * an attached PAGE comes back as a sandboxed download: served from the platform's origin, anything
+ * else would be a script with every route this host answers.
+ */
+test('a quest carries a link and files: kept here, opened here, never run as the platform', async ({ page, request }) => {
+  const title = 'Read the media field names from config';
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64');
+
+  await page.goto('/');
+  await nav(page, 'Quests').click();
+  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByLabel('from', { exact: true }).click();
+  await page.getByRole('option', { name: 'game' }).click();
+  await page.getByLabel('to', { exact: true }).click();
+  await page.getByRole('option', { name: 'engine' }).click();
+  await page.getByLabel('what is wanted, in one line').fill(title);
+  await page.getByLabel('why, and the evidence').fill('The video and image field names are hard-coded; the ticket and a screenshot say where.');
+  await page.getByLabel(/^links/).fill('https://tickets.example/T-7');
+  await page.getByLabel('choose files…').setInputFiles([
+    { name: 'before.png', mimeType: 'image/png', buffer: png },
+    { name: 'page.html', mimeType: 'text/html', buffer: Buffer.from('<script>parent.document.title = "owned"</script>') },
+  ]);
+  await page.getByRole('button', { name: 'publish quest' }).click();
+  await expect(page.getByText(/Published quest `#[0-9a-f]{6}` to `engine`/).first()).toBeVisible();
+
+  // The card counts what it carries; the drawer holds the things themselves.
+  await expect(page.getByLabel('1 link · 2 files').first()).toBeVisible();
+  await page.getByText(title).first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('link', { name: /tickets\.example\/T-7/ }))
+    .toHaveAttribute('href', 'https://tickets.example/T-7');
+
+  // The picture is the real bytes, through the host's route — decoded, so it is the file and not an
+  // error page wearing an image tag.
+  const picture = dialog.getByRole('img', { name: 'before.png' });
+  await expect(picture).toBeVisible();
+  await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1);
+
+  // 🔴 Where it lies is never shown: the host answers this machine a path, and the page must not
+  // print it.
+  await expect(dialog).not.toContainText('_fixtures');
+  await expect(dialog).not.toContainText('attachments');
+
+  // 🔴 An attached page is a sandboxed download, never a document on the platform's origin.
+  const href = await dialog.getByRole('link', { name: /page\.html/ }).getAttribute('href');
+  const served = await request.get(href!);
+  expect(served.status()).toBe(200);
+  expect(served.headers()['content-security-policy']).toContain('sandbox');
+  expect(served.headers()['x-content-type-options']).toBe('nosniff');
+  expect(served.headers()['content-disposition']).toContain('attachment');
+
+  // Leave the family as it was found: the suite is serial, and the next test expects nothing open.
+  await dialog.getByRole('button', { name: 'done', exact: true }).click();
+  await expect(page.getByText(/is now Done/).first()).toBeVisible();
+});
+
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();

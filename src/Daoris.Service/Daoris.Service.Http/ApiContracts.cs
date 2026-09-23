@@ -27,10 +27,22 @@ public sealed record ConvergenceEntryResponse(
 public sealed record ConvergenceResponse(
     string Method, double Similarity, IReadOnlyList<string> Repositories,
     IReadOnlyList<ConvergenceEntryResponse> Entries, string Suggestion);
+// What a quest carries (D65 §2) travels on every read: links whole, files by name. `Path` is where
+// THIS machine keeps a file — answered only to a caller on this machine, like a transcript (D47 §4),
+// and only when the bytes are actually here: a mirrored quest's file is named and not held, and a
+// null path is how a reader, and the driver, learn that rather than guess it.
+public sealed record QuestAttachmentResponse(string Name, string Sha256, long Bytes, string? Path);
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
-    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace);
-public sealed record PublishQuestRequest(string From, string To, string Title, string Body);
+    string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
+    IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments);
+// An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
+// array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
+// decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
+public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, string? Sha256, long? Bytes);
+public sealed record PublishQuestRequest(
+    string From, string To, string Title, string Body,
+    IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null);
 public sealed record RespondQuestRequest(string? Action, string? Reason);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(
@@ -94,9 +106,13 @@ public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, 
 public sealed record FeedEntriesRequest(
     string Repository, IReadOnlyList<FeedEntryRecord>? Entries,
     string? Commit, DateTimeOffset? CommittedAt, string? Branch);
+// A mirrored quest carries what its home's record carries — links, and files BY NAME: the bytes are
+// on the machine that published them, and a mirror is exactly where a file is named and not held.
+public sealed record FeedQuestAttachment(string? Name, string? Sha256, long? Bytes);
 public sealed record FeedQuestRecord(
     string Id, string From, string To, string Title, string Body, string? Status, string? Note,
-    DateTimeOffset Filed, DateTimeOffset Updated);
+    DateTimeOffset Filed, DateTimeOffset Updated,
+    IReadOnlyList<string>? Links = null, IReadOnlyList<FeedQuestAttachment>? Attachments = null);
 public sealed record FeedQuestsRequest(IReadOnlyList<FeedQuestRecord>? Quests);
 public sealed record FeedResponse(int Accepted, string Message);
 public sealed record ErrorResponse(string Error);

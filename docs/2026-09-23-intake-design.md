@@ -72,6 +72,13 @@ handed them the way it is handed everything else: the composed target names them
 `DAORIS_QUEST_ATTACHMENTS` points at the directory. The desktop's composer takes drops and pastes;
 the terminal's `--file` and `--url` take paths and addresses.
 
+*As built (INT2, 2026-09-23; D65 as amended):* the local host tells a caller on this machine where
+each kept file lies, and the driver sets the variable from that answer rather than deriving it,
+because the driver's home is not always the host's. A link is an absolute http or https address. A
+quest carries at most 10 files and 20 MB together. A shared door refuses content outright. The host
+serves a kept file loopback-only and sandboxed. `--file` and `--url` arrive with the ask (INT4);
+until then the MCP door's `quest_publish` takes `links` and `attachments` (paths).
+
 ### 1d. Locate — declarations first, a session second
 
 The registry is the answer to *whose problem is this* (D34), and it stays the answer: the intake

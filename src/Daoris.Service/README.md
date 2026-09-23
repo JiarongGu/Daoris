@@ -48,9 +48,19 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 
 | Tool | What it does |
 |---|---|
-| `quest_publish` | Ask another repository for something. Refuses a repository that has not adopted |
-| `quest_list` | What has been asked of whom, and what is still outstanding |
+| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them. Refuses a repository that has not adopted |
+| `quest_list` | What has been asked of whom, and what is still outstanding — links and file names included |
 | `quest_respond` | `take`, `done` or `decline` — declining needs a reason |
+
+**A quest carries links and files** (D65 §2). A link is an absolute http or https address, refused
+otherwise, because a drawer shows it as a link. A file's **bytes stay on the machine that published
+it**, kept under that machine's home at `quests/<id>/attachments/<first 12 of the sha256>-<name>`.
+They are kept only after the record exists, so a refused ask leaves nothing on disk. The record names
+each file by name, hash and size, which is all a remote ever learns: a shared deployment refuses
+content outright, and the relay's signature has no field for it. A quest carries at most 10 files and
+20 MB in total. A local host tells a caller on this machine where each kept file lies (the
+transcript's rule), and the driver hands a session that directory as `DAORIS_QUEST_ATTACHMENTS`. With
+no Daoris home, files are refused, and links still travel.
 
 The judgement behind those — who may be addressed, what a refusal says, what declining requires —
 lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would
@@ -131,7 +141,8 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 |---|---|
 | `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
 | `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands |
-| `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline |
+| `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape |
+| `GET /api/quests/{id}/attachments/{sha256}` | local mode, loopback only: a kept file, served sandboxed (`Content-Security-Policy: sandbox`, `nosniff`), and anything but an image, a PDF or text as a download, so an attached page never runs on the platform's origin |
 | `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46) |
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
 | `POST /api/feed/sessions` · `/api/feed/entries` | shared mode only: what a desktop's sync feeds up (D47) |

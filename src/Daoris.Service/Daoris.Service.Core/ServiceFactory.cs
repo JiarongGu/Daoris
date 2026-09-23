@@ -48,6 +48,12 @@ public sealed record ComposedService(
 {
     internal SqliteKnowledgeStore? Store { get; init; }
 
+    /// <summary>
+    /// Where this deployment keeps the bytes a quest carries (D65 §2) — null on a deployment that keeps
+    /// none: a shared one, which holds names only, or a local one with no Daoris home (D63).
+    /// </summary>
+    public QuestFiles? Files { get; init; }
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -129,6 +135,10 @@ public static class ServiceFactory
         // shared host passes EmptyKnowledgeSource, because it is fed and never scans (D47 §4) — the
         // route refusal alone would leave the index-on-first-use path free to scan the server's disk.
         IKnowledgeSource? source = null,
+        // Where a quest's files are kept, when this deployment keeps any (D65 §2). A local host passes
+        // the home's keeper; a shared host passes nothing — it holds names, never bytes — and so does a
+        // local host with no home, whose exchange then refuses files with the home's sentence (D63).
+        QuestFiles? files = null,
         CancellationToken ct = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
@@ -195,12 +205,13 @@ public static class ServiceFactory
         }
 
         return new ComposedService(
-            service, quests, new QuestExchange(service, quests, remoteQuests),
+            service, quests, new QuestExchange(service, quests, remoteQuests, files),
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
             // repository it runs in, and therefore which circle its record belongs to (D49 §3).
             sessions, new SessionLedger(quests, sessions, service), keys, service.SemanticEnabled)
         {
             Store = store,
+            Files = files,
         };
     }
 

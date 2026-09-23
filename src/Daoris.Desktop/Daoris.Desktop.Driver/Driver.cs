@@ -324,7 +324,11 @@ public sealed class Driver(
         {
             var adapter = _adapters.Resolve(config.Adapter);
             var target = new SessionTarget(
-                quest.Id, quest.Title, quest.Body, quest.From, quest.To, workTree, service.BaseUrl);
+                quest.Id, quest.Title, quest.Body, quest.From, quest.To, workTree, service.BaseUrl)
+            {
+                Links = quest.Links,
+                Attachments = quest.Attachments,
+            };
             var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
 
             // The environment seam every harness already carries for exactly this (D49 §4). Applied

@@ -129,8 +129,7 @@ function useInvalidateQuestWork() {
 export const usePublishQuest = () => {
   const invalidate = useInvalidateQuestWork();
   return useMutation({
-    mutationFn: (draft: { from: string; to: string; title: string; body: string }) =>
-      api.publishQuest(draft),
+    mutationFn: (draft: Parameters<typeof api.publishQuest>[0]) => api.publishQuest(draft),
     onSuccess: invalidate,
   });
 };

@@ -48,7 +48,27 @@ public sealed record Quest(
     DateTimeOffset Filed,
     DateTimeOffset Updated,
     string? Home = null,
-    string Workspace = Workspaces.Default);
+    string Workspace = Workspaces.Default)
+{
+    /// <summary>
+    /// Addresses the quest carries — a ticket, a page, a document (D65 §2). They travel with it
+    /// everywhere the quest does, and are given in the order the asker gave them.
+    /// </summary>
+    public IReadOnlyList<string> Links { get; init; } = [];
+
+    /// <summary>
+    /// Files the quest carries, BY NAME (D65 §2). The bytes are machine-local — kept under the home of
+    /// the machine that published them, the transcript's boundary (D47 §4) — so a record read anywhere
+    /// else says a file exists without being able to open it.
+    /// </summary>
+    public IReadOnlyList<QuestAttachment> Attachments { get; init; } = [];
+}
+
+/// <summary>A file a quest carries, as its record names it — never where it lies on a disk.</summary>
+/// <param name="Name">The file's own name, made safe to keep: what a reader and a session see.</param>
+/// <param name="Sha256">Its content's hash, lowercase hex — the file's identity, and how it is found.</param>
+/// <param name="Bytes">Its size.</param>
+public sealed record QuestAttachment(string Name, string Sha256, long Bytes);
 
 /// <param name="Quest">The quest as it now stands — null when no such id exists.</param>
 /// <param name="Moved">Whether THIS call moved it. False with a non-null quest is a refused move.</param>
@@ -101,8 +121,10 @@ public sealed class QuestStore
                   note      TEXT NULL,
                   filed     TEXT NOT NULL,
                   updated   TEXT NOT NULL,
-                  home      TEXT NULL,
-                  workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'
+                  home        TEXT NULL,
+                  workspace   TEXT NOT NULL DEFAULT '{Workspaces.Default}',
+                  links       TEXT NOT NULL DEFAULT '[]',
+                  attachments TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -110,12 +132,15 @@ public sealed class QuestStore
         }
 
         // A store created before the remote existed has no home column; one from before workspaces has
-        // no workspace. Their quests must survive the upgrade — home NULL and the one workspace there
-        // was, which is exactly right, because everything in them was its own.
+        // no workspace; one from before quests carried anything (D65) has neither list. Their quests
+        // must survive the upgrade — home NULL, the one workspace there was, and nothing carried, which
+        // is exactly right, because everything in them was its own and carried nothing.
         foreach (var (column, definition) in new[]
         {
             ("home", "home TEXT NULL"),
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
+            ("links", "links TEXT NOT NULL DEFAULT '[]'"),
+            ("attachments", "attachments TEXT NOT NULL DEFAULT '[]'"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -148,9 +173,14 @@ public sealed class QuestStore
     /// The circle both sides share — decided by <see cref="QuestExchange"/>, which is where the
     /// same-workspace clause lives. The store holds state; it does not judge who may ask whom.
     /// </param>
+    /// <param name="links">Addresses the quest carries, already judged by the exchange.</param>
+    /// <param name="attachments">Files the quest carries, by name — the bytes are never this store's.</param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
-        string? workspace = null, CancellationToken ct = default)
+        string? workspace = null,
+        IReadOnlyList<string>? links = null,
+        IReadOnlyList<QuestAttachment>? attachments = null,
+        CancellationToken ct = default)
     {
         var id = MakeId(from, to, title);
         var existing = await FindAsync(id, ct).ConfigureAwait(false);
@@ -158,13 +188,19 @@ public sealed class QuestStore
 
         var quest = new Quest(
             id, from, to, title, body, QuestStatus.Open, null, now, now,
-            Workspace: Workspaces.Normalize(workspace));
+            Workspace: Workspaces.Normalize(workspace))
+        {
+            Links = links ?? [],
+            Attachments = attachments ?? [],
+        };
 
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, NULL, $filed, $updated, $workspace)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, NULL, $filed, $updated, $workspace, $links, $attachments)
             """;
+        command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
+        command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
         command.Parameters.AddWithValue("$workspace", quest.Workspace);
         command.Parameters.AddWithValue("$id", quest.Id);
         command.Parameters.AddWithValue("$sender", quest.From);
@@ -234,12 +270,17 @@ public sealed class QuestStore
     public async Task MirrorAsync(Quest quest, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
+        // What a quest carries is fixed at publish, like its words — but a mirror row written by a
+        // version that did not know about carrying has nothing, so the home's record overwrites it.
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $home, $workspace)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace, links, attachments)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $home, $workspace, $links, $attachments)
             ON CONFLICT (id) DO UPDATE SET
-              status = $status, note = $note, updated = $updated, home = $home, workspace = $workspace
+              status = $status, note = $note, updated = $updated, home = $home, workspace = $workspace,
+              links = $links, attachments = $attachments
             """;
+        command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
+        command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(quest.Workspace));
         command.Parameters.AddWithValue("$id", quest.Id);
         command.Parameters.AddWithValue("$sender", quest.From);
@@ -303,5 +344,60 @@ public sealed class QuestStore
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("filed"))),
         DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
         reader.IsDBNull(reader.GetOrdinal("home")) ? null : reader.GetString(reader.GetOrdinal("home")),
-        Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))));
+        Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))))
+    {
+        Links = ReadLinks(reader.GetString(reader.GetOrdinal("links"))),
+        Attachments = ReadAttachments(reader.GetString(reader.GetOrdinal("attachments"))),
+    };
+
+    // Written and read by hand rather than through the reflection serializer, for the same reason the
+    // registration store's lists are: nothing here may quietly stop working under AOT.
+    private static string LinksJson(IReadOnlyList<string> links) => Json(writer =>
+    {
+        writer.WriteStartArray();
+        foreach (var link in links) writer.WriteStringValue(link);
+        writer.WriteEndArray();
+    });
+
+    private static string AttachmentsJson(IReadOnlyList<QuestAttachment> attachments) => Json(writer =>
+    {
+        writer.WriteStartArray();
+        foreach (var attachment in attachments)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("name", attachment.Name);
+            writer.WriteString("sha256", attachment.Sha256);
+            writer.WriteNumber("bytes", attachment.Bytes);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    });
+
+    private static string Json(Action<System.Text.Json.Utf8JsonWriter> write)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new System.Text.Json.Utf8JsonWriter(stream)) write(writer);
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static IReadOnlyList<string> ReadLinks(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.EnumerateArray()
+            .Select(item => item.GetString())
+            .OfType<string>()
+            .ToList();
+    }
+
+    private static IReadOnlyList<QuestAttachment> ReadAttachments(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.EnumerateArray()
+            .Select(item => new QuestAttachment(
+                item.GetProperty("name").GetString() ?? "",
+                item.GetProperty("sha256").GetString() ?? "",
+                item.GetProperty("bytes").GetInt64()))
+            .ToList();
+    }
 }

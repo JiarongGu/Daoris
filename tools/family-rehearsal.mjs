@@ -380,7 +380,8 @@ run(`git ${GIT_ID} commit -q -m "the newcomer is born"`, newcomer);
 const stubAgent = join(scratch, 'stub-agent.mjs');
 writeFileSync(stubAgent, `
 import { execSync } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // The stub is a fake BINARY as well as a fake session (D49 §4): before anything else it answers the
 // two questions the toolchain probe asks any harness — its version, and whether a configuration home
@@ -438,6 +439,20 @@ console.log('stub: taking quest ' + id);
 // rather than trusting the record's word for it.
 console.log('stub: config home ' + (process.env.DAORIS_STUB_CONFIG_DIR ?? '(the harness’s own)'));
 
+// What the quest carried (D65 §2), as a session meets it: the links its target names, and each file
+// in the directory it was handed — READ, so the gate proves the bytes arrived rather than the name.
+// A file named on the record and kept on another machine is said to be elsewhere by the target.
+const target = process.env.DAORIS_TARGET ?? '';
+for (const link of target.match(/https:\\/\\/\\S+/g) ?? []) console.log('stub: link ' + link);
+const attachments = process.env.DAORIS_QUEST_ATTACHMENTS;
+if (attachments) {
+  for (const name of readdirSync(attachments)) {
+    console.log('stub: attachment ' + name + ' reads ' + readFileSync(join(attachments, name), 'utf8').trim());
+  }
+} else if (/not on this machine/.test(target)) {
+  console.log('stub: a file is named and not here');
+}
+
 if (/decline/i.test(title)) {
   await respond('decline', 'The stub declines what asks to be declined.');
   process.exit(0);
@@ -463,15 +478,33 @@ writeFileSync(driverConfig, `${JSON.stringify({
 
 const drive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: driverConfig, mode });
 
+// It carries a link and a file (D65 §2), so the loop proves the file reaches the session whole — kept
+// by the host under ITS home, which is not the driver's (the driver's is wherever driver.json lives),
+// and handed over by the path the host answered rather than one the driver guessed.
+const BRIEF = 'the brief the asker attached, read back by the session';
 const driven = await api('POST', '/api/quests', {
   body: {
     from: 'game',
     to: 'newcomer',
     title: 'Drive the newcomer',
     body: 'Prove the loop: a quest becomes a session becomes a commit becomes done.',
+    links: ['https://tickets.example/T-42'],
+    attachments: [{ name: 'brief.txt', content: Buffer.from(BRIEF).toString('base64') }],
   },
 });
 const drivenId = driven.json?.quest?.id ?? '';
+const brief = driven.json?.quest?.attachments?.[0];
+check(
+  'a quest carries a link and a file through the local door',
+  driven.status === 200 && driven.json.quest.links?.[0] === 'https://tickets.example/T-42' && brief?.name === 'brief.txt',
+  driven.text,
+);
+check(
+  '…and the host keeps the file under ITS home, by the quest and the content',
+  Boolean(brief?.path) && brief.path.startsWith(join(scratch, 'home', 'quests', drivenId, 'attachments'))
+    && existsSync(brief.path) && readFileSync(brief.path, 'utf8') === BRIEF,
+  JSON.stringify(brief),
+);
 
 // A dirty tree holds the queue rather than entangling a session with somebody's work in flight —
 // and holding is NOT progress, so --until-idle returns instead of spinning.
@@ -517,6 +550,12 @@ check(
   existsSync(completed?.transcript ?? '')
     && readFileSync(completed.transcript, 'utf8').includes(`stub: taking quest ${drivenId}`),
   `${completed?.transcript}`,
+);
+const said = existsSync(completed?.transcript ?? '') ? readFileSync(completed.transcript, 'utf8') : '';
+check(
+  'the session was handed the link in its target, and READ the file from the directory it was given',
+  said.includes('stub: link https://tickets.example/T-42') && said.includes(`-brief.txt reads ${BRIEF}`),
+  said.split('\n').filter((line) => line.startsWith('stub:')).join('\n'),
 );
 const landed = run('git log --oneline', newcomer);
 check(
@@ -954,6 +993,10 @@ const hostB = await startServer({
   ASPNETCORE_URLS: HOST_B_BASE,
   DAORIS_REMOTE_URL: REMOTE_BASE,
   DAORIS_REMOTE_KEY: keyB,
+  // A machine of its own has a HOME of its own (D63). Inheriting machine a's would let b's host find
+  // a's quest files on disk and call them here — two simulated machines quietly sharing one, which
+  // is exactly the disclosure boundary this phase exists to prove (D65 §2).
+  DAORIS_HOME: join(scratch, 'home-b'),
 }, HOST_B_BASE);
 check('machine b’s host is up, carrying its remote', hostB !== null);
 const borealisConnect = run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
@@ -1061,12 +1104,16 @@ check(
 
 // The crossing: published on machine a through its own local door, homed at the remote, driven to
 // done on machine b — the loop D45's part 3 exists for.
+// It carries a file (D65 §2), and the file is the boundary under test: machine a keeps the bytes,
+// the remote and machine b learn the NAME, and the session on b is told the file is elsewhere.
+const CROSSING_BYTES = 'the crossing marker bytes, which never leave machine a';
 const crossing = await api('POST', '/api/quests', {
   body: {
     from: 'newcomer',
     to: 'borealis',
     title: 'Cross the machines',
     body: 'Published on machine a, driven on machine b: the write-through and the mirror, end to end.',
+    attachments: [{ name: 'crossing.txt', content: Buffer.from(CROSSING_BYTES).toString('base64') }],
   },
 });
 check(
@@ -1081,9 +1128,43 @@ check(
   (onRemote.json ?? []).some((q) => q.id === crossingId && q.status === 'Open'),
   onRemote.text,
 );
+const crossingAtRemote = (onRemote.json ?? []).find((q) => q.id === crossingId);
+check(
+  'the remote knows the file by NAME — and has no path for it, because it has no bytes',
+  crossingAtRemote?.attachments?.[0]?.name === 'crossing.txt' && !('path' in (crossingAtRemote.attachments[0] ?? {})),
+  JSON.stringify(crossingAtRemote),
+);
+const crossingOnA = (await api('GET', '/api/quests?repository=borealis')).json?.find((q) => q.id === crossingId);
+check(
+  '…while machine a, which published it, keeps the bytes under its own home',
+  existsSync(crossingOnA?.attachments?.[0]?.path ?? '')
+    && readFileSync(crossingOnA.attachments[0].path, 'utf8') === CROSSING_BYTES,
+  JSON.stringify(crossingOnA),
+);
+const bytesAtRemote = await api('POST', '/api/quests', {
+  base: REMOTE_BASE,
+  key: keyA,
+  body: {
+    from: 'newcomer', to: 'borealis', title: 'Bytes straight at the remote', body: 'A client that sent content.',
+    attachments: [{ name: 'leak.txt', content: Buffer.from('bytes that must not land').toString('base64') }],
+  },
+});
+check(
+  'a shared deployment refuses a file’s content outright — names, never bytes',
+  bytesAtRemote.status === 400 && /keeps names, never bytes/.test(bytesAtRemote.text),
+  bytesAtRemote.text,
+);
 
 const crossingRun = driveB();
 check('machine b drives the crossing to done', crossingRun.code === 0 && /completed/.test(crossingRun.out), crossingRun.out);
+const crossingSession = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true',
+  { base: HOST_B_BASE })).json ?? []).find((s) => s.quest === crossingId);
+const saidOnB = existsSync(crossingSession?.transcript ?? '') ? readFileSync(crossingSession.transcript, 'utf8') : '';
+check(
+  'the session on machine b was told the file is named and not on its machine — never handed a path',
+  saidOnB.includes('stub: a file is named and not here') && !saidOnB.includes('stub: attachment '),
+  saidOnB.split('\n').filter((line) => line.startsWith('stub:')).join('\n'),
+);
 const landedB = run('git log --oneline', borealis);
 check(
   'the commit is really in borealis’ history',
@@ -1211,6 +1292,12 @@ check('…and none of the knowledge that was kept home', !remoteBytes.includes('
 // "three guards" is a claim about code, while this is a claim about the artefact.
 check('…and no account name a session ran as', !remoteBytes.includes('mach-b-account'),
   'a credential profile name reached the remote store');
+// A quest's file is the newest machine-local thing (D65 §2): its NAME is on the remote by design, and
+// its bytes — kept by machine a — must be nowhere in the store, including the ones a client sent
+// straight at the shared door and were refused.
+check('…and none of a quest file’s bytes, relayed or sent straight at it',
+  !remoteBytes.includes('crossing marker bytes') && !remoteBytes.includes('bytes that must not land'),
+  'a quest attachment’s content reached the remote store');
 
 // -------------------------------------------------- 12. the remotes are a map
 
@@ -2419,13 +2506,14 @@ if (totals.failures) {
   console.log('  a quest published, refused where it should be, taken, finished, and still there');
   console.log("  after a restart; one project's knowledge answering the other's search; a newcomer");
   console.log('  joining through the real CLI and answering its first quest on day one — then DRIVEN:');
-  console.log('  a quest became a session became a commit became done, a dirty tree held, a decline');
-  console.log('  carried its reason, and outside work was left entirely alone (D46). Then REMOTE (D47):');
-  console.log('  two machines and a shared host with minted keys — a quest published on one machine,');
-  console.log('  driven to done on the other under a named account, the closure crossing back with the');
-  console.log('  tool version but never the account name; a raced take standing down;');
-  console.log('  knowledge crossing only where declared; and the remote store scanned to hold no');
-  console.log('  machine path, no transcript, and nothing a repository kept home. And WORKSPACES');
+  console.log('  a quest carrying a link and a file became a session that read both, became a commit');
+  console.log('  became done, a dirty tree held, a decline carried its reason, and outside work was');
+  console.log('  left entirely alone (D46, D65). Then REMOTE (D47): two machines and a shared host with');
+  console.log('  minted keys — a quest published on one machine, driven to done on the other under a');
+  console.log('  named account, its file known there by name and its bytes kept home, the closure');
+  console.log('  crossing back with the tool version but never the account name; a raced take standing');
+  console.log('  down; knowledge crossing only where declared; and the remote store scanned to hold no');
+  console.log('  machine path, no transcript, no file’s bytes, and nothing a repository kept home. And WORKSPACES');
   console.log('  (D48): two circles on one machine, wired by `connect --workspace` and written into no');
   console.log('  tracked file — a search answering from one circle while the other held the same');
   console.log('  lesson word for word, and a quest across the boundary refused in a sentence that');

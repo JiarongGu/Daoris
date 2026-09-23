@@ -210,6 +210,35 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
+    /// A mirrored quest carries what its home's record carries (D65 §2) — the links, and each file BY
+    /// NAME. A path is never copied, even one a buggy remote sent: where another machine keeps a file
+    /// means nothing here, and a mirror that carried it would hand a session a path that opens nothing.
+    /// </summary>
+    [Fact]
+    public void The_quest_mirror_carries_links_and_file_names_and_never_a_path()
+    {
+        const string remoteQuests = """
+            [
+              { "id": "abc123", "from": "Elsewhere", "to": "Shared", "title": "For us", "body": "b",
+                "status": "Open", "filed": "2026-09-20T10:00:00+00:00", "updated": "2026-09-20T10:00:00+00:00",
+                "links": ["https://tickets.example/T-1"],
+                "attachments": [{ "name": "before.png", "sha256": "ab12", "bytes": 2048, "path": "/srv/else/before.png" }] }
+            ]
+            """;
+
+        var mirror = RemoteSyncPayloads.Quests(remoteQuests, new HashSet<string>(["Shared"]));
+
+        using var document = JsonDocument.Parse(mirror!.Value.Json);
+        var quest = document.RootElement.GetProperty("quests")[0];
+        Assert.Equal("https://tickets.example/T-1", quest.GetProperty("links")[0].GetString());
+        var file = quest.GetProperty("attachments")[0];
+        Assert.Equal("before.png", file.GetProperty("name").GetString());
+        Assert.Equal(2048, file.GetProperty("bytes").GetInt64());
+        Assert.False(file.TryGetProperty("path", out _));
+        Assert.DoesNotContain("/srv/else", mirror.Value.Json);
+    }
+
+    /// <summary>
     /// The remote's registry mirrors down as FOREIGN rows only (D47 §5): a teammate's repository
     /// becomes addressable here, while anything this machine holds keeps its own registration — the
     /// machine with the checkout is the authority, and its root must survive the sync untouched.

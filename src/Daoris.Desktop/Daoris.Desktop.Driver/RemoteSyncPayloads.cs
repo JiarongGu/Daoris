@@ -232,6 +232,37 @@ public static class RemoteSyncPayloads
                 Copy(writer, quest, "note");
                 writer.WriteString("filed", Text(quest, "filed"));
                 writer.WriteString("updated", Text(quest, "updated"));
+
+                // What the quest carries (D65 §2): links whole, files BY NAME — field by field, so a
+                // path another machine answered can never ride along into this one's mirror.
+                writer.WriteStartArray("links");
+                if (quest.TryGetProperty("links", out var links) && links.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var link in links.EnumerateArray())
+                    {
+                        if (link.ValueKind == JsonValueKind.String) writer.WriteStringValue(link.GetString());
+                    }
+                }
+
+                writer.WriteEndArray();
+                writer.WriteStartArray("attachments");
+                if (quest.TryGetProperty("attachments", out var files) && files.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var file in files.EnumerateArray())
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("name", Text(file, "name"));
+                        writer.WriteString("sha256", Text(file, "sha256"));
+                        if (file.TryGetProperty("bytes", out var bytes) && bytes.ValueKind == JsonValueKind.Number)
+                        {
+                            writer.WriteNumber("bytes", bytes.GetInt64());
+                        }
+
+                        writer.WriteEndObject();
+                    }
+                }
+
+                writer.WriteEndArray();
                 writer.WriteEndObject();
             }
 

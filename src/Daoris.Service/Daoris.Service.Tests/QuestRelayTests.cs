@@ -40,10 +40,16 @@ public sealed class QuestRelayTests : IAsyncLifetime
         public RemoteQuestAnswer NextAnswer { get; set; } = new(0, "unreachable", null);
         public List<string> Calls { get; } = [];
 
+        /// <summary>What the last publish carried across — the names the remote was told.</summary>
+        public (IReadOnlyList<string> Links, IReadOnlyList<QuestAttachment> Attachments) Carried { get; private set; }
+
         public Task<RemoteQuestAnswer> PublishAsync(
-            string from, string to, string title, string body, CancellationToken ct = default)
+            string from, string to, string title, string body,
+            IReadOnlyList<string> links, IReadOnlyList<QuestAttachment> attachments,
+            CancellationToken ct = default)
         {
             Calls.Add($"publish {to}:{title}");
+            Carried = (links, attachments);
             return Task.FromResult(NextAnswer);
         }
 
@@ -134,6 +140,45 @@ public sealed class QuestRelayTests : IAsyncLifetime
         Assert.Contains("publish Federated:Do it", _remote.Calls);
         var mirrored = (await _quests.FindAsync("abc123"))!;
         Assert.Equal("remote", mirrored.Home);
+    }
+
+    /// <summary>
+    /// 🔴 The disclosure boundary for a quest's files (D65 §2, D47 §4): the remote is told the links and
+    /// the NAMES, the mirror carries what the remote answered, and the bytes are kept on THIS machine
+    /// under the quest's id — the home decided the id, and the file follows the record, never the wire.
+    /// </summary>
+    [Fact]
+    public async Task A_joined_receivers_quest_tells_the_remote_names_and_keeps_the_bytes_here()
+    {
+        var home = _root + "-home";
+        var upload = new QuestUpload("before.png", System.Text.Encoding.UTF8.GetBytes("pixels"));
+        var described = QuestFiles.Describe(upload);
+        _remote.NextAnswer = new(200, "Published quest `#abc123` to `Federated` — Open.", RemoteQuest() with
+        {
+            Links = ["https://tickets.example/T-9"],
+            Attachments = [described],
+        });
+
+        var files = new QuestFiles(home);
+        var outcome = await new QuestExchange(
+                _service, _quests, new FakeRoutes((Workspaces.Default, _remote)), files)
+            .PublishAsync(
+                new QuestAsk("Asker", "Federated", "Do it", "why")
+                {
+                    Links = ["https://tickets.example/T-9"],
+                    Uploads = [upload],
+                },
+                Now);
+
+        Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);
+        Assert.Equal(["https://tickets.example/T-9"], _remote.Carried.Links);
+        Assert.Equal(described, Assert.Single(_remote.Carried.Attachments));
+
+        var mirrored = (await _quests.FindAsync("abc123"))!;
+        Assert.Equal("before.png", Assert.Single(mirrored.Attachments).Name);
+        Assert.True(files.Has("abc123", described));
+
+        Directory.Delete(home, recursive: true);
     }
 
     /// <summary>A local-only receiver's quests stay entirely local — the remote never hears of them.</summary>

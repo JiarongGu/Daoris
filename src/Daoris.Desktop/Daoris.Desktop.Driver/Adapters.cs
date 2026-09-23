@@ -20,7 +20,24 @@ public sealed record SessionTarget(
     string Asker,
     string Repository,
     string Root,
-    string ServiceUrl);
+    string ServiceUrl)
+{
+    /// <summary>Addresses the quest carries (D65 §2), handed over as the asker gave them.</summary>
+    public IReadOnlyList<string> Links { get; init; } = [];
+
+    /// <summary>Files the quest carries, with where this machine keeps each — or null where it does not.</summary>
+    public IReadOnlyList<QuestFileView> Attachments { get; init; } = [];
+
+    /// <summary>
+    /// The directory the session is handed as <c>DAORIS_QUEST_ATTACHMENTS</c> — the one the service
+    /// keeps this quest's files in — or null when none of them is on this machine.
+    /// </summary>
+    public string? AttachmentsDirectory => Attachments
+        .Select(file => file.Path)
+        .OfType<string>()
+        .Select(System.IO.Path.GetDirectoryName)
+        .FirstOrDefault(directory => !string.IsNullOrEmpty(directory));
+}
 
 /// <summary>
 /// The claiming instruction (D46 §3), composed once and delivered per harness. Project-agnostic on
@@ -38,7 +55,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-
+        {Carried(target)}
         First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
@@ -49,6 +66,39 @@ public static class TargetPrompt
         back or that leaves the repository — a push, a publish, a release — is not yours to do; surface
         it and finish.
         """;
+
+    /// <summary>
+    /// What the asker gave beside their words, said plainly — each link, each file where it lies, and a
+    /// file this machine does not hold said to be elsewhere rather than listed as if a path would open
+    /// it. Empty when the quest carries nothing, so an ordinary target reads exactly as it always has.
+    /// </summary>
+    private static string Carried(SessionTarget target)
+    {
+        if (target.Links.Count == 0 && target.Attachments.Count == 0) return "";
+
+        var text = new StringBuilder();
+        if (target.Links.Count > 0)
+        {
+            text.AppendLine().AppendLine("Links the asker gave with it — read them; they are part of the ask:");
+            foreach (var link in target.Links) text.AppendLine($"- {link}");
+        }
+
+        if (target.Attachments.Count > 0)
+        {
+            text.AppendLine().AppendLine(target.AttachmentsDirectory is { } directory
+                ? $"Files the asker attached, kept for you in `{directory}` (also `DAORIS_QUEST_ATTACHMENTS`) — read them, never edit them:"
+                : "Files the asker attached:");
+            foreach (var file in target.Attachments)
+            {
+                text.AppendLine(file.Path is { } path
+                    ? $"- `{file.Name}` — {path}"
+                    : $"- `{file.Name}` — not on this machine: it stayed where the quest was published. Ask for "
+                      + "what it shows if the work needs it.");
+            }
+        }
+
+        return text.ToString();
+    }
 }
 
 /// <param name="Repository">Whose agent the conversation is.</param>
@@ -194,6 +244,13 @@ internal static class Spawning
         info.Environment["DAORIS_QUEST_BODY"] = target.Body;
         info.Environment["DAORIS_QUEST_ASKER"] = target.Asker;
         info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+
+        // The quest's files (D65 §2), when this machine holds any — absent rather than empty when it
+        // does not, because a blank directory would read to a session as one that was emptied.
+        if (target.AttachmentsDirectory is { } attachments)
+        {
+            info.Environment["DAORIS_QUEST_ATTACHMENTS"] = attachments;
+        }
 
         return info;
     }

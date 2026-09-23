@@ -2372,3 +2372,20 @@ integration in the host (a plugin declares a server for it). Attachments crossin
 **What does not move.** D24 and D1; D32 (the intake publishes, never edits); D37 and D46 §5 (the
 session's tool calls stay under the repository's own posture, browser included); D50 (two doors:
 the composer and `daoris-driver ask`); D64 (servers are one more thing a plugin declares).
+
+**Amended 2026-09-23, building INT2: the session is TOLD where a file lies, never left to derive
+it.** The design had the driver point `DAORIS_QUEST_ATTACHMENTS` at `<home>/quests/<id>/attachments/`.
+The driver's home is wherever `driver.json` lives, which is not always `DAORIS_HOME`. The family
+rehearsal is one case where they differ, so a driver deriving the path would have handed a session
+a directory that is not there. So the layout is `QuestFiles`'s alone. A local host answers a caller
+on this machine each kept file's path, only when the bytes are here (the transcript's rule, D47
+§4), and the driver sets the variable from that answer. Null is how a mirrored quest's file says it
+is elsewhere: to the driver, which tells the session, and to the page. Four more choices landed with
+it. A link is an **absolute http or https address**, refused otherwise, because a drawer renders it
+as a link and a `javascript:` "link" is a script. A quest carries **at most 10 files and 20 MB
+together**, judged once in the exchange, because three doors reach it and a limit two of them
+enforced would be a limit the third did not. A **shared door refuses content outright** rather than
+dropping it, because dropped looks kept. And the local route that serves a kept file answers
+**loopback only and sandboxed** (`Content-Security-Policy: sandbox`, `nosniff`, a download for
+anything that is not an image, a PDF or text), because it serves from the platform's own origin, and
+an attached HTML file would otherwise run with every route the host answers.

@@ -5,6 +5,45 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## "Send it back as a quest" opened no composer (2026-09-23)
+
+**Symptom.** Found by a test, then seen on the window. The first unit test to hand `QuestsView` an
+`opening` draft *the way `App` holds one* (a parent `useState`, cleared by `onOpened`) failed with
+React's *"Too many re-renders"*. On the scratch shell, SURF6b's review act *send it back…* switched
+the window to Quests and **opened nothing**: no composer, no draft, and no error anywhere a person
+could see. The draft the door exists to carry was silently lost.
+
+**Root cause.** The composer consumed the draft **during render**: `if (opening) { setDraft(…);
+setComposing(true); onOpened?.(); }`. A state update during render makes React re-run that
+component *at once, with the same props*, before the parent's update (the `onOpened` clear) can
+land, so every pass saw the draft still there and set it again. `setDraft` is handed a new object
+each time, so there was never a pass on which nothing changed. A test's render gives up loudly.
+The window's ends with the parent's clear winning and the composer closed; exactly how React
+resolved it there was not traced, and both outcomes come from consuming an event during render. The line has been
+there since the door arrived (`5f959b7`, SURF6b), and no test held `opening` at all, so the
+composer's own tests passed on a path that was never taken.
+
+**Fix.** `QuestsView.tsx`: the draft is consumed by **identity**, React's pattern for adjusting
+state when a prop changes: remember the last `opening` seen, and act only on a new one. The parent
+is told from an effect, because updating another component during this one's render is its own
+warning. The test file holds the view through `Held`, a holder shaped like `App`'s. **The same
+shape was in `WorkFrame`**: the palette's *start a session* and *review* arrive as `intent`, and
+were consumed the same way. A test holding it like `App` failed with the same loop before the fix,
+and the same fix, plus forgetting a cleared intent so asking twice still counts, passes it. On the
+scratch shell after the fix, Ctrl+K → *Start a session…* lands in Work with the form open. What the
+palette did on the window before the fix was not looked at; the test is the evidence there. The
+rule is in `docs/2026-09-19-frontend-architecture.md` §4b.
+
+**Verify.** `QuestsView.test.tsx`, *a draft handed in by a door opens the composer on it, once*,
+which proves the draft landed by the publish button coming enabled (it needs both repositories).
+The four compose tests that drive the composer through a draft failed with the loop before the fix
+and pass after it. On the scratch shell (`npm run desktop`), Work → Review → *send it back…* was
+pressed with the old code rebuilt, and no dialog opened. With the fix rebuilt, the composer opened
+with `from` set to the session's repository. The window swallowed the failure that the test made
+loud, which is why nothing had reported it.
+
+**Commit.** pending
+
 ## A login from the Machine view could never finish (2026-09-23)
 
 **Symptom.** Pressing *Log in* on an account opened a browser and then nothing: the row kept

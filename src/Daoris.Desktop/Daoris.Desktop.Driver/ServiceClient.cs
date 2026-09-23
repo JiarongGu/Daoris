@@ -200,7 +200,21 @@ public sealed class ServiceClient : IDisposable
                 Text(quest, "to") ?? "",
                 Text(quest, "title") ?? "",
                 Text(quest, "body") ?? "",
-                Text(quest, "status") ?? ""));
+                Text(quest, "status") ?? "")
+            {
+                // Absent is nothing carried: a service from before D65 answers without either.
+                Links = quest.TryGetProperty("links", out var links) && links.ValueKind == JsonValueKind.Array
+                    ? links.EnumerateArray().Select(l => l.GetString()).OfType<string>().ToList()
+                    : [],
+                Attachments = quest.TryGetProperty("attachments", out var files) && files.ValueKind == JsonValueKind.Array
+                    ? files.EnumerateArray().Select(file => new QuestFileView(
+                        Text(file, "name") ?? "",
+                        Text(file, "sha256") ?? "",
+                        file.TryGetProperty("bytes", out var bytes) && bytes.ValueKind == JsonValueKind.Number ? bytes.GetInt64() : 0,
+                        // The service answers a path only to this machine, and only when the bytes are here.
+                        Text(file, "path"))).ToList()
+                    : [],
+            });
         }
 
         return quests;

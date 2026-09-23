@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -244,6 +245,33 @@ describe('starting and holding a conversation', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Start a session' }));
     return screen.findByRole('dialog');
   };
+
+  /**
+   * 🔴 The palette's "start a session" arrives as an EVENT — `intent`, cleared by `onIntentTaken`
+   * the way `App` clears it. Consumed by setting state during render, React re-ran the frame with
+   * the same prop on every pass: the quest composer's opening draft failed exactly this way and
+   * opened nothing on the window (FIX-LOG 2026-09-23). Held here as App holds it.
+   */
+  it('opens the start form when the palette asks, once', async () => {
+    function Held() {
+      const [intent, setIntent] = useState<'start' | 'review' | null>('start');
+      return (
+        <WorkFrame
+          selected={null} onSelect={() => {}} notify={() => {}}
+          intent={intent} onIntentTaken={() => setIntent(null)}
+        />
+      );
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Held /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(await screen.findByLabelText('repository')).toBeTruthy();
+  });
 
   it('keeps the form behind one control, and the rail a list of sessions', async () => {
     show(null);

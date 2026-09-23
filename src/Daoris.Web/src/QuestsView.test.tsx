@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -8,10 +9,18 @@ import { QuestsView } from './QuestsView';
 // The view over a stubbed service — the shapes the real endpoints return, without a host. The
 // Playwright loop owns the real end-to-end; this owns the view's own logic at millisecond speed.
 
+// What a quest carries (D65 §2): a link, a file kept on this machine (it has a path — which the
+// page must never SHOW), and a file named on the record whose bytes stayed where it was published.
+const KEPT_PATH = 'D:/home/quests/abc123/attachments/ab12cd34ef56-before.png';
 const QUESTS = [{
   id: 'abc123', from: 'game', to: 'engine',
   title: 'Expose a streaming budget', body: 'World streaming needs a per-frame cap.',
   status: 'Open', filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+  links: ['https://tickets.example/T-1'],
+  attachments: [
+    { name: 'before.png', sha256: `ab12cd34ef56${'0'.repeat(52)}`, bytes: 2048, path: KEPT_PATH },
+    { name: 'trace.log', sha256: `cd34${'1'.repeat(60)}`, bytes: 300 },
+  ],
 }];
 
 const REGISTRY = [
@@ -38,22 +47,141 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-function view() {
+/**
+ * The view as the app holds it: a draft handed in is an EVENT, consumed through `onOpened` — so the
+ * holder clears it, exactly as `App` does, or the composer would reopen on every render.
+ */
+function Held({ opening }: { opening: { from?: string; to?: string } | null }) {
+  const [pending, setPending] = useState(opening);
+  return <QuestsView notify={() => {}} opening={pending} onOpened={() => setPending(null)} />;
+}
+
+function view(opening: { from?: string; to?: string } | null = null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <QuestsView notify={() => {}} />
+        <Held opening={opening} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
 }
 
+/** The body the last publish sent — what the local host would have been asked to keep. */
+let published: { links?: string[]; attachments?: { name: string; content: string }[] } | null = null;
+
 describe('QuestsView', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    published = null;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST' && String(input) === '/api/quests') {
+        published = JSON.parse(String(init.body));
+        return Response.json({ quest: QUESTS[0], message: 'Published quest `#abc123` to `engine` — Open.' });
+      }
+      return respond(String(input));
+    }));
   });
   afterEach(() => vi.unstubAllGlobals());
+
+  /**
+   * 🔴 SURF6b's door — "send it back as a quest" — hands the composer a draft, and consuming it by
+   * setting state during render looped until React gave up: the door crashed the view it opened.
+   */
+  it('a draft handed in by a door opens the composer on it, once', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'New quest' })).toBeInTheDocument();
+
+    // The draft LANDED: publish needs both repositories, and the person has chosen neither.
+    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'An ask' } });
+    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Its reason.' } });
+    expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeEnabled();
+  });
+
+  // ——— What a quest carries (D65 §2).
+
+  it('the drawer shows the links as links and opens a kept file — and never shows where it lies', async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(within(dialog).getByRole('link', { name: /tickets\.example\/T-1/ })).toHaveAttribute(
+      'href', 'https://tickets.example/T-1');
+    expect(within(dialog).getByRole('link', { name: /before\.png/ })).toHaveAttribute(
+      'href', `/api/quests/abc123/attachments/ab12cd34ef56${'0'.repeat(52)}`);
+    // A picture is shown as one — from the host's own route, never from the path.
+    expect(within(dialog).getByRole('img', { name: 'before.png' })).toBeInTheDocument();
+    // 🔴 A page does not name a machine path, even one it was answered.
+    expect(dialog.textContent).not.toContain('D:/home');
+  });
+
+  it('a file named on the record but not kept here is said to be elsewhere, not offered as a link', async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(within(dialog).getByText('trace.log')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('link', { name: /trace\.log/ })).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/kept on the machine that published it/)).toBeInTheDocument();
+  });
+
+  it('a card says what its quest carries, beside the title', async () => {
+    view();
+    expect(await screen.findByLabelText('1 link · 2 files')).toBeInTheDocument();
+  });
+
+  it('links typed and a file chosen travel with the publish — the file whole, as base64', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    // Set rather than typed key by key: what is under test is what travels, not the keyboard — and
+    // typing three fields character by character outran the suite's timeout under a full run.
+    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'Use the media config' } });
+    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Field names are hard-coded.' } });
+    fireEvent.change(
+      within(dialog).getByLabelText(/^links/), { target: { value: 'https://tickets.example/T-1\nhttps://docs.example/media' } });
+    await userEvent.upload(within(dialog).getByLabelText('choose files…'), new File(['pixels'], 'before.png'));
+
+    expect(within(dialog).getByText('before.png')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'publish quest' }));
+
+    await vi.waitFor(() => expect(published).not.toBeNull());
+    expect(published!.links).toEqual(['https://tickets.example/T-1', 'https://docs.example/media']);
+    expect(published!.attachments).toEqual([{ name: 'before.png', content: btoa('pixels') }]);
+  });
+
+  it('a pasted screenshot is attached rather than typed', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    const shot = new File(['pixels'], 'image.png', { type: 'image/png' });
+
+    fireEvent.paste(within(dialog).getByLabelText('why, and the evidence'), { clipboardData: { files: [shot] } });
+
+    expect(await within(dialog).findByText('image.png')).toBeInTheDocument();
+  });
+
+  it('a dropped file is attached, and a chosen one can be taken back off', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+
+    fireEvent.drop(within(dialog).getByText(/drop files here/i), {
+      dataTransfer: { files: [new File(['stack'], 'trace.log')], types: ['Files'] },
+    });
+    expect(await within(dialog).findByText('trace.log')).toBeInTheDocument();
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'remove trace.log' }));
+    expect(within(dialog).queryByText('trace.log')).not.toBeInTheDocument();
+  });
+
+  it('more files than a quest carries are left off, and the composer says why', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    const eleven = Array.from({ length: 11 }, (_, i) => new File([`${i}`], `f${i}.txt`));
+
+    await userEvent.upload(within(dialog).getByLabelText('choose files…'), eleven);
+
+    expect(within(dialog).getByText('A quest carries at most 10 files.')).toBeInTheDocument();
+    expect(within(dialog).queryByText('f10.txt')).not.toBeInTheDocument();
+  });
 
   it('groups what the service returns by where it is in its life', async () => {
     view();

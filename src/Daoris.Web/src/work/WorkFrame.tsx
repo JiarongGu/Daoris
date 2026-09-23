@@ -180,11 +180,17 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIn
     });
   };
 
-  if (intent) {
+  // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is (FIX-LOG 2026-09-23):
+  // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
+  // so the palette's ask never landed. The parent is told from an effect, not during this render.
+  const [taken, setTaken] = useState<typeof intent>(null);
+  if (intent && intent !== taken) {
+    setTaken(intent);
     if (intent === 'start') setStarting(true);
     else setDock('review');
-    onIntentTaken?.();
   }
+  if (!intent && taken) setTaken(null);
+  useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
 
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));

@@ -9,8 +9,14 @@ namespace Daoris.Knowledge;
 /// </summary>
 public interface IRemoteQuestClient
 {
+    /// <summary>
+    /// Publish at the quest's home. What it carries crosses as LINKS and NAMES — an attachment's bytes
+    /// stay on the machine that has them (D65 §2), and this signature has nowhere to put them.
+    /// </summary>
     Task<RemoteQuestAnswer> PublishAsync(
-        string from, string to, string title, string body, CancellationToken ct = default);
+        string from, string to, string title, string body,
+        IReadOnlyList<string> links, IReadOnlyList<QuestAttachment> attachments,
+        CancellationToken ct = default);
 
     Task<RemoteQuestAnswer> RespondAsync(
         string id, string action, string? reason, CancellationToken ct = default);
@@ -167,13 +173,30 @@ public sealed class HttpRemoteQuests(RemoteConfig config) : IRemoteQuestClient
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
     public Task<RemoteQuestAnswer> PublishAsync(
-        string from, string to, string title, string body, CancellationToken ct = default) =>
+        string from, string to, string title, string body,
+        IReadOnlyList<string> links, IReadOnlyList<QuestAttachment> attachments,
+        CancellationToken ct = default) =>
         SendAsync("/api/quests", writer =>
         {
             writer.WriteString("from", from);
             writer.WriteString("to", to);
             writer.WriteString("title", title);
             writer.WriteString("body", body);
+            writer.WriteStartArray("links");
+            foreach (var link in links) writer.WriteStringValue(link);
+            writer.WriteEndArray();
+            // By name: the shared door refuses content outright, and there is none to send.
+            writer.WriteStartArray("attachments");
+            foreach (var attachment in attachments)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("name", attachment.Name);
+                writer.WriteString("sha256", attachment.Sha256);
+                writer.WriteNumber("bytes", attachment.Bytes);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
         }, ct);
 
     public Task<RemoteQuestAnswer> RespondAsync(
@@ -246,7 +269,20 @@ public sealed class HttpRemoteQuests(RemoteConfig config) : IRemoteQuestClient
                     Enum.Parse<QuestStatus>(q.GetProperty("status").GetString()!, ignoreCase: true),
                     q.TryGetProperty("note", out var note) && note.ValueKind == JsonValueKind.String ? note.GetString() : null,
                     q.GetProperty("filed").GetDateTimeOffset(),
-                    q.GetProperty("updated").GetDateTimeOffset());
+                    q.GetProperty("updated").GetDateTimeOffset())
+                {
+                    // Absent is nothing carried — a remote from before D65 answers without either.
+                    Links = q.TryGetProperty("links", out var links) && links.ValueKind == JsonValueKind.Array
+                        ? links.EnumerateArray().Select(l => l.GetString()).OfType<string>().ToList()
+                        : [],
+                    Attachments = q.TryGetProperty("attachments", out var attachments)
+                        && attachments.ValueKind == JsonValueKind.Array
+                        ? attachments.EnumerateArray().Select(a => new QuestAttachment(
+                            a.GetProperty("name").GetString()!,
+                            a.GetProperty("sha256").GetString()!,
+                            a.GetProperty("bytes").GetInt64())).ToList()
+                        : [],
+                };
             }
 
             return new(status, message, quest);

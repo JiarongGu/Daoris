@@ -283,12 +283,32 @@ public sealed class KnowledgeTools(
         [Description("One line: what is wanted.")] string title,
         [Description("Why, and the evidence. Whoever works there may see a better answer than you did.")]
         string body,
+        [Description("Addresses the quest carries — a ticket, a page, a document. Absolute http or https only.")]
+        string[]? links = null,
+        [Description(
+            "Files the quest carries, by their path on this machine — a screenshot, a log, a document. "
+            + "Relative paths are the repository you are working in. They are kept on this machine and "
+            + "handed to whoever takes the quest here; a remote learns only their names.")]
+        string[]? attachments = null,
         CancellationToken ct = default)
     {
+        // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
+        // judges and keeps them, exactly as it does for the HTTP host's uploads.
+        var uploads = new List<QuestUpload>();
+        foreach (var path in attachments ?? [])
+        {
+            var (upload, refusal) = await QuestFiles.ReadAsync(path, Directory.GetCurrentDirectory(), ct)
+                .ConfigureAwait(false);
+            if (refusal is not null) return refusal + " Nothing was published.";
+            uploads.Add(upload!);
+        }
+
         // The judgement — who may be addressed, what a refusal says — lives in the exchange, shared
         // with the HTTP host so the same ask cannot be deliverable through one door and refused at
         // the other.
-        var outcome = await exchange.PublishAsync(from, to, title, body, DateTimeOffset.UtcNow, ct)
+        var outcome = await exchange.PublishAsync(
+                new QuestAsk(from, to, title, body) { Links = links ?? [], Uploads = uploads },
+                DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         return outcome.Message;
     }
@@ -322,6 +342,13 @@ public sealed class KnowledgeTools(
             {
                 text.AppendLine($"- `#{quest.Id}` **{quest.Title}** — {quest.Status}, from `{quest.From}`");
                 text.AppendLine($"  {Text.Excerpt(quest.Body, null, 200)}");
+                if (quest.Links.Count > 0) text.AppendLine($"  links: {string.Join(" · ", quest.Links)}");
+                if (quest.Attachments.Count > 0)
+                {
+                    // Names only: whoever takes the quest on the machine that keeps them is handed them.
+                    text.AppendLine($"  files: {string.Join(" · ", quest.Attachments.Select(a => a.Name))}");
+                }
+
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
             }
 

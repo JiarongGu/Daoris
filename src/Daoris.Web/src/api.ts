@@ -39,10 +39,19 @@ export type Convergence = {
   entries: ConvergenceEntry[];
   suggestion: string;
 };
+/**
+ * A file a quest carries, by name (D65 §2). `path` is where THIS machine keeps it — answered only to a
+ * caller on this machine, and only when the bytes are here — so the page reads its PRESENCE as "can be
+ * opened" and never shows the path itself: a page does not name a machine path.
+ */
+export type QuestAttachment = { name: string; sha256: string; bytes: number; path?: string };
 export type Quest = {
   id: string; from: string; to: string; title: string; body: string;
   status: 'Open' | 'Taken' | 'Done' | 'Declined';
   note?: string; filed: string; updated: string; workspace?: string;
+  /** Absent from a host older than D65 — the same as carrying nothing. */
+  links?: string[];
+  attachments?: QuestAttachment[];
 };
 export type QuestAction = { quest: Quest; message: string };
 export type Registration = {
@@ -176,8 +185,15 @@ export const api = {
       `/api/registry/${encodeURIComponent(repository)}/workspace`, { workspace }),
   retireRepository: (repository: string) =>
     post<Retired>(`/api/registry/${encodeURIComponent(repository)}`, undefined, 'DELETE'),
-  publishQuest: (quest: { from: string; to: string; title: string; body: string }) =>
-    post<QuestAction>('/api/quests', quest),
+  // Files travel WHOLE to the local host, which keeps them under this machine's home (D65 §2); a
+  // shared deployment refuses content outright, and the platform is only ever served by a local one.
+  publishQuest: (quest: {
+    from: string; to: string; title: string; body: string;
+    links?: string[]; attachments?: { name: string; content: string }[];
+  }) => post<QuestAction>('/api/quests', quest),
+  /** Where a kept file is opened — the local host's own route, which answers this machine only. */
+  attachmentUrl: (quest: string, sha256: string) =>
+    `/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`,
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,

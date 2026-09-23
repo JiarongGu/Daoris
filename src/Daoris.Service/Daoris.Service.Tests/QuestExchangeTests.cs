@@ -16,6 +16,9 @@ public sealed class QuestExchangeTests : IAsyncLifetime
 
     private SqliteConnection _connection = null!;
     private QuestExchange _exchange = null!;
+    private KnowledgeService _service = null!;
+    private QuestStore _quests = null!;
+    private QuestFiles _files = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-18T10:00:00Z");
 
     public async Task InitializeAsync()
@@ -35,21 +38,25 @@ public sealed class QuestExchangeTests : IAsyncLifetime
 
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
-        var quests = await QuestStore.OpenAsync(_connection);
+        _quests = await QuestStore.OpenAsync(_connection);
 
         var store = new InMemoryKnowledgeStore();
-        var service = new KnowledgeService(
+        _service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, registry: new Registry());
-        await service.ImportAsync(_root, Now);
+        await _service.ImportAsync(_root, Now);
 
-        _exchange = new QuestExchange(service, quests);
+        // The home is beside the family, never inside a repository: a quest's files are the
+        // machine's, and a repository is exactly where they must not land (D32).
+        _files = new QuestFiles(Path.Combine(_root + "-home"));
+        _exchange = new QuestExchange(_service, _quests, files: _files);
     }
 
     public async Task DisposeAsync()
     {
         await _connection.DisposeAsync();
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        if (Directory.Exists(_root + "-home")) Directory.Delete(_root + "-home", recursive: true);
     }
 
     private void Repo(string name, string? manifest)
@@ -192,5 +199,140 @@ public sealed class QuestExchangeTests : IAsyncLifetime
 
         Assert.Equal(QuestRespondRefusal.None, done.Refusal);
         Assert.Equal(QuestStatus.Done, done.Quest!.Status);
+    }
+
+    // ——— What a quest carries (D65 §2): links travel with it; files are kept here, by content.
+
+    private static QuestUpload Upload(string name, string content) =>
+        new(name, System.Text.Encoding.UTF8.GetBytes(content));
+
+    private Task<QuestPublishOutcome> Carry(
+        IReadOnlyList<string>? links = null, IReadOnlyList<QuestUpload>? uploads = null,
+        QuestExchange? exchange = null, string title = "Use the media config") =>
+        (exchange ?? _exchange).PublishAsync(
+            new QuestAsk("Asker", "Declared", title, "The field names are hard-coded.")
+            {
+                Links = links ?? [],
+                Uploads = uploads ?? [],
+            },
+            Now);
+
+    [Fact]
+    public async Task A_quest_carries_its_links_and_keeps_its_files_under_the_home()
+    {
+        var outcome = await Carry(
+            links: ["https://tickets.example/T-1"],
+            uploads: [Upload("before.png", "pixels"), Upload("notes.txt", "remember")]);
+
+        Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);
+        var quest = outcome.Quest!;
+        Assert.Equal(["https://tickets.example/T-1"], quest.Links);
+        Assert.Equal(["before.png", "notes.txt"], quest.Attachments.Select(a => a.Name));
+        Assert.All(quest.Attachments, a => Assert.True(_files.Has(quest.Id, a)));
+        Assert.Equal("pixels", await File.ReadAllTextAsync(_files.PathOf(quest.Id, quest.Attachments[0])));
+
+        // And the record the store holds is the one the outcome named — not a copy that forgot.
+        Assert.Equal(2, (await _quests.FindAsync(quest.Id))!.Attachments.Count);
+    }
+
+    /// <summary>
+    /// A link is shown AS a link, so it has to be an address: anything that is not an absolute http
+    /// or https URL is refused naming it — a <c>javascript:</c> "link" in a drawer is a script.
+    /// </summary>
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("ftp://files.example/a")]
+    [InlineData("tickets.example/T-1")]
+    [InlineData("file:///C:/Users/someone/notes.txt")]
+    public async Task A_link_that_is_not_an_address_is_refused_naming_it(string link)
+    {
+        var outcome = await Carry(links: [link]);
+
+        Assert.Equal(QuestPublishRefusal.BadLink, outcome.Refusal);
+        Assert.Contains(link, outcome.Message);
+        Assert.Empty(await _quests.ListAsync());
+    }
+
+    [Fact]
+    public async Task Blank_and_repeated_links_are_carried_once_and_blanks_not_at_all()
+    {
+        var outcome = await Carry(links: ["https://a.example", "  ", "https://a.example", " https://b.example "]);
+
+        Assert.Equal(["https://a.example", "https://b.example"], outcome.Quest!.Links);
+    }
+
+    /// <summary>The same file dropped twice is one file — its content is its identity.</summary>
+    [Fact]
+    public async Task The_same_file_twice_is_carried_once()
+    {
+        var outcome = await Carry(uploads: [Upload("a.txt", "same"), Upload("b.txt", "same")]);
+
+        Assert.Equal("a.txt", Assert.Single(outcome.Quest!.Attachments).Name);
+    }
+
+    /// <summary>
+    /// Limits are refused before anything is kept — a refused ask must leave nothing behind on disk,
+    /// or the home fills with files no record names.
+    /// </summary>
+    [Fact]
+    public async Task Too_many_files_are_refused_and_nothing_is_kept()
+    {
+        var uploads = Enumerable.Range(0, QuestExchange.MaxAttachments + 1)
+            .Select(i => Upload($"f{i}.txt", $"content {i}"))
+            .ToList();
+
+        var outcome = await Carry(uploads: uploads);
+
+        Assert.Equal(QuestPublishRefusal.BadAttachment, outcome.Refusal);
+        Assert.Contains($"at most {QuestExchange.MaxAttachments}", outcome.Message);
+        Assert.False(Directory.Exists(Path.Combine(_root + "-home", QuestFiles.Folder)));
+    }
+
+    [Fact]
+    public async Task Files_larger_than_a_quest_carries_are_refused_naming_the_limit()
+    {
+        var big = new QuestUpload("huge.bin", new byte[QuestExchange.MaxAttachmentBytes + 1]);
+
+        var outcome = await Carry(uploads: [big]);
+
+        Assert.Equal(QuestPublishRefusal.BadAttachment, outcome.Refusal);
+        Assert.Contains("MB", outcome.Message);
+        Assert.Contains("link", outcome.Message);
+    }
+
+    /// <summary>
+    /// 🔴 No home, no files (D63): a host with nowhere of Daoris's to keep bytes refuses them with the
+    /// home's own sentence rather than writing somewhere nobody pointed it. Links need no home.
+    /// </summary>
+    [Fact]
+    public async Task Files_with_no_home_to_keep_them_are_refused_with_the_home_sentence()
+    {
+        var homeless = new QuestExchange(_service, _quests);
+
+        var files = await Carry(uploads: [Upload("a.txt", "x")], exchange: homeless);
+        var links = await Carry(links: ["https://a.example"], exchange: homeless, title: "Links only");
+
+        Assert.Equal(QuestPublishRefusal.NoHome, files.Refusal);
+        Assert.Contains(DaorisHome.Variable, files.Message);
+        Assert.Equal(QuestPublishRefusal.None, links.Refusal);
+    }
+
+    /// <summary>
+    /// One title is one quest (D46 §3): publishing it again answers the quest as it stands, and must
+    /// SAY that what this call carried was not added — an ignored attachment is otherwise invisible.
+    /// </summary>
+    [Fact]
+    public async Task Publishing_again_says_what_it_did_not_add()
+    {
+        await Carry();
+
+        var again = await Carry(links: ["https://a.example"], uploads: [Upload("late.png", "late")]);
+
+        Assert.Equal(QuestPublishRefusal.None, again.Refusal);
+        Assert.Empty(again.Quest!.Attachments);
+        Assert.Contains("already published", again.Message);
+        Assert.Contains("late.png", again.Message);
+        Assert.Contains("https://a.example", again.Message);
+        Assert.False(Directory.Exists(_files.DirectoryOf(again.Quest.Id)));
     }
 }

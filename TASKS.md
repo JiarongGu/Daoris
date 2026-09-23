@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**317 CLI tests, 278 service, 350 driver, 96 desktop modules, 514 web unit, 14 Playwright**, 59
-devkit, 56/56 release rehearsal, **195/195 family rehearsal** (it names its own phases when you run
+**317 CLI tests, 311 service, 354 driver, 96 desktop modules, 530 web unit, 15 Playwright**, 59
+devkit, 56/56 release rehearsal, **203/203 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -108,6 +108,10 @@ answers once the process has started; `HARNESS_INPUT` answers its prompt and `HA
 it. Signing in sits on the account's row (`SignIn`), tooltips follow the editor's rules (`Tip`), and
 no spawn opens a console window — all three were the owner's asks that day, all three seen on the
 installed shell, all three in `docs/FIX-LOG.md` or `docs/2026-09-19-platform-ux.md` §4.
+
+🔴 **A quest carries links and files** (INT2, D65 as amended): the bytes stay on the machine that
+published them, and the host, never the driver, says where each lies. Building it found an event
+prop consumed during render in two places (`docs/FIX-LOG.md`; frontend architecture §4b).
 
 🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
 (DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that
@@ -239,19 +243,21 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Every open item now waits on something**, which is new and is the honest state rather than a
-  lull. **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a real login; PLUG2 is a
-  decision). **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts, TOOL5 and CANON2
-  on a repository naming what it wants, HARNESS1 on the same, REH1 and TEST1 on a captured recurrence,
-  and HELP3 on where the guard lives being settled. Pick one up only when its trigger has actually
-  arrived — and **a new direction from the owner outranks all of them**.
+- **The actionable rows are the regular task's** (D65): **INT4** (the intake) and **INT5** (`then`)
+  are ready to build; INT3 waits on the owner's yes and INT6 needs the owner present. Everything
+  else still waits on something. **Three are the owner's** (ACP2 and DEPLOY1's second half each
+  cost a real login; PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's
+  transcripts, TOOL5 and CANON2 on a repository naming what it wants, HARNESS1 on the same, REH1
+  and TEST1 on a captured recurrence, HELP3 on where the guard lives being settled, and PLUG7 on a
+  plugin asking for a service-side point. Pick one of those up only when its trigger has actually
+  arrived, and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 313 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 317 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (278),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (311),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (340), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (93), `npm run rehearse:family` (193/193), `npm run test:web` (507 vitest + 14 Playwright),
+  (354), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (96), `npm run rehearse:family` (203/203), `npm run test:web` (530 vitest + 15 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -265,20 +271,19 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Thirteen items are open** and every closed one is
+the archive; its decision is **D53, accepted**). **Fifteen items are open** and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
 last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
 that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
 question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
-design's §5 is realised and what waits is a tool somebody names.
+design's §5 is realised and what waits is a tool somebody names. The other five are the regular
+task's (D65, below) and PLUG7, held.
 
-🔴 **Which leaves nothing actionable**, as of 2026-09-22. That is the first time it has been true and
-it is a result, not a stall: the D45, D47, D48–D50, D51–D56, D53, D57, D59, D60 and ARCH1 arcs are
-all closed and in the archive. **The ripest row is PLUG2** — a decision needing no login and no
-external event (DEPLOY4, the other one, became D63 on 2026-09-23). Each item is one session-sized
-landing, TDD, gates green, moved to the archive on completion.
+🔴 **INT4 and INT5 are the next builds** (D65): no login, no external event. INT3 waits on the
+owner's yes. Each item is one session-sized landing, TDD, gates green, moved to the archive on
+completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -435,12 +440,9 @@ both are the owner's.**
 workspace; an **intake session** (the harness carries the model, D24) reads the ticket, decides
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
-engine. Nothing new runs a model and nothing new orchestrates.
+engine. Nothing new runs a model and nothing new orchestrates. **INT1 and INT2 are in the
+archive**: a plugin hands every session its servers, and a quest carries links and files.
 
-- [ ] **INT2 — links and attachments on a quest.** `links` travel with the quest; `attachments`
-  are copied under `<home>/quests/<id>/attachments/` by content hash, machine-local; the compose
-  drawer takes drops and pastes; the composed target names them and `DAORIS_QUEST_ATTACHMENTS`
-  points at the directory. HTTP and MCP surfaces carry both.
 - [ ] ⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
   requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
   owner's yes first** — it amends the letter of D34/D46.

@@ -127,7 +127,10 @@ var remoteQuests = mode == ServiceMode.Local ? RemoteQuestRoutes.From(RemoteConf
 // would scan the server's own disk on its first request and serve what it found to keyed callers.
 var composed = await ServiceFactory.CreateAsync(
     options, embedder, remoteQuests: remoteQuests,
-    source: mode == ServiceMode.Shared ? new EmptyKnowledgeSource() : null);
+    source: mode == ServiceMode.Shared ? new EmptyKnowledgeSource() : null,
+    // A quest's files are kept by the machine that has them (D65 §2): a local host keeps them under
+    // its home, and a shared host keeps none — it holds names, and its door refuses bytes outright.
+    files: mode == ServiceMode.Local ? QuestFiles.FromEnvironment() : null);
 builder.Services.AddSingleton(composed);
 
 // Source-generated serialization: this host publishes AOT-friendly and reflection-based JSON would be
@@ -309,13 +312,16 @@ app.MapGet("/api/convergence", async (
 // into anyone's files: repositories here are not developed across, so a quest is published and pulled,
 // never pushed into a sibling's tree.
 app.MapGet("/api/quests", async (
-    ComposedService s, string? repository, bool? includeClosed, string? workspace, CancellationToken ct) =>
-    (await s.Quests.ListAsync(repository, includeClosed ?? false, workspace, ct)).Select(ToQuest));
+    ComposedService s, HttpContext http, string? repository, bool? includeClosed, string? workspace,
+    CancellationToken ct) =>
+    (await s.Quests.ListAsync(repository, includeClosed ?? false, workspace, ct))
+        .Select(q => ToQuest(q, s.Files, MachineLocal(http))));
 
 // Publish and respond go through the same exchange the MCP host uses, so the two doors cannot drift
 // on who may be addressed or what declining requires. This pair is what makes a REMOTE deployment a
 // transfer of work rather than a read-only mirror — and it needs no model at all (D24).
-app.MapPost("/api/quests", async (ComposedService s, PublishQuestRequest body, CancellationToken ct) =>
+app.MapPost("/api/quests", async (
+    ComposedService s, HttpContext http, PublishQuestRequest body, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(body.From) || string.IsNullOrWhiteSpace(body.To)
         || string.IsNullOrWhiteSpace(body.Title) || string.IsNullOrWhiteSpace(body.Body))
@@ -323,12 +329,62 @@ app.MapPost("/api/quests", async (ComposedService s, PublishQuestRequest body, C
         return Results.BadRequest(new ErrorResponse("from, to, title and body are all required"));
     }
 
+    // Which shape a file may arrive in is this deployment's mode (D65 §2). A LOCAL host is on the
+    // machine that has the file, so a file comes with its content and is kept here. A SHARED host is
+    // the quest's home for other machines and keeps names only — a content field reaching it is bytes
+    // leaving a machine, which is refused rather than quietly dropped, because dropped looks kept.
+    var uploads = new List<QuestUpload>();
+    var named = new List<QuestAttachment>();
+    foreach (var file in body.Attachments ?? [])
+    {
+        if (string.IsNullOrWhiteSpace(file.Name))
+        {
+            return Results.BadRequest(new ErrorResponse("every attachment needs a name"));
+        }
+
+        if (mode == ServiceMode.Shared)
+        {
+            if (file.Content is not null)
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    $"`{file.Name}` arrived with its content, and a shared deployment keeps names, never bytes "
+                    + "(D65 §2) — the file stays on the machine that has it, which sends its name and hash."));
+            }
+
+            if (file.Sha256 is null || file.Bytes is null)
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    $"`{file.Name}` needs its sha256 and its size — by name is the only way a file reaches a shared deployment."));
+            }
+
+            named.Add(new QuestAttachment(file.Name, file.Sha256, file.Bytes.Value));
+        }
+        else
+        {
+            if (file.Content is null)
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    $"`{file.Name}` arrived without its content — this host is on the machine that keeps a quest's "
+                    + "files, so it takes them whole."));
+            }
+
+            uploads.Add(new QuestUpload(file.Name, file.Content));
+        }
+    }
+
     var outcome = await s.Exchange.PublishAsync(
-        body.From, body.To, body.Title, body.Body, DateTimeOffset.UtcNow, ct);
+        new QuestAsk(body.From, body.To, body.Title, body.Body)
+        {
+            Links = body.Links ?? [],
+            Uploads = uploads,
+            Named = named,
+        },
+        DateTimeOffset.UtcNow, ct);
 
     return outcome.Refusal switch
     {
-        QuestPublishRefusal.None => Results.Ok(new QuestActionResponse(ToQuest(outcome.Quest!), outcome.Message)),
+        QuestPublishRefusal.None => Results.Ok(
+            new QuestActionResponse(ToQuest(outcome.Quest!, s.Files, MachineLocal(http)), outcome.Message)),
         // Two circles that were never joined is a state conflict, not a malformed ask — the same 409
         // shape the quest lock teaches. The sentence names both sides (D48 §4).
         QuestPublishRefusal.CrossWorkspace => Results.Conflict(new ErrorResponse(outcome.Message)),
@@ -337,14 +393,15 @@ app.MapPost("/api/quests", async (ComposedService s, PublishQuestRequest body, C
 });
 
 app.MapPost("/api/quests/{id}/respond", async (
-    ComposedService s, string id, RespondQuestRequest body, CancellationToken ct) =>
+    ComposedService s, HttpContext http, string id, RespondQuestRequest body, CancellationToken ct) =>
 {
     var outcome = await s.Exchange.RespondAsync(
         id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct);
 
     return outcome.Refusal switch
     {
-        QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(ToQuest(outcome.Quest!), outcome.Message)),
+        QuestRespondRefusal.None => Results.Ok(
+            new QuestActionResponse(ToQuest(outcome.Quest!, s.Files, MachineLocal(http)), outcome.Message)),
         QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         // The refused transition is a state conflict, not a bad request: the losing side of the
         // cross-machine race reads 409 as "someone got there first" and stands down (D47 §5).
@@ -353,6 +410,43 @@ app.MapPost("/api/quests/{id}/respond", async (
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
+
+// A quest's file, whole — so a person reading the drawer can open the screenshot the quest carries.
+// LOCAL mode only and to a caller on this machine only: the bytes never left it (D65 §2), and a shared
+// deployment has no door here because it has none of them. Found by hash, never by a path a caller
+// names, so nothing outside the quest's own directory is reachable through it.
+if (mode == ServiceMode.Local)
+{
+    app.MapGet("/api/quests/{id}/attachments/{sha256}", async (
+        ComposedService s, HttpContext http, string id, string sha256, CancellationToken ct) =>
+    {
+        var quest = MachineLocal(http) ? await s.Quests.FindAsync(id.TrimStart('#'), ct) : null;
+        var attachment = quest?.Attachments.FirstOrDefault(a => string.Equals(a.Sha256, sha256, StringComparison.Ordinal));
+        if (quest is null || attachment is null || s.Files is null || !s.Files.Has(quest.Id, attachment))
+        {
+            return Results.NotFound(new ErrorResponse(
+                quest is not null && attachment is not null
+                    ? $"`{attachment.Name}` is named on quest `#{quest.Id}` and not kept on this machine — its bytes "
+                      + "are on the machine that published it."
+                    : $"quest `#{id.TrimStart('#')}` carries no file with that hash"));
+        }
+
+        // 🔴 An attached page must not run as the platform. The file is served from the platform's own
+        // origin, so an HTML or SVG a session attached would otherwise be a script with every route
+        // this host answers: `sandbox` makes it an opaque origin with no script, `nosniff` stops a
+        // browser promoting a text file into a page, and anything that is not plainly an image, a
+        // PDF or text is a download rather than a document.
+        http.Response.Headers.ContentSecurityPolicy = "sandbox; default-src 'none'; img-src 'self'; style-src 'unsafe-inline'";
+        http.Response.Headers.XContentTypeOptions = "nosniff";
+        var type = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider()
+            .TryGetContentType(attachment.Name, out var known) ? known : "application/octet-stream";
+        var inline = type is "image/png" or "image/jpeg" or "image/gif" or "image/webp" or "application/pdf"
+            || type.StartsWith("text/plain", StringComparison.Ordinal);
+
+        return Results.File(
+            s.Files.PathOf(quest.Id, attachment), type, fileDownloadName: inline ? null : attachment.Name);
+    });
+}
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is
 // what the platform renders and what survives a driver restart; the process handle stays with the
@@ -676,10 +770,12 @@ else
             if (string.IsNullOrWhiteSpace(quest.Id)
                 || quest.From is null || quest.To is null || quest.Title is null || quest.Body is null
                 || !Enum.TryParse<QuestStatus>(quest.Status ?? "", ignoreCase: true, out var status)
-                || !Enum.IsDefined(status))
+                || !Enum.IsDefined(status)
+                || (quest.Attachments ?? []).Any(a => a.Name is null || a.Sha256 is null || a.Bytes is null))
             {
                 return Results.BadRequest(new ErrorResponse(
-                    $"quest `{quest.Id}` is not mirrorable — id, from, to, title, body and a known status are required"));
+                    $"quest `{quest.Id}` is not mirrorable — id, from, to, title, body and a known status are required, "
+                    + "and every attachment needs its name, sha256 and size"));
             }
         }
 
@@ -692,7 +788,14 @@ else
                 // THIS machine's wiring decides which circle a mirrored quest is filed under (D48) —
                 // the receiver's registry row, not anything the feed claimed. A mirror that could name
                 // its own workspace could file itself into one this machine never joined.
-                Workspace: await s.Service.WorkspaceOfAsync(quest.To, ct)), ct);
+                Workspace: await s.Service.WorkspaceOfAsync(quest.To, ct))
+            {
+                // What the home's record carries, by name — the bytes are wherever it was published.
+                Links = quest.Links ?? [],
+                Attachments = (quest.Attachments ?? [])
+                    .Select(a => new QuestAttachment(a.Name!, a.Sha256!, a.Bytes!.Value))
+                    .ToList(),
+            }, ct);
         }
 
         return Results.Ok(new FeedResponse(quests.Count, $"{quests.Count} quest(s) mirrored."));
@@ -723,8 +826,14 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
         + "share may be canonical, and what differs is usually each repository's own and must stay local.",
 };
 
-static QuestResponse ToQuest(Quest q) => new(
-    q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated, q.Workspace);
+// Links and attachment names travel with every read; a kept file's PATH answers only to a caller on
+// this machine, and only when the bytes are here (D47 §4, D65 §2) — so null says "named, not held".
+static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => new(
+    q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated, q.Workspace,
+    q.Links,
+    q.Attachments.Select(a => new QuestAttachmentResponse(
+        a.Name, a.Sha256, a.Bytes,
+        Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList());
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(
     entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),

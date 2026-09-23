@@ -118,6 +118,17 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   tool asks), a Cancel that stops the process rather than the window, the raw output one
 >   disclosure away, and the result as the row's own pill plus a sentence naming the account. The
 >   door keeps its console for the actions that are the door's — install, update, pin.
+> - **A file dropped anywhere but its target must not become the page** (2026-09-23, INT2). A
+>   browser, and the desktop's webview, answers an unhandled file drop by *navigating to the file*,
+>   which in the desktop replaces the whole application with a picture. So while the quest composer
+>   is open, a stray drop is absorbed at the window, and the WHOLE composer is the drop target,
+>   because aiming a file at a box inside a drawer is a chore. A pasted screenshot is a file, not
+>   text: it is attached and kept out of the field it was pasted into.
+> - **A page never prints a machine path it was answered.** A local host answers this machine where
+>   a kept file lies (a quest's attachment, D65 §2), and the drawer reads that path's *presence* as
+>   "can be opened" and opens the file through the host's own route. A file the record names and
+>   this machine does not hold says *kept on the machine that published it*, rather than looking
+>   like a broken link.
 
 > **Amended again 2026-09-22, the app strip** (owner: *"the application topbar you can take more
 > example from application like vscode"*, and *"the backdrop should not cover the topbar? because we
@@ -187,6 +198,11 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   age, first line of the ask) grouped Open / In progress / Closed; **clicking a card opens the detail
   drawer**: the whole ask, the meta, the note, and the actions — take, done, decline-with-reason —
   where there is room to act deliberately. Quick actions leave the cards; a card is for reading.
+  What a quest carries (D65 §2) is **counted on the card** (a link glyph and a paperclip, each with
+  its number, before the other marks) and **listed in the drawer**: links as links, and files by
+  name and size, with a picture shown as one. The composer takes links one per line, and files by
+  drop, paste or *choose files…*, each removable, and it says why a file was left off (the count,
+  or the total) while the person is still choosing.
 - **Projects** — adopted as cards (two columns wide) with chips and the local/canonical split;
   non-adopters as the marked list with the join steps proposed as text.
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the

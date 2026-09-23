@@ -80,7 +80,10 @@ var embedder = HostComposition.BuildEmbedder(serviceOptions);
 // where a quest lives. The MCP host is always a LOCAL door; a shared deployment has no stdio.
 var remoteQuests = RemoteQuestRoutes.From(RemoteConfig.Load());
 
-var composed = await ServiceFactory.CreateAsync(serviceOptions, embedder, remoteQuests: remoteQuests);
+// A quest's files are kept under the home of the machine that has them (D65 §2) — this one, always:
+// the MCP host is a local door. No home, no keeper, and a publish carrying files is refused (D63).
+var composed = await ServiceFactory.CreateAsync(
+    serviceOptions, embedder, remoteQuests: remoteQuests, files: QuestFiles.FromEnvironment());
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);

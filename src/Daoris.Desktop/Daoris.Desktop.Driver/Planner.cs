@@ -1,7 +1,26 @@
 namespace Daoris.Driver;
 
 /// <summary>A quest as the service answered it — enough to decide on, and enough to compose a target from.</summary>
-public sealed record QuestView(string Id, string From, string To, string Title, string Body, string Status);
+public sealed record QuestView(string Id, string From, string To, string Title, string Body, string Status)
+{
+    /// <summary>Addresses the quest carries — a ticket, a page — handed to the session as given.</summary>
+    public IReadOnlyList<string> Links { get; init; } = [];
+
+    /// <summary>Files the quest carries, each with where this machine keeps it, or null when it does not.</summary>
+    public IReadOnlyList<QuestFileView> Attachments { get; init; } = [];
+}
+
+/// <summary>A file a quest carries, as the local service answered it.</summary>
+/// <param name="Name">The file's own name.</param>
+/// <param name="Sha256">Its content's hash.</param>
+/// <param name="Bytes">Its size.</param>
+/// <param name="Path">
+/// Where THIS machine keeps it — told by the service, never derived here: the layout under the home is
+/// the service's, and the driver's home is not always the service's (it is wherever `driver.json`
+/// lives). Null is honest and common: a quest mirrored from another machine names files whose bytes
+/// stayed where it was published.
+/// </param>
+public sealed record QuestFileView(string Name, string Sha256, long Bytes, string? Path);
 
 /// <summary>A registration as the service answered it. The root is present only from a local service.</summary>
 /// <param name="Workspace">

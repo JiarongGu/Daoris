@@ -350,6 +350,21 @@ The first version: doctrine that installs, is checked, and flows back.
 - **No spawn opens a console window.** The installed shell flashed a terminal on every tick: git,
   the harness probes and the sessions were started without `CreateNoWindow`, and a windowed process's
   console child is given a console of its own. A source scan holds it for every spawn site.
+- **A quest carries links and files** (D65 §2). The composer takes links one per line, and files by
+  drop, paste or *choose files…*; `quest_publish` takes `links` and `attachments` (paths on this
+  machine); the drawer shows links as links and files by name and size, a picture as a picture. A
+  link must be an http or https address. A quest carries at most 10 files and 20 MB in total, and
+  the composer says why a file was left off while you are still choosing. **The bytes stay on the
+  machine that published them**, under the home at `quests/<id>/attachments/`, kept only once the
+  record exists. A remote learns names and hashes, and a shared deployment refuses content outright.
+  A session is handed the files as `DAORIS_QUEST_ATTACHMENTS`, and its target names each link and
+  file. A file kept on another machine is said to be elsewhere, never offered as a path. The host
+  serves a kept file to this machine only, sandboxed, and anything but an image, a PDF or text as a
+  download, so an attached page cannot run as the platform.
+- **"Send it back as a quest" opens the composer again.** The review's door switched the window to
+  Quests and opened nothing, because the composer consumed the draft during render and lost it to
+  the parent's clear. The palette's *start a session* and *review* reached the Work frame the same
+  way. Both are now consumed once, by identity.
 
 ### The remote
 

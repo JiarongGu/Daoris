@@ -10,6 +10,14 @@ export function compact(value: number): string {
   return value.toLocaleString(i18n.language);
 }
 
+/** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */
+export function size(bytes: number): string {
+  if (bytes < 1024) return `${bytes.toLocaleString(i18n.language)} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toLocaleString(i18n.language, { maximumFractionDigits: 1 })} KB`;
+  return `${(kb / 1024).toLocaleString(i18n.language, { maximumFractionDigits: 1 })} MB`;
+}
+
 /**
  * Relative time, because on a management surface "when" matters as "how long has this sat".
  * Reads the active catalog; callers re-render on language change through their own useTranslation.

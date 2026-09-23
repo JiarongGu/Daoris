@@ -23,6 +23,35 @@ public enum QuestPublishRefusal
     /// home (D47 §5). Nothing was published anywhere — a half-published quest would be two opinions.
     /// </summary>
     HomeUnreachable,
+
+    /// <summary>A link that is not an absolute http or https address — shown as a link, it would be something else.</summary>
+    BadLink,
+
+    /// <summary>More files, or more bytes, than a quest carries — or a file named in a shape no record keeps.</summary>
+    BadAttachment,
+
+    /// <summary>Files arrived with their bytes and this host has no Daoris home to keep them under (D63).</summary>
+    NoHome,
+}
+
+/// <summary>
+/// What a publish is asked for: who asks, of whom, what — and what the quest carries beside its words
+/// (D65 §2).
+/// </summary>
+/// <remarks>
+/// A file arrives one of two ways and the type says which. <see cref="Uploads"/> come WITH their
+/// bytes, from a door on the machine that has them, and are kept under this machine's home.
+/// <see cref="Named"/> come by name only, from a machine that keeps the bytes itself and is relaying
+/// to the quest's home — the only shape a shared deployment ever takes, because it keeps names and
+/// never bytes. A relay has no field for bytes at all: absent, not policed (D47 §4).
+/// </remarks>
+public sealed record QuestAsk(string From, string To, string Title, string Body)
+{
+    public IReadOnlyList<string> Links { get; init; } = [];
+
+    public IReadOnlyList<QuestUpload> Uploads { get; init; } = [];
+
+    public IReadOnlyList<QuestAttachment> Named { get; init; } = [];
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -81,16 +110,40 @@ public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Mes
 /// <para>The messages are composed here too, not only the verdicts. They are what an agent acts on, so
 /// two hosts phrasing them differently is two behaviours in all the ways that matter.</para>
 /// </remarks>
-public sealed class QuestExchange(KnowledgeService service, QuestStore quests, IRemoteQuestRoutes? remotes = null)
+public sealed class QuestExchange(
+    KnowledgeService service, QuestStore quests, IRemoteQuestRoutes? remotes = null, QuestFiles? files = null)
 {
+    /// <summary>How many links a quest carries — a ticket and its neighbours, not a bibliography.</summary>
+    public const int MaxLinks = 20;
+
+    /// <summary>How long one link may be.</summary>
+    public const int MaxLinkLength = 2048;
+
+    /// <summary>How many files a quest carries.</summary>
+    public const int MaxAttachments = 10;
+
+    /// <summary>
+    /// How many bytes a quest's files come to TOGETHER — screenshots, a log, a document. Anything
+    /// larger has a home of its own already, and a link to it is the better thing to carry.
+    /// </summary>
+    public const long MaxAttachmentBytes = 20L * 1024 * 1024;
+
+    /// <summary>A quest that carries nothing but its words — every caller before D65.</summary>
+    public Task<QuestPublishOutcome> PublishAsync(
+        string from, string to, string title, string body, DateTimeOffset now, CancellationToken ct = default) =>
+        PublishAsync(new QuestAsk(from, to, title, body), now, ct);
+
     /// <summary>
     /// Publish a quest to another repository. Refuses a self-addressed quest and a target that has not
     /// adopted; warns when the target has declared nothing about itself (D34). A quest for a JOINED
     /// receiver homes at the remote (D47 §5) — the publish writes through and the mirror keeps a copy.
+    /// What it carries is judged before anything is written anywhere, and its files are kept HERE —
+    /// under this machine's home — whichever deployment the record lives at (D65 §2).
     /// </summary>
-    public async Task<QuestPublishOutcome> PublishAsync(
-        string from, string to, string title, string body, DateTimeOffset now, CancellationToken ct = default)
+    public async Task<QuestPublishOutcome> PublishAsync(QuestAsk ask, DateTimeOffset now, CancellationToken ct = default)
     {
+        var (from, to, title, body) = (ask.From, ask.To, ask.Title, ask.Body);
+
         if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
         {
             return new(
@@ -142,6 +195,14 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
                 Quest: null, addressable);
         }
 
+        // What it carries is judged here, before any door writes anything: a refused ask must leave
+        // nothing behind — not a record, and not a file no record names.
+        var carried = Judge(ask);
+        if (carried.Refusal is { } unfit)
+        {
+            return new(unfit, carried.Message, Quest: null, addressable);
+        }
+
         // Home follows the receiver, decided at publish and never migrated (D47 §5): a joined
         // receiver's quests live at the remote, because other machines may be drivable for it and the
         // one lock must sit where every taker can reach it. WHICH remote is the workspace's (D48 §5)
@@ -150,7 +211,9 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
         var remote = remotes?.For(home);
         if (remote is not null && target.Joined)
         {
-            var answer = await remote.PublishAsync(from, to, title, body, ct).ConfigureAwait(false);
+            // Names and hashes cross; bytes never do — the relay's signature has no field for them.
+            var answer = await remote.PublishAsync(
+                from, to, title, body, carried.Links, carried.Attachments, ct).ConfigureAwait(false);
             if (answer.Status == 0)
             {
                 return new(
@@ -169,10 +232,14 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
 
             var homed = answer.Quest with { Home = "remote", Workspace = home };
             await quests.MirrorAsync(homed, ct).ConfigureAwait(false);
-            return new(QuestPublishRefusal.None, answer.Message, homed, addressable);
+            return new(
+                QuestPublishRefusal.None,
+                answer.Message + await KeepAsync(homed, ask, carried, ct).ConfigureAwait(false),
+                homed, addressable);
         }
 
-        var quest = await quests.PublishAsync(from, to, title, body, now, home, ct).ConfigureAwait(false);
+        var quest = await quests.PublishAsync(
+            from, to, title, body, now, home, carried.Links, carried.Attachments, ct).ConfigureAwait(false);
 
         var caution = target.Registered
             ? ""
@@ -183,9 +250,154 @@ public sealed class QuestExchange(KnowledgeService service, QuestStore quests, I
             QuestPublishRefusal.None,
             $"Published quest `#{quest.Id}` to `{quest.To}` — {quest.Status}.{caution}\n\n"
             + "It is held by the service, not written into that repository. Its agent will see it and "
-            + "decide. Do not make the change yourself.",
+            + "decide. Do not make the change yourself."
+            + await KeepAsync(quest, ask, carried, ct).ConfigureAwait(false),
             quest, addressable);
     }
+
+    /// <summary>What a publish carries once judged: the links and files a record may name, or why not.</summary>
+    private sealed record Carried(
+        QuestPublishRefusal? Refusal, string Message,
+        IReadOnlyList<string> Links, IReadOnlyList<QuestAttachment> Attachments);
+
+    /// <summary>
+    /// The judgement over what a quest carries — one place, because an HTTP door, the MCP door and a
+    /// relay from another machine all arrive here, and a limit two of them enforced would be a limit
+    /// the third quietly did not.
+    /// </summary>
+    private Carried Judge(QuestAsk ask)
+    {
+        var links = new List<string>();
+        foreach (var given in ask.Links)
+        {
+            var link = given.Trim();
+            if (link.Length == 0 || links.Contains(link, StringComparer.Ordinal)) continue;
+
+            // Shown as a link, so it must BE an address: a `javascript:` "link" in a drawer is a
+            // script, and a `file:` one names somebody's disk.
+            if (link.Length > MaxLinkLength
+                || !Uri.TryCreate(link, UriKind.Absolute, out var address)
+                || (address.Scheme != Uri.UriSchemeHttp && address.Scheme != Uri.UriSchemeHttps))
+            {
+                return Refuse(
+                    QuestPublishRefusal.BadLink,
+                    $"`{Clip(link)}` is not a link a quest can carry — a link is an absolute http or https "
+                    + $"address of at most {MaxLinkLength} characters. Put anything else in the body.");
+            }
+
+            links.Add(link);
+        }
+
+        if (links.Count > MaxLinks)
+        {
+            return Refuse(
+                QuestPublishRefusal.BadLink,
+                $"A quest carries at most {MaxLinks} links — this one was given {links.Count}.");
+        }
+
+        if (ask.Uploads.Count > 0 && files is null)
+        {
+            // No home, no files (D63): writing them somewhere nobody pointed this host is the thing
+            // that was removed. A shared deployment never reaches here — its door takes names only.
+            return Refuse(QuestPublishRefusal.NoHome, DaorisHome.Sentence);
+        }
+
+        var attachments = new List<QuestAttachment>();
+        foreach (var named in ask.Named)
+        {
+            // A name that arrives already described was made safe by the machine that kept the file;
+            // one that is not safe was never kept by Daoris, and a record naming it would lie.
+            if (named.Name != QuestFiles.SafeName(named.Name)
+                || named.Sha256.Length != 64 || !named.Sha256.All(Uri.IsHexDigit) || named.Sha256 != named.Sha256.ToLowerInvariant()
+                || named.Bytes < 0)
+            {
+                return Refuse(
+                    QuestPublishRefusal.BadAttachment,
+                    $"`{Clip(named.Name)}` is not a file a record can name — an attachment by name carries a "
+                    + "safe file name, its lowercase sha256 and its size.");
+            }
+
+            attachments.Add(named);
+        }
+
+        attachments.AddRange(ask.Uploads.Select(QuestFiles.Describe));
+
+        // The same content twice is one file — its hash is its identity; the first name given wins.
+        var distinct = attachments
+            .GroupBy(a => a.Sha256, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToList();
+
+        if (distinct.Count > MaxAttachments)
+        {
+            return Refuse(
+                QuestPublishRefusal.BadAttachment,
+                $"A quest carries at most {MaxAttachments} files — this one was given {distinct.Count}.");
+        }
+
+        var total = distinct.Sum(a => a.Bytes);
+        if (total > MaxAttachmentBytes)
+        {
+            return Refuse(
+                QuestPublishRefusal.BadAttachment,
+                $"A quest's files come to at most {Megabytes(MaxAttachmentBytes)} together — these come to "
+                + $"{Megabytes(total)}. Carry a link to the large ones instead.");
+        }
+
+        return new(null, "", links, distinct);
+
+        static Carried Refuse(QuestPublishRefusal refusal, string message) => new(refusal, message, [], []);
+    }
+
+    /// <summary>
+    /// Keep the bytes the record names, under THIS machine's home — after the record exists, so a
+    /// refused publish kept nothing. Answers what the asker should hear about it, or nothing.
+    /// </summary>
+    /// <remarks>
+    /// Only bytes the record actually names are kept: a quest published before, under the same title,
+    /// is answered as it stands (D46 §3), and what this call carried beyond it is SAID rather than
+    /// quietly dropped. A file the disk refuses leaves the quest published and says which — the
+    /// record's name for it is honest either way, because every reader asks whether it is here.
+    /// </remarks>
+    private async Task<string> KeepAsync(Quest quest, QuestAsk ask, Carried carried, CancellationToken ct)
+    {
+        var onRecord = quest.Attachments.Select(a => a.Sha256).ToHashSet(StringComparer.Ordinal);
+        var notKept = new List<string>();
+        foreach (var upload in ask.Uploads)
+        {
+            if (!onRecord.Contains(QuestFiles.Describe(upload).Sha256)) continue;
+            try
+            {
+                await files!.KeepAsync(quest.Id, upload, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                notKept.Add($"`{QuestFiles.SafeName(upload.Name)}` ({error.Message})");
+            }
+        }
+
+        var said = "";
+        var unadded = carried.Attachments.Where(a => !onRecord.Contains(a.Sha256)).Select(a => $"`{a.Name}`")
+            .Concat(carried.Links.Where(l => !quest.Links.Contains(l, StringComparer.Ordinal)).Select(l => $"<{l}>"))
+            .ToList();
+        if (unadded.Count > 0)
+        {
+            said += $"\n\n⚠ `#{quest.Id}` was already published, and a quest carries what it was first published "
+                    + $"with — not added: {string.Join(", ", unadded)}. A new ask is a new title.";
+        }
+
+        if (notKept.Count > 0)
+        {
+            said += $"\n\n⚠ Published, but this machine could not keep: {string.Join(", ", notKept)}. The record "
+                    + "names them; a session will be told they are not here.";
+        }
+
+        return said;
+    }
+
+    private static string Megabytes(long bytes) => $"{bytes / (1024.0 * 1024.0):0.#} MB";
+
+    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 
     /// <summary>
     /// Answer a quest: take, done, or decline. Declining without a reason is refused — a bare refusal

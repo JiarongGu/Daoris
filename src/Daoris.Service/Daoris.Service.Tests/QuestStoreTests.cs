@@ -214,6 +214,82 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.True((await store.MoveAsync("e1de11", QuestStatus.Taken, null, Now)).Moved);
     }
 
+    /// <summary>
+    /// A quest carries addresses and files beside its words (D65 §2) — in the order they were given,
+    /// because "the ticket, then the screenshot of it" is an order a person chose.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_keeps_its_links_and_attachments_in_order()
+    {
+        var published = await _quests.PublishAsync(
+            "Asker", "Owner", "Use the media config", "The field names are hard-coded.", Now,
+            links: ["https://tickets.example/T-1", "https://docs.example/media"],
+            attachments: [new("before.png", "ab12cd34ef56" + new string('0', 52), 2048), new("notes.txt", new string('1', 64), 12)]);
+
+        var found = (await _quests.FindAsync(published.Id))!;
+
+        Assert.Equal(["https://tickets.example/T-1", "https://docs.example/media"], found.Links);
+        Assert.Equal(["before.png", "notes.txt"], found.Attachments.Select(a => a.Name));
+        Assert.Equal(2048, found.Attachments[0].Bytes);
+        Assert.Equal(new string('1', 64), found.Attachments[1].Sha256);
+    }
+
+    /// <summary>A quest that carries nothing carries empty lists — never null, so no reader has to ask.</summary>
+    [Fact]
+    public async Task A_quest_that_carries_nothing_carries_empty_lists()
+    {
+        var found = (await _quests.FindAsync((await Publish()).Id))!;
+
+        Assert.Empty(found.Links);
+        Assert.Empty(found.Attachments);
+    }
+
+    /// <summary>
+    /// A mirror keeps what its home's quest carries — the NAMES of its attachments, never their bytes
+    /// (D65 §2): the remote's record is where another machine learns a file exists at all.
+    /// </summary>
+    [Fact]
+    public async Task A_mirror_carries_the_links_and_attachment_names()
+    {
+        var remote = new Quest(
+            "abc124", "Asker", "Owner", "Do it", "why", QuestStatus.Open, null, Now, Now, Home: "remote")
+        {
+            Links = ["https://tickets.example/T-2"],
+            Attachments = [new("trace.log", new string('2', 64), 300)],
+        };
+        await _quests.MirrorAsync(remote);
+
+        var found = (await _quests.FindAsync("abc124"))!;
+
+        Assert.Equal(["https://tickets.example/T-2"], found.Links);
+        Assert.Equal("trace.log", Assert.Single(found.Attachments).Name);
+    }
+
+    /// <summary>A store from before quests carried anything must survive the upgrade, carrying nothing.</summary>
+    [Fact]
+    public async Task An_existing_store_without_the_carry_columns_is_migrated_in_place()
+    {
+        await using var old = new SqliteConnection("Data Source=:memory:");
+        await old.OpenAsync();
+        await using (var create = old.CreateCommand())
+        {
+            create.CommandText = """
+                CREATE TABLE quests (
+                  id TEXT PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, title TEXT NOT NULL,
+                  body TEXT NOT NULL, status TEXT NOT NULL, note TEXT NULL, filed TEXT NOT NULL, updated TEXT NOT NULL,
+                  home TEXT NULL, workspace TEXT NOT NULL DEFAULT 'default'
+                );
+                INSERT INTO quests VALUES ('e1de12', 'A', 'B', 'Old ask', 'why', 'Open', NULL, '2026-01-01', '2026-01-01', NULL, 'default');
+                """;
+            await create.ExecuteNonQueryAsync();
+        }
+
+        var elder = (await (await QuestStore.OpenAsync(old)).ListAsync()).Single();
+
+        Assert.Empty(elder.Links);
+        Assert.Empty(elder.Attachments);
+    }
+
     [Fact]
     public async Task An_unknown_id_yields_nothing_rather_than_throwing()
     {

@@ -3945,3 +3945,45 @@ removed when the session ends. `examples/plugins/browser` is the tracked example
 rehearsal installs it beside the other two and reads `daoris-knowledge, browser` back from the
 agent's own account of what it was offered. What a session may *call* stays the repository's
 allow-list (D37). Gates: verify (317), driver 346, modules 93, family 195/195, deploy 39/39.
+
+## INT2 — links and attachments on a quest (2026-09-23)
+
+- [x] **INT2 — links and attachments on a quest.** `links` travel with the quest; `attachments`
+  are copied under `<home>/quests/<id>/attachments/` by content hash, machine-local; the compose
+  drawer takes drops and pastes; the composed target names them and `DAORIS_QUEST_ATTACHMENTS`
+  points at the directory. HTTP and MCP surfaces carry both.
+
+✅ **done 2026-09-23.** This is the second slice of D65, and the one that lets an ask carry the
+ticket and the screenshot. `Quest` gains `Links` and `Attachments` (name, sha256, size), held as
+two columns the store adds in place. `QuestFiles` is the only author of the layout
+(`quests/<id>/attachments/<hash12>-<name>`); a name is made safe, so a kept file can never land
+outside its directory. `QuestExchange` judges what a quest carries in one place for every door:
+http(s) links only, at most 10 files and 20 MB, the same content once. It keeps the bytes only after
+the record exists, and says what a re-publish did not add. The relay's signature carries names and
+hashes and has no field for bytes. The HTTP door takes content at a local host and names at a
+shared one, refusing the other shape. The MCP `quest_publish` takes paths, and `quest_list` names
+what each quest carries. A new local, loopback-only route serves a kept file sandboxed.
+
+**One design change, recorded as D65's amendment.** The driver does not derive the directory. Its
+home is wherever `driver.json` lives, and the family rehearsal is a case where that differs from the
+host's. So the host answers this machine each kept file's path, only when the bytes are here, and
+the driver sets `DAORIS_QUEST_ATTACHMENTS` and the target's list from that answer. A file kept on
+another machine is said to be elsewhere.
+
+**The platform:** the composer takes links one per line, and files by drop (the whole composer, with
+stray drops absorbed so the webview never navigates to a file), paste or *choose files…*. The drawer
+shows links as links and files by name and size, a picture as a picture, and never the path; the
+card counts both.
+
+**Seen on the scratch shell in both themes.** Building it found two event props consumed during
+render: the composer's opening draft (SURF6b's *send it back…* opened nothing on the window) and the
+Work frame's palette intent. Both are fixed and held by tests, with the rule in frontend
+architecture §4b.
+
+**Proven by** the family rehearsal: phase 7's session reads the link and the file's bytes from what
+it was handed, and phase 11's machine b, with a home of its own, is told the file is elsewhere. The
+remote refuses content and its store holds no file's bytes. Playwright proves the real bundle keeps,
+shows and sandboxes a file.
+
+Gates: verify (317), service 311, driver 354, modules 96, web 530 + 15, family 203/203, deploy
+39/39.

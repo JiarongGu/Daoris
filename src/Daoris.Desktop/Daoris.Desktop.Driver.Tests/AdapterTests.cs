@@ -172,6 +172,66 @@ public sealed class AdapterTests
         Assert.DoesNotContain("D46", prompt);
     }
 
+    // ——— What a quest carries (D65 §2): its links, and its files — handed by name and by directory.
+
+    private const string Kept = "D:/home/quests/abc123/attachments";
+
+    private static SessionTarget Carrying() => Target() with
+    {
+        Links = ["https://tickets.example/T-1"],
+        Attachments =
+        [
+            new QuestFileView("before.png", "ab12", 2048, $"{Kept}/ab12-before.png"),
+            new QuestFileView("trace.log", "cd34", 300, Path: null),
+        ],
+    };
+
+    /// <summary>
+    /// The session is TOLD what the asker gave — each link, each file with where it lies — and a file
+    /// named on the record but not on this machine is said to be elsewhere rather than listed as if a
+    /// path would open it. Nothing is claimed that the session would find untrue.
+    /// </summary>
+    [Fact]
+    public void The_target_prompt_names_the_links_and_the_files_and_says_which_are_not_here()
+    {
+        var prompt = TargetPrompt.Compose(Carrying());
+
+        Assert.Contains("https://tickets.example/T-1", prompt);
+        Assert.Contains($"{Kept}/ab12-before.png", prompt);
+        Assert.Contains("DAORIS_QUEST_ATTACHMENTS", prompt);
+        Assert.Contains("trace.log", prompt);
+        Assert.Contains("not on this machine", prompt);
+        Assert.DoesNotContain("D65", prompt);
+    }
+
+    [Fact]
+    public void A_quest_that_carries_nothing_says_nothing_about_carrying()
+    {
+        var prompt = TargetPrompt.Compose(Target());
+
+        Assert.DoesNotContain("DAORIS_QUEST_ATTACHMENTS", prompt);
+        Assert.DoesNotContain("Links", prompt);
+    }
+
+    /// <summary>
+    /// The directory rides the environment when a file is here — and is ABSENT, not empty, when none
+    /// is: a blank directory would read to a session as one that was emptied.
+    /// </summary>
+    [Fact]
+    public void The_attachments_directory_is_in_the_environment_only_when_a_file_is_here()
+    {
+        var stub = AdapterSet.Built().Resolve("stub");
+
+        var carrying = stub.Prepare(Carrying(), ["node", "agent.mjs"]);
+        var elsewhere = stub.Prepare(
+            Target() with { Attachments = [new QuestFileView("trace.log", "cd34", 300, Path: null)] },
+            ["node", "agent.mjs"]);
+
+        Assert.Equal(Path.GetDirectoryName($"{Kept}/ab12-before.png"), carrying.Environment["DAORIS_QUEST_ATTACHMENTS"]);
+        Assert.False(elsewhere.Environment.ContainsKey("DAORIS_QUEST_ATTACHMENTS"));
+        Assert.False(stub.Prepare(Target(), ["node", "agent.mjs"]).Environment.ContainsKey("DAORIS_QUEST_ATTACHMENTS"));
+    }
+
     // ——— The interactive capability (D49 §3). Declared honestly and opted into: an adapter that has
     // not been wired for a conversation says so, and asking errors naming what the harness is.
 

@@ -123,6 +123,22 @@ refusal with one fixed sentence.
 Adding a refusal is therefore three things, and a test holds each: a code in `Refusals`, an entry in
 **both** catalogues, and a throw site using it.
 
+## 4b. An event handed down as a prop is consumed by identity (2026-09-23)
+
+Some props are **events**, not state: a door asking the quest composer to open on a draft
+(`opening`), or the palette asking the Work frame to start a session (`intent`). The parent holds
+one and a callback clears it. Both were consumed as `if (prop) { set…(); onTaken(); }` **during
+render**, and both were broken. A state update during render makes React re-run the component *at
+once, with the same props*, before the parent's clear can land, so every pass saw the event again.
+In a test React throws *Too many re-renders*. On the window the send-back door opened nothing, with
+no error anywhere (FIX-LOG 2026-09-23).
+
+The rule: **remember the last event seen and act only on a new one**, then tell the parent **from an
+effect**. For a value that can repeat (an intent is a string), forget it once the parent has cleared
+it, so asking twice still counts. And **test it the way the app holds it**: a test that passed the
+prop without a holder that clears it could never reach the path. `QuestsView.test.tsx` (`Held`) and
+`WorkFrame.test.tsx` (*opens the start form when the palette asks, once*) are the two tests.
+
 ## 5. What Storybook is here, and is not
 
 It is the **design tool**: where states are designed, reviewed and kept — including the states real
