@@ -222,6 +222,12 @@ jobs:
       - name: Universal gates
         run: dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only --allow-builtins-only
 
+      # The committed code map is what the project files say (MAP3c) — a fact, so it gates (D54). It is
+      # a DECLARED gate rather than a universal one: a map an agent or a person wrote for another stack
+      # is not the devkit's to judge, and nothing in the file says which producer wrote it.
+      - name: Code map gate
+        run: dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check
+
       # Everything that protects a consumer, in the order a consumer meets it.
       - name: Verify gate
         run: npm run verify

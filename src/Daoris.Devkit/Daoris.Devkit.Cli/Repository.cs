@@ -90,6 +90,8 @@ internal static class Repository
           scan --history          AUDIT all history: every object, every path it ever had
           init                    write a starter daoris.gates.json
           install-hooks           write .githooks/ and point git at it
+          map                     write the code map (docs/code-map.json) from the project files
+          map --check             exit 1 when the committed code map is not what the project files say
           version                 print the devkit version
 
         flags:

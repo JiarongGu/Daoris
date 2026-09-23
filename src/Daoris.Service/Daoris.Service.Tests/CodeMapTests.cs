@@ -97,6 +97,27 @@ public sealed class CodeMapTests : IDisposable
         Assert.Contains($"{CodeMapReader.MaxModules}", read.Problem);
     }
 
+    /// <summary>
+    /// 🔴 MAP3c's twin, from the judge's side. This repository's own map is written by the devkit
+    /// (`daoris-devkit map`), a separate artefact that shares no code with this reader — so the file it
+    /// committed is judged here, whole, by the reader every deployment uses. The devkit's tests hold its
+    /// restated rules to this file's source; this holds its output to this reader.
+    /// </summary>
+    [Fact]
+    public void This_repositorys_own_map_as_the_devkit_wrote_it_is_judged_whole()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
+        Assert.NotNull(root);
+
+        var read = CodeMapReader.Read(root.FullName);
+
+        Assert.Equal("docs/code-map.json", read.File);
+        Assert.Null(read.Problem);
+        Assert.Contains(read.Map!.Modules, m => m.Id == "Daoris.Service.Core" && m.Path == "src/Daoris.Service/Daoris.Service.Core");
+        Assert.Contains(read.Map.Dependencies, d => d is { From: "Daoris.Service.Http", To: "Daoris.Service.Core", Kind: "project" });
+    }
+
     /// <summary>The service answers for a registered repository by reading its checkout — nothing is kept.</summary>
     [Fact]
     public async Task The_service_reads_a_registered_checkout_on_each_ask()

@@ -22,6 +22,7 @@ try
         "scan" => Scan(),
         "init" => Init(),
         "install-hooks" => InstallHooks(),
+        "map" => Map(),
         "version" or "--version" => Print(Repository.DevkitVersion),
         "help" or "--help" or "-h" => Print(Repository.Usage),
         _ => Print($"daoris-devkit: unknown command '{command}'\n\n{Repository.Usage}", code: 2),
@@ -125,6 +126,33 @@ int InstallHooks()
 
     return Print($"wrote .githooks/ and set core.hooksPath — commit the directory so a clone gets them.\n"
                + "Bypass a hook deliberately with 'git commit --no-verify'.");
+}
+
+// The code map from the project files (MAP3c). `--check` is the gate a repository declares: whether the
+// committed map is what its project files say is a fact, and a fact gates (D54). Not a universal gate —
+// a map another producer wrote (an agent, a person, another stack's tool) is not this tool's to judge.
+int Map()
+{
+    var produced = CodeMapProducer.Produce(root, new CommandLineGit(root));
+    foreach (var note in produced.Notes) Console.WriteLine($"  note  {note}");
+
+    if (flags.Contains("--check"))
+    {
+        var (fresh, detail) = CodeMapProducer.Check(root, produced);
+        Console.WriteLine($"code-map: {detail}");
+        return fresh ? 0 : 1;
+    }
+
+    if (produced.Problem is not null) return Print($"code-map: {produced.Problem}", code: 1);
+
+    if (CodeMapProducer.Check(root, produced).Fresh)
+    {
+        return Print($"{produced.File} is already what the project files say — nothing written.");
+    }
+
+    CodeMapProducer.Write(root, produced);
+    return Print($"wrote {produced.File} — {produced.Modules.Count} module(s), {produced.Dependencies.Count} dependency(ies). "
+               + "Commit it with the change that moved it.");
 }
 
 int Print(string text, int code = 0)

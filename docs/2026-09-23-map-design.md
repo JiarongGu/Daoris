@@ -163,6 +163,36 @@ in canonical form (`CodeMapReader.Write`) in `fed_code_maps`. A commit with no m
 with no body. The code-map door answers from that store for a repository with no checkout here.
 A teammate's map is not yet brought down to other machines (MAP3e).
 
+**MAP3c is built (2026-09-24): `daoris-devkit map`.** The devkit writes the file from the project
+files it can read exactly, with no compiler, and `map --check` says whether the committed file is
+still what they say.
+- **Modules.** Every tracked `*.csproj` is a module, with the project's file name as its id and its
+  directory as its path. Every tracked `package.json` below the root is a module too, with its package
+  name as its id. The root `package.json` is the repository itself, not a module of it. Tracked files
+  only, so a build output or an installed package never becomes a module.
+- **Dependencies.** A `ProjectReference` is kind `project`, and a dependency in any section naming
+  another of the repository's packages is kind `package`. A reference the repository does not track
+  (outside it, or an MSBuild expression) is reported and not drawn, because the reader refuses a
+  dependency that names no module.
+- **What a person writes is kept.** The tool owns the modules and its two kinds. A summary is the
+  project's own `Description` or `description`, folded to one line. Where the project declares none,
+  the line already in the map is kept, so a person writes it once and the tool never erases it.
+  Dependencies of any other kind (`http`, say) are a person's too, and stay while both ends are
+  modules.
+- **What it refuses.** It refuses to write anything the reader would refuse: two modules on one id,
+  or more than the reader's bounds. It also refuses to rewrite a map it cannot read, which would lose
+  what a person wrote in it.
+- **The file.** It goes where the reader looks: an existing root `code-map.json` stays at the root,
+  otherwise `docs/code-map.json`. It is written the same way every time (sorted, two-space indent,
+  LF, a final newline, text as it reads), so a moved reference is a small diff.
+- **The gate.** `map --check` is a fact, so it gates (D54). It is a **declared** gate, because a map an
+  agent or a person wrote for another stack is not the devkit's to judge, and nothing in the file says
+  which producer wrote it. Daoris declares it in `daoris.gates.json` and keeps its own
+  `docs/code-map.json` this way.
+- **The twin.** The devkit shares no code with the service, so it restates the reader's rules. A
+  devkit test holds the candidates and bounds to `CodeMapReader`'s own source, and a service test
+  judges Daoris's own committed map with the reader.
+
 **Build order.** MAP3a: the contract, the local read, the page, and the example family carrying a
 map. MAP3b: the feed to a shared deployment, with WSP4's provenance. MAP3c: a tool producer (the
 devkit reads project references, which is exact for C# without Roslyn, and a package's

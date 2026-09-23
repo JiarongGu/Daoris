@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "id": "daoris",
+      "path": "src/Daoris.Cli",
+      "summary": "Cross-repo engineering doctrine: materialize canonical agent rules and knowledge into a repo, and keep them from drifting."
+    },
+    {
+      "id": "Daoris.Desktop.App",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.App",
+      "summary": "the desktop window: carries the platform, runs the driver loop, hosts the machine's service"
+    },
+    {
+      "id": "Daoris.Desktop.Driver",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Driver",
+      "summary": "the driver: plans quests into sessions, runs the harnesses, syncs each circle with its remote"
+    },
+    {
+      "id": "Daoris.Desktop.Driver.Host",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Driver.Host",
+      "summary": "`daoris-driver`, the driver's headless door: the tick, chat, ask, trees and sync"
+    },
+    {
+      "id": "Daoris.Desktop.Driver.Tests",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests",
+      "summary": "the driver's tests"
+    },
+    {
+      "id": "Daoris.Desktop.Modules",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Modules",
+      "summary": "the shell's modules: every IPC surface the page talks to"
+    },
+    {
+      "id": "Daoris.Desktop.Modules.Tests",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests",
+      "summary": "the shell modules' tests"
+    },
+    {
+      "id": "Daoris.Devkit.Cli",
+      "path": "src/Daoris.Devkit/Daoris.Devkit.Cli",
+      "summary": "`daoris-devkit`, the AOT binary: the universal gates and the code map"
+    },
+    {
+      "id": "Daoris.Devkit.Core",
+      "path": "src/Daoris.Devkit/Daoris.Devkit.Core",
+      "summary": "the universal gates, the sensitive scan and the code-map producer"
+    },
+    {
+      "id": "Daoris.Devkit.Tests",
+      "path": "src/Daoris.Devkit/Daoris.Devkit.Tests",
+      "summary": "the devkit's tests"
+    },
+    {
+      "id": "Daoris.Service.Core",
+      "path": "src/Daoris.Service/Daoris.Service.Core",
+      "summary": "the knowledge index, the registry, quests as history, session records and the sync"
+    },
+    {
+      "id": "Daoris.Service.Http",
+      "path": "src/Daoris.Service/Daoris.Service.Http",
+      "summary": "the HTTP host: the platform's API and page, local or shared"
+    },
+    {
+      "id": "Daoris.Service.Mcp",
+      "path": "src/Daoris.Service/Daoris.Service.Mcp",
+      "summary": "the MCP host: the family's knowledge and quests, for an agent's session"
+    },
+    {
+      "id": "Daoris.Service.Tests",
+      "path": "src/Daoris.Service/Daoris.Service.Tests",
+      "summary": "the service's tests"
+    },
+    {
+      "id": "daoris-web",
+      "path": "src/Daoris.Web",
+      "summary": "The platform: knowledge, quests and projects over the service. Doctrine read-only; convergence first. Built into the HTTP host's wwwroot."
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "Daoris.Desktop.App",
+      "to": "Daoris.Desktop.Driver",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.App",
+      "to": "Daoris.Desktop.Modules",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver",
+      "to": "Daoris.Service.Http",
+      "kind": "http"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Host",
+      "to": "Daoris.Desktop.Driver",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Driver.Tests",
+      "to": "Daoris.Desktop.Driver",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Modules",
+      "to": "Daoris.Desktop.Driver",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Desktop.Modules.Tests",
+      "to": "Daoris.Desktop.Modules",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Devkit.Cli",
+      "to": "Daoris.Devkit.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Devkit.Tests",
+      "to": "Daoris.Devkit.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Http",
+      "to": "Daoris.Service.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Mcp",
+      "to": "Daoris.Service.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Tests",
+      "to": "Daoris.Service.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Tests",
+      "to": "Daoris.Service.Mcp",
+      "kind": "project"
+    },
+    {
+      "from": "daoris",
+      "to": "Daoris.Service.Http",
+      "kind": "http"
+    },
+    {
+      "from": "daoris-web",
+      "to": "Daoris.Service.Http",
+      "kind": "http"
+    }
+  ]
+}

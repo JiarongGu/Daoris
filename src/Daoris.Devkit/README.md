@@ -1,6 +1,6 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built and run over this repository.** One self-contained 2.7 MB binary and 59 tests. The two
+**Status: built and run over this repository.** One self-contained 2.7 MB binary and 73 tests. The two
 questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
 
 **The universal gates run here** (DEVKIT3, 2026-09-22): `universal` in `daoris.gates.json` and a step
@@ -121,7 +121,35 @@ daoris-devkit scan --tree     # …on every tracked file
 daoris-devkit scan --history  # …on everything the repository has EVER contained
 daoris-devkit init            # write a starter daoris.gates.json
 daoris-devkit install-hooks   # write .githooks/ and point core.hooksPath at it
+daoris-devkit map             # write docs/code-map.json from the project files
+daoris-devkit map --check     # exit 1 when the committed code map is not what they say
 ```
+
+### `map` — the code map from the project files
+
+A repository's code map (`docs/2026-09-23-map-design.md` §3) is the file the platform draws a
+repository's modules from. `map` writes it from what the project files declare exactly, with no
+compiler:
+- every tracked `*.csproj` is a module, and each `ProjectReference` is a dependency of kind `project`;
+- every tracked `package.json` below the root is a module named by its package, and a dependency on
+  another of the repository's packages is of kind `package`.
+
+What the files do not say is left to a person and kept across runs. A summary comes from the
+project's own description, and where the project declares none, the line already in the map is
+kept. A dependency of any other kind, such as `http`, stays while both its ends are modules.
+
+`map --check` is a **declared** gate, not a universal one. Whether the committed map is what the
+project files say is a fact, so it gates. But a map an agent or a person wrote for another stack is
+not this tool's to judge, and nothing in the file says which producer wrote it. Declare it where it
+applies:
+
+```json
+{ "name": "code-map", "run": "daoris-devkit map --check" }
+```
+
+The devkit shares no code with the service that reads the file, so it restates the reader's rules:
+where the file lives, one id per module, the bounds. Its tests hold them to the reader's source, and
+the tool refuses rather than write a file the reader would refuse.
 
 ### `--history` is an audit, not a gate
 
