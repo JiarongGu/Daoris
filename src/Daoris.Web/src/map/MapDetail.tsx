@@ -24,10 +24,12 @@ function QuestList({ quests }: { quests: Quest[] }) {
  * What the chosen part of the map holds (MAP2). It adds no action of its own: acting on a quest or a
  * session stays where it already lives, and this only says what is there.
  */
-export function MapDetail({ topology, selected, onOpenConvergence }: {
+export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode }: {
   topology: Topology;
   selected: MapSelection | null;
   onOpenConvergence?: () => void;
+  /** Open this repository's own code map (MAP3a) — the same map, one level in. */
+  onOpenCode?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
 
@@ -47,6 +49,11 @@ export function MapDetail({ topology, selected, onOpenConvergence }: {
           {node.working && <Chip accent>{t('map.working')}</Chip>}
         </header>
         {node.summary && <p className="m-0 text-small text-ink-soft">{node.summary}</p>}
+        {onOpenCode && (
+          <div>
+            <Button variant="ghost" onClick={() => onOpenCode(node.id)}>{t('map.detail.openCode')}</Button>
+          </div>
+        )}
         {node.owns.length > 0 && (
           <section>
             <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.owns')}</p>

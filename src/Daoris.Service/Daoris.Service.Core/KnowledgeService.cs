@@ -465,6 +465,23 @@ public sealed class KnowledgeService(
     }
 
     /// <summary>
+    /// A registered repository's code map (MAP3a), read from its checkout on each ask — the person's
+    /// machine showing the person's state, as the local index does (WSP4). Null for a repository
+    /// nobody registered; an empty read for one with no checkout here, whose map arrives by feed (MAP3b).
+    /// </summary>
+    public Task<CodeMapRead?> CodeMapAsync(string repository, CancellationToken ct = default)
+    {
+        var registration = (registry?.Read(new Dictionary<string, int>()) ?? [])
+            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+        if (registration is null) return Task.FromResult<CodeMapRead?>(null);
+
+        return Task.FromResult<CodeMapRead?>(
+            string.IsNullOrWhiteSpace(registration.Root) || !Directory.Exists(registration.Root)
+                ? new CodeMapRead(null, null, null)
+                : CodeMapReader.Read(registration.Root));
+    }
+
+    /// <summary>
     /// Registered repositories whose checkout is not where the registry says it is (D48 §3).
     /// </summary>
     /// <remarks>

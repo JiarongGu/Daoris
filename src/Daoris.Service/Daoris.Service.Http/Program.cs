@@ -708,6 +708,18 @@ app.MapGet("/api/registry", async (
         Root: MachineLocal(http) ? r.Root : null,
         r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch)));
 
+// A repository's code map (MAP3a): its modules and how they depend on each other, read from its own
+// committed file — never written to (D32). Local mode reads the checkout on each ask; a repository
+// with no checkout here answers with no file, until a feed brings one (MAP3b). The file's content is
+// repository-relative by its own rules, so nothing machine-local rides this door.
+app.MapGet("/api/code-map/{repository}", async (ComposedService s, string repository, CancellationToken ct) =>
+    await s.Service.CodeMapAsync(repository, ct) is { } read
+        ? Results.Ok(new CodeMapResponse(
+            repository, read.File, read.Problem,
+            read.Map?.Modules.Select(m => new CodeModuleResponse(m.Id, m.Path, m.Summary)).ToList() ?? [],
+            read.Map?.Dependencies.Select(d => new CodeDependencyResponse(d.From, d.To, d.Kind)).ToList() ?? []))
+        : Results.NotFound(new ErrorResponse($"`{repository}` is not a repository this service has registered.")));
+
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 {
     // A shared deployment is fed, not scanned (D47 §4): fed entries are the only entries it has, and a

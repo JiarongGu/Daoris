@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "modules": [
+    { "id": "runtime", "path": "src/runtime", "summary": "the frame loop the game drives" },
+    { "id": "renderer", "path": "src/renderer", "summary": "draws each frame from the visible chunks" },
+    { "id": "chunks", "path": "src/chunks", "summary": "streams the world in chunks, within a per-frame budget" },
+    { "id": "media", "path": "src/media", "summary": "loads video and image fields named by the media config" }
+  ],
+  "dependencies": [
+    { "from": "runtime", "to": "renderer", "kind": "imports" },
+    { "from": "runtime", "to": "chunks", "kind": "imports" },
+    { "from": "renderer", "to": "chunks", "kind": "imports" },
+    { "from": "chunks", "to": "media", "kind": "imports" }
+  ]
+}

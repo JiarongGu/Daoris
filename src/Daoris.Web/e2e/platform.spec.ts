@@ -147,6 +147,29 @@ test('the map draws the family and the quests that moved between them', async ({
   await expect(page.getByText('Develop the streaming cap')).toBeVisible();
 });
 
+/**
+ * **One level in: a repository's own code map** (MAP3a) — over the real host, read from the example
+ * engine's committed `docs/code-map.json`. The game keeps none, and says so.
+ */
+test('a repository opens its own code map, and one without says where it would go', async ({ page }) => {
+  await page.goto('/');
+  await nav(page, 'Map').click();
+  await page.getByRole('button', { name: /^engine, \d+ open/ }).click();
+  await page.getByRole('button', { name: 'Open its code map' }).click();
+
+  await expect(page.getByRole('heading', { name: 'engine: its code' })).toBeVisible();
+  await page.getByRole('button', { name: 'chunks, depends on 1' }).click();
+  await expect(page.getByText('streams the world in chunks, within a per-frame budget')).toBeVisible();
+  // Its neighbours are doors: what uses it, and what it uses.
+  await page.getByRole('button', { name: 'media', exact: true }).click();
+  await expect(page.getByText('loads video and image fields named by the media config')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Back to the workspace' }).click();
+  await page.getByRole('button', { name: /^game, \d+ open/ }).click();
+  await page.getByRole('button', { name: 'Open its code map' }).click();
+  await expect(page.getByText('game keeps no code map')).toBeVisible();
+});
+
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();

@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CodeMapCanvas, CodeMapDetail } from './map/CodeMap';
 import { MapCanvas, type MapSelection } from './map/MapCanvas';
 import { MapDetail } from './map/MapDetail';
 import { buildTopology } from './map/topology';
-import { useConvergence, useQuests, useRegistry, useSessions } from './queries';
-import { Card, EmptyState, type Notify, PageHeader, SkeletonRows, useErrorNotify } from './ui';
+import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from './queries';
+import {
+  Button, Card, EmptyState, Icon, type Notify, PageHeader, SkeletonRows, useErrorNotify,
+} from './ui';
 
 /** The similarity the Convergence view opens at — the map's dotted lines are the same findings. */
 const SHARED = 0.75;
@@ -28,7 +31,67 @@ export function MapView({ notify, onOpenConvergence }: {
   const shared = useConvergence(SHARED);
   const sessions = useSessions(null, false);
   const [selected, setSelected] = useState<MapSelection | null>(null);
-  useErrorNotify(registry.error ?? quests.error ?? sessions.error, notify);
+  // One level in (MAP3a): the repository whose own code map is open, and the module chosen on it.
+  const [code, setCode] = useState<string | null>(null);
+  const [module, setModule] = useState<string | null>(null);
+  const codeMap = useCodeMap(code);
+  useErrorNotify(registry.error ?? quests.error ?? sessions.error ?? codeMap.error, notify);
+
+  if (code !== null) {
+    const back = () => { setCode(null); setModule(null); };
+    const answer = codeMap.data;
+    return (
+      <section>
+        <PageHeader
+          title={t('code.title', { repository: code })}
+          description={t('code.description')}
+          action={<Button variant="ghost" onClick={back}><Icon name="map" size={14} />{t('code.back')}</Button>}
+        />
+        {codeMap.isPending && <SkeletonRows rows={4} />}
+        {answer?.problem && (
+          /* The service's own sentence, whole: it names the first rule the file broke (§3). */
+          <Card>
+            <p className="m-0 mb-2 text-body font-semibold text-ink">{t('code.refused')}</p>
+            <p className="m-0 max-w-prose whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-body text-ink-soft">
+              {answer.problem}
+            </p>
+          </Card>
+        )}
+        {/* 🔴 ABSENT, not null: the host leaves a null field out of its answer, and `=== null` drew
+            nothing at all for a repository with no map (found by the browser gate). */}
+        {answer && !answer.problem && !answer.file && (
+          <EmptyState
+            icon="map"
+            headline={t('code.none.headline', { repository: code })}
+            body={t('code.none.body')}
+          />
+        )}
+        {answer?.file && !answer.problem && (
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <Card>
+              <CodeMapCanvas
+                repository={code}
+                modules={answer.modules}
+                dependencies={answer.dependencies}
+                selected={module}
+                onSelect={setModule}
+              />
+              <p className="m-0 mt-2 text-meta text-ink-faint">{t('code.legend')}</p>
+            </Card>
+            <Card>
+              <CodeMapDetail
+                modules={answer.modules}
+                dependencies={answer.dependencies}
+                selected={module}
+                file={answer.file}
+                onSelect={setModule}
+              />
+            </Card>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   const header = <PageHeader title={t('map.title')} description={t('map.description')} />;
 
@@ -72,7 +135,12 @@ export function MapView({ notify, onOpenConvergence }: {
           )}
         </Card>
         <Card>
-          <MapDetail topology={topology} selected={selected} onOpenConvergence={onOpenConvergence} />
+          <MapDetail
+            topology={topology}
+            selected={selected}
+            onOpenConvergence={onOpenConvergence}
+            onOpenCode={setCode}
+          />
         </Card>
       </div>
     </section>

@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A repository with no code map drew nothing at all: the host leaves nulls out (2026-09-23)
+
+**Symptom.** Found by the browser gate before the change landed. Opening the code map of a
+repository that keeps none showed the header and nothing else: no empty state, no map, no sentence.
+
+**Root cause.** The host serializes with `DefaultIgnoreCondition = WhenWritingNull`
+(`Daoris.Service.Http/Program.cs`), so a null field is **absent** from its answer, not `null`. The
+page's type said `file: string | null` and the view tested `answer.file === null`, which is false for
+`undefined`. The unit test's stub sent an explicit `null`, so it agreed with the type and not with
+the host. Every other optional field in `api.ts` is already `?:` for this reason, and nothing said
+why.
+
+**Fix.** `CodeMapAnswer.file` and `problem` are `?: string | null`, and the view tests `!answer.file`.
+The comment on the type says the host omits nulls.
+
+**Verify.** The view test answers as the host does, with the fields left out. It failed with the
+`=== null` comparison put back, one test red, and passes with the fix. The browser gate opens the
+game's missing map over the real host (18/18).
+
 ## A door ran in its own accounts, not the agent's it declares (2026-09-23)
 
 **Symptom.** Found by reading while designing API-key accounts, not by a person. An account made

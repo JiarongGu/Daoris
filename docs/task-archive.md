@@ -4306,3 +4306,22 @@ does: a molecule may not import the shell module, types included.
 **Seen on the window**: ready and held, both themes. *Look again* refreshes the card too. A held
 start's sentence ran 190 characters a line across the card, and is now capped at a reading measure.
 Driver 396, modules 105, web 601 + 17, family 214/214, deploy 39/39.
+
+## MAP3a — a repository's code map, read and drawn (2026-09-23)
+
+- [x] **MAP3a — a repository's code map, read and drawn** (design §3): `docs/code-map.json` judged
+  whole, read from the checkout in local mode, opened from a MAP2 node, laid out in layers; the
+  example family carries one.
+
+✅ **done 2026-09-23**, after the contract was written into design §3 (`63ec3ea`). `CodeMapReader`
+takes the candidates in order and judges the file whole. It refuses naming the first break: not
+JSON, a version other than 1, an id missing, one-line text broken, an id named twice, a dangling
+dependency, a path that is not repository-relative, or past a bound. `KnowledgeService.CodeMapAsync`
+reads the registered checkout on each ask, and `GET /api/code-map/{repository}` serves it. The page
+opens it from a node's detail. `layerModules` lays it out longest-path, and `codeEdge` bows an arrow
+that skips a layer out past the column. The example engine keeps a map and the game keeps none.
+
+**Found**: the browser gate found the game's missing map drawing nothing, because the host leaves
+a null field out and the view tested `=== null` (FIX-LOG). The window showed the skip-layer arrow
+hidden behind the box between, and lit arrows ending in grey heads. Service 361, web 619 + 18,
+family 214/214.

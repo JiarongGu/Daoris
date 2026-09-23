@@ -21,7 +21,11 @@ const SESSIONS = [
   { id: 's1', repository: 'engine', adapter: 'stub', state: 'working', created: '', updated: '' },
 ];
 
+// MAP3a: what `/api/code-map/{repository}` answers — the engine keeps a map, the game keeps none.
+let CODE_MAPS: Record<string, unknown> = {};
+
 function respond(url: string): Response {
+  if (url.startsWith('/api/code-map/')) return Response.json(CODE_MAPS[decodeURIComponent(url.slice('/api/code-map/'.length))]);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/convergence')) return Response.json(CONVERGENCE);
@@ -113,5 +117,56 @@ describe('the workspace map', () => {
     show();
 
     expect(await screen.findByText('No repositories in this circle')).toBeTruthy();
+  });
+
+  // ——— One level in: a repository's own code map (MAP3a).
+
+  const openCode = async (repository: 'engine' | 'game') => {
+    await userEvent.click(await screen.findByRole('button', { name: new RegExp(`^${repository}, 1 open`) }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open its code map' }));
+  };
+
+  it('opens a repository\'s code map from its node, and goes back', async () => {
+    CODE_MAPS = {
+      engine: {
+        repository: 'engine', file: 'docs/code-map.json', problem: null,
+        modules: [
+          { id: 'renderer', path: 'src/renderer', summary: 'draws frames' },
+          { id: 'chunks', path: 'src/chunks', summary: 'streams the world' },
+        ],
+        dependencies: [{ from: 'renderer', to: 'chunks', kind: 'imports' }],
+      },
+    };
+    show();
+    await openCode('engine');
+
+    expect(await screen.findByRole('heading', { name: 'engine: its code' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'chunks, depends on 0' }));
+    expect(screen.getByText('streams the world')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'renderer' })).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Back to the workspace' }));
+    expect(await screen.findByRole('heading', { name: 'Map' })).toBeTruthy();
+  });
+
+  /** 🔴 As the host answers it: a null field is LEFT OUT, and `=== null` once drew nothing at all. */
+  it('says a repository keeps no code map, and where one would go', async () => {
+    CODE_MAPS = { game: { repository: 'game', modules: [], dependencies: [] } };
+    show();
+    await openCode('game');
+
+    expect(await screen.findByText('game keeps no code map')).toBeTruthy();
+    expect(screen.getByText(/docs\/code-map\.json/)).toBeTruthy();
+  });
+
+  /** Judged whole: the service's sentence, verbatim, and nothing of the file drawn. */
+  it('shows a refused file in the service\'s own words and draws none of it', async () => {
+    const problem = '`docs/code-map.json` has a dependency naming `ghost`, which is not a module in the file.';
+    CODE_MAPS = { engine: { repository: 'engine', file: 'docs/code-map.json', problem, modules: [], dependencies: [] } };
+    show();
+    await openCode('engine');
+
+    expect(await screen.findByText(problem)).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'the code map of engine' })).toBeNull();
   });
 });

@@ -59,6 +59,19 @@ export type Quest = {
 };
 /** One step of a chain. `{parent}` in its words becomes the id of the quest it follows. */
 export type QuestStep = { to: string; title: string; body: string };
+/** One module of a repository, as its code map names it (MAP3a). `path` is repository-relative. */
+export type CodeModule = { id: string; path: string; summary: string };
+export type CodeDependency = { from: string; to: string; kind: string };
+/**
+ * A repository's code map (MAP3a). `file` is which candidate was read, absent when it keeps none;
+ * `problem` is why the file was refused WHOLE, verbatim — and then both lists are empty, because a
+ * half-drawn map reads as a whole one. Both are ABSENT rather than null on the wire: the host omits
+ * a null field.
+ */
+export type CodeMapAnswer = {
+  repository: string; file?: string | null; problem?: string | null;
+  modules: CodeModule[]; dependencies: CodeDependency[];
+};
 export type QuestAction = { quest: Quest; message: string };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
@@ -177,6 +190,9 @@ export const api = {
     get<Quest[]>(`/api/quests${qs({ includeClosed, repository, workspace })}`, signal),
   registry: (workspace: string | null, signal?: AbortSignal) =>
     get<Registration[]>(`/api/registry${qs({ workspace })}`, signal),
+  // A repository's own code map (MAP3a), read from its committed file — never written to (D32).
+  codeMap: (repository: string, signal?: AbortSignal) =>
+    get<CodeMapAnswer>(`/api/code-map/${encodeURIComponent(repository)}`, signal),
   sessions: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Session[]>(`/api/sessions${qs({ includeClosed, repository, workspace })}`, signal),
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine

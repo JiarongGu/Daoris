@@ -158,6 +158,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 |---|---|
 | `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
 | `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands |
+| `GET /api/code-map/{repository}` | a repository's own code map (MAP3a), read from its committed `docs/code-map.json` and judged whole; local mode reads the checkout, and a repository with no checkout here answers with no file |
 | `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape |
 | `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason |
 | `GET /api/quests/{id}/attachments/{sha256}` | local mode, loopback only: a kept file, served sandboxed (`Content-Security-Policy: sandbox`, `nosniff`), and anything but an image, a PDF or text as a download, so an attached page never runs on the platform's origin |

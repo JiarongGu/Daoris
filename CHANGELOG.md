@@ -392,6 +392,11 @@ The first version: doctrine that installs, is checked, and flows back.
   the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
   characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
   included. Removing the account removes its key. A sign-in stays the tool's, as before.
+- **A repository's own code map** (MAP3a). A repository that keeps a `docs/code-map.json`, listing
+  its modules and what each depends on, can be opened from its node on the Map. The modules are
+  drawn in layers, with what uses a module above it; choose one to see its path, its summary, what
+  it depends on and what uses it. Daoris reads the file and never writes it. A file that breaks a
+  rule is refused whole, with the sentence naming the break, rather than half drawn.
 - **What a start runs on** (MAP1b). Settings shows, for each workspace, the agent, account and
   version a driven session would start with, and which setting chose each: this workspace's
   default, this machine's, or the agent's own sign-in; a pin, or PATH. A start the driver would

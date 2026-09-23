@@ -125,8 +125,8 @@ setting up gets set up for one repository and never for the rest.
   `http`, …) and is drawn as the producer wrote it.
 - **Judged whole.** A file that breaks any rule above is refused with the sentence naming the
   first break, and nothing of it is shown. A half-drawn map reads as a whole one.
-- **Bounded** at 500 modules and 5,000 dependencies. A map that size is no longer a picture, and
-  the bound keeps a mistaken producer from filling the store.
+- **Bounded** at 500 modules and 5,000 dependencies, and at 1 MB before it is parsed. A map that
+  size is no longer a picture, and the bound keeps a mistaken producer from filling the store.
 - No field says which producer wrote it, so the service and the page never know.
 
 **Where it is read.** In local mode the service reads the file from the registered checkout on each
@@ -149,6 +149,13 @@ repository has learned to keep a code map; it is a Daoris feature. The alternati
 out of it: the driver's session prompt asks, for a repository whose code map exists, to keep it
 current, as wiring at spawn (HELP3's shape). The file is still written by that repository's own
 agent (D32). **Recommended: the prompt.** A pack is the middle road, but packs have the same bar.
+
+**MAP3a is built (2026-09-23).** `CodeMapReader` (service core) judges the file, and
+`GET /api/code-map/{repository}` answers from the registered checkout. On the page, a MAP2 node's
+detail offers *Open its code map*. The map is laid out by `layerModules`, longest path, so what uses
+a module sits above it and a recorded cycle still places every module once. An arrow that skips a
+layer bows out past the column: drawn straight, it ran behind the box between and vanished (seen on
+the window). The example engine keeps a map and the game keeps none, and the browser gate opens both.
 
 **Build order.** MAP3a: the contract, the local read, the page, and the example family carrying a
 map. MAP3b: the feed to a shared deployment, with WSP4's provenance. MAP3c: a tool producer (the

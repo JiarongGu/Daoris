@@ -20,6 +20,7 @@ export const keys = {
   repositories: (workspace: string | null) => ['repositories', workspace ?? '*'] as const,
   allRegistry: ['registry'] as const,
   registry: (workspace: string | null) => ['registry', workspace ?? '*'] as const,
+  codeMap: (repository: string) => ['code-map', repository] as const,
   driver: ['driver'] as const,
   /** The machine's wiring — shell-only, like the driver's state (D48 §5). */
   remotes: ['remotes'] as const,
@@ -65,6 +66,14 @@ export const useRegistry = () => {
     queryFn: ({ signal }) => api.registry(workspace, signal),
   });
 };
+
+/** A repository's code map (MAP3a) — asked only once a person opens one. */
+export const useCodeMap = (repository: string | null) =>
+  useQuery({
+    queryKey: keys.codeMap(repository ?? ''),
+    queryFn: ({ signal }) => api.codeMap(repository!, signal),
+    enabled: repository !== null,
+  });
 
 /**
  * The circles this deployment holds — the registry unscoped, because it is the authority (D48 §3)

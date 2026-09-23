@@ -137,6 +137,14 @@ public sealed record FeedQuestRecord(
     IReadOnlyList<QuestStepWire>? Then = null, string? Parent = null);
 public sealed record FeedQuestsRequest(IReadOnlyList<FeedQuestRecord>? Quests);
 public sealed record FeedResponse(int Accepted, string Message);
+// A repository's code map (MAP3a). `File` is which candidate was read, and null when the repository
+// keeps none; `Problem` is why a file was refused whole, verbatim — and then both lists are empty,
+// because a half-drawn map reads as a whole one.
+public sealed record CodeModuleResponse(string Id, string Path, string Summary);
+public sealed record CodeDependencyResponse(string From, string To, string Kind);
+public sealed record CodeMapResponse(
+    string Repository, string? File, string? Problem,
+    IReadOnlyList<CodeModuleResponse> Modules, IReadOnlyList<CodeDependencyResponse> Dependencies);
 public sealed record ErrorResponse(string Error);
 /// <summary>
 /// A refusal the CLIENT should report rather than fix (D48 §6) — a stale or branch feed is the system
@@ -178,6 +186,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedQuestsRequest))]
 [JsonSerializable(typeof(FeedResponse))]
+[JsonSerializable(typeof(CodeMapResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;

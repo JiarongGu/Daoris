@@ -232,7 +232,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
   the chosen node or line holds, and a legend says every mark in words. It adds no actions. What the
   window taught it (names outward, wide hit strokes, arrowheads in the map's units) is in
-  `docs/2026-09-23-map-design.md` §1.
+  `docs/2026-09-23-map-design.md` §1. A node's detail opens **its code map** (MAP3a), the same
+  page one level in: modules as boxes in layers, what uses a module above it, an arrow that skips a
+  layer bowed out past the column, and *Back to the workspace* where the page action goes.
 - **Settings** (D66) — *Appearance* first, for everyone: the theme and the language, each a
   segmented choice. Then, on the desktop only, **This machine**: the home's path under its heading,
   then cards that are *sections of one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,
