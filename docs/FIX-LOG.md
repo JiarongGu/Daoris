@@ -30,7 +30,7 @@ binary off `PATH` gains nothing: its updates are the machine's (D48 §2a).
 DISABLE_UPDATES)*, `claude update` refused, still 2.1.270. `PinnedUpdatesTests` (driver) and the
 CLI's pinned-probe test hold both doors, the probe, and the untouched `PATH` case.
 
-**Commit.** pending
+**Commit.** `2a41c05`
 
 ## INT5 landed with the desktop's palette test red (2026-09-23)
 
