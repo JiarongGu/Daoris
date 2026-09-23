@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: MAP3b, MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: SYNC0d, then SYNC1–6 (D68); MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -266,7 +266,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Twenty items are open** — five of them D67's —
+the archive; its decision is **D53, accepted**). **Thirty items are open** — eleven of them D68's and four D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
@@ -277,8 +277,9 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D67's items (MAP3b next; AGT2b last — npm already installs the native build), then INT4b and
-INT4c**, outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **D68's SYNC arc first, the owner's newest direction (SYNC0d, then SYNC1–6 in order); then D67's
+remaining items (AGT2b last — npm already installs the native build), then INT4b and INT4c.** They
+outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -306,18 +307,9 @@ wire evidence.
   the owner supplies the login. **This is D23's "on proof".** The pipe door stays supported until it
   passes.
 
-  ⏸ **Driven for real 2026-09-22, and it got as far as the model.** `node tools/acp2-proof.mjs
-  --drive` now spawns the pinned adapter, reaches Claude, sets `acceptEdits` as a mode, discovers the
-  repository's synced skills and streams a real answer — **11 of 13 checks**. It stops at one thing,
-  and it is a missing feature rather than a fault in the door: **ACP4**. The session is told to take
-  its quest and the door hands it no MCP server, so it ends the turn having touched nothing.
-  **ACP2 closes when ACP4 lands** and the same command passes 13/13.
-
-  Four defects were found by running it, all fixed: the presence probe asked about a different binary
-  than the spawn would run, so a working pin reported absent (FIX-LOG — it hid `codex` too); a scratch
-  host with no root of its own indexed the machine's whole family (FIX-LOG); `connect` has no
-  `--service` flag and an unknown flag is ignored in silence; and a driver that refuses a dirty tree
-  was right while the fixture, which left the adoption uncommitted, was wrong.
+  ⏸ **Driven for real 2026-09-22 to 11 of 13 checks**; the two missing were ACP4 (no MCP server
+  handed over), which has since landed. What is left is `node tools/acp2-proof.mjs --drive` passing
+  13/13 on the owner's login. The run's four other defects are fixed and archived under ACP4.
 
 - [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
   Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
@@ -425,11 +417,10 @@ checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b and MAP3a are 
 - [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
   its signed manifest; Codex's releases once Windows and versions are confirmed.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
-- [ ] **MAP3b — the code map fed to a shared deployment**, with WSP4's provenance.
 - [ ] **MAP3c — a tool producer**: the devkit writes the file from project references and package
   dependencies.
-- [ ] ⛔ **MAP3d — the agent producer.** The owner's call first (design §3): a canon skill against
-  the two-repository bar, or the driver's session prompt (recommended).
+- [ ] ⛔ **MAP3d — the agent producer.** The owner's call first (design §3): canon skill, or the
+  session prompt (recommended).
 
 ### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
 
@@ -455,6 +446,23 @@ screen.
   record (the proposal, the tier, its quests, *publish to…* and *close*).
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
+
+### The remote as a git remote (owner, 2026-09-23 → D68)
+
+`docs/2026-09-23-sync-design.md`: every verb commits locally; sync is fetch, rebase, push. Today's
+five defects (SYNC0a–e) are in its §0. In order:
+
+- [ ] **SYNC0d — a newly wired remote takes effect without a restart** (`RemoteSyncSet` and
+  `RemoteQuestRoutes` are built once, though `RemotesModule` says the loop re-reads the map).
+- [ ] **SYNC1 — quests as history, locally**: the operation log, replayed through the transition
+  table; the status table as its cache; 48-bit ids.
+- [ ] **SYNC2 — fetch, rebase, push for quests**, conflicts recorded; replaces the mirror and the
+  write-through (fixes SYNC0a, SYNC0e); the rehearsal's two-machine phase rewritten.
+- [ ] **SYNC3 — claim by push**, unconfirmed takes offline, a losing session stopped.
+- [ ] **SYNC4 — session records both ways, by cursor.**
+- [ ] **SYNC5 — knowledge, code map and registrations by ancestry**, a content digest, retire as a
+  tombstone (fixes SYNC0b, SYNC0c; carries MAP3b).
+- [ ] **SYNC6 — the surfaces**: ahead, behind, conflicts; *Sync now*; `daoris-driver sync`.
 
 ### Plugins — a folder that declares, and may speak (owner, 2026-09-23 → D64)
 

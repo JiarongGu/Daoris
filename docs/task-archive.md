@@ -3389,6 +3389,13 @@ session the real machine's.
 **One trap, twice now:** a C# lambda parameter named `_` shadows the discard in
 `TryGetProperty("id", out _)`, and the error names neither.
 
+**The driven ACP2 run that measured this found four more defects, all fixed** (moved here from the
+backlog's ACP2 entry, 2026-09-23): the presence probe asked about a different binary than the spawn
+would run, so a working pin reported absent (FIX-LOG — it hid `codex` too); a scratch host with no
+root of its own indexed the machine's whole family (FIX-LOG); `connect` has no `--service` flag and
+an unknown flag is ignored in silence; and a driver that refuses a dirty tree was right while the
+fixture, which left the adoption uncommitted, was wrong.
+
 ## CANON8d — say the new thing (2026-09-22)
 
 > **CANON8d — say the new thing.** Four sentences D59 made false, each verified stale on 2026-09-22

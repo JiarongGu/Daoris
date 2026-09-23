@@ -2526,3 +2526,48 @@ and how work travels, is a picture a person reads at a glance.
 **What does not move.** D24 (the harness carries the model); D49 §4 for sign-ins; D47 §4 (no key, and
 no path, crosses the HTTP surface); D32 (a map of another repository's code is read, never written
 into — that repository feeds it, as it feeds knowledge).
+
+## D68 — The remote is a git remote: every machine commits locally, sync is fetch, rebase, push (2026-09-23)
+
+**Decision.** The owner: *"the remote share server is more like a git system, and local is the main
+driver and we can push/sync/merge/rebase remote so to keep everything in sync, what this gives is the
+system works with/without remote share and we can have proper merging logic when there is
+conflict"*. `docs/2026-09-23-sync-design.md` is the mechanism. **Every verb commits locally and
+always succeeds locally.** A quest is kept as its operations and replayed through the one transition
+table. Sync is **fetch, rebase, push** per wired workspace, and the remote orders what it accepts, as
+a remote branch orders commits. The owner answered its three trade-offs the same day:
+
+1. **Claim by push.** Before a driven session starts, the take is pushed and awaited when the remote
+   is reachable, so there is no duplicate work online. Offline, the take stays local and unconfirmed,
+   and the session runs.
+2. **First push wins, and the loser is kept.** The operation that reached the remote second becomes a
+   `conflict` on the quest, with what it attempted and its evidence, for a person. Nothing is dropped
+   and nothing is merged into a second truth. A losing session still running is stopped by its own
+   machine's driver.
+3. **Automatic, and on demand.** Every tick fetches, rebases and pushes. `daoris-driver sync` and
+   *Sync now* do it when asked. Ahead, behind and conflicts are shown per workspace.
+
+**Amends D47.** A joined quest no longer has a remote *home*, and its verbs no longer write through
+or fail. That rule made offline work impossible for exactly the repositories a team shares. D47's
+case against git was that git finds the race at push time, after a duplicate session already ran.
+Claim by push keeps that guarantee whenever the remote can be reached. What the owner accepts in
+exchange is the offline race, ended by rule 2. **Stays from D47:** the same host in shared mode, the
+keys, the two declarations and the structural strip, records keyed by origin, no processes and no
+doctrine on a remote, and the one judgement class.
+
+**Why.** A machine is where the work, the checkouts and the person are. A design that stops that
+machine's shared work whenever a server is unreachable has the dependency backwards. Git's model is
+one every developer already reads: local commits, a remote that orders them, and conflicts that
+surface instead of vanishing. The records needed it most. Before this, every tick re-sent full
+snapshots, the last writer won on registrations, and nothing was ordered but knowledge.
+
+**Rejected.**
+- **Merging two results into one automatically.** Two sessions' work on one quest is two sets of
+  commits in someone's repository, and only a person, or that repository's agent, can combine them
+  (D32). The loser is kept and shown instead.
+- **An operation-based CRDT with no ordering point.** It would merge without conflicts by
+  construction, and a `take` is exactly the operation that must conflict. The remote as the ordering
+  point is what makes "first" mean something.
+- **Git itself as the store.** It was priced in D47 and still loses on the lock. Rule 1 needs an
+  answer before the spawn, which a push to a bare git repository can give only by making every take a
+  commit in a repository nobody reviews.

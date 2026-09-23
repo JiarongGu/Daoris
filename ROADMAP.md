@@ -126,6 +126,11 @@ test in a browser; **`then`** chains develop → verify → report, and the driv
 `docs/2026-09-23-intake-design.md` is the contract; INT1–INT6 are the build order in `TASKS.md`,
 with INT3 (registered is drivable) waiting on the owner's yes.
 
+## The newest direction: the remote as a git remote (D68, set 2026-09-23)
+
+**Every machine commits locally; sync is fetch, rebase, push** (`docs/2026-09-23-sync-design.md`;
+SYNC0d–SYNC6 first).
+
 ## The next direction: agents, and the map (D67, set 2026-09-23)
 
 **Daoris's loop is the higher one**; an agent keeps its own and reaches Daoris over MCP; Daoris may
@@ -136,7 +141,7 @@ keep an API key; the wiring is a **map**. The asks are in `docs/2026-09-23-agent
 | **AGT · Agents and accounts** | *agent* as the word, with each tool's maker; pins that stay pinned; vendor-channel installs; API-key accounts | AGT1, AGT2a, AGT3, AGT3b, AGT7 **built**; AGT2b last |
 | **MAP2 · The workspace topology** | A circle's repositories, the quests and the shared knowledge between them; no model | **Built** — the Map view (`docs/2026-09-23-map-design.md` §1) |
 | **MAP1 · The workflow** | ask → intake → quests → sessions → `then`, each step's agent, account and version | **Built**: the chain strip (MAP1a) and the wiring panel (MAP1b); the intake joins with INT4b |
-| **MAP3 · A repository's code** | The same map inside one repository, fed by it (D32): **repository intelligence**'s first consumer | **Built**: read and drawn from `docs/code-map.json` (MAP3a); the feed (MAP3b) and a tool producer (MAP3c) next; the agent's half (MAP3d) waits on the owner |
+| **MAP3 · A repository's code** | The same map inside one repository, fed by it (D32): **repository intelligence**'s first consumer | **Built** (MAP3a); the feed rides SYNC5; MAP3c next; MAP3d waits on the owner |
 
 **What else is open is decisions and triggers**, not work: ACP2 and DEPLOY1's second half each spend
 a real login; PLUG2 reopens D4; the held rows wait on something arriving. Surface work comes from
