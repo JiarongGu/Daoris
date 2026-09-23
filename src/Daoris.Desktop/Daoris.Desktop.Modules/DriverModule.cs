@@ -272,6 +272,10 @@ public sealed class DriverModule : ModuleBase
                         // things a person has to have opinions about. They are one tool and one
                         // account; the second is a way in. The page groups on these two fields.
                         AccountOf = _loop.Harnesses.Toolchain(report.Adapter)?.AccountOf,
+                        // What a person calls the tool, and whose it is (AGT1) — `dsh` meant nothing
+                        // to the owner until it said.
+                        _loop.Harnesses.Toolchain(report.Adapter)?.Product,
+                        _loop.Harnesses.Toolchain(report.Adapter)?.Maker,
                         Wire = _loop.Harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
                         // The plugin this harness came from (D64), or null for one this build carries
                         // — shown beside it, so a person knows which folder to look in.
@@ -328,7 +332,7 @@ public sealed class DriverModule : ModuleBase
                 {
                     "unpin" => Unpin(harness),
                     // 🔴 The credential profiles, from a SCREEN (DEPLOY3). They existed only as
-                    // `daoris harness profile add|remove|default`, so the Machine view could list a
+                    // `daoris agent profile add|remove|default`, so the Machine view could list a
                     // profile and log into one and never make one — D50 violated in the direction
                     // nothing tests, since the rule is written "whatever a screen can set, a
                     // terminal can" and the converse had no check.
@@ -341,7 +345,7 @@ public sealed class DriverModule : ModuleBase
                     "install" or "update" or "login" or "login-new" or "pin" => null,
                     _ => throw Refusals.Because(
                         Refusals.HarnessActionUnknown,
-                        $"unknown harness action '{action}' — one of: install, update, login, login-new, "
+                        $"unknown agent action '{action}' — one of: install, update, login, login-new, "
                         + "pin, unpin, profile-add, profile-remove, profile-default",
                         ("action", action)),
                 };
@@ -383,7 +387,7 @@ public sealed class DriverModule : ModuleBase
                     "login" => () => HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track),
                     "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track),
                     // The managed toolchain (TOOL2/D57) — the desktop's half of
-                    // `daoris harness pin|unpin`, over the same file.
+                    // `daoris agent pin|unpin`, over the same file.
                     _ => () => PinAsync(harness, toolchain, stream, request, CancellationToken.None, track),
                 };
                 var work = RunActionAsync(key, harness, action, fresh ?? profile, run, started.Task, config);
@@ -916,7 +920,7 @@ public sealed class DriverModule : ModuleBase
     /// <remarks>
     /// Idempotent, exactly as the CLI verb is — asking for one that exists is an answer, not a
     /// failure. The page makes accounts by signing in (<c>login-new</c>, D66 §3); this is the
-    /// bridge's half of <c>daoris harness profile add</c>, for a name a person picks before signing in.
+    /// bridge's half of <c>daoris agent profile add</c>, for a name a person picks before signing in.
     /// </remarks>
     private int ProfileAdd(string harness, IpcRequest request)
     {
@@ -932,7 +936,7 @@ public sealed class DriverModule : ModuleBase
     /// delete the account. The old rule un-pointed it and kept any directory the tool would not
     /// call signed out, so a removed account stayed listed and signed in — the leftover the person
     /// pressed the button to be rid of. The page asks twice before it sends this; the terminal twin
-    /// is <c>daoris harness profile remove</c>.</para>
+    /// is <c>daoris agent profile remove</c>.</para>
     ///
     /// <para>Only ever a profile: the tool's own configuration home is not under Daoris's directory,
     /// and no name reaches it.</para>

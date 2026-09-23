@@ -458,6 +458,14 @@ public sealed class DriverModuleTests : Bridge
             Assert.True(harness.TryGetProperty("present", out _));
             Assert.True(harness.TryGetProperty("profiles", out _));
         }
+
+        // AGT1: what a person calls the tool, and whose it is — `dsh` meant nothing to the owner
+        // until it said. Answered by the toolchain's own declaration, not a table on the page.
+        var claude = harnesses.Single(h => h.GetProperty("harness").GetString() == "claude-code");
+        Assert.Equal("Claude Code", claude.GetProperty("product").GetString());
+        Assert.Equal("Anthropic", claude.GetProperty("maker").GetString());
+        var dsh = harnesses.Single(h => h.GetProperty("harness").GetString() == "dsh");
+        Assert.Equal("DeepSeek", dsh.GetProperty("maker").GetString());
     }
 
     /// <summary>
@@ -491,7 +499,7 @@ public sealed class DriverModuleTests : Bridge
 
     /// <summary>
     /// 🔴 A work account for the work circle (D49 §4) could be set from a terminal
-    /// (`daoris harness profile default … --workspace`) and not from the screen — D50 in the
+    /// (`daoris agent profile default … --workspace`) and not from the screen — D50 in the
     /// direction nothing tests. The bridge carries the workspace, the roster answers which circles
     /// use which account, and an action naming no profile CLEARS the default rather than refusing:
     /// "use the tool's own home again" is a choice, not a missing argument.

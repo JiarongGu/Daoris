@@ -78,7 +78,8 @@ seam. Building them together would mean one change that cannot be reviewed.
   through `HarnessToolchain.Command`.
 - **Every session record already says which version ran** (`HarnessVersion`, D49 §4), so "what
   produced this work" stays answerable across a pin change. Nothing new is needed for that.
-- **Two doors** (D50): `daoris harness pin <harness> <version>` / `unpin`, and the Machine view's
+- **Two doors** (D50): `daoris agent pin <agent> <version>` / `unpin` (`daoris harness` until
+  AGT1), and the Machine view's
   harness card. One file, either door, as with every other machine-local choice.
 
 **Rejected: vendoring a harness into the Daoris package.** It would make the version certain and make

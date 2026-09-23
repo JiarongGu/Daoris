@@ -27,6 +27,9 @@ export interface ToolDoor {
   problem?: string | null;
   wire?: string | null;
   accountOf?: string | null;
+  /** What a person calls the tool this door runs, and who makes it (AGT1). Absent from an older shell. */
+  product?: string | null;
+  maker?: string | null;
   pinnable?: boolean;
   /** Whether this door can run the tool's sign-in — false where it declares no login flow. Absent from an older shell. */
   signsIn?: boolean;
@@ -57,8 +60,14 @@ export interface Account {
 
 /** One tool, with every door onto it and the one account list they share. */
 export interface Tool {
-  /** The tool a person means — `claude-code`, `codex`, `dsh`. */
+  /** The tool's id — `claude-code`, `codex`, `dsh` — which is what a terminal types. */
   name: string;
+  /**
+   * What a person calls it and whose it is (AGT1), from the first door that says — or null, and a
+   * surface shows the id. `dsh` meant nothing to the owner until it said it was DeepSeek's.
+   */
+  product: string | null;
+  maker: string | null;
   /** Its doors, the one that owns the account first. */
   doors: ToolDoor[];
   /** The accounts, deduplicated: every door onto one tool reads one configuration home. */
@@ -140,6 +149,8 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
 
     return {
       name,
+      product: doorsInOrder.map((door) => door.product).find(Boolean) ?? null,
+      maker: doorsInOrder.map((door) => door.maker).find(Boolean) ?? null,
       doors: doorsInOrder,
       accounts,
       machineDefault: doorsInOrder.find((door) => door.machineDefault)?.machineDefault ?? null,

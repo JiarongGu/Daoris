@@ -275,7 +275,7 @@ public sealed class AcpSession(
             // Whatever was still awaited will never be answered. Faulting it here is what turns an
             // agent that died mid-handshake into a sentence rather than a hang.
             Fail(new DriverException(
-                "the ACP agent's stream ended before it answered — the harness exited, or it is not "
+                "the ACP agent's stream ended before it answered — the agent exited, or it is not "
                 + "speaking ACP on stdout."));
         }
     }

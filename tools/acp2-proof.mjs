@@ -100,7 +100,7 @@ const home = harnessHome(harnessesPath());
 const managed = (harness, binary) =>
   managedBinary(home, harness, resolveVersion(settings, harness, null, null), [binary]);
 
-/** Ask a harness about itself the way `daoris harness list` does, tolerating absence. */
+/** Ask a harness about itself the way `daoris agent list` does, tolerating absence. */
 function present(harness, binary, args = ['--version']) {
   const where = managed(harness, binary) ?? binary;
   const found = capture(`"${where}" ${args.join(' ')}`, repoRoot, { timeout: 30_000 });
@@ -114,7 +114,7 @@ const claudeVersion = claude?.version ?? null;
 ready('`claude` is on this machine', Boolean(claude),
   claude ? `${claude.version}  (${claude.where})` : 'not pinned, and not on PATH');
 if (!claudeVersion) {
-  needs('the Claude Code CLI', 'daoris harness install claude-code   (or pin one: daoris harness pin claude-code <version>)');
+  needs('the Claude Code CLI', 'daoris agent install claude-code   (or pin one: daoris agent pin claude-code <version>)');
 }
 
 const acpAdapter = present(ADAPTER, BINARY);
@@ -122,7 +122,7 @@ const adapterVersion = acpAdapter?.version ?? null;
 ready(`\`${ADAPTER}\` is on this machine`, Boolean(adapterVersion), adapterVersion ?? 'not on PATH');
 if (!adapterVersion) {
   needs(`the ACP adapter (${PACKAGE})`,
-    `daoris harness pin ${ADAPTER} 0.79.0   — the version the evaluation ran`);
+    `daoris agent pin ${ADAPTER} 0.79.0   — the version the evaluation ran`);
 }
 
 // The account. `claude auth status` answers JSON and exits 0 either way, so the OUTPUT is the answer
@@ -133,7 +133,7 @@ ready('a Claude account is logged in', loggedIn,
   loggedIn ? '' : 'the profile this run would use reports logged out');
 if (!loggedIn) {
   needs('a logged-in account',
-    'daoris harness login claude-code [--profile <name>]   — runs the harness\'s own flow, into a directory Daoris owns');
+    'daoris agent login claude-code [--profile <name>]   — runs the agent\'s own flow, into a directory Daoris owns');
 }
 
 // ─── the keyless half ─────────────────────────────────────────────────────────────────────────────

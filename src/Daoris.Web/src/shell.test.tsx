@@ -543,7 +543,8 @@ describe('the harness roster', () => {
     adapter: 'claude-code',
     harnesses: [
       {
-        harness: 'claude-code', present: true, version: 'claude 9.9.9', problem: null,
+        harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic',
+        present: true, version: 'claude 9.9.9', problem: null,
         machineDefault: 'personal', pinned: null, managed: null, pinnable: true,
         ownLogin: 'in',
         workspaceDefaults: [{ workspace: 'orbit', profile: 'work' }],
@@ -574,6 +575,10 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} />);
 
     expect(await screen.findByText('claude 9.9.9')).toBeTruthy();
+    // AGT1: a tool is named as a person knows it, with whose it is; one that says neither keeps its id.
+    expect(screen.getByText('Claude Code')).toBeTruthy();
+    expect(screen.getByText('Anthropic')).toBeTruthy();
+    expect(screen.getAllByText('codex').length).toBeGreaterThan(0);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', {});
     expect(serviceCalls()).toEqual([]);
   });
@@ -693,7 +698,7 @@ describe('the harness roster', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'login-new' },
     });
-    expect(await screen.findByText('Signing in to another claude-code account')).toBeTruthy();
+    expect(await screen.findByText('Signing in to another Claude Code account')).toBeTruthy();
 
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
@@ -703,7 +708,7 @@ describe('the harness roster', () => {
     });
 
     expect(notify).toHaveBeenCalledWith('Signed in as someone@example.invalid — sessions can run as it.');
-    await waitFor(() => expect(screen.queryByText('Signing in to another claude-code account')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Signing in to another Claude Code account')).toBeNull());
   });
 
   /** A sign-in that did not finish keeps nothing, and says so rather than going quiet. */

@@ -29,8 +29,15 @@ import { Button, Dot, Icon, MonoWell } from './ui';
  * name yet — who it is, is what the sign-in finds out.
  */
 export function SignIn({
-  id, harness, profile, action = 'login',
-}: { id: string; harness: string; profile?: string; action?: 'login' | 'login-new' }) {
+  id, harness, profile, action = 'login', tool,
+}: {
+  id: string;
+  harness: string;
+  profile?: string;
+  action?: 'login' | 'login-new';
+  /** What a person calls the tool (AGT1) — the id when it does not say. */
+  tool?: string;
+}) {
   const { t } = useTranslation();
   const { lines, live, dropped } = useSessionConsole(id);
   const input = useHarnessInput();
@@ -67,7 +74,7 @@ export function SignIn({
     input.mutate({ harness, action, text });
   };
 
-  const title = profile ? t('signin.title', { profile }) : t('signin.titleNew', { harness });
+  const title = profile ? t('signin.title', { profile }) : t('signin.titleNew', { harness: tool ?? harness });
 
   return (
     <section

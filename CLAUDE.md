@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 323 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fifteen commands, 324 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 348, `Daoris.Devkit` 59, and the
 driver 369. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
@@ -137,7 +137,7 @@ risk, **authorship** was.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
 - **The toolchain is Daoris's** (**D57**, `docs/2026-09-22-toolchain-design.md`): which binary runs
-  (`harness pin|unpin`; *explicit command → managed pin → `PATH`*; a pin nobody installed
+  (`agent pin|unpin`; *explicit command → managed pin → `PATH`*; a pin nobody installed
   **refuses**), usage **measured before managed** (ACP's `usage_update` per session at its
   high-water mark, totalled per account, machine-local; 🔴 **absent is never zero**, no price
   claimed), and breadth as **native adapters plus the ACP door, never a registry**. TOOL4 is held.
@@ -269,7 +269,7 @@ Run every command from the **workspace root**, not from a package directory.
   echoing through the console.
 - **Exit codes are the contract:** `0` clean · `1` policy failure · `2` tool error.
 - **`check` works offline, and so does every doctrine command.** The exceptions are the **management
-  class** — `connect`, `retire`, `import` talk to a service; `remote`, `harness` and `driver` edit
+  class** — `connect`, `retire`, `import` talk to a service; `remote`, `agent` and `driver` edit
   files under the profile — all opt-in and never run by a gate (D35, D50). Three tests hold the line:
   only `service.ts` may contain a network primitive, only `toolchain.ts` may spawn a harness, and
   nothing

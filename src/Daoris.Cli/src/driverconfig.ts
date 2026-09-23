@@ -252,7 +252,7 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       writeDriverChoices(path, { ...choices, adapter });
       write(`daoris: sessions on this machine spawn via \`${adapter}\`.`);
       if (!(adapter in TOOLCHAINS)) {
-        write('  Daoris manages no toolchain for that name — `daoris harness list` shows the ones it does.');
+        write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
       }
 
       return 0;

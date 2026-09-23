@@ -947,7 +947,7 @@ public sealed class HarnessSelectionTests : IDisposable
 
         Assert.False(selection.Allowed);
         Assert.Contains("not installed", selection.Refusal);
-        Assert.Contains("daoris harness install fake", selection.Refusal);
+        Assert.Contains("daoris agent install fake", selection.Refusal);
     }
 
     /// <summary>
@@ -965,9 +965,9 @@ public sealed class HarnessSelectionTests : IDisposable
 
         Assert.False(selection.Allowed);
         Assert.Contains("not logged in", selection.Refusal);
-        Assert.Contains("daoris harness login fake --profile fresh", selection.Refusal);
+        Assert.Contains("daoris agent login fake --profile fresh", selection.Refusal);
         // And it says where the credential lives, because the obvious worry is that Daoris took it.
-        Assert.Contains("harness's own store", selection.Refusal);
+        Assert.Contains("agent's own store", selection.Refusal);
     }
 
     /// <summary>

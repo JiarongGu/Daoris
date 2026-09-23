@@ -140,6 +140,17 @@ describe('byTool', () => {
     expect(byTool([door({ harness: 'dsh' })])[0]!.ownAccount).toBeNull();
   });
 
+  /** AGT1: what a person calls the tool and whose it is — the first door that says, or nothing. */
+  it('names the tool and its maker from the doors, and leaves both empty when none says', () => {
+    const tools = byTool([
+      door({ harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI' }),
+      door({ harness: 'acme-agent' }),
+    ]);
+
+    expect([tools[0]!.name, tools[0]!.product, tools[0]!.maker]).toEqual(['codex', 'Codex', 'OpenAI']);
+    expect([tools[1]!.product, tools[1]!.maker]).toEqual([null, null]);
+  });
+
   it('answers unknown for a tool whose doors say nothing about their own home', () => {
     expect(byTool([door({ harness: 'dsh' })])[0]!.ownLogin).toBe('unknown');
     expect(byTool([door({ harness: 'dsh' })])[0]!.workspaceDefaults).toEqual([]);

@@ -4159,3 +4159,28 @@ update`, and stayed 2.1.270. So a toolchain now declares what a pinned binary ru
 (`PinnedEnvironment` / `pinnedEnv`), and every spawn of the managed binary carries it: sessions and
 chats on the pipe door, the SDK's `claude` on the ACP door, and the probe. A binary off `PATH` gains
 nothing. FIX-LOG has the entry. Driver 369, CLI 323, modules 97, family 212/212, deploy 39/39.
+
+## AGT1 — one word a person reads: *agent* (2026-09-23)
+
+> *"I have no idea what harness is (so its for deepseek?)"* — the owner.
+
+- [x] **AGT1 — one word a person reads: *agent*,** with the maker named beside each tool.
+
+✅ **done 2026-09-23.**
+
+**The verb.** `daoris harness` is `daoris agent`, the same verbs under it. The old verb is not kept
+as a second name: typed, it fails like any unknown command and says `it is \`daoris agent\` now`
+(`MOVED` in `cli.ts`). The help, the CLI's own sentences, the driver's refusals (install, login,
+pin, *that agent declares no…*, trust, chat) and seven catalogue strings say *agent*. `harness` and
+`adapter` stay the code's words, and so do the file keys: a plugin still declares `harnesses`, and
+the home still holds `harnesses/`.
+
+**What it is, and whose.** Each toolchain declares `Product` and `Maker` (`product`/`maker` in the
+CLI twin, held equal by both twin tables): Claude Code (Anthropic), Codex (OpenAI), dsh (DeepSeek).
+The Settings card leads with them, the new-account sign-in names the product, and `agent list`
+prints them above the version. A tool that declares neither, a plugin's, keeps its id.
+
+**Seen on the scratch shell**, both themes: *Claude Code* Anthropic, *Codex* OpenAI, *dsh* DeepSeek.
+Dated studies and evidence (the dsh evaluation, the plugin study, the ACP3 probe) keep the old verb,
+because they record what was run. CLI 324, driver 369, modules 97, web 555 + 16, family 212/212,
+deploy 39/39.

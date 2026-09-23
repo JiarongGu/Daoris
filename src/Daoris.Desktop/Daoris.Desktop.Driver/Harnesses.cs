@@ -124,7 +124,12 @@ public sealed record HarnessToolchain(
     // What a PINNED binary runs with so it stays the version pinned (AGT2) — the tool's own switch,
     // measured rather than assumed, and applied to a managed binary only: a binary off PATH is the
     // machine's, and its updates are the machine's business (D48 §2a). Null declares none.
-    IReadOnlyDictionary<string, string>? PinnedEnvironment = null)
+    IReadOnlyDictionary<string, string>? PinnedEnvironment = null,
+    // What a person calls the tool this runs, and who makes it (AGT1): `dsh` meant nothing to the
+    // owner until it said whose. A door onto a tool names that tool, not itself. Null for one that
+    // declares neither — a plugin's, until it says.
+    string? Product = null,
+    string? Maker = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -168,7 +173,7 @@ public sealed record HarnessReport(
 /// </summary>
 /// <remarks>
 /// <para><b>The FILE is the contract</b> (`harnesses.json` under the Daoris home), and so is the directory layout
-/// beside it — the CLI's `daoris harness` and this class share no code, because the driver links
+/// beside it — the CLI's `daoris agent` and this class share no code, because the driver links
 /// against no CLI and the CLI has no .NET. The twins move together, the same rule the remotes map's
 /// three copies established (WSP3).</para>
 ///
@@ -283,7 +288,7 @@ public sealed record HarnessSettings(
 
             WriteCircles(writer, "workspaces", Workspaces);
 
-            // 🔴 The pins go out too, or this write DELETES what `daoris harness pin` put there.
+            // 🔴 The pins go out too, or this write DELETES what `daoris agent pin` put there.
             // Both artefacts write this one file, and a save that knew only about profiles would
             // compile, pass every profile test, and silently lose somebody's toolchain (TOOL2).
             writer.WriteStartObject("versions");
@@ -408,7 +413,7 @@ public sealed record HarnessSettings(
 
     /// <summary>Where a managed version of a harness lives. Daoris owns this location, binary and all.</summary>
     public static string ManagedHome(string home, string harness, string version) =>
-        Path.Combine(home, "toolchain", SafeName(harness, "harness name"), SafeName(version, "version"));
+        Path.Combine(home, "toolchain", SafeName(harness, "agent name"), SafeName(version, "version"));
 
     /// <summary>
     /// The executable inside a managed install, or null when nothing is pinned or nothing is
@@ -446,7 +451,7 @@ public sealed record HarnessSettings(
     /// inside it.</b>
     /// </summary>
     public static string ProfileHome(string home, string harness, string profile) =>
-        Path.Combine(home, "harnesses", Name(harness, "harness name"), Name(profile, "profile name"));
+        Path.Combine(home, "harnesses", Name(harness, "agent name"), Name(profile, "profile name"));
 
     /// <summary>
     /// The profiles that exist for a harness — <b>the directories that exist</b>, sorted. There is no
@@ -455,7 +460,7 @@ public sealed record HarnessSettings(
     /// </summary>
     public static IReadOnlyList<string> Profiles(string home, string harness)
     {
-        var root = Path.Combine(home, "harnesses", Name(harness, "harness name"));
+        var root = Path.Combine(home, "harnesses", Name(harness, "agent name"));
         if (!Directory.Exists(root)) return [];
 
         return [.. Directory.EnumerateDirectories(root)
@@ -652,8 +657,8 @@ public static class HarnessProbe
                 return new HarnessReport(
                     adapter, false, null,
                     $"pinned to {pinned} on this machine, and nothing is installed at that version — "
-                    + $"`daoris harness pin {adapter} {pinned}` installs it, and "
-                    + $"`daoris harness unpin {adapter}` goes back to PATH",
+                    + $"`daoris agent pin {adapter} {pinned}` installs it, and "
+                    + $"`daoris agent unpin {adapter}` goes back to PATH",
                     toolchain.ProfileVariable,
                     settings.Defaults.TryGetValue(adapter, out var pinnedDefault) ? pinnedDefault : null,
                     []);
@@ -891,8 +896,8 @@ public static class HarnessProbe
         if (toolchain.ProfileVariable is not { Length: > 0 } variable)
         {
             throw new DriverException(
-                "that harness has no configuration-home variable, so Daoris cannot run it as a named "
-                + "profile. Its accounts are managed with its own tooling.");
+                "that agent has no configuration-home variable, so Daoris cannot run it as a named "
+                + "account. Its accounts are managed with its own tooling.");
         }
 
         // 🔴 Created, not assumed to exist: `codex-acp` exits 1 before `initialize` completes when
@@ -1098,8 +1103,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 // is the failure this whole shape exists to prevent.
                 return new HarnessSelection(
                     $"`{resolved.Name}` is pinned to {pinned} on this machine, and nothing is "
-                    + $"installed at that version — `daoris harness pin {resolved.Name} {pinned}` "
-                    + $"installs it, and `daoris harness unpin {resolved.Name}` goes back to PATH. "
+                    + $"installed at that version — `daoris agent pin {resolved.Name} {pinned}` "
+                    + $"installs it, and `daoris agent unpin {resolved.Name}` goes back to PATH. "
                     + "Daoris will not quietly run a different version than the one you asked for.");
             }
         }
@@ -1115,12 +1120,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (report is { Present: false })
         {
             var install = toolchain.Install is { Count: > 0 }
-                ? $"`daoris harness install {resolved.Name}` installs it"
+                ? $"`daoris agent install {resolved.Name}` installs it"
                 : $"install it with its own tooling ({string.Join(' ', toolchain.Command(config.Commands.GetValueOrDefault(resolved.Name)))})";
 
             return new HarnessSelection(
                 $"`{resolved.Name}` is not installed on this machine, so there is nothing to spawn — "
-                + $"{install}. Daoris never installs a harness unasked: a tool that changed under a "
+                + $"{install}. Daoris never installs an agent unasked: a tool that changed under a "
                 + "running loop is a moving target.");
         }
 
@@ -1154,9 +1159,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             return new HarnessSelection(
                 $"the `{resolved.Name}` profile `{profile}` is not logged in, so a session would have "
-                + $"nothing to run as — `daoris harness login {resolved.Name} --profile {profile}` runs "
-                + "the harness's own login flow into it. Daoris manages the directory and the name; the "
-                + "credential stays in the harness's own store.");
+                + $"nothing to run as — `daoris agent login {resolved.Name} --profile {profile}` runs "
+                + "the agent's own login flow into it. Daoris manages the directory and the name; the "
+                + "credential stays in the agent's own store.");
         }
 
         return new HarnessSelection(null, profile, home, report?.Version, managed, claude);
@@ -1225,7 +1230,7 @@ public static class HarnessActions
         toolchain.Install is { Count: > 0 } install
             ? RunAsync(install, toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
-                "that harness declares no installer, so Daoris has no sanctioned way to install it. "
+                "that agent declares no installer, so Daoris has no sanctioned way to install it. "
                 + "Install it with its own tooling; Daoris will find it on the next probe.");
 
     /// <summary>
@@ -1241,7 +1246,7 @@ public static class HarnessActions
                  $"{package}@{version}"],
                 toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
-                "that harness declares no package, so Daoris has no sanctioned way to fetch a version "
+                "that agent declares no package, so Daoris has no sanctioned way to fetch a version "
                 + "of it. Install it with its own tooling and Daoris will find it on PATH.");
 
     /// <summary>Update a present harness through its own updater.</summary>
@@ -1250,7 +1255,7 @@ public static class HarnessActions
         CancellationToken ct = default, Action<HarnessRun>? started = null) =>
         toolchain.UpdateArguments is { Count: > 0 } update
             ? RunAsync([.. toolchain.Command(command), .. update], toolchain, profileHome: null, write, ct, started)
-            : throw new DriverException("that harness declares no updater — it updates itself, or its package manager does.");
+            : throw new DriverException("that agent declares no updater — it updates itself, or its package manager does.");
 
     /// <summary>
     /// Run the harness's own login flow INTO a profile. The directory is Daoris's; everything that
@@ -1262,8 +1267,8 @@ public static class HarnessActions
         toolchain.LoginArguments is { Count: > 0 } login
             ? RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct, started)
             : throw new DriverException(
-                "that harness declares no login flow — log in with its own tooling, pointing its "
-                + "configuration-home variable at the profile directory.");
+                "that agent declares no login flow — log in with its own tooling, pointing its "
+                + "configuration-home variable at the account's directory.");
 
     /// <summary>
     /// Spawn and relay. Both streams, line by line, in the order they arrive — the same shape the

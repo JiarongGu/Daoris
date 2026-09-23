@@ -80,7 +80,7 @@ public static class ClaudeTrust
 
     /// <summary>The sentence a person can act on, naming the path, the fix, and what it costs.</summary>
     public static string Refusal(string tree) =>
-        $"`{tree}` has never been trusted by this harness on this machine, so it ignores the "
+        $"`{tree}` has never been trusted by this agent on this machine, so it ignores the "
         + "repository's own `permissions.allow` — a session here can do the work but cannot take or "
         + "close its quest. Run `claude` in that directory once and accept the trust prompt. Daoris "
         + "does not set that flag for you: it is your grant to give.";

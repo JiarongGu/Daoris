@@ -278,23 +278,26 @@ public sealed class Acp3AdapterTests : IDisposable
     /// once: `claude-agent-acp` was guessed as the adapter's Daoris name and caught by `harness list`
     /// reporting a pin that was installed as absent.
     /// </remarks>
-    public static TheoryData<string, string, string> Twins => new()
+    public static TheoryData<string, string, string, string, string> Twins => new()
     {
-        { "claude-code", "claude", "CLAUDE_CONFIG_DIR" },
-        { "claude-code-acp", "claude-agent-acp", "CLAUDE_CONFIG_DIR" },
-        { "codex-acp", "codex-acp", "CODEX_HOME" },
-        { "dsh", "dsh", "DSH_HOME" },
+        { "claude-code", "claude", "CLAUDE_CONFIG_DIR", "Claude Code", "Anthropic" },
+        { "claude-code-acp", "claude-agent-acp", "CLAUDE_CONFIG_DIR", "Claude Code", "Anthropic" },
+        { "codex-acp", "codex-acp", "CODEX_HOME", "Codex", "OpenAI" },
+        { "dsh", "dsh", "DSH_HOME", "dsh", "DeepSeek" },
     };
 
     [Theory]
     [MemberData(nameof(Twins))]
-    public void A_shared_name_means_the_same_binary_and_seam_on_both_sides(
-        string name, string binary, string seam)
+    public void A_shared_name_means_the_same_binary_seam_and_tool_on_both_sides(
+        string name, string binary, string seam, string product, string maker)
     {
         var toolchain = Adapter(name).Toolchain!;
 
         Assert.Equal(binary, Assert.Single(toolchain.Binary));
         Assert.Equal(seam, toolchain.ProfileVariable);
+        // AGT1: what a person calls it, and whose it is — `dsh` meant nothing until it said.
+        Assert.Equal(product, toolchain.Product);
+        Assert.Equal(maker, toolchain.Maker);
     }
 
     /// <summary>

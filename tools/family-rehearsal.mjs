@@ -1961,7 +1961,7 @@ check(
   'a logged-out profile holds the start, naming the login action rather than failing bare',
   loggedOutRun.code === 0
     && /not logged in/.test(loggedOutRun.out)
-    && /daoris harness login stub --profile fresh/.test(loggedOutRun.out),
+    && /daoris agent login stub --profile fresh/.test(loggedOutRun.out),
   loggedOutRun.out,
 );
 check(
@@ -1999,16 +1999,16 @@ check(
 
 // D50, from a terminal: the same directories and the same file, through the real CLI. A machine with
 // no screen sets all of this up the same way the desktop's roster does.
-const cliHarness = (args) => run(`node "${cliBin}" harness ${args}`, scratch, HARNESS_ENV);
+const cliHarness = (args) => run(`node "${cliBin}" agent ${args}`, scratch, HARNESS_ENV);
 const added = cliHarness('profile add claude-code work');
 check(
-  '`daoris harness profile add` creates the directory and says it is empty until you log in',
+  '`daoris agent profile add` creates the directory and says it is empty until you log in',
   added.code === 0 && existsSync(profileAt('claude-code', 'work')) && /empty until you log into it/.test(added.out),
   added.out,
 );
 const defaulted = cliHarness('profile default claude-code work --workspace aurora');
 check(
-  '`daoris harness profile default --workspace` wires one circle’s account',
+  '`daoris agent profile default --workspace` wires one circle’s account',
   defaulted.code === 0
     && JSON.parse(readFileSync(harnessConfig, 'utf8')).workspaces?.aurora?.['claude-code'] === 'work',
   defaulted.out,
@@ -2474,9 +2474,9 @@ check(
   pluginList.out,
 );
 
-const harnessList = run(`node "${cliBin}" harness list`, scratch, NO_HARNESS);
+const harnessList = run(`node "${cliBin}" agent list`, scratch, NO_HARNESS);
 check(
-  '`daoris harness list` shows the declared harness beside the build\'s own, naming the plugin',
+  '`daoris agent list` shows the declared agent beside the build\'s own, naming the plugin',
   /gate-agent/.test(harnessList.out) && /declared by plugin `rehearsal\.agent`/.test(harnessList.out),
   harnessList.out,
 );

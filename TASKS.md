@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**323 CLI tests, 348 service, 369 driver, 97 desktop modules, 554 web unit, 16 Playwright**, 59
+**324 CLI tests, 348 service, 369 driver, 97 desktop modules, 555 web unit, 16 Playwright**, 59
 devkit, 56/56 release rehearsal, **212/212 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -210,7 +210,7 @@ the traps that are not in any contract, because they were found rather than desi
   reviewable record. Work left behind by an arc goes in the backlog as an item, never as a
   handover sentence — that is how work quietly stops being work.
 - **Every capability has TWO doors, and anything new inherits both.** The desktop's IPC and
-  `daoris-driver chat` run the same `ChatRunner`; `daoris harness` and `daoris driver` do from a
+  `daoris-driver chat` run the same `ChatRunner`; `daoris agent` and `daoris driver` do from a
   terminal what the roster and the checkboxes do from a screen. What is shell-only is the STREAM, not
   the capability (D47 §4 protects transcript-class material, and D50 forbids stranding a capability on
   a screenless machine).
@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT1, AGT2b, INT4b, INT4c.** AGT3/AGT4 and INT3 wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: AGT2b, INT4b, INT4c.** AGT3/AGT4 and INT3 wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -248,11 +248,11 @@ the traps that are not in any contract, because they were found rather than desi
   arrives — and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 323 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 324 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (348),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (369), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (97), `npm run rehearse:family` (212/212), `npm run test:web` (554 vitest + 16 Playwright),
+  (369), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (97), `npm run rehearse:family` (212/212), `npm run test:web` (555 vitest + 16 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -266,8 +266,8 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Twenty-one items are open** — six of them the
-owner's agents direction (AGT1–AGT6, two waiting on the owner's call) — and every closed one is
+the archive; its decision is **D53, accepted**). **Twenty items are open** — five of them the
+owner's agents direction (AGT2b–AGT6, two waiting on the owner's call) — and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
@@ -277,7 +277,8 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **AGT1, then INT4b and INT4c, are next** — the owner's agents direction outranks the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **AGT2b, then INT4b and INT4c, are next** — the owner's agents direction outranks the rest; AGT5's
+design waits on the owner's answer to its one open question. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -297,7 +298,7 @@ own, and **null means the wire carries none** rather than a licence to guess a n
 wire evidence.
 
 - [ ] **ACP2 — `claude-code` over ACP.** `@agentclientprotocol/claude-agent-acp` pinned exact as a
-  managed toolchain entry (`daoris harness`: install, version, the executable seam
+  managed toolchain entry (`daoris agent`: install, version, the executable seam
   `CLAUDE_CODE_EXECUTABLE` → the managed `claude`, the profile seam `CLAUDE_CONFIG_DIR` → the chosen
   credential profile — both verified keylessly in the evaluation's §1a); `acceptEdits` set as the ACP
   **mode**, not a flag; the permission answerer against Claude Code's real requests; the record naming
@@ -421,7 +422,6 @@ both are the owner's.**
 `docs/2026-09-23-agents-direction.md` holds the owner's words, what was checked against the vendors'
 own documents, and the order. Nothing here is designed yet.
 
-- [ ] **AGT1 — one word a person reads: *agent*,** with the maker named beside each tool.
 - [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
   its signed manifest; Codex's releases once Windows and versions are confirmed. AGT2a is archived.
 - [ ] ⛔ **AGT3 — an API-key account.** The owner decides how the key is held (D49 §4).

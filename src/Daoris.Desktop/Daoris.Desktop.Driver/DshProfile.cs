@@ -78,7 +78,7 @@ public static class DshProfile
         {
             throw new DriverException(
                 $"`{path}` already exists and daoris did not write it, so it is not daoris's to "
-                + "replace. Point this harness at a profile daoris created, or fold these rows into "
+                + "replace. Point this agent at a profile daoris created, or fold these rows into "
                 + $"that file yourself: {string.Join(" and ", OutboundRows)} disabled, and "
                 + $"`{SkillRoot}` added to skill-filesystem's `customSkillDirs`.");
         }
@@ -137,6 +137,6 @@ public static class DshProfile
         return "— this dsh session runs in dsh's own configuration home, which daoris does not write "
                + "to. Two rows ship enabled there that send session material off this machine "
                + $"({string.Join(" and ", OutboundRows)}), and daoris has not turned them off. "
-               + "`daoris harness profile add dsh <name>` makes a home daoris owns, where it does.";
+               + "`daoris agent profile add dsh <name>` makes a home daoris owns, where it does.";
     }
 }

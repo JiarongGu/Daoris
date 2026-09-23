@@ -69,7 +69,7 @@ public sealed class ChatRunner(
             // have happened would hold the repository and explain nothing.
             return new(
                 null,
-                $"the `{resolved.Name}` adapter does not hold conversations — it spawns a harness that "
+                $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
                 + "takes its target once and runs to completion.");
         }
 

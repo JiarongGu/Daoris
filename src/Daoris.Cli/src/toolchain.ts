@@ -1,4 +1,5 @@
-// `daoris harness` — this machine's agent harnesses and the accounts they run as (D49 §4, D50).
+// `daoris agent` — this machine's agents and the accounts they run as (D49 §4, D50). The code calls
+// the program a session runs a HARNESS; a person reads *agent* (AGT1), and that is the verb.
 //
 // NOT to be confused with `harness.ts`, which is about a harness's DOCTRINE LAYOUT — where an agent
 // tool loads rules from. This file is about the harness as a TOOL: is it installed, at what version,
@@ -64,6 +65,13 @@ export function harnessHome(path = harnessesPath()): string {
  * harness updates and authenticates itself.
  */
 export interface Toolchain {
+  /**
+   * What a person calls the tool this runs, and who makes it (AGT1) — `dsh` meant nothing to the
+   * owner until it said whose. A door onto a tool names that tool, not itself. The driver's
+   * `Product` and `Maker` are the twin.
+   */
+  product?: string;
+  maker?: string;
   /** The default command, when nothing on this machine names another. */
   binary: string[];
   /** How to ask its version. */
@@ -103,7 +111,7 @@ export interface Toolchain {
    * `claude` and reads the configuration home `claude` logged into; it has no login of its own and
    * never will. Without this field its silence is indistinguishable from an omission — and an
    * unanswerable login question is PERMISSIVE (SES3), so an omission would quietly widen what may
-   * spawn. `daoris harness login <accountOf>` is the verb the surfaces then name.
+   * spawn. `daoris agent login <accountOf>` is the verb the surfaces then name.
    */
   accountOf?: string;
   /**
@@ -138,6 +146,8 @@ export interface Toolchain {
  */
 export const TOOLCHAINS: Record<string, Toolchain> = {
   'claude-code': {
+    product: 'Claude Code',
+    maker: 'Anthropic',
     binary: ['claude'],
     version: ['--version'],
     profileVariable: 'CLAUDE_CONFIG_DIR',
@@ -162,9 +172,11 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
   // versions, and one pin for both would install the wrong thing under a name somebody trusted.
   //
   // It declares no login flow and no login question. The ACCOUNT belongs to `claude`, and the
-  // profile directory carries it — `daoris harness login claude-code` is still the verb, and this
+  // profile directory carries it — `daoris agent login claude-code` is still the verb, and this
   // adapter reads the home that produced. An unknown login state is permissive, by SES3's rule.
   'claude-code-acp': {
+    product: 'Claude Code',
+    maker: 'Anthropic',
     // 🔴 The BINARY is `claude-agent-acp`, not the adapter's Daoris name — verified against the
     // installed package, after a guess was caught by `list` reporting the pin as not installed.
     binary: ['claude-agent-acp'],
@@ -176,6 +188,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     accountOf: 'claude-code',
   },
   codex: {
+    product: 'Codex',
+    maker: 'OpenAI',
     binary: ['codex'],
     version: ['--version'],
     profileVariable: 'CODEX_HOME',
@@ -193,6 +207,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
   // are different packages at different versions, and one pin for both installs the wrong thing
   // under a name somebody trusted.
   'codex-acp': {
+    product: 'Codex',
+    maker: 'OpenAI',
     // 🔴 The BINARY is `codex-acp` — the adapter's own bin, not this entry's Daoris name and not
     // `codex`. Verified against the installed package's `bin` map.
     binary: ['codex-acp'],
@@ -213,6 +229,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
   // refuses (SES3), so `unknown` is permissive and a session starts. No model is named (D24) —
   // which model answers is the profile's own `settings.yaml`.
   dsh: {
+    product: 'dsh',
+    maker: 'DeepSeek',
     binary: ['dsh'],
     version: ['--version'],
     profileVariable: 'DSH_HOME',
@@ -310,7 +328,7 @@ export function resolveProfile(
 
 /** Where a named profile's configuration home is. Daoris owns this location and nothing inside it. */
 export function profileHome(home: string, harness: string, profile: string): string {
-  return join(home, 'harnesses', safeName(harness, 'harness name'), safeName(profile, 'profile name'));
+  return join(home, 'harnesses', safeName(harness, 'agent name'), safeName(profile, 'profile name'));
 }
 
 /**
@@ -337,7 +355,7 @@ export function resolveVersion(
 
 /** Where a managed version of a harness lives. Daoris owns this location, binary and all. */
 export function managedHome(home: string, harness: string, version: string): string {
-  return join(home, 'toolchain', safeName(harness, 'harness name'), safeName(version, 'version'));
+  return join(home, 'toolchain', safeName(harness, 'agent name'), safeName(version, 'version'));
 }
 
 /**
@@ -370,7 +388,7 @@ export function managedBinary(
 
 /** The profiles that exist — the directories that exist, sorted. There is no second register. */
 export function profiles(home: string, harness: string): string[] {
-  const root = join(home, 'harnesses', safeName(harness, 'harness name'));
+  const root = join(home, 'harnesses', safeName(harness, 'agent name'));
   if (!existsSync(root)) return [];
 
   return readdirSync(root, { withFileTypes: true })
@@ -502,7 +520,7 @@ export function probe(
       ran: false,
       output: '',
       problem: `pinned to ${pinned} on this machine, and nothing is installed at that version — `
-        + `\`daoris harness pin ${harness} ${pinned}\` installs it, and \`daoris harness unpin `
+        + `\`daoris agent pin ${harness} ${pinned}\` installs it, and \`daoris agent unpin `
         + `${harness}\` goes back to PATH`,
     }
     : ask([command, ...toolchain.binary.slice(1)], toolchain.version, null, toolchain, Boolean(pinned));
@@ -564,7 +582,7 @@ export function signInNew(
   write(`daoris: signing in to another \`${harness}\` account, with its own login flow.`);
   write(`  ${where}`);
   write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by the');
-  write('  harness, in its own store, under your OS account — Daoris never sees it.');
+  write('  agent, in its own store, under your OS account — Daoris never sees it.');
 
   let code: ExitCode = 2;
   try {
@@ -582,7 +600,7 @@ export function signInNew(
       write(said.account
         ? `daoris: signed in as ${said.account} — this machine lists it as \`${name}\`.`
         : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${name}\`.`);
-      write(`  \`daoris harness profile default ${harness} ${name}\` makes sessions run as it.`);
+      write(`  \`daoris agent profile default ${harness} ${name}\` makes sessions run as it.`);
     }
   }
 
@@ -610,7 +628,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       if (!toolchain.install) {
         throw new DaorisError(
           `\`${name}\` declares no installer, so Daoris has no sanctioned way to install it. Install `
-          + 'it with its own tooling; `daoris harness list` will find it afterwards.');
+          + 'it with its own tooling; `daoris agent list` will find it afterwards.');
       }
 
       write(`daoris: installing \`${name}\` with its own installer — nothing here is automatic (D49 §4).`);
@@ -651,10 +669,10 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         ?? 'default';
       const where = profileHome(home, name, profile);
 
-      write(`daoris: running \`${name}\`'s own login flow into the profile \`${profile}\`.`);
+      write(`daoris: running \`${name}\`'s own login flow into the account \`${profile}\`.`);
       write(`  ${where}`);
       write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by');
-      write('  the harness, in its own store, under your OS account — Daoris never sees it.');
+      write('  the agent, in its own store, under your OS account — Daoris never sees it.');
       return relay([...toolchain.binary, ...login], where, toolchain, write);
     }
 
@@ -667,7 +685,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
           + 'it. Install it with its own tooling and Daoris will find it on PATH.');
       }
 
-      const version = bare(argv, 2, 'pin', '<harness> <version>');
+      const version = bare(argv, 2, 'pin', '<agent> <version>');
       const where = managedHome(home, name, version);
       const workspace = flagValue(argv, '--workspace');
 
@@ -686,7 +704,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       write(workspace
         ? `daoris: \`${name}\` runs at ${version} for the \`${workspace}\` circle on this machine.`
         : `daoris: \`${name}\` runs at ${version} on this machine.`);
-      write('  Sessions spawn this binary rather than whatever is on PATH. `daoris harness unpin`');
+      write('  Sessions spawn this binary rather than whatever is on PATH. `daoris agent unpin`');
       write('  puts it back, and the version is on every session record either way.');
       return 0;
     }
@@ -709,7 +727,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
 
     default:
       throw new DaorisError(
-        `unknown harness verb '${verb}' — one of: list, install, update, login, pin, unpin, profile`);
+        `unknown agent verb '${verb}' — one of: list, install, update, login, pin, unpin, profile`);
   }
 
   /** Write one pin, machine-wide or for one circle. Null takes it off. */
@@ -740,9 +758,15 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
     for (const [name, toolchain] of Object.entries(TOOLCHAINS)) {
       const report = probe(name, toolchain, home, settings);
       write('');
-      write(`  ${name.padEnd(14)} ${report.present ? report.version : `absent — ${report.problem}`}`);
+      // What it IS, before what state it is in: `dsh` meant nothing to the owner until it said whose.
+      if (toolchain.product) {
+        write(`  ${name.padEnd(14)} ${toolchain.product}${toolchain.maker ? `, by ${toolchain.maker}` : ''}`);
+        write(`  ${''.padEnd(14)} ${report.present ? report.version : `absent — ${report.problem}`}`);
+      } else {
+        write(`  ${name.padEnd(14)} ${report.present ? report.version : `absent — ${report.problem}`}`);
+      }
       if (!report.present && toolchain.install) {
-        write(`  ${''.padEnd(14)} \`daoris harness install ${name}\` installs it, with its own installer`);
+        write(`  ${''.padEnd(14)} \`daoris agent install ${name}\` installs it, with its own installer`);
       }
 
       // The pin, and whether it is actually in force (TOOL2/D57). A pin whose directory is not there
@@ -754,7 +778,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         write(`  ${''.padEnd(14)} pinned ${pinned} — `
           + (binary ? `managed: ${binary}` : 'NOT INSTALLED, so sessions fall back to PATH'));
         if (!binary) {
-          write(`  ${''.padEnd(14)} \`daoris harness pin ${name} ${pinned}\` installs it`);
+          write(`  ${''.padEnd(14)} \`daoris agent pin ${name} ${pinned}\` installs it`);
         }
       }
 
@@ -763,7 +787,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       }
 
       if (report.profiles.length === 0) {
-        write(`  ${''.padEnd(14)} no profiles — sessions run in the harness's own configuration home`);
+        write(`  ${''.padEnd(14)} no accounts — sessions run in the agent's own configuration home`);
         continue;
       }
 
@@ -802,13 +826,13 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         write(`  ${harness.name.padEnd(14)} ${present.present ? present.version : `absent — ${present.problem}`}`
           + `  (declared by plugin \`${plugin.manifest.id}\`)`);
         const existing = profiles(home, harness.name);
-        write(`  ${''.padEnd(14)} ${existing.length > 0 ? `profiles: ${existing.join(', ')}` : 'no profiles — sessions run in the harness\'s own configuration home'}`);
+        write(`  ${''.padEnd(14)} ${existing.length > 0 ? `accounts: ${existing.join(', ')}` : 'no accounts — sessions run in the agent\'s own configuration home'}`);
       }
     }
 
     write('');
-    write('  A profile is a directory Daoris owns the location of. The credential inside it belongs to');
-    write("  the harness's own store — Daoris manages directories and names, never secrets.");
+    write('  An account is a directory Daoris owns the location of. The credential inside it belongs to');
+    write("  the agent's own store — Daoris manages directories and names, never secrets.");
     return 0;
   }
 
@@ -828,7 +852,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
 
       case 'add': {
         const { name } = namedHarness(argv[2], 'profile add');
-        const profile = bare(argv, 3, 'profile add', '<harness> <profile>');
+        const profile = bare(argv, 3, 'profile add', '<agent> <profile>');
         const where = profileHome(home, name, profile);
         const existed = existsSync(where);
         mkdirSync(where, { recursive: true });
@@ -836,13 +860,13 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         write(existed
           ? `daoris: \`${name}\` profile \`${profile}\` already exists — ${where}`
           : `daoris: \`${name}\` profile \`${profile}\` — ${where}`);
-        write(`  It is empty until you log into it: \`daoris harness login ${name} --profile ${profile}\`.`);
+        write(`  It is empty until you log into it: \`daoris agent login ${name} --profile ${profile}\`.`);
         return 0;
       }
 
       case 'remove': {
         const { name } = namedHarness(argv[2], 'profile remove');
-        const profile = bare(argv, 3, 'profile remove', '<harness> <profile>');
+        const profile = bare(argv, 3, 'profile remove', '<agent> <profile>');
         const where = profileHome(home, name, profile);
 
         // 🔴 The account goes, directory and sign-in both (D66 §3, amending SES3's "deletes
@@ -870,14 +894,14 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
 
       case 'default': {
         const { name } = namedHarness(argv[2], 'profile default');
-        const profile = bare(argv, 3, 'profile default', '<harness> <profile> [--workspace <name>]');
+        const profile = bare(argv, 3, 'profile default', '<agent> <profile> [--workspace <name>]');
         const workspace = flagValue(argv, '--workspace');
         // Refused rather than created: naming a default that does not exist is a typo with a silent
         // wrong answer available — every spawn in that circle would refuse, and the message would be
         // about logging in rather than about the name.
         if (!profiles(home, name).includes(profile)) {
           throw new DaorisError(
-            `\`${name}\` has no profile \`${profile}\` on this machine — \`daoris harness profile add `
+            `\`${name}\` has no profile \`${profile}\` on this machine — \`daoris agent profile add `
             + `${name} ${profile}\` creates it. Profiles that exist: `
             + `${profiles(home, name).join(', ') || '(none)'}`);
         }
@@ -903,19 +927,19 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
 
       default:
         throw new DaorisError(
-          `unknown harness profile verb '${action}' — one of: list, add, remove, default`);
+          `unknown agent profile verb '${action}' — one of: list, add, remove, default`);
     }
   }
 
-  /** The harness named after the verb, refused rather than defaulted. */
+  /** The agent named after the verb, refused rather than defaulted. */
   function required(args: string[], verb: string): { name: string; toolchain: Toolchain } {
-    return namedHarness(bare(args, 1, verb, '<harness>'), verb);
+    return namedHarness(bare(args, 1, verb, '<agent>'), verb);
   }
 
   function namedHarness(value: string | undefined, verb: string): { name: string; toolchain: Toolchain } {
     if (!value) {
       throw new DaorisError(
-        `\`harness ${verb}\` needs a harness — one of: ${Object.keys(TOOLCHAINS).join(', ')}`);
+        `\`agent ${verb}\` needs an agent — one of: ${Object.keys(TOOLCHAINS).join(', ')}`);
     }
 
     const toolchain = TOOLCHAINS[value];
@@ -923,8 +947,8 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       // Never a silent fallback: a machine that installed a different harness than the person named
       // is the same failure as a repository that asked for one layout and received another (D23).
       throw new DaorisError(
-        `unknown harness '${value}' — one of: ${Object.keys(TOOLCHAINS).join(', ')}. `
-        + 'A harness is added deliberately, never guessed.');
+        `unknown agent '${value}' — one of: ${Object.keys(TOOLCHAINS).join(', ')}. `
+        + 'An agent is added deliberately, never guessed.');
     }
 
     return { name: value, toolchain };
@@ -937,7 +961,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       else if (!token.startsWith('--')) return token;
     }
 
-    throw new DaorisError(`\`harness ${verb}\` needs ${shape} — e.g. \`daoris harness ${verb} claude-code\``);
+    throw new DaorisError(`\`agent ${verb}\` needs ${shape} — e.g. \`daoris agent ${verb} claude-code\``);
   }
 
   /**
@@ -973,7 +997,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
     if (result.error) {
       throw new DaorisError(
         `\`${command[0]}\` could not be run — ${result.error.message}. `
-        + 'Daoris spawns the harness\'s own tooling; it does not vendor a copy of it.');
+        + 'Daoris spawns the agent\'s own tooling; it does not vendor a copy of it.');
     }
 
     // The harness's exit code is the answer, mapped onto this family's contract: anything non-zero is
@@ -1014,7 +1038,7 @@ function spawnable(command: string[]): [string, string[], boolean] {
   for (const token of [resolved, ...rest]) {
     if (/["%\r\n]/.test(token)) {
       throw new DaorisError(
-        `\`${token}\` cannot be passed to a Windows command shim safely. Run the harness's own `
+        `\`${token}\` cannot be passed to a Windows command shim safely. Run the agent's own `
         + 'tooling directly, or move it somewhere without quotes or percent signs in the path.');
     }
   }

@@ -187,7 +187,7 @@ public sealed class DshProfileTests : IDisposable
 
         Assert.NotNull(notice);
         Assert.Contains("telemetry", notice, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("daoris harness profile add dsh", notice);
+        Assert.Contains("daoris agent profile add dsh", notice);
     }
 
     /// <summary>With a profile Daoris owns, there is nothing to warn about and nothing is said.</summary>

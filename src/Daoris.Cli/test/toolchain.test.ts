@@ -12,7 +12,7 @@ import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
 
 /**
- * `daoris harness` — management parity for the toolchain (D49 §4, D50).
+ * `daoris agent` — management parity for the toolchain (D49 §4, D50).
  *
  * The whole feature rests on one sentence: **Daoris manages directories and names, never secrets.**
  * A profile is a directory Daoris owns the location of; whatever credential ends up inside it was put
@@ -215,7 +215,7 @@ test('`profile add` creates the directory and says it is empty until you log in'
   assert.equal(result.code, 0);
   assert.ok(existsSync(profileHome(fx.root, 'claude-code', 'work')));
   assert.match(result.out, /empty until you log into it/);
-  assert.match(result.out, /daoris harness login claude-code --profile work/);
+  assert.match(result.out, /daoris agent login claude-code --profile work/);
   fx.cleanup();
 });
 
@@ -395,11 +395,11 @@ test('a signed-out home names nobody, and a toolchain that does not ask keeps no
   fx.cleanup();
 });
 
-test('an unknown harness errors naming what exists, never a silent fallback', () => {
+test('an unknown agent errors naming what exists, never a silent fallback', () => {
   const fx = makeFixture('harness-unknown');
-  const error = captureError(() => run(['install', 'not-a-harness'], at(fx)));
+  const error = captureError(() => run(['install', 'not-an-agent'], at(fx)));
 
-  assert.match(error.message, /unknown harness 'not-a-harness'/);
+  assert.match(error.message, /unknown agent 'not-an-agent'/);
   assert.match(error.message, /claude-code/);
   assert.match(error.message, /never guessed/);
   fx.cleanup();
@@ -468,7 +468,7 @@ test('an unknown verb names the ones that exist', () => {
   const fx = makeFixture('harness-verb');
   const error = captureError(() => run(['frobnicate'], at(fx)));
 
-  assert.match(error.message, /unknown harness verb 'frobnicate'/);
+  assert.match(error.message, /unknown agent verb 'frobnicate'/);
   assert.match(error.message, /list, install, update, login, pin, unpin, profile/);
   fx.cleanup();
 });
@@ -533,15 +533,15 @@ test('every harness declares a real mechanism for each thing Daoris offers to do
  * with — asserted on neither side. Nothing was wrong with it; nothing would have said so either.
  * Proving one row's reach proves nothing about the next one, so membership is derived.
  */
-const TWINS: Record<string, { binary: string[]; profileVariable: string }> = {
-  'claude-code': { binary: ['claude'], profileVariable: 'CLAUDE_CONFIG_DIR' },
-  'claude-code-acp': { binary: ['claude-agent-acp'], profileVariable: 'CLAUDE_CONFIG_DIR' },
-  codex: { binary: ['codex'], profileVariable: 'CODEX_HOME' },
-  'codex-acp': { binary: ['codex-acp'], profileVariable: 'CODEX_HOME' },
-  dsh: { binary: ['dsh'], profileVariable: 'DSH_HOME' },
+const TWINS: Record<string, { binary: string[]; profileVariable: string; product: string; maker: string }> = {
+  'claude-code': { binary: ['claude'], profileVariable: 'CLAUDE_CONFIG_DIR', product: 'Claude Code', maker: 'Anthropic' },
+  'claude-code-acp': { binary: ['claude-agent-acp'], profileVariable: 'CLAUDE_CONFIG_DIR', product: 'Claude Code', maker: 'Anthropic' },
+  codex: { binary: ['codex'], profileVariable: 'CODEX_HOME', product: 'Codex', maker: 'OpenAI' },
+  'codex-acp': { binary: ['codex-acp'], profileVariable: 'CODEX_HOME', product: 'Codex', maker: 'OpenAI' },
+  dsh: { binary: ['dsh'], profileVariable: 'DSH_HOME', product: 'dsh', maker: 'DeepSeek' },
 };
 
-test('every declared harness is pinned by name, binary and seam', () => {
+test('every declared harness is pinned by name, binary, seam, and what a person calls it', () => {
   for (const [name, toolchain] of Object.entries(TOOLCHAINS)) {
     const twin = TWINS[name];
     assert.ok(twin,
@@ -549,6 +549,9 @@ test('every declared harness is pinned by name, binary and seam', () => {
       + 'different program under the same name and both sides would read as correct');
     assert.deepEqual(toolchain.binary, twin.binary, `${name}: the binary moved`);
     assert.equal(toolchain.profileVariable, twin.profileVariable, `${name}: the account seam moved`);
+    // AGT1: the tool a person reads, and whose it is — the same on the screen and in a terminal.
+    assert.equal(toolchain.product, twin.product, `${name}: the product moved`);
+    assert.equal(toolchain.maker, twin.maker, `${name}: the maker moved`);
   }
 
   // The protocol door borrows the pipe door's account, through the same seam (ACP2/ACP3).

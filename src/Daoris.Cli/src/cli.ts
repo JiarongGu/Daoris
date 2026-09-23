@@ -46,24 +46,24 @@ const USAGE = `daoris <command> [options]
                          add <workspace> --url U   wire a workspace's deployment
                          remove <workspace>        unwire it here; the
                                                    deployment is untouched
-  harness [verb]       this machine's agent harnesses and the accounts they run
-                       as. Daoris manages directories and names, never secrets:
-                         list                      installed? version? profiles?
-                         install|update <harness>  its OWN mechanism, never auto
-                         login <harness> [--profile P]
+  agent [verb]         this machine's agents — Claude Code, Codex, dsh — and the
+                       accounts they run as. Directories and names, never secrets:
+                         list                      installed? version? accounts?
+                         install|update <agent>    its OWN mechanism, never auto
+                         login <agent> [--profile P]
                                                    its own login flow, run INTO
-                                                   a profile directory
-                         login <harness> --new     sign in to another account:
+                                                   an account's directory
+                         login <agent> --new       sign in to another account:
                                                    kept only if it finished;
                                                    list names who signed in
-                         profile list|add|remove <harness> <profile>
+                         profile list|add|remove <agent> <profile>
                                                    remove deletes the account,
                                                    sign-in and all
-                         profile default <harness> <profile> [--workspace W]
-                         pin <harness> <version> [--workspace W]
+                         profile default <agent> <profile> [--workspace W]
+                         pin <agent> <version> [--workspace W]
                                                    install that version somewhere
                                                    Daoris owns, and run it
-                         unpin <harness> [--workspace W]
+                         unpin <agent> [--workspace W]
                                                    back to whatever is on PATH
   driver [verb]        what this machine drives ($DAORIS_HOME/driver.json):
                          list                      adapter, cap, what is opted in
@@ -83,10 +83,10 @@ const USAGE = `daoris <command> [options]
                          enable|disable <id>       a row, never a rename
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
-  service, and no gate ever runs them. remote, harness, driver and plugin are
+  service, and no gate ever runs them. remote, agent, driver and plugin are
   management too and reach no network — they edit files under the Daoris home
   ($DAORIS_HOME, the installed application's own data folder; nothing lives under
-  your profile), and harness spawns each harness's own tooling. Every doctrine
+  your profile), and agent spawns each agent's own tooling. Every doctrine
   command is offline.
 
 Options:
@@ -101,8 +101,8 @@ Options:
   --url <url>          the deployment a workspace syncs with (remote add)
   --key <key>          its key; or DAORIS_REMOTE_KEY, or typed in (remote add).
                        Never printed back — only its audit prefix
-  --profile <name>     which credential profile to act on (harness login) —
-                       a named, isolated configuration home for that harness
+  --profile <name>     which account to act on (agent login) — a named,
+                       isolated configuration home for that agent
   --help, --version`;
 
 /** Commands are registered here as they land. @returns {number} process exit code */
@@ -118,10 +118,16 @@ const commands: Record<string, (args: CommandArgs) => ExitCode | Promise<ExitCod
   retire: commandRetire,
   import: commandImport,
   remote: commandRemote,
-  harness: commandHarness,
+  agent: commandHarness,
   driver: commandDriver,
   plugin: commandPlugin,
   analyze: commandAnalyze,
+};
+
+/** Verbs that were renamed, and what they are called now. */
+const MOVED: Record<string, string> = {
+  // The tools a session runs are agents to a person; `harness` stays the code's word (AGT1).
+  harness: 'agent',
 };
 
 export function runCli(
@@ -146,7 +152,13 @@ export function runCli(
     }
 
     const handler = commands[command];
-    if (!handler) throw new DaorisError(`unknown command '${command}' — run 'daoris --help'`);
+    if (!handler) {
+      // A verb that moved says where to, once — it is not a second name for the new one (AGT1).
+      const moved = MOVED[command];
+      throw new DaorisError(moved
+        ? `unknown command '${command}' — it is \`daoris ${moved}\` now`
+        : `unknown command '${command}' — run 'daoris --help'`);
+    }
 
     const result = handler({ root: cwd, argv: argv.slice(1), write, packageRoot });
 

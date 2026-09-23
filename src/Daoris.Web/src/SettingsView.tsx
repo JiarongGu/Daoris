@@ -501,7 +501,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // What each account has carried (TOOL3). Beside the roster because it is about the same accounts.
   const usage = useUsage();
   // The circles this machine has, so an account can be chosen for one (D49 §4) — the terminal
-  // could already do it (`daoris harness profile default … --workspace`), and the screen could not.
+  // could already do it (`daoris agent profile default … --workspace`), and the screen could not.
   const registry = useRegistry();
   const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace).filter(Boolean))]
     .sort() as string[];
@@ -644,7 +644,10 @@ function HarnessRoster({ notify }: { notify: Notify }) {
           className="mt-3 rounded-card border border-line bg-page/60 p-3 first:mt-3.5"
         >
           <header className="flex flex-wrap items-center gap-2">
-            <span className="text-body font-semibold text-ink">{tool.name}</span>
+            {/* What a person calls it, and whose it is (AGT1) — `dsh` meant nothing to the owner
+                until it said DeepSeek. The id a terminal types is on each door below. */}
+            <span className="text-body font-semibold text-ink">{tool.product ?? tool.name}</span>
+            {tool.maker && <span className="text-small text-ink-faint">{tool.maker}</span>}
             {tool.present
               ? <Pill tone="done">{t('harness.installed')}</Pill>
               : <Pill tone="neutral">{t('harness.absent')}</Pill>}
@@ -834,6 +837,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               id={`${tool.doors[0]!.harness}:login-new`}
               harness={tool.doors[0]!.harness}
               action="login-new"
+              tool={tool.product ?? tool.name}
             />
           ) : (
             <Button

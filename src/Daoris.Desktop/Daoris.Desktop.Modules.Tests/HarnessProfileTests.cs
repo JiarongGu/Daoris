@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <para>🔴 <b>Written from the owner looking at the application and saying so</b>: *"there is no
 /// credential management location"*. Literally true — the Machine view could LIST a harness's
 /// profiles and log into one, and there was no way to make, un-point or choose one. Those three
-/// verbs existed only as `daoris harness profile add|remove|default`.</para>
+/// verbs existed only as `daoris agent profile add|remove|default` (then `daoris harness`).</para>
 ///
 /// <para><b>That is D50 violated in the direction nothing checks.</b> The rule is written "whatever
 /// a screen can set, a terminal can", and the converse had no test anywhere — so a capability

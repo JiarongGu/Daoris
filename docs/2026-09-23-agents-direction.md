@@ -16,9 +16,9 @@ direction, not a design: each item that needs one gets it before it is built.
 - **A harness is the agent program a session runs** — Claude Code (Anthropic), Codex (OpenAI), dsh
   (DeepSeek's agent CLI, `@deepseek-ai/dsh`, adopted as a protocol configuration by D53). The model
   belongs to the harness; Daoris starts it, hands it the work and pipes its text (D24). The word is
-  the code's, and a person never needed it: the Settings card already says *Agent tools*, while the
-  CLI verb (`daoris harness`), `driver.json` (`adapter`) and the roster's rows (`claude-code-acp`)
-  still say it. That is AGT1.
+  the code's, and a person never needed it. Since AGT1 a person reads *agent*: `daoris agent`, the
+  refusals, and each tool's card naming its product and maker. `driver.json`'s `adapter` and the
+  door ids (`claude-code-acp`) stay, because a file and a terminal type them.
 - **A door is how Daoris holds a session**: *direct* (a pipe to the tool's own CLI) or *protocol*
   (the Agent Client Protocol, D53). One tool can have both, which is why Settings groups doors under
   the tool.
@@ -55,9 +55,10 @@ From the vendors' own documents, not from memory:
 
 ## 3. The asks, as items
 
-- **AGT1 — one word a person reads: *agent*.** The CLI verb, its help, the roster's rows and the
-  refusals say *agent* and name the maker beside the tool (dsh reads as DeepSeek's). `harness` and
-  `adapter` stay the code's words. Nothing is published, so the verb can move.
+- **AGT1 — one word a person reads: *agent*** (done). The CLI verb, its help and the refusals say
+  *agent*; each toolchain declares its product and maker, and the card and `agent list` show them
+  (dsh reads as DeepSeek's). `daoris harness` answers with where it went. `harness` and `adapter`
+  stay the code's words.
 - **AGT2 — a managed install from the vendor's own channel.** AGT2a measured whether a pinned spawn
   updates itself, and it could, so the tool's own switch is now set. AGT2b fetches Claude Code from
   its release bucket at the pinned version, checked against the signed manifest, and Codex from its

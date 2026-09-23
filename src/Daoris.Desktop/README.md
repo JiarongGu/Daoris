@@ -191,7 +191,7 @@ sitting that the driver should have started".
 3. **The adapter seam** is D23 one layer up: claude-code supported, codex explicit second, unknown
    adapters error naming what exists; an adapter names a harness, never a model. Since D49 §4 it also
    declares that harness **as a tool** — and managing a tool is a different question from spawning
-   sessions on it, which is why `codex` is manageable from `daoris harness` while no adapter spawns it.
+   sessions on it, which is why `codex` is manageable from `daoris agent` while no adapter spawns it.
 4. **The service holds state, the driver holds action**: session records and the machine-local
    repository root go to the service; the scheduler, process control, adapters, driver config and
    notifications live here.

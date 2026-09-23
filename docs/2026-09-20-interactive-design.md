@@ -136,7 +136,7 @@ memory. The toolchain manager makes it Daoris's job — **explicitly, never auto
   version (`claude --version` etc.) — run at driver startup and on demand; the platform shows the
   roster: harness, version, present/absent. Detection is free and read-only.
 - **Two surfaces, one truth** (management parity — workspace design §2b): everything here is equally
-  manageable from a terminal — `daoris harness list|install|update|login|profile ...` — because a
+  manageable from a terminal — `daoris agent list|install|update|login|profile ...` — because a
   headless machine running `daoris-driver` has no roster page and still needs its harnesses and
   profiles set up. Both surfaces do the same thing: spawn the harness's own tooling into the right
   profile home; neither holds a secret.
@@ -216,7 +216,7 @@ choices the building settled:
   the harness cannot run the harness, so installing is that harness's package manager; a harness that
   is present updates and authenticates itself. The shapes differ because the meanings do.
 - **The CLI inherits the terminal; the desktop streams.** A login flow asks questions and waits for a
-  code, so `daoris harness login` gives the harness the person's terminal outright — capturing the
+  code, so `daoris agent login` gives the harness the person's terminal outright — capturing the
   stream to pretty-print it would turn a working login into a hung one. The desktop relays the same
   process through §2's console, under `<harness>:<action>` rather than a session id, because it is not
   a session and must never look like one.

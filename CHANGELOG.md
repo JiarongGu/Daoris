@@ -386,6 +386,10 @@ The first version: doctrine that installs, is checked, and flows back.
   included**, after asking once — it used to keep a signed-in account on disk and on the list.
   From a terminal: `daoris harness login <harness> --new`, and `profile remove` deletes;
   `harness list` shows who is signed in to each account.
+- **`daoris harness` is `daoris agent` now** (AGT1). The tools a session runs are agents to a
+  person: the verb, its help, the CLI's output and the driver's refusals say so. `daoris harness`
+  answers with where it went. Each tool names what it is and whose: *Claude Code* (Anthropic),
+  *Codex* (OpenAI), *dsh* (DeepSeek), on its Settings card and in `agent list`.
 - **A pinned Claude Code stays the version you pinned.** Claude Code updates itself by default, and
   a pinned copy reported exactly that. Every spawn of a pinned binary now runs with
   `DISABLE_UPDATES=1`: sessions and chats over either door, and the version and sign-in questions.

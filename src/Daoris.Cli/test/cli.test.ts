@@ -26,6 +26,22 @@ test('an unknown command is a tool error (exit 2)', () => {
   assert.match(out.join('\n'), /unknown command/i);
 });
 
+/**
+ * AGT1: the tools a session runs are AGENTS to a person — the owner, reading `daoris harness`:
+ * *"I have no idea what harness is"*. The old verb is not a second name for the new one; it says
+ * where the command went, once, and fails like any unknown command.
+ */
+test('the agent tools are `daoris agent`, and the old verb says where it went', () => {
+  const out: string[] = [];
+  assert.equal(runCli(['harness', 'list'], process.cwd(), (s) => out.push(s)), 2);
+  assert.match(out.join('\n'), /`daoris agent`/);
+
+  const help: string[] = [];
+  runCli(['--help'], process.cwd(), (s) => help.push(s));
+  assert.match(help.join('\n'), /^ {2}agent \[verb\]/m);
+  assert.doesNotMatch(help.join('\n'), /^ {2}harness /m);
+});
+
 test('no arguments prints usage and exits 2', () => {
   const out: string[] = [];
   assert.equal(runCli([], process.cwd(), (s) => out.push(s)), 2);

@@ -230,7 +230,7 @@ public interface ISessionAdapter
     /// <summary>The process that would be a CHAT: the same spawn, with stdin open.</summary>
     ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
         throw new DriverException(
-            $"the `{Name}` adapter cannot hold a conversation — it spawns a harness that takes its "
+            $"the `{Name}` adapter cannot hold a conversation — it spawns an agent that takes its "
             + "target once and runs to completion. Chat with an adapter that declares `interactive`.");
 
     /// <summary>
@@ -475,6 +475,8 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// loop is the moving target D49 §4 already refuses for harnesses.
     /// </summary>
     public HarnessToolchain? Toolchain => new(
+        Product: "Claude Code",
+        Maker: "Anthropic",
         // 🔴 The BINARY is `claude-agent-acp`, not this adapter's Daoris name — verified against
         // the installed package, after a guess was caught by `harness list` reporting a pin that
         // was there as NOT INSTALLED. Every field here is a claim about somebody else's program.
@@ -485,7 +487,7 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         ProfileVariable: "CLAUDE_CONFIG_DIR",
         Install: ["npm", "install", "-g", "@agentclientprotocol/claude-agent-acp"],
         // No login flow and no login question of its own: the ACCOUNT belongs to `claude`, which the
-        // profile directory carries. `daoris harness login claude-code` is still the verb, and this
+        // profile directory carries. `daoris agent login claude-code` is still the verb, and this
         // adapter reads the home it produced. Unknown is permissive, by SES3's rule.
         Package: "@agentclientprotocol/claude-agent-acp",
         // No login of its own: it runs `claude` and reads the home `claude` logged into.
@@ -568,6 +570,8 @@ public sealed class DshAdapter : ISessionAdapter
     /// its own problem — but the version the toolchain installs is asserted, not assumed (D53).
     /// </summary>
     public HarnessToolchain? Toolchain => new(
+        Product: "dsh",
+        Maker: "DeepSeek",
         Binary: ["dsh"],
         // `-V, --version` — verified against the installed CLI, which printed its exact version.
         VersionArguments: ["--version"],
@@ -628,6 +632,8 @@ public sealed class CodexAcpAdapter : ISessionAdapter
     }
 
     public HarnessToolchain? Toolchain => new(
+        Product: "Codex",
+        Maker: "OpenAI",
         // 🔴 The BINARY is `codex-acp` — the adapter's own bin, not this adapter's Daoris name and
         // not `codex`. Verified against the installed package's `bin` map, the same check that
         // caught the `claude-agent-acp` guess.
@@ -760,6 +766,8 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// account — a fresh directory reports logged out while the machine's own home reports logged in.</para>
     /// </remarks>
     public HarnessToolchain? Toolchain => new(
+        Product: "Claude Code",
+        Maker: "Anthropic",
         Binary: ["claude"],
         VersionArguments: ["--version"],
         ProfileVariable: "CLAUDE_CONFIG_DIR",

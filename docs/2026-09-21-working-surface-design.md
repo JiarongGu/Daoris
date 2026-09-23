@@ -247,7 +247,7 @@ terminal emulation: ANSI sequences, resize protocols, the alternate screen, and 
 that must stay faithful to each harness's redraws. That is a large permanent commitment made to
 recover an affordance that already has a better door: **the person's own terminal on the same
 machine**, where `daoris-driver chat` hands the harness the real thing outright — precisely as
-`daoris harness login` does, and for the same reason (D49 §4: capturing an interactive flow to
+`daoris agent login` does, and for the same reason (D49 §4: capturing an interactive flow to
 pretty-print it turns a working one into a hung one).
 
 Held as an open question with a real trigger: a supported harness whose interactive output proves
