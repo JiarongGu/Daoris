@@ -5,6 +5,46 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The intake control was missing while the intake was off: the bridge leaves a null out (2026-09-24)
+
+**Symptom.** Looking at AGT6's Settings card on the real window, the search row was there and the
+intake row was not. That was on the desktop, with the intake off, which is exactly the state a
+person would switch it on from. Every gate was green.
+
+**Root cause.** The page tells a shell older than the intake by the field's absence (`'intakeAdapter'
+in driver`). The bridge leaves a null property out of what it sends, so a shell with the intake off
+sent no field and read as older. Two test doubles hid it. The modules' `AnswerAsync` serializes
+with camelCase and keeps nulls, so the module test saw a present null. The page's mock returned
+`intakeAdapter: null`, a shape the real bridge never sends.
+
+**Fix.** Off is `""` on the wire (the file keeps null), and the page reads `""` as Off. The page's
+mock now speaks the wire's form. One test covers the off state reading as Off, and one covers an
+older shell answering no field, which still gets no control.
+
+**Verify.** The off test failed with a blank trigger before the page's fix. The module test failed
+on the old null. On the window, the row shows "Off — declarations only" and offers the one agent the
+machine has. The trap: **over this bridge, a null and an absent field are the same thing.**
+Detecting an older shell by absence needs a value that is never null.
+
+## The attention band missed an ask until a reload: a quiet tick never told the page (2026-09-24)
+
+**Symptom.** With INT4d merged, an ask made over HTTP while the window was open did not appear in
+*What needs you*. Its parked intake showed as a bare "parked at a checkpoint" session. A reload
+showed both correctly.
+
+**Root cause.** On the desktop the page is live only through the tick push. The shell forwards a
+tick when it planned something, had events, or its considerations changed. It refetches sessions,
+quests, the driver, sync and the index, but not asks. With the intake off, the tick never reads asks,
+so an ask made by the other door changed nothing the tick reported. The band reads asks beside
+sessions, so the sessions were fresher than the asks, and the parked intake could not find the ask
+it belonged to.
+
+**Fix.** `Asks.Signature` sits beside `Considerations.Signature`. The shell reads the asks each tick
+and forwards the tick when they change, and the page refetches the asks on every tick it receives.
+
+**Verify.** `AskSignatureTests` and the tick test failed first. On the window, an ask posted with
+the page open appeared in the band with no reload.
+
 ## A gate declared and in the workflow was still red for a day: nothing a session runs ran it (2026-09-24)
 
 **Symptom.** MAP3c ran `daoris-devkit verify --universal-only` and the sensitive gate was red. It

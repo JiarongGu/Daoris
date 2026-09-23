@@ -4934,3 +4934,62 @@ comment now says what is true. Installing the hook remains the owner's call.
 
 CLI 383 (was 382), driver 462, service 448, web 684, and the universal gates are 5/5 with the private
 list.
+
+## INT4d — an ask that waits on a person is outstanding, and its record says who answered (2026-09-24)
+
+- [x] ~~**INT4d — an ask that waits on a person is outstanding, and its record says who answered.**
+  Overview's *What needs you* lists sessions and quests only. A proposed ask, or one whose intake
+  parked asking, is the person's to settle, and neither shows there. On the ask's record, the tier
+  INT4b added (`intake`) has no words in either catalogue (`asks.tier.intake`,
+  `asks.tierShort.intake`), and the intake session is not shown or linked. Found by INT4c and INT4b.~~
+✅ **done 2026-09-24** — `needsAPerson` takes the asks. A live ask waits unless its intake is busy,
+either as a *proposal* or as *its intake asked you*. A parked intake is counted once, as its ask, and
+stays a parked session only while its ask is not in hand. Asks sit between parked sessions and
+quests nobody can take, and the Sessions badge follows them. A band row is a door only where its
+destination exists: a parked session opens in Sessions (desktop only), an ask opens its record in
+Quests, and a quest nobody can take opens its drawer, which a browser now has too. A row with
+nowhere to go is text. The record gains an intake-session section: a door into Sessions on the
+desktop, named without one in a browser, and by id when unloaded. The tier has words in both
+catalogues, held from the service side (`AskTierCatalogueTests`). Decisions are in intake design
+§1h and platform-ux §4.
+
+**Built in a parallel worktree and cherry-picked. Its Playwright check was first run here, and it
+passed. The window then found two defects.** The band went stale: with the intake off, a tick never
+reads asks, so an ask made by the other door moved nothing a tick reports. The page was never told,
+and the ask's parked intake read as a bare session. The shell now forwards a tick when
+`Asks.Signature` changes, and the page refetches the asks on every tick (FIX-LOG). The record also
+said "no intake harness ran" directly above the intake that ran, because a parked intake published
+nothing and the tier stays the declarations'. It now says so in its own words. Looked at in both
+themes and 中文.
+
+**Not done: INT4g.** Sessions offers a parked intake the parked-session moves, and each one ends
+the record without answering the ask. Web 684 → 733 with AGT6, service 448 → 451, driver 464,
+Playwright 21.
+
+## AGT6 — Daoris's own AI on the Settings page (2026-09-24)
+
+- [x] ~~**AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
+  The intake is one job since INT4b. `daoris driver intake <adapter>|off` and the bridge's
+  `SET_INTAKE` both exist, but no screen control does (D50).~~
+✅ **done 2026-09-24**, built in a parallel worktree and integrated here. The agents direction §3
+*as built* and platform-ux §4 carry the reasoning.
+- **A card for everyone**, *Daoris's own AI*, between *Appearance* and *This machine*. Search and
+  convergence shows `/api/status`'s tier and note verbatim. How to change it is a sentence: the
+  service reads `DAORIS_EMBED_MODEL`/`DAORIS_EMBED_URL` when it starts. **Rejected**: a settable
+  home file, which would be a second source for the deployment's choice.
+- **The intake is the desktop's**: the screen's half of `daoris driver intake` over `SET_INTAKE`. It
+  offers *Off* and each way in the machine has installed, always shows the agent in effect, and gives
+  one line per circle naming the account an intake there runs as.
+- **One answer, not two**: `STARTS` answers an `intake` row after each circle's `work` row, from the
+  same `WiringAsync`. An unknown agent is a held row in the driver's words. *What a start runs on*
+  names each row's job once there are two.
+- The status bar's tier leads to the card.
+
+**The window found the control missing** while the intake was off. The bridge leaves a null out,
+and the page tells an older shell by the field's absence, so off read as older. Off is `""` on the
+wire now (FIX-LOG). Both test doubles had kept the null, the module helper's serializer and the
+page's mock, which is why nothing failed. Looked at in both themes with the intake off: the tier
+pill, the hint, the select and its options, and the status-bar door. **The on state was not looked
+at**, because choosing the machine's one agent with asks waiting spawns a real session on a real
+account. Its rows are held by vitest. Modules 109, web 733 + 21, and the Playwright check (a browser
+is told the tier verbatim, and nothing of the intake) passed on its first run here.

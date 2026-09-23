@@ -471,6 +471,16 @@ The first version: doctrine that installs, is checked, and flows back.
   not settle it, the intake publishes nothing and the session waits for you; publishing or closing
   the ask ends it. The intake is off until a harness is named, because each intake spends a login,
   and `daoris driver intake off` goes back to declarations only.
+- **An ask that waits on you is in *What needs you*** (INT4d). A proposal, or an ask whose intake
+  parked asking, is a row of Overview's band that opens the ask's record. A parked intake is counted
+  once, as its ask. The band stays live on the desktop: an ask made by the other door arrives with
+  the next tick, without a reload. The record names who answered: the `intake` tier in words, and
+  the intake session, which is a door into Sessions on the desktop. A band row with nowhere to go (a
+  parked session, in a browser) is no longer a button.
+- **Settings says what Daoris's own AI is** (AGT6): search and convergence with the service's tier,
+  verbatim, and the variables that choose its model; on the desktop, the intake's agent — off, or a
+  way in this machine has — and the account an intake in each circle runs as. What a start runs on
+  lists the intake as a second job, and the status bar's tier leads there.
 - **Two conversations in one repository no longer break the driver.** A conversation in a checkout
   beside another in its own tree (D51) made every tick fail on a duplicate key, starting nothing
   until one ended.
