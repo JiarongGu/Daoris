@@ -417,7 +417,8 @@ both are the owner's.**
 checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b and MAP3a are archived.
 
 - [ ] **AGT2b — a managed install from the vendor's channel:** Claude Code's release bucket against
-  its signed manifest; Codex's releases once Windows and versions are confirmed.
+  its signed manifest; Codex's package at an exact version, by its published hashes. The channels
+  were checked on 2026-09-24: `docs/2026-09-24-agt2b-channel-evidence.md`.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
 - [ ] **MAP3c — a tool producer**: the devkit writes the file from project references and package
   dependencies.

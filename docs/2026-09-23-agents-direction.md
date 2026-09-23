@@ -53,6 +53,10 @@ From the vendors' own documents, not from memory:
   model (INT4a), and INT4b makes it a **session** on a harness rather than a model call. Every
   model-backed feature works with none and names the tier that answered (`model-decoupling`).
 
+**Checked again for AGT2b (2026-09-24)**: `docs/2026-09-24-agt2b-channel-evidence.md` records each
+channel's layout, how the signature works, what the official installers verify, and what is not
+confirmed.
+
 ## 3. The asks, as items
 
 - **AGT1 — one word a person reads: *agent*** (done). The CLI verb, its help and the refusals say
