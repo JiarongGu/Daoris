@@ -2504,7 +2504,9 @@ map will also show for the repo itself for code)"*.
    **topology**: how a workspace's repositories are wired (what each declares it owns and accepts,
    the quests between them, what drives each). Inside a repository the same map shows its **code**,
    which gives the roadmap's long-standing *repository intelligence* its first consumer. It is a
-   roadmap arc (MAP), designed before it is built.
+   roadmap arc (MAP), designed before it is built. **Settled the same day**
+   (`docs/2026-09-23-map-design.md`): the workspace map is a view of its own, and a repository's
+   code map is fed by a tool where one exists and by the repository's agent elsewhere.
 
 **Why.** A key is an account that no sign-in flow holds for Daoris, and the owner wants API-driven
 work: Daoris keeping it gives every agent one account shape. An agent with Daoris's loop inside it would be
