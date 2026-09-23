@@ -199,15 +199,9 @@ the traps that are not in any contract, because they were found rather than desi
   2 on exactly that basis, while the registration store adds columns, because a registration that
   vanished on an upgrade is the failure that store exists to prevent — and the session store does the
   same, for the same reason (SES3 added two).
-- **The arc's landings are local commits, unpushed by the owner's standing call** — `b70ac0e`
-  (WSP1), `7333f74` (WSP2), `538bc03` (WSP3), `03ed5d9` (WSP4), `15ba288` (SES1), `a965feb`
-  (SES2), `49da224` (SES3, with `aa24ea7` closing its outer loops) and `2487ec8` (CANON6), then the
-  review: `6f45276` (the gate list) and `beaab13` (the shell's head). All
-  gate-green; `git log` is the reviewable record.
-- **What the arc left behind is now backlog items, not prose** — CANON7 and HARNESS2 (WSP5 and DOCS2
-  both landed 2026-09-21 and are in the archive; ARCH1 and DEVKIT3 joined the list the same day). They
-  were carried as handover sentences for a while, which is how work quietly stops being work; the
-  backlog is where something is still to do.
+- **Every landing is a local commit, unpushed by the owner's standing call**, and `git log` is the
+  reviewable record. Work left behind by an arc goes in the backlog as an item, never as a
+  handover sentence — that is how work quietly stops being work.
 - **Every capability has TWO doors, and anything new inherits both.** The desktop's IPC and
   `daoris-driver chat` run the same `ChatRunner`; `daoris harness` and `daoris driver` do from a
   terminal what the roster and the checkboxes do from a screen. What is shell-only is the STREAM, not
@@ -244,11 +238,8 @@ the traps that are not in any contract, because they were found rather than desi
   on a repository naming what it wants, HARNESS1 on the same, REH1 and TEST1 on a captured recurrence,
   and HELP3 on where the guard lives being settled. Pick one up only when its trigger has actually
   arrived — and **a new direction from the owner outranks all of them**.
-- **The shell has a dev loop now (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click`. It
-  is **not a gate** — it starts the real window on a scratch machine of its own, and `eval` is the one
-  instrument that reaches the bridge-attached half (the Machine view, the driver controls, the
-  console, chat) that Playwright cannot reach and vitest only mocks. Reach for it when SURF4/SURF5
-  land a surface: seeing the real thing is the step that had no tooling at all.
+- **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
+  gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 313 + `check` + doc
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (278),
@@ -430,6 +421,35 @@ both are the owner's.**
   (d), silently** — that flag *is* the grant. And **measure the ACP door first**: it runs the Agent
   SDK rather than the CLI's trust flow, so it may not have the problem at all, and one driven run
   answers it.
+
+### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
+
+`docs/2026-09-23-intake-design.md` is the contract. A sentence with files and links enters at the
+workspace; an **intake session** (the harness carries the model, D24) reads the ticket, decides
+the owning repository from the declarations, and publishes quests; a plugin-declared **browser
+server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
+engine. Nothing new runs a model and nothing new orchestrates.
+
+- [ ] **INT1 — plugins declare MCP servers handed to every session.** `servers` in `plugin.json`
+  (name, command, arguments, environment, `${plugin}` expanded); the driver offers them beside the
+  knowledge host over ACP (`session/new`), and over the pipe door by `--mcp-config` pointed at a
+  file written under the home per spawn — never the repository. The example plugin declares the
+  Playwright MCP. Proven by the family rehearsal's stub reporting every server offered.
+- [ ] **INT2 — links and attachments on a quest.** `links` travel with the quest; `attachments`
+  are copied under `<home>/quests/<id>/attachments/` by content hash, machine-local; the compose
+  drawer takes drops and pastes; the composed target names them and `DAORIS_QUEST_ATTACHMENTS`
+  points at the directory. HTTP and MCP surfaces carry both.
+- [ ] ⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
+  requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
+  owner's yes first** — it amends the letter of D34/D46.
+- [ ] **INT4 — the intake.** The ask record; the room under `<home>/intake/<workspace>/` seeded
+  from the registry; `daoris-driver ask --workspace … [--file …] [--url …] "…"` and the desktop
+  composer at workspace scope; `intakeAdapter` in `driver.json`; the declarations-only tier that
+  proposes and reports itself. Proven with no model by the rehearsal; a real ask is the owner's.
+- [ ] **INT5 — `then` on a quest.** Published by the exchange at the moment of `done`, atomically;
+  the driver picks it up at its next look. Linear in v1.
+- [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
+  real ask — owner present, adoption playbook.
 
 ### Plugins — a folder that declares, and may speak (owner, 2026-09-23 → D64)
 

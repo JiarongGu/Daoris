@@ -124,27 +124,23 @@ risk, **authorship** was.
   invisible in the source — a 190-character measure, a field with no border in dark, an icon rail
   stacked on the page at 680px — because they are properties of the assembled window at a real
   width in a real theme. `docs/2026-09-19-platform-ux.md` §4 carries what each pass settled.
-- **The protocol door is open** (D53, accepted 2026-09-21 on the DSH1 evidence in
-  `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a protocol, not a product* — the adapter
+- **The protocol door is open** (D53, `docs/2026-09-21-dsh-evaluation.md`): *dsh is adopted as a
+  protocol, not a product* — the adapter
   seam grows an **ACP door**, dsh and codex arrive as configurations of it, and the working surface
   stays `Daoris.Web`. **ACP1, ACP3 and ACP4 have landed** and four configurations ride the door: the
   seam carries a `Wire`, `AcpSession` speaks JSON-RPC over stdio, a permission request is **refused by
   construction** (D52), and the record still moves on the exit code and the quest — the wire flattens
   an aborted turn to `end_turn`, so it enriches and never decides. 🔴 **The posture is the ADAPTER's,
   in that harness's own words** (`docs/2026-09-22-acp3-probe-evidence.md`): null means the wire
-  carries none, and is never a licence to guess a neighbouring mode. **ACP2 is what is left** and its
-  closing step spends a real login. Probe instruments: `tools/dsh-probes/`.
+  carries none, and is never a licence to guess a neighbouring mode. **ACP2 is left**, and it spends
+  a real login.
 - `docs/2026-09-19-platform-ux.md` — the platform's design language (D41): the shell, the tokens, the
   validated status palette, the interaction rules. Read before changing anything a person looks at.
-- **The current direction is the toolchain** (owner, 2026-09-22 → **D57**,
-  `docs/2026-09-22-toolchain-design.md`): Daoris owns which binary runs, **usage is measured before
-  it is managed**, and breadth is **more native adapters plus the ACP door, never a registry**.
-  Nothing was reopened — measurement needs no credential and native adapters need no catalogue, so
-  D49 §4 and D24 both stand. **TOOL2**: `daoris harness pin|unpin`, a fourth twin rule (*explicit
-  command → managed pin → `PATH`*), and a pin nobody installed **refuses**. **TOOL3**: ACP's
-  `usage_update` parsed rather than rendered away, per session at its **high-water mark** and
-  totalled per account, machine-local by the profile's own rule. 🔴 **Absent is never zero**, and no
-  price is claimed. TOOL4 is held.
+- **The toolchain is Daoris's** (**D57**, `docs/2026-09-22-toolchain-design.md`): which binary runs
+  (`harness pin|unpin`; *explicit command → managed pin → `PATH`*; a pin nobody installed
+  **refuses**), usage **measured before managed** (ACP's `usage_update` per session at its
+  high-water mark, totalled per account, machine-local; 🔴 **absent is never zero**, no price
+  claimed), and breadth as **native adapters plus the ACP door, never a registry**. TOOL4 is held.
 - 🔴 **Daoris is DEPLOYED** (2026-09-22): `npm run publish:desktop -- --to <dir> --service` installs
   it — one exe at the root, binaries under `app/`, **the Daoris home in `data/`**; `--beside` when
   the folder already holds the repositories it drives — and **starting it starts the driver loop**.
@@ -157,6 +153,11 @@ risk, **authorship** was.
 - **A plugin is a folder that declares, and may speak** (**D64**, `docs/2026-09-23-plugin-design.md`):
   a manifest under `plugins/`, a declared harness on the ACP door, behaviour spoken over a wire —
   **never code loaded into a host**, no view, no registry.
+- 🔴 **The current direction is the regular task** (owner, 2026-09-23 → **D65**,
+  `docs/2026-09-23-intake-design.md`): an ask with files and links enters at the workspace, an
+  **intake session** decides the owning repository from the declarations and publishes quests, a
+  plugin-declared **browser server** puts testing in the session's hands, and `then` chains quests.
+  **The driver's brain is a session, not a model** (D24 holds); INT3 waits on the owner's yes.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

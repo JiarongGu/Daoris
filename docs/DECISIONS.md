@@ -2328,3 +2328,47 @@ on the one loop that costs money; the hold names the plugin and the person disab
 PLUG2 (core doctrine stays non-optional and is the owner's to reopen), D46 §3 (sitting says why —
 now for a plugin's hold too), D49 §2 (a plugin's word is a console line under `plugin:<id>`,
 machine-local). ARCH1's three declarative seams stand; this is the fourth, and the first that speaks.
+
+## D65 — A regular task is an ask; the intake is a session; a workflow is a chain of quests (2026-09-23)
+
+**Decision.** The owner described the regular task Daoris exists for — a workspace of real
+repositories, a sentence naming a ticket and a change, and Daoris expected to *locate the project,
+start the development via an agent, and test via chrome*, with files and URLs sent along, possibly
+as a workflow, and *"the local desktop will have its own driver llm"*.
+`docs/2026-09-23-intake-design.md` is the design. Five things are decided by it:
+
+1. **The driver's brain is a session, not a model.** An ask opens a conversation (SES2) in a
+   working tree Daoris owns under the home, seeded from the registry, with the family's tools; its
+   job is to read the ticket, decide the owning repository from the declarations, and publish
+   quests. The harness carries the model under the workspace's own credential profile (D24, D49
+   §4); with no harness the deterministic tier proposes by declarations and says so.
+2. **A quest carries links and attachments.** Links travel with it; attachments are content-
+   addressed under the home and machine-local, the transcript's boundary (D47 §4), and a session
+   is handed them by name and by a directory in its environment.
+3. **A plugin declares MCP servers handed to every session** — over ACP on `session/new` (ACP4),
+   over the pipe door by the harness's own `--mcp-config` from a file under Daoris's home, never the
+   repository. A browser is such a server (the Playwright MCP, as the harness reference's own
+   browser-use providers are), and *testing in Daoris* is a session driving one.
+4. **A workflow is a chain of quests**, `then` on a quest published at its close; the driver is the
+   engine that already exists. No script engine, no coordinator agent (D1).
+5. **Registered is addressable; adopted is disciplined** — proposed: a repository registered with
+   a root is drivable over the ACP door, since the connector travels on the wire and not in the
+   repository's files. 🔴 This amends the letter of D34/D46 and is **the owner's yes first**
+   (INT3); until then the exchange keeps refusing an unadopted target.
+
+**Why a session and not a model.** Every path that puts a model inside Daoris reopens D1 and D24
+at once: a provider to choose, a credential to hold (D49 §4 refuses), a price to know (D57 refuses).
+A session has all of it already — the harness, the account, the tools, the record — and the
+intake's answer is then reviewable exactly as a driven session's is: what it published, and why.
+
+**Why no engine.** The harness reference's workflow is a model-written orchestration script; orca's
+is a coordinator running task DAGs with decision gates. Both are right for products whose loop IS
+the agent's. Daoris's loop is the driver's, and the only orchestration it needs — this, then that —
+is a quest that names its follow-up. A decision gate is a parked session asking (SURF5).
+
+**Rejected.** A browser extension (the session drives a browser through MCP). A ticket-system
+integration in the host (a plugin declares a server for it). Attachments crossing machines in v1.
+
+**What does not move.** D24 and D1; D32 (the intake publishes, never edits); D37 and D46 §5 (the
+session's tool calls stay under the repository's own posture, browser included); D50 (two doors:
+the composer and `daoris-driver ask`); D64 (servers are one more thing a plugin declares).

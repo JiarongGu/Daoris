@@ -117,9 +117,18 @@ Each was set by the owner and measured before it was designed; the archive carri
 | **DEPLOY1–4 · Deployed** (D60, D62, D63) | `publish:desktop -- --to <dir> --service` installs one exe, binaries under `app/`, **the Daoris home in `data/`**; a gate drives the published artefact; development happens against the install; **nothing of Daoris's lives under the user profile** — `DAORIS_HOME` is the one seam and a writer with none refuses | **Built** (2026-09-22/23) — two deployments found seventeen defects invisible from the workspace, every one in `docs/FIX-LOG.md`; DEPLOY1's second half is the owner's |
 | **PLUG1–6 · Plugins** (D64, `docs/2026-09-23-plugin-design.md`) | A plugin is a folder under the home's `plugins/` that **declares** (harnesses on the ACP door) and may **speak** (a process of its own answering the driver at named points, fail-closed); two doors; no code loads into any host | **Built** (2026-09-23) — the family rehearsal drives one; PLUG7 (service-side points) is held until a plugin asks; PLUG2 is the owner's |
 
-**What is open is decisions and triggers**, not work: ACP2 and DEPLOY1's second half each spend a real
-login; PLUG2 reopens D4; the held rows wait on something arriving. Surface work comes from looking at
-the deployed application after every change.
+## The current direction: the regular task (D65, set 2026-09-23)
+
+A sentence with a ticket, a file and a link enters at the workspace; an **intake session** — the
+harness carries the model — reads the ticket, decides the owning repository from the declarations,
+and publishes quests; the driver develops; a plugin-declared **browser server** lets the session
+test in a browser; **`then`** chains develop → verify → report, and the driver is the engine.
+`docs/2026-09-23-intake-design.md` is the contract; INT1–INT6 are the build order in `TASKS.md`,
+with INT3 (registered is drivable) waiting on the owner's yes.
+
+**What else is open is decisions and triggers**, not work: ACP2 and DEPLOY1's second half each spend
+a real login; PLUG2 reopens D4; the held rows wait on something arriving. Surface work comes from
+looking at the deployed application after every change.
 
 ---
 
