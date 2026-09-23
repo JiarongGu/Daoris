@@ -291,6 +291,7 @@ public static class WorkingTree
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+            CreateNoWindow = true, // git runs every tick; from a window it must not flash a console (Adapters.Shell)
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };

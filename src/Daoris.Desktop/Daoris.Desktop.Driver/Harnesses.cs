@@ -676,6 +676,7 @@ public static class HarnessProbe
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+            CreateNoWindow = true, // a probe from a window must not open a console (Adapters.Shell)
         };
         foreach (var part in resolved.Skip(1)) info.ArgumentList.Add(part);
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
@@ -1091,6 +1092,7 @@ public static class HarnessActions
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+            CreateNoWindow = true, // its output is relayed to the console below, never a window of its own
         };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
         HarnessProbe.Apply(info, toolchain, profileHome);

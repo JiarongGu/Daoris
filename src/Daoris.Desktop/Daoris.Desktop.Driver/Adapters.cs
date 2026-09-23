@@ -226,6 +226,13 @@ internal static class Spawning
             RedirectStandardError = true,
             UseShellExecute = false,
 
+            // 🔴 The shell is a window, not a console. A console child of a GUI process is given a
+            // console of its own unless this says otherwise — and nothing said otherwise, so every
+            // git, every probe and every session flashed a terminal onto the desktop (owner,
+            // 2026-09-23: *"a console window keep popup up"*). Held by a source scan over every
+            // spawn the desktop makes, because the next spawn site will forget it too.
+            CreateNoWindow = true,
+
             // 🔴 A transcript is read as UTF-8 or it is not the transcript. .NET defaults a
             // redirected stream to the CONSOLE's codepage; on this machine that is CP936, and the
             // first real deployment recorded an em-dash (`e2 80 94`) as `e9 88 a5 3f` — decoded as

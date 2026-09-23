@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The deployed shell flashed a console window on every tick (2026-09-23)
+
+**Symptom.** With the installed application running, a terminal window kept appearing and vanishing
+on the desktop (owner: *"a console window keep popup up"*). Nothing in the workspace dev loop showed
+it.
+
+**Root cause.** The shell is a windowed process with no console, and a console child of such a
+process is given a console of its own unless the spawn sets `CreateNoWindow`. Four spawn sites did
+not: the session shell in `Adapters.cs`, the harness probe and the harness action in `Harnesses.cs`,
+and git in `WorkingTree.cs`. The host supervisor and the hook processes did, which is why the
+loop's own children never showed — but git runs every tick and the probes on every roster refresh,
+each one flashing a window. Invisible from the workspace because `desktop.mjs run` starts the shell
+from a terminal, whose console every child inherits.
+
+**Fix.** `CreateNoWindow = true` at all four sites, and `NoConsoleWindowTests` in the driver's tests
+scans every `new ProcessStartInfo` under the desktop's projects for it — the property belongs to every
+spawn and the next site written will not know to.
+
+**Verify.** The scan failed on the four sites before the fix and passes after; the installed shell
+republished and run with the loop ticking, no window.
+
+**Commit.** _pending_
+
 ## The rehearsal's ACP stub hung the driver on its second quest (2026-09-23)
 
 **Symptom.** The family rehearsal's new plugin phase (D64) drove a second quest over the ACP stub
