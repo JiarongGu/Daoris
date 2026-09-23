@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**331 CLI tests, 439 service, 427 driver, 106 desktop modules, 643 web unit, 18 Playwright**, 73
+**331 CLI tests, 439 service, 427 driver, 106 desktop modules, 684 web unit, 19 Playwright**, 73
 devkit, 56/56 release rehearsal, **250/250 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: AGT6, INT4b, INT4d, AGT2b, SEN1.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -253,7 +253,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (439),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (427), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (106), `npm run rehearse:family` (250/250), `npm run test:web` (643 vitest + 18 Playwright),
+  (427), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (106), `npm run rehearse:family` (250/250), `npm run test:web` (684 vitest + 19 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -267,7 +267,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Eighteen items are open** — three of them D67's —
+the archive; its decision is **D53, accepted**). **Nineteen items are open** — three of them D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
@@ -279,7 +279,7 @@ design's §5 is realised and what waits is a tool somebody names. The other five
 task's (D65, below) and PLUG7, held.
 
 🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **Next: D67's remaining
-items (AGT2b last — npm already installs the native build), then INT4b and INT4c.** They outrank the
+items (AGT2b last — npm already installs the native build), then INT4b and INT4d.** They outrank the
 rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
@@ -429,8 +429,8 @@ checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b and MAP3a are 
 workspace; an **intake session** (the harness carries the model, D24) reads the ticket, decides
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
-engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT4a and INT5 are in
-the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
+engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT4a, INT4c and INT5 are
+in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
 - [ ] ⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
@@ -442,9 +442,9 @@ screen.
   onto INT4a's ask, and asks the person rather than guessing. Proven by a stub intake agent; a real
   ask is the owner's. 🔴 **Read the design's §1b traps first**: eight things the conversation
   plumbing assumes that an intake breaks, starting with a chat being handed no connector.
-- [ ] **INT4c — the desktop door.** The screen twin of `daoris-driver ask` (D50): a composer at the
-  status bar's workspace scope, with the quest composer's drop, paste and links, and the ask's
-  record (the proposal, the tier, its quests, *publish to…* and *close*).
+- [ ] **INT4d — a proposal waits on a person, so it is outstanding.** Overview's *What needs you*
+  lists sessions and quests only. A proposed ask is the person's to accept, and it does not show
+  there. Found by INT4c.
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 

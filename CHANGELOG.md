@@ -451,6 +451,13 @@ The first version: doctrine that installs, is checked, and flows back.
   nothing. `--to` publishes at once, asked by `ask #<id>` in the ask's circle, carrying its links
   and files. A refused `--to` keeps the ask with its proposal. `ask --publish <id> --to <repo>` and
   `ask --close <id> --reason "…"` finish it. The same words in the same circle are the same ask.
+- **Ask from the screen, too** (INT4c, D50). Quests leads with *Ask*, and the palette offers *Ask the
+  circle…*. The ask is made in the scoped circle, or the only one; with several and none chosen, the
+  composer asks which. It carries links and files exactly as the quest composer does, because both
+  now share one set of fields. Each ask's record says which tier answered and what it proposed. It
+  publishes to a proposal or to any other adopter in the circle, opens the quests the ask became,
+  names its files without saying where they are kept, and closes with a reason. A browser on this
+  machine has the same door.
 - **Two conversations in one repository no longer break the driver.** A conversation in a checkout
   beside another in its own tree (D51) made every tick fail on a duplicate key, starting nothing
   until one ended.

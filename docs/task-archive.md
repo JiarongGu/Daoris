@@ -4794,3 +4794,39 @@ its story and its unit tests. It was not looked at on the real window, because t
 has no teammate.
 
 Service 439, web 643 + 18, family 250/250, deploy 39/39, verify green.
+
+## INT4c — the desktop door for asks (2026-09-24)
+
+- [x] **INT4c — the desktop door.** The screen twin of `daoris-driver ask` (D50): a composer at the
+  status bar's workspace scope, with the quest composer's drop, paste and links, and the ask's
+  record (the proposal, the tier, its quests, *publish to…* and *close*).
+
+✅ **done 2026-09-24**, built by a parallel agent in its own worktree and integrated here. Quests now
+leads with *Ask*, and the palette offers *Ask the circle…*.
+- **The door is in Quests, not on the status bar.** The bar states what is true, and an ask is an
+  action. The ask is made in the circle the bar names: the scoped one, or the only one held. With
+  several and none chosen, the composer asks which, and never assumes `default`.
+- **The asks sit above the quests** as their own group, because quests come from asks and a
+  proposal waits on a person.
+- **One carry for both composers.** The quest composer's links, drop, paste and chooser became one
+  shared molecule (`compose/carry`), so the two cannot drift on how a file arrives.
+- **The record** says which tier answered and offers each proposal, and any other adopter in the
+  circle, as a publish. It opens the quests the ask became, names its files without their path, and
+  closes with a reason.
+- **A browser on this machine has the same door**, because an ask goes through the local host's
+  HTTP, not the bridge.
+
+**Found while building**:
+- A scoped page asked for the whole registry, which the scope test caught.
+- A just-published quest's door opened nothing until the list refetched. It is now a plain `#id`
+  until the page holds the quest, seen failing first.
+
+**Looked at on the real window**, light and dark: the header's *ask* primary, the composer (*Asked
+in default*), a real ask proposed by declarations (the service's sentence as the toast), the card in
+the new group, the record with both proposals and *publish*, and the close flow with its reason.
+
+**Left for later**:
+- If the palette's *Ask* is used while the quest composer is open, two drawers can stack.
+- Overview does not list a proposed ask, although one waits on a person. That is filed as INT4d.
+
+Web 684 + 19 Playwright, verify green.
