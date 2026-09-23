@@ -106,9 +106,34 @@ depend on each other. This is the roadmap's *repository intelligence* given a fi
 **The rule it keeps.** Daoris never writes into another repository (D32). The code map is **fed by
 the repository**, the way its knowledge is, and stamped with the commit it speaks for (WSP4).
 
-**A contract to agree first.** The feed is a small file: modules (id, path, one-line summary) and
-dependencies (from, to, kind). The service keeps it per repository per commit, and the page opens it
-from MAP2's node.
+**The contract (settled 2026-09-23).** One committed JSON file, found by convention like the
+decisions log: `docs/code-map.json`, else `code-map.json` at the root, first match wins. The scanner
+takes candidates rather than configuration, for the reason it already gives: a reader that needs
+setting up gets set up for one repository and never for the rest.
+
+```json
+{
+  "version": 1,
+  "modules": [{ "id": "service", "path": "src/Service", "summary": "indexes the family's knowledge" }],
+  "dependencies": [{ "from": "web", "to": "service", "kind": "http" }]
+}
+```
+
+- `id` is unique in the file and is what a dependency names. `path` is repository-relative, with
+  no leading slash, no drive and no `..`: a map is read by machines that are not this one (D47 §4).
+  `summary` is one line. `kind` is a short word the producer chooses (`imports`, `project`,
+  `http`, …) and is drawn as the producer wrote it.
+- **Judged whole.** A file that breaks any rule above is refused with the sentence naming the
+  first break, and nothing of it is shown. A half-drawn map reads as a whole one.
+- **Bounded** at 500 modules and 5,000 dependencies. A map that size is no longer a picture, and
+  the bound keeps a mistaken producer from filling the store.
+- No field says which producer wrote it, so the service and the page never know.
+
+**Where it is read.** In local mode the service reads the file from the registered checkout on each
+request. That is the person's machine showing the person's state, as the local index already does
+(WSP4). A shared deployment holds what was fed, per repository, with the commit it speaks for and
+refused when older (WSP4's three rules, unchanged). The page opens it from a MAP2 node's detail and
+lays it out in layers by dependency: a pure function, tested, and still no graph library.
 
 **Who produces it — decided (owner, 2026-09-23): both.** A tool per stack where one exists (Roslyn
 for C#, the TypeScript compiler for TS), run by the repository's own gates, because it is exact.
@@ -116,6 +141,19 @@ Elsewhere, a canon skill asks the repository's agent to keep the file current as
 works for any language, and is only as fresh as the last session. Both write the same small file,
 so the service and the page never know which produced it. Rejected: the agent alone (drifts where a
 tool could be exact) and a tool alone (nothing for a stack without one).
+
+⛔ **One question for the owner before the agent's half (MAP3d)**: *how* the agent is asked. A canon
+skill installs into every adopter, and the canon's bar is that two repositories learned a thing
+before it is doctrine (DECISIONS: the bar "is what makes canonical content trustworthy"). No
+repository has learned to keep a code map; it is a Daoris feature. The alternative keeps the canon
+out of it: the driver's session prompt asks, for a repository whose code map exists, to keep it
+current, as wiring at spawn (HELP3's shape). The file is still written by that repository's own
+agent (D32). **Recommended: the prompt.** A pack is the middle road, but packs have the same bar.
+
+**Build order.** MAP3a: the contract, the local read, the page, and the example family carrying a
+map. MAP3b: the feed to a shared deployment, with WSP4's provenance. MAP3c: a tool producer (the
+devkit reads project references, which is exact for C# without Roslyn, and a package's
+dependencies for TS). MAP3d: the agent producer, once the owner has answered the question above.
 
 ## 4. What does not move
 
