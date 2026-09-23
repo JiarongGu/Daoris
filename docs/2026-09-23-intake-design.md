@@ -126,6 +126,12 @@ scripts and orca's coordinator runs task DAGs with decision gates — both are t
 *their* products and both are declined here (D1). A decision gate is what `AwaitingPerson` already
 is: a session that parks and asks. v1 chains are linear; a fan-out is a later `then` list.
 
+*As built (INT5, 2026-09-23; D65 as amended):* `then` is an ordered list of steps, judged when the
+chain is composed. Every step is asked on behalf of the chain's asker, and every step shares the
+first one's home. A step's id derives from its parent, and `{parent}` in its words becomes that id.
+A decline stops the chain. The composer offers one next step; `quest_publish` and the HTTP door take
+up to five.
+
 ### 1h. Report
 
 The ask's record links the intake session and every quest it published; the Work frame reads a

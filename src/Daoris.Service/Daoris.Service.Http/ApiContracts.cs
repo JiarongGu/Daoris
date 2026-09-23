@@ -32,17 +32,23 @@ public sealed record ConvergenceResponse(
 // and only when the bytes are actually here: a mirrored quest's file is named and not held, and a
 // null path is how a reader, and the driver, learn that rather than guess it.
 public sealed record QuestAttachmentResponse(string Name, string Sha256, long Bytes, string? Path);
+// A chain's step (D65 §4), the same shape both ways. Nullable on the way in and judged by the
+// exchange, which refuses a step without its words naming which step it was.
+public sealed record QuestStepWire(string? To, string? Title, string? Body);
+// `Then` is what this quest's close will publish next; `Parent` the quest whose close published it.
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
     string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
-    IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments);
+    IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments,
+    IReadOnlyList<QuestStepWire> Then, string? Parent);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
 public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, string? Sha256, long? Bytes);
 public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
-    IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null);
+    IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
+    IReadOnlyList<QuestStepWire>? Then = null);
 public sealed record RespondQuestRequest(string? Action, string? Reason);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(
@@ -112,7 +118,8 @@ public sealed record FeedQuestAttachment(string? Name, string? Sha256, long? Byt
 public sealed record FeedQuestRecord(
     string Id, string From, string To, string Title, string Body, string? Status, string? Note,
     DateTimeOffset Filed, DateTimeOffset Updated,
-    IReadOnlyList<string>? Links = null, IReadOnlyList<FeedQuestAttachment>? Attachments = null);
+    IReadOnlyList<string>? Links = null, IReadOnlyList<FeedQuestAttachment>? Attachments = null,
+    IReadOnlyList<QuestStepWire>? Then = null, string? Parent = null);
 public sealed record FeedQuestsRequest(IReadOnlyList<FeedQuestRecord>? Quests);
 public sealed record FeedResponse(int Accepted, string Message);
 public sealed record ErrorResponse(string Error);

@@ -378,6 +378,9 @@ app.MapPost("/api/quests", async (
             Links = body.Links ?? [],
             Uploads = uploads,
             Named = named,
+            // The chain (D65 §4). A step missing its words arrives blank and is refused by the
+            // exchange naming which step — the same sentence every door gives.
+            Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
         },
         DateTimeOffset.UtcNow, ct);
 
@@ -771,11 +774,12 @@ else
                 || quest.From is null || quest.To is null || quest.Title is null || quest.Body is null
                 || !Enum.TryParse<QuestStatus>(quest.Status ?? "", ignoreCase: true, out var status)
                 || !Enum.IsDefined(status)
-                || (quest.Attachments ?? []).Any(a => a.Name is null || a.Sha256 is null || a.Bytes is null))
+                || (quest.Attachments ?? []).Any(a => a.Name is null || a.Sha256 is null || a.Bytes is null)
+                || (quest.Then ?? []).Any(s => s.To is null || s.Title is null || s.Body is null))
             {
                 return Results.BadRequest(new ErrorResponse(
                     $"quest `{quest.Id}` is not mirrorable — id, from, to, title, body and a known status are required, "
-                    + "and every attachment needs its name, sha256 and size"));
+                    + "every attachment needs its name, sha256 and size, and every step of a chain its to, title and body"));
             }
         }
 
@@ -795,6 +799,10 @@ else
                 Attachments = (quest.Attachments ?? [])
                     .Select(a => new QuestAttachment(a.Name!, a.Sha256!, a.Bytes!.Value))
                     .ToList(),
+                // The chain as the home holds it: the home closes each step and publishes the next,
+                // and the mirror only shows what is coming and what a quest follows.
+                Then = (quest.Then ?? []).Select(s => new QuestStep(s.To!, s.Title!, s.Body!)).ToList(),
+                Parent = quest.Parent,
             }, ct);
         }
 
@@ -833,7 +841,9 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => n
     q.Links,
     q.Attachments.Select(a => new QuestAttachmentResponse(
         a.Name, a.Sha256, a.Bytes,
-        Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList());
+        Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
+    q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
+    q.Parent);
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(
     entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),

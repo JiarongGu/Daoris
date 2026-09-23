@@ -263,6 +263,24 @@ public static class RemoteSyncPayloads
                 }
 
                 writer.WriteEndArray();
+
+                // The chain as its home holds it (D65 §4): the home closes each step and publishes
+                // the next; the mirror only shows what follows and what a quest follows.
+                Copy(writer, quest, "parent");
+                writer.WriteStartArray("then");
+                if (quest.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var step in then.EnumerateArray())
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("to", Text(step, "to"));
+                        writer.WriteString("title", Text(step, "title"));
+                        writer.WriteString("body", Text(step, "body"));
+                        writer.WriteEndObject();
+                    }
+                }
+
+                writer.WriteEndArray();
                 writer.WriteEndObject();
             }
 

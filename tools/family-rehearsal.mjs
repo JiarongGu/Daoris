@@ -564,6 +564,42 @@ check(
   landed.out,
 );
 
+// A CHAIN (D65 §4): develop, then verify. The close of the first publishes the second in the same
+// transaction, and the driver starts it at its next look — no engine, no coordinator, the loop that
+// already exists. One --until-idle run takes both, because the second exists the moment the first is
+// done.
+const chained = await api('POST', '/api/quests', {
+  body: {
+    from: 'game',
+    to: 'newcomer',
+    title: 'Develop the chained change',
+    body: 'The first step of a chain: make the change.',
+    then: [{ to: 'newcomer', title: 'Verify {parent} landed', body: 'The second step: check what {parent} did.' }],
+  },
+});
+const developId = chained.json?.quest?.id ?? '';
+check(
+  'a quest publishes with its chain, and nothing of the chain exists yet',
+  chained.status === 200 && chained.json.quest.then?.[0]?.to === 'newcomer'
+    && !((await api('GET', '/api/quests?repository=newcomer')).json ?? []).some((q) => q.parent === developId),
+  chained.text,
+);
+const chainRun = drive();
+const afterChain = (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
+const verifyStep = afterChain.find((q) => q.parent === developId);
+check(
+  'closing it done published the next step — asked by the same asker, naming what it follows',
+  afterChain.some((q) => q.id === developId && q.status === 'Done')
+    && verifyStep?.from === 'game' && verifyStep?.title === `Verify #${developId} landed`,
+  `${chainRun.out}\n${JSON.stringify(afterChain.map((q) => ({ id: q.id, title: q.title, status: q.status, parent: q.parent })))}`,
+);
+check(
+  '…and the driver took the step at its next look and drove it to done — the chain is the loop',
+  verifyStep?.status === 'Done'
+    && new RegExp(`stub: answer quest ${verifyStep.id}`).test(run('git log --oneline', newcomer).out),
+  chainRun.out,
+);
+
 // Declining is a real answer, and it is the session's answer — the driver only observes it.
 const declineAsk = await api('POST', '/api/quests', {
   body: {
@@ -2507,8 +2543,9 @@ if (totals.failures) {
   console.log("  after a restart; one project's knowledge answering the other's search; a newcomer");
   console.log('  joining through the real CLI and answering its first quest on day one — then DRIVEN:');
   console.log('  a quest carrying a link and a file became a session that read both, became a commit');
-  console.log('  became done, a dirty tree held, a decline carried its reason, and outside work was');
-  console.log('  left entirely alone (D46, D65). Then REMOTE (D47): two machines and a shared host with');
+  console.log('  became done, a chain of two ran as one loop with no engine, a dirty tree held, a decline');
+  console.log('  carried its reason, and outside work was left entirely alone (D46, D65). Then REMOTE');
+  console.log('  (D47): two machines and a shared host with');
   console.log('  minted keys — a quest published on one machine, driven to done on the other under a');
   console.log('  named account, its file known there by name and its bytes kept home, the closure');
   console.log('  crossing back with the tool version but never the account name; a raced take standing');

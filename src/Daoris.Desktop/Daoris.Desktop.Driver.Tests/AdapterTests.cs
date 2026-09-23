@@ -204,6 +204,25 @@ public sealed class AdapterTests
         Assert.DoesNotContain("D65", prompt);
     }
 
+    /// <summary>
+    /// A chain's step is told what it follows, and a quest with steps after it is told what its close
+    /// will publish (D65 §4) — so a developing session knows a verifier comes next, and a verifying one
+    /// knows which quest's work it is checking.
+    /// </summary>
+    [Fact]
+    public void The_target_prompt_says_what_a_step_follows_and_what_closing_it_publishes()
+    {
+        var prompt = TargetPrompt.Compose(Target() with
+        {
+            Parent = "a1b2c3",
+            Then = [new QuestStepView("Checker", "Report on #abc123", "Say what was done.")],
+        });
+
+        Assert.Contains("#a1b2c3", prompt);
+        Assert.Contains("`Checker`", prompt);
+        Assert.Contains("Report on #abc123", prompt);
+    }
+
     [Fact]
     public void A_quest_that_carries_nothing_says_nothing_about_carrying()
     {
@@ -211,6 +230,8 @@ public sealed class AdapterTests
 
         Assert.DoesNotContain("DAORIS_QUEST_ATTACHMENTS", prompt);
         Assert.DoesNotContain("Links", prompt);
+        Assert.DoesNotContain("follows", prompt);
+        Assert.DoesNotContain("next step", prompt);
     }
 
     /// <summary>

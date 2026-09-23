@@ -32,6 +32,12 @@ public enum QuestPublishRefusal
 
     /// <summary>Files arrived with their bytes and this host has no Daoris home to keep them under (D63).</summary>
     NoHome,
+
+    /// <summary>
+    /// A chain (D65 §4) with a step that cannot be published when its turn comes: nobody there can see
+    /// it, it asks the asker, it has no words, it would live in another home, or there are too many.
+    /// </summary>
+    BadChain,
 }
 
 /// <summary>
@@ -52,6 +58,9 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     public IReadOnlyList<QuestUpload> Uploads { get; init; } = [];
 
     public IReadOnlyList<QuestAttachment> Named { get; init; } = [];
+
+    /// <summary>What to ask next when this closes done (D65 §4) — judged here, when the chain is composed.</summary>
+    public IReadOnlyList<QuestStep> Then { get; init; } = [];
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -127,6 +136,12 @@ public sealed class QuestExchange(
     /// larger has a home of its own already, and a link to it is the better thing to carry.
     /// </summary>
     public const long MaxAttachmentBytes = 20L * 1024 * 1024;
+
+    /// <summary>
+    /// How many steps a chain carries after its first quest — develop, verify, report is two. A longer
+    /// chain is a plan, and a plan belongs to whoever composes it, step by step.
+    /// </summary>
+    public const int MaxChain = 5;
 
     /// <summary>A quest that carries nothing but its words — every caller before D65.</summary>
     public Task<QuestPublishOutcome> PublishAsync(
@@ -209,11 +224,21 @@ public sealed class QuestExchange(
         // — both sides share it by now — and a circle this machine has no entry for stays local,
         // silently: a joined repository in an unwired workspace is a declaration with nowhere to go.
         var remote = remotes?.For(home);
-        if (remote is not null && target.Joined)
+        var homedRemotely = remote is not null && target.Joined;
+
+        // A chain is judged now, while the person or the intake composing it can still act on the
+        // answer — not at a close nobody is watching (D65 §4).
+        if (JudgeChain(ask, registered, home, remote is not null, homedRemotely, addressable) is { } unfitChain)
+        {
+            return new(QuestPublishRefusal.BadChain, unfitChain, Quest: null, addressable);
+        }
+
+        if (homedRemotely)
         {
             // Names and hashes cross; bytes never do — the relay's signature has no field for them.
-            var answer = await remote.PublishAsync(
-                from, to, title, body, carried.Links, carried.Attachments, ct).ConfigureAwait(false);
+            // The chain crosses whole: its home is the one that closes each step and publishes the next.
+            var answer = await remote!.PublishAsync(
+                from, to, title, body, carried.Links, carried.Attachments, ask.Then, ct).ConfigureAwait(false);
             if (answer.Status == 0)
             {
                 return new(
@@ -239,7 +264,7 @@ public sealed class QuestExchange(
         }
 
         var quest = await quests.PublishAsync(
-            from, to, title, body, now, home, carried.Links, carried.Attachments, ct).ConfigureAwait(false);
+            from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct).ConfigureAwait(false);
 
         var caution = target.Registered
             ? ""
@@ -253,6 +278,61 @@ public sealed class QuestExchange(
             + "decide. Do not make the change yourself."
             + await KeepAsync(quest, ask, carried, ct).ConfigureAwait(false),
             quest, addressable);
+    }
+
+    /// <summary>
+    /// Every step of a chain must be publishable when its turn comes — so each is judged as its own
+    /// publish would be, asked on behalf of the chain's asker, and each must live in the same home as
+    /// the quest it follows. Null when the chain is fit (or there is none).
+    /// </summary>
+    /// <remarks>
+    /// <b>One home per chain</b> (D47 §5): a step is published by the close of the one before it, at
+    /// whichever store closed it. A remote could not publish into this machine's store, and a quest for
+    /// a local-only repository homed at the remote is exactly the disclosure the boundary forbids — so
+    /// a chain that straddles the two is refused rather than homed wrongly.
+    /// </remarks>
+    private static string? JudgeChain(
+        QuestAsk ask, IReadOnlyList<Registration> registered, string home, bool hasRemote, bool homedRemotely,
+        IReadOnlyList<string> addressable)
+    {
+        if (ask.Then.Count > MaxChain)
+        {
+            return $"A chain carries at most {MaxChain} steps after its first quest — this one was given "
+                   + $"{ask.Then.Count}. Publish the rest when the work gets there.";
+        }
+
+        foreach (var (step, index) in ask.Then.Select((step, index) => (step, index + 1)))
+        {
+            if (string.IsNullOrWhiteSpace(step.To) || string.IsNullOrWhiteSpace(step.Title) || string.IsNullOrWhiteSpace(step.Body))
+            {
+                return $"Step {index} of the chain needs whom to ask, a title and a body — the same three words any quest does.";
+            }
+
+            if (string.Equals(step.To, ask.From, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"Step {index} asks `{step.To}`, which is the chain's own asker — every step is asked on its "
+                       + "behalf, so that would be a quest to itself. Its own backlog is the place for that.";
+            }
+
+            var receiver = registered.FirstOrDefault(r =>
+                string.Equals(r.Repository, step.To, StringComparison.OrdinalIgnoreCase));
+            if (receiver is null || !receiver.Adopted || !Workspaces.Same(receiver.InWorkspace, home))
+            {
+                return $"Step {index} asks `{step.To}`, which cannot be asked from `{ask.From}` — nothing would see it "
+                       + $"when its turn came. Addressable: {string.Join(", ", addressable)}.";
+            }
+
+            var stepRemotely = hasRemote && receiver.Joined;
+            if (stepRemotely != homedRemotely)
+            {
+                return $"Step {index} asks `{step.To}`, which lives {(stepRemotely ? "at the remote" : "on this machine")}, "
+                       + $"and the chain starts at `{ask.To}`, which lives {(homedRemotely ? "at the remote" : "on this machine")}. "
+                       + "A chain has one home: each step is published where the one before it closes. Publish the "
+                       + "other half as its own quest when this one is done.";
+            }
+        }
+
+        return null;
     }
 
     /// <summary>What a publish carries once judged: the links and files a record may name, or why not.</summary>
@@ -497,7 +577,13 @@ public sealed class QuestExchange(
 
         if (move.Moved)
         {
-            return new(QuestRespondRefusal.None, $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.", move.Quest);
+            // The chain moved on with the close (D65 §4) — said here, because the next step is now
+            // somebody's open quest and whoever closed this one should know whose.
+            var then = move.FollowUp is { } next
+                ? $"\n\nThen: published `#{next.Id}` to `{next.To}` on behalf of `{next.From}` — {next.Status}."
+                  + (next.Then.Count > 0 ? $" {next.Then.Count} more step(s) follow it." : "")
+                : "";
+            return new(QuestRespondRefusal.None, $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{then}", move.Quest);
         }
 
         // The store refused the transition; the quest comes back unchanged so the answer can name the

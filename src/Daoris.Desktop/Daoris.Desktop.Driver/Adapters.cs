@@ -28,6 +28,12 @@ public sealed record SessionTarget(
     /// <summary>Files the quest carries, with where this machine keeps each — or null where it does not.</summary>
     public IReadOnlyList<QuestFileView> Attachments { get; init; } = [];
 
+    /// <summary>What the service publishes when this closes done (D65 §4) — told, so the session knows.</summary>
+    public IReadOnlyList<QuestStepView> Then { get; init; } = [];
+
+    /// <summary>The quest this one follows, when it is a step of a chain.</summary>
+    public string? Parent { get; init; }
+
     /// <summary>
     /// The directory the session is handed as <c>DAORIS_QUEST_ATTACHMENTS</c> — the one the service
     /// keeps this quest's files in — or null when none of them is on this machine.
@@ -74,9 +80,30 @@ public static class TargetPrompt
     /// </summary>
     private static string Carried(SessionTarget target)
     {
-        if (target.Links.Count == 0 && target.Attachments.Count == 0) return "";
+        if (target.Links.Count == 0 && target.Attachments.Count == 0 && target.Parent is null && target.Then.Count == 0)
+        {
+            return "";
+        }
 
         var text = new StringBuilder();
+
+        // Where it sits in a chain the asker composed: what it follows, and what its close publishes —
+        // so a verifying session knows whose work it checks, and a developing one that a check comes.
+        if (target.Parent is { } parent)
+        {
+            text.AppendLine().AppendLine(
+                $"It follows quest `#{parent}`, which is done — read that quest for the work this one builds on.");
+        }
+
+        if (target.Then.Count > 0)
+        {
+            var next = target.Then[0];
+            text.AppendLine().AppendLine(
+                $"When you close it `done`, the asker's next step is published to `{next.To}`: \"{next.Title}\""
+                + (target.Then.Count > 1 ? $", with {target.Then.Count - 1} more after it." : ".")
+                + " Close it `done` only when that step can start from what you landed.");
+        }
+
         if (target.Links.Count > 0)
         {
             text.AppendLine().AppendLine("Links the asker gave with it — read them; they are part of the ask:");

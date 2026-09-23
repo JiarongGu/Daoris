@@ -238,6 +238,27 @@ public sealed class RemoteSyncTests
         Assert.DoesNotContain("/srv/else", mirror.Value.Json);
     }
 
+    /// <summary>A mirrored quest shows its chain as its home holds it — what follows, and what it follows (D65 §4).</summary>
+    [Fact]
+    public void The_quest_mirror_carries_the_chain()
+    {
+        const string remoteQuests = """
+            [
+              { "id": "abc123", "from": "Elsewhere", "to": "Shared", "title": "Verify", "body": "b",
+                "status": "Open", "filed": "2026-09-20T10:00:00+00:00", "updated": "2026-09-20T10:00:00+00:00",
+                "parent": "fff000",
+                "then": [{ "to": "Elsewhere", "title": "Report on {parent}", "body": "Say it." }] }
+            ]
+            """;
+
+        var mirror = RemoteSyncPayloads.Quests(remoteQuests, new HashSet<string>(["Shared"]));
+
+        using var document = JsonDocument.Parse(mirror!.Value.Json);
+        var quest = document.RootElement.GetProperty("quests")[0];
+        Assert.Equal("fff000", quest.GetProperty("parent").GetString());
+        Assert.Equal("Report on {parent}", quest.GetProperty("then")[0].GetProperty("title").GetString());
+    }
+
     /// <summary>
     /// The remote's registry mirrors down as FOREIGN rows only (D47 §5): a teammate's repository
     /// becomes addressable here, while anything this machine holds keeps its own registration — the

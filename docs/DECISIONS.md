@@ -2389,3 +2389,22 @@ dropping it, because dropped looks kept. And the local route that serves a kept 
 **loopback only and sandboxed** (`Content-Security-Policy: sandbox`, `nosniff`, a download for
 anything that is not an image, a PDF or text), because it serves from the platform's own origin, and
 an attached HTML file would otherwise run with every route the host answers.
+
+**Amended 2026-09-23, building INT5: a chain is a list, judged when composed, with one home.** `then`
+is an ordered list of steps rather than a nested `then` per step, so an agent writes the chain once
+as a list. Closing `done` publishes the first step in the **same transaction**, carrying the rest.
+Five choices, each with its reason:
+- **Every step is asked on behalf of the chain's asker**, because the asker composed the whole of it.
+  A step back to the asker is therefore refused as a self-ask.
+- **A step's id derives from its parent as well as its words.** Ids are content-derived, and a step
+  titled "Verify in the browser" would otherwise collide with any older quest of those words and
+  quietly join it. An unchained quest's id is unchanged.
+- **Judged when composed, not at the close.** The person or the intake composing the chain can act
+  on a refusal; nobody is watching a close.
+- **One home per chain** (D47 §5). Each step is published wherever the one before it closes. A
+  chain straddling the remote and this machine could only be homed wrongly, so it is refused naming
+  both halves.
+- **A decline stops the chain**, because a decline is an answer rather than a finish.
+
+`{parent}` in a step's words becomes the parent's id at the moment of publishing, and a chain carries
+at most five steps after its first quest.

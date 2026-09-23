@@ -89,6 +89,39 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
+/**
+ * **A chain moves on when its quest closes done** (D65 §4) — over the real host, whose close publishes
+ * the next step in the same transaction. The drawer shows what is coming before it comes, the close's
+ * toast names the step it published, and the step says which quest it follows.
+ */
+test('a chain moves on when its quest closes done', async ({ page, request }) => {
+  const published = await request.post('/api/quests', {
+    data: {
+      from: 'game', to: 'engine', title: 'Develop the streaming cap', body: 'Cap hydration per frame.',
+      then: [{ to: 'engine', title: 'Verify {parent} in a playtest', body: 'Stream the world and watch for seams.' }],
+    },
+  });
+  const parent = (await published.json() as { quest: { id: string } }).quest.id;
+
+  await page.goto('/');
+  await nav(page, 'Quests').click();
+  await page.getByText('Develop the streaming cap').first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
+  await dialog.getByRole('button', { name: 'done', exact: true }).click();
+  await expect(page.getByText(/Then: published `#[0-9a-f]{6}` to `engine`/).first()).toBeVisible();
+
+  // The step is an ordinary open quest, named with the id of the one it follows.
+  const step = page.getByText(`Verify #${parent} in a playtest`).first();
+  await expect(step).toBeVisible();
+  await expect(page.getByText(`follows #${parent}`).first()).toBeVisible();
+
+  // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
+  await step.click();
+  await page.getByRole('dialog').getByRole('button', { name: 'done', exact: true }).click();
+  await expect(page.getByText(/is now Done/).first()).toBeVisible();
+});
+
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();

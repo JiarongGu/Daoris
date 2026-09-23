@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**317 CLI tests, 311 service, 354 driver, 96 desktop modules, 530 web unit, 15 Playwright**, 59
-devkit, 56/56 release rehearsal, **203/203 family rehearsal** (it names its own phases when you run
+**317 CLI tests, 330 service, 356 driver, 96 desktop modules, 534 web unit, 16 Playwright**, 59
+devkit, 56/56 release rehearsal, **206/206 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -243,8 +243,8 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **The actionable rows are the regular task's** (D65): **INT4** (the intake) and **INT5** (`then`)
-  are ready to build; INT3 waits on the owner's yes and INT6 needs the owner present. Everything
+- **The actionable row is the regular task's** (D65): **INT4** (the intake) is ready to build;
+  INT3 waits on the owner's yes and INT6 needs the owner present. Everything
   else still waits on something. **Three are the owner's** (ACP2 and DEPLOY1's second half each
   cost a real login; PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's
   transcripts, TOOL5 and CANON2 on a repository naming what it wants, HARNESS1 on the same, REH1
@@ -255,9 +255,9 @@ the traps that are not in any contract, because they were found rather than desi
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 317 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (311),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (330),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (354), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (96), `npm run rehearse:family` (203/203), `npm run test:web` (530 vitest + 15 Playwright),
+  (356), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (96), `npm run rehearse:family` (206/206), `npm run test:web` (534 vitest + 16 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -271,18 +271,18 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Fifteen items are open** and every closed one is
+the archive; its decision is **D53, accepted**). **Fourteen items are open** and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
 last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
 that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
 question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
-design's §5 is realised and what waits is a tool somebody names. The other five are the regular
+design's §5 is realised and what waits is a tool somebody names. The other four are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **INT4 and INT5 are the next builds** (D65): no login, no external event. INT3 waits on the
-owner's yes. Each item is one session-sized landing, TDD, gates green, moved to the archive on
+🔴 **INT4 is the next build** (D65): no login, no external event, and its intake composes chains
+with INT5's `then`. INT3 waits on the owner's yes. Each item is one session-sized landing, TDD, gates green, moved to the archive on
 completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
@@ -440,8 +440,9 @@ both are the owner's.**
 workspace; an **intake session** (the harness carries the model, D24) reads the ticket, decides
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
-engine. Nothing new runs a model and nothing new orchestrates. **INT1 and INT2 are in the
-archive**: a plugin hands every session its servers, and a quest carries links and files.
+engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2 and INT5 are in the
+archive**: a plugin hands every session its servers, a quest carries links and files, and a quest
+can name what comes next.
 
 - [ ] ⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
   requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
@@ -450,8 +451,6 @@ archive**: a plugin hands every session its servers, and a quest carries links a
   from the registry; `daoris-driver ask --workspace … [--file …] [--url …] "…"` and the desktop
   composer at workspace scope; `intakeAdapter` in `driver.json`; the declarations-only tier that
   proposes and reports itself. Proven with no model by the rehearsal; a real ask is the owner's.
-- [ ] **INT5 — `then` on a quest.** Published by the exchange at the moment of `done`, atomically;
-  the driver picks it up at its next look. Linear in v1.
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 

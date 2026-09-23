@@ -62,7 +62,23 @@ public sealed record Quest(
     /// else says a file exists without being able to open it.
     /// </summary>
     public IReadOnlyList<QuestAttachment> Attachments { get; init; } = [];
+
+    /// <summary>
+    /// What happens when this closes done (D65 §4): the next step is published as part of the close,
+    /// asked on behalf of the same asker and carrying the rest. Empty for an ordinary quest. A chain is
+    /// data on the quest — no engine runs it; the driver drives each step as it drives any quest.
+    /// </summary>
+    public IReadOnlyList<QuestStep> Then { get; init; } = [];
+
+    /// <summary>The quest whose close published this one, when it is a step of a chain.</summary>
+    public string? Parent { get; init; }
 }
+
+/// <summary>One step of a chain: whom to ask next, and what (D65 §4).</summary>
+/// <param name="To">The repository asked — addressable from the chain's asker, judged when composed.</param>
+/// <param name="Title">One line. <c>{parent}</c> becomes the id of the quest this step follows.</param>
+/// <param name="Body">Why, and the evidence. <c>{parent}</c> is expanded here too.</param>
+public sealed record QuestStep(string To, string Title, string Body);
 
 /// <summary>A file a quest carries, as its record names it — never where it lies on a disk.</summary>
 /// <param name="Name">The file's own name, made safe to keep: what a reader and a session see.</param>
@@ -72,7 +88,8 @@ public sealed record QuestAttachment(string Name, string Sha256, long Bytes);
 
 /// <param name="Quest">The quest as it now stands — null when no such id exists.</param>
 /// <param name="Moved">Whether THIS call moved it. False with a non-null quest is a refused move.</param>
-public sealed record QuestMove(Quest? Quest, bool Moved);
+/// <param name="FollowUp">The chain's next step, published by this close — null when there was none.</param>
+public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null);
 
 /// <summary>
 /// Quests, held by the service rather than written into anyone's repository.
@@ -124,7 +141,9 @@ public sealed class QuestStore
                   home        TEXT NULL,
                   workspace   TEXT NOT NULL DEFAULT '{Workspaces.Default}',
                   links       TEXT NOT NULL DEFAULT '[]',
-                  attachments TEXT NOT NULL DEFAULT '[]'
+                  attachments TEXT NOT NULL DEFAULT '[]',
+                  then_steps  TEXT NOT NULL DEFAULT '[]',
+                  parent      TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -141,6 +160,9 @@ public sealed class QuestStore
             ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
             ("links", "links TEXT NOT NULL DEFAULT '[]'"),
             ("attachments", "attachments TEXT NOT NULL DEFAULT '[]'"),
+            // A chain (D65 §4): `then` is an SQL keyword, so the column says what it holds.
+            ("then_steps", "then_steps TEXT NOT NULL DEFAULT '[]'"),
+            ("parent", "parent TEXT NULL"),
         })
         {
             await using var probe = _connection.CreateCommand();
@@ -161,12 +183,16 @@ public sealed class QuestStore
     /// </summary>
     /// <remarks>
     /// Content-derived so publishing the same quest twice collides rather than multiplying — an agent
-    /// that retries should not produce a second copy of the same ask.
+    /// that retries should not produce a second copy of the same ask. A chain's step also derives from
+    /// its PARENT (D65 §4): "Verify in the browser" is a title many chains will use, and a step that
+    /// collided with an earlier quest of those words would quietly join somebody else's closed quest.
+    /// A quest with no parent keeps exactly the id it always had.
     /// </remarks>
-    private static string MakeId(string from, string to, string title) =>
+    internal static string MakeId(string from, string to, string title, string? parent = null) =>
         Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
-                System.Text.Encoding.UTF8.GetBytes($"{from}->{to}:{title.Trim()}")))[..6].ToLowerInvariant();
+                System.Text.Encoding.UTF8.GetBytes(
+                    $"{from}->{to}:{title.Trim()}" + (parent is null ? "" : $"<-{parent}"))))[..6].ToLowerInvariant();
 
     /// <summary>Publish a quest. Returns the existing one unchanged if it was already asked.</summary>
     /// <param name="workspace">
@@ -175,11 +201,13 @@ public sealed class QuestStore
     /// </param>
     /// <param name="links">Addresses the quest carries, already judged by the exchange.</param>
     /// <param name="attachments">Files the quest carries, by name — the bytes are never this store's.</param>
+    /// <param name="then">The chain after this quest (D65 §4), already judged by the exchange.</param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
         string? workspace = null,
         IReadOnlyList<string>? links = null,
         IReadOnlyList<QuestAttachment>? attachments = null,
+        IReadOnlyList<QuestStep>? then = null,
         CancellationToken ct = default)
     {
         var id = MakeId(from, to, title);
@@ -192,15 +220,29 @@ public sealed class QuestStore
         {
             Links = links ?? [],
             Attachments = attachments ?? [],
+            Then = then ?? [],
         };
 
+        await InsertAsync(quest, transaction: null, ct).ConfigureAwait(false);
+        return quest;
+    }
+
+    /// <summary>
+    /// Write a new row. OR IGNORE, because the id is the ask: a step a crash-and-retry publishes twice
+    /// is one quest, and the row already there is the one that stands.
+    /// </summary>
+    private async Task InsertAsync(Quest quest, SqliteTransaction? transaction, CancellationToken ct)
+    {
         await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, NULL, $filed, $updated, $workspace, $links, $attachments)
+            INSERT OR IGNORE INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, NULL, $filed, $updated, $workspace, $links, $attachments, $then, $parent)
             """;
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
+        command.Parameters.AddWithValue("$then", StepsJson(quest.Then));
+        command.Parameters.AddWithValue("$parent", (object?)quest.Parent ?? DBNull.Value);
         command.Parameters.AddWithValue("$workspace", quest.Workspace);
         command.Parameters.AddWithValue("$id", quest.Id);
         command.Parameters.AddWithValue("$sender", quest.From);
@@ -211,8 +253,25 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$filed", quest.Filed.ToString("O"));
         command.Parameters.AddWithValue("$updated", quest.Updated.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
 
-        return quest;
+    /// <summary>
+    /// The chain's next step as the close of <paramref name="parent"/> publishes it: asked on behalf of
+    /// the same asker, of the step's receiver, with <c>{parent}</c> expanded, carrying the rest.
+    /// </summary>
+    private static Quest? NextStep(Quest parent, DateTimeOffset now)
+    {
+        if (parent.Then.Count == 0) return null;
+        var step = parent.Then[0];
+        var title = step.Title.Replace("{parent}", $"#{parent.Id}", StringComparison.Ordinal);
+        return new Quest(
+            MakeId(parent.From, step.To, title, parent.Id), parent.From, step.To, title,
+            step.Body.Replace("{parent}", $"#{parent.Id}", StringComparison.Ordinal),
+            QuestStatus.Open, null, now, now, Workspace: parent.Workspace)
+        {
+            Then = parent.Then.Skip(1).ToList(),
+            Parent = parent.Id,
+        };
     }
 
     /// <summary>
@@ -242,16 +301,40 @@ public sealed class QuestStore
 
         var from = string.Join(", ", allowed.Select(s => $"'{s}'"));
 
-        await using var command = _connection.CreateCommand();
-        command.CommandText =
-            $"UPDATE quests SET status = $status, note = $note, updated = $updated WHERE id = $id AND home IS NULL AND status IN ({from})";
-        command.Parameters.AddWithValue("$status", status.ToString());
-        command.Parameters.AddWithValue("$note", (object?)note ?? DBNull.Value);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
-        command.Parameters.AddWithValue("$id", id);
-        var moved = await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 1;
+        // A close that finishes a chain's step publishes the next one IN THE SAME TRANSACTION (D65 §4):
+        // there is no moment at which the work is done and the chain lost, and a close another host
+        // wins publishes nothing here. The chain is read first — it is fixed at publish, so reading it
+        // before the guarded UPDATE cannot race anything.
+        var next = status == QuestStatus.Done && await FindAsync(id, ct).ConfigureAwait(false) is { } closing
+            ? NextStep(closing, now)
+            : null;
 
-        return new(await FindAsync(id, ct).ConfigureAwait(false), moved);
+        await using var transaction = next is null
+            ? null
+            : (SqliteTransaction)await _connection.BeginTransactionAsync(ct).ConfigureAwait(false);
+
+        bool moved;
+        await using (var command = _connection.CreateCommand())
+        {
+            command.Transaction = transaction;
+            command.CommandText =
+                $"UPDATE quests SET status = $status, note = $note, updated = $updated WHERE id = $id AND home IS NULL AND status IN ({from})";
+            command.Parameters.AddWithValue("$status", status.ToString());
+            command.Parameters.AddWithValue("$note", (object?)note ?? DBNull.Value);
+            command.Parameters.AddWithValue("$updated", now.ToString("O"));
+            command.Parameters.AddWithValue("$id", id);
+            moved = await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 1;
+        }
+
+        if (transaction is not null)
+        {
+            if (moved) await InsertAsync(next!, transaction, ct).ConfigureAwait(false);
+            await transaction.CommitAsync(ct).ConfigureAwait(false);
+        }
+
+        return new(
+            await FindAsync(id, ct).ConfigureAwait(false), moved,
+            moved && next is not null ? await FindAsync(next.Id, ct).ConfigureAwait(false) : null);
     }
 
     /// <summary>The states a move to <paramref name="target"/> may start from — D47 §5's table.</summary>
@@ -273,14 +356,16 @@ public sealed class QuestStore
         // What a quest carries is fixed at publish, like its words — but a mirror row written by a
         // version that did not know about carrying has nothing, so the home's record overwrites it.
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace, links, attachments)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $home, $workspace, $links, $attachments)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace, links, attachments, then_steps, parent)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $home, $workspace, $links, $attachments, $then, $parent)
             ON CONFLICT (id) DO UPDATE SET
               status = $status, note = $note, updated = $updated, home = $home, workspace = $workspace,
-              links = $links, attachments = $attachments
+              links = $links, attachments = $attachments, then_steps = $then, parent = $parent
             """;
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
+        command.Parameters.AddWithValue("$then", StepsJson(quest.Then));
+        command.Parameters.AddWithValue("$parent", (object?)quest.Parent ?? DBNull.Value);
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(quest.Workspace));
         command.Parameters.AddWithValue("$id", quest.Id);
         command.Parameters.AddWithValue("$sender", quest.From);
@@ -348,7 +433,35 @@ public sealed class QuestStore
     {
         Links = ReadLinks(reader.GetString(reader.GetOrdinal("links"))),
         Attachments = ReadAttachments(reader.GetString(reader.GetOrdinal("attachments"))),
+        Then = ReadSteps(reader.GetString(reader.GetOrdinal("then_steps"))),
+        Parent = reader.IsDBNull(reader.GetOrdinal("parent")) ? null : reader.GetString(reader.GetOrdinal("parent")),
     };
+
+    private static string StepsJson(IReadOnlyList<QuestStep> steps) => Json(writer =>
+    {
+        writer.WriteStartArray();
+        foreach (var step in steps)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("to", step.To);
+            writer.WriteString("title", step.Title);
+            writer.WriteString("body", step.Body);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    });
+
+    private static IReadOnlyList<QuestStep> ReadSteps(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.EnumerateArray()
+            .Select(item => new QuestStep(
+                item.GetProperty("to").GetString() ?? "",
+                item.GetProperty("title").GetString() ?? "",
+                item.GetProperty("body").GetString() ?? ""))
+            .ToList();
+    }
 
     // Written and read by hand rather than through the reflection serializer, for the same reason the
     // registration store's lists are: nothing here may quietly stop working under AOT.

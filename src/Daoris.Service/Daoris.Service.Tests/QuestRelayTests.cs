@@ -40,16 +40,17 @@ public sealed class QuestRelayTests : IAsyncLifetime
         public RemoteQuestAnswer NextAnswer { get; set; } = new(0, "unreachable", null);
         public List<string> Calls { get; } = [];
 
-        /// <summary>What the last publish carried across — the names the remote was told.</summary>
-        public (IReadOnlyList<string> Links, IReadOnlyList<QuestAttachment> Attachments) Carried { get; private set; }
+        /// <summary>What the last publish carried across — the names the remote was told, and the chain.</summary>
+        public (IReadOnlyList<string> Links, IReadOnlyList<QuestAttachment> Attachments, IReadOnlyList<QuestStep> Then) Carried { get; private set; }
 
         public Task<RemoteQuestAnswer> PublishAsync(
             string from, string to, string title, string body,
             IReadOnlyList<string> links, IReadOnlyList<QuestAttachment> attachments,
+            IReadOnlyList<QuestStep> then,
             CancellationToken ct = default)
         {
             Calls.Add($"publish {to}:{title}");
-            Carried = (links, attachments);
+            Carried = (links, attachments, then);
             return Task.FromResult(NextAnswer);
         }
 
@@ -179,6 +180,45 @@ public sealed class QuestRelayTests : IAsyncLifetime
         Assert.True(files.Has("abc123", described));
 
         Directory.Delete(home, recursive: true);
+    }
+
+    /// <summary>
+    /// 🔴 One home per CHAIN (D47 §5, D65 §4): every step is published by the close of the one before,
+    /// so every step is published wherever that close happens. A chain that would straddle the remote
+    /// and this machine could only be homed wrongly — a local-only repository's quest at the remote is
+    /// the disclosure boundary broken — so it is refused when composed, naming both.
+    /// </summary>
+    [Theory]
+    [InlineData("Federated", "Homebody")]
+    [InlineData("Homebody", "Federated")]
+    public async Task A_chain_that_would_cross_homes_is_refused_when_composed(string first, string next)
+    {
+        var outcome = await Exchange().PublishAsync(
+            new QuestAsk("Asker", first, "Develop", "why") { Then = [new QuestStep(next, "Verify", "b")] }, Now);
+
+        Assert.Equal(QuestPublishRefusal.BadChain, outcome.Refusal);
+        Assert.Contains(first, outcome.Message);
+        Assert.Contains(next, outcome.Message);
+        Assert.Empty(_remote.Calls);
+        Assert.Empty(await _quests.ListAsync());
+    }
+
+    /// <summary>A joined chain goes to its home whole, and the home's close publishes each step.</summary>
+    [Fact]
+    public async Task A_joined_chain_is_carried_to_its_home_whole()
+    {
+        _remote.NextAnswer = new(200, "Published quest `#abc123` to `Federated` — Open.", RemoteQuest() with
+        {
+            Then = [new QuestStep("Federated", "Verify {parent}", "b")],
+        });
+
+        var outcome = await Exchange().PublishAsync(
+            new QuestAsk("Asker", "Federated", "Do it", "why") { Then = [new QuestStep("Federated", "Verify {parent}", "b")] },
+            Now);
+
+        Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);
+        Assert.Equal("Verify {parent}", Assert.Single(_remote.Carried.Then).Title);
+        Assert.Equal("Verify {parent}", Assert.Single((await _quests.FindAsync("abc123"))!.Then).Title);
     }
 
     /// <summary>A local-only receiver's quests stay entirely local — the remote never hears of them.</summary>

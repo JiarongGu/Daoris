@@ -361,6 +361,17 @@ The first version: doctrine that installs, is checked, and flows back.
   file. A file kept on another machine is said to be elsewhere, never offered as a path. The host
   serves a kept file to this machine only, sandboxed, and anything but an image, a PDF or text as a
   download, so an attached page cannot run as the platform.
+- **A quest can name what comes next** (D65 §4). `then` is a list of steps (develop, then verify,
+  then report), and closing the quest `done` publishes the first in the same transaction, asked on
+  behalf of the same asker. The step carries the rest of the chain and says which quest it follows;
+  `{parent}` in its words becomes that id. The driver takes each step at its next look, so the
+  chain *is* the loop, with no engine. A decline stops it. The chain is judged when it is composed:
+  every step must be addressable, and every step must live in the same home. The composer offers
+  a next step; the drawer shows what is coming and what a quest follows; `quest_publish` takes the
+  list; and a driven session is told both what its quest follows and what closing it will publish.
+- **Scrollbars follow the theme.** A scrollbar is painted by the browser, and with no
+  `color-scheme` it stayed light down a dark drawer. The page now declares both schemes, and the
+  bar wears the line token.
 - **"Send it back as a quest" opens the composer again.** The review's door switched the window to
   Quests and opened nothing, because the composer consumed the draft during render and lost it to
   the parent's clear. The palette's *start a session* and *review* reached the Work frame the same

@@ -93,7 +93,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **A native form control carries the OS accent** (2026-09-23): `type="search"`'s built-in clear
 >   button is painted by WebView2 in Windows' accent colour — a blue ✕ in a palette with no blue.
 >   The platform draws its own affordances; a native one left showing is a defect in whichever
->   colour the person's system happens to be.
+>   colour the person's system happens to be. **The same goes for a scrollbar** (2026-09-23): with
+>   no `color-scheme` it is painted light whatever the tokens say, which showed as a pale OS bar
+>   down a dark drawer the first time the composer grew long enough to scroll. `:root` declares
+>   `color-scheme: light dark`, and the bar wears `--line-strong`.
 > - **A setting is a row** (2026-09-23, owner: *"you have this really long list of setup (this
 >   machine), which probably can be improved ui/ux"*): label, one-line hint, the control at the
 >   right, and the paragraph that motivated it on an info glyph — `SettingRow`. Measured before: five
@@ -202,7 +205,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   its number, before the other marks) and **listed in the drawer**: links as links, and files by
   name and size, with a picture shown as one. The composer takes links one per line, and files by
   drop, paste or *choose files…*, each removable, and it says why a file was left off (the count,
-  or the total) while the person is still choosing.
+  or the total) while the person is still choosing. **A chain** (D65 §4) is behind a press, *add a
+  next step…*, because most asks are one quest: one step, whom and what, and a started step holds
+  the publish back until it is whole. The drawer shows the steps still to come as the asker wrote
+  them, `{parent}` included, and a step's card and drawer say which quest it follows.
 - **Projects** — adopted as cards (two columns wide) with chips and the local/canonical split;
   non-adopters as the marked list with the join steps proposed as text.
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the

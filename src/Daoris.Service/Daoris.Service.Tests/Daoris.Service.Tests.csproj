@@ -13,6 +13,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Service.Core\Daoris.Service.Core.csproj" />
+    <!-- The MCP door's own tools (D65): a path becomes bytes there, and a chain arrives as a list, so
+         the door itself is tested rather than only the exchange behind it. -->
+    <ProjectReference Include="..\Daoris.Service.Mcp\Daoris.Service.Mcp.csproj" />
   </ItemGroup>
 
 </Project>

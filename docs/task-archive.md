@@ -3987,3 +3987,47 @@ shows and sandboxes a file.
 
 Gates: verify (317), service 311, driver 354, modules 96, web 530 + 15, family 203/203, deploy
 39/39.
+
+## INT5 — `then` on a quest (2026-09-23)
+
+- [x] **INT5 — `then` on a quest.** Published by the exchange at the moment of `done`, atomically;
+  the driver picks it up at its next look. Linear in v1.
+
+✅ **done 2026-09-23.** The workflow D65 asked for, as data on the quest: `then` is an ordered list
+of steps (`to`, `title`, `body`, at most five). The store's close to `done` publishes the first
+step **in the same transaction** as the guarded update, so a close another host wins publishes
+nothing here and there is no moment at which the work is done and the chain is lost. Each step is
+asked on behalf of the same asker, carries the rest, and names its `parent`; `{parent}` in its words
+becomes that id.
+
+**A step's id derives from its parent as well as its words.** Ids are content-derived, and a step
+called "Verify in the browser" would otherwise have joined an older quest of the same words; an
+unchained quest's id is unchanged.
+
+`QuestExchange` judges the whole chain when it is composed:
+- every step addressable from the asker;
+- no step back to the asker;
+- no step without its words;
+- one home per chain (D47 §5): a chain straddling the remote and this machine is refused naming
+  both, since each step is published where the one before it closes.
+
+A decline stops the chain. The relay carries the chain to the remote, and the remote's own close
+publishes each step; the mirror carries `then` and `parent` both ways. The HTTP door takes and
+answers the list, and `quest_publish` takes it as `ChainStep[]`. **The MCP door has C# tests for the
+first time**, which also covered INT2's paths-to-bytes. They include its schema: an agent that
+cannot see a chain described cannot compose one.
+
+A driven session is told what its quest follows and what closing it will publish. The platform shows
+the steps still to come and a step's parent, and the composer offers one next step behind a press.
+
+**Seen on the scratch shell:** closing the chained quest in the drawer published *Verify #c7c4de in
+the browser*, marked *follows #c7c4de*, and a step asking the chain's own asker was refused in its
+own sentence. The look also found the drawer's scrollbar painted light in dark, because the page
+declared no `color-scheme`; it now follows the theme.
+
+**Proven by** the family rehearsal: develop → verify, both driven to done by one `--until-idle`, the
+second existing only once the first closed. Playwright proves the real host's close publishes the
+step, and the drawer shows it.
+
+Gates: verify (317), service 330, driver 356, modules 96, web 534 + 16, family 206/206, deploy
+39/39.

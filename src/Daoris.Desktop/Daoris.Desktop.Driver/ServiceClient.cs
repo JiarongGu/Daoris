@@ -214,6 +214,11 @@ public sealed class ServiceClient : IDisposable
                         // The service answers a path only to this machine, and only when the bytes are here.
                         Text(file, "path"))).ToList()
                     : [],
+                Then = quest.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array
+                    ? then.EnumerateArray().Select(step => new QuestStepView(
+                        Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? "")).ToList()
+                    : [],
+                Parent = Text(quest, "parent"),
             });
         }
 

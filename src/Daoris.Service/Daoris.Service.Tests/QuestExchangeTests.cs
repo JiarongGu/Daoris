@@ -201,6 +201,87 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, done.Quest!.Status);
     }
 
+    // ——— A chain (D65 §4): judged when composed, published at the moment the quest closes done.
+
+    private Task<QuestPublishOutcome> Chain(params QuestStep[] then) =>
+        _exchange.PublishAsync(
+            new QuestAsk("Asker", "Declared", "Develop the media config", "Field names are hard-coded.") { Then = then },
+            Now);
+
+    [Fact]
+    public async Task A_chain_moves_on_when_its_quest_closes_done_and_the_answer_says_so()
+    {
+        var published = await Chain(new QuestStep("Quiet", "Verify {parent} in the browser", "Check it."));
+        Assert.Equal(QuestPublishRefusal.None, published.Refusal);
+        Assert.Equal("Quiet", Assert.Single(published.Quest!.Then).To);
+
+        var done = await _exchange.RespondAsync(published.Quest.Id, "done", "Landed.", Now.AddHours(1));
+
+        Assert.Equal(QuestRespondRefusal.None, done.Refusal);
+        var next = (await _quests.ListAsync(receiver: "Quiet")).Single();
+        Assert.Equal("Asker", next.From);
+        Assert.Equal(published.Quest.Id, next.Parent);
+        Assert.Contains($"`#{next.Id}`", done.Message);
+        Assert.Contains("Quiet", done.Message);
+    }
+
+    /// <summary>
+    /// Judged where the person or the intake can still act on the answer — when composing — rather
+    /// than at a close nobody is watching. A step nobody can see is refused naming the step.
+    /// </summary>
+    [Fact]
+    public async Task A_step_to_a_repository_that_cannot_be_asked_is_refused_when_composed()
+    {
+        var outcome = await Chain(new QuestStep("Stranger", "Verify", "b"));
+
+        Assert.Equal(QuestPublishRefusal.BadChain, outcome.Refusal);
+        Assert.Contains("Stranger", outcome.Message);
+        Assert.Contains("Declared", outcome.Message);
+        Assert.Empty(await _quests.ListAsync());
+    }
+
+    /// <summary>Every step is asked on behalf of the chain's asker, so a step to the asker is a self-ask.</summary>
+    [Fact]
+    public async Task A_step_back_to_the_asker_is_refused()
+    {
+        var outcome = await Chain(new QuestStep("Asker", "Report", "b"));
+
+        Assert.Equal(QuestPublishRefusal.BadChain, outcome.Refusal);
+        Assert.Empty(await _quests.ListAsync());
+    }
+
+    [Fact]
+    public async Task A_step_without_its_words_is_refused()
+    {
+        var outcome = await Chain(new QuestStep("Quiet", "  ", "b"));
+
+        Assert.Equal(QuestPublishRefusal.BadChain, outcome.Refusal);
+    }
+
+    [Fact]
+    public async Task A_chain_longer_than_a_quest_carries_is_refused_naming_the_limit()
+    {
+        var steps = Enumerable.Range(0, QuestExchange.MaxChain + 1)
+            .Select(i => new QuestStep("Quiet", $"Step {i}", "b"))
+            .ToArray();
+
+        var outcome = await Chain(steps);
+
+        Assert.Equal(QuestPublishRefusal.BadChain, outcome.Refusal);
+        Assert.Contains($"{QuestExchange.MaxChain}", outcome.Message);
+    }
+
+    /// <summary>A decline answers the chain too: nothing follows it, and the reason is the answer.</summary>
+    [Fact]
+    public async Task A_declined_quest_publishes_no_next_step()
+    {
+        var published = await Chain(new QuestStep("Quiet", "Verify", "b"));
+
+        await _exchange.RespondAsync(published.Quest!.Id, "decline", "Not ours.", Now);
+
+        Assert.Empty(await _quests.ListAsync(receiver: "Quiet", includeClosed: true));
+    }
+
     // ——— What a quest carries (D65 §2): links travel with it; files are kept here, by content.
 
     private static QuestUpload Upload(string name, string content) =>

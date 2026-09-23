@@ -48,8 +48,8 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 
 | Tool | What it does |
 |---|---|
-| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them. Refuses a repository that has not adopted |
-| `quest_list` | What has been asked of whom, and what is still outstanding — links and file names included |
+| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them, and `then`, the steps to ask next once it is done. Refuses a repository that has not adopted |
+| `quest_list` | What has been asked of whom, and what is still outstanding: links, file names, what each follows and what follows it |
 | `quest_respond` | `take`, `done` or `decline` — declining needs a reason |
 
 **A quest carries links and files** (D65 §2). A link is an absolute http or https address, refused
@@ -61,6 +61,14 @@ content outright, and the relay's signature has no field for it. A quest carries
 20 MB in total. A local host tells a caller on this machine where each kept file lies (the
 transcript's rule), and the driver hands a session that directory as `DAORIS_QUEST_ATTACHMENTS`. With
 no Daoris home, files are refused, and links still travel.
+
+**A quest can name what comes next** (D65 §4). `then` is an ordered list of steps (`to`, `title`,
+`body`, at most 5). Closing the quest `done` publishes the first step **in the same transaction**,
+asked on behalf of the same asker, carrying the rest and naming its `parent`. `{parent}` in a step's
+words becomes that id. A decline stops the chain. A step's id derives from its parent too, so a step
+never collides with an older quest of the same words. The whole chain is judged when it is composed:
+every step must be addressable from the asker, and every step must live in the same home as the
+first, because each is published wherever the one before it closes.
 
 The judgement behind those — who may be addressed, what a refusal says, what declining requires —
 lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would

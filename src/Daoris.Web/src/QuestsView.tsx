@@ -1,6 +1,6 @@
 import { type ClipboardEvent, type DragEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Quest, type Session } from './api';
+import { api, type Quest, type QuestStep, type Session } from './api';
 import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
 import { useConsidered, useDriver, useStopSession } from './shell';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
@@ -19,8 +19,12 @@ const EVERYONE = '*';
  * An ask being written. `links` is the text as typed — read into addresses at publish — and `files`
  * are the browser's own handles, read whole only when the ask is sent (D65 §2).
  */
-type Draft = { from: string; to: string; title: string; body: string; links: string; files: File[] };
-const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '', links: '', files: [] };
+type Draft = {
+  from: string; to: string; title: string; body: string; links: string; files: File[];
+  /** One next step (D65 §4), or none. The service takes a longer chain; the composer offers one. */
+  step: QuestStep | null;
+};
+const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '', links: '', files: [], step: null };
 
 /** Whether a drag carries files — a dragged selection of text is the body's business, not ours. */
 const carriesFiles = (event: { dataTransfer: DataTransfer | null }) =>
@@ -148,7 +152,8 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
     }
 
     const { from, to, title, body } = draft;
-    publish.mutate({ from, to, title, body, links: linksOf(draft.links), attachments }, {
+    const then = draft.step ? [draft.step] : [];
+    publish.mutate({ from, to, title, body, links: linksOf(draft.links), attachments, then }, {
       onSuccess: (result) => {
         notify(result.message);
         setDraft(EMPTY_DRAFT);
@@ -262,6 +267,8 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
             <span className="font-mono text-meta text-ink-faint">
               {' '}· {t('quests.card.filed', { ago: ago(quest.filed) })}
               {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
+              {/* A step of a chain says which quest's close published it (D65 §4). */}
+              {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
             </span>
           </p>
           <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{quest.body}</p>
@@ -385,6 +392,12 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
             )}
             <dt className="text-ink-faint">{t('quests.detail.state')}</dt>
             <dd className="m-0">{t(`statusHint.${detail.status}`)}</dd>
+            {detail.parent && (
+              <>
+                <dt className="text-ink-faint">{t('quests.detail.follows')}</dt>
+                <dd className="m-0 font-mono text-meta">#{detail.parent}</dd>
+              </>
+            )}
             {(() => {
               // Why this machine's driver is not starting it, in its own words (D46 §3) — the
               // whole sentence here, where there is room; the Overview row carries it truncated.
@@ -458,6 +471,23 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
               </ul>
             </div>
           )}
+          {(detail.then?.length ?? 0) > 0 && (
+            /* What the service publishes when this closes done (D65 §4) — shown as the asker wrote it,
+               `{parent}` and all: it becomes this quest's id only at the moment of publishing. */
+            <div className="mt-4">
+              <SectionTitle>{t('quests.detail.then')}</SectionTitle>
+              <p className="m-0 mb-2 text-small text-ink-faint">{t('quests.detail.thenHint')}</p>
+              <ol className="m-0 grid list-none gap-2 p-0">
+                {detail.then!.map((step, index) => (
+                  <li key={index} className="min-w-0 border-l-2 border-line-strong pl-3 text-body">
+                    <span className="text-accent">→ {step.to}</span>
+                    <span className="text-ink"> · {step.title}</span>
+                    <p className="m-0 line-clamp-2 text-small text-ink-soft">{step.body}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
           {detail.note && (
             <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{detail.note}</p>
           )}
@@ -521,7 +551,11 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="primary"
-                disabled={busy || !draft.from || !draft.to || !draft.title.trim() || !draft.body.trim()}
+                disabled={
+                  busy || !draft.from || !draft.to || !draft.title.trim() || !draft.body.trim()
+                  // A next step started is a next step owed: the form does not offer half of one.
+                  || (draft.step !== null && (!draft.step.to || !draft.step.title.trim() || !draft.step.body.trim()))
+                }
                 onClick={() => void onPublish()}
               >
                 {t('quests.compose.publish')}
@@ -646,6 +680,54 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
                 </ul>
               )}
             </div>
+            {/* The chain (D65 §4): one next step, published by the service when this closes done.
+                Behind a press, because most asks are one quest and the form should not say otherwise. */}
+            {draft.step === null ? (
+              <div>
+                <Button
+                  type="button" variant="ghost" disabled={busy}
+                  onClick={() => setDraft({ ...draft, step: { to: '', title: '', body: '' } })}
+                >
+                  <Icon name="plus" size={12} />{t('quests.compose.addStep')}
+                </Button>
+              </div>
+            ) : (
+              <fieldset className="m-0 grid gap-2.5 rounded-control border border-line-strong px-3 pb-3 pt-2">
+                <legend className="px-1 text-small text-ink-soft">{t('quests.compose.stepLegend')}</legend>
+                <p className="m-0 text-small text-ink-faint">{t('quests.compose.stepHint')}</p>
+                <label className="grid gap-1 text-small text-ink-soft">
+                  {t('quests.compose.stepTo')}
+                  <SelectField
+                    value={draft.step.to}
+                    onChange={(to) => setDraft({ ...draft, step: { ...draft.step!, to } })}
+                    placeholder={t('quests.compose.toPlaceholder')}
+                    ariaLabel={t('quests.compose.stepTo')}
+                    options={adopterOptions}
+                  />
+                </label>
+                <label className="grid gap-1 text-small text-ink-soft">
+                  {t('quests.compose.stepTitle')}
+                  <input
+                    value={draft.step.title}
+                    onChange={(e) => setDraft({ ...draft, step: { ...draft.step!, title: e.target.value } })}
+                    className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+                  />
+                </label>
+                <label className="grid gap-1 text-small text-ink-soft">
+                  {t('quests.compose.stepBody')}
+                  <textarea
+                    rows={3} value={draft.step.body}
+                    onChange={(e) => setDraft({ ...draft, step: { ...draft.step!, body: e.target.value } })}
+                    className="resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+                  />
+                </label>
+                <div>
+                  <Button type="button" variant="ghost" disabled={busy} onClick={() => setDraft({ ...draft, step: null })}>
+                    <Icon name="x" size={12} />{t('quests.compose.removeStep')}
+                  </Button>
+                </div>
+              </fieldset>
+            )}
           </form>
         </Drawer>
       )}

@@ -290,6 +290,12 @@ public sealed class KnowledgeTools(
             + "Relative paths are the repository you are working in. They are kept on this machine and "
             + "handed to whoever takes the quest here; a remote learns only their names.")]
         string[]? attachments = null,
+        [Description(
+            "What to ask next, in order, once this quest is DONE — develop, then verify, then report. "
+            + "Each step is published automatically when the one before it closes done, on behalf of "
+            + "the same asker; a decline stops the chain. Write {parent} in a step's title or body for "
+            + "the id of the quest it follows.")]
+        ChainStep[]? then = null,
         CancellationToken ct = default)
     {
         // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
@@ -307,7 +313,12 @@ public sealed class KnowledgeTools(
         // with the HTTP host so the same ask cannot be deliverable through one door and refused at
         // the other.
         var outcome = await exchange.PublishAsync(
-                new QuestAsk(from, to, title, body) { Links = links ?? [], Uploads = uploads },
+                new QuestAsk(from, to, title, body)
+                {
+                    Links = links ?? [],
+                    Uploads = uploads,
+                    Then = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
+                },
                 DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         return outcome.Message;
@@ -348,6 +359,10 @@ public sealed class KnowledgeTools(
                     // Names only: whoever takes the quest on the machine that keeps them is handed them.
                     text.AppendLine($"  files: {string.Join(" · ", quest.Attachments.Select(a => a.Name))}");
                 }
+
+                // The chain around it (D65 §4): what this one follows, and what its close publishes.
+                if (quest.Parent is { } parent) text.AppendLine($"  follows `#{parent}`");
+                foreach (var step in quest.Then) text.AppendLine($"  then → `{step.To}`: {step.Title}");
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
             }
@@ -396,3 +411,16 @@ public sealed class KnowledgeTools(
     }
 
 }
+
+/// <summary>
+/// One step of a chain as an agent writes it (D65 §4) — the door's own shape, so each field can
+/// describe itself to the model that fills it. Nullable because an agent may leave one out, and the
+/// exchange refuses a step without its words naming which step it was.
+/// </summary>
+public sealed record ChainStep(
+    [property: Description("The repository asked at this step. Every step is asked on behalf of the chain's asker.")]
+    string? To,
+    [property: Description("One line: what is wanted. {parent} becomes the id of the quest this step follows.")]
+    string? Title,
+    [property: Description("Why, and how to tell it is done — e.g. where to look in the browser. {parent} works here too.")]
+    string? Body);

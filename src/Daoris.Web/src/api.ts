@@ -52,7 +52,13 @@ export type Quest = {
   /** Absent from a host older than D65 — the same as carrying nothing. */
   links?: string[];
   attachments?: QuestAttachment[];
+  /** What this quest's close publishes next (D65 §4), in order — the service does it, not the page. */
+  then?: QuestStep[];
+  /** The quest whose close published this one, when it is a step of a chain. */
+  parent?: string;
 };
+/** One step of a chain. `{parent}` in its words becomes the id of the quest it follows. */
+export type QuestStep = { to: string; title: string; body: string };
 export type QuestAction = { quest: Quest; message: string };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
@@ -189,7 +195,7 @@ export const api = {
   // shared deployment refuses content outright, and the platform is only ever served by a local one.
   publishQuest: (quest: {
     from: string; to: string; title: string; body: string;
-    links?: string[]; attachments?: { name: string; content: string }[];
+    links?: string[]; attachments?: { name: string; content: string }[]; then?: QuestStep[];
   }) => post<QuestAction>('/api/quests', quest),
   /** Where a kept file is opened — the local host's own route, which answers this machine only. */
   attachmentUrl: (quest: string, sha256: string) =>

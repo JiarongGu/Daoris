@@ -16,6 +16,7 @@ public interface IRemoteQuestClient
     Task<RemoteQuestAnswer> PublishAsync(
         string from, string to, string title, string body,
         IReadOnlyList<string> links, IReadOnlyList<QuestAttachment> attachments,
+        IReadOnlyList<QuestStep> then,
         CancellationToken ct = default);
 
     Task<RemoteQuestAnswer> RespondAsync(
@@ -175,9 +176,22 @@ public sealed class HttpRemoteQuests(RemoteConfig config) : IRemoteQuestClient
     public Task<RemoteQuestAnswer> PublishAsync(
         string from, string to, string title, string body,
         IReadOnlyList<string> links, IReadOnlyList<QuestAttachment> attachments,
+        IReadOnlyList<QuestStep> then,
         CancellationToken ct = default) =>
         SendAsync("/api/quests", writer =>
         {
+            // The chain crosses whole (D65 §4): the remote is its home, and its close publishes each step.
+            writer.WriteStartArray("then");
+            foreach (var step in then)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("to", step.To);
+                writer.WriteString("title", step.Title);
+                writer.WriteString("body", step.Body);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
             writer.WriteString("from", from);
             writer.WriteString("to", to);
             writer.WriteString("title", title);
@@ -282,6 +296,15 @@ public sealed class HttpRemoteQuests(RemoteConfig config) : IRemoteQuestClient
                             a.GetProperty("sha256").GetString()!,
                             a.GetProperty("bytes").GetInt64())).ToList()
                         : [],
+                    Then = q.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array
+                        ? then.EnumerateArray().Select(s => new QuestStep(
+                            s.GetProperty("to").GetString()!,
+                            s.GetProperty("title").GetString()!,
+                            s.GetProperty("body").GetString()!)).ToList()
+                        : [],
+                    Parent = q.TryGetProperty("parent", out var parent) && parent.ValueKind == JsonValueKind.String
+                        ? parent.GetString()
+                        : null,
                 };
             }
 

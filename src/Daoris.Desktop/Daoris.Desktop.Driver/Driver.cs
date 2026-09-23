@@ -328,6 +328,8 @@ public sealed class Driver(
             {
                 Links = quest.Links,
                 Attachments = quest.Attachments,
+                Then = quest.Then,
+                Parent = quest.Parent,
             };
             var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
 

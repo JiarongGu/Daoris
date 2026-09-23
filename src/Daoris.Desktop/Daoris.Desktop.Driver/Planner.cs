@@ -8,7 +8,16 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 
     /// <summary>Files the quest carries, each with where this machine keeps it, or null when it does not.</summary>
     public IReadOnlyList<QuestFileView> Attachments { get; init; } = [];
+
+    /// <summary>What closing this done will publish next (D65 §4) — the service's to do, never the driver's.</summary>
+    public IReadOnlyList<QuestStepView> Then { get; init; } = [];
+
+    /// <summary>The quest whose close published this one, when it is a step of a chain.</summary>
+    public string? Parent { get; init; }
 }
+
+/// <summary>One step of a chain, as the service answered it.</summary>
+public sealed record QuestStepView(string To, string Title, string Body);
 
 /// <summary>A file a quest carries, as the local service answered it.</summary>
 /// <param name="Name">The file's own name.</param>

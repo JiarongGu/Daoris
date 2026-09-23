@@ -288,6 +288,128 @@ public sealed class QuestStoreTests : IAsyncLifetime
 
         Assert.Empty(elder.Links);
         Assert.Empty(elder.Attachments);
+        Assert.Empty(elder.Then);
+        Assert.Null(elder.Parent);
+    }
+
+    // ——— A chain (D65 §4): `then` on a quest, published at the moment it closes done.
+
+    private Task<Quest> Chained(string title = "Develop the media config") =>
+        _quests.PublishAsync(
+            "Intake", "Owner", title, "Read the field names from config.", Now,
+            then:
+            [
+                new QuestStep("Owner", "Verify {parent} in the browser", "Open the app and check {parent} landed."),
+                new QuestStep("Intake", "Report on {parent}", "Say what was done."),
+            ]);
+
+    /// <summary>
+    /// Closing done publishes the next step AS PART OF THE CLOSE — one transaction, so there is no
+    /// moment at which the work is done and the chain is lost. It asks on behalf of the original asker,
+    /// names its parent, and carries the rest of the chain.
+    /// </summary>
+    [Fact]
+    public async Task Closing_done_publishes_the_next_step_carrying_the_rest()
+    {
+        var parent = await Chained();
+
+        var move = await _quests.MoveAsync(parent.Id, QuestStatus.Done, "Landed.", Now.AddHours(1));
+
+        Assert.True(move.Moved);
+        var next = move.FollowUp!;
+        Assert.Equal("Intake", next.From);
+        Assert.Equal("Owner", next.To);
+        Assert.Equal(QuestStatus.Open, next.Status);
+        Assert.Equal(parent.Id, next.Parent);
+        Assert.Equal($"Verify #{parent.Id} in the browser", next.Title);
+        Assert.Contains($"check #{parent.Id} landed", next.Body);
+        Assert.Equal("Report on {parent}", Assert.Single(next.Then).Title);
+
+        // What the close answered is what the store holds — not a copy that forgot its chain.
+        var held = (await _quests.FindAsync(next.Id))!;
+        Assert.Equal(parent.Id, held.Parent);
+        Assert.Equal("Report on {parent}", Assert.Single(held.Then).Title);
+    }
+
+    [Fact]
+    public async Task A_chain_walks_to_its_end_one_close_at_a_time()
+    {
+        var first = await Chained();
+        var second = (await _quests.MoveAsync(first.Id, QuestStatus.Done, null, Now)).FollowUp!;
+
+        var third = (await _quests.MoveAsync(second.Id, QuestStatus.Done, null, Now)).FollowUp!;
+        var end = await _quests.MoveAsync(third.Id, QuestStatus.Done, null, Now);
+
+        Assert.Equal($"Report on #{second.Id}", third.Title);
+        Assert.Equal("Intake", third.To);
+        Assert.Null(end.FollowUp);
+        Assert.Empty(third.Then);
+    }
+
+    /// <summary>A decline is an answer, not a finish — the chain stops there, and the reason says why.</summary>
+    [Fact]
+    public async Task Declining_publishes_nothing()
+    {
+        var parent = await Chained();
+
+        var move = await _quests.MoveAsync(parent.Id, QuestStatus.Declined, "Not ours.", Now);
+
+        Assert.Null(move.FollowUp);
+        Assert.Single(await _quests.ListAsync(includeClosed: true));
+    }
+
+    /// <summary>Taking is not finishing: only done moves a chain on.</summary>
+    [Fact]
+    public async Task Taking_publishes_nothing()
+    {
+        var parent = await Chained();
+
+        var move = await _quests.MoveAsync(parent.Id, QuestStatus.Taken, null, Now);
+
+        Assert.Null(move.FollowUp);
+        Assert.Single(await _quests.ListAsync());
+    }
+
+    /// <summary>
+    /// 🔴 A follow-up's id includes its parent. Ids derive from the title, and a step called "Verify in
+    /// the browser" would otherwise collide with every earlier quest of that name — the chain would
+    /// quietly attach to somebody else's closed quest. A quest with no parent keeps the id it always had.
+    /// </summary>
+    [Fact]
+    public async Task A_follow_up_never_collides_with_an_unchained_quest_of_the_same_words()
+    {
+        var elder = await _quests.PublishAsync("Intake", "Owner", "Verify in the browser", "An older ask.", Now);
+        await _quests.MoveAsync(elder.Id, QuestStatus.Done, "Long done.", Now);
+        var parent = await _quests.PublishAsync(
+            "Intake", "Owner", "Develop", "b", Now,
+            then: [new QuestStep("Owner", "Verify in the browser", "The new one.")]);
+
+        var next = (await _quests.MoveAsync(parent.Id, QuestStatus.Done, null, Now)).FollowUp!;
+
+        Assert.NotEqual(elder.Id, next.Id);
+        Assert.Equal(QuestStatus.Open, next.Status);
+        Assert.Equal("The new one.", next.Body);
+        Assert.Equal(elder.Id, (await _quests.PublishAsync("Intake", "Owner", "Verify in the browser", "x", Now)).Id);
+    }
+
+    /// <summary>A mirror row never moves here, so it never publishes here: its home closes it and chains it.</summary>
+    [Fact]
+    public async Task A_mirrored_chain_is_moved_and_chained_only_at_its_home()
+    {
+        await _quests.MirrorAsync(new Quest(
+            "abc125", "Intake", "Owner", "Do it", "why", QuestStatus.Open, null, Now, Now, Home: "remote")
+        {
+            Then = [new QuestStep("Owner", "Then this", "b")],
+            Parent = "fff000",
+        });
+
+        var move = await _quests.MoveAsync("abc125", QuestStatus.Done, null, Now);
+
+        Assert.False(move.Moved);
+        Assert.Null(move.FollowUp);
+        var mirrored = (await _quests.FindAsync("abc125"))!;
+        Assert.Equal("Then this", Assert.Single(mirrored.Then).Title);
+        Assert.Equal("fff000", mirrored.Parent);
     }
 
     [Fact]

@@ -21,6 +21,9 @@ const QUESTS = [{
     { name: 'before.png', sha256: `ab12cd34ef56${'0'.repeat(52)}`, bytes: 2048, path: KEPT_PATH },
     { name: 'trace.log', sha256: `cd34${'1'.repeat(60)}`, bytes: 300 },
   ],
+  // A step of a chain (D65 §4): it follows one quest, and its close publishes the next.
+  parent: 'f0f0f0',
+  then: [{ to: 'game', title: 'Report on {parent}', body: 'Say what was done.' }],
 }];
 
 const REGISTRY = [
@@ -68,7 +71,10 @@ function view(opening: { from?: string; to?: string } | null = null) {
 }
 
 /** The body the last publish sent — what the local host would have been asked to keep. */
-let published: { links?: string[]; attachments?: { name: string; content: string }[] } | null = null;
+let published: {
+  links?: string[]; attachments?: { name: string; content: string }[];
+  then?: { to: string; title: string; body: string }[];
+} | null = null;
 
 describe('QuestsView', () => {
   beforeEach(() => {
@@ -95,6 +101,53 @@ describe('QuestsView', () => {
     // The draft LANDED: publish needs both repositories, and the person has chosen neither.
     fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'An ask' } });
     fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Its reason.' } });
+    expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeEnabled();
+  });
+
+  // ——— A chain (D65 §4).
+
+  it('the drawer says what a quest follows and what its close will publish next', async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(within(dialog).getByText('#f0f0f0')).toBeInTheDocument();
+    expect(within(dialog).getByText(/Report on \{parent\}/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/published when this closes done/i)).toBeInTheDocument();
+  });
+
+  it('a card says it follows another quest', async () => {
+    view();
+    expect(await screen.findByText(/follows #f0f0f0/)).toBeInTheDocument();
+  });
+
+  it('a next step composed travels with the publish as its chain', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'Develop it' } });
+    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Because.' } });
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'add a next step…' }));
+    await userEvent.click(within(dialog).getByLabelText('then ask'));
+    await userEvent.click(await screen.findByRole('option', { name: 'engine' }));
+    fireEvent.change(within(dialog).getByLabelText('what is wanted next, in one line'), { target: { value: 'Verify {parent}' } });
+    fireEvent.change(within(dialog).getByLabelText('why, and how to tell it is done'), { target: { value: 'Open the app.' } });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'publish quest' }));
+
+    await vi.waitFor(() => expect(published).not.toBeNull());
+    expect(published!.then).toEqual([{ to: 'engine', title: 'Verify {parent}', body: 'Open the app.' }]);
+  });
+
+  it('a next step started and left empty holds the publish back, and can be taken off', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'Develop it' } });
+    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Because.' } });
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'add a next step…' }));
+    expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeDisabled();
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'no next step' }));
     expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeEnabled();
   });
 
