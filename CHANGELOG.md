@@ -392,6 +392,10 @@ The first version: doctrine that installs, is checked, and flows back.
   the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
   characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
   included. Removing the account removes its key. A sign-in stays the tool's, as before.
+- **An account its provider refused is not spent again** (AGT3b). A session that fails with the
+  tool's own "API Error: 401" ends saying which account was refused and what fixes it. Further
+  starts on that account are held, instead of each sitting through the tool's minutes of silent
+  retries, until you change the account or look again.
 - **The protocol door runs as the agent's accounts** (AGT7). Claude Code over the protocol door
   (`claude-code-acp`) used to look for accounts under its own name, so an account made for
   Claude Code, a key account included, never reached it. Codex's never reached `codex-acp`. A door's

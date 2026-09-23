@@ -57,8 +57,12 @@ agent measured so far.
 
 ## 3. Left for later
 
-- **A refused key is news at the first 401, not after ten retries** (AGT3b). The pipe door's stream
-  says `api_retry` with `error_status: 401` on the first attempt. Ending the session there, with a
-  sentence naming the account, saves the minutes the retries cost. Expired sign-ins would benefit
-  from it too.
+- **A refused account is not spent twice** (AGT3b, built). Measured: the direct door runs `claude
+  -p` in text mode, which is **silent for 189 s** of retries and then prints `Failed to
+  authenticate. API Error: 401 API key is invalid.` and exits 1. So the first 401 cannot be seen
+  from that door; only the JSON stream shows `api_retry`, and switching the door's output format is
+  a larger change. What is built instead: the toolchain declares those words (`Refused`). A failed
+  session whose last lines carry them ends with a sentence naming the account and the fix. The
+  roster then **holds every further start on that account**, on either door, until a person looks
+  again: any account action, or *look again*. One session pays the retries, and the rest do not.
 - **Codex key accounts**, once measured.

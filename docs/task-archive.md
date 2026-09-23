@@ -4224,6 +4224,19 @@ its owner. The selection asks the owner's login question and takes the owner's k
 this build carries the owner; the door's pin stays its own. FIX-LOG has the entry. Driver 385,
 modules 101, CLI 43 in the toolchain file.
 
+## AGT3b — an account its provider refused is not spent again (2026-09-23)
+
+- [x] **AGT3b — a refused key is news at the first 401,** not after ten retries.
+
+✅ **done 2026-09-23, reshaped by a measurement.** A text-mode `claude -p` with an invalid key was
+**silent for 189 s**, then printed `Failed to authenticate. API Error: 401 API key is invalid.` and
+exited 1, so the first 401 is not visible from the direct door. Built instead: the toolchain
+declares those words (`Refused`, Claude Code's measured phrase, mirrored by the stub). A failed
+session whose last lines carry them ends naming the account and the fix, and `HarnessRoster.Refuse`
+holds further starts on that account, on either door, until an account action or *look again*
+clears it. The rehearsal proves it end to end in one run: one session, then a held start (214/214).
+Driver 387.
+
 ## AGT4 — an API-driven agent: closed by the owner's decision (2026-09-23)
 
 - [x] ⛔ **AGT4 — an API-driven agent.** Recommended as a plugin's ACP agent; a loop of Daoris's

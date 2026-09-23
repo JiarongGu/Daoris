@@ -34,4 +34,12 @@ public static class Observation
             exitCode == 0 ? "exited without touching its quest."
                           : $"exit {exitCode} before taking its quest."),
     };
+
+    /// <summary>
+    /// Did the tool say its provider refused the account's credential (AGT3b)? Read from its own last
+    /// words, by the pattern its toolchain declares; null declares none, and nothing is observed.
+    /// </summary>
+    public static bool Refused(IEnumerable<string> lastLines, string? pattern) =>
+        pattern is { Length: > 0 }
+        && lastLines.Any(line => line.Contains(pattern, StringComparison.OrdinalIgnoreCase));
 }

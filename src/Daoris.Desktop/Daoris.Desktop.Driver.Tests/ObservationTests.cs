@@ -9,6 +9,23 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class ObservationTests
 {
+    /// <summary>
+    /// 🔴 A refused credential is OBSERVED in the tool's own words (AGT3b). Measured on Claude Code
+    /// 2.1.280 with an invalid key: a text-mode run prints nothing for 189 s while it retries, then
+    /// this one line, and exits 1.
+    /// </summary>
+    [Fact]
+    public void A_provider_s_refusal_is_read_from_the_tool_s_own_last_words()
+    {
+        const string measured = "Failed to authenticate. API Error: 401 API key is invalid.";
+        const string pattern = "API Error: 401";
+
+        Assert.True(Observation.Refused(["some work", measured], pattern));
+        Assert.False(Observation.Refused(["API Error: 529 overloaded", "exit"], pattern));
+        // A tool that declares no such words has no refusal to observe.
+        Assert.False(Observation.Refused([measured], null));
+    }
+
     [Fact]
     public void A_done_quest_is_a_completed_session()
     {

@@ -134,7 +134,10 @@ public sealed record HarnessToolchain(
     string? Maker = null,
     // The tool's own variable for an API key (AGT3, D67 §1) — what an account that is a key is
     // handed at spawn. Declared only where measured; null means this agent takes no key from Daoris.
-    string? KeyVariable = null)
+    string? KeyVariable = null,
+    // The words this tool prints when its provider refuses the account's credential (AGT3b) — read
+    // from a failed session's last lines, so the account is not spent again. Measured, never guessed.
+    string? Refused = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -1117,6 +1120,31 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, HarnessReport> _seen =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // Accounts a provider refused (AGT3b), by owner and profile — "" for the tool's own home — with
+    // the sentence that says so. Held in memory until a person looks again; see `Refuse`.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _refused =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private static string AccountKey(string owner, string? profile) => $"{owner}/{profile ?? ""}";
+
+    /// <summary>
+    /// Hold further starts on an account its provider refused (AGT3b), with the sentence that says
+    /// why and what fixes it.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Measured: a refused key costs a session over three minutes of the tool's silent retries
+    /// before it fails, and every further session on that account would do the same. It is the
+    /// ACCOUNT's, so it holds both doors onto it (AGT7). It clears when a person looks again: any
+    /// account action, or the roster's own refresh. A new sign-in or key is exactly such an action.
+    /// </remarks>
+    public void Refuse(string adapter, string? profile, string reason)
+    {
+        var owner = adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
+            ? Toolchain(adapter)?.Owner(adapters.Resolve(adapter).Name) ?? adapter
+            : adapter;
+        _refused[AccountKey(owner, profile)] = reason;
+    }
+
     /// <summary>The adapters this roster answers for — the build's, plus whatever plugins declare (D64).</summary>
     public AdapterSet Adapters => adapters;
 
@@ -1223,6 +1251,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public async Task<IReadOnlyList<HarnessReport>> RosterAsync(
         DriverConfig config, bool refresh = false, CancellationToken ct = default)
     {
+        // A person looking again is asking to try again (AGT3b): a refused account is let through.
+        if (refresh) _refused.Clear();
+
         var reports = new List<HarnessReport>();
         foreach (var name in Known)
         {
@@ -1268,6 +1299,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // different package at a different version (ACP2).
         var owner = toolchain.Owner(resolved.Name);
         var profile = settings.Resolve(owner, workspace, chosen);
+
+        // An account its provider already refused is not spent again (AGT3b).
+        if (_refused.TryGetValue(AccountKey(owner, profile), out var refused))
+        {
+            return new HarnessSelection(refused);
+        }
 
         // Which binary this spawn runs (TOOL2/D57): the explicit command, then the managed pin, then
         // PATH. An explicit `commands` entry is the person naming exactly what to run and has the

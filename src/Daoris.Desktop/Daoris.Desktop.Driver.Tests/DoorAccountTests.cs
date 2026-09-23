@@ -169,6 +169,33 @@ public sealed class DoorAccountTests : IDisposable
         Assert.Null(selection.Environment);
     }
 
+    /// <summary>
+    /// 🔴 An account its provider refused is not spent again (AGT3b): each further session would sit
+    /// through the tool's own minutes of retries to fail the same way. The refusal holds the start,
+    /// naming the fix, and it is the ACCOUNT's — on either door onto it — until a person looks again.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_account_holds_further_starts_until_a_person_looks_again()
+    {
+        var work = HarnessSettings.ProfileHome(_home, "owner", "work");
+        Directory.CreateDirectory(work);
+        File.WriteAllText(Path.Combine(work, "credentials.json"), "{}");
+        new HarnessSettings().WithDefault("owner", "work").Save(Settings);
+        var roster = Roster();
+
+        roster.Refuse("owner", "work", "the provider refused `work` (401).");
+
+        var direct = await roster.SelectAsync("owner", Config(), null, null);
+        var door = await roster.SelectAsync("owner-acp", Config(), null, null);
+        Assert.False(direct.Allowed);
+        Assert.Contains("refused `work`", direct.Refusal);
+        Assert.False(door.Allowed);
+
+        await roster.RosterAsync(Config(), refresh: true);
+
+        Assert.True((await roster.SelectAsync("owner", Config(), null, null)).Allowed);
+    }
+
     /// <summary>The door's pin stays the door's: a different package, a different version (ACP2).</summary>
     [Fact]
     public async Task The_door_s_pin_is_still_its_own()

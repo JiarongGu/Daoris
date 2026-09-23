@@ -373,7 +373,10 @@ public sealed class StubAdapter : ISessionAdapter
         LoginArguments: ["--login"],
         LoginCheck: new LoginQuestion(
             ["--login-state"], LoggedIn: @"logged-in", LoggedOut: @"logged-out",
-            Account: @"logged-in as (\S+)"));
+            Account: @"logged-in as (\S+)"),
+        // Claude Code's own words for a refused credential (AGT3b), mirrored so the rehearsal can
+        // gate a refused account with no account behind it.
+        Refused: "API Error: 401");
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -788,7 +791,11 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         PinnedEnvironment: StayPinned,
         // An account that is an API key (AGT3). Measured on 2.1.280 with an invalid key: `auth
         // status` reads it (api_key, no email) and a `-p` run takes it with no prompt.
-        KeyVariable: "ANTHROPIC_API_KEY");
+        KeyVariable: "ANTHROPIC_API_KEY",
+        // What it prints when its provider refuses the credential (AGT3b) — measured on 2.1.280: a
+        // `-p` run with an invalid key was silent for 189 s of retries, then printed "Failed to
+        // authenticate. API Error: 401 API key is invalid." and exited 1.
+        Refused: "API Error: 401");
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

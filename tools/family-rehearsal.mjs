@@ -1987,6 +1987,40 @@ check(
   missingRun.out,
 );
 
+// An account its provider refused (AGT3b). Claude Code, measured, is silent for minutes of retries
+// and then prints "Failed to authenticate. API Error: 401 …" and exits 1 — so every further session
+// on that account would pay the same minutes to fail the same way. The stub mirrors those words: the
+// first session ends saying so, and the NEXT start is held rather than spent. One run, one driver,
+// because the hold lives with the roster the loop keeps.
+setProfile('alpha');
+const refusedAgent = join(scratch, 'refused-agent.mjs');
+writeFileSync(refusedAgent, [
+  "if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }",
+  "if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }",
+  "console.log('Failed to authenticate. API Error: 401 API key is invalid.');",
+  'process.exit(1);',
+].join('\n'));
+const refusedConfig = join(scratch, 'driver-refused.json');
+writeFileSync(refusedConfig, `${JSON.stringify({
+  drivable: ['newcomer'], adapter: 'stub', cap: 1, timeoutMinutes: 2,
+  commands: { stub: ['node', refusedAgent] },
+}, null, 2)}\n`);
+await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title: 'A second quest for a refused account', body: 'It must be held, not spent.' },
+});
+const newcomerSessions = async () =>
+  ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
+const sessionsBeforeRefused = await newcomerSessions();
+const refusedRun = driver({ serviceUrl: BASE, config: refusedConfig, harness: HARNESS_ENV, mode: '--until-idle' });
+check(
+  'an account its provider refused ends its session saying so, and the next start is held, not spent',
+  refusedRun.code === 0
+    && /provider refused the `stub` account `alpha` \(401\)/.test(refusedRun.out)
+    && /held .*an earlier session found that its provider refused/.test(refusedRun.out)
+    && (await newcomerSessions()) - sessionsBeforeRefused === 1,
+  refusedRun.out,
+);
+
 // Put the machine back, and let the held quest through — a held quest that never ran would leave the
 // next phase looking at a queue nobody explained.
 setProfile('alpha');

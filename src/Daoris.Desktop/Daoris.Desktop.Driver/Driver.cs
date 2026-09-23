@@ -424,6 +424,19 @@ public sealed class Driver(
                     ? Observation.Conclude(code, status)
                     : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
+            // 🔴 A credential its provider refused is read from the tool's own last words (AGT3b), and
+            // the account is held so no further session sits through the same minutes of retries.
+            if (conclusion.State == "failed" && adapter.Toolchain is { Refused: { Length: > 0 } refusedWords } refusing
+                && Observation.Refused(LastLines(transcript), refusedWords))
+            {
+                var owner = refusing.Owner(adapter.Name);
+                var account = selection.Profile is { } named ? $"the `{owner}` account `{named}`" : $"`{owner}`'s own sign-in";
+                var reason = $"its provider refused {account} (401). Replace the key or sign in again — "
+                    + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
+                conclusion = conclusion with { Note = $"{conclusion.Note} {char.ToUpperInvariant(reason[0])}{reason[1..]}" };
+                _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
+            }
+
             var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
             await service.AdvanceAsync(
                 sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct).ConfigureAwait(false);
@@ -628,6 +641,19 @@ public sealed class Driver(
     /// belongs to <see cref="ChatRunner"/>. Shared rather than copied: one pump, one tee, one set of
     /// rules about which destination is the durable one.
     /// </summary>
+    /// <summary>A finished transcript's last lines — where a tool says why it gave up. Unreadable is none.</summary>
+    private static IReadOnlyList<string> LastLines(string transcript)
+    {
+        try
+        {
+            return [.. File.ReadLines(transcript).TakeLast(40)];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
     internal static async Task CaptureAsync(
         Process process, string transcript, string sessionId, SessionOutput? output, CancellationToken ct)
     {
