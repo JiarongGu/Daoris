@@ -325,6 +325,16 @@ public sealed class RegistrationStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>Stop holding a repository's code map, and the commit it was held at.</summary>
+    /// <returns>Whether there was one; false is an answer, not a failure.</returns>
+    public async Task<bool> ForgetCodeMapAsync(string repository, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE";
+        command.Parameters.AddWithValue("$repository", repository);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }
+
     /// <summary>Every repository's fed provenance, for the one read a summary needs.</summary>
     public async Task<IReadOnlyDictionary<string, FeedProvenance>> AllProvenanceAsync(CancellationToken ct = default)
     {

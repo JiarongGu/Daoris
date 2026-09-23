@@ -161,7 +161,20 @@ the window). The example engine keeps a map and the game keeps none, and the bro
 feeds the file's text to `POST /api/feed/code-map`. The deployment judges it whole again and keeps it
 in canonical form (`CodeMapReader.Write`) in `fed_code_maps`. A commit with no map keeps the row
 with no body. The code-map door answers from that store for a repository with no checkout here.
-A teammate's map is not yet brought down to other machines (MAP3e).
+
+**MAP3e is built (2026-09-24): a teammate's map comes down.** A machine's host brings it down on the
+same pass as the quests and the records (`CodeMapSync`), for each repository of the circle it holds
+only a teammate's copy of. Pulling a map needs no git, so the pass is the host's (D69's reasoning),
+and the host is what answers the page. The remote's holding is the order: it already took each map
+by ancestry, so this machine holds exactly what the remote holds, at the commit it holds it. A newer
+commit replaces the map here, a commit that keeps none is held with none, and a map the remote no
+longer holds is forgotten here. The commit is asked first (`GET /api/feed/held`), so a map that has
+not moved is not sent again. A checkout here is the authority on its own map and is never asked for.
+The door's answer is one shape, `CodeMapWire`, which the host writes and the pass reads. It carries
+`fed` when no checkout was read, naming the commit, its line and the key that fed it, and the page
+says so. Rejected: telling the page where the map lives instead of bringing it. A machine that has
+to ask the remote to draw a teammate's repository stops answering for its circle when it is offline,
+and the team's rows and quests already come down.
 
 **MAP3c is built (2026-09-24): `daoris-devkit map`.** The devkit writes the file from the project
 files it can read exactly, with no compiler, and `map --check` says whether the committed file is

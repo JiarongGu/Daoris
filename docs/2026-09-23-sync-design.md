@@ -225,6 +225,13 @@ doors are `GET /api/feed/held?repository=` (the commits a feeding machine asks g
 `POST /api/feed/code-map` beside the existing entries feed, which now carries `base`. The digest is
 computed at the deployment, never taken from the wire.
 
+**The team's code maps come down (MAP3e).** A machine's host pass brings down the map of each
+repository of the circle it holds only a teammate's copy of, as the remote holds it, beside the
+quests and the records. The remote already ordered it, so the machine holds what the remote holds:
+a newer commit replaces, a commit with none is held as none, and one the remote no longer holds is
+forgotten. The commit is asked first, so an unmoved map is not sent again. A checkout here is read
+from disk and never asked for. The map design's §3 has the rest.
+
 **Registrations and the travelling retire (SYNC5b).** The machine holding a checkout owns its row.
 Other machines' copies are updated and removed rather than mirrored once, and a retire travels as a
 tombstone (SYNC0b).

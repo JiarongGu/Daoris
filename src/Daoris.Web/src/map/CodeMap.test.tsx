@@ -65,6 +65,28 @@ describe('the code map detail', () => {
     expect(screen.getByText(/docs\/code-map\.json/)).toBeInTheDocument();
   });
 
+  /**
+   * MAP3e: a teammate's map came down with the sync, so it says where from — the commit, its line and
+   * whose key fed it — rather than implying this machine read a checkout it does not have.
+   */
+  it('says where a fed map came from: the commit, its line, and who fed it', () => {
+    render(
+      <CodeMapDetail
+        modules={MODULES} dependencies={DEPENDENCIES} selected={null} file="docs/code-map.json" onSelect={() => {}}
+        fed={{
+          commit: 'c0ffee1234567890', shortCommit: 'c0ffee12', committedAt: new Date().toISOString(),
+          branch: 'main', origin: 'person@machine-b',
+        }}
+      />,
+    );
+
+    const line = screen.getByText(/c0ffee12/);
+    expect(line.textContent).toContain('docs/code-map.json');
+    expect(line.textContent).toContain('main');
+    expect(line.textContent).toContain('person@machine-b');
+    expect(line.textContent).toContain('brought here by the sync');
+  });
+
   it('lists what a module depends on and what uses it, each a door to that module', () => {
     const onSelect = vi.fn();
     render(<CodeMapDetail modules={MODULES} dependencies={DEPENDENCIES} selected="service" file="docs/code-map.json" onSelect={onSelect} />);

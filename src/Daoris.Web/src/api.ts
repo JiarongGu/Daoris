@@ -91,11 +91,13 @@ export type CodeDependency = { from: string; to: string; kind: string };
  * A repository's code map (MAP3a). `file` is which candidate was read, absent when it keeps none;
  * `problem` is why the file was refused WHOLE, verbatim — and then both lists are empty, because a
  * half-drawn map reads as a whole one. Both are ABSENT rather than null on the wire: the host omits
- * a null field.
+ * a null field. `fed` is where the map came from when no checkout here was read (MAP3b, MAP3e): a
+ * teammate's, brought down by the sync, at the commit the circle's deployment holds it.
  */
 export type CodeMapAnswer = {
   repository: string; file?: string | null; problem?: string | null;
   modules: CodeModule[]; dependencies: CodeDependency[];
+  fed?: Provenance;
 };
 export type QuestAction = { quest: Quest; message: string };
 export type Registration = {

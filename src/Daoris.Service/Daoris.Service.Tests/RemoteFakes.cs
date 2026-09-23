@@ -45,6 +45,21 @@ internal sealed class StoreRemote(
         Calls++;
         return SessionWire.ReadPage(SessionWire.Page(await sessions!.TeamSinceAsync(since, caller, ct: ct)))!;
     }
+
+    // The team's code maps (MAP3e) are asked of the remote's registry service, when one is given.
+    public async Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default)
+    {
+        Calls++;
+        return registry is null ? null : (await registry.HeldAsync(repository, ct)).CodeMap;
+    }
+
+    public async Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default)
+    {
+        Calls++;
+        return registry is not null && await registry.CodeMapAsync(repository, ct) is { } read
+            ? CodeMapWire.Read(CodeMapWire.Answer(repository, read))
+            : null;
+    }
 }
 
 /// <summary>A remote nobody can reach — what a take meets offline.</summary>
@@ -66,6 +81,10 @@ internal sealed class UnreachableRemote : IRemote
     public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw Wall();
 
     public Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) => throw Wall();
+
+    public Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default) => throw Wall();
+
+    public Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default) => throw Wall();
 }
 
 /// <summary>A machine whose every circle is wired to the one remote given — or to none.</summary>

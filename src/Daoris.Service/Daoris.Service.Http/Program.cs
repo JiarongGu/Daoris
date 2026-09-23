@@ -757,14 +757,14 @@ app.MapGet("/api/registry", async (
 
 // A repository's code map (MAP3a): its modules and how they depend on each other, read from its own
 // committed file — never written to (D32). A repository with a checkout here is read from it on each
-// ask; one without answers with what was fed (MAP3b), or with no file when nothing was. The file's
-// content is repository-relative by its own rules, so nothing machine-local rides this door.
+// ask; one without answers with what was fed (MAP3b) or brought down from the circle's remote (MAP3e),
+// saying where it came from, or with no file when nothing was. The file's content is
+// repository-relative by its own rules, and the provenance names a commit and a key, never a path, so
+// nothing machine-local rides this door. The shape is Core's (CodeMapWire), the one a machine's host
+// reads when it brings a teammate's map down — two hands, one shape.
 app.MapGet("/api/code-map/{repository}", async (ComposedService s, string repository, CancellationToken ct) =>
     await s.Service.CodeMapAsync(repository, ct) is { } read
-        ? Results.Ok(new CodeMapResponse(
-            repository, read.File, read.Problem,
-            read.Map?.Modules.Select(m => new CodeModuleResponse(m.Id, m.Path, m.Summary)).ToList() ?? [],
-            read.Map?.Dependencies.Select(d => new CodeDependencyResponse(d.From, d.To, d.Kind)).ToList() ?? []))
+        ? Results.Text(CodeMapWire.Answer(repository, read), "application/json")
         : Results.NotFound(new ErrorResponse($"`{repository}` is not a repository this service has registered.")));
 
 app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
@@ -929,11 +929,14 @@ else
         var circle = Workspaces.Normalize(workspace);
         if (s.Remotes?.For(circle) is not { } remote)
         {
-            return Results.Ok(new SyncResponse(circle, s.Quests.Machine, Wired: false, 0, [], [], [], 0, 0, null));
+            return Results.Ok(new SyncResponse(circle, s.Quests.Machine, Wired: false, 0, [], [], [], 0, 0, null, 0));
         }
 
         var quests = await QuestSync.RunAsync(s.Quests, s.Service, remote, circle, ct);
         var sessions = await SessionSync.RunAsync(s.Sessions, s.Service, remote, circle, ct);
+        // The team's code maps come down on the same pass (MAP3e): pulling one needs no git, so it is
+        // the host's to do, and the host is what answers the page for a repository with no checkout here.
+        var maps = await CodeMapSync.RunAsync(s.Service, remote, circle, ct);
         return Results.Ok(new SyncResponse(
             circle, s.Quests.Machine, Wired: true, quests.Pushed,
             quests.Conflicts.Select(c => new QuestConflictNote(c.Quest, (c.Attempted ?? QuestStatus.Open).ToString())).ToList(),
@@ -941,7 +944,8 @@ else
             quests.Behind,
             sessions.Pushed,
             sessions.Fetched,
-            quests.Problem ?? sessions.Problem));
+            quests.Problem ?? sessions.Problem ?? maps.Problem,
+            maps.Fetched));
     });
 
     // Where a circle stands (SYNC6a): read from the store, so it answers without reaching the remote —

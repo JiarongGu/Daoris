@@ -4,8 +4,8 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// A workspace's remote as this machine's host speaks to it (D68 §3, D69): quest operations fetched
-/// since a number and pushed on one, and session records — this machine's own fed up, the team's
-/// fetched since a number (SYNC4).
+/// since a number and pushed on one, session records — this machine's own fed up, the team's fetched
+/// since a number (SYNC4) — and the team's code maps, brought down when they move (MAP3e).
 /// </summary>
 public interface IRemote
 {
@@ -30,6 +30,17 @@ public interface IRemote
     /// </summary>
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
     Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default);
+
+    /// <summary>
+    /// The commit a repository's code map is held at there (MAP3e), or null where it holds none — asked
+    /// before the map itself, so a map that has not moved is not sent again.
+    /// </summary>
+    /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
+    Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default);
+
+    /// <summary>A repository's code map as the remote holds it, with where it came from; null when it holds none.</summary>
+    /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
+    Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default);
 }
 
 /// <param name="Records">The team's records, each keyed `origin/id` and carrying its origin.</param>
@@ -83,6 +94,29 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
     public async Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) =>
         SessionWire.ReadPage(await SendAsync(HttpMethod.Get, $"/api/sessions/since?since={since}", null, ct).ConfigureAwait(false))
         ?? throw new RemoteException("the remote answered a fetch of session records with something that is not a page of them");
+
+    public async Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default)
+    {
+        var held = await SendAsync(
+            HttpMethod.Get, $"/api/feed/held?repository={Uri.EscapeDataString(repository)}", null, ct).ConfigureAwait(false);
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(held);
+            return document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                   && document.RootElement.TryGetProperty("codeMap", out var commit)
+                   && commit.ValueKind == System.Text.Json.JsonValueKind.String
+                ? commit.GetString()
+                : null;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            throw new RemoteException("the remote answered what it holds with something that is not an answer");
+        }
+    }
+
+    public async Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default) =>
+        CodeMapWire.Read(await SendAsync(
+            HttpMethod.Get, $"/api/code-map/{Uri.EscapeDataString(repository)}", null, ct).ConfigureAwait(false));
 
     private async Task<string> SendAsync(HttpMethod method, string path, string? json, CancellationToken ct)
     {

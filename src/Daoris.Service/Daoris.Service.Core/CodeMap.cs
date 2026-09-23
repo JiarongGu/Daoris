@@ -18,7 +18,12 @@ public sealed record CodeMap(IReadOnlyList<CodeModule> Modules, IReadOnlyList<Co
 /// <param name="Map">The map, when the file exists and keeps every rule; otherwise null.</param>
 /// <param name="File">Which candidate was read, repository-relative; null when there is none.</param>
 /// <param name="Problem">Why the file was refused, naming the first break; null when it was not.</param>
-public sealed record CodeMapRead(CodeMap? Map, string? File, string? Problem);
+/// <param name="Fed">
+/// Where the map came from when it was not read from a checkout here (MAP3b, MAP3e): the commit it
+/// was fed at, its line, and whose key fed it. Null for a checkout read from disk, and for a
+/// repository nobody has fed a map for.
+/// </param>
+public sealed record CodeMapRead(CodeMap? Map, string? File, string? Problem, FeedProvenance? Fed = null);
 
 /// <summary>
 /// Reads a repository's code map (MAP3a, <c>docs/2026-09-23-map-design.md</c> §3) — one committed

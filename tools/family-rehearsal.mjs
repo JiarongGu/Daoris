@@ -1144,6 +1144,17 @@ writeFileSync(
   join(newcomer, '.claude', 'knowledge', 'rehearsal-lesson.md'),
   '# rehearsal lesson\n\nThe stub taught the remote a lesson about crossings.\n',
 );
+// And a code map of its own, so the one machine without its checkout has something to bring down
+// (MAP3e) — committed, as a repository's map is.
+mkdirSync(join(newcomer, 'docs'), { recursive: true });
+writeFileSync(join(newcomer, 'docs', 'code-map.json'), `${JSON.stringify({
+  version: 1,
+  modules: [
+    { id: 'crossing', path: 'src/crossing', summary: 'carries a quest between machines' },
+    { id: 'ledger', path: 'src/ledger', summary: 'remembers what crossed' },
+  ],
+  dependencies: [{ from: 'crossing', to: 'ledger', kind: 'imports' }],
+}, null, 2)}\n`);
 run(`git ${GIT_ID} add -A`, newcomer);
 run(`git ${GIT_ID} commit -q -m "the newcomer joins the remote"`, newcomer);
 check('machine a’s host restarts carrying its remote', await startHost({
@@ -1235,8 +1246,7 @@ check(
 );
 
 // What the remote holds, and at which commit (SYNC5a): the question a feeding machine asks git about
-// before its next feed. A clean checkout fed both its knowledge and its code map — none, here, which
-// is itself a statement at that commit.
+// before its next feed. A clean checkout fed both its knowledge and its code map.
 const newcomerHead = run('git rev-parse HEAD', newcomer).out.trim();
 const heldNewcomer = await api('GET', '/api/feed/held?repository=newcomer', { base: REMOTE_BASE, key: keyA });
 check(
@@ -1332,6 +1342,20 @@ check(
   'the remote holds the closure, pushed within the tick that made it',
   (closedOnRemote.json ?? []).some((q) => q.id === crossingId && q.status === 'Done'),
   closedOnRemote.text,
+);
+
+// A TEAMMATE'S CODE MAP, ON THIS MACHINE (MAP3e). Machine b has no checkout of the newcomer, so it
+// used to answer "no map" for a repository that keeps one. Its host's pass now brings the map down
+// as the remote holds it, and the answer says where it came from — a commit and a key, never a path.
+const mapOnB = await api('GET', '/api/code-map/newcomer', { base: HOST_B_BASE });
+const heldMapNow = (await api('GET', '/api/feed/held?repository=newcomer', { base: REMOTE_BASE, key: keyA })).json?.codeMap;
+check(
+  'machine b answers the newcomer’s code map, brought down by its sync, at the commit the remote holds',
+  mapOnB.status === 200 && mapOnB.json?.file === 'docs/code-map.json'
+    && (mapOnB.json?.modules ?? []).some((m) => m.id === 'crossing')
+    && typeof heldMapNow === 'string' && mapOnB.json?.fed?.commit === heldMapNow
+    && !mapOnB.text.includes('_fixtures'),
+  `${heldMapNow}\n${mapOnB.text}`,
 );
 const tickBack = driveA('--once');
 const closureOnA = await api('GET', '/api/quests?repository=borealis&includeClosed=true');

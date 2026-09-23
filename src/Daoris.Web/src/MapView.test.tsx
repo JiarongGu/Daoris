@@ -159,6 +159,21 @@ describe('the workspace map', () => {
     expect(screen.getByText(/docs\/code-map\.json/)).toBeTruthy();
   });
 
+  /** MAP3e: a teammate's commit that keeps no map says so by that commit, not with the advice for a checkout here. */
+  it('says a teammate\'s held commit keeps no code map', async () => {
+    CODE_MAPS = {
+      game: {
+        repository: 'game', modules: [], dependencies: [],
+        fed: { commit: 'feedfeedfeed', shortCommit: 'feedfeed', committedAt: new Date().toISOString(), branch: 'main' },
+      },
+    };
+    show();
+    await openCode('game');
+
+    expect(await screen.findByText('game keeps no code map')).toBeTruthy();
+    expect(screen.getByText(/feedfeed/)).toBeTruthy();
+  });
+
   /** Judged whole: the service's sentence, verbatim, and nothing of the file drawn. */
   it('shows a refused file in the service\'s own words and draws none of it', async () => {
     const problem = '`docs/code-map.json` has a dependency naming `ghost`, which is not a module in the file.';

@@ -145,10 +145,11 @@ public sealed record FeedHeldResponse(string Repository, string? Knowledge, stri
 // `SessionWire`, and this one only says what a pass did.
 public sealed record QuestConflictNote(string Quest, string Attempted);
 public sealed record QuestPushRefusalWire(string Quest, string Reason);
+// `CodeMapsFetched` is how many of the team's code maps came down, new or moved (MAP3e).
 public sealed record SyncResponse(
     string Workspace, string Machine, bool Wired, int Pushed, IReadOnlyList<QuestConflictNote> Conflicts,
     IReadOnlyList<QuestPushRefusalWire> Refused, IReadOnlyList<string> Behind,
-    int SessionsPushed, int SessionsFetched, string? Problem);
+    int SessionsPushed, int SessionsFetched, string? Problem, int CodeMapsFetched);
 // Where a circle stands on this machine (SYNC6a): what it has not pushed, the quests the last pass
 // left behind, the quests carrying a conflict, when a pass last reached the remote and last tried, and
 // the wall it hit. A circle with no remote here answers `wired: false` and nothing else, because
@@ -159,14 +160,8 @@ public sealed record SyncStandingResponse(
 // Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4).
 public sealed record QuestClaimResponse(string Quest, string Claim);
 public sealed record FeedResponse(int Accepted, string Message);
-// A repository's code map (MAP3a). `File` is which candidate was read, and null when the repository
-// keeps none; `Problem` is why a file was refused whole, verbatim — and then both lists are empty,
-// because a half-drawn map reads as a whole one.
-public sealed record CodeModuleResponse(string Id, string Path, string Summary);
-public sealed record CodeDependencyResponse(string From, string To, string Kind);
-public sealed record CodeMapResponse(
-    string Repository, string? File, string? Problem,
-    IReadOnlyList<CodeModuleResponse> Modules, IReadOnlyList<CodeDependencyResponse> Dependencies);
+// A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
+// host that brings a teammate's map down reads the same answer the door writes.
 public sealed record ErrorResponse(string Error);
 /// <summary>
 /// A refusal the CLIENT should report rather than fix (D48 §6) — a stale or branch feed is the system
@@ -214,7 +209,6 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(SyncStandingResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(FeedResponse))]
-[JsonSerializable(typeof(CodeMapResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
 internal sealed partial class ApiJson : JsonSerializerContext;

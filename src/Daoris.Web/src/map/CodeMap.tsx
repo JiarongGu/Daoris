@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CodeDependency, CodeModule } from '../api';
+import type { CodeDependency, CodeModule, Provenance } from '../api';
+import { ago } from '../format';
 import { cn } from '../lib/cn';
 import { layerModules } from './codeLayout';
 
@@ -155,12 +156,17 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
 }
 
 /** What the chosen module is, and what it depends on and is used by — each a door to that module. */
-export function CodeMapDetail({ modules, dependencies, selected, file, onSelect }: {
+export function CodeMapDetail({ modules, dependencies, selected, file, fed, onSelect }: {
   modules: CodeModule[];
   dependencies: CodeDependency[];
   selected: string | null;
   /** Which committed file the map was read from — said, so a person knows where to change it. */
   file: string;
+  /**
+   * Where the map came from when this machine has no checkout of the repository (MAP3e): a teammate's,
+   * brought down by the sync. Said, because the file line alone would claim a checkout read here.
+   */
+  fed?: Provenance;
   onSelect: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -170,7 +176,14 @@ export function CodeMapDetail({ modules, dependencies, selected, file, onSelect 
     return (
       <div className="grid gap-2">
         <p className="m-0 text-body text-ink-soft">{t('code.detail.hint')}</p>
-        <p className="m-0 text-meta text-ink-faint">{t('code.file', { file })}</p>
+        <p className="m-0 text-meta text-ink-faint">
+          {fed
+            ? t('code.fed', {
+              file, commit: fed.shortCommit, branch: fed.branch, when: ago(fed.committedAt),
+              origin: fed.origin ?? t('code.fedUnknownOrigin'),
+            })
+            : t('code.file', { file })}
+        </p>
       </div>
     );
   }

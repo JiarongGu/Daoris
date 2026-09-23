@@ -63,7 +63,11 @@ export function MapView({ notify, onOpenConvergence }: {
           <EmptyState
             icon="map"
             headline={t('code.none.headline', { repository: code })}
-            body={t('code.none.body')}
+            // A teammate's held commit that keeps none (MAP3e) says so by that commit: the advice
+            // about committing a file is for a repository whose checkout is here.
+            body={answer.fed
+              ? t('code.none.fedBody', { commit: answer.fed.shortCommit })
+              : t('code.none.body')}
           />
         )}
         {answer?.file && !answer.problem && (
@@ -84,6 +88,7 @@ export function MapView({ notify, onOpenConvergence }: {
                 dependencies={answer.dependencies}
                 selected={module}
                 file={answer.file}
+                fed={answer.fed}
                 onSelect={setModule}
               />
             </Card>
