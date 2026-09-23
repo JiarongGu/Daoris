@@ -80,6 +80,10 @@ public sealed class ServiceClient : IDisposable
     /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
     /// driver learns that a session it is running took a quest another machine took first.
     /// </summary>
+    /// <summary>Where a circle stands on this machine (SYNC6a) — read from its host, without reaching the remote.</summary>
+    public async Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default) =>
+        RemoteSyncPayloads.Standing(await GetAsync($"/api/sync?workspace={Uri.EscapeDataString(workspace)}", ct).ConfigureAwait(false));
+
     public async Task<string> ClaimAsync(string id, CancellationToken ct = default) =>
         RemoteSyncPayloads.Claim(await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false));
 

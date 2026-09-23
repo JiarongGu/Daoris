@@ -170,6 +170,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `GET /api/feed/held?repository=` | shared mode only: the commits a repository's knowledge, code map and declaration stand on here — what a feeding machine asks git about (SYNC5a, SYNC5b) |
 | `GET /api/quests/operations?since=N` · `POST /api/quests/operations` | shared mode only: what the remote accepted after number N, in its order, and a push of a machine's quest operations rebased on N, judged quest by quest (D68) |
 | `POST /api/sync?workspace=` · `GET /api/quests/{id}/claim` | local mode only: one pass for a workspace — the quests' fetch, rebase and push, then the session records both ways — answering its conflicts, refusals, record counts and wall; and where this machine's claim on a quest stands — held, unconfirmed, lost or none (D69). A take on a shared quest runs the quest half before it answers |
+| `GET /api/sync?workspace=` | local mode only: where a workspace stands — operations not yet pushed, the quests the last pass left behind, the quests carrying a conflict, when a pass last reached the remote and last tried, and the wall it hit. Read from the store, reaching no remote; a workspace with no remote here answers `wired: false` and nothing else (SYNC6a) |
 | `GET /api/sessions/since?since=N` | shared mode only: the team's session records held after revision N, in order — every origin but the caller's own (SYNC4) |
 
 There are exactly two trust shapes (D47 §7, as amended). **Local** — the default — trusts the

@@ -4591,3 +4591,44 @@ the re-wire and unjoin tests prove. **The rehearsal's two-machine phase proves i
 - joining again registers the repository afresh.
 
 Service 420, driver 424, modules 105, web 620 + 18, family 243/243, deploy 39/39, verify green.
+
+## SYNC6a — where a circle stands, and the terminal door (2026-09-24)
+
+- [x] **SYNC6a — where a circle stands, and the terminal door.** The first of SYNC6's three
+  landings; SYNC6 was split into a, b and c on 2026-09-24 (design §9).
+
+✅ **done 2026-09-24**, the eighth of D68's build. **Every pass records how it ended**, in the store's
+`quest_passes`. `QuestSync.RunAsync` writes it however the pass ended, so a take's pass and a tick's
+are both recorded. A pass that reached the remote moves `synced`. One that hit a wall keeps
+`synced`, moves `tried`, and names the wall. Being in the store, it survives a host restart.
+
+**Where a circle stands** (`QuestStore.StandingAsync`):
+- ahead: the pending operations, read through the same *what may leave* predicate the pass uses, so
+  a quest to a local receiver is never ahead of anything;
+- behind: the quests the last pass could not bring level;
+- the quests carrying a conflict, from the cached `conflicts` column;
+- the last pass.
+A local host answers it at `GET /api/sync?workspace=` without reaching the remote. A circle with no
+remote here answers `wired: false` and nothing else.
+
+**The terminal door** (`SyncConsole`):
+- `daoris-driver sync [--workspace <name>]` runs the tick's own pass: the feed up, the retires, the
+  team's rows, then the host's pass. It then prints each circle's standing, and exits 2 when a pass
+  hit a wall.
+- `sync status` prints the standing, and reaches no remote.
+- Naming a circle with no remote is refused by name (`RemoteSyncSet.RunOnceAsync(workspace)`).
+
+**Decided while building**, both in design §6:
+- *Behind* is the quests the last pass could not bring level. A pass fetches and rebases in one
+  step, so nothing is ever "fetched, not yet seen", and the time of the last sync says how old that
+  knowledge is.
+- There is no `pull` or `push`: the tick runs the whole pass within seconds, so holding back either
+  half would be undone at once.
+
+**Found**: the web renders no conflict anywhere, although every quest answer carries them. SYNC6b
+shows them on the quest as well as counting them. **The rehearsal's two-machine phase proves the
+door**: with the remote down, `sync` exits 2 naming the wall and `sync status` shows work ahead and
+the wall as the last try; the losing machine lists the conflicted quest; `sync` pushes a quest
+before any tick does; and a circle with no remote is refused by name.
+
+Service 424, driver 427, modules 105, web 620 + 18, family 248/248, deploy 39/39, verify green.

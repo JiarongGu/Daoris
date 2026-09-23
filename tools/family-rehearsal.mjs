@@ -1190,6 +1190,15 @@ const driveB = (mode = '--once') => driver({
   harness: { DAORIS_HARNESS_CONFIG: machineBHarness },
 });
 
+// The sync on demand, from a terminal (SYNC6a): the tick's own pass when asked, and where a circle
+// stands — read from the machine's host, reaching no remote.
+const syncA = (args) => run(`dotnet "${driverDll}" sync ${args}`, scratch, {
+  DAORIS_SERVICE_URL: BASE, ...NO_REMOTE, DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyA,
+}, DRIVE_TIMEOUT);
+const syncB = (args) => run(`dotnet "${driverDll}" sync ${args}`, scratch, {
+  DAORIS_SERVICE_URL: HOST_B_BASE, ...NO_REMOTE, DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyB,
+}, DRIVE_TIMEOUT);
+
 const firstTickB = driveB('--once');
 check('machine b’s tick syncs without a problem', firstTickB.code === 0 && !/sync {2}/.test(firstTickB.out), firstTickB.out);
 const firstTickA = driveA('--once');
@@ -1448,6 +1457,19 @@ check(
     && downTick.code === 0 && /sync {2}/.test(downTick.out),
   `${offlineTakeA.text}\n${offlineTakeB.text}\n${downTick.out}`,
 );
+const downSync = syncA('--workspace default');
+const downStatus = syncA('status');
+check(
+  '`daoris-driver sync` asked with the remote down exits 2 naming the wall — a script that syncs can tell',
+  downSync.code === 2 && /^sync {2}default: \S/m.test(downSync.out),
+  downSync.out,
+);
+check(
+  '`daoris-driver sync status` says where the circle stands with the remote down: ahead, and the wall as the last try',
+  downStatus.code === 0 && /^default {2}[1-9]\d* ahead · \d+ behind · \d+ in conflict · synced /m.test(downStatus.out)
+    && /the last try, \d\d:\d\dZ, did not reach the remote/.test(downStatus.out),
+  downStatus.out,
+);
 remoteHost = await startServer(remoteEnv, REMOTE_BASE);
 const backTick = driveA('--once');
 const caughtUp = ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
@@ -1465,6 +1487,36 @@ check(
   losingTick.code === 0 && /kept on the quest as a conflict/.test(losingTick.out)
     && offlineOnB?.conflicts?.length === 1 && offlineOnB.conflicts[0].note === 'machine b, offline',
   `${losingTick.out}\n${JSON.stringify(offlineOnB)}`,
+);
+const losingStatus = syncB('status');
+check(
+  '…and machine b’s `sync status` lists that quest as in conflict, with the circle level again',
+  losingStatus.code === 0 && /^default {2}0 ahead · 0 behind · [1-9]\d* in conflict · synced /m.test(losingStatus.out)
+    && new RegExp(`in conflict: .*#${offlineId}`).test(losingStatus.out),
+  losingStatus.out,
+);
+
+// On demand: the pass runs when asked, not when the tick comes round. The quest is declined straight
+// after, and synced the same way, so nothing later in the run finds an extra quest open to drive.
+const whenAsked = await api('POST', '/api/quests', {
+  body: { from: 'newcomer', to: 'borealis', title: 'Pushed when asked', body: 'Not waiting for the tick.' },
+});
+const whenAskedId = whenAsked.json?.quest?.id ?? '';
+const syncNow = syncA('--workspace default');
+const pushedNow = ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
+  .some((q) => q.id === whenAskedId);
+check(
+  '`daoris-driver sync` runs the tick’s pass when asked — the quest is at the remote before any tick, and the circle stands level',
+  whenAsked.status === 200 && syncNow.code === 0 && pushedNow && /^default {2}0 ahead/m.test(syncNow.out),
+  syncNow.out,
+);
+await api('POST', `/api/quests/${whenAskedId}/respond`, { body: { action: 'decline', reason: 'a rehearsal of the door, not work' } });
+syncA('--workspace default');
+const unwiredSync = syncA('--workspace studio');
+check(
+  '…and a circle this machine has no remote for is refused by name, not synced nowhere in silence',
+  unwiredSync.code === 2 && /no remote for `studio`/.test(unwiredSync.out),
+  unwiredSync.out,
 );
 
 // A LOSING SESSION STOPPED (D68 §5): a session on machine b takes its quest while b cannot reach the

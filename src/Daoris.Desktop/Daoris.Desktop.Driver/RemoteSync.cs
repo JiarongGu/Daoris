@@ -109,12 +109,26 @@ public sealed class RemoteSyncSet : IDisposable
             .ToList();
     }
 
-    public async Task<SyncReport> RunOnceAsync(CancellationToken ct = default)
+    public Task<SyncReport> RunOnceAsync(CancellationToken ct = default) => RunOnceAsync(workspace: null, ct);
+
+    /// <summary>One pass — of every circle, or of the one <paramref name="workspace"/> names (SYNC6a).</summary>
+    /// <exception cref="DriverException">A circle was named that this machine has no remote for.</exception>
+    public async Task<SyncReport> RunOnceAsync(string? workspace, CancellationToken ct = default)
     {
         Refresh();
+        var syncs = workspace is null
+            ? _syncs
+            : _syncs.Where(sync => string.Equals(sync.Workspace, RemoteTarget.Workspace(workspace), StringComparison.OrdinalIgnoreCase)).ToList();
+        if (workspace is not null && syncs.Count == 0)
+        {
+            throw new DriverException(
+                $"this machine has no remote for `{RemoteTarget.Workspace(workspace)}` — `daoris remote add` wires one, "
+                + "and a circle with none syncs nowhere.");
+        }
+
         var problems = new List<string>();
         var notes = new List<string>();
-        foreach (var sync in _syncs)
+        foreach (var sync in syncs)
         {
             var report = await sync.RunOnceAsync(ct).ConfigureAwait(false);
             if (report.Problem is not null) problems.Add($"{sync.Workspace}: {report.Problem}");

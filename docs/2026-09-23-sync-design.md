@@ -107,14 +107,19 @@ processes (D47 §6 unchanged).
 - **Every driver tick**: fetch, rebase, push for each wired workspace, like auto-fetch. A session
   running no longer holds the sync back: the sync gets its own cadence beside the tick. Before, a
   tick ran sessions to completion inside itself, so no sync ran for up to 30 minutes.
-- **On demand**: `daoris-driver sync [status|pull|push] [--workspace <name>]`, the terminal door
-  (D50). The screen door is a *Sync now* action. The knowledge feed stays in the driver, because git
+- **On demand**: `daoris-driver sync [status] [--workspace <name>]`, the terminal door (D50). The
+  screen door is a *Sync now* action. There is no `pull` or `push`. A pass pushes what it rebased on
+  what it fetched, and the tick runs the whole pass within seconds, so holding back either half would
+  be undone before anyone relied on it. The knowledge feed stays in the driver, because git
   provenance needs a spawn and the service spawns nothing (D46 §7). The quest sync runs in the hosts
   (D69), because a take pushes and awaits from the door it was made at. The driver's tick asks its
   local host for a pass.
-- **Seen**: the status bar shows, per workspace, what is ahead (unpushed), behind (fetched, not yet
-  seen) and in conflict, with the time of the last sync. Conflicts are listed where they can be
-  acted on.
+- **Seen**: the status bar shows, per workspace, what is ahead (unpushed), behind and in conflict,
+  with the time of the last sync. Conflicts are listed where they can be acted on. A pass fetches and
+  rebases in one step, so nothing is ever fetched and left unapplied. *Behind* is therefore the quests
+  the last pass could not bring level, because the remote moved them on every round. The time the
+  circle last reached its remote says how old that knowledge is. A pass that hits a wall keeps that
+  time, and names the wall as the last try.
 
 ## 7. What stays, and what goes
 
@@ -262,5 +267,13 @@ tombstone (SYNC0b).
 - **SYNC5 — knowledge, code map and registrations by ancestry**: fast-forward by
   `merge-base --is-ancestor`, a content digest for the same commit, and retire as a tombstone. This
   dissolves SYNC0b and SYNC0c and carries MAP3b.
-- **SYNC6 — the surfaces**: ahead, behind and conflicts on the status bar; the conflict list with its
-  actions; *Sync now*; `daoris-driver sync`.
+- **SYNC6 — the surfaces**, in three landings:
+  - **SYNC6a — where a circle stands, and the terminal door.** Every pass records how it ended, in
+    the store, whether a take or a tick ran it. A local host's `GET /api/sync?workspace=` answers
+    ahead, behind, the quests in conflict, when the circle last synced and last tried, and the wall.
+    It reads the store and reaches no remote. `daoris-driver sync` runs the tick's pass now, and
+    `sync status` prints the standing.
+  - **SYNC6b — the screen door.** The status bar's sync item, and *Sync now* over the bridge running
+    the same pass as the terminal. The conflict list links each quest to where it can be acted on.
+  - **SYNC6c — dismissing a conflict.** A person's dismissal is an operation that travels, so every
+    machine stops showing it. It changes no status, and it is the conflict list's action.

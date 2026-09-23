@@ -190,6 +190,16 @@ public sealed class QuestStore
                   workspace TEXT PRIMARY KEY COLLATE NOCASE,
                   number    INTEGER NOT NULL
                 );
+                -- How each circle's last pass ended (SYNC6a): when it last reached its remote, when it
+                -- last tried, the quests it left behind and the wall it hit. Kept in the store rather
+                -- than in a host's memory, so a restarted host still knows when the circle last synced.
+                CREATE TABLE IF NOT EXISTS quest_passes (
+                  workspace TEXT PRIMARY KEY COLLATE NOCASE,
+                  synced    TEXT NULL,
+                  tried     TEXT NOT NULL,
+                  behind    TEXT NOT NULL,
+                  problem   TEXT NULL
+                );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -896,6 +906,78 @@ public sealed class QuestStore
 
             return claim;
         }, ct);
+
+    /// <summary>
+    /// How a circle's pass ended (SYNC6a). A pass that reached the remote moves <see cref="QuestStanding.Synced"/>;
+    /// one that hit a wall keeps it and names the wall, because when the circle last synced and why
+    /// the last try did not are two facts.
+    /// </summary>
+    public Task RecordPassAsync(string workspace, QuestSyncReport report, DateTimeOffset at, CancellationToken ct = default) =>
+        InTransactionAsync(async transaction =>
+        {
+            await using var command = _connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = """
+                INSERT INTO quest_passes (workspace, synced, tried, behind, problem)
+                VALUES ($workspace, $synced, $tried, $behind, $problem)
+                ON CONFLICT (workspace) DO UPDATE SET
+                  synced = COALESCE($synced, synced), tried = $tried, behind = $behind, problem = $problem
+                """;
+            command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+            command.Parameters.AddWithValue("$synced", report.Problem is null ? at.ToString("O") : DBNull.Value);
+            command.Parameters.AddWithValue("$tried", at.ToString("O"));
+            // A list of quest ids, kept the way links are: a plain array of strings.
+            command.Parameters.AddWithValue("$behind", LinksJson(report.Behind));
+            command.Parameters.AddWithValue("$problem", (object?)report.Problem ?? DBNull.Value);
+            return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }, ct);
+
+    /// <summary>
+    /// Where a circle stands (SYNC6a): what this machine has not pushed, the quests carrying a conflict,
+    /// and how its last pass ended.
+    /// </summary>
+    /// <param name="shared">Whether a receiver may leave the machine — what <see cref="PendingAsync"/> reads.
+    /// What never leaves is not ahead of anything.</param>
+    public async Task<QuestStanding> StandingAsync(
+        string workspace, Func<string, bool> shared, CancellationToken ct = default)
+    {
+        var circle = Workspaces.Normalize(workspace);
+        var ahead = (await PendingAsync(circle, shared, ct).ConfigureAwait(false)).Count;
+        return await InGateAsync(async () =>
+        {
+            var conflicts = new List<string>();
+            await using (var command = _connection.CreateCommand())
+            {
+                command.CommandText =
+                    "SELECT id FROM quests WHERE workspace = $workspace COLLATE NOCASE AND conflicts <> '[]' ORDER BY updated DESC";
+                command.Parameters.AddWithValue("$workspace", circle);
+                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await reader.ReadAsync(ct).ConfigureAwait(false)) conflicts.Add(reader.GetString(0));
+            }
+
+            await using (var command = _connection.CreateCommand())
+            {
+                command.CommandText = "SELECT synced, tried, behind, problem FROM quest_passes WHERE workspace = $workspace";
+                command.Parameters.AddWithValue("$workspace", circle);
+                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                if (await reader.ReadAsync(ct).ConfigureAwait(false))
+                {
+                    return new QuestStanding(
+                        ahead,
+                        ReadLinks(reader.GetString(2)),
+                        conflicts,
+                        reader.IsDBNull(0) ? null : Time(reader.GetString(0)),
+                        Time(reader.GetString(1)),
+                        reader.IsDBNull(3) ? null : reader.GetString(3));
+                }
+            }
+
+            return new QuestStanding(ahead, [], conflicts, Synced: null, Tried: null, Problem: null);
+        }, ct).ConfigureAwait(false);
+    }
+
+    private static DateTimeOffset Time(string text) =>
+        DateTimeOffset.Parse(text, null, System.Globalization.DateTimeStyles.RoundtripKind);
 
     /// <summary>Record the numbers a push was given — the operations stop being pending.</summary>
     public Task AcceptedAsync(IReadOnlyList<QuestAcceptance> accepted, CancellationToken ct = default) =>

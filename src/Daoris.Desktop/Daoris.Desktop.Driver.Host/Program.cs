@@ -34,6 +34,10 @@ using Daoris.Driver;
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced.
 //
+//   sync [status] [--workspace <name>]
+//                 one pass now, the tick's own, for every circle with a remote or the one named; with
+//                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a).
+//
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`
 // turns it off here exactly as the desktop's checkbox does — one file, two doors (D50).
@@ -62,6 +66,12 @@ if (args is ["ask", .. var askArgs])
 if (args is ["trees", .. var treesArgs])
 {
     return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs);
+}
+
+// The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.
+if (args is ["sync", .. var syncArgs])
+{
+    return await Daoris.Driver.Host.SyncConsole.RunAsync(syncArgs);
 }
 
 var once = args.Contains("--once");

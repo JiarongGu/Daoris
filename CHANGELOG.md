@@ -547,6 +547,12 @@ The first version: doctrine that installs, is checked, and flows back.
   rewrites a copy whose declaration changed, and removes a copy the circle no longer lists. A joined
   checkout that leaves a circle owes that circle a retire: removed, moved to another circle, or no
   longer joined. The store records the retire when the row changes, and the next pass carries it.
+- **Sync when asked, and see where a circle stands** (SYNC6a). `daoris-driver sync` runs the tick's
+  own pass now, for every circle with a remote or the one `--workspace` names. `daoris-driver sync
+  status` prints where each circle stands on this machine: operations not yet pushed, quests left
+  behind, quests in conflict, and when it last reached its remote. A pass that could not reach the
+  remote keeps that time and names the wall as the last try. The status reads the machine's own
+  host and never contacts the remote.
 - **A refusal can be information.** A stale or branch feed is the rules working, not a fault, so it is
   flagged as such on the wire and the sync reports it as news rather than as a wall. Records and
   quests still travel from any checkout; only knowledge waits for the canonical line. A checkout git

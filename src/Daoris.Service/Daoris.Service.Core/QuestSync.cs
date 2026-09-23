@@ -12,6 +12,21 @@ public sealed record QuestSyncReport(
     int Pushed, IReadOnlyList<QuestOperation> Conflicts, IReadOnlyList<QuestPushRefusal> Refused,
     IReadOnlyList<string> Behind, string? Problem);
 
+/// <summary>Where a circle stands on this machine (SYNC6a) — what the status bar and `daoris-driver sync status` read.</summary>
+/// <param name="Ahead">Operations this machine made that the circle's remote has not numbered yet.</param>
+/// <param name="Behind">
+/// Quests the last pass could not bring level, because the remote moved them on every round. A pass
+/// fetches and rebases in one step, so nothing is ever fetched and left unapplied: behind is what the
+/// last pass could not finish, and <paramref name="Synced"/> says how old that knowledge is.
+/// </param>
+/// <param name="Conflicts">Quests in the circle carrying a conflict, newest first.</param>
+/// <param name="Synced">When a pass last reached the remote; null before the first one did.</param>
+/// <param name="Tried">When a pass last ran, reaching the remote or not; null before the first.</param>
+/// <param name="Problem">The wall the last pass hit; null when it reached the remote.</param>
+public sealed record QuestStanding(
+    int Ahead, IReadOnlyList<string> Behind, IReadOnlyList<string> Conflicts,
+    DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem);
+
 /// <summary>
 /// One pass of fetch, rebase, push for one workspace's quests (D68 §3, sync design §8) — the ONE
 /// implementation, run by a take that claims by push and by the driver's tick alike (D69).
@@ -32,14 +47,31 @@ public static class QuestSync
     public static async Task<QuestSyncReport> RunAsync(
         QuestStore store, KnowledgeService service, IRemote remote, string workspace, CancellationToken ct = default)
     {
-        // What may leave follows the receiver: joined in this circle, whether its checkout is here or a
-        // teammate's row came down without one. Silence means local.
         var circle = Workspaces.Normalize(workspace);
+        return await RunAsync(store, await SharedAsync(service, circle, ct).ConfigureAwait(false), remote, circle, ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>Where a circle stands (SYNC6a), with what may leave read the way a pass reads it.</summary>
+    public static async Task<QuestStanding> StandingAsync(
+        QuestStore store, KnowledgeService service, string workspace, CancellationToken ct = default)
+    {
+        var circle = Workspaces.Normalize(workspace);
+        return await store.StandingAsync(circle, await SharedAsync(service, circle, ct).ConfigureAwait(false), ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What may leave follows the receiver: joined in this circle, whether its checkout is here or a
+    /// teammate's row came down without one. Silence means local.
+    /// </summary>
+    private static async Task<Func<string, bool>> SharedAsync(KnowledgeService service, string circle, CancellationToken ct)
+    {
         var shared = (await service.RegistryAsync(ct: ct).ConfigureAwait(false))
             .Where(r => r.Joined && Workspaces.Same(r.InWorkspace, circle))
             .Select(r => r.Repository)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return await RunAsync(store, shared.Contains, remote, circle, ct).ConfigureAwait(false);
+        return shared.Contains;
     }
 
     /// <summary>A pass, pushing the pending operations of quests whose receiver <paramref name="shared"/> admits.</summary>
@@ -52,7 +84,12 @@ public static class QuestSync
         await pass.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            return await RunLockedAsync(store, shared, remote, circle, ct).ConfigureAwait(false);
+            var report = await RunLockedAsync(store, shared, remote, circle, ct).ConfigureAwait(false);
+
+            // Recorded however it ended — a take's pass and a tick's alike — so where the circle stands
+            // is read from the store rather than from whichever caller happened to see the pass.
+            await store.RecordPassAsync(circle, report, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            return report;
         }
         finally
         {

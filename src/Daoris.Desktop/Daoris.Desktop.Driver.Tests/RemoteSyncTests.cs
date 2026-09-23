@@ -306,6 +306,42 @@ public sealed class RemoteSyncTests
         Assert.False(unnamed.RootElement.TryGetProperty("base", out _));
     }
 
+    // ——— Where a circle stands (SYNC6a), as `daoris-driver sync status` prints it.
+
+    /// <summary>
+    /// Ahead, behind and conflicts in one line, the quests named beneath it, and a wall said as the last
+    /// TRY — beside the last time the circle reached its remote, which a wall does not move.
+    /// </summary>
+    [Fact]
+    public void A_circle_s_standing_reads_as_one_line_and_the_quests_beneath_it()
+    {
+        var standing = RemoteSyncPayloads.Standing("""
+            { "workspace": "aurora", "wired": true, "ahead": 2, "behind": ["q2"], "conflicts": ["q1", "q3"],
+              "synced": "2026-09-24T10:03:00+00:00", "tried": "2026-09-24T10:05:00+00:00",
+              "problem": "the remote could not be reached (connection refused)" }
+            """);
+
+        var lines = standing.Describe();
+
+        Assert.Equal("aurora  2 ahead · 1 behind · 2 in conflict · synced 2026-09-24 10:03Z", lines[0]);
+        Assert.Contains(lines, line => line.Contains("in conflict: #q1, #q3"));
+        Assert.Contains(lines, line => line.Contains("behind: #q2"));
+        Assert.Contains(lines, line => line.Contains("10:05Z") && line.Contains("could not be reached"));
+    }
+
+    /// <summary>A circle with no remote here has nothing to be ahead of, and one never synced says so rather than showing a time.</summary>
+    [Fact]
+    public void An_unwired_circle_and_one_never_synced_each_say_what_they_are()
+    {
+        var unwired = RemoteSyncPayloads.Standing("""{ "workspace": "tools", "wired": false }""").Describe();
+        var fresh = RemoteSyncPayloads.Standing("""
+            { "workspace": "aurora", "wired": true, "ahead": 1, "behind": [], "conflicts": [], "synced": null, "tried": null, "problem": null }
+            """).Describe();
+
+        Assert.Equal(["tools  no remote on this machine's host — nothing of this circle leaves it"], unwired);
+        Assert.Equal(["aurora  1 ahead · 0 behind · 0 in conflict · not synced yet"], fresh);
+    }
+
     /// <summary>What stands on one held commit is said once, naming everything that does.</summary>
     [Fact]
     public void Everything_waiting_on_one_commit_is_named_in_one_sentence()
@@ -1063,6 +1099,25 @@ public sealed class RemoteSyncSetTests
         new RemoteSync(Local, null, "aurora", new RemoteTarget(Aurora, "dk_aurora"), transport),
         new RemoteSync(Local, null, "tools", new RemoteTarget(Tools, "dk_tools"), transport),
     ]);
+
+    /// <summary>
+    /// `daoris-driver sync --workspace` and *Sync now* run ONE circle's pass (SYNC6a): the other circle's
+    /// remote hears nothing, and a circle this machine has no remote for is not a pass at all.
+    /// </summary>
+    [Fact]
+    public async Task One_circle_syncs_on_its_own_when_it_is_named()
+    {
+        using var transport = new RecordingTransport { Answer = Answer };
+        using var set = Set(transport);
+
+        var report = await set.RunOnceAsync("TOOLS");
+
+        Assert.Null(report.Problem);
+        Assert.Contains(transport.Calls, c => c.Call.StartsWith($"POST {Tools}/"));
+        Assert.DoesNotContain(transport.Calls, c => c.Call.Contains(Aurora));
+        var unwired = await Assert.ThrowsAsync<DriverException>(() => set.RunOnceAsync("studio"));
+        Assert.Contains("no remote for `studio`", unwired.Message);
+    }
 
     [Fact]
     public async Task Each_circle_feeds_its_own_remote_and_no_other()

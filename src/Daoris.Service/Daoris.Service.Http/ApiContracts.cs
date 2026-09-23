@@ -146,6 +146,13 @@ public sealed record SyncResponse(
     string Workspace, string Machine, bool Wired, int Pushed, IReadOnlyList<QuestConflictNote> Conflicts,
     IReadOnlyList<QuestPushRefusalWire> Refused, IReadOnlyList<string> Behind,
     int SessionsPushed, int SessionsFetched, string? Problem);
+// Where a circle stands on this machine (SYNC6a): what it has not pushed, the quests the last pass
+// left behind, the quests carrying a conflict, when a pass last reached the remote and last tried, and
+// the wall it hit. A circle with no remote here answers `wired: false` and nothing else, because
+// "unpushed" means nothing where there is nowhere to push.
+public sealed record SyncStandingResponse(
+    string Workspace, bool Wired, int Ahead, IReadOnlyList<string> Behind, IReadOnlyList<string> Conflicts,
+    DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem);
 // Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4).
 public sealed record QuestClaimResponse(string Quest, string Claim);
 public sealed record FeedResponse(int Accepted, string Message);
@@ -200,6 +207,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(FeedCodeMapRequest))]
 [JsonSerializable(typeof(FeedHeldResponse))]
 [JsonSerializable(typeof(SyncResponse))]
+[JsonSerializable(typeof(SyncStandingResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(CodeMapResponse))]

@@ -921,6 +921,22 @@ else
             quests.Problem ?? sessions.Problem));
     });
 
+    // Where a circle stands (SYNC6a): read from the store, so it answers without reaching the remote —
+    // what the status bar polls and `daoris-driver sync status` prints.
+    app.MapGet("/api/sync", async (ComposedService s, string? workspace, CancellationToken ct) =>
+    {
+        var circle = Workspaces.Normalize(workspace);
+        if (s.Remotes?.For(circle) is null)
+        {
+            return Results.Ok(new SyncStandingResponse(circle, Wired: false, 0, [], [], null, null, null));
+        }
+
+        var standing = await QuestSync.StandingAsync(s.Quests, s.Service, circle, ct);
+        return Results.Ok(new SyncStandingResponse(
+            circle, Wired: true, standing.Ahead, standing.Behind, standing.Conflicts,
+            standing.Synced, standing.Tried, standing.Problem));
+    });
+
     app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>
         Results.Ok(new QuestClaimResponse(
             id.TrimStart('#'), (await s.Quests.ClaimAsync(id.TrimStart('#'), ct)).ToString().ToLowerInvariant())));

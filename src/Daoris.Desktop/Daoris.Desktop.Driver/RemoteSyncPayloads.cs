@@ -4,6 +4,41 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
+/// Where a circle stands on this machine (SYNC6a): what it has not pushed, the quests its last pass
+/// could not bring level, the quests carrying a conflict, and how that pass ended.
+/// </summary>
+/// <param name="Synced">When a pass last reached the remote; a wall does not move it.</param>
+/// <param name="Tried">When a pass last ran, reaching the remote or not.</param>
+/// <param name="Problem">The wall the last pass hit; null when it reached the remote.</param>
+public sealed record SyncStanding(
+    string Workspace, bool Wired, int Ahead, IReadOnlyList<string> Behind, IReadOnlyList<string> Conflicts,
+    DateTimeOffset? Synced, DateTimeOffset? Tried, string? Problem)
+{
+    /// <summary>
+    /// As a terminal prints it: the circle and its counts on one line, then the quests each count
+    /// names, then the wall as the last TRY, beside the last time the circle reached its remote.
+    /// </summary>
+    public IReadOnlyList<string> Describe()
+    {
+        if (!Wired) return [$"{Workspace}  no remote on this machine's host — nothing of this circle leaves it"];
+
+        var lines = new List<string>
+        {
+            $"{Workspace}  {Ahead} ahead · {Behind.Count} behind · {Conflicts.Count} in conflict · "
+            + (Synced is { } synced ? $"synced {synced.UtcDateTime:yyyy-MM-dd HH:mm}Z" : "not synced yet"),
+        };
+        if (Conflicts.Count > 0) lines.Add($"  in conflict: {string.Join(", ", Conflicts.Select(id => $"#{id}"))}");
+        if (Behind.Count > 0) lines.Add($"  behind: {string.Join(", ", Behind.Select(id => $"#{id}"))}");
+        if (Problem is not null)
+        {
+            lines.Add($"  the last try{(Tried is { } tried ? $", {tried.UtcDateTime:HH:mm}Z," : "")} did not reach the remote: {Problem}");
+        }
+
+        return lines;
+    }
+}
+
+/// <summary>
 /// The pure half of the sync: what leaves this machine and what comes back, built from the doors' own
 /// JSON. Pure so the boundary is testable where it matters most — the payloads these functions build
 /// are the disclosure boundary in practice, and none of them has a field for a machine path. A root or
@@ -361,6 +396,30 @@ public static class RemoteSyncPayloads
         return new SyncPass(
             root.TryGetProperty("wired", out var wired) && wired.ValueKind == JsonValueKind.True,
             notes,
+            Text(root, "problem"));
+    }
+
+    /// <summary>Where a circle stands on this machine (SYNC6a), as its host answered.</summary>
+    public static SyncStanding Standing(string standingJson)
+    {
+        using var document = JsonDocument.Parse(standingJson);
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            throw new DriverException($"a host answered a circle's standing with something that is not one: {Clip(root.GetRawText())}");
+        }
+
+        DateTimeOffset? At(string name) =>
+            Text(root, name) is { } text ? DateTimeOffset.Parse(text, null, System.Globalization.DateTimeStyles.RoundtripKind) : null;
+
+        return new SyncStanding(
+            Text(root, "workspace") ?? "default",
+            root.TryGetProperty("wired", out var wired) && wired.ValueKind == JsonValueKind.True,
+            root.TryGetProperty("ahead", out var ahead) && ahead.ValueKind == JsonValueKind.Number ? ahead.GetInt32() : 0,
+            Strings(root, "behind"),
+            Strings(root, "conflicts"),
+            At("synced"),
+            At("tried"),
             Text(root, "problem"));
     }
 

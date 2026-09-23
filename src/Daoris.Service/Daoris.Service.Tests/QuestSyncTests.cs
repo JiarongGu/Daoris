@@ -376,6 +376,82 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestClaim.None, await _b.ClaimAsync(quest.Id));
     }
 
+    // ——— Where a circle stands (SYNC6a): what this machine has not pushed, the quests carrying a
+    // conflict, and how the last pass ended — what the status bar and `daoris-driver sync status` read.
+
+    [Fact]
+    public async Task A_circle_stands_at_what_is_unpushed_and_when_it_last_reached_its_remote()
+    {
+        var never = await _a.StandingAsync(Workspaces.Default, _ => true);
+        Assert.Equal(0, never.Ahead);
+        Assert.Null(never.Synced);
+        Assert.Null(never.Tried);
+
+        await Publish(_a);
+        Assert.Equal(1, (await _a.StandingAsync(Workspaces.Default, _ => true)).Ahead);
+
+        await SyncAsync(_a);
+        var synced = await _a.StandingAsync(Workspaces.Default, _ => true);
+
+        Assert.Equal(0, synced.Ahead);
+        Assert.NotNull(synced.Synced);
+        Assert.Equal(synced.Synced, synced.Tried);
+        Assert.Null(synced.Problem);
+        Assert.Empty(synced.Behind);
+    }
+
+    /// <summary>
+    /// A pass that hit a wall keeps the time the circle last reached its remote and names the wall —
+    /// "synced at ten, and the try at quarter past could not reach it" is two facts, not one.
+    /// </summary>
+    [Fact]
+    public async Task A_pass_that_hit_a_wall_keeps_the_last_sync_and_names_the_wall()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        var reached = (await _a.StandingAsync(Workspaces.Default, _ => true)).Synced;
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+
+        await QuestSync.RunAsync(_a, _ => true, new UnreachableRemote(), Workspaces.Default);
+        var walled = await _a.StandingAsync(Workspaces.Default, _ => true);
+
+        Assert.Equal(reached, walled.Synced);
+        Assert.True(walled.Tried >= walled.Synced);
+        Assert.Contains("could not be reached", walled.Problem);
+        Assert.Equal(1, walled.Ahead);
+
+        await SyncAsync(_a);
+        Assert.Null((await _a.StandingAsync(Workspaces.Default, _ => true)).Problem);
+    }
+
+    /// <summary>A quest carrying a conflict is listed wherever the circle's standing is read, on both machines.</summary>
+    [Fact]
+    public async Task The_quests_carrying_a_conflict_are_where_the_circle_stands()
+    {
+        var quest = await Publish(_a);
+        await Publish(_a, "Quiet quest");
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(2));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Equal([quest.Id], (await _a.StandingAsync(Workspaces.Default, _ => true)).Conflicts);
+        Assert.Equal([quest.Id], (await _b.StandingAsync(Workspaces.Default, _ => true)).Conflicts);
+        Assert.Empty((await _b.StandingAsync("elsewhere", _ => true)).Conflicts);
+    }
+
+    /// <summary>What never leaves the machine is not ahead of anything: a quest to a local receiver waits on nobody.</summary>
+    [Fact]
+    public async Task What_may_not_leave_the_machine_is_not_ahead()
+    {
+        await Publish(_a);
+
+        Assert.Equal(0, (await _a.StandingAsync(Workspaces.Default, _ => false)).Ahead);
+    }
+
     /// <summary>
     /// The wire both hosts speak carries an operation whole — a publish's ask with its files by name,
     /// its chain and its parent; a conflict with what it attempted; a number — and nothing half-made.
