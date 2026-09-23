@@ -578,7 +578,9 @@ describe("Daoris's own AI on Settings", () => {
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { adapter?: string | null } }) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
       if (type === 'SET_INTAKE') intakeAdapter = request?.payload?.adapter ?? null;
-      if (type === 'STATE' || type === 'SET_INTAKE') return { ...DRIVER_STATE, intakeAdapter };
+      // As the wire carries it: off is "", never null — the bridge leaves a null out, and a missing
+      // field is how the page knows a shell older than the intake (AGT6, seen on the window).
+      if (type === 'STATE' || type === 'SET_INTAKE') return { ...DRIVER_STATE, intakeAdapter: intakeAdapter ?? '' };
       if (type === 'HARNESSES') return ROSTER;
       if (type === 'STARTS') {
         return {
@@ -600,6 +602,34 @@ describe("Daoris's own AI on Settings", () => {
     expect(await screen.findByText('lexical only')).toBeTruthy();
     expect(screen.getByText(STATUS.note)).toBeTruthy();
     expect(screen.getByText(/DAORIS_EMBED_MODEL \(a model's name\)/)).toBeTruthy();
+  });
+
+  /**
+   * 🔴 Seen on the window (AGT6): with the intake off, the card offered no intake control at all —
+   * the bridge left the null out, and the page read the missing field as a shell older than the
+   * intake. Off is "" on the wire now, and reads as Off.
+   */
+  it('offers the intake control while it is off, reading as Off', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    const trigger = await screen.findByRole('combobox', { name: 'the intake agent' });
+    expect(trigger).toHaveTextContent('Off — declarations only');
+  });
+
+  /** A shell that answers no field has never heard of the intake: no control, not a disabled one. */
+  it('offers no intake control on a shell older than the intake', async () => {
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'STATE') return DRIVER_STATE;
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'STARTS') return { adapter: 'claude-code', starts: [start('work', 'claude-code')] };
+      return undefined;
+    });
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('lexical only')).toBeTruthy();
+    await screen.findByRole('heading', { name: 'This machine' });
+    expect(screen.queryByRole('combobox', { name: 'the intake agent' })).toBeNull();
   });
 
   /**
@@ -1263,8 +1293,10 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notify).toHaveBeenCalledWith('sync  fed 2');
     // The index too: a schema rebuild is observable, and a summary cached mid-feed stayed "555 · 7"
     // on an index of 1,050 · 17 for as long as the window was open (deployed app, 2026-09-23).
-    // And where each circle stands with its remote (SYNC6b): every tick runs a pass.
-    for (const key of [keys.allSessions, keys.allQuests, keys.driver, keys.allRepositories, keys.allSync]) {
+    // And where each circle stands with its remote (SYNC6b): every tick runs a pass. And the asks: a
+    // tick takes them (INT4b) and the band reads them (INT4d) — seen on the window, an ask made by the
+    // other door was missing from *What needs you*, and its parked intake read as a bare session.
+    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.driver, keys.allRepositories, keys.allSync]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
   });

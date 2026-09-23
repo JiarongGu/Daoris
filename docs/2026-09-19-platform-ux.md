@@ -230,8 +230,14 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   page can open it. A button that closes one drawer and opens nothing is a dead click.
 
 > **Amended 2026-09-24, asks in *What needs you* (INT4d).** Held by vitest and a Playwright check,
-> and **not yet looked at on the real window**.
+> and looked at on the real window in both themes and 中文, which found two defects.
 >
+> - **The band is live, or it lies.** An ask made by the other door (a terminal, a teammate's
+>   sync) moves nothing else a tick reports, so the shell forwards a tick when the asks change too,
+>   and the page refetches them on every tick. Before this, the band missed the ask until a reload,
+>   and its parked intake read as a bare session.
+> - **A record never says no intake ran above the intake that did.** A parked intake published
+>   nothing, so the tier stays the declarations'. The record then says so in words of its own.
 > - **A row is a door only where its destination exists.** A parked session opens in Sessions,
 >   which only the desktop has. A quest nobody can take opens in its own drawer, and an ask opens in
 >   its record, in a browser as on the desktop. A row with nowhere to go is text rather than a
@@ -242,9 +248,13 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **A record says who answered.** The tier is in words, and an intake session is a line of the
 >   record: its state, then its tool. The tool is a door into Sessions wherever Sessions exists.
 
-> **Amended 2026-09-24, Daoris's own AI (AGT6).** Held by vitest and a Playwright check. **Not yet
-> looked at on the real window.**
+> **Amended 2026-09-24, Daoris's own AI (AGT6).** Held by vitest and a Playwright check, and looked
+> at on the real window in both themes, with the intake off. The on state was not looked at, because
+> choosing an agent on a machine that has asks waiting spawns a real session.
 >
+> - **Off is a value, not an absence.** The bridge leaves a null out, and the page tells a shell
+>   older than the intake by the field's absence. So a null "off" hid the control from exactly the
+>   state a person would switch it on from. Off is `""` on the wire.
 > - **A section goes where its audience is.** *Daoris's own AI* sits between *Appearance* and *This
 >   machine*: which tier answers search is the service's answer, given to every browser, so the
 >   card is for everyone. Its intake row is `driver.json` and appears only with a shell. The card

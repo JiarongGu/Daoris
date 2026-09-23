@@ -412,6 +412,7 @@
   "asks.tier.intake": "an intake session read it and published it",
   "asks.tierShort.intake": "by intake",
   "asks.record.intake": "intake session",
+  "asks.record.tierIntakeUnpublished": "by declarations; an intake read it and has not published",
   "quests.compose.title": "New quest",
   "quests.compose.meta": "published to the service; pulled by its owner",
   "quests.compose.hint": "Say what is needed and why, with the evidence — never the change you would make; whoever works there may see a better answer.",

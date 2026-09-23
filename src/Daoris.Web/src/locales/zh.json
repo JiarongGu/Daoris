@@ -412,6 +412,7 @@
   "asks.tier.intake": "由受理会话读取后发布",
   "asks.tierShort.intake": "由受理会话",
   "asks.record.intake": "受理会话",
+  "asks.record.tierIntakeUnpublished": "按声明判断；受理会话已读过，尚未发布",
   "quests.compose.title": "新建委托",
   "quests.compose.meta": "发布至服务；由归属方拉取",
   "quests.compose.hint": "说清需要什么、为什么，并附上证据——绝不要写你打算做的改动；在那里做事的人也许能看出更好的答案。",

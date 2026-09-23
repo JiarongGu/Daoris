@@ -7,6 +7,41 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
+/// The shell forwards a tick to the page when the asks CHANGED (INT4d): the attention band reads them
+/// beside the sessions, and an ask made by the other door — a terminal, a teammate's sync — moves
+/// nothing else a tick reports, so without this the band missed it until the window was reloaded.
+/// </summary>
+public sealed class AskSignatureTests
+{
+    private static AskView Ask(string id, string state = "Proposed", string? intake = null, int quests = 0) =>
+        new(id, "default", "a sentence", state, "declarations")
+        {
+            Intake = intake,
+            Quests = [.. Enumerable.Range(0, quests).Select(n => $"q{n}")],
+        };
+
+    [Fact]
+    public void The_same_asks_sign_the_same_whatever_their_order()
+    {
+        var a = new[] { Ask("a1"), Ask("b2", "Published", quests: 1) };
+
+        Assert.Equal(Asks.Signature(a), Asks.Signature([a[1], a[0]]));
+    }
+
+    [Fact]
+    public void A_new_ask_a_moved_state_an_intake_or_a_quest_each_sign_differently()
+    {
+        var before = new[] { Ask("a1") };
+
+        Assert.NotEqual(Asks.Signature(before), Asks.Signature([Ask("a1"), Ask("b2")]));
+        Assert.NotEqual(Asks.Signature(before), Asks.Signature([Ask("a1", "Closed")]));
+        Assert.NotEqual(Asks.Signature(before), Asks.Signature([Ask("a1", intake: "s1a2b3c4")]));
+        Assert.NotEqual(Asks.Signature(before), Asks.Signature([Ask("a1", quests: 1)]));
+        Assert.Equal(string.Empty, Asks.Signature([]));
+    }
+}
+
+/// <summary>
 /// The intake session (D65 §1b, INT4b): an ask the declarations did not settle is answered by a
 /// SESSION the driver opens in a room it owns — which reads the circle's declarations, publishes the
 /// quests onto the ask itself, and asks the person where the declarations do not settle it.

@@ -97,9 +97,10 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
     <AiJobs
       search={search}
       // An older shell has never heard of the intake: its STATE carries no field, and it gets no row.
+      // Off is "" rather than null, because the bridge leaves a null out — which read as older.
       intake={driver.data && 'intakeAdapter' in driver.data
         ? {
-          adapter: driver.data.intakeAdapter ?? null,
+          adapter: driver.data.intakeAdapter || null,
           agents,
           starts: starts.filter((start) => start.job === 'intake'),
           nameOf: namer(t, harnesses as ToolDoor[]),

@@ -56,6 +56,11 @@ export function ShellSignals({ notify, onAttend }: {
     // price of a quiet one.
     void client.invalidateQueries({ queryKey: keys.allSessions });
     void client.invalidateQueries({ queryKey: keys.allQuests });
+    // 🔴 And the asks. A tick takes them (INT4b), and the attention band reads them beside the
+    // sessions (INT4d) — so a session list fresher than its asks is worse than both stale: seen on
+    // the window, an ask made by the other door was missing from *What needs you*, and its parked
+    // intake read as a bare session, because the band could not see the ask it belonged to.
+    void client.invalidateQueries({ queryKey: keys.allAsks });
     void client.invalidateQueries({ queryKey: keys.driver });
     // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b).
     void client.invalidateQueries({ queryKey: keys.allSync });

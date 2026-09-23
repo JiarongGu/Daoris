@@ -27,6 +27,20 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
     public IReadOnlyList<string> Proposed { get; init; } = [];
 }
 
+public static class Asks
+{
+    /// <summary>
+    /// What a set of asks SAYS to the attention band, as one string — equal when the same asks stand
+    /// in the same states with the same intake and quests, whatever the order. The shell forwards a
+    /// tick to the page when this changes (INT4d), as it does for <see cref="Considerations.Signature"/>:
+    /// an ask made by the other door moves nothing else a tick reports.
+    /// </summary>
+    public static string Signature(IEnumerable<AskView> asks) =>
+        string.Join("\n", asks
+            .Select(ask => $"{ask.Id}\t{ask.State}\t{ask.Intake}\t{ask.Quests.Count}")
+            .OrderBy(line => line, StringComparer.Ordinal));
+}
+
 /// <summary>A repository's declaration as the registry answered it — what the intake decides from (D34).</summary>
 /// <param name="Registered">Whether it declared a domain at all — adopted and silent is not the same as owning nothing.</param>
 /// <param name="Root">Where it is on this machine, answered only to this machine; null elsewhere.</param>

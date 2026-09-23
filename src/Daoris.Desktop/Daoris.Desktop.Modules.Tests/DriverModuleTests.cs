@@ -188,12 +188,19 @@ public sealed class DriverModuleTests : Bridge
     /// until named, and 🔴 kept by every other edit: the state is what the page shows, and a control
     /// that deleted it would switch the intake off with nobody touching it.
     /// </summary>
+    /// <remarks>
+    /// 🔴 Off is the empty string on the wire, never null. The bridge leaves a null property out, and
+    /// the page tells a shell older than the intake by the field's ABSENCE — so a null "off" read as an
+    /// older shell and the screen offered no intake control at all: seen on the window (AGT6), from
+    /// exactly the state a person would want to switch it on from. This helper keeps nulls, which is
+    /// why it never saw that.
+    /// </remarks>
     [Fact]
     public async Task The_intake_harness_is_off_until_named_and_every_other_edit_keeps_it()
     {
         var module = Module();
 
-        Assert.Equal(JsonValueKind.Null, (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").ValueKind);
+        Assert.Equal("", (await AnswerAsync(module, "STATE")).GetProperty("intakeAdapter").GetString());
 
         var on = await AnswerAsync(module, "SET_INTAKE", new { adapter = "claude-code-acp" });
         Assert.Equal("claude-code-acp", on.GetProperty("intakeAdapter").GetString());
@@ -202,7 +209,7 @@ public sealed class DriverModuleTests : Bridge
         Assert.Equal("claude-code-acp", DriverConfig.Load(DriverConfigPath).IntakeAdapter);
 
         var off = await AnswerAsync(module, "SET_INTAKE", new { adapter = (string?)null });
-        Assert.Equal(JsonValueKind.Null, off.GetProperty("intakeAdapter").ValueKind);
+        Assert.Equal("", off.GetProperty("intakeAdapter").GetString());
         Assert.Null(DriverConfig.Load(DriverConfigPath).IntakeAdapter);
     }
 

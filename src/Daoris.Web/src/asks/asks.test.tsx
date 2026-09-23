@@ -176,6 +176,16 @@ describe('AskRecord', () => {
     expect(within(line).queryByRole('button')).toBeNull();
   });
 
+  /**
+   * 🔴 Seen on the window: an intake that parks has published nothing, so the tier stays the
+   * declarations' — and its words, "no intake harness ran", sat directly above the intake that ran.
+   */
+  it('never says no intake ran above the intake that did', () => {
+    const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED });
+    expect(within(drawer).queryByText('by declarations only; no intake harness ran')).toBeNull();
+    expect(within(drawer).getByText('by declarations; an intake read it and has not published')).toBeInTheDocument();
+  });
+
   it('has no intake line for an ask no intake served', () => {
     const { drawer } = record(PROPOSED);
     expect(within(drawer).queryByRole('region', { name: 'intake session' })).toBeNull();

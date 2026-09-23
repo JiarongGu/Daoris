@@ -213,6 +213,7 @@ public sealed class DriverLoop(
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.
         var attention = new AttentionWatch();
         string? lastConsidered = null;
+        string? lastAsked = null;
 
         _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks);
         await _watch.RunAsync(
@@ -245,6 +246,19 @@ public sealed class DriverLoop(
                 var considered = Considerations.Signature(report.Considerations);
                 var changed = considered != lastConsidered;
                 lastConsidered = considered;
+
+                // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
+                // ask made by the other door — a terminal, a teammate's sync — moves nothing above,
+                // so a quiet tick never told the page and the band missed it until a reload. Read
+                // here because the tick reads asks only when an intake is named. A host that answers
+                // no ask door changes nothing.
+                var asked = await AskedAsync(service, ct).ConfigureAwait(false);
+                if (asked is not null && asked != lastAsked)
+                {
+                    changed = true;
+                    lastAsked = asked;
+                }
+
                 if (report.PlannedAnything || report.Events.Count > 0 || changed)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
@@ -263,6 +277,19 @@ public sealed class DriverLoop(
             // An unattended loop outlives its service's restarts — say so, wait, look again.
             onError: error => eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { error.Message }),
             ct).ConfigureAwait(false);
+    }
+
+    /// <summary>What the asks say this tick, or null when the host could not answer — never a change.</summary>
+    private static async Task<string?> AskedAsync(ServiceClient service, CancellationToken ct)
+    {
+        try
+        {
+            return Asks.Signature(await service.AsksAsync(ct).ConfigureAwait(false));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Stop, bounded: an in-flight session is ended and recorded `stopped` by the driver itself.</summary>

@@ -1172,7 +1172,9 @@ public sealed class DriverModule : ModuleBase
             config.Strikes,
             config.Forgiven,
             // 🔴 Reported so the page can show it, and modelled on the record so no toggle deletes it.
-            config.IntakeAdapter,
+            // Off is "" on the wire, never null: the bridge leaves a null out, and the page tells a
+            // shell older than the intake by this field's absence (AGT6, seen on the window).
+            IntakeAdapter = config.IntakeAdapter ?? "",
             Running = _loop.Processes.Running,
         };
     }

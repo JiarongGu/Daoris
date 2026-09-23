@@ -94,7 +94,12 @@ export function AskRecord({
         {ask.asker && (
           <><dt className="text-ink-faint">{t('asks.record.asker')}</dt><dd className="m-0">{ask.asker}</dd></>
         )}
-        <dt className="text-ink-faint">{t('asks.record.tier')}</dt><dd className="m-0">{tierWords(t, ask.tier)}</dd>
+        <dt className="text-ink-faint">{t('asks.record.tier')}</dt>
+        <dd className="m-0">
+          {/* An intake that parks published nothing, so the tier stays the declarations' — whose words
+              say no intake ran, which the section below would contradict. */}
+          {ask.tier === 'declarations' && ask.intake ? t('asks.record.tierIntakeUnpublished') : tierWords(t, ask.tier)}
+        </dd>
         {ask.note && (
           /* Why it closed, or the service's sentence about the receiver it named — verbatim either way. */
           <>

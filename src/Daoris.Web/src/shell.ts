@@ -32,10 +32,11 @@ export type DriverState = {
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
   /**
-   * The agent an ask the declarations leave opens an intake session on (INT4b), or null — asks are
-   * answered by declarations only. Absent on a shell older than the intake.
+   * The agent an ask the declarations leave opens an intake session on (INT4b), or "" — asks are
+   * answered by declarations only. Never null: the bridge leaves a null out, and absent is how a
+   * shell older than the intake reads.
    */
-  intakeAdapter?: string | null;
+  intakeAdapter?: string;
   /** The Daoris home (D63): the directory every machine-local file lives in. Absent on an older shell. */
   home?: string;
   /**
