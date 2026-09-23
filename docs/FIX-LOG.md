@@ -26,7 +26,7 @@ names the one-light-one-dark rule and the test that reads it.
 a gate count in a commit message is for the tree as committed, so every suite a late edit can reach
 is re-run after that edit.
 
-**Commit.** pending
+**Commit.** `21e1c2b`
 
 ## Two sessions in one repository broke every driver tick (2026-09-23)
 
@@ -50,7 +50,7 @@ repository, and the first is the one the reason names.
 **Verify.** `PlannerTests`, *two active sessions in one repository block it rather than break the
 tick*: failed with the exception above before the fix, passes after. Driver 357.
 
-**Commit.** pending
+**Commit.** `21e1c2b`
 
 ## "Send it back as a quest" opened no composer (2026-09-23)
 
