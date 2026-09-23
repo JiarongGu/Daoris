@@ -78,6 +78,14 @@ public sealed class DriverLoop(
     public string? HomeNotice => home is { Worth: true } ? home.Notice : null;
 
     /// <summary>
+    /// The host the shell adopted is serving a page that is not this install's (case study 4d), or
+    /// null. Carried in the state for the same reason the home's notice is: it was a toast, and a
+    /// toast raised before the page subscribed — which is exactly when adoption is decided — reached
+    /// nobody. The one surface item the second deployment left unfiled.
+    /// </summary>
+    public string? HostNotice => supervisor.Notice;
+
+    /// <summary>
     /// This machine's harnesses and the accounts they run as (D49 §4) — the roster surface reads it,
     /// and both spawn doors ask it the same question before starting anything.
     /// </summary>

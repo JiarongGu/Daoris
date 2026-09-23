@@ -104,6 +104,15 @@ export function SettingsView({ notify }: { notify: Notify }) {
               {driver.data.homeNotice}
             </p>
           )}
+          {/* The host this window adopted serves another install's page (case study 4d). A
+              standing fact, so a standing line: the toast that carried it fired before this page
+              existed to hear it, which is how the second deployment showed a new window, an old
+              page, and no surface saying so. */}
+          {driver.data.hostNotice && (
+            <p className="mt-2 max-w-prose border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+              {driver.data.hostNotice}
+            </p>
+          )}
         </div>
       )}
 

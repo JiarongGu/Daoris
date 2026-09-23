@@ -154,19 +154,27 @@ function stopEverything() {
 // -------------------------------------------------- 1. doctrine is current
 
 section('1. The examples hold current, clean doctrine');
+
+// What the question is: did SYNC change anything? Measured as the tree before against the tree
+// after, tracked-and-modified only (untracked files are the first run of a fresh checkout, not
+// drift). Measured as absolute dirtiness once, which read an in-progress edit to `examples/README.md`
+// — a file sync never touches — as a canon change nobody synced.
+const trackedDirt = () => run('git status --porcelain -- examples', repoRoot)
+  .out.split('\n')
+  .filter((line) => line.trim() && !line.startsWith('??'))
+  .sort();
+const beforeSync = trackedDirt();
 for (const name of EXAMPLES) {
   const sync = run(`node "${cliBin}" sync`, join(examplesRoot, name));
   check(`${name}: sync exits 0`, sync.code === 0, sync.out);
 }
 
-// Tracked-and-modified only: untracked files are the first run of a fresh checkout, not drift.
-const dirty = run('git status --porcelain -- examples', repoRoot)
-  .out.split('\n')
-  .filter((line) => line.trim() && !line.startsWith('??'));
+const afterSync = trackedDirt();
+const changedBySync = afterSync.filter((line) => !beforeSync.includes(line));
 check(
   'sync changed nothing tracked — the examples are current with the canon',
-  dirty.length === 0,
-  `${dirty.join('; ')}\n          a canon change must sync the examples in the same change (D39)`,
+  changedBySync.length === 0,
+  `${changedBySync.join('; ')}\n          a canon change must sync the examples in the same change (D39)`,
 );
 
 for (const name of EXAMPLES) {
@@ -2245,71 +2253,54 @@ check(
 
 // -------------------------------------------------- 18. a plugin that declares, and speaks
 
-section('18. A plugin declares a harness and holds a quest with a sentence (D64)');
+section('18. Two plugins: one declares a harness, one holds a quest with a sentence (D64)');
 
-// A plugin is a folder under the home (D63) with a manifest. This one does both things a plugin can
-// do: it DECLARES a harness — the ACP stub agent above, as a configuration of the door, so a session
-// runs on a harness this build never named — and it SPEAKS: a hook process that holds any quest whose
-// title says so, and writes down every ending it is told about. No code of it loads anywhere; the
-// driver starts it, asks it, and stops it.
+// A plugin is a folder under the home (D63) with a manifest. Two here, one for each thing a plugin
+// can do. `rehearsal.agent` DECLARES a harness — the ACP stub agent above, as a configuration of the
+// door, so a session runs on a harness this build never named; it is written here because it has to
+// name that agent's scratch path. `hold-by-title` SPEAKS — a process the driver starts, asks and
+// stops — and it is the TRACKED example under `examples/plugins/`, installed with the real
+// `daoris plugin add`, so the example somebody copies is the one this gate drives. No code of either
+// loads anywhere.
 //
 // The driver's home is the directory its config sits in (the per-file override wins, D63), which in
-// this rehearsal is `scratch` — so the plugin lives there, and the CLI's two doors onto the same
+// this rehearsal is `scratch` — so the plugins live there, and the CLI's two doors onto the same
 // folder are pointed there too, for this phase only.
 const PLUGIN_HOME = { DAORIS_HOME: scratch };
-const pluginFolder = join(scratch, 'plugins', 'rehearsal.gate');
-mkdirSync(pluginFolder, { recursive: true });
-writeFileSync(join(pluginFolder, 'plugin.json'), `${JSON.stringify({
-  id: 'rehearsal.gate',
+const agentPlugin = join(scratch, 'plugins', 'rehearsal.agent');
+mkdirSync(agentPlugin, { recursive: true });
+writeFileSync(join(agentPlugin, 'plugin.json'), `${JSON.stringify({
+  id: 'rehearsal.agent',
   apiVersion: 1,
-  name: 'Rehearsal gate',
+  name: 'Rehearsal agent',
   version: '1.0.0',
-  description: 'Declares the stub agent as a harness, and holds any quest whose title says [hold].',
+  description: 'Declares the stub ACP agent as a harness.',
   harnesses: [{ name: 'gate-agent', command: ['node', acpAgent] }],
-  hooks: { command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider', 'session/ended'] },
 }, null, 2)}\n`);
-writeFileSync(join(pluginFolder, 'hooks.mjs'), `
-import { appendFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { createInterface } from 'node:readline';
 
-const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\\n');
-const data = process.env.DAORIS_PLUGIN_DATA;
-mkdirSync(data, { recursive: true });
-console.error('gate: up as ' + process.env.DAORIS_PLUGIN_ID);
-
-const lines = createInterface({ input: process.stdin });
-for await (const line of lines) {
-  const frame = JSON.parse(line);
-  if (frame.method === 'initialize') {
-    send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
-  } else if (frame.method === 'hook/quest/consider') {
-    const hold = frame.params.quest.title.includes('[hold]');
-    send({ jsonrpc: '2.0', id: frame.id, result: hold
-      ? { kind: 'hold', reason: 'outside working hours — the gate opens at nine' }
-      : { kind: 'allow' } });
-  } else if (frame.method === 'hook/session/ended') {
-    appendFileSync(join(data, 'ended.log'), frame.params.session + ' ' + frame.params.quest + ' ' + frame.params.state + ' ' + frame.params.adapter + '\\n');
-    send({ jsonrpc: '2.0', id: frame.id, result: {} });
-  } else if (frame.method === 'shutdown') {
-    process.exit(0);
-  }
-}
-`);
+const pluginAdded = run(`node "${cliBin}" plugin add "${join(examplesRoot, 'plugins', 'hold-by-title')}"`, scratch, PLUGIN_HOME);
+check(
+  '`daoris plugin add` copies the tracked example in under its id',
+  pluginAdded.code === 0 && /added plugin `hold-by-title`/.test(pluginAdded.out)
+    && existsSync(join(scratch, 'plugins', 'hold-by-title', 'hooks.mjs')),
+  pluginAdded.out,
+);
+const pluginFolder = join(scratch, 'plugins', 'hold-by-title');
 
 // The CLI twin reads the same folder by the same rules.
 const pluginList = run(`node "${cliBin}" plugin list`, scratch, PLUGIN_HOME);
 check(
-  '`daoris plugin list` names the plugin, what it declares and what it speaks on',
-  pluginList.code === 0 && /rehearsal\.gate/.test(pluginList.out)
-    && /declares gate-agent; speaks on quest\/consider, session\/ended/.test(pluginList.out),
+  '`daoris plugin list` names both, what each declares and what each speaks on',
+  pluginList.code === 0
+    && /rehearsal\.agent[\s\S]*declares gate-agent/.test(pluginList.out)
+    && /hold-by-title[\s\S]*speaks on quest\/consider, session\/ended/.test(pluginList.out),
   pluginList.out,
 );
 
 const harnessList = run(`node "${cliBin}" harness list`, scratch, NO_HARNESS);
 check(
   '`daoris harness list` shows the declared harness beside the build\'s own, naming the plugin',
-  /gate-agent/.test(harnessList.out) && /declared by plugin `rehearsal\.gate`/.test(harnessList.out),
+  /gate-agent/.test(harnessList.out) && /declared by plugin `rehearsal\.agent`/.test(harnessList.out),
   harnessList.out,
 );
 
@@ -2333,56 +2324,57 @@ const gateHeldId = gateHeld.json?.quest?.id ?? '';
 
 const gateRun = driver({ serviceUrl: BASE, config: gateConfig, mode: '--until-idle' });
 check(
-  'the driver starts the plugin\'s hook process and says what it listens on',
-  /plugin\s+rehearsal\.gate: started, listening on quest\/consider, session\/ended/.test(gateRun.out),
+  'the driver starts the speaking plugin\'s process and says what it listens on — and starts nothing for the one that only declares',
+  /plugin\s+hold-by-title: started, listening on quest\/consider, session\/ended/.test(gateRun.out)
+    && !/plugin\s+rehearsal\.agent: started/.test(gateRun.out),
   gateRun.out,
 );
 check(
-  'the quest the gate lets through runs to done on the DECLARED harness',
+  'the quest the plugin lets through runs to done on the DECLARED harness',
   gateRun.code === 0 && new RegExp(`completed[^\\n]*#${gatePassId}`).test(gateRun.out),
   gateRun.out,
 );
 check(
-  '🔴 the quest the gate holds sits with the PLUGIN\'S sentence — "sitting must always say why" holds for a plugin too',
-  new RegExp(`sitting\\s+#${gateHeldId} → newcomer — plugin \`rehearsal\\.gate\` holds it: outside working hours`).test(gateRun.out),
+  '🔴 the quest the plugin holds sits with the PLUGIN\'S sentence — "sitting must always say why" holds for a plugin too',
+  new RegExp(`sitting\\s+#${gateHeldId} → newcomer — plugin \`hold-by-title\` holds it: its title asks to be held`).test(gateRun.out),
   gateRun.out,
 );
 
 const gateRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
   .find((s) => s.quest === gatePassId);
 check(
-  'the record names the declared harness, and the plugin nowhere',
+  'the record names the declared harness, and neither plugin anywhere',
   gateRecord?.state === 'completed' && gateRecord?.adapter === 'gate-agent'
-    && !JSON.stringify(gateRecord).includes('rehearsal.gate'),
+    && !/rehearsal\.agent|hold-by-title/.test(JSON.stringify(gateRecord)),
   JSON.stringify(gateRecord),
 );
 
-const endedLog = join(scratch, 'plugins', '.data', 'rehearsal.gate', 'ended.log');
+const endedLog = join(scratch, 'plugins', '.data', 'hold-by-title', 'ended.log');
 const endedSoFar = () => (existsSync(endedLog) ? readFileSync(endedLog, 'utf8') : '(no ended.log)');
 check(
   'the ending was told to the plugin, which kept it in ITS data folder — beside the install, never in it',
-  existsSync(endedLog) && new RegExp(`${gateRecord?.id} ${gatePassId} completed gate-agent`).test(endedSoFar())
+  existsSync(endedLog) && new RegExp(`${gateRecord?.id} ${gatePassId} newcomer completed gate-agent`).test(endedSoFar())
     && !existsSync(join(pluginFolder, 'ended.log')),
   endedSoFar(),
 );
 
-// Disabled from the terminal: a row, never a rename. The next run does not start the process, does
-// not ask it, and the held quest goes — on the build's own stub, since the declared harness went with
-// the plugin.
-const disabled = run(`node "${cliBin}" plugin disable rehearsal.gate`, scratch, PLUGIN_HOME);
+// Disabled from the terminal: a row, never a rename. The next run does not start the process and
+// does not ask it, so the held quest goes — still on the declared harness, because the other plugin
+// is still on: switching one off takes nothing from another.
+const disabled = run(`node "${cliBin}" plugin disable hold-by-title`, scratch, PLUGIN_HOME);
 check('`daoris plugin disable` switches it off and says so', disabled.code === 0 && /is off/.test(disabled.out), disabled.out);
 const listedOff = run(`node "${cliBin}" plugin list`, scratch, PLUGIN_HOME).out;
 check(
   'the folder and its data stay exactly where they were',
-  existsSync(join(pluginFolder, 'plugin.json')) && existsSync(endedLog) && /rehearsal\.gate[^\n]*\(off\)/.test(listedOff),
+  existsSync(join(pluginFolder, 'plugin.json')) && existsSync(endedLog) && /hold-by-title[^\n]*\(off\)/.test(listedOff),
   listedOff,
 );
 
-const gateOff = driver({ serviceUrl: BASE, config: acpConfig, mode: '--until-idle' });
+const gateOff = driver({ serviceUrl: BASE, config: gateConfig, mode: '--until-idle' });
 check(
-  'with the plugin off, the held quest runs to done and no hook process is started',
+  'with the speaking plugin off, the held quest runs to done on the still-declared harness, and no hook process is started',
   gateOff.code === 0 && new RegExp(`completed[^\\n]*#${gateHeldId}`).test(gateOff.out)
-    && !/plugin\s+rehearsal\.gate: started/.test(gateOff.out),
+    && !/plugin\s+hold-by-title: started/.test(gateOff.out),
   gateOff.out,
 );
 check(

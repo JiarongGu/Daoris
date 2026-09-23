@@ -1,0 +1,11 @@
+{
+  "id": "hold-by-title",
+  "apiVersion": 1,
+  "name": "Hold by title",
+  "version": "1.0.0",
+  "description": "Holds any quest whose title carries [hold], and keeps a log of every ending the driver tells it about.",
+  "hooks": {
+    "command": ["node", "${plugin}/hooks.mjs"],
+    "points": ["quest/consider", "session/ended"]
+  }
+}

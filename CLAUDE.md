@@ -52,7 +52,7 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
 quest lock hardened into code, and the desktop's sync loop feeding up and mirroring down. **The family
-rehearsal gates all of it with no model, no account and no credential** (192/192) — it names its own
+rehearsal gates all of it with no model, no account and no credential** (193/193) — it names its own
 phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
 **The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
@@ -212,7 +212,7 @@ Run every command from the **workspace root**, not from a package directory.
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
   driver drive?" gate, since D47 the "does the remote cross?" gate, and since D48 the "does the
-  boundary hold?" gate. 192 checks over the example family, from both examples current and clean
+  boundary hold?" gate. 193 checks over the example family, from both examples current and clean
   through a quest's whole life, the workspace boundary refused naming both sides, two simulated
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to

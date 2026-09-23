@@ -64,7 +64,18 @@ transcript in `_fixtures/rehearsal-logs/`:
 - the **remote crosses** (D47): a shared host with minted keys, two simulated machines, a quest
   crossing them to done, a raced take standing down, and the remote's store scanned to hold nothing
   machine-local;
+- a **plugin speaks** (D64): [`plugins/hold-by-title`](plugins/hold-by-title/README.md) is installed
+  with the real `daoris plugin add`, holds one quest with its own sentence, is told of an ending it
+  keeps in its data folder, and is switched off from a terminal — while a second plugin declares the
+  harness the sessions ran on;
 - the host is killed and restarted, and **nothing is lost**.
+
+## How it is extended
+
+`plugins/` is not a project in the family — it holds the **example plugin**, a folder with a
+`plugin.json` that the driver reads from the home's `plugins/` once it is added
+(`docs/2026-09-23-plugin-design.md`). A plugin declares harnesses on the ACP door and may speak from
+a process of its own; no code from one ever loads into Daoris.
 
 The examples are tracked in full — manifests, locks, synced doctrine — so they are readable as
 examples, not only runnable as fixtures (D39). The cost is stated in the same decision: a canon change

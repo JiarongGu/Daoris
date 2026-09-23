@@ -34,6 +34,9 @@ public sealed class DriverModuleTests : Bridge
         // to announce on a start that established nothing.
         Assert.Equal(Home, state.GetProperty("home").GetString());
         Assert.Equal(JsonValueKind.Null, state.GetProperty("homeNotice").ValueKind);
+        // And what the shell adopted, when it is not its own page — nothing adopted here, so null,
+        // and the field is there for the page to read rather than a toast it can miss.
+        Assert.Equal(JsonValueKind.Null, state.GetProperty("hostNotice").ValueKind);
     }
 
     /// <summary>

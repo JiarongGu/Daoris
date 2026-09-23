@@ -301,6 +301,11 @@ The first version: doctrine that installs, is checked, and flows back.
   Machine view's Plugins card is the other door: a row per plugin with what it declares and speaks
   on, running or off, the driver's sentence under a refused one, the switch, and Remove naming what
   the plugin kept; a declared harness on the roster wears the plugin it came from.
+  `examples/plugins/hold-by-title` is the tracked example of a plugin that speaks — the one the
+  family rehearsal installs with the real `daoris plugin add` and drives.
+- **What the shell adopted stands on the Machine view.** A host already running and serving another
+  install's page was said once, as a toast raised before the page existed to hear it; the sentence
+  now rides the driver state beside the home's, and stands for as long as it is true.
 - **The Machine view is a settings page of rows.** Each setting is a label, a one-line hint naming
   its terminal twin, and the control at the right; the paragraph that motivated it is on an info
   glyph. The home's path sits under the header, the driver's two dials share a card, and wiring a

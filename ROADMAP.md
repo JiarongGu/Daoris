@@ -95,10 +95,31 @@ object is a **session, not a file**, and there is no editor in the plan at any p
 | **ACP2–3 · The harnesses on it** | `claude-code` through the ACP project's adapter, closing with a real driven run; then dsh and codex as configurations of the same door (HARNESS2 closes into ACP3) | Next — ACP2's closing step spends a real login |
 | **SURF4a–d · The Work frame** | Built component by component (D52 as amended, `docs/2026-09-21-working-surface-components.md`): the atoms and the two helpers, then the rail, then the attended session, then — **D55** — the *frame* rather than a sixth nav item. A story before each component, its own test, and no hook inside a molecule. SURF4c's timeline reads the protocol | **SURF4a built** (2026-09-21): three atoms, `SESSION_TONE` moved, `sessionTitle`, a sabotage-tested presentational boundary, every story a smoke test. 4b next |
 | **SURF5 · Attention** | Overview's *what needs you*, `AwaitingPerson`'s surface, the sidebar counts, OS notification on park and end | **Built** (5a 2026-09-21, 5b 2026-09-22): the attention band and a parked session's three moves, then the notification — a park is seen by diffing the tick's sessions, an end is known from the driver's own conclusion, so "never for an ending the person caused" needs no suppression list. Closes driver open question 5 |
-| **SURF6 · Review** | The diff over the bridge, bounded; **a multibuffer with a per-file *viewed* mark** (D55); accept, or send it back as a quest | Planned |
-| **SURF7 · The window is the frame** (D55) | `OptimizedForm` with frameless chrome; the top strip becomes app menu + mode switch + scope + caption buttons; `WindowCommandModule` mapped late, Snap Layouts bought by reporting the button rectangles | Planned — the framework ships it; `Form.WindowState` lies about a frameless window and `IAppMaximizable` is the truth |
+| **SURF6 · Review** | The diff over the bridge, bounded; **a multibuffer with a per-file *viewed* mark** (D55); accept, or send it back as a quest | **Built** (6a and 6b, 2026-09-22) — what a session landed, read off the checkout, and the two acts over it |
+| **SURF7 · The window is the frame** (D55) | `OptimizedForm` with frameless chrome; the top strip becomes app menu + mode switch + scope + caption buttons; `WindowCommandModule` mapped late, Snap Layouts bought by reporting the button rectangles | **Built** (2026-09-22, with SURF10 → **D56**) — the app strip is the title bar, one denser type scale held by a test |
 | **SURF8 · The monitor window** (D55) | `SecondaryWindows`: a read-only rail-and-streams window for a second screen, and a detached session — named windows on their own STA threads, geometry per name | **Built** (2026-09-22): both are routes into the same bundle; the second reader was already true (`Tail` keeps no cursor) and is now asserted; a secondary window needs its own thread-affine WebView2 environment and follows the OS theme itself |
-| **SURF9 · Command palette** (D55) | The only affordance that scales past ~7 domains, and cheaper before the count grows | Planned |
+| **SURF9 · Command palette** (D55) | The only affordance that scales past ~7 domains, and cheaper before the count grows | **Built** (2026-09-22) — centred in the app strip, printing its own shortcut |
+
+**Every SURF item is built**; the Work frame is usable, and `docs/2026-09-19-platform-ux.md` §4
+carries what each looking pass settled.
+
+---
+
+## The arcs since: the toolchain, the instruction file, the deployment, the home, the plugins (2026-09-22 → 23)
+
+Each was set by the owner and measured before it was designed; the archive carries the outcomes and
+`docs/DECISIONS.md` the reasons.
+
+| Arc | What | Where it stands |
+|---|---|---|
+| **TOOL1–3 · The toolchain** (D57, `docs/2026-09-22-toolchain-design.md`) | Daoris owns which binary runs (`harness pin\|unpin`, a pin nobody installed refuses); usage is measured before it is managed (ACP's `usage_update` per session at its high-water mark, totalled per account, machine-local); breadth is more native adapters plus the ACP door, never a registry | **Built** (2026-09-22) — TOOL4 (rotation) is held until TOOL3 has data; TOOL5 is a trigger |
+| **CANON8 · The instruction file** (D59, `docs/2026-09-22-instruction-file-design.md`) | The always-loaded tier lives in a region of `AGENTS.md`, because `.claude/rules/` is read by one harness of three; `CLAUDE.md` carries `@AGENTS.md` | **Built and migrated** (2026-09-22) — this repository and both examples |
+| **DEPLOY1–4 · Deployed** (D60, D62, D63) | `publish:desktop -- --to <dir> --service` installs one exe, binaries under `app/`, **the Daoris home in `data/`**; a gate drives the published artefact; development happens against the install; **nothing of Daoris's lives under the user profile** — `DAORIS_HOME` is the one seam and a writer with none refuses | **Built** (2026-09-22/23) — two deployments found seventeen defects invisible from the workspace, every one in `docs/FIX-LOG.md`; DEPLOY1's second half is the owner's |
+| **PLUG1–6 · Plugins** (D64, `docs/2026-09-23-plugin-design.md`) | A plugin is a folder under the home's `plugins/` that **declares** (harnesses on the ACP door) and may **speak** (a process of its own answering the driver at named points, fail-closed); two doors; no code loads into any host | **Built** (2026-09-23) — the family rehearsal drives one; PLUG7 (service-side points) is held until a plugin asks; PLUG2 is the owner's |
+
+**What is open is decisions and triggers**, not work: ACP2 and DEPLOY1's second half each spend a real
+login; PLUG2 reopens D4; the held rows wait on something arriving. Surface work comes from looking at
+the deployed application after every change.
 
 ---
 
@@ -143,90 +164,33 @@ to what they share (D14). The `doc-*` maintenance family is deliberately not can
 
 ## Built — `Daoris.Devkit`: the same pathology, one layer down
 
-Eleven repositories carry a hand-copied `devtools/dev.mjs`, measured at **2.6 KB to 52.6 KB — a 20×
-spread**. Nine also carry a config file, which is the part that was *meant* to differ. The rest is one
-tool, re-derived and diverged. This was the strongest evidence in the family, and the artefact answers
-it the way the CLI answers the document version: gates get **declared, not copied**.
-
-**Built 2026-08-05.** One 2.7 MB self-contained binary, 57 tests, five universal gates, and it runs this
-repository's own gate set end to end.
-
-- **Shipped as a .NET AOT binary**, reversing the earlier position that the tooling should stay Node
-  (D20). That position weighed the execution cost and missed the distribution one — and distribution is
-  the only cost this project exists to address. A .NET repository carrying a Node script has a Node
-  dependency it needs for tooling alone; a binary has a version, a pasted script has whatever the paste
-  contained.
-- **The CLI stays Node and zero-dependency.** Different artefact, different job: it has to keep running
-  in repositories that have no Node dependencies of their own.
-- Daoris ships the gates that are genuinely universal — sensitive scan, doctrine drift, version
-  authorship, documentation freshness — and each repository declares its own stack gates.
-- Both open questions are settled. Gates are declared in `daoris.gates.json`, a file the CLI never
-  reads, because the manifest is inert data and gates are commands that execute (**D26**). The binary is
-  hash-pinned and explicitly acquired, never implicitly downloaded — which falls out of D8 rather than
-  working around it, since nothing in the CLI may open a socket (**D27**).
-- **`doctrine` delegates to `daoris check`** instead of reimplementing drift. A second answer to a
-  question that already has one would be this project's own pathology, committed by the tool built to
-  remove it.
+Eleven repositories carried a hand-copied `devtools/dev.mjs` at a 20× spread in size; the artefact
+answers that the way the CLI answers the document version: gates get **declared, not copied**.
+**Built 2026-08-05** as one self-contained .NET AOT binary (D20 — distribution is the cost this
+project exists to address; the CLI stays Node and zero-dependency for the opposite reason), five
+universal gates, and each repository declaring its own stack gates in `daoris.gates.json` — a file
+the CLI never reads (D26), acquired explicitly and hash-pinned rather than downloaded (D27).
+`doctrine` delegates to `daoris check` rather than reimplementing drift.
 
 ## Built — the knowledge layer: `Daoris.Service` and `Daoris.Web`
 
-Doctrine is now consistent across repositories, but what each repository *learned* — its decisions, its
-fix log, its task outcomes — is still visible only from inside it. That is how the same problem gets
-solved twice by the same person in two directories.
+What each repository *learned* — its decisions, its fix log, its task outcomes — was visible only from
+inside it, which is how the same problem gets solved twice by one person in two directories.
 
-**One UI, two shells.** A React application over the service, served over HTTP and hosted unchanged
-inside a desktop shell built on the family's desktop runtime. A second hand-written desktop UI would be
-this project's own pathology in a new place. It also makes Daoris the first real external consumer of
-that runtime, which is worth something on its own — a runtime with no consumer is unvalidated, exactly as
-a pack nobody installs is.
+**One UI, two shells** over one service, **local-first with sharing as configuration** (D21,
+`docs/2026-08-05-knowledge-service-design.md`): local needs no server, account or network; shared
+mode and per-repository indexing are opt-in, and the untracked local directory is a hard exclusion.
+**Built by composition** (D22) from the cognition and desktop siblings at released versions, which
+made Daoris the first external consumer either had. **Convergence detection is the one capability
+no existing tool supplies** — the same principle in different words scores like an unrelated document
+(D17) — and it proposes while a person disposes through `upstream`. It came after the canon
+deliberately: indexing divergent content indexes the divergence. Checked against the agent
+platform's own features (D15) and generated-wiki tools (D16) before committing; neither supersedes it.
 
-**Local-first; sharing is configuration** (D21, and `docs/2026-08-05-knowledge-service-design.md`). One
-service, two modes: local needs no server, no account and no network, and must stay fully useful alone.
-Shared mode is opt-in, indexing is opt-in per repository, and the untracked local directory is a hard
-exclusion rather than a permission — several siblings are private, and centralising their content is
-exactly what `sensitive-info` keeps out of tracked files. The shared store is one SQLite file behind
-the shared-mode host: git-as-store was priced and declined when the driver turned quests into an
-execution queue (D47 §3) — a queue two machines race needs an arbiter that refuses the second take
-before work starts, and the serialization point a lock needs is a host.
-
-**Built by composition** (D22), which is what made the scope plausible. Embeddings, the vector store,
-semantic recall, provider routing and MCP hosting already shipped in the cognition sibling; the shell,
-WebView2 surface and IPC bridge in the desktop one. The wiring is done, and Daoris became the **first
-external consumer either had**, validating both. Released versions only: three repositories coupled at
-HEAD are one repository with extra steps.
-
-**LLM-assisted merge is the capability none of the existing tooling can supply.** `doctor` provably
-cannot see convergence — the same principle in different words scores like an unrelated document (D17) —
-and that is precisely the gap. It proposes; a person disposes, through `upstream`, under review.
-
-_Checked against the agent platform's own features before committing further (D15): its workspaces are
-billing and access segmentation, its skills are a format rather than a distribution mechanism, and its
-per-project memory is machine-local and untracked. Nothing here is superseded._
-
-**It comes after the canon deliberately**, because indexing content that is still divergent indexes the
-divergence.
-
-**Deployable since 2026-09-18 (D36).** Local mode needs no daemon: the MCP host is spawned per session
-and the persistent store is what survives, shared by every repository's sessions on the machine — a
-quest published from one session is waiting when another starts. The HTTP host is the remote half:
-registrations persist, quests publish and answer over the same `QuestExchange` the MCP host uses, and
-shared mode (D47) gates every route with minted per-person keys — local mode trusts the loopback and
-may bind nothing else. It needs **no model**: a remote deployment is purely a transfer
-of request and task until a repository opts its knowledge in (D21, D24).
-
-**The platform since 2026-09-19 (D38), proven by the family rehearsal (D39).** `Daoris.Web` grew into
-the person's window — Quests and Projects beside Convergence and Search; doctrine stays unwritable from
-every view. And the router is a gate rather than a belief: `npm run rehearse:family` drives two tracked
-example projects through adoption, registration, a quest's whole life and a restart, through the real
-artefacts. This is the readiness story for the next real family — a game and its subsystems, with
-Daoris as their centralized router.
-
-_Also checked against generated-wiki tools (D16). They are the complement: a wiki is **derived** from the
-code and fails by going stale, doctrine is **authored** because something went wrong and fails by
-diverging. They meet inside `doc-loader`, which routes first to the repository's own documentation router
-— what a generator maintains — and then to the rules index, which `sync` writes. The dependency runs one
-way: a wiki generated over divergent copies documents the divergence, so canonizing first is what makes
-the generated layer worth having. Prefer pointing at such a tool over growing one._
+**Deployable since 2026-09-18 (D36)** — the MCP host spawned per session over one persistent store,
+the HTTP host as the remote half, no model required — and **the platform since 2026-09-19 (D38)**,
+proven by the family rehearsal (D39): two tracked example projects driven through adoption,
+registration, a quest's whole life and a restart, through the real artefacts.
 
 ## Long term — repository intelligence
 

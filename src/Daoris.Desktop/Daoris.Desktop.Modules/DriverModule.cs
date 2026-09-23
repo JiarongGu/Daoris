@@ -852,6 +852,7 @@ public sealed class DriverModule : ModuleBase
             // machine-local path, answered only over this bridge, like every path here.
             _loop.Home,
             _loop.HomeNotice,
+            _loop.HostNotice,
             config.Drivable,
             config.Holds,
             config.Trees,

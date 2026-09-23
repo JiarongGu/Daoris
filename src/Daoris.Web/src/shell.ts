@@ -37,6 +37,11 @@ export type DriverState = {
    * profile directory, or the account's environment gaining the variable. Null when nothing was.
    */
   homeNotice?: string | null;
+  /**
+   * The host this shell adopted is serving a page that is not this install's, in the shell's own
+   * sentence — or null. Standing, because it is true for as long as that host runs.
+   */
+  hostNotice?: string | null;
 };
 
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>

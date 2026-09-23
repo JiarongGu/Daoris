@@ -332,12 +332,15 @@ describe('the machine settings surface', () => {
         ...DRIVER_STATE,
         home: 'D:/somewhere/Daoris/data',
         homeNotice: 'Daoris home: D:/somewhere/Daoris/data — moved in from D:/somewhere/.daoris: driver.json.',
+        hostNotice: 'the host at http://localhost:5177 was already running and serves a different page than this install carries.',
       }
       : WIRING));
     show(<SettingsView notify={() => {}} />);
 
     expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
     expect(screen.getByText(/moved in from/)).toBeTruthy();
+    // The adopted host's page is a standing fact and gets a standing line, not only a toast.
+    expect(screen.getByText(/serves a different page/)).toBeTruthy();
     // Every path on the page is under it — the wiring file included.
     expect(screen.getByText('C:/somewhere/.daoris/remotes.json')).toBeTruthy();
   });

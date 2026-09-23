@@ -30,9 +30,9 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 
 ## State
 
-**All five artefacts exist and are built, and all three parts of D45 with them.** Fourteen commands,
-**294 CLI tests, 275 service, 303 driver, 84 desktop modules, 498 web unit, 14 Playwright**, 59
-devkit, 56/56 release rehearsal, **181/181 family rehearsal** (it names its own phases when you run
+**All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
+**313 CLI tests, 278 service, 339 driver, 93 desktop modules, 507 web unit, 14 Playwright**, 59
+devkit, 56/56 release rehearsal, **193/193 family rehearsal** (it names its own phases when you run
 it), **36/36 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -45,7 +45,7 @@ machine is the only lock and outside sessions stay first-class; and a session's 
 from its exit code and its quest's state, never from what it said about itself (D46 §4).
 
 The service is **deployable** (D36) and **ships as executables** (D43): `npm run publish:service --
---install` lands both hosts self-contained in `~/.daoris/bin` and prints the ready `.mcp.json`
+--install` lands both hosts self-contained under the home's `bin/` and prints the ready `.mcp.json`
 snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
 spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
 remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): both
@@ -82,8 +82,10 @@ study). Nothing is pushed or published, and a release is still blocked on REH1.
 
 🔴 **Daoris is DEPLOYED and running as an installed application** (2026-09-22), which is new and
 changes what "works" means. `npm run publish:desktop -- --to <folder> --service` installs it: one
-`daoris-desktop.exe` at the root, binaries under `app/`, state in `data/`. It runs against the real
-`~/.daoris`, so **starting it starts the driver loop**.
+`daoris-desktop.exe` at the root, binaries under `app/`, and **the Daoris home in `data/`** (D63,
+2026-09-23: `DAORIS_HOME` is the one seam, set by the install for itself and once for the account;
+nothing of Daoris's lives under the user profile, and a writer with no home refuses). **Starting it
+starts the driver loop.**
 `docs/2026-09-22-first-deployment-case-study.md` is the record, and it is the first document to read
 before touching the desktop — four defects were invisible from inside the workspace, three of them
 *because* of something the workspace provides. 🔴 **The second deployment (2026-09-23) found
@@ -91,9 +93,14 @@ thirteen more, every one in `docs/FIX-LOG.md` under that date** — the three th
 itself (the machine's older host spawned over the install's own, a stale page reused from the
 WebView2 cache, an adopted host serving another page and nobody told), then what looking at each
 surface on real data turned up: why a quest sits, a drawer under the caption buttons, the OS accent
-through a native control, a fixture on the tool roster. A notice that outlives a toast is the one
-surface item left unfiled. **Republish and LOOK after every surface change, in both themes** — that
-is how all thirteen were found, and `document.scripts` names which bundle is live.
+through a native control, a fixture on the tool roster. A notice that outlived a toast was the one
+surface item left unfiled, and it is filed now: the home's and the adopted host's sentences ride the
+driver STATE and stand on the Machine view. **Republish and LOOK after every surface change, in both
+themes** — that is how all thirteen were found, and `document.scripts` names which bundle is live.
+🔴 **Plugins exist** (D64, 2026-09-23, `docs/2026-09-23-plugin-design.md`): a folder under the
+home's `plugins/` that declares harnesses on the ACP door and may speak from a process of its own;
+`daoris plugin` and the Machine view's Plugins card are the two doors, and the family rehearsal's
+phase 18 drives one. No code from a plugin loads into any host, ever.
 
 🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
 (DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that
@@ -246,7 +253,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (278),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (339), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (93), `npm run rehearse:family` (192/192), `npm run test:web` (507 vitest + 14 Playwright),
+  (339), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (93), `npm run rehearse:family` (193/193), `npm run test:web` (507 vitest + 14 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (36/36), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so

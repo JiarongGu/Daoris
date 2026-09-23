@@ -465,9 +465,11 @@ async function start(command, args) {
       // The example family (D39) is the fixture: two adopters the store's bootstrap import registers
       // on first sight, so the window has something in it. COPIED rather than pointed at, because
       // the shell can write a repository's own `daoris.json` from Projects — and the tracked
-      // examples are a gate's fixture, not a scratchpad.
-      copyTree(join(repoRoot, 'examples'), family);
-      console.log(`copied examples/ -> ${family}`);
+      // examples are a gate's fixture, not a scratchpad. The MEMBERS, not the folder: `examples/`
+      // also holds the example plugin (D64), which is not a project and must not be imported as one.
+      mkdirSync(family, { recursive: true });
+      for (const name of ['engine', 'game']) copyTree(join(repoRoot, 'examples', name), join(family, name));
+      console.log(`copied examples/{engine,game} -> ${family}`);
     }
 
     const httpHost = assemblyExe(HTTP_PROJECT);
