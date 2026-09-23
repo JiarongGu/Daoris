@@ -4269,3 +4269,21 @@ made the chosen line's head twice the size of the others, so they are now sized 
 Found by the browser gate: a two-pixel curve could not be pressed, so every line now has a wide
 invisible hit stroke and a count disc on the line. Web 571 + 17 (the e2e presses the game → engine
 line and reads its quests), CLI 331.
+
+## MAP1a — the chain strip (2026-09-23)
+
+- [x] **MAP1 — the workflow**, its first half: how one piece of work was carried, in the quest
+  drawer and in Sessions (`docs/2026-09-23-map-design.md` §2).
+
+✅ **done 2026-09-23.** `map/chain.ts` builds the chain from records the page already has: the ask
+(by its handle), the parents, the published steps, what the last one will still publish, and every
+session under its quest with its agent, version and account. `ChainStrip` is a molecule with a
+story. It replaced the drawer's *follows* row and *then* list. The drawer's session section still
+shows where things stand now, and is a named region so its tests say which view they mean. The
+browser gate walks a real chain: from the step to the quest it follows, and back.
+
+**Found on the window**: a dashed seven-pixel mark was invisible in dark, so it is now a solid
+hollow ring. "No session yet" under a closed quest promised a session that would never come, so it
+now reads *closed without a session*, with a test. The earlier quest's title was a door with no sign
+of one, so it is now faintly underlined. **Split off as MAP1b**: the wiring panel, which needs the
+driver. Web 591 + 17.

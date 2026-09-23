@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
+import { buildChain } from '../map/chain';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
   useEndChat, useHarnesses, useResolveSession, useSendMessage, useStartChat, useStopSession,
@@ -247,6 +248,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIn
             quest={quest}
             resolving={resolve.isPending}
             onResolve={onResolve}
+            chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
+            onSession={(session) => attend(session.id)}
           />
         </div>
 

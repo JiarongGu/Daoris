@@ -220,8 +220,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   drop, paste or *choose files…*, each removable, and it says why a file was left off (the count,
   or the total) while the person is still choosing. **A chain** (D65 §4) is behind a press, *add a
   next step…*, because most asks are one quest: one step, whom and what, and a started step holds
-  the publish back until it is whole. The drawer shows the steps still to come as the asker wrote
-  them, `{parent}` included, and a step's card and drawer say which quest it follows.
+  the publish back until it is whole. A step's card says which quest it follows. The drawer shows the
+  whole chain as one strip (MAP1a): the ask, the quests before and after, the steps still to come as
+  the asker wrote them (`{parent}` included), and every session under its quest. The quest being
+  read is marked and named, and the others are underlined doors.
 - **Projects** — adopted as cards (two columns wide) with chips and the local/canonical split;
   non-adopters as the marked list with the join steps proposed as text.
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the

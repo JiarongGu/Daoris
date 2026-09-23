@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../api';
+import { buildChain } from '../map/chain';
 import { AttendedSession } from './AttendedSession';
 
 // The assembled region: the record and the observed layer over it. The stream is deliberately not
@@ -58,6 +59,21 @@ export const Parked: Story = {
       updated: at(11),
       note: 'Two ways forward.\n\n1. Cap hydration in the scheduler — smaller change, but the budget then lives away from the API that spends it.\n2. Cap it on the chunk API itself — touches more call sites, and the budget ends up where the work is.\n\nI recommend the second: the quest asks for the budget on the chunk API, and option 1 would leave that promise half kept.',
     },
+  },
+};
+
+/** A step of a chain (MAP1): the strip under the head says what came before and what is to come. */
+export const InAChain: Story = {
+  args: {
+    quest: { ...QUEST, parent: '19c0de', then: [{ to: 'platform', title: 'Report the cap back', body: '' }] },
+    chain: buildChain(
+      '7a82cc',
+      [
+        { ...QUEST, parent: '19c0de', then: [{ to: 'platform', title: 'Report the cap back', body: '' }] },
+        { ...QUEST, id: '19c0de', from: 'ask #c7c4de', title: 'Measure what a frame hydrates', status: 'Done' },
+      ],
+      [SESSION, { ...SESSION, id: 's0measure', quest: '19c0de', state: 'completed', created: at(400) }],
+    ),
   },
 };
 

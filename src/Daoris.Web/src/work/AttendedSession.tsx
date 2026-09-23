@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { EmptyState } from '../ui';
+import type { ChainStep } from '../map/chain';
+import { ChainStrip } from '../map/ChainStrip';
 import type { Resolution } from './AwaitingPerson';
 import { SessionHead } from './SessionHead';
 import { SessionTimeline } from './SessionTimeline';
@@ -24,13 +26,20 @@ import { SessionTimeline } from './SessionTimeline';
  * The composer sits beneath this region rather than inside it, for the same reason the panel does:
  * the record scrolls and the things you act with do not.
  */
-export function AttendedSession({ session, quest, resolving, onResolve }: {
+export function AttendedSession({ session, quest, resolving, onResolve, chain = [], onSession }: {
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
   quest?: Quest | null;
   resolving?: boolean;
   /** Passed straight through to the head, where a parked session's three moves live (design §4). */
   onResolve?: (state: Resolution, note: string | null) => void;
+  /**
+   * The chain its quest belongs to (MAP1), the same strip a quest's drawer shows. Rendered only
+   * when there is one, like there: a lone quest has nothing before or after it to show.
+   */
+  chain?: ChainStep[];
+  /** Attend another session of the chain — the frame's own selection, so every region follows. */
+  onSession?: (session: Session) => void;
 }) {
   const { t } = useTranslation();
 
@@ -47,6 +56,7 @@ export function AttendedSession({ session, quest, resolving, onResolve }: {
   return (
     <article className="grid content-start gap-4">
       <SessionHead session={session} quest={quest} resolving={resolving} onResolve={onResolve} />
+      {chain.length > 1 && <ChainStrip chain={chain} level={3} onSession={onSession} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It
           stays here on a narrow window, where the dock is not rendered at all — the column is the
           fallback, so nothing is unreachable on a laptop. */}

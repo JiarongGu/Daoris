@@ -6,6 +6,8 @@ import { useConsidered, useDriver, useStopSession } from './shell';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
 import { admit, isImage, linksOf, MAX_FILE_BYTES, MAX_FILES, toUpload } from './attachments';
 import { sittingBecause } from './signals';
+import { buildChain } from './map/chain';
+import { ChainStrip } from './map/ChainStrip';
 import {
   Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
   SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
@@ -109,6 +111,9 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
   useEffect(() => { if (opening) onOpened?.(); }, [opening, onOpened]);
 
   const quests = useQuests(repository === EVERYONE ? null : repository, includeClosed);
+  // Every quest, closed ones included, for the chain a drawer shows (MAP1): the step before this one
+  // is usually closed, and very often somebody else's.
+  const everything = useQuests(null, true);
   const registry = useRegistry();
   const sessions = useSessions(null, true);
   const driver = useDriver();
@@ -392,12 +397,6 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
             )}
             <dt className="text-ink-faint">{t('quests.detail.state')}</dt>
             <dd className="m-0">{t(`statusHint.${detail.status}`)}</dd>
-            {detail.parent && (
-              <>
-                <dt className="text-ink-faint">{t('quests.detail.follows')}</dt>
-                <dd className="m-0 font-mono text-meta">#{detail.parent}</dd>
-              </>
-            )}
             {(() => {
               // Why this machine's driver is not starting it, in its own words (D46 §3) — the
               // whole sentence here, where there is room; the Overview row carries it truncated.
@@ -471,23 +470,22 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
               </ul>
             </div>
           )}
-          {(detail.then?.length ?? 0) > 0 && (
-            /* What the service publishes when this closes done (D65 §4) — shown as the asker wrote it,
-               `{parent}` and all: it becomes this quest's id only at the moment of publishing. */
-            <div className="mt-4">
-              <SectionTitle>{t('quests.detail.then')}</SectionTitle>
-              <p className="m-0 mb-2 text-small text-ink-faint">{t('quests.detail.thenHint')}</p>
-              <ol className="m-0 grid list-none gap-2 p-0">
-                {detail.then!.map((step, index) => (
-                  <li key={index} className="min-w-0 border-l-2 border-line-strong pl-3 text-body">
-                    <span className="text-accent">→ {step.to}</span>
-                    <span className="text-ink"> · {step.title}</span>
-                    <p className="m-0 line-clamp-2 text-small text-ink-soft">{step.body}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+          {(() => {
+            /* The chain this quest belongs to (MAP1): the ask, the steps before and after it, what
+               its close will still publish (D65 §4, `{parent}` as the asker wrote it), and on what
+               each step ran. Only when there is a chain: a lone quest's session is shown below. */
+            const chain = buildChain(
+              detail.id, everything.data ?? quests.data ?? [detail], sessions.data ?? []);
+            return chain.length > 1 && (
+              <div className="mt-4">
+                <ChainStrip
+                  chain={chain}
+                  onQuest={openDetail}
+                  onSession={onAttend && driver.data ? (session) => onAttend(session.id) : undefined}
+                />
+              </div>
+            );
+          })()}
           {detail.note && (
             <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{detail.note}</p>
           )}
@@ -498,7 +496,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
               /* The driven session's RECORD (D46 §4) — read-only here: the process, and the person's
                  controls over it, live where a driver is attached, which is the desktop. The note and
                  evidence are the driver's observations and render verbatim, like every system sentence. */
-              <div className="mt-5">
+              <section className="mt-5" aria-label={t('quests.session.title')}>
                 <SectionTitle>{t('quests.session.title')}</SectionTitle>
                 <div className="flex flex-wrap items-center gap-2">
                   <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
@@ -536,7 +534,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened }: {
                   <Button className="mt-2.5" onClick={() => onAttend(session.id)}>{t('work.open')}</Button>
                 )}
                 <p className="mt-2 mb-0 text-small text-ink-faint">{t('quests.session.hint')}</p>
-              </div>
+              </section>
             );
           })()}
         </Drawer>

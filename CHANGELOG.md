@@ -392,6 +392,10 @@ The first version: doctrine that installs, is checked, and flows back.
   the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
   characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
   included. Removing the account removes its key. A sign-in stays the tool's, as before.
+- **How this work ran** (MAP1a). A quest in a chain shows the whole chain in its drawer: the ask it
+  came from, the quests before and after it, the steps still to come, and every session that ran
+  each one, with its agent, version and account. Press a quest to open it, or a session to attend
+  it. The same strip sits under a session in Sessions.
 - **A map of the workspace** (MAP2, D67 §3). *Map* on the activity bar draws the circle's
   repositories, the quests that went between them (one arrow per direction, counted, solid while
   any is open), and where two repositories learned the same thing. Choose a repository or a line to

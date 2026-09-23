@@ -77,6 +77,17 @@ panel beside the agents on Settings, drawn as the resolution runs — pick, then
 then machine default, then the tool's own home. The same strip reads the same way in the Sessions
 view.
 
+**The strip is built (MAP1a, 2026-09-23).** `buildChain` in `src/Daoris.Web/src/map/chain.ts` walks
+up through `parent` and down through the quest that names the last as its parent. The steps still
+to come are taken from the last published quest, because the quest before it still lists the step
+that has already become one. A parent loop stops the walk, and a parent the page does not hold is
+named rather than dropped. `ChainStrip` shows every session under its quest, oldest attempt first,
+with the agent, version and account from the record. It renders in the quest drawer, where it
+replaced the *follows* row and the *then* list, and under the attended session's head in Sessions.
+Both only when there is a chain. The drawer's own session section still shows where things stand
+now. The ask is shown by its handle: which tier answered is on the ask's record, which INT4c puts
+on screen.
+
 ## 3. MAP3 — a repository's code (after MAP2)
 
 **What it answers.** Inside one node, what the repository is made of: its modules and how they

@@ -116,8 +116,16 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await expect(step).toBeVisible();
   await expect(page.getByText(`follows #${parent}`).first()).toBeVisible();
 
-  // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
+  // MAP1: the step's drawer carries the chain — the quest it follows, done, and a door back to it;
+  // and from there, a door forward again. Real records, the real host's parent link.
   await step.click();
+  const chain = () => page.getByRole('dialog').getByRole('region', { name: 'How this work ran' });
+  await expect(chain().getByText('this quest')).toBeVisible();
+  await chain().getByRole('button', { name: 'Develop the streaming cap' }).click();
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Develop the streaming cap' })).toBeVisible();
+  await chain().getByRole('button', { name: `Verify #${parent} in a playtest` }).click();
+
+  // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
   await page.getByRole('dialog').getByRole('button', { name: 'done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });

@@ -110,10 +110,22 @@ describe('QuestsView', () => {
     view();
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
+    const chain = within(dialog).getByRole('region', { name: 'How this work ran' });
 
-    expect(within(dialog).getByText('#f0f0f0')).toBeInTheDocument();
-    expect(within(dialog).getByText(/Report on \{parent\}/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/published when this closes done/i)).toBeInTheDocument();
+    // The parent is closed and out of this page's list: named, not dropped (MAP1).
+    expect(within(chain).getByText('#f0f0f0')).toBeInTheDocument();
+    expect(within(chain).getByText(/Report on \{parent\}/)).toBeInTheDocument();
+    expect(within(chain).getByText(/published when the one before it closes done/i)).toBeInTheDocument();
+  });
+
+  /** MAP1: every attempt at a step, on what it ran — the drawer's session section keeps only the latest. */
+  it('the chain lists every session that ran the quest', async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const chain = within(await screen.findByRole('dialog')).getByRole('region', { name: 'How this work ran' });
+
+    expect(within(chain).getAllByText('stub')).toHaveLength(2);
+    expect(within(chain).getByText('failed')).toBeInTheDocument();
   });
 
   it('a card says it follows another quest', async () => {
@@ -263,30 +275,34 @@ describe('QuestsView', () => {
     expect(await screen.findByText('working')).toBeInTheDocument();
   });
 
+  /** The drawer's session section — where things stand NOW. The chain above it keeps the history. */
+  const sessionSection = async () => {
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    return within(await screen.findByRole('dialog')).getByRole('region', { name: 'session' });
+  };
+
   it("the drawer carries the session's record — state, adapter, and the evidence, verbatim", async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('working')).toBeInTheDocument();
-    expect(within(dialog).getByText(/s1a2b3c4 · stub/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/stub: answer quest abc123/)).toBeInTheDocument();
+    const section = await sessionSection();
+    expect(within(section).getByText('working')).toBeInTheDocument();
+    expect(within(section).getByText(/s1a2b3c4 · stub/)).toBeInTheDocument();
+    expect(within(section).getByText(/stub: answer quest abc123/)).toBeInTheDocument();
   });
 
   it('a retried quest shows its freshest attempt, never the failed first one', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText(/s1a2b3c4 · stub/)).toBeInTheDocument();
-    expect(within(dialog).queryByText('failed')).not.toBeInTheDocument();
-    expect(within(dialog).queryByText(/s0f1r2s3/)).not.toBeInTheDocument();
+    const section = await sessionSection();
+    expect(within(section).getByText(/s1a2b3c4 · stub/)).toBeInTheDocument();
+    expect(within(section).queryByText('failed')).not.toBeInTheDocument();
+    expect(within(section).queryByText(/s0f1r2s3/)).not.toBeInTheDocument();
   });
 
   it('a browser offers no stop — the control reaches a process, and only the desktop has one', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    const section = await sessionSection();
     // The record renders (above); the control must not — a browser could only wish (D46 §6).
-    expect(within(dialog).getByText('working')).toBeInTheDocument();
-    expect(within(dialog).queryByRole('button', { name: 'stop session' })).not.toBeInTheDocument();
+    expect(within(section).getByText('working')).toBeInTheDocument();
+    expect(within(await screen.findByRole('dialog')).queryByRole('button', { name: 'stop session' }))
+      .not.toBeInTheDocument();
   });
 });
