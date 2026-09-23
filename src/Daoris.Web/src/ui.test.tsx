@@ -5,7 +5,7 @@ import type { SessionState } from './api';
 import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SESSION_ACTIVE, SESSION_DOT,
+  Button, CountBadge, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, Segmented, SESSION_ACTIVE, SESSION_DOT,
   SESSION_TONE, SettingRow, Tile, Tip,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
@@ -256,5 +256,63 @@ describe('a tip', () => {
     await screen.findByRole('tooltip');
     fireEvent.keyDown(document.body, { key: 'a' });
     await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
+  });
+});
+
+/**
+ * 🔴 A count is a circle (owner, 2026-09-23: *"the notification number is not even circle border"*).
+ * jsdom has no layout, so what can be held here is the cause: the box's height and its minimum width
+ * are ONE size. The oval was two sizes nothing kept equal — a min-width, and a line-height plus a
+ * border. The window's own measurement is the other half, taken on the desktop.
+ */
+describe('the count badge', () => {
+  const sizes = (className: string) => ({
+    height: /\bh-(\d+(?:\.\d+)?)\b/.exec(className)?.[1],
+    minWidth: /\bmin-w-(\d+(?:\.\d+)?)\b/.exec(className)?.[1],
+  });
+
+  it('is as tall as it is wide at least, with no line-height to make it taller', () => {
+    const { container } = render(<CountBadge count={3} />);
+    const badge = container.firstElementChild as HTMLElement;
+    const { height, minWidth } = sizes(badge.className);
+
+    expect(height).toBeDefined();
+    expect(height).toBe(minWidth);
+    expect(badge.className).toContain('leading-none');
+    expect(badge.className).toContain('rounded-full');
+  });
+
+  it('is nothing at zero — a zero badge is furniture — and caps a large count', () => {
+    expect(render(<CountBadge count={0} />).container.firstChild).toBeNull();
+    render(<CountBadge count={140} />);
+    expect(screen.getByText('99+')).toBeInTheDocument();
+  });
+});
+
+describe('the segmented choice', () => {
+  const Theme = ({ onChange }: { onChange: (value: 'system' | 'light' | 'dark') => void }) => (
+    <Segmented
+      label="theme" value="system" onChange={onChange}
+      options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+    />
+  );
+
+  it('is a radiogroup that says which is chosen, and chooses on a press', async () => {
+    const chosen: string[] = [];
+    render(<Theme onChange={(value) => chosen.push(value)} />);
+
+    expect(screen.getByRole('radiogroup', { name: 'theme' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'System' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('radio', { name: 'Dark' }));
+    expect(chosen).toEqual(['dark']);
+  });
+
+  it('moves the choice with the arrow keys, wrapping at the ends, like every radiogroup', () => {
+    const chosen: string[] = [];
+    render(<Theme onChange={(value) => chosen.push(value)} />);
+
+    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'ArrowRight' });
+    fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'ArrowLeft' });
+    expect(chosen).toEqual(['light', 'dark']);
   });
 });

@@ -2,16 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { type Command, commands, matching } from './commands';
 
 // The registry is the half that matters (SURF9): "what can I do right now" is a value, so every
-// world — a browser, a shell in Manage, a shell in Work — is an argument rather than an arrangement.
+// world — a browser, a shell on Overview, a shell on Sessions — is an argument rather than an
+// arrangement.
 
-const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => ({
+const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<typeof commands>[0] => ({
   label: (id: string) => id,
   group: (id: string) => id,
   attached: true,
-  mode: 'manage' as const,
+  current: 'overview',
   waiting: 0,
   go: vi.fn(),
-  setMode: vi.fn(),
   refresh: vi.fn(),
   toggleLanguage: vi.fn(),
   startSession: vi.fn(),
@@ -23,11 +23,13 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => ({
 const ids = (list: Command[]) => list.map((command) => command.id);
 
 describe('the command registry', () => {
-  it('offers every management domain, and the global actions, in a browser', () => {
-    const list = ids(commands(world({ attached: false })));
+  it('offers every view a browser has, and the global actions', () => {
+    const list = ids(commands(world({ attached: false, current: 'quests' })));
 
     expect(list).toContain('go.overview');
     expect(list).toContain('go.search');
+    // Settings is everywhere since D66: a browser has appearance to set, if nothing of a machine.
+    expect(list).toContain('go.settings');
     expect(list).toContain('do.refresh');
     expect(list).toContain('do.language');
   });
@@ -40,23 +42,32 @@ describe('the command registry', () => {
   it('offers nothing shell-only in a browser — absent, never disabled', () => {
     const list = ids(commands(world({ attached: false })));
 
-    expect(list).not.toContain('go.settings');
-    expect(list).not.toContain('go.work');
-    expect(list).not.toContain('go.manage');
+    expect(list).not.toContain('go.sessions');
     expect(list).not.toContain('work.start');
     expect(list).not.toContain('work.review');
     // Nothing sneaks in under another name either.
     expect(list.some((id) => id.startsWith('work.'))).toBe(false);
   });
 
-  it('offers the machine and the session actions where a shell is here', () => {
+  it('offers Sessions and the session actions where a shell is here', () => {
     const list = ids(commands(world()));
 
+    expect(list).toContain('go.sessions');
     expect(list).toContain('go.settings');
     expect(list).toContain('work.start');
     expect(list).toContain('work.review');
     // The second screen (SURF8) — a window is the shell's to open, so it follows the same rule.
     expect(list).toContain('work.monitor');
+  });
+
+  /**
+   * One navigation, one list (D66): there is no mode to switch, and the palette never offers the view
+   * already in front of the person — an entry that does nothing is noise in this list.
+   */
+  it('never offers the view you are already on', () => {
+    expect(ids(commands(world({ current: 'sessions' })))).not.toContain('go.sessions');
+    expect(ids(commands(world({ current: 'sessions' })))).toContain('go.overview');
+    expect(ids(commands(world({ current: 'overview' })))).not.toContain('go.overview');
   });
 
   /**
@@ -74,25 +85,13 @@ describe('the command registry', () => {
     expect(detach).toHaveBeenCalled();
   });
 
-  /** Only ever the frame you are not in: an entry that does nothing is noise in this list. */
-  it('offers the other frame, never the one you are in', () => {
-    expect(ids(commands(world({ mode: 'manage' })))).toContain('go.work');
-    expect(ids(commands(world({ mode: 'manage' })))).not.toContain('go.manage');
-
-    expect(ids(commands(world({ mode: 'work' })))).toContain('go.manage');
-    expect(ids(commands(world({ mode: 'work' })))).not.toContain('go.work');
-  });
-
   it('runs what it was handed, and nothing else', () => {
     const go = vi.fn();
-    const setMode = vi.fn();
-    const list = commands(world({ go, setMode }));
+    const list = commands(world({ go }));
 
     list.find((command) => command.id === 'go.quests')!.run();
-    expect(go).toHaveBeenCalledWith('quests');
-
-    list.find((command) => command.id === 'go.work')!.run();
-    expect(setMode).toHaveBeenCalledWith('work');
+    list.find((command) => command.id === 'go.sessions')!.run();
+    expect(go.mock.calls).toEqual([['quests'], ['sessions']]);
   });
 
   it('gives every command a stable id and a distinct one', () => {
@@ -103,14 +102,14 @@ describe('the command registry', () => {
 
 describe('matching what was typed', () => {
   const list = commands(world({
+    current: 'quests',
     label: (id: string) => ({
       'go.overview': 'Overview',
-      'go.quests': 'Quests',
+      'go.sessions': 'Sessions',
       'go.projects': 'Projects',
       'go.convergence': 'Convergence',
       'go.search': 'Search',
-      'go.settings': 'Machine',
-      'go.work': 'Work',
+      'go.settings': 'Settings',
       'work.start': 'Start a session',
       'work.review': 'Review what landed',
       'do.refresh': 'Refresh the index',
@@ -130,13 +129,14 @@ describe('matching what was typed', () => {
   });
 
   it('ranks a word-boundary match above one buried mid-word', () => {
-    // "se" begins Search; it appears mid-word in Convergence and "a session".
-    expect(matching(list, 'se')[0].id).toBe('go.search');
+    // "sea" begins Search, and is buried mid-word nowhere else.
+    expect(matching(list, 'sea')[0].id).toBe('go.search');
   });
 
   it('finds a command by a keyword it does not show', () => {
-    // "settings" is what the Machine view used to be called, and what people will type.
-    expect(matching(list, 'settings').map((c) => c.id)).toContain('go.settings');
+    // "theme" and "machine" are what people will type for Settings (D66); neither is in its title.
+    expect(matching(list, 'theme').map((c) => c.id)).toContain('go.settings');
+    expect(matching(list, 'machine').map((c) => c.id)).toContain('go.settings');
     expect(matching(list, 'diff').map((c) => c.id)).toContain('work.review');
   });
 

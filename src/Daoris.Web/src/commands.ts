@@ -4,6 +4,9 @@ import type { IconName } from './ui';
 // addressable by name — and it is a pure function so that "what can I do right now" is a value a test
 // can assert rather than a screen somebody has to arrange.
 
+/** The application's views (D66): one list, the activity bar's. */
+export type View = 'overview' | 'sessions' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
+
 /** A named thing a person can do, from anywhere. */
 export type Command = {
   /** Stable, structural, and never shown: the id is what a test and a keybinding name. */
@@ -29,27 +32,26 @@ export type Command = {
  * OMISSION, and Playwright asserts the absence.
  *
  * **Pure, and given its world.** No hook, no bridge, no i18n: the caller hands in what is true and
- * what to run. That is what makes every combination — a browser, a shell in Manage, a shell in Work
- * with something parked — reachable by passing an argument.
+ * what to run. That is what makes every combination — a browser, a shell on Overview, a shell on
+ * Sessions with something parked — reachable by passing an argument.
  */
 export function commands(world: {
   /** Titles, already translated, keyed by command id. The caller owns the catalogue. */
   label: (id: string) => string;
   /** Group headings, already translated. */
   group: (id: 'go' | 'do' | 'work') => string;
-  /** Whether a shell is here. False is a browser: no Work, no Machine, no session controls. */
+  /** Whether a shell is here. False is a browser: no Sessions, no machine settings, no session controls. */
   attached: boolean;
-  /** Which frame is current, so the switch offers the other one. */
-  mode: 'manage' | 'work';
+  /** The view in front of the person — the palette does not offer to go where they already are. */
+  current: View;
   /** How many things are waiting on a person — shown on the command that goes to them. */
   waiting: number;
-  go: (tab: 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings') => void;
-  setMode: (mode: 'manage' | 'work') => void;
+  go: (view: View) => void;
   refresh: () => void;
   toggleLanguage: () => void;
-  /** Ask the Work frame to open its start-a-session form. Shell-only, like the frame. */
+  /** Ask Sessions to open its start-a-session form. Shell-only, like the view. */
   startSession: () => void;
-  /** Ask the Work frame to show the review of whatever is attended. Shell-only. */
+  /** Ask Sessions to show the review of whatever is attended. Shell-only. */
   review: () => void;
   /** Open the monitor window on a second screen (SURF8). Shell-only: a page cannot open a window. */
   monitor: () => void;
@@ -60,43 +62,32 @@ export function commands(world: {
    */
   detach?: () => void;
 }): Command[] {
-  const domains: { id: string; icon: IconName; run: () => void }[] = [
-    { id: 'go.overview', icon: 'overview', run: () => world.go('overview') },
-    { id: 'go.quests', icon: 'quests', run: () => world.go('quests') },
-    { id: 'go.projects', icon: 'projects', run: () => world.go('projects') },
-    { id: 'go.convergence', icon: 'convergence', run: () => world.go('convergence') },
-    { id: 'go.search', icon: 'search', run: () => world.go('search') },
+  // The activity bar's list, in its order (D66). Sessions only where a shell is — a stream never
+  // leaves the machine — and never the view already in front of the person: an entry that does
+  // nothing is noise in a list whose whole value is that everything in it is worth pressing.
+  const views: { view: View; icon: IconName; keywords?: string; shellOnly?: boolean }[] = [
+    { view: 'overview', icon: 'overview' },
+    { view: 'sessions', icon: 'frameWork', keywords: 'work watch console conversation', shellOnly: true },
+    { view: 'quests', icon: 'quests' },
+    { view: 'projects', icon: 'projects' },
+    { view: 'convergence', icon: 'convergence' },
+    { view: 'search', icon: 'search' },
+    // Everywhere since D66: a browser has appearance to set, if nothing of a machine.
+    { view: 'settings', icon: 'settings', keywords: 'settings theme dark light appearance language machine remote harness account' },
   ];
 
-  const list: Command[] = domains.map((command) => ({
-    ...command,
-    title: world.label(command.id),
-    group: world.group('go'),
-  }));
+  const list: Command[] = views
+    .filter(({ view, shellOnly }) => view !== world.current && (!shellOnly || world.attached))
+    .map(({ view, icon, keywords }) => ({
+      id: `go.${view}`,
+      icon,
+      keywords,
+      title: world.label(`go.${view}`),
+      group: world.group('go'),
+      run: () => world.go(view),
+    }));
 
   if (world.attached) {
-    // The machine's own wiring: absent in a browser because the service has no route onto it and an
-    // empty view would imply one exists.
-    list.push({
-      id: 'go.settings',
-      icon: 'settings',
-      group: world.group('go'),
-      title: world.label('go.settings'),
-      keywords: 'settings machine remote harness',
-      run: () => world.go('settings'),
-    });
-
-    // The other frame. Only ever the one you are not in — an entry that does nothing is noise in a
-    // list whose whole value is that everything in it is worth pressing.
-    const other = world.mode === 'work' ? 'manage' : 'work';
-    list.push({
-      id: `go.${other}`,
-      icon: other === 'work' ? 'diff' : 'overview',
-      group: world.group('go'),
-      title: world.label(`go.${other}`),
-      run: () => world.setMode(other),
-    });
-
     list.push(
       {
         id: 'work.start',

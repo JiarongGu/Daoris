@@ -24,7 +24,7 @@ import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
 import type { Attention } from './work/AttentionRow';
 import { needsAPerson } from './work/attention';
-import { ActivityBar, AppStrip, type DriverPresence, type Mode, StatusBar } from './work/frame';
+import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
 import { commands } from './commands';
 import { capped } from './signals';
@@ -32,20 +32,21 @@ import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
 
-type Tab = 'overview' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
+type Tab = 'overview' | 'sessions' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
 
 /**
- * Which frame the person was last in — a per-browser preference like the language and the scope
- * (D55), never machine wiring and never a tracked file. It replaces the remembered *view* the
- * design asked for, because a mode is the thing worth returning to and a view inside Manage is not.
+ * Whether the person was last watching Sessions — a per-browser preference like the language and the
+ * scope, never machine wiring and never a tracked file. Only Sessions is worth returning to (D55's
+ * reason for remembering a mode, kept when the mode went — D66): a relaunch lands on Overview, the
+ * landing view (D40), unless the person was attending work.
  */
-const MODE = 'daoris.mode';
+const VIEW = 'daoris.view';
 
 /**
- * And which session they were attending (D56). The mode survived a restart and the selection did
- * not, so relaunching into Work landed on *Nothing attended* while a session sat parked — the one
+ * And which session they were attending (D56). Sessions survived a restart and the selection did
+ * not, so relaunching into it landed on *Nothing attended* while a session sat parked — the one
  * arrangement SURF5a's whole attention half exists to prevent. An id that no longer names a record
- * is cleared by the frame's own effect, so a stale one costs nothing.
+ * is cleared by the view's own effect, so a stale one costs nothing.
  */
 const ATTENDING = 'daoris.attending';
 
@@ -67,21 +68,21 @@ function remember(key: string, value: string | null): void {
   }
 }
 
-function rememberedMode(): Mode {
-  // Landing on Manage is the safe half of the choice.
-  return remembered(MODE) === 'work' ? 'work' : 'manage';
+function rememberedView(): Tab {
+  // Landing on Overview is the safe half of the choice.
+  return remembered(VIEW) === 'sessions' ? 'sessions' : 'overview';
 }
 
 const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
   { tab: 'overview', icon: 'overview' },
+  // Sessions is a view (D66), what the Work frame was: the rail, the attended session, the dock and
+  // the console. Absent in a browser rather than disabled — a stream never leaves the machine that
+  // produced it (D47 §4), so there is nothing a browser could be shown there.
+  { tab: 'sessions', icon: 'frameWork', shellOnly: true },
   { tab: 'quests', icon: 'quests' },
   { tab: 'projects', icon: 'projects' },
   { tab: 'convergence', icon: 'convergence' },
   { tab: 'search', icon: 'search' },
-  // The machine's own settings, where there is a machine to have them (D50). In a browser this is
-  // not a disabled tab but an absent one: the wiring is machine-local state with a credential in it,
-  // and the service has no route onto it — an empty view would imply one exists.
-  { tab: 'settings', icon: 'settings', shellOnly: true },
 ];
 
 /**
@@ -91,12 +92,11 @@ const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
  */
 export function App() {
   const { t, i18n } = useTranslation();
-  const [tab, setTab] = useState<Tab>('overview');
-  const [mode, setMode] = useState<Mode>(rememberedMode);
+  const [tab, setTab] = useState<Tab>(rememberedView);
   const [attending, setAttendingState] = useState<string | null>(() => remembered(ATTENDING));
   const [readingId, setReadingId] = useState<string | null>(null);
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
-  // to the composer as an opening draft. Held here because the door crosses the two frames.
+  // to the composer as an opening draft. Held here because the door crosses two views.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
   // The palette (SURF9), and what it asks the Work frame to do. Both are events consumed on arrival
   // rather than state, for the reason the quest composer's opening draft is.
@@ -130,9 +130,9 @@ export function App() {
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
 
-  // Work does not exist over a keyed remote (D55): no stream, no tree path, nothing honest to show.
-  // A remembered `work` on a machine with no shell falls back rather than rendering an empty frame.
-  const frame: Mode = attached ? mode : 'manage';
+  // Sessions does not exist in a browser (D55): no stream, no tree path, nothing honest to show. A
+  // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
+  const view: Tab = tab === 'sessions' && !attached ? 'overview' : tab;
 
   // The scope (WSP5): which circle this window is looking at. The roster comes from the registry
   // unscoped — the one reader that must see every workspace — and a remembered choice the deployment
@@ -183,9 +183,9 @@ export function App() {
     ? remotes.data.remotes.some((row) => row.workspace === (scope.workspace ?? 'default'))
     : null;
 
-  const chooseMode = (next: Mode) => {
-    setMode(next);
-    remember(MODE, next);
+  const setView = (next: Tab) => {
+    setTab(next);
+    remember(VIEW, next === 'sessions' ? 'sessions' : null);
   };
 
   // Ctrl/Cmd+K, the one this class of application has agreed on. Captured on the window so it works
@@ -202,7 +202,7 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // The attended session is remembered alongside the mode (D56), so a relaunch into Work reopens
+  // The attended session is remembered alongside the view (D56), so a relaunch into Sessions reopens
   // what the person was watching rather than an empty column.
   const setAttending = useCallback((next: string | null) => {
     setAttendingState(next);
@@ -210,18 +210,18 @@ export function App() {
   }, []);
 
   // A door from a record into the session itself. The selection lives here rather than inside the
-  // frame precisely so a door can name which session it is opening (D55: one selection, every
-  // region) — the mode change alone would land the person on whatever they last attended.
+  // view precisely so a door can name which session it is opening (D55: one selection, every
+  // region) — the view change alone would land the person on whatever they last attended.
   const openInWork = (session: string) => {
     setAttending(session);
-    chooseMode('work');
+    setView('sessions');
   };
 
-  // A row in Overview's band is a door into whatever is waiting — a parked session opens in Work,
-  // and a quest nobody can take opens where quests are answered.
+  // A row in Overview's band is a door into whatever is waiting — a parked session opens in
+  // Sessions, and a quest nobody can take opens where quests are answered.
   const openAttention = (item: Attention) => {
     if (item.kind === 'parked') openInWork(item.id);
-    else setTab('quests');
+    else setView('quests');
   };
 
   return (
@@ -229,26 +229,18 @@ export function App() {
     // the status bar is therefore always where it was. Page scrolling would put the output panel
     // below the fold exactly when a session is producing output.
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* The application's one global row (D56). It holds what is true in BOTH frames, which is
-          exactly why none of it belonged in a sidebar owned by one of them. SURF7 makes this strip
-          the window's own chrome; until then it sits below an OS title bar, which D56 records as a
-          known interim. */}
+      {/* The application's one global row (D56). It holds what is true everywhere, which is exactly
+          why none of it belongs in a sidebar owned by one view. Since SURF7 it is the window's own
+          title bar. */}
       <AppStrip
-        mode={frame}
-        modeAvailable={attached}
-        attention={waiting}
-        onMode={chooseMode}
         captionRoom={chrome.present}
         stripRef={chrome.stripRef}
         onDragStart={chrome.present ? chrome.onDragStart : undefined}
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
-        // Each frame as a MENU of what is inside it (VS Code's menu bar), which the two-button
-        // toggle could not be: a view in the other frame was switch-then-hunt-an-unlabelled-icon,
-        // and is now one click with a name on it.
         // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE: settings, this
-        // machine's wiring, the accounts sessions run as, help. Switching frames is NOT here — that
-        // went to the rail, where switching belongs.
+        // machine's wiring, the accounts sessions run as, help. Navigating is NOT here — that is the
+        // rail's, and since D66 the rail is the only navigation there is.
         menus={(
           <AppMenuBar>
             <AppMenu
@@ -256,9 +248,15 @@ export function App() {
               trigger="app"
               active={false}
               items={[
-                { id: 'settings', label: t('menu.machine'), icon: 'settings' },
-                { id: 'harnesses', label: t('menu.harnesses'), icon: 'inbox' },
-                { id: 'remotes', label: t('menu.remotes'), icon: 'convergence' },
+                { id: 'settings', label: t('menu.settings'), icon: 'settings' },
+                // The machine's own pages are absent where there is no machine to have them — in
+                // a browser they would open Settings on appearance, which is not what they name.
+                ...(attached
+                  ? [
+                    { id: 'harnesses', label: t('menu.harnesses'), icon: 'inbox' as const },
+                    { id: 'remotes', label: t('menu.remotes'), icon: 'convergence' as const },
+                  ]
+                  : []),
                 { id: 'refresh', label: t('menu.refresh'), icon: 'refresh', separated: true },
                 { id: 'language', label: t('menu.language'), icon: 'languages' },
                 { id: 'about', label: t('menu.about'), icon: 'check', separated: true },
@@ -270,10 +268,9 @@ export function App() {
                   void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh');
                   return;
                 }
-                // Every configuration surface this machine has lives in one view; the menu is how
-                // you reach it by name instead of by remembering which icon it is.
-                chooseMode('manage');
-                setTab('settings');
+                // Every setting lives in one view; the menu is how you reach it by name instead of
+                // by remembering which icon it is.
+                setView('settings');
               }}
             />
             <AppMenu
@@ -309,41 +306,24 @@ export function App() {
           browser at 686px. One layout at every width, which is also what keeps D55's "a window, not
           a page" true on a narrow screen instead of only on a wide one. */}
       <div className="flex min-h-0 flex-1">
-        {/* The same bar in both frames, which is what makes them peers (D56). It replaces a 15rem
-            labelled sidebar that, in Work, was six items belonging to the other frame above ~440px
-            of empty column. Its foot holds ACTIONS; the state it used to carry went to the status
-            bar, where ambient state belongs. */}
+        {/* The application's one navigation (D66): every view is one click from every other, and
+            nothing is gated behind a mode. Its foot holds ACTIONS, then Settings — the state it used
+            to carry went to the status bar, where ambient state belongs. */}
         <ActivityBar
           label={t('nav.label')}
-          // 🔴 The frames live HERE now, at the top of the rail (owner: *"those mode/tab switches
-          // can be at left menu"*). Work is ABSENT in a browser rather than disabled — the rule this
-          // bar already follows for the Machine domain.
-          frames={[
-            { id: 'manage', label: t('work.mode.manage'), icon: 'frameManage', active: frame === 'manage' },
-            ...(attached
-              ? [{
-                  id: 'work',
-                  label: t('work.mode.work'),
-                  icon: 'frameWork' as const,
-                  badge: waiting,
-                  active: frame === 'work',
-                }]
-              : []),
-          ]}
           items={NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ tab: target, icon }) => ({
             tab: target,
             label: t(`nav.${target}`),
             icon,
-            badge: target === 'quests' ? outstandingCount : undefined,
+            // Two counts, and only one is a status: what is waiting on a person wears the status
+            // hue; how many quests are outstanding is a quantity and wears the accent.
+            badge: target === 'quests' ? outstandingCount : target === 'sessions' ? waiting : undefined,
+            tone: target === 'sessions' ? 'open' as const : undefined,
           }))}
-          // Nothing is current in Work: the current thing is the other frame, and selecting a
-          // domain here is a door back into it.
-          active={frame === 'manage' ? tab : null}
-          onFrame={(id) => chooseMode(id as Mode)}
-          onSelect={(target) => {
-            setTab(target);
-            chooseMode('manage');
-          }}
+          // Settings is everywhere now (D66) — a browser has appearance to set, if nothing of a machine.
+          end={[{ tab: 'settings', label: t('nav.settings'), icon: 'settings' }]}
+          active={view}
+          onSelect={setView}
           footer={(
             <>
               <Tip content={refresh.isPending ? t('sidebar.refreshing') : t('sidebar.refresh')}>
@@ -362,10 +342,9 @@ export function App() {
           )}
         />
 
-        {/* The two frames (D55). Work fills the window because it is for WATCHING; Manage keeps the
-            reading cap, because that is what the cap is for. Neither carries the other's navigator
-            any more — the bar above is shared and belongs to the application (D56). */}
-        {frame === 'work'
+        {/* Sessions fills the window because it is for WATCHING; every other view keeps the reading
+            cap, because that is what the cap is for (D55). */}
+        {view === 'sessions'
           ? (
             <WorkFrame
               selected={attending}
@@ -374,25 +353,24 @@ export function App() {
               intent={workIntent}
               onIntentTaken={() => setWorkIntent(null)}
               // Sending work back is publishing a request, which is the platform's own door — so
-              // this switches frames onto the composer rather than growing a second one here.
+              // this goes to the composer rather than growing a second one here.
               onSendBack={(repository) => {
                 setOpening({ from: repository });
-                setTab('quests');
-                chooseMode('manage');
+                setView('quests');
               }}
             />
           )
           : (
             <main className="min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
               <div className="max-w-6xl">
-                {tab === 'overview' && (
+                {view === 'overview' && (
                   <OverviewView
-                    onNavigate={setTab}
+                    onNavigate={setView}
                     onAttend={attached ? openAttention : undefined}
                     notify={notify}
                   />
                 )}
-                {tab === 'quests' && (
+                {view === 'quests' && (
                   <QuestsView
                     notify={notify}
                     onAttend={attached ? openInWork : undefined}
@@ -400,22 +378,22 @@ export function App() {
                     onOpened={() => setOpening(null)}
                   />
                 )}
-                {tab === 'projects' && <ProjectsView notify={notify} />}
-                {tab === 'convergence' && (
+                {view === 'projects' && <ProjectsView notify={notify} />}
+                {view === 'convergence' && (
                   <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
                 )}
-                {tab === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
-                {tab === 'settings' && attached && <SettingsView notify={notify} />}
+                {view === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
+                {view === 'settings' && <SettingsView notify={notify} />}
               </div>
             </main>
           )}
       </div>
 
-      {/* Ambient truth, true in both frames without being looked at (D55). It belongs to the
-          application rather than to Work: which circle and whether it syncs are as true on a
-          management screen, and a bar that appeared and vanished with a mode would be chrome.
-          Since D56 it also carries the tier — D24's "stated on every screen" is better served by a
-          bar that is on every screen by construction — and what the index holds. */}
+      {/* Ambient truth, true on every view without being looked at (D55). Which circle and whether
+          it syncs are as true on Quests as on Sessions, and a bar that appeared and vanished with a
+          view would be chrome. Since D56 it also carries the tier — D24's "stated on every screen"
+          is better served by a bar that is on every screen by construction — and what the index
+          holds. */}
       <StatusBar
         // The scope lives here now, not in the strip: this bar is what is TRUE, and a circle is a
         // fact about what you are looking at rather than an action.
@@ -441,16 +419,16 @@ export function App() {
         /* Where each fact leads, and the rule is that a status item goes where the fact is SET
            rather than where it is merely repeated (owner, 2026-09-22: *"better design with display
            and action (on click or on hover)"*). The driver and the remote are both machine wiring,
-           so both land on Machine; sessions are Work's whole subject; the index count leads to the
+           so both land on Settings; sessions land on Sessions; the index count leads to the
            repositories it was built from.
 
            🔴 Handed over unconditionally and refused per-item inside the bar. A browser has no
-           Machine view at all, and `driver === 'absent'` is exactly that case — the bar drops the
-           target itself rather than making every caller remember to. */
-        onDriver={() => { setTab('settings'); chooseMode('manage'); }}
-        onRemote={() => { setTab('settings'); chooseMode('manage'); }}
-        onSessions={() => chooseMode('work')}
-        onIndex={() => { setTab('projects'); chooseMode('manage'); }}
+           machine settings at all, and `driver === 'absent'` is exactly that case — the bar drops
+           the target itself rather than making every caller remember to. */
+        onDriver={() => setView('settings')}
+        onRemote={() => setView('settings')}
+        onSessions={attached ? () => setView('sessions') : undefined}
+        onIndex={() => setView('projects')}
         tier={status.data
           ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
           : undefined}
@@ -494,15 +472,14 @@ export function App() {
           label: (id) => t(`command.${id}`),
           group: (id) => t(`palette.group.${id}`),
           attached,
-          mode: frame,
+          current: view,
           waiting,
-          go: (target) => { setTab(target); chooseMode('manage'); },
-          setMode: chooseMode,
+          go: setView,
           refresh: onRefresh,
           toggleLanguage: () => void i18n.changeLanguage(
             i18n.language.startsWith('zh') ? 'en' : 'zh'),
-          startSession: () => { chooseMode('work'); setWorkIntent('start'); },
-          review: () => { chooseMode('work'); setWorkIntent('review'); },
+          startSession: () => { setView('sessions'); setWorkIntent('start'); },
+          review: () => { setView('sessions'); setWorkIntent('review'); },
           // The second screen (SURF8). Opening a window is the shell's act, so both of these are
           // absent in a browser by the same omission every other shell-only command uses.
           monitor: () => openWindow.mutate(MONITOR_WINDOW),

@@ -1,28 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { ModeSwitch, OutputPanel, StatusBar } from './frame';
+import { OutputPanel, StatusBar } from './frame';
 import { StartSession } from './StartSession';
 
-// The frame's furniture (D55) — three regions the platform had nowhere to put, plus the control
-// that starts a session. The panel's console is absent here on purpose: a stream arrives over the
-// shell's bridge and Storybook has none, so what these stories are for is the CHROME around it.
+// The window's furniture (D55) — regions the platform had nowhere to put, plus the control that
+// starts a session. The panel's console is absent here on purpose: a stream arrives over the shell's
+// bridge and Storybook has none, so what these stories are for is the CHROME around it.
 
 const meta: Meta = { title: 'Work/Frame' };
 export default meta;
-
-export const Modes: StoryObj = {
-  render: () => (
-    <div className="grid w-64 gap-3">
-      <ModeSwitch mode="manage" available onChange={() => {}} />
-      <ModeSwitch mode="work" available onChange={() => {}} />
-      {/* A browser: Work does not exist there, so the switch is absent rather than disabled. */}
-      <div className="text-small text-ink-faint">
-        <ModeSwitch mode="manage" available={false} onChange={() => {}} />
-        (no shell — nothing renders above this line)
-      </div>
-    </div>
-  ),
-};
 
 /**
  * 🔴 Wrapped in the tooltip provider the application mounts once (`main.tsx`). Every status item

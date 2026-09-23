@@ -54,6 +54,13 @@ applications do with the **window** itself. Five rules recur, and Daoris breaks 
 
 ## 3. The frame, region by region
 
+> **Amended by D66 (2026-09-23, the owner's choice).** There is no Manage ⇄ Work any more. The
+> activity bar is the one navigation — **Overview, Sessions, Quests, Projects, Convergence, Search**,
+> with **Settings** at its foot — and *Sessions* is what the Work frame was, as one view among the
+> others. §3a's mode switch and §3b's frame icons are gone; everything else here stands, including
+> the strip as the title bar, the rail, the attended column's one owner for the verbs, the panel and
+> the status bar.
+
 ```
 ┌────────────────────────────────────────────────┐
 │ ▦ Daoris 道衍  [Manage│Work①]  every circle ─ □ ✕│  app strip   36px

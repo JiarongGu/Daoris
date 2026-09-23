@@ -3,23 +3,23 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { ActivityBar, AppStrip } from './frame';
 import { Button, Icon, LanguageSwitcher } from '../ui';
 
-// The application's own chrome (D56): the strip across the top and the bar down the side. Both are
-// molecules — every state below is reached by passing props, with no shell and no service behind
+// The application's own chrome (D56, D66): the strip across the top and the bar down the side. Both
+// are molecules — every state below is reached by passing props, with no shell and no service behind
 // them (components plan §2).
 
-const DOMAINS = [
+const VIEWS = [
   { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const },
+  { tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, badge: 2, tone: 'open' as const },
   { tab: 'quests' as const, label: 'Quests', icon: 'quests' as const, badge: 1 },
   { tab: 'projects' as const, label: 'Projects', icon: 'projects' as const },
   { tab: 'convergence' as const, label: 'Convergence', icon: 'convergence' as const },
   { tab: 'search' as const, label: 'Search', icon: 'search' as const },
-  { tab: 'settings' as const, label: 'Machine', icon: 'settings' as const },
 ];
+const SETTINGS = [{ tab: 'settings' as const, label: 'Settings', icon: 'settings' as const }];
 
 const meta: Meta<typeof AppStrip> = {
   title: 'Chrome/AppStrip',
   component: AppStrip,
-  args: { mode: 'manage', modeAvailable: true, attention: 0, onMode: () => {} },
   decorators: [(Story) => (
     <Tooltip.Provider><div className="w-[52rem] border border-line"><Story /></div></Tooltip.Provider>
   )],
@@ -28,14 +28,16 @@ export default meta;
 
 type Story = StoryObj<typeof AppStrip>;
 
-/** A browser: no shell, so no Work to switch to, and the strip is a wordmark and a scope. */
-export const InABrowser: Story = { args: { modeAvailable: false } };
+/** A browser: no window to command, so the strip is the mark and nothing reserved. */
+export const InABrowser: Story = {};
 
-/** The shell, in Manage, with nothing waiting. */
-export const Manage: Story = {};
-
-/** In Work, with two things waiting on a person — the one badge that wears a status hue. */
-export const WorkingWithAttention: Story = { args: { mode: 'work', attention: 2 } };
+/** The shell: the application's menus, and the room the window paints its buttons into. */
+export const InTheShell: Story = {
+  args: {
+    menus: <span className="text-small text-ink-soft">Daoris · View</span>,
+    captionRoom: true,
+  },
+};
 
 /** The scope is a slot, because the switcher is absent while the family is one circle (WSP5). */
 export const WithScope: Story = {
@@ -57,12 +59,17 @@ export const CaptionRoomReserved: Story = { args: { captionRoom: true } };
 
 /* ------------------------------------------------------------------ activity bar */
 
+/**
+ * The one navigation (D66): every view in one list, Settings at the foot, and two counts — sessions
+ * waiting on a person in the status hue, outstanding quests in the accent, each a true circle.
+ */
 export const Bar: StoryObj<typeof ActivityBar> = {
   render: () => (
-    <Tooltip.Provider><div className="flex h-[24rem] border border-line">
+    <Tooltip.Provider><div className="flex h-[26rem] border border-line">
       <ActivityBar
-        label="Domains"
-        items={DOMAINS}
+        label="Views"
+        items={VIEWS}
+        end={SETTINGS}
         active="quests"
         onSelect={() => {}}
         footer={<><Button variant="ghost"><Icon name="refresh" size={14} /></Button><LanguageSwitcher compact /></>}
@@ -72,26 +79,24 @@ export const Bar: StoryObj<typeof ActivityBar> = {
   ),
 };
 
-/**
- * In Work **nothing is active**, because the active thing is the other frame. The bar still renders
- * every domain, and a click on one is a door back into Manage on it (D56).
- */
-export const BarInWork: StoryObj<typeof ActivityBar> = {
+/** Settings current — the foot place wears the marking the list's places do. */
+export const BarOnSettings: StoryObj<typeof ActivityBar> = {
   render: () => (
-    <Tooltip.Provider><div className="flex h-[24rem] border border-line">
-      <ActivityBar label="Domains" items={DOMAINS} active={null} onSelect={() => {}} />
+    <Tooltip.Provider><div className="flex h-[26rem] border border-line">
+      <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="settings" onSelect={() => {}} />
       <div className="flex-1 bg-page" />
     </div></Tooltip.Provider>
   ),
 };
 
-/** A browser has no Machine domain at all — an absent item, never a disabled one. */
-export const BarWithoutMachine: StoryObj<typeof ActivityBar> = {
+/** A browser has no Sessions at all — an absent item, never a disabled one. */
+export const BarInABrowser: StoryObj<typeof ActivityBar> = {
   render: () => (
-    <Tooltip.Provider><div className="flex h-[24rem] border border-line">
+    <Tooltip.Provider><div className="flex h-[26rem] border border-line">
       <ActivityBar
-        label="Domains"
-        items={DOMAINS.filter((item) => item.tab !== 'settings')}
+        label="Views"
+        items={VIEWS.filter((item) => item.tab !== 'sessions')}
+        end={SETTINGS}
         active="overview"
         onSelect={() => {}}
       />

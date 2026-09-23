@@ -12,9 +12,8 @@ const LABELS: Record<string, string> = {
   'go.projects': 'Projects',
   'go.convergence': 'Convergence',
   'go.search': 'Search',
-  'go.settings': 'Machine',
-  'go.work': 'Switch to Work',
-  'go.manage': 'Switch to Manage',
+  'go.settings': 'Settings',
+  'go.sessions': 'Sessions',
   'work.start': 'Start a session…',
   'work.review': 'Review what this session landed',
   'work.monitor': 'Open the monitor window',
@@ -29,10 +28,9 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => commands({
   label: (id) => LABELS[id] ?? id,
   group: (id) => GROUPS[id],
   attached: true,
-  mode: 'manage',
+  current: 'overview',
   waiting: 0,
   go: () => {},
-  setMode: () => {},
   refresh: () => {},
   toggleLanguage: () => {},
   startSession: () => {},
@@ -51,11 +49,11 @@ export default meta;
 
 type Story = StoryObj<typeof CommandPalette>;
 
-/** A shell in Manage: every domain, the other frame, the session actions, the global two. */
+/** A shell on Overview: every other view, the session actions, the global two. */
 export const InTheShell: Story = { args: { commands: world() } };
 
-/** A shell in Work — the switch offers Manage, never the frame you are already in. */
-export const InWork: Story = { args: { commands: world({ mode: 'work' }) } };
+/** A shell on Sessions — every view but the one you are already on (D66). */
+export const OnSessions: Story = { args: { commands: world({ current: 'sessions' }) } };
 
 /**
  * A browser. Shorter by OMISSION: no Machine, no frame switch, no session actions — because a palette

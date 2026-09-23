@@ -127,6 +127,13 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   is open, a stray drop is absorbed at the window, and the WHOLE composer is the drop target,
 >   because aiming a file at a box inside a drawer is a chore. A pasted screenshot is a file, not
 >   text: it is attached and kept out of the field it was pasted into.
+> - **One navigation, and a count is a circle** (2026-09-23, owner → D66). The frame switch was a
+>   second navigation stacked on the activity bar, so Sessions became a view on the bar and Settings
+>   took the gear at its foot. The bar's counts are `CountBadge`: one fixed height, the same minimum
+>   width, no line-height of their own. Measured 14 × 17.2px before and 16 × 16 after, on the window.
+> - **The theme is the viewer's to choose** (D66): *System · Light · Dark* on Settings, applied as
+>   `data-theme` before the first paint, pushed to the window's native chrome, and held by two
+>   forced blocks in `tokens.css` that a test keeps equal to their system twins.
 > - **A page never prints a machine path it was answered.** A local host answers this machine where
 >   a kept file lies (a quest's attachment, D65 §2), and the drawer reads that path's *presence* as
 >   "can be opened" and opens the file through the host's own route. A file the record names and
@@ -213,8 +220,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   non-adopters as the marked list with the join steps proposed as text.
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the
   drawer instead of a centered modal.
-- **Machine** (desktop only) — the home's path under the header, then cards that are *sections of
-  one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,
+- **Settings** (D66) — *Appearance* first, for everyone: the theme and the language, each a
+  segmented choice. Then, on the desktop only, **This machine**: the home's path under its heading,
+  then cards that are *sections of one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,
   the wired rows, *Wire a workspace* behind a press), Agent tools (one row per tool, its accounts
   leading, its ways in beneath — a declared door wearing the plugin it came from), usage, and
   Plugins (a row per folder: what it declares and speaks on, running or off, the driver's own

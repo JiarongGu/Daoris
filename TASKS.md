@@ -239,15 +239,12 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **The actionable rows are the regular task's** (D65): **INT4b** (the intake session) and
-  **INT4c** (its desktop door) are ready to build; INT3 waits on the owner's yes and INT6 needs the
-  owner present. Everything
-  else still waits on something. **Three are the owner's** (ACP2 and DEPLOY1's second half each
-  cost a real login; PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's
-  transcripts, TOOL5 and CANON2 on a repository naming what it wants, HARNESS1 on the same, REH1
-  and TEST1 on a captured recurrence, HELP3 on where the guard lives being settled, and PLUG7 on a
-  plugin asking for a service-side point. Pick one of those up only when its trigger has actually
-  arrived, and **a new direction from the owner outranks all of them**.
+- **Actionable: UX1, INT4b, INT4c.** INT3 waits on the owner's yes, INT6 on the owner's presence.
+  **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
+  decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
+  on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
+  guard lives; PLUG7 on a plugin asking for a service-side point. Take one only when its trigger
+  arrives — and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 317 + `check` + doc
@@ -278,9 +275,8 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **INT4b and INT4c are the next builds** (D65): no login, no external event. INT4b's row lists the
-traps the plumbing map found. INT3 waits on the owner's yes. Each item is one session-sized landing, TDD, gates green, moved to the archive on
-completion.
+🔴 **UX1, then INT4b and INT4c, are next.** Each is one session-sized landing, TDD, gates green,
+moved to the archive on completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -471,6 +467,13 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
   `packs: []` is a flat set with no precedence. ⛔ **Decide before building**: this reopens **D4's
   "core installs with no opt-out"**, which was a deliberate choice about doctrine rather than a
   limitation. The owner's call, and the study says so rather than assuming it.
+
+### The owner's look at the desktop (2026-09-23 → D66) — outranks INT4b/INT4c
+
+Four asks; the owner's words and UX2–UX4's outcome are in the archive.
+
+- [ ] **UX1 — an account is made by signing in, and removing it removes it** (D66 §3).
+  `claude auth status` names who signed in; `daoris harness` is the terminal twin (D50).
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

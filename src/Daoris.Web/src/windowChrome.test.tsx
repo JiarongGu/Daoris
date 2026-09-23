@@ -71,9 +71,7 @@ describe('the app strip as a title bar', () => {
     render(
       <Tooltip.Provider>
         <AppStrip
-          mode="manage"
-          modeAvailable
-          onMode={() => {}}
+          menus={<button type="button">app menu</button>}
           captionRoom
           {...handlers}
           {...props}
@@ -95,15 +93,15 @@ describe('the app strip as a title bar', () => {
   it('reserves nothing in a browser, where there is no window to give the pixels to', () => {
     render(
       <Tooltip.Provider>
-        <AppStrip mode="manage" modeAvailable={false} onMode={() => {}} />
+        <AppStrip />
       </Tooltip.Provider>,
     );
     expect(document.querySelectorAll(`[${CAPTION_ATTRIBUTE}]`)).toHaveLength(0);
   });
 
   /**
-   * The whole strip is a drag handle EXCEPT its controls. Without the target check every press on
-   * the mode switch would start an OS move loop, and the switch would stop being a button.
+   * The whole strip is a drag handle EXCEPT its controls. Without the target check every press on a
+   * menu would start an OS move loop, and the menu would stop being a button.
    */
   it('drags from the strip itself and never from a control on it', async () => {
     const { onDragStart } = show();
@@ -111,7 +109,7 @@ describe('the app strip as a title bar', () => {
     await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('banner') });
     expect(onDragStart).toHaveBeenCalledTimes(1);
 
-    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('button', { name: /work/i }) });
+    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('button', { name: 'app menu' }) });
     expect(onDragStart).toHaveBeenCalledTimes(1);
   });
 
@@ -130,7 +128,7 @@ describe('the app strip as a title bar', () => {
   it('offers a top resize strip only where there is a window to resize', () => {
     const { container } = render(
       <Tooltip.Provider>
-        <AppStrip mode="manage" modeAvailable={false} onMode={() => {}} />
+        <AppStrip />
       </Tooltip.Provider>,
     );
     expect(container.querySelector('.cursor-ns-resize')).toBeNull();

@@ -8,7 +8,7 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy, FileDiff, GitMerge,
   Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, LogIn, Monitor,
-  Paperclip, Plus, RotateCw, Search, SlidersHorizontal, SquareArrowOutUpRight, SquareTerminal,
+  Paperclip, Plus, RotateCw, Search, Settings, SquareArrowOutUpRight, SquareTerminal,
   Trash2, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +26,9 @@ const ICONS = {
   projects: Layers,
   convergence: GitMerge,
   search: Search,
-  settings: SlidersHorizontal,
+  // A GEAR (D66): Settings is the application's settings page now, and a gear is what every
+  // application draws for one. The sliders it wore as "Machine" read as a mixer, not a place.
+  settings: Settings,
   refresh: RotateCw,
   plus: Plus,
   x: X,
@@ -538,6 +540,90 @@ export function CheckField({ checked, onChange, label, hideLabel }: {
       </Checkbox.Root>
       <span className={cn(hideLabel && 'sr-only')}>{label}</span>
     </label>
+  );
+}
+
+/**
+ * A choice of a few, all in view (D66: the theme, the language) — a radiogroup of buttons, the arrow
+ * keys moving the choice the way every radiogroup's do. For two to four options that fit a line: a
+ * select would hide what a person is choosing between.
+ */
+export function Segmented<T extends string>({ label, value, options, onChange }: {
+  /** The group's accessible name — the row's label, since the options alone say nothing of what. */
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  const move = (by: number) => {
+    const at = options.findIndex((option) => option.value === value);
+    onChange(options[(at + by + options.length) % options.length]!.value);
+  };
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') move(1);
+        else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') move(-1);
+        else return;
+        event.preventDefault();
+      }}
+      className="inline-flex rounded-control border border-line-strong bg-raised p-0.5"
+    >
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          // Roving focus: the group is one tab stop, and the chosen option is where it lands.
+          tabIndex={value === option.value ? 0 : -1}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            'inline-flex items-center rounded-[4px] px-2.5 py-1 text-small transition-colors duration-(--speed)',
+            value === option.value ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:text-ink',
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * A count on an icon — a CIRCLE for one digit, a pill beyond (owner, 2026-09-23: *"the notification
+ * number is not even circle border"*).
+ *
+ * @remarks
+ * 🔴 Measured before it was fixed: 14px wide and 17.2px tall, because the width came from `min-w-3.5`
+ * and the height from the line-height plus the border — two numbers nothing held equal, so a single
+ * digit sat in an upright oval. Here the box is one fixed height, the minimum width is the same
+ * number, and the text is centred by flex with no line-height of its own to push it taller.
+ * `ui.test.tsx` holds the two equal.
+ */
+export function CountBadge({ count, tone = 'accent' }: {
+  count: number;
+  /** A status hue for a count that IS a status (sessions waiting on a person); the accent otherwise. */
+  tone?: 'accent' | 'open';
+}) {
+  if (count <= 0) return null;
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        // `px-0.5`, not `px-1`: measured on the window, a single digit plus 4px a side plus the border
+        // came to 16.45px — wider than the 16px height by the padding alone. At 2px a side one digit
+        // sits inside the circle, and two grow it into a pill as they should.
+        'absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full border bg-page px-0.5',
+        'font-mono text-meta leading-none tabular-nums',
+        tone === 'open' ? 'border-st-open text-st-open' : 'border-accent text-accent',
+      )}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
   );
 }
 

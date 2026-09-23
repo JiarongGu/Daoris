@@ -369,6 +369,16 @@ The first version: doctrine that installs, is checked, and flows back.
   every step must be addressable, and every step must live in the same home. The composer offers
   a next step; the drawer shows what is coming and what a quest follows; `quest_publish` takes the
   list; and a driven session is told both what its quest follows and what closing it will publish.
+- **One navigation** (D66). There is no Manage ⇄ Work switch any more: the activity bar lists
+  Overview, Sessions, Quests, Projects, Convergence and Search, with Settings at its foot, and
+  Sessions is what the Work frame was. The palette offers the same list, minus the view you are
+  on. A remembered Sessions reopens it, and a browser has no Sessions to reopen.
+- **A settings page, and the theme is yours to choose** (D66). Settings holds *Appearance* (theme:
+  system, light or dark; language) and, on the desktop, everything *This machine* held. A chosen
+  theme applies before the first paint and repaints the window's own caption buttons. In a browser,
+  Settings is appearance alone.
+- **The activity bar's counts are circles.** Measured on the window: 14 × 17.2px before, 16 × 16
+  after. Waiting sessions wear the status hue, and outstanding quests the accent.
 - **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
   [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
   and files, who asked, and what became of it, naming the tier that answered on every record. With

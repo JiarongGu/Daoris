@@ -60,6 +60,51 @@
   }
 }
 
+/* 🔴 A CHOSEN theme outranks the OS's (D66): the Settings page puts `data-theme` on <html>, and
+   `:root[data-theme]` is more specific than the media query's `:root`, so it wins wherever the OS
+   stands. Each block is a copy of its twin above — `tokens.test.ts` holds every value equal, because
+   two copies of a palette are two palettes the first time one is edited alone. The attribute is
+   absent for the system, so these never apply unless a person chose. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ink: #1a1a18;
+  --ink-soft: #5b5a55;
+  --ink-faint: #8a887f;
+  --page: #faf9f6;
+  --raised: #ffffff;
+  --overlay: #ffffff;
+  --line: #e3e0d8;
+  --line-strong: #cfcabe;
+  --accent: #7a5c2e;
+  --accent-ink: #faf9f6;
+  --accent-soft: #f0e9dc;
+  --warn: #8a4b2a;
+  --st-open: #b07818;
+  --st-taken: #2f6db3;
+  --st-done: #2c9a62;
+  --st-declined: #9e2f24;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8e6df;
+  --ink-soft: #a9a69c;
+  --ink-faint: #7a7770;
+  --page: #16161a;
+  --raised: #1e1e23;
+  --overlay: #24242a;
+  --line: #2e2e34;
+  --line-strong: #3d3d45;
+  --accent: #d3ac6b;
+  --accent-ink: #16161a;
+  --accent-soft: #2a2419;
+  --warn: #d99a72;
+  --st-open: #bd8226;
+  --st-taken: #5c97dd;
+  --st-done: #3da476;
+  --st-declined: #c74534;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root { --speed: 0ms; }
 }

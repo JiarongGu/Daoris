@@ -2424,3 +2424,46 @@ INT4a settled:
 - **A named receiver the exchange refuses keeps the ask.** The sentence is still what the person
   meant, so the refusal arrives with the declarations' proposal as somewhere to go.
 - **Asks are local mode only**, like a quest file's bytes: the intake is this machine's.
+
+## D66 — One bar: Sessions is a view, Settings is a place, and an account is made by signing in (2026-09-23)
+
+**Decision.** The owner looked at the desktop and asked four things (UX1–UX4 in the backlog). Two of
+them change a standing decision, and the owner chose the shape of the larger one directly:
+
+1. **One frame, not Manage ⇄ Work** (amends D55 §a and D56 §3a–b). The activity bar was already the
+   navigation — the two frame icons at its top were a second navigation stacked on the first. The
+   bar is now one list: **Overview, Sessions, Quests, Projects, Convergence, Search**, with
+   **Settings** at its foot. *Sessions* is what the Work frame was — the rail, the attended session,
+   the dock, the console — as one view among the others. D55's substance stands: the session is
+   still the organising object of that view, a timeline is still derived, and the stream still has
+   one home. What goes is the mode: nothing is gated behind a switch, and there is no frame to be in.
+2. **A settings page** holds the application's own settings — the theme (system, light, dark) and
+   the language — above what *This machine* held, which moves inside it. In a browser it holds only
+   what a browser may know: appearance.
+3. **An account is made by signing in** (amends the SES3/D57 profile rule *"removing one deletes
+   nothing"*). *Sign in to another account* opens a fresh profile, runs the tool's own login in it,
+   and names the account by who signed in when the tool says (`claude auth status` reports the
+   email); a sign-in that does not finish leaves nothing behind. **Removing an account deletes its
+   directory**, credentials included — the owner's call: an account a person removes should not
+   still be signed in on disk. The tool's own configuration home is never Daoris's to remove.
+
+**Why.** The frame switch cost a click and a concept for every move between reading and working,
+and the bar beside it already did the navigating. The theme was the OS's alone. And an account
+that must be named before anyone knows whose it is, then kept on disk after it is "forgotten", was
+two steps and a leftover where the person meant one act.
+
+**Rejected.**
+- **Two places, Overview and Monitor.** Quests, projects, convergence and search would move one
+  level deeper, into tabs inside Overview, and every one of them is a place people go directly. The
+  owner chose the flat list.
+- **Keeping both frames and only tidying the bar.** That leaves the concept the owner asked to
+  lose.
+- **CSS `light-dark()` in place of copied forced blocks.** It is one declaration per token, but it
+  would rewrite every token. It would also break the desktop's `ChromePaletteTests`, which reads the
+  palette block by block, and would buy nothing the equality test does not already guarantee.
+- **Removing an account's record and keeping its directory** (the SES3 rule). The owner's call: a
+  removed account still signed in on disk is the leftover the person meant to remove.
+
+**What does not move.** D41's language and D56's density; the status bar; the palette; D47 §4 (a
+browser still learns nothing about this machine — Settings in a browser is appearance only); D49 §4
+(Daoris never reads a credential — it deletes a directory it made, and never looks inside it).

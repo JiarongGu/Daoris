@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { CaptionButtonRect } from '@shenora/react';
 import { WindowCommands, useShenora, useWindowMaximized } from '@shenora/react';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './work/caption';
+import { effectiveDark, subscribeTheme } from './theme';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from './work/caption';
 
@@ -42,15 +43,6 @@ export function captionRects(container: HTMLElement | null): CaptionButtonRect[]
   });
 }
 
-/** True when the OS is in dark mode, as the page's own tokens read it. */
-function osPrefersDark(): boolean {
-  try {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  } catch {
-    // A jsdom without matchMedia, or a locked-down embedder. Dark is the shell's own default fill.
-    return true;
-  }
-}
 
 /**
  * The app strip, wired to the window it sits in.
@@ -123,10 +115,17 @@ export function useWindowChrome() {
       ? window.matchMedia('(prefers-color-scheme: dark)')
       : null;
 
-    const push = () => fire((commands) => commands.setTheme(osPrefersDark()));
+    // The theme the PAGE is in, which is the viewer's choice when there is one (D66) and the OS's
+    // when there is not — so pushed on either changing. Told only the OS, a window set to light on
+    // a dark desktop would keep dark caption buttons over a light strip.
+    const push = () => fire((commands) => commands.setTheme(effectiveDark()));
     push();
     media?.addEventListener('change', push);
-    return () => media?.removeEventListener('change', push);
+    const stop = subscribeTheme(push);
+    return () => {
+      media?.removeEventListener('change', push);
+      stop();
+    };
   }, []);
 
   return {

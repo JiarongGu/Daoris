@@ -354,10 +354,14 @@ test('a session record names the tool version and the account it ran as (D49 §4
 test('a browser learns nothing about this machine’s harnesses (D49 §4)', async ({ page }) => {
   await page.goto('/');
 
-  // The machine's settings are not even reachable: the tab is shell-only. Its SIDEBAR label is
-  // `Machine` — the page heading reads "This machine", and asserting on that one would have been a
-  // check that could never fail, which is worse than no check at all.
-  await expect(nav(page, 'Machine')).toHaveCount(0);
+  // Settings is here (D66) — a browser has appearance to set — and it holds NOTHING of a machine:
+  // the machine's half is absent, not disabled. Asserted on the page itself, after checking the page
+  // really is Settings, because an absence asserted on the wrong page is a check that cannot fail.
+  await nav(page, 'Settings').click();
+  await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'This machine' })).toHaveCount(0);
+  await expect(page.getByText('Agent tools')).toHaveCount(0);
+  await expect(page.getByText(/harnesses\.json|remotes\.json/)).toHaveCount(0);
 
   await nav(page, 'Projects').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
@@ -374,28 +378,29 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
  * transcript — none of which may leave the machine that produced them (D47 §4). Playwright holds
  * the NEGATIVE, over the shipped bundle, because the positive is only reachable from the desktop.
  */
-test('a browser has one frame, and it is Manage (D55)', async ({ page }) => {
+test('a browser has no Sessions, and no mode to switch (D55, D66)', async ({ page }) => {
   await page.goto('/');
 
-  // No switch, because there is nothing to switch to — absent rather than disabled.
-  await expect(page.getByRole('group', { name: 'mode' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Work', exact: true })).toHaveCount(0);
+  // One navigation, and Sessions is not on it — absent rather than disabled.
+  await expect(page.getByRole('group', { name: /mode/i })).toHaveCount(0);
+  await expect(nav(page, 'Sessions')).toHaveCount(0);
+  await expect(nav(page, 'Quests')).toBeVisible();
 
-  // A browser that remembers the other frame still gets this one: the fallback is not cosmetic.
-  await page.evaluate(() => window.localStorage.setItem('daoris.mode', 'work'));
+  // A browser that remembers Sessions still lands on Overview: the fallback is not cosmetic.
+  await page.evaluate(() => window.localStorage.setItem('daoris.view', 'sessions'));
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'sessions' })).toHaveCount(0);
   await expect(page.getByLabel('console height')).toHaveCount(0);
   await expect(page.getByLabel('message')).toHaveCount(0);
-  await page.evaluate(() => window.localStorage.removeItem('daoris.mode'));
+  await page.evaluate(() => window.localStorage.removeItem('daoris.view'));
 
   // The status bar IS here — it belongs to the application — and it says what a browser is.
   await expect(page.getByLabel('state of this machine')).toContainText('none here');
 
   // And no review (SURF6). A diff is read off a checkout on the machine that ran the session, so a
-  // browser has no door onto one — the dock that would hold it is part of the Work frame and the
-  // Work frame is not rendered here at all.
+  // browser has no door onto one — the dock that would hold it is part of Sessions, and Sessions is
+  // not rendered here at all.
   await expect(page.getByRole('tab', { name: 'Review' })).toHaveCount(0);
   await expect(page.getByRole('tablist', { name: 'Session surfaces' })).toHaveCount(0);
 });
@@ -430,13 +435,15 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   const palette = page.getByRole('dialog');
   await expect(palette).toBeVisible();
 
-  // The management domains are all here.
-  await expect(palette.getByRole('option', { name: /Overview/ })).toBeVisible();
+  // The views a browser has are here — every one but the view already in front of the person
+  // (Overview, on landing) — Settings among them, since a browser has appearance to set (D66).
+  await expect(palette.getByRole('option', { name: /Quests/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /Search/ })).toBeVisible();
+  await expect(palette.getByRole('option', { name: /Settings/ })).toBeVisible();
+  await expect(palette.getByRole('option', { name: /^Overview/ })).toHaveCount(0);
 
   // Nothing that needs a shell is — not disabled, ABSENT.
-  await expect(palette.getByRole('option', { name: /Machine/ })).toHaveCount(0);
-  await expect(palette.getByRole('option', { name: /Switch to Work/ })).toHaveCount(0);
+  await expect(palette.getByRole('option', { name: /Sessions/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Start a session/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
   // A window is the shell's to open, so neither of SURF8's is offered here.

@@ -4075,3 +4075,37 @@ done, whose session read the file.
 
 Gates: verify (317), service 348, driver 357, modules 96, web 534 + 16, family 212/212, deploy
 39/39.
+
+## UX2, UX3, UX4 — one bar, a settings page, circular counts (2026-09-23)
+
+> *"2. we dont really have a setting page, so there is no way to change theme 3. since its all tab
+> based so there probbaly no need for manage/work? mostly just overview/monitor?? 4. and we should
+> keep polish the ui/ux currently the notification number is not even circle border"* — the owner,
+> looking at the desktop; for 3 the owner chose *one bar, Sessions is a view* from three shapes.
+
+- [x] **UX2 — a settings page, and the theme is one of its settings.**
+- [x] **UX3 — one frame, not Manage ⇄ Work.**
+- [x] **UX4 — the activity bar's count is a circle.**
+
+✅ **done 2026-09-23 (D66).**
+
+**UX3.** The mode is gone from the strip, the bar, the palette and the stories. The activity bar is
+one list: Overview, Sessions, Quests, Projects, Convergence, Search. Settings takes the foot, after
+the refresh and language actions, and wears a gear instead of sliders. *Sessions* is what the Work
+frame was. A remembered Sessions reopens it (`daoris.view`), and a browser has none, so a remembered
+one falls back to Overview. The palette offers the same list, minus the view you are on.
+
+**UX2.** `theme.ts` holds the viewer's choice (*system · light · dark*) as `data-theme`, applied in
+`main.tsx` before the first paint and pushed to the window's native chrome with the OS's own changes.
+`tokens.css` gains forced light and dark blocks that outrank the media query, and `tokens.test.ts`
+holds each equal to its system twin, proven by a sabotaged copy it catches. Settings is Appearance
+(theme and language, each a new `Segmented` radiogroup with arrow keys) and, on the desktop only,
+*This machine* beneath it. In a browser it is appearance alone, which Playwright asserts on the page
+itself.
+
+**UX4.** `CountBadge` is one fixed height with the same minimum width and no line-height of its
+own. On the window it measured 14 × 17.2 before, then 16.45 × 16 after the first try (the padding
+alone overran), then 16 × 16.
+
+**Seen on the scratch shell:** the bar in light, Settings in light, Dark chosen from the page
+(caption buttons included), and Sessions from the bar.

@@ -1,25 +1,23 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Dot, Icon, type IconName, Tip } from '../ui';
+import { Button, CountBadge, Dot, Icon, type IconName, Tip } from '../ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
 import { SessionConsole } from '../SessionConsole';
 import { cn } from '../lib/cn';
 import { Mark } from '../Mark';
 
-// The frame's own furniture (D55, extended by D56): the app strip, the activity bar, the mode
-// switch, the status bar and the output panel. Small, presentational, and kept together because
-// they are one arrangement rather than five features — what the workbench references all have and
-// what this platform had nowhere to put.
-
-export type Mode = 'manage' | 'work';
+// The window's own furniture (D55, extended by D56, simplified by D66): the app strip, the activity
+// bar, the status bar and the output panel. Small, presentational, and kept together because they
+// are one arrangement rather than four features — what the workbench references all have and what
+// this platform had nowhere to put.
 
 /**
  * The **app strip** (D56): the application's one global row, across the top of the window.
  *
  * @remarks
- * It holds what is true in **both** frames — the wordmark, the mode switch, the workspace scope —
- * which is precisely why none of them belongs in a sidebar owned by one frame. Measured before it
- * was built: 42% of the window's width was navigation and a form, and the session that is the
+ * It holds what is true everywhere — the mark, the application's menus, the command center — which
+ * is precisely why none of them belongs in a sidebar owned by one view. Measured before it was
+ * built: 42% of the window's width was navigation and a form, and the session that is the
  * application's organising object (D55) got about 28%.
  *
  * **`captionRoom` reserves the right edge, and the WINDOW paints there** (SURF7; D56 as amended has
@@ -31,18 +29,14 @@ export type Mode = 'manage' | 'work';
  * where there is no window to command and none of them are passed at all.
  */
 export function AppStrip({
-  mode, modeAvailable, attention = 0, onMode, scope, center, menus, captionRoom,
+  scope, center, menus, captionRoom,
   stripRef, onDragStart, onToggleMaximize, onResizeTop,
 }: {
-  mode: Mode;
-  modeAvailable: boolean;
-  attention?: number;
-  onMode: (mode: Mode) => void;
   /** The workspace switcher, or nothing while the deployment holds one circle (WSP5). */
   scope?: ReactNode;
   /** The command center — where you are, and the way into everything (taken from VS Code's shape). */
   center?: ReactNode;
-  /** The frame menus, when the caller has a roster of sub-views to offer. */
+  /** The application's menus — settings, help — which is what a title bar holds in an IDE. */
   menus?: ReactNode;
   captionRoom?: boolean;
   stripRef?: (element: HTMLElement | null) => void;
@@ -57,8 +51,8 @@ export function AppStrip({
       // The title bar's own gesture. `onPointerDown` rather than a click: the OS move loop has to
       // start while the button is still down, which is also why the host dispatches it inline.
       onPointerDown={(event) => {
-        // Only the strip itself drags. A press that began on the mode switch or the scope is that
-        // control's, and handing it to the OS would make every button a drag handle.
+        // Only the strip itself drags. A press that began on a menu or the scope is that control's,
+        // and handing it to the OS would make every button a drag handle.
         if (event.button !== 0 || event.target !== event.currentTarget) return;
         onDragStart?.();
       }}
@@ -87,15 +81,14 @@ export function AppStrip({
         <Mark size={18} className="text-accent" />
       </div>
 
-      {/* The frames, as menus of what is inside them (VS Code's menu bar). `menus` replaces the
-          two-button toggle; the toggle survives as the fallback for a caller that has no roster to
-          offer, which is what a story or a narrow test renders. */}
-      {menus ?? <ModeSwitch mode={mode} available={modeAvailable} attention={attention} onChange={onMode} />}
+      {/* The application's menus (VS Code's menu bar). There is no mode switch beside them any more
+          (D66): the activity bar is the one navigation, so a second one up here was a concept and a
+          click between every reading and every working. */}
+      {menus}
 
       {/* The middle, which used to be ~1,400px of nothing at any real window width. Absolutely
-          positioned so it centres on the STRIP rather than on whatever is left over after the
-          wordmark and the mode switch — a flex-centred child drifts as those change width, and the
-          mode switch changes width with its attention badge. */}
+          positioned so it centres on the STRIP rather than on whatever is left over after the mark
+          and the menus — a flex-centred child drifts as those change width. */}
       {center}
 
       <div className="ml-auto flex items-center gap-2">{scope}</div>
@@ -113,179 +106,90 @@ export function AppStrip({
   );
 }
 
+/** One place on the activity bar. */
+export type ActivityItem<T extends string> = {
+  tab: T;
+  label: string;
+  icon: IconName;
+  /** A count on the icon. Zero wears nothing. */
+  badge?: number;
+  /**
+   * `open` for a count that IS a status — sessions waiting on a person — and the accent for a
+   * quantity. The only status hue on the bar, because it is the only status on it.
+   */
+  tone?: 'accent' | 'open';
+};
+
 /**
- * The **activity bar** (D56): the management domains as icons, down the window's left edge.
+ * The **activity bar**: the application's one navigation, down the window's left edge (D56, and
+ * since D66 the only one).
  *
  * @remarks
- * **Identical in both frames**, which is what makes Manage and Work peers rather than one nesting
- * inside the other. In Work `active` is `null` — nothing here is current, because the current thing
- * is the other frame — and selecting a domain is a door back into Manage on it.
+ * 🔴 **One list, not two frames** (owner, 2026-09-23: *"since its all tab based so there probably no
+ * need for manage/work?"*). The bar carried two frame icons above a rule and the views below them —
+ * a second navigation stacked on the first, and a click between every reading and every working.
+ * Sessions is a view now, one of the list, and nothing is gated behind a mode.
  *
- * It replaces a 15rem labelled sidebar that, in Work, was six items belonging to the other frame
- * above ~440px of empty column. The cost is the labels, paid by the tooltip here, the view's own
- * page header, and eventually SURF9's palette.
+ * It replaced a 15rem labelled sidebar. The cost is the labels, paid by the tooltip here, each
+ * view's own page header, and SURF9's palette.
  *
- * **Absent, never disabled** (the rule the Machine tab already followed): a browser is handed a
- * shorter `items`, because a greyed row implies the thing exists somewhere you could get to.
+ * **Absent, never disabled**: a browser is handed a shorter `items` (no Sessions — a stream never
+ * leaves the machine), because a greyed row implies the thing exists somewhere you could get to.
  */
 export function ActivityBar<T extends string>({
-  label, items, active, onSelect, footer, frames, onFrame,
+  label, items, end = [], active, onSelect, footer,
 }: {
   /** The bar's accessible name — passed in, so this stays a molecule with no i18n of its own. */
   label: string;
-  items: { tab: T; label: string; icon: IconName; badge?: number }[];
-  /** The current domain, or null in a frame where no domain is current. */
-  active: T | null;
+  items: ActivityItem<T>[];
+  /**
+   * The places at the FOOT, below the actions — Settings, where every workbench puts its gear.
+   * Places rather than actions, so they wear the current-place marking the list above does.
+   */
+  end?: ActivityItem<T>[];
+  active: T;
   onSelect: (tab: T) => void;
   /** Actions, not state: refresh and language. State went to the status bar. */
   footer?: ReactNode;
-  /**
-   * The FRAMES, at the top of the rail (owner, 2026-09-22: *"those mode/tab switches can be at left
-   * menu"*).
-   *
-   * 🔴 They were a segmented toggle in the title bar, then briefly menus there — and both were the
-   * wrong home. A title bar in an IDE holds the **application's** menus (settings, configuration,
-   * help); switching what you are looking at belongs on the rail, which is exactly what an activity
-   * bar is for. Separated from the domains below, because a frame and a view inside one are not
-   * peers.
-   */
-  frames?: { id: string; label: string; icon: IconName; badge?: number; active: boolean }[];
-  /**
-   * Choosing a frame. Its own callback rather than `onSelect`, because a frame id is not a domain
-   * id — routing both through one handler needed a cast, and a cast here would be the component
-   * telling the compiler something untrue about its own contract.
-   */
-  onFrame?: (id: string) => void;
 }) {
+  const place = ({ tab, label: name, icon, badge, tone }: ActivityItem<T>) => (
+    <Tip key={tab} content={name} side="right">
+      <button
+        type="button"
+        aria-label={name}
+        aria-current={active === tab ? 'page' : undefined}
+        onClick={() => onSelect(tab)}
+        className={cn(
+          'relative flex h-9 w-9 items-center justify-center rounded-control transition-colors duration-(--speed)',
+          active === tab
+            ? 'bg-accent-soft text-accent'
+            : 'text-ink-faint hover:bg-raised hover:text-ink',
+        )}
+      >
+        {/* The 2px accent rail D41 §2 gives the active nav item, rotated onto a narrow bar. */}
+        {active === tab && (
+          <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />
+        )}
+        <Icon name={icon} size={17} />
+        <CountBadge count={badge ?? 0} tone={tone} />
+      </button>
+    </Tip>
+  );
+
   return (
     <nav
       aria-label={label}
       className="flex w-12 shrink-0 flex-col items-center gap-0.5 border-r border-line py-1.5"
     >
-      {frames && frames.length > 0 && (
-        <>
-          {frames.map((frame) => (
-            <Tip key={frame.id} content={frame.label} side="right">
-              <button
-                type="button"
-                aria-label={frame.label}
-                aria-pressed={frame.active}
-                onClick={() => onFrame?.(frame.id)}
-                className={cn(
-                  'relative flex h-9 w-9 items-center justify-center rounded-control transition-colors duration-(--speed)',
-                  frame.active
-                    ? 'bg-accent text-accent-ink'
-                    : 'text-ink-faint hover:bg-raised hover:text-ink',
-                )}
-              >
-                <Icon name={frame.icon} size={17} />
-                {frame.badge !== undefined && frame.badge > 0 && (
-                  <span
-                    aria-hidden
-                    className="absolute right-0.5 top-0.5 min-w-3.5 rounded-full border border-st-open bg-page px-0.5 text-center font-mono text-meta leading-[0.95rem] tabular-nums text-st-open"
-                  >
-                    {frame.badge}
-                  </span>
-                )}
-              </button>
-            </Tip>
-          ))}
-          {/* A frame and a view inside one are not peers, and a rail with no rule between them
-              reads as one list of eight equal things. */}
-          <div aria-hidden className="my-1.5 h-px w-5 shrink-0 bg-line" />
-        </>
+      {items.map(place)}
+
+      {(footer || end.length > 0) && (
+        <div className="mt-auto flex flex-col items-center gap-0.5">
+          {footer}
+          {end.map(place)}
+        </div>
       )}
-
-      {items.map(({ tab, label: name, icon, badge }) => (
-        <Tip key={tab} content={name} side="right">
-          <button
-            type="button"
-            aria-label={name}
-            aria-current={active === tab ? 'page' : undefined}
-            onClick={() => onSelect(tab)}
-            className={cn(
-              'relative flex h-9 w-9 items-center justify-center rounded-control transition-colors duration-(--speed)',
-              active === tab
-                ? 'bg-accent-soft text-accent'
-                : 'text-ink-faint hover:bg-raised hover:text-ink',
-            )}
-          >
-            {/* The 2px accent rail D41 §2 gives the active nav item, rotated onto a narrow bar. */}
-            {active === tab && (
-              <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />
-            )}
-            <Icon name={icon} size={17} />
-            {badge !== undefined && badge > 0 && (
-              <span
-                aria-hidden
-                className="absolute right-0.5 top-0.5 min-w-3.5 rounded-full border border-accent bg-page px-0.5 text-center font-mono text-meta leading-[0.95rem] tabular-nums text-accent"
-              >
-                {badge}
-              </span>
-            )}
-          </button>
-        </Tip>
-      ))}
-
-      {footer && <div className="mt-auto flex flex-col items-center gap-0.5">{footer}</div>}
     </nav>
-  );
-}
-
-/**
- * *Manage* ⇄ *Work*, as **peers** (D55) — not a sixth nav item.
- *
- * @remarks
- * **Absent where Work is** (D47 §4 / D55): over a keyed remote the Work frame is not rendered at
- * all, so a switch offering it would be a door onto nothing. `available` is the shell's answer,
- * and `false` renders nothing rather than a disabled control — the same rule the Machine tab
- * follows, and for the same reason: a disabled control implies the thing exists elsewhere.
- *
- * **It carries the second of the sidebar's two counts** (design §4): how many things need a
- * person. It is the **only** badge that wears a status hue, because it is the only one that is a
- * status — the session count beside it in the status bar is a quantity. Design §4 asked for both
- * counts in the sidebar; after D55 the quantity's home is the status bar and the status's home is
- * the door into the thing, which is here.
- */
-export function ModeSwitch({ mode, available, attention = 0, onChange }: {
-  mode: Mode;
-  available: boolean;
-  /** How many things are waiting on a person. Zero wears nothing: a zero badge is furniture. */
-  attention?: number;
-  onChange: (mode: Mode) => void;
-}) {
-  const { t } = useTranslation();
-  if (!available) return null;
-
-  return (
-    <div
-      role="group"
-      aria-label={t('work.mode.label')}
-      className="inline-flex rounded-control border border-line-strong bg-raised p-0.5"
-    >
-      {(['manage', 'work'] as const).map((target) => (
-        <button
-          key={target}
-          type="button"
-          aria-pressed={mode === target}
-          onClick={() => onChange(target)}
-          className={cn(
-            'inline-flex items-center rounded-[4px] px-2.5 py-1 text-small transition-colors duration-(--speed)',
-            mode === target ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:text-ink',
-          )}
-        >
-          {t(`work.mode.${target}`)}
-          {target === 'work' && attention > 0 && (
-            <span
-              title={t('work.mode.needsYou', { count: attention })}
-              className="ml-1.5 rounded-full border border-st-open bg-st-open/15 px-1.5 font-mono text-meta tabular-nums text-st-open"
-            >
-              {attention}
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
   );
 }
 

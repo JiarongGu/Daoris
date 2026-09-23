@@ -341,8 +341,10 @@ describe('the machine settings surface', () => {
     expect(screen.getByText(/moved in from/)).toBeTruthy();
     // The adopted host's page is a standing fact and gets a standing line, not only a toast.
     expect(screen.getByText(/serves a different page/)).toBeTruthy();
-    // Every path on the page is under it — the wiring file included.
-    expect(screen.getByText('C:/somewhere/.daoris/remotes.json')).toBeTruthy();
+    // Every path on the page is under it — the wiring file included. Awaited: the machine's half
+    // mounts once the driver has answered (D66: Settings asks whether a shell is here first), so its
+    // wiring query starts a beat after the home is already on the page.
+    expect(await screen.findByText('C:/somewhere/.daoris/remotes.json')).toBeTruthy();
   });
 
   it('says nothing about the home on a shell that has never heard of one', async () => {

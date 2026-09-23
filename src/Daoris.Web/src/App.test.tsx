@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -94,38 +94,50 @@ describe('the shell in a browser, over two workspaces', () => {
 });
 
 /**
- * The two frames (D55). In a browser there is exactly one: Work's centre is a stream, its rows
- * carry tree paths, and neither may leave the machine that produced them (D47 §4) — so the switch
- * that would offer it is absent rather than disabled, and a remembered `work` cannot resurrect it.
+ * One navigation (D66), in a browser. Sessions' centre is a stream and its rows carry tree paths,
+ * and neither may leave the machine that produced them (D47 §4) — so the view is absent from the bar
+ * rather than disabled, and a remembered `sessions` cannot resurrect it. Settings is there: a browser
+ * has appearance to set.
  */
-describe('the frames, in a browser', () => {
+describe('the views, in a browser', () => {
   beforeEach(() => {
     fetchMock = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
     vi.stubGlobal('fetch', fetchMock);
   });
   afterEach(() => {
     vi.unstubAllGlobals();
-    window.localStorage.removeItem('daoris.mode');
+    window.localStorage.removeItem('daoris.view');
   });
 
-  it('offers no mode switch where there is no shell to hold the other frame', async () => {
+  it('offers no Sessions and no mode switch — and does offer Settings', async () => {
     shell();
-    await screen.findByRole('combobox', { name: 'workspace' });
+    const bar = await screen.findByRole('navigation', { name: 'Views' });
 
-    expect(screen.queryByRole('group', { name: 'mode' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Work' })).toBeNull();
+    expect(within(bar).queryByRole('button', { name: 'Sessions' })).toBeNull();
+    expect(screen.queryByRole('group', { name: /mode/i })).toBeNull();
+    expect(within(bar).getByRole('button', { name: 'Settings' })).toBeInTheDocument();
   });
 
-  it('falls back to Manage when the browser remembers a frame this deployment does not have', async () => {
-    window.localStorage.setItem('daoris.mode', 'work');
+  it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
+    window.localStorage.setItem('daoris.view', 'sessions');
     shell();
 
-    // Manage's landing view, not an empty Work frame.
+    // The landing view, not an empty Sessions.
     expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
     expect(screen.queryByLabelText('sessions')).toBeNull();
   });
 
-  /** Ambient truth is true in both frames, so the bar belongs to the application, not to Work. */
+  /** In a browser, Settings is appearance and nothing of a machine (D47 §4). */
+  it('opens Settings on appearance alone', async () => {
+    shell();
+    await userEvent.click(await screen.findByRole('button', { name: 'Settings' }));
+
+    expect(await screen.findByRole('radiogroup', { name: 'Theme' })).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: 'Language' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'This machine' })).toBeNull();
+  });
+
+  /** Ambient truth is true on every view, so the bar belongs to the application. */
   it('carries the status bar, saying plainly that this machine has no driver', async () => {
     shell();
 

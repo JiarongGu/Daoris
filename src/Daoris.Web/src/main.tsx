@@ -6,8 +6,14 @@ import { App } from './App';
 import { SecondaryWindowRoot } from './SecondaryWindowRoot';
 import { WorkspaceScopeProvider } from './scope';
 import { secondaryWindow } from './work/window';
+import { applyTheme } from './theme';
 import './tokens.css';
 import './i18n';
+
+// The viewer's theme (D66), on the document BEFORE the first paint — applied after React mounted,
+// every launch with a chosen theme would flash the OS's one first. A secondary window runs this
+// too: same origin, same remembered choice.
+applyTheme();
 
 const client = new QueryClient({
   defaultOptions: {

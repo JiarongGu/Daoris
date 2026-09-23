@@ -12,8 +12,86 @@ import { SignIn } from './SignIn';
 import { byTool, type ToolDoor } from './tools';
 import {
   Button, Card, CheckField, Chip, Icon, type Notify, PageHeader, Pill, Prose, SectionTitle,
-  SelectField, SettingRow, Tip, useErrorNotify,
+  Segmented, SelectField, SettingRow, Tip, useErrorNotify,
 } from './ui';
+import { useThemeChoice } from './theme';
+
+/**
+ * Settings (D66): the application's own — how it looks, which language it speaks — and, on the
+ * desktop, everything that is true about THIS machine beneath them.
+ *
+ * @remarks
+ * 🔴 Written from the owner's *"we dont really have a setting page, so there is no way to change
+ * theme"* (2026-09-23). The machine's page was the only settings there were, reachable from a sliders
+ * icon labelled *Machine*, and the theme was the OS's alone. Appearance leads because it is the part
+ * everyone has; a browser shows only that part, because a browser may learn nothing of a machine
+ * (D47 §4) — the machine's half is absent there, never disabled.
+ */
+export function SettingsView({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  // The same "is a shell here" answer every control uses — one detection path, not two that drift.
+  const attached = useDriver().data !== undefined;
+
+  return (
+    <section>
+      <PageHeader
+        title={t('settings.title')}
+        description={t(attached ? 'settings.description' : 'settings.descriptionBrowser')}
+      />
+      <Appearance />
+      {attached && <MachineSettings notify={notify} />}
+    </section>
+  );
+}
+
+/**
+ * How this window looks and speaks — per viewer, remembered by this window's profile like the scope,
+ * never machine wiring and never a file (D66). Both settings apply at once; nothing to save.
+ */
+function Appearance() {
+  const { t, i18n } = useTranslation();
+  const [theme, setTheme] = useThemeChoice();
+  const language = i18n.language.startsWith('zh') ? 'zh' : 'en';
+
+  return (
+    <Card>
+      <SectionTitle>{t('settings.appearance.title')}</SectionTitle>
+      <SettingRow
+        label={t('settings.theme.label')}
+        hint={t('settings.theme.hint')}
+        control={(
+          <Segmented
+            label={t('settings.theme.label')}
+            value={theme}
+            onChange={setTheme}
+            options={[
+              { value: 'system', label: t('settings.theme.system') },
+              { value: 'light', label: t('settings.theme.light') },
+              { value: 'dark', label: t('settings.theme.dark') },
+            ]}
+          />
+        )}
+      />
+      <SettingRow
+        label={t('settings.language.label')}
+        hint={t('settings.language.hint')}
+        control={(
+          <Segmented
+            label={t('settings.language.label')}
+            value={language}
+            onChange={(next) => void i18n.changeLanguage(next)}
+            // Each language named in itself — a person who cannot read the current one can still
+            // find their own.
+            options={[
+              { value: 'en', label: t('language.en') },
+              { value: 'zh', label: t('language.zh') },
+            ]}
+          />
+        )}
+      />
+    </Card>
+  );
+}
 
 /**
  * The machine's own settings (D50): what is true about THIS computer rather than about the family.
@@ -28,7 +106,7 @@ import {
  * the service has no route onto it at all. The key goes in and never comes out: what is rendered is
  * the audit prefix a deployment's own `keys list` prints.
  */
-export function SettingsView({ notify }: { notify: Notify }) {
+function MachineSettings({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const wiring = useRemotes();
   const wire = useWireRemote();
@@ -78,8 +156,11 @@ export function SettingsView({ notify }: { notify: Notify }) {
     });
 
   return (
-    <section>
-      <PageHeader title={t('settings.title')} description={t('settings.description')} />
+    <section aria-label={t('settings.machine.title')} className="mt-8">
+      {/* The machine's half, under its own name: every row below is a file under the Daoris home,
+          which is the one thing the appearance above is not. */}
+      <h2 className="m-0 text-title font-semibold text-ink">{t('settings.machine.title')}</h2>
+      <Prose className="mb-3.5 mt-1 text-ink-soft">{t('settings.machine.description')}</Prose>
 
       {/* 🔴 A setting is a ROW (owner, 2026-09-23: *"you have this really long list of setup (this
           machine), which probably can be improved ui/ux"*). Every card here used to open with a
@@ -94,7 +175,7 @@ export function SettingsView({ notify }: { notify: Notify }) {
           notice is the shell's own sentence about what the start did, carried in the state rather
           than only raised: a toast raised before the page subscribed reached nobody. */}
       {driver.data?.home && (
-        <div className="-mt-3.5 mb-5">
+        <div className="mb-5">
           <Tip content={t('settings.home.hint')}>
             <p className="m-0 inline-block max-w-full cursor-help break-all font-mono text-small text-ink-soft">
               {driver.data.home}

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -120,5 +122,50 @@ describe('the scrim', () => {
 
   it('holds: no panel puts its own header under the caption buttons', () => {
     expect(panelsOverTheStrip(components)).toEqual([]);
+  });
+});
+
+/**
+ * 🔴 **A chosen theme is the same palette as the system's** (D66). `tokens.css` carries each theme
+ * twice — once for the OS's media query, once for `data-theme` — because a chosen theme has to
+ * outrank the query and CSS has no way to say "this block, again, under another selector". Two
+ * copies are two palettes the first time one is edited alone, and the edit would look right in
+ * whichever the person happens to be using. So every value is held equal here.
+ */
+export function palettes(css: string): Record<'system-light' | 'system-dark' | 'chosen-light' | 'chosen-dark', Record<string, string>> {
+  const tokens = (body: string) =>
+    Object.fromEntries([...body.matchAll(/(--[a-z-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)].map((m) => [m[1], m[2].toLowerCase()]));
+  const block = (pattern: RegExp) => tokens(pattern.exec(css)?.[1] ?? '');
+  return {
+    'system-light': block(/^:root\s*\{([^}]*)\}/m),
+    'system-dark': block(/@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{([^}]*)\}/),
+    'chosen-light': block(/:root\[data-theme="light"\]\s*\{([^}]*)\}/),
+    'chosen-dark': block(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/),
+  };
+}
+
+// From disk, not `?raw`: the CSS pipeline answers a raw import of a stylesheet with an empty string,
+// which is how the first version of this check came to hold nothing equal to nothing.
+const tokensCss = readFileSync(join(process.cwd(), 'src', 'tokens.css'), 'utf8');
+
+describe('the chosen themes', () => {
+  it('reads every block — a parser that stopped reading would hold nothing equal to nothing', () => {
+    const read = palettes(tokensCss);
+    for (const [name, values] of Object.entries(read)) {
+      expect(Object.keys(values).length, `${name} parsed ${Object.keys(values).length} tokens`).toBeGreaterThanOrEqual(15);
+    }
+    expect(read['system-light']['--page']).not.toBe(read['system-dark']['--page']);
+  });
+
+  it('catches a chosen block that drifted from its system twin', () => {
+    const drifted = tokensCss.replace(/(:root\[data-theme="dark"\]\s*\{[^}]*--page:\s*)#16161a/, '$1#000000');
+    expect(drifted).not.toBe(tokensCss);
+    expect(palettes(drifted)['chosen-dark']).not.toEqual(palettes(drifted)['system-dark']);
+  });
+
+  it('holds: chosen light is the system light, chosen dark is the system dark', () => {
+    const read = palettes(tokensCss);
+    expect(read['chosen-light']).toEqual(read['system-light']);
+    expect(read['chosen-dark']).toEqual(read['system-dark']);
   });
 });

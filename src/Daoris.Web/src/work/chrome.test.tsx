@@ -15,15 +15,16 @@ const render = (node: ReactElement) => {
   };
 };
 
-// The application's chrome (D56), as molecules: props in, states out. No shell, no service, no
-// arranged world — which is what lets "in a browser", "in Work" and "with attention" all be
-// ordinary assertions rather than integration setup (components plan §2).
+// The application's chrome (D56, D66), as molecules: props in, states out. No shell, no service, no
+// arranged world — which is what lets "in a browser" and "with attention" be ordinary assertions
+// rather than integration setup (components plan §2).
 
-const DOMAINS = [
+const VIEWS = [
   { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const },
+  { tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, badge: 1, tone: 'open' as const },
   { tab: 'quests' as const, label: 'Quests', icon: 'quests' as const, badge: 3 },
-  { tab: 'settings' as const, label: 'Machine', icon: 'settings' as const },
 ];
+const SETTINGS = [{ tab: 'settings' as const, label: 'Settings', icon: 'settings' as const }];
 
 describe('AppStrip', () => {
   /**
@@ -34,33 +35,24 @@ describe('AppStrip', () => {
    * D41 §1's rule survives and is now stricter: the serif's one appearance is not spent here at all.
    */
   it('carries the mark and not the name — the serif is not spent on the strip', () => {
-    const { container } = render(
-      <AppStrip mode="manage" modeAvailable onMode={() => {}} />,
-    );
+    const { container } = render(<AppStrip />);
     expect(screen.queryByText('Daoris')).toBeNull();
     expect(container.querySelector('svg')).toBeTruthy();
     expect(container.querySelectorAll('.font-serif')).toHaveLength(0);
   });
 
-  it('offers no mode switch in a browser — absent, not disabled', () => {
-    render(<AppStrip mode="manage" modeAvailable={false} onMode={() => {}} />);
-    expect(screen.queryByRole('button', { name: /work/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /manage/i })).toBeNull();
-  });
-
-  it('switches frames', async () => {
-    const onMode = vi.fn();
-    render(<AppStrip mode="manage" modeAvailable onMode={onMode} />);
-    await userEvent.click(screen.getByRole('button', { name: /work/i }));
-    expect(onMode).toHaveBeenCalledWith('work');
+  /** One navigation (D66): the strip holds the application's menus and no switch between frames. */
+  it('carries no mode switch — the activity bar is the one navigation', () => {
+    render(<AppStrip menus={<span>menus</span>} />);
+    expect(screen.queryByRole('group', { name: /mode/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^work$/i })).toBeNull();
+    expect(screen.getByText('menus')).toBeTruthy();
   });
 
   it('holds the scope slot — which is empty while the family is one circle (WSP5)', () => {
-    const { rerender } = render(<AppStrip mode="manage" modeAvailable onMode={() => {}} />);
+    const { rerender } = render(<AppStrip />);
     expect(screen.queryByText('every circle')).toBeNull();
-    rerender(
-      <AppStrip mode="manage" modeAvailable onMode={() => {}} scope={<span>every circle</span>} />,
-    );
+    rerender(<AppStrip scope={<span>every circle</span>} />);
     expect(screen.getByText('every circle')).toBeTruthy();
   });
 
@@ -70,45 +62,50 @@ describe('AppStrip', () => {
    * are exactly three. What is DONE with them belongs to `windowChrome.test.tsx`.
    */
   it('reserves the caption room only when asked, so nothing shifts when a window claims it', () => {
-    const { container, rerender } = render(
-      <AppStrip mode="manage" modeAvailable onMode={() => {}} />,
-    );
+    const { container, rerender } = render(<AppStrip />);
     expect(container.querySelectorAll('[data-caption]')).toHaveLength(0);
-    rerender(<AppStrip mode="manage" modeAvailable onMode={() => {}} captionRoom />);
+    rerender(<AppStrip captionRoom />);
     expect(container.querySelectorAll('[data-caption]')).toHaveLength(3);
   });
 });
 
 describe('ActivityBar', () => {
-  it('names every domain, because an icon-only control has no name otherwise (D41 §6)', () => {
-    render(<ActivityBar label="Domains" items={DOMAINS} active="quests" onSelect={() => {}} />);
-    for (const { label } of DOMAINS) {
+  it('names every view, because an icon-only control has no name otherwise (D41 §6)', () => {
+    render(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="quests" onSelect={() => {}} />);
+    for (const { label } of [...VIEWS, ...SETTINGS]) {
       expect(screen.getByRole('button', { name: label })).toBeTruthy();
     }
-    expect(screen.getByRole('navigation', { name: 'Domains' })).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Views' })).toBeTruthy();
   });
 
-  it('marks the current domain, and marks nothing in a frame that has none', () => {
+  /** One list (D66): whichever view is in front is the one marked — Settings at the foot included. */
+  it('marks the current view, wherever on the bar it sits', () => {
     const { rerender } = render(
-      <ActivityBar label="Domains" items={DOMAINS} active="quests" onSelect={() => {}} />,
+      <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="quests" onSelect={() => {}} />,
     );
     expect(screen.getByRole('button', { name: 'Quests' }).getAttribute('aria-current')).toBe('page');
 
-    // In Work no domain is current — the current thing is the other frame (D56).
-    rerender(<ActivityBar label="Domains" items={DOMAINS} active={null} onSelect={() => {}} />);
-    expect(screen.queryByRole('button', { current: 'page' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Quests' })).toBeTruthy();
+    rerender(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="settings" onSelect={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Settings' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getAllByRole('button', { current: 'page' })).toHaveLength(1);
   });
 
-  it('carries the outstanding count, and wears nothing at zero', () => {
+  /** The one status on the bar wears the status hue; a quantity wears the accent. */
+  it('colours a count by what it is', () => {
+    render(<ActivityBar label="Views" items={VIEWS} active="overview" onSelect={() => {}} />);
+    expect(screen.getByText('1').className).toContain('text-st-open');
+    expect(screen.getByText('3').className).toContain('text-accent');
+  });
+
+  it('carries the counts, and wears nothing at zero', () => {
     const { rerender } = render(
-      <ActivityBar label="Domains" items={DOMAINS} active="overview" onSelect={() => {}} />,
+      <ActivityBar label="Views" items={VIEWS} active="overview" onSelect={() => {}} />,
     );
     expect(screen.getByText('3')).toBeTruthy();
     rerender(
       <ActivityBar
-        label="Domains"
-        items={DOMAINS.map((item) => ({ ...item, badge: item.badge && 0 }))}
+        label="Views"
+        items={VIEWS.map((item) => ({ ...item, badge: item.badge && 0 }))}
         active="overview"
         onSelect={() => {}}
       />,
@@ -117,36 +114,40 @@ describe('ActivityBar', () => {
     expect(screen.queryByText('0')).toBeNull();
   });
 
-  it('selects a domain — the door back into Manage from Work', async () => {
+  it('selects a view, from the list or from the foot', async () => {
     const onSelect = vi.fn();
-    render(<ActivityBar label="Domains" items={DOMAINS} active={null} onSelect={onSelect} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Machine' }));
-    expect(onSelect).toHaveBeenCalledWith('settings');
+    render(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="overview" onSelect={onSelect} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Sessions' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(onSelect.mock.calls).toEqual([['sessions'], ['settings']]);
   });
 
-  it('shows only the domains it is given — a browser gets no Machine at all', () => {
+  it('shows only the views it is given — a browser gets no Sessions at all', () => {
     render(
       <ActivityBar
-        label="Domains"
-        items={DOMAINS.filter((item) => item.tab !== 'settings')}
+        label="Views"
+        items={VIEWS.filter((item) => item.tab !== 'sessions')}
         active="overview"
         onSelect={() => {}}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Machine' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sessions' })).toBeNull();
   });
 
-  it('holds its footer actions below the domains', () => {
+  /** Actions, then the places at the foot — Settings last, where every workbench keeps its gear. */
+  it('holds its footer actions and then its foot places, below the list', () => {
     render(
       <ActivityBar
-        label="Domains"
-        items={DOMAINS}
+        label="Views"
+        items={VIEWS}
+        end={SETTINGS}
         active="overview"
         onSelect={() => {}}
         footer={<button type="button">refresh</button>}
       />,
     );
-    expect(screen.getByRole('button', { name: 'refresh' })).toBeTruthy();
+    const names = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent);
+    expect(names.slice(-2)).toEqual(['refresh', 'Settings']);
   });
 });
 

@@ -101,11 +101,11 @@ risk, **authorship** was.
   and there is no editor in the plan. `docs/2026-09-21-working-surface-design.md` is the contract,
   `docs/2026-09-21-working-surface-components.md` the method — **a molecule imports no hook**, held
   by a test — and `docs/2026-09-21-ide-reference-study.md` what changed it. **Every SURF item is
-  built**; Work is usable (`npm run desktop -- run`). Two rules that still bind: a timeline is
+  built**; Sessions is usable (`npm run desktop -- run`). Two rules that still bind: a timeline is
   **derived**, and **the stream has one home**.
 - **The application has a frame of its own** (SURF10/SURF7 → **D56**,
   `docs/2026-09-21-desktop-frame-design.md`): a frameless window whose **app strip is the title
-  bar**, a 48px **activity bar** in both frames, one owner for the verbs, a **right dock**, and
+  bar**, a 48px **activity bar** as the one navigation (**D66**), one owner for the verbs, a **right dock**, and
   **D41 §3 amended to one denser scale** — seven named type tokens held by `tokens.test.ts`, after
   the literal form had drifted to fifteen values. The diagnosis was **measured**, which is how a
   design complaint became a decision. 🔴 **git walks UP** — a diff of a path that is not a
