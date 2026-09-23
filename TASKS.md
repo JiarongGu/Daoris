@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**331 CLI tests, 439 service, 427 driver, 106 desktop modules, 684 web unit, 19 Playwright**, 73
-devkit, 56/56 release rehearsal, **250/250 family rehearsal** (it names its own phases when you run
+**334 CLI tests, 448 service, 447 driver, 107 desktop modules, 684 web unit, 19 Playwright**, 73
+devkit, 56/56 release rehearsal, **256/256 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT6, INT4b, INT4d, AGT2b, SEN1.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: AGT6, INT4d, AGT2b, SEN1.** INT3 and MAP3d wait on the owner's call, INT4f and INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -249,11 +249,11 @@ the traps that are not in any contract, because they were found rather than desi
   arrives — and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 331 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 334 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (439),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (448),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (427), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (106), `npm run rehearse:family` (250/250), `npm run test:web` (684 vitest + 19 Playwright),
+  (447), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (107), `npm run rehearse:family` (256/256), `npm run test:web` (684 vitest + 19 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -279,7 +279,7 @@ design's §5 is realised and what waits is a tool somebody names. The other five
 task's (D65, below) and PLUG7, held.
 
 🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **Next: D67's remaining
-items (AGT2b last — npm already installs the native build), then INT4b and INT4d.** They outrank the
+items (AGT2b last — npm already installs the native build), then INT4d.** They outrank the
 rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
@@ -420,6 +420,8 @@ checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b and MAP3a are 
   its signed manifest; Codex's package at an exact version, by its published hashes. The channels
   were checked on 2026-09-24: `docs/2026-09-24-agt2b-channel-evidence.md`.
 - [ ] **AGT6 — Daoris's own AI on the Settings page:** each job, its tier, and how to change it.
+  The intake is one job since INT4b. `daoris driver intake <adapter>|off` and the bridge's
+  `SET_INTAKE` both exist, but no screen control does (D50).
 - [ ] ⛔ **MAP3d — the agent producer.** The owner's call first (design §3): canon skill, or the
   session prompt (recommended).
 
@@ -429,22 +431,21 @@ checked. AGT1, AGT2a, AGT3, AGT3b, AGT4, AGT7, MAP2, MAP1a, MAP1b and MAP3a are 
 workspace; an **intake session** (the harness carries the model, D24) reads the ticket, decides
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
-engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT4a, INT4c and INT5 are
-in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
+engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT4a, INT4b, INT4c and
+INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
 - [ ] ⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
   requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
   owner's yes first** — it amends the letter of D34/D46.
-- [ ] **INT4b — the intake session.** The room under `<home>/intake/<workspace>/`, seeded with an
-  `AGENTS.md` of the circle's declarations; `intakeAdapter` in `driver.json`; an ask with a harness
-  runs a session there that decides from the declarations, publishes the quests (chains included)
-  onto INT4a's ask, and asks the person rather than guessing. Proven by a stub intake agent; a real
-  ask is the owner's. 🔴 **Read the design's §1b traps first**: eight things the conversation
-  plumbing assumes that an intake breaks, starting with a chat being handed no connector.
-- [ ] **INT4d — a proposal waits on a person, so it is outstanding.** Overview's *What needs you*
-  lists sessions and quests only. A proposed ask is the person's to accept, and it does not show
-  there. Found by INT4c.
+- [ ] **INT4d — an ask that waits on a person is outstanding, and its record says who answered.**
+  Overview's *What needs you* lists sessions and quests only. A proposed ask, or one whose intake
+  parked asking, is the person's to settle, and neither shows there. On the ask's record, the tier
+  INT4b added (`intake`) has no words in either catalogue (`asks.tier.intake`,
+  `asks.tierShort.intake`), and the intake session is not shown or linked. Found by INT4c and INT4b.
+- [ ] **INT4f — a real ask through a real intake harness.** INT4b is proven by a stub. What is
+  unseen: the MCP host publishing as the ask under a real harness's environment, and the room's
+  trust hold for an intake. It spends a login, so it is the owner's.
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 

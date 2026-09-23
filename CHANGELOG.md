@@ -458,6 +458,14 @@ The first version: doctrine that installs, is checked, and flows back.
   publishes to a proposal or to any other adopter in the circle, opens the quests the ask became,
   names its files without saying where they are kept, and closes with a reason. A browser on this
   machine has the same door.
+- **An ask can be answered by an intake session** (INT4b, D65 §1b). Name a harness with `daoris
+  driver intake <adapter>`, and an ask the declarations did not settle opens a session in the
+  circle's room under the home. The room is seeded with who owns and accepts what. The session
+  publishes the quests itself, chains included, asked by `ask #<id>` in its own words with the
+  asker's beneath. The ask names its intake, and its tier reads `intake`. Where the declarations do
+  not settle it, the intake publishes nothing and the session waits for you; publishing or closing
+  the ask ends it. The intake is off until a harness is named, because each intake spends a login,
+  and `daoris driver intake off` goes back to declarations only.
 - **Two conversations in one repository no longer break the driver.** A conversation in a checkout
   beside another in its own tree (D51) made every tick fail on a duplicate key, starting nothing
   until one ended.

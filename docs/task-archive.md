@@ -4830,3 +4830,46 @@ the new group, the record with both proposals and *publish*, and the close flow 
 - Overview does not list a proposed ask, although one waits on a person. That is filed as INT4d.
 
 Web 684 + 19 Playwright, verify green.
+
+## INT4b — the intake session (2026-09-24)
+
+- [x] **INT4b — the intake session.** The room under `<home>/intake/<workspace>/`, seeded with an
+  `AGENTS.md` of the circle's declarations; `intakeAdapter` in `driver.json`; an ask with a harness
+  runs a session there that decides from the declarations, publishes the quests (chains included)
+  onto INT4a's ask, and asks the person rather than guessing. Proven by a stub intake agent; a real
+  ask is the owner's.
+
+✅ **done 2026-09-24**, built by a parallel agent in its own worktree and integrated here. The design's
+§1b *as built* and D65's amendment carry the reasoning.
+- **Off until a harness is named.** `daoris driver intake <adapter>|off`, the bridge's `SET_INTAKE`,
+  and `intakeAdapter` are modelled in all three places a driver setting lives, so no other toggle
+  deletes it. Absent means the declarations tier alone. This departs from the design's "defaulting
+  to the machine's adapter": each intake spends a login, and an upgrade should not start doing that
+  silently.
+- **A chat for the ask.** `POST /api/sessions/intake` goes to `SessionLedger.OpenIntakeAsync`. The
+  session's repository is `ask #<id>`, its circle is the ask's, its tree is the room, and it has no
+  base commit. There is one intake per ask, and the room is held only while a process runs.
+- **The room** is `<home>/intake/<circle>/`, holding `AGENTS.md` of the circle's declarations,
+  `CLAUDE.md` (`@AGENTS.md`), and a `.claude/settings.json`. That file allows only the family's read
+  tools, `quest_list`, `quest_publish` and `WebFetch`: no shell, and no writes except through the
+  service. It is under Daoris's home, never in a repository (D32).
+- **It publishes as the ask.** The spawn and its connector carry `DAORIS_ASK_ID` and
+  `DAORIS_SESSION_ID`. The MCP host's `quest_publish` and the HTTP publish door take the intake's
+  draft and chain. The tier becomes `intake` only for the ask's own session. A drafted body puts the
+  intake's words first and quotes the asker's beneath, and the ask's links and files always travel.
+- **It asks the person by parking.** A clean exit that published nothing parks the session
+  `awaiting-person`, with a note naming both answers. The question stays on the transcript and never
+  travels. The person's publish or close of the ask ends the session at the next tick.
+- **The loop** takes asks after the quest plan, in the slots the quests leave, the oldest per circle
+  and one per circle per tick.
+
+**The rehearsal's intake phase**, six checks, was written in the worktree and first run here, and
+passed. Covered: an ask answered by a session in the room, the room holding the declarations, the
+publish made as the ask with its chain driven, the park when the declarations do not settle it, and
+the person's answer ending it. **Not covered by any gate**: a real harness running an intake, the
+MCP host publishing as the ask under a real harness's environment, and the room's trust hold. Those
+are INT4f, the owner's. The screen's words for the `intake` tier and the record's link to its
+session are INT4d.
+
+Service 448, driver 447, modules 107, CLI 334, web 684 + 19, family 256/256, deploy 39/39, verify
+green.
