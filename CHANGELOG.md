@@ -404,6 +404,12 @@ The first version: doctrine that installs, is checked, and flows back.
   repository's map beside its knowledge, at the same commit and by the same ordering rules. The
   deployment judges it whole again before it keeps it. A commit with no map removes the one held, and
   an older checkout cannot bring it back.
+- **The devkit writes a repository's code map** (MAP3c). `daoris-devkit map` writes
+  `docs/code-map.json` from the project files. C# projects and their references come from each
+  `.csproj`, and packages and their dependencies on one another from each `package.json`, with no
+  compiler. A summary or a dependency the files cannot say (a service called over HTTP) is written
+  once by a person and kept. `daoris-devkit map --check` is the gate a repository declares, and Daoris
+  keeps its own map with it.
 - **What a start runs on** (MAP1b). Settings shows, for each workspace, the agent, account and
   version a driven session would start with, and which setting chose each: this workspace's
   default, this machine's, or the agent's own sign-in; a pin, or PATH. A start the driver would

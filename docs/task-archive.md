@@ -4720,3 +4720,38 @@ the "needs a person" edge, and *Dismiss* toasted the service's sentence and remo
 The quest's status did not move.
 
 Service 430, driver 427, modules 106, web 640 + 18, family 249/249, deploy 39/39, verify green.
+
+## MAP3c — a tool producer (2026-09-24)
+
+- [x] **MAP3c — a tool producer**: the devkit writes the file from project references and package
+  dependencies.
+
+✅ **done 2026-09-24**, built by a parallel agent in its own worktree and integrated here.
+**`daoris-devkit map`** writes `docs/code-map.json` from what the project files declare, with no
+compiler:
+- every tracked `*.csproj` is a module, with its file name as the id, and each `ProjectReference` is
+  a `project` dependency;
+- every tracked `package.json` below the root is a module named by its package, and a dependency on
+  another of the repository's packages is a `package` one;
+- the root `package.json` is the repository itself;
+- a reference the repository does not track is reported, not drawn.
+
+**What a person writes is kept.** A summary is the project's own description, or otherwise the line
+already in the map. A dependency of any other kind (`http`) stays while both its ends are modules.
+The tool refuses to write what the reader would refuse (an id twice, the bounds), and to rewrite a
+map it cannot read. It writes where the reader reads, the same way every time.
+
+**`map --check` gates as a declared gate** (D54: a fact). It is not a universal gate, because a map
+another producer wrote is not the devkit's to judge. Daoris declares it, the release workflow runs
+it, and Daoris keeps its own `docs/code-map.json` this way, with summaries and three `http` edges
+written by hand and kept.
+
+**The twin.** The devkit restates the reader's rules. A devkit test holds them to `CodeMapReader`'s
+source, and a service test judges Daoris's own map with the reader. Both were watched failing.
+
+**Found**: the devkit's universal `sensitive` gate is already red on main, over placeholder home
+paths in five test fixtures. That predates MAP3c and is left to a follow-up once the parallel work
+has merged.
+
+Devkit 73 (was 59), service 431, the code-map gate fresh, verify green. Nothing here binds a port,
+so no rehearsal moved.
