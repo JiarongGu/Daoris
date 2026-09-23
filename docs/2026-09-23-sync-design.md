@@ -53,6 +53,11 @@ went up only, all of them, every tick. Five defects, none covered by a test:
 Knowledge already had most of this (WSP4): it now compares ancestry where it compared timestamps,
 and a content digest where it trusted the same commit.
 
+**The machine id lives in the store, beside the sequence it numbers** (SYNC1). It does not get a
+file of its own. If a store were deleted and its machine id kept, the sequence would start again at
+one under the same id and reuse numbers the remote already holds. A new store is a new machine. Two
+hosts over one store are one machine, and `BEGIN IMMEDIATE` keeps them from taking one number twice.
+
 ## 3. Fetch, rebase, push
 
 1. **Fetch**: the operations the remote accepted since this machine's cursor for it, in the remote's
@@ -117,6 +122,8 @@ writer wins. Nothing is deployed, so the store is rebuilt rather than migrated (
 **Widened:** quest ids. Six hex characters (24 bits) were enough for one machine. Once every machine
 holds every quest touching its repositories, unrelated asks can collide, so an id grows to twelve
 characters (48 bits) and stays content-derived. The same ask from two machines is still one quest.
+The hash did not change, so a quest from before keeps the six characters it was quoted by, and the
+same ask finds it as the first six of today's id.
 
 ## 8. Build order
 

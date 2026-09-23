@@ -56,7 +56,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
     { name: 'page.html', mimeType: 'text/html', buffer: Buffer.from('<script>parent.document.title = "owned"</script>') },
   ]);
   await page.getByRole('button', { name: 'publish quest' }).click();
-  await expect(page.getByText(/Published quest `#[0-9a-f]{6}` to `engine`/).first()).toBeVisible();
+  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
 
   // The card counts what it carries; the drawer holds the things themselves.
   await expect(page.getByLabel('1 link · 2 files').first()).toBeVisible();
@@ -109,7 +109,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
   await dialog.getByRole('button', { name: 'done', exact: true }).click();
-  await expect(page.getByText(/Then: published `#[0-9a-f]{6}` to `engine`/).first()).toBeVisible();
+  await expect(page.getByText(/Then: published `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
 
   // The step is an ordinary open quest, named with the id of the one it follows.
   const step = page.getByText(`Verify #${parent} in a playtest`).first();
@@ -187,7 +187,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
 
   // The toast carries the service's sentence verbatim — that text IS the contract. (.first(): Radix
   // renders each toast twice — the visible element and its aria-live announcer.)
-  await expect(page.getByText(/Published quest `#[0-9a-f]{6}` to `engine`/).first()).toBeVisible();
+  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
 
   // It sits in Open; its card is a door to the detail drawer, where the acting happens.
   await page.getByText('Expose a streaming budget on the chunk API').first().click();
@@ -263,7 +263,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   await page.getByLabel('what is wanted, in one line').fill('A first quest for the newcomer');
   await page.getByLabel('why, and the evidence').fill('Joining means being askable — prove it.');
   await page.getByRole('button', { name: 'publish quest' }).click();
-  await expect(page.getByText(/Published quest `#[0-9a-f]{6}` to `newcomer`/).first()).toBeVisible();
+  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `newcomer`/).first()).toBeVisible();
 });
 
 /**

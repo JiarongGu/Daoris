@@ -88,6 +88,23 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     public async Task ReplaceRepositoryAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default)
     {
+        // The connection is every store's, and SQLite does not nest transactions: a publish arriving
+        // mid-refresh would fail on this one's (ConnectionGate).
+        var gate = ConnectionGate.For(_connection);
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await ReplaceRepositoryInAsync(repository, entries, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private async Task ReplaceRepositoryInAsync(
+        string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct)
+    {
         await using var transaction = await _connection.BeginTransactionAsync(ct).ConfigureAwait(false);
 
         // Both tables, in one transaction: an FTS row whose entry is gone would return a hit that

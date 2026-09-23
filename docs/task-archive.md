@@ -4345,3 +4345,38 @@ Both hosts (the shell's loop and the headless driver) take it through `FromEnvir
 tests failed with the per-pass read removed. **Left to SYNC2**: the service's quest relay
 (`RemoteQuestRoutes`) is still built once, and SYNC2 replaces that relay rather than mending it.
 Driver 398, modules 105, family 214/214.
+
+## SYNC1 — quests as history, locally (2026-09-24)
+
+- [x] **SYNC1 — quests as history, locally**: the operation log, replayed through the transition
+  table; the status table as its cache; 48-bit ids.
+
+✅ **done 2026-09-24**, the second of D68's build. Every verb now appends to `quest_log`: the kind,
+this store's machine, that machine's next sequence number, the time, and a payload. A publish
+carries the whole ask, so a replay can rebuild the quest anywhere, and a move carries its note.
+`QuestLog.Replay` folds a history through `QuestTransitions`, the one table, which moved out of the
+SQL `WHERE` clause into code. An operation the table refuses changes nothing, so no order of
+operations can reach a forbidden state. SYNC2's rebase stands on that. Publish and move take the
+write lock before they read (`BEGIN IMMEDIATE`), judge the replayed history, append, and rewrite the
+`quests` row from the replay, so the row is a cache by construction. A chain's next step is
+published in the same transaction, one sequence number after the close. A refused move writes
+nothing. Ids are 12 hex characters with the same hash, so a quest from before keeps its 6 characters
+and still answers its own ask.
+
+**Decided while building** (design §2 and §7 now say so): the machine id lives **in the store**,
+next to the sequence it numbers. A file of its own would outlive a deleted store, and a restarted
+sequence under the same id would reuse numbers a remote already holds. A store from before the log
+is **migrated, not rebuilt**, because nothing else holds quests. Each local quest gets its history
+from its row, once, however many hosts open the store. Mirror rows get none, since they are their
+home's record until SYNC2 replaces them.
+
+**Found, and fixed before landing**: a host holds one connection for all its stores and answers
+requests at once, and SQLite does not nest transactions. Once every quest write became a
+transaction, 24 publishes and 24 takes run at once failed with *cannot start a transaction within a
+transaction*. Before SYNC1 only a chain's close and an index refresh opened one. `ConnectionGate`
+now allows one transaction at a time per connection, shared by the quest store and the index store.
+A source scan fails any Core file that opens a transaction without it, and it was seen failing on a
+planted file. A second probe showed that on this driver, a statement run *outside* a transaction
+while one is open **joins it** rather than failing. So every path that wrote nothing commits instead
+of rolling back, which would have undone another request's write, and a test pins that driver
+behaviour. Service 388, driver 398, modules 105, web 619 + 18, family 214/214, verify green.

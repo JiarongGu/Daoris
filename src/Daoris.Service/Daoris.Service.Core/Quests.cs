@@ -109,22 +109,80 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
 /// <para><b>Only an adopted repository can be addressed.</b> A quest for a repository with no manifest
 /// has nobody to answer it and no client to see it, so it would sit in a queue nobody reads. Refusing
 /// at publish time says that immediately, rather than letting it look delivered.</para>
+///
+/// <para><b>A quest is its history</b> (D68, SYNC1). Every verb appends an operation to
+/// <c>quest_log</c>, stamped with this store's machine and that machine's next sequence number, and
+/// the <c>quests</c> table is rewritten from replaying the quest's history through
+/// <see cref="QuestTransitions"/> in the same transaction — so what the platform reads is a cache of
+/// the replay, never a second truth beside it. A mirror row is the one exception: it is another
+/// store's record, and nothing happened to it here.</para>
 /// </remarks>
 public sealed class QuestStore
 {
-    private readonly SqliteConnection _connection;
+    /// <summary>
+    /// Hex characters in a quest id: 48 bits (design §7). Six were enough while a machine held its own
+    /// quests; once every machine holds every quest touching its repositories, unrelated asks collide.
+    /// </summary>
+    internal const int IdLength = 12;
 
-    private QuestStore(SqliteConnection connection) => _connection = connection;
+    /// <summary>What an id was before it widened — a quest published then keeps the id it was quoted by.</summary>
+    private const int LegacyIdLength = 6;
+
+    private readonly SqliteConnection _connection;
+    private readonly SemaphoreSlim _gate;
+
+    private QuestStore(SqliteConnection connection)
+    {
+        _connection = connection;
+        _gate = ConnectionGate.For(connection);
+    }
+
+    /// <summary>
+    /// This store's machine: the stable id every operation it writes is stamped with (D68 §2) — never
+    /// the key, which rotates.
+    /// </summary>
+    /// <remarks>
+    /// Kept in the store, beside the sequence it numbers, rather than in a file of its own: a machine
+    /// whose store was deleted starts its sequence again at one, and under the same id that would
+    /// name operations a remote already holds. A new store is a new machine, and cannot be anything else.
+    /// </remarks>
+    public string Machine { get; private set; } = "";
 
     public static async Task<QuestStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
         var store = new QuestStore(connection);
         await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
+        store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
+        await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
         return store;
     }
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
     {
+        await using (var command = _connection.CreateCommand())
+        {
+            // The log's position is this store's order of appending, and so the order a history
+            // replays in. Machine + sequence names one operation anywhere; position names it here.
+            command.CommandText = """
+                CREATE TABLE IF NOT EXISTS quest_log (
+                  position  INTEGER PRIMARY KEY,
+                  quest     TEXT NOT NULL,
+                  kind      TEXT NOT NULL,
+                  machine   TEXT NOT NULL,
+                  sequence  INTEGER NOT NULL,
+                  at        TEXT NOT NULL,
+                  payload   TEXT NOT NULL,
+                  UNIQUE (machine, sequence)
+                );
+                CREATE INDEX IF NOT EXISTS quest_log_quest ON quest_log (quest, position);
+                CREATE TABLE IF NOT EXISTS quest_machine (
+                  one INTEGER PRIMARY KEY CHECK (one = 1),
+                  id  TEXT NOT NULL
+                );
+                """;
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         await using (var command = _connection.CreateCommand())
         {
             command.CommandText = $"""
@@ -179,20 +237,127 @@ public sealed class QuestStore
     }
 
     /// <summary>
-    /// A short handle derived from who asked, of whom, and for what.
+    /// The store's machine id, made the first time any host opens it. One fixed row, so two hosts
+    /// opening a new store at once cannot each make one: the second insert is ignored and both read
+    /// the first.
+    /// </summary>
+    private async Task<string> EnsureMachineAsync(CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            INSERT OR IGNORE INTO quest_machine (one, id) VALUES (1, $id);
+            SELECT id FROM quest_machine WHERE one = 1;
+            """;
+        command.Parameters.AddWithValue(
+            "$id", Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(8)).ToLowerInvariant());
+        return (string)(await command.ExecuteScalarAsync(ct).ConfigureAwait(false))!;
+    }
+
+    /// <summary>
+    /// Give every quest of this store's own that the log has never seen its history, from what its row
+    /// says: published when it was filed, and the move to where it stands when it last moved.
+    /// </summary>
+    /// <remarks>
+    /// A quest is not derivable from anything, so a store from before the log is migrated rather than
+    /// rebuilt (the index's rule is for what can be re-read). Checked again inside the transaction,
+    /// because two hosts open one store and only one of them may write the histories. A mirror row is
+    /// left alone: it is its home's record, and nothing happened to it here.
+    /// </remarks>
+    private async Task GiveHistoriesAsync(CancellationToken ct)
+    {
+        const string Unlogged = """
+            SELECT * FROM quests
+            WHERE home IS NULL AND NOT EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id)
+            ORDER BY filed, id
+            """;
+
+        await using (var probe = _connection.CreateCommand())
+        {
+            probe.CommandText = $"SELECT EXISTS ({Unlogged})";
+            if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
+        }
+
+        await InTransactionAsync(async transaction =>
+        {
+            var unlogged = new List<Quest>();
+            await using (var select = _connection.CreateCommand())
+            {
+                select.Transaction = transaction;
+                select.CommandText = Unlogged;
+                await using var reader = await select.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await reader.ReadAsync(ct).ConfigureAwait(false)) unlogged.Add(Read(reader));
+            }
+
+            foreach (var quest in unlogged) await GiveHistoryAsync(quest, transaction, ct).ConfigureAwait(false);
+            return unlogged.Count;
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>One quest's history, from its row — the operations that replay to exactly what it says.</summary>
+    private async Task<IReadOnlyList<QuestOperation>> GiveHistoryAsync(
+        Quest quest, SqliteTransaction transaction, CancellationToken ct)
+    {
+        var history = new List<QuestOperation>
+        {
+            await AppendAsync(quest.Id, QuestOperationKind.Published, quest.Filed, null, quest, transaction, ct)
+                .ConfigureAwait(false),
+        };
+
+        if (QuestTransitions.KindFor(quest.Status) is { } moved)
+        {
+            history.Add(await AppendAsync(quest.Id, moved, quest.Updated, quest.Note, null, transaction, ct)
+                .ConfigureAwait(false));
+        }
+
+        return history;
+    }
+
+    /// <summary>
+    /// Run <paramref name="work"/> in a write transaction taken at once (BEGIN IMMEDIATE), not at its
+    /// first write: the judgement is made on what it reads, so the read must already hold the lock, or
+    /// two hosts over one file could both judge the same open quest and both append a take (D47 §5).
+    /// </summary>
+    /// <remarks>
+    /// <para>Within one host, the connection's gate holds every other transaction off until this one
+    /// ends — SQLite does not nest them, and a host answers requests at once (<see cref="ConnectionGate"/>).</para>
+    ///
+    /// <para>It COMMITS whenever the work returns, including a refusal that wrote nothing. A statement
+    /// another request runs meanwhile, outside any transaction, joins this one rather than failing
+    /// (measured on this driver version, and pinned by a test) — so a rollback would quietly undo
+    /// somebody else's write along with our nothing. Only a throw rolls back.</para>
+    /// </remarks>
+    private async Task<T> InTransactionAsync<T>(Func<SqliteTransaction, Task<T>> work, CancellationToken ct)
+    {
+        await _gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await using var transaction = _connection.BeginTransaction(deferred: false);
+            var result = await work(transaction).ConfigureAwait(false);
+            await transaction.CommitAsync(ct).ConfigureAwait(false);
+            return result;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// A handle derived from who asked, of whom, and for what — twelve hex characters (design §7).
     /// </summary>
     /// <remarks>
     /// Content-derived so publishing the same quest twice collides rather than multiplying — an agent
-    /// that retries should not produce a second copy of the same ask. A chain's step also derives from
-    /// its PARENT (D65 §4): "Verify in the browser" is a title many chains will use, and a step that
-    /// collided with an earlier quest of those words would quietly join somebody else's closed quest.
-    /// A quest with no parent keeps exactly the id it always had.
+    /// that retries should not produce a second copy of the same ask, and the same ask made on two
+    /// machines is one quest. A chain's step also derives from its PARENT (D65 §4): "Verify in the
+    /// browser" is a title many chains will use, and a step that collided with an earlier quest of
+    /// those words would quietly join somebody else's closed quest. The widening kept the hash, so an
+    /// id from before it is exactly the first six characters of the same ask's id now.
     /// </remarks>
     internal static string MakeId(string from, string to, string title, string? parent = null) =>
         Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes(
-                    $"{from}->{to}:{title.Trim()}" + (parent is null ? "" : $"<-{parent}"))))[..6].ToLowerInvariant();
+                    $"{from}->{to}:{title.Trim()}" + (parent is null ? "" : $"<-{parent}"))))[..IdLength].ToLowerInvariant();
 
     /// <summary>Publish a quest. Returns the existing one unchanged if it was already asked.</summary>
     /// <param name="workspace">
@@ -211,33 +376,82 @@ public sealed class QuestStore
         CancellationToken ct = default)
     {
         var id = MakeId(from, to, title);
-        var existing = await FindAsync(id, ct).ConfigureAwait(false);
-        if (existing is not null) return existing;
-
-        var quest = new Quest(
-            id, from, to, title, body, QuestStatus.Open, null, now, now,
-            Workspace: Workspaces.Normalize(workspace))
+        return await InTransactionAsync(async transaction =>
         {
-            Links = links ?? [],
-            Attachments = attachments ?? [],
-            Then = then ?? [],
-        };
+            // The same ask already held is the answer, whichever width of id it was published under.
+            var existing = await FindAsync(id, transaction, ct).ConfigureAwait(false)
+                           ?? await FindAsync(id[..LegacyIdLength], transaction, ct).ConfigureAwait(false);
+            if (existing is not null) return existing;
 
-        await InsertAsync(quest, transaction: null, ct).ConfigureAwait(false);
+            var asked = new Quest(
+                id, from, to, title, body, QuestStatus.Open, null, now, now,
+                Workspace: Workspaces.Normalize(workspace))
+            {
+                Links = links ?? [],
+                Attachments = attachments ?? [],
+                Then = then ?? [],
+            };
+
+            return await PublishInAsync(asked, transaction, ct).ConfigureAwait(false);
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Append a quest's `published` and write its row from the replay, inside a transaction.</summary>
+    private async Task<Quest> PublishInAsync(Quest asked, SqliteTransaction transaction, CancellationToken ct)
+    {
+        var published = await AppendAsync(
+            asked.Id, QuestOperationKind.Published, asked.Filed, null, asked, transaction, ct).ConfigureAwait(false);
+        var quest = QuestLog.Replay([published])!;
+        await WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
         return quest;
     }
 
     /// <summary>
-    /// Write a new row. OR IGNORE, because the id is the ask: a step a crash-and-retry publishes twice
-    /// is one quest, and the row already there is the one that stands.
+    /// Append one operation, stamped with this machine and its next sequence number — counted inside
+    /// the caller's write transaction, so two hosts over one file cannot take the same number.
     /// </summary>
-    private async Task InsertAsync(Quest quest, SqliteTransaction? transaction, CancellationToken ct)
+    private async Task<QuestOperation> AppendAsync(
+        string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
+        SqliteTransaction transaction, CancellationToken ct)
     {
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT OR IGNORE INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, NULL, $filed, $updated, $workspace, $links, $attachments, $then, $parent)
+            INSERT INTO quest_log (quest, kind, machine, sequence, at, payload)
+            VALUES ($quest, $kind, $machine,
+                    (SELECT COALESCE(MAX(sequence), 0) + 1 FROM quest_log WHERE machine = $machine),
+                    $at, $payload)
+            RETURNING sequence
+            """;
+        command.Parameters.AddWithValue("$quest", quest);
+        command.Parameters.AddWithValue("$kind", KindText(kind));
+        command.Parameters.AddWithValue("$machine", Machine);
+        command.Parameters.AddWithValue("$at", at.ToString("O"));
+        command.Parameters.AddWithValue("$payload", PayloadJson(note, published));
+        var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
+
+        // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
+        return new QuestOperation(
+            quest, kind, Machine, sequence, at, note,
+            published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Home = null });
+    }
+
+    /// <summary>
+    /// Write a quest's row as its replay gives it. The row is a cache, so it is written whole: a
+    /// replay is the only thing that decides what it says.
+    /// </summary>
+    private async Task WriteCacheAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, home, workspace, links, attachments, then_steps, parent)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, NULL, $workspace, $links, $attachments, $then, $parent)
+            ON CONFLICT (id) DO UPDATE SET
+              sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
+              status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
+              home = NULL, workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
+              then_steps = excluded.then_steps, parent = excluded.parent
             """;
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
@@ -250,9 +464,29 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$title", quest.Title);
         command.Parameters.AddWithValue("$body", quest.Body);
         command.Parameters.AddWithValue("$status", quest.Status.ToString());
+        command.Parameters.AddWithValue("$note", (object?)quest.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$filed", quest.Filed.ToString("O"));
         command.Parameters.AddWithValue("$updated", quest.Updated.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>A quest's history, in the order it replays — empty for a mirror row or an unknown id.</summary>
+    public Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, CancellationToken ct = default) =>
+        HistoryAsync(id, transaction: null, ct);
+
+    private async Task<IReadOnlyList<QuestOperation>> HistoryAsync(
+        string id, SqliteTransaction? transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            "SELECT quest, kind, machine, sequence, at, payload FROM quest_log WHERE quest = $id ORDER BY position";
+        command.Parameters.AddWithValue("$id", id);
+
+        var history = new List<QuestOperation>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) history.Add(ReadOperation(reader));
+        return history;
     }
 
     /// <summary>
@@ -276,74 +510,59 @@ public sealed class QuestStore
 
     /// <summary>
     /// Move a quest to a new status, atomically, honouring the transition table. Declining without a
-    /// reason is refused by the caller; an illegal move is refused HERE, in the store, because the
-    /// guarded UPDATE is what makes "the quest state machine is the only lock" true when two hosts'
-    /// callers race over one file (D47 §5) — a check the caller ran a moment earlier decides nothing.
+    /// reason is refused by the caller; an illegal move is refused HERE, in the store, because judging
+    /// the replayed history inside the write transaction is what makes "the quest state machine is the
+    /// only lock" true when two hosts' callers race over one file (D47 §5) — a check the caller ran a
+    /// moment earlier decides nothing.
     /// </summary>
     /// <returns>
     /// The quest as it now stands and whether this call moved it; a null quest means no such id.
     /// A refused move returns the row unchanged, so the caller can name the state that refused it.
     /// </returns>
-    public async Task<QuestMove> MoveAsync(
-        string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default)
-    {
-        // The table, inlined into the WHERE so winning the move and writing it are one statement:
-        // Taken only from Open (the atomic take), closed only from live, terminal states immovable —
-        // and a mirror row never moves here at all (home IS NULL): its transitions happen at its home,
-        // and only the next mirror writes the result back (D47 §5).
-        var allowed = AllowedFrom(status).ToList();
-        if (allowed.Count == 0)
+    public Task<QuestMove> MoveAsync(
+        string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async transaction =>
         {
-            // Nothing moves TO Open — refused here rather than rendered, because an empty IN () is a
-            // SQLite syntax error dressed as a safe default.
-            return new(await FindAsync(id, ct).ConfigureAwait(false), Moved: false);
-        }
+            var held = await FindAsync(id, transaction, ct).ConfigureAwait(false);
 
-        var from = string.Join(", ", allowed.Select(s => $"'{s}'"));
+            // A mirror row never moves here at all: its transitions happen at its home, and only the
+            // next mirror writes the result back (D47 §5). And nothing moves TO open.
+            if (held is null || held.Home is not null || QuestTransitions.KindFor(status) is not { } kind)
+            {
+                return new QuestMove(held, Moved: false);
+            }
 
-        // A close that finishes a chain's step publishes the next one IN THE SAME TRANSACTION (D65 §4):
-        // there is no moment at which the work is done and the chain lost, and a close another host
-        // wins publishes nothing here. The chain is read first — it is fixed at publish, so reading it
-        // before the guarded UPDATE cannot race anything.
-        var next = status == QuestStatus.Done && await FindAsync(id, ct).ConfigureAwait(false) is { } closing
-            ? NextStep(closing, now)
-            : null;
+            var history = await HistoryAsync(id, transaction, ct).ConfigureAwait(false);
+            if (history.Count == 0)
+            {
+                // A row the log never saw — written by something older than the log since this store
+                // was opened. It is given its history now, exactly as the open would have, and keeps it
+                // even if the move is refused: that write is the store's, and true.
+                history = await GiveHistoryAsync(held, transaction, ct).ConfigureAwait(false);
+            }
 
-        await using var transaction = next is null
-            ? null
-            : (SqliteTransaction)await _connection.BeginTransactionAsync(ct).ConfigureAwait(false);
+            if (!QuestTransitions.Allows(QuestLog.Replay(history)!.Status, status))
+            {
+                return new QuestMove(held, Moved: false);
+            }
 
-        bool moved;
-        await using (var command = _connection.CreateCommand())
-        {
-            command.Transaction = transaction;
-            command.CommandText =
-                $"UPDATE quests SET status = $status, note = $note, updated = $updated WHERE id = $id AND home IS NULL AND status IN ({from})";
-            command.Parameters.AddWithValue("$status", status.ToString());
-            command.Parameters.AddWithValue("$note", (object?)note ?? DBNull.Value);
-            command.Parameters.AddWithValue("$updated", now.ToString("O"));
-            command.Parameters.AddWithValue("$id", id);
-            moved = await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 1;
-        }
+            var operation = await AppendAsync(id, kind, now, note, null, transaction, ct).ConfigureAwait(false);
+            var moved = QuestLog.Replay([.. history, operation])!;
+            await WriteCacheAsync(moved, transaction, ct).ConfigureAwait(false);
 
-        if (transaction is not null)
-        {
-            if (moved) await InsertAsync(next!, transaction, ct).ConfigureAwait(false);
-            await transaction.CommitAsync(ct).ConfigureAwait(false);
-        }
+            // A close that finishes a chain's step publishes the next one IN THE SAME TRANSACTION
+            // (D65 §4): there is no moment at which the work is done and the chain lost, and a close
+            // another host wins publishes nothing here. A step already published is the one that
+            // stands — the id is the ask.
+            Quest? followUp = null;
+            if (status == QuestStatus.Done && NextStep(moved, now) is { } next)
+            {
+                followUp = await FindAsync(next.Id, transaction, ct).ConfigureAwait(false)
+                           ?? await PublishInAsync(next, transaction, ct).ConfigureAwait(false);
+            }
 
-        return new(
-            await FindAsync(id, ct).ConfigureAwait(false), moved,
-            moved && next is not null ? await FindAsync(next.Id, ct).ConfigureAwait(false) : null);
-    }
-
-    /// <summary>The states a move to <paramref name="target"/> may start from — D47 §5's table.</summary>
-    private static IEnumerable<string> AllowedFrom(QuestStatus target) => target switch
-    {
-        QuestStatus.Taken => [nameof(QuestStatus.Open)],
-        QuestStatus.Done or QuestStatus.Declined => [nameof(QuestStatus.Open), nameof(QuestStatus.Taken)],
-        _ => [],
-    };
+            return new QuestMove(moved, Moved: true, followUp);
+        }, ct);
 
     /// <summary>
     /// Copy another store's quest into this one, whole. The row is marked with its home, which is what
@@ -380,9 +599,13 @@ public sealed class QuestStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
-    public async Task<Quest?> FindAsync(string id, CancellationToken ct = default)
+    public Task<Quest?> FindAsync(string id, CancellationToken ct = default) =>
+        FindAsync(id, transaction: null, ct);
+
+    private async Task<Quest?> FindAsync(string id, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = "SELECT * FROM quests WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -437,7 +660,69 @@ public sealed class QuestStore
         Parent = reader.IsDBNull(reader.GetOrdinal("parent")) ? null : reader.GetString(reader.GetOrdinal("parent")),
     };
 
-    private static string StepsJson(IReadOnlyList<QuestStep> steps) => Json(writer =>
+    /// <summary>An operation as its log row holds it — a publish's payload is the quest as asked.</summary>
+    private static QuestOperation ReadOperation(SqliteDataReader reader)
+    {
+        var quest = reader.GetString(0);
+        var kind = Enum.Parse<QuestOperationKind>(reader.GetString(1), ignoreCase: true);
+        var at = DateTimeOffset.Parse(reader.GetString(4));
+
+        using var document = System.Text.Json.JsonDocument.Parse(reader.GetString(5));
+        var payload = document.RootElement;
+        var note = payload.TryGetProperty("note", out var said) ? said.GetString() : null;
+        var published = kind != QuestOperationKind.Published
+            ? null
+            : new Quest(
+                quest,
+                payload.GetProperty("from").GetString() ?? "",
+                payload.GetProperty("to").GetString() ?? "",
+                payload.GetProperty("title").GetString() ?? "",
+                payload.GetProperty("body").GetString() ?? "",
+                QuestStatus.Open, null, at, at,
+                Workspace: Workspaces.Normalize(payload.GetProperty("workspace").GetString()))
+            {
+                Links = ReadLinks(payload.GetProperty("links")),
+                Attachments = ReadAttachments(payload.GetProperty("attachments")),
+                Then = ReadSteps(payload.GetProperty("then")),
+                Parent = payload.TryGetProperty("parent", out var parent) ? parent.GetString() : null,
+            };
+
+        return new QuestOperation(quest, kind, reader.GetString(2), reader.GetInt64(3), at, note, published);
+    }
+
+    /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
+    private static string KindText(QuestOperationKind kind) => kind.ToString().ToLowerInvariant();
+
+    /// <summary>
+    /// What an operation carries. A publish carries the quest's words and everything it carries — all
+    /// a replay needs to make the quest, on this machine or another — and a move carries its note.
+    /// </summary>
+    private static string PayloadJson(string? note, Quest? published) => Json(writer =>
+    {
+        writer.WriteStartObject();
+        if (published is not null)
+        {
+            writer.WriteString("from", published.From);
+            writer.WriteString("to", published.To);
+            writer.WriteString("title", published.Title);
+            writer.WriteString("body", published.Body);
+            writer.WriteString("workspace", published.Workspace);
+            writer.WritePropertyName("links");
+            WriteLinks(writer, published.Links);
+            writer.WritePropertyName("attachments");
+            WriteAttachments(writer, published.Attachments);
+            writer.WritePropertyName("then");
+            WriteSteps(writer, published.Then);
+            if (published.Parent is not null) writer.WriteString("parent", published.Parent);
+        }
+
+        if (note is not null) writer.WriteString("note", note);
+        writer.WriteEndObject();
+    });
+
+    private static string StepsJson(IReadOnlyList<QuestStep> steps) => Json(writer => WriteSteps(writer, steps));
+
+    private static void WriteSteps(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<QuestStep> steps)
     {
         writer.WriteStartArray();
         foreach (var step in steps)
@@ -450,29 +735,37 @@ public sealed class QuestStore
         }
 
         writer.WriteEndArray();
-    });
+    }
 
     private static IReadOnlyList<QuestStep> ReadSteps(string json)
     {
         using var document = System.Text.Json.JsonDocument.Parse(json);
-        return document.RootElement.EnumerateArray()
+        return ReadSteps(document.RootElement);
+    }
+
+    private static IReadOnlyList<QuestStep> ReadSteps(System.Text.Json.JsonElement steps) =>
+        steps.EnumerateArray()
             .Select(item => new QuestStep(
                 item.GetProperty("to").GetString() ?? "",
                 item.GetProperty("title").GetString() ?? "",
                 item.GetProperty("body").GetString() ?? ""))
             .ToList();
-    }
 
     // Written and read by hand rather than through the reflection serializer, for the same reason the
     // registration store's lists are: nothing here may quietly stop working under AOT.
-    private static string LinksJson(IReadOnlyList<string> links) => Json(writer =>
+    private static string LinksJson(IReadOnlyList<string> links) => Json(writer => WriteLinks(writer, links));
+
+    private static void WriteLinks(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<string> links)
     {
         writer.WriteStartArray();
         foreach (var link in links) writer.WriteStringValue(link);
         writer.WriteEndArray();
-    });
+    }
 
-    private static string AttachmentsJson(IReadOnlyList<QuestAttachment> attachments) => Json(writer =>
+    private static string AttachmentsJson(IReadOnlyList<QuestAttachment> attachments) =>
+        Json(writer => WriteAttachments(writer, attachments));
+
+    private static void WriteAttachments(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<QuestAttachment> attachments)
     {
         writer.WriteStartArray();
         foreach (var attachment in attachments)
@@ -485,7 +778,7 @@ public sealed class QuestStore
         }
 
         writer.WriteEndArray();
-    });
+    }
 
     private static string Json(Action<System.Text.Json.Utf8JsonWriter> write)
     {
@@ -497,20 +790,26 @@ public sealed class QuestStore
     private static IReadOnlyList<string> ReadLinks(string json)
     {
         using var document = System.Text.Json.JsonDocument.Parse(json);
-        return document.RootElement.EnumerateArray()
+        return ReadLinks(document.RootElement);
+    }
+
+    private static IReadOnlyList<string> ReadLinks(System.Text.Json.JsonElement links) =>
+        links.EnumerateArray()
             .Select(item => item.GetString())
             .OfType<string>()
             .ToList();
-    }
 
     private static IReadOnlyList<QuestAttachment> ReadAttachments(string json)
     {
         using var document = System.Text.Json.JsonDocument.Parse(json);
-        return document.RootElement.EnumerateArray()
+        return ReadAttachments(document.RootElement);
+    }
+
+    private static IReadOnlyList<QuestAttachment> ReadAttachments(System.Text.Json.JsonElement attachments) =>
+        attachments.EnumerateArray()
             .Select(item => new QuestAttachment(
                 item.GetProperty("name").GetString() ?? "",
                 item.GetProperty("sha256").GetString() ?? "",
                 item.GetProperty("bytes").GetInt64()))
             .ToList();
-    }
 }

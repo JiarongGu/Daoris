@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**331 CLI tests, 348 service, 387 driver, 101 desktop modules, 557 web unit, 16 Playwright**, 59
+**331 CLI tests, 388 service, 398 driver, 105 desktop modules, 619 web unit, 18 Playwright**, 59
 devkit, 56/56 release rehearsal, **214/214 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: SYNC1–6 (D68); MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: SYNC2–6 (D68); MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -250,7 +250,7 @@ the traps that are not in any contract, because they were found rather than desi
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 331 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (361),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (388),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
   (398), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (105), `npm run rehearse:family` (214/214), `npm run test:web` (619 vitest + 18 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
@@ -266,7 +266,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Twenty-nine items are open** — ten of them D68's and four D67's —
+the archive; its decision is **D53, accepted**). **Twenty-four items are open** — five of them D68's and four D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
@@ -277,7 +277,7 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D68's SYNC arc first, the owner's newest direction (SYNC1–6 in order); then D67's
+🔴 **D68's SYNC arc first, the owner's newest direction (SYNC2–6 in order; SYNC1 is in the archive); then D67's
 remaining items (AGT2b last — npm already installs the native build), then INT4b and INT4c.** They
 outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
@@ -451,10 +451,8 @@ screen.
 ### The remote as a git remote (owner, 2026-09-23 → D68)
 
 `docs/2026-09-23-sync-design.md`: every verb commits locally; sync is fetch, rebase, push. Today's
-five defects (SYNC0a–e) are in its §0. In order:
+five defects (SYNC0a–e) are in its §0. SYNC0d and SYNC1 are in the archive. In order:
 
-- [ ] **SYNC1 — quests as history, locally**: the operation log, replayed through the transition
-  table; the status table as its cache; 48-bit ids.
 - [ ] **SYNC2 — fetch, rebase, push for quests**, conflicts recorded; replaces the mirror and the
   write-through (fixes SYNC0a, SYNC0e); the rehearsal's two-machine phase rewritten.
 - [ ] **SYNC3 — claim by push**, unconfirmed takes offline, a losing session stopped.

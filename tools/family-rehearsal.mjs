@@ -629,7 +629,7 @@ writeFileSync(askBrief, 'the brief an ask carried\n');
 const namedAsk = askVerb(
   `--workspace default --to newcomer --url https://tickets.example/T-77 --file "${askBrief}" "make the newcomer answer an ask"`);
 const namedAskId = /ask\s+#([0-9a-f]{6})/.exec(namedAsk.out)?.[1] ?? '';
-const namedQuestId = /quest\s+#([0-9a-f]{6})/.exec(namedAsk.out)?.[1] ?? '';
+const namedQuestId = /quest\s+#([0-9a-f]{12})/.exec(namedAsk.out)?.[1] ?? '';
 const namedQuest = ((await api('GET', '/api/quests?repository=newcomer')).json ?? []).find((q) => q.id === namedQuestId);
 check(
   'a receiver named with --to is published at once — asked BY the ask, carrying its link and its file',
