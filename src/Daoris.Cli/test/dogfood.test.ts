@@ -152,6 +152,26 @@ test('every declared gate is actually run by the release workflow', () => {
 });
 
 /**
+ * The same gap one list further in (SEN1): the universal gates were declared and in the workflow, and
+ * red on this repository for a day, because nothing a session runs before committing ran them — the
+ * workflow is dispatched by hand and the pre-commit hook was never installed. Placeholder home paths
+ * reached six fixtures across four landings that way. The universal half is the one that belongs in
+ * `verify`: it is fast, it judges facts (D54), and a leak is cheapest caught the moment it is written.
+ */
+test('the universal gates run in verify, not only at release', () => {
+  const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
+    gates: { name: string; run: string }[];
+  };
+  const universal = gates.gates.find((gate) => gate.name === 'universal');
+  const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
+    scripts: { verify: string };
+  }).scripts.verify;
+
+  assert.ok(universal, 'the universal gate is no longer declared — that is not a pass');
+  assert.ok(verify.includes(universal.run), `npm run verify never runs the universal gates: ${universal.run}`);
+});
+
+/**
  * A decision recorded without what it beat invites re-litigation — which is the failure the decisions
  * record exists to prevent, so a decision that names no alternative has not finished being made.
  *

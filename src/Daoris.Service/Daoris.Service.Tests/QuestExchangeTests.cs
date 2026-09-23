@@ -348,7 +348,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     [InlineData("javascript:alert(1)")]
     [InlineData("ftp://files.example/a")]
     [InlineData("tickets.example/T-1")]
-    [InlineData("file:///C:/Users/someone/notes.txt")]
+    [InlineData("file:///C:/somewhere/notes.txt")]
     public async Task A_link_that_is_not_an_address_is_refused_naming_it(string link)
     {
         var outcome = await Carry(links: [link]);

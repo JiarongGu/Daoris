@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 382 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fifteen commands, 383 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 448, `Daoris.Devkit` 73, and the
 driver 462. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
@@ -205,8 +205,8 @@ Run every command from the **workspace root**, not from a package directory.
   rather than compiling them, so without this a type error reaches `npm pack` and nothing sooner —
   FIX-LOG 2026-09-21), then every CLI test, `daoris check` against Daoris's own doctrine,
   `doc-budgets` (word ceilings for the prose a session reads whole; reported, never enforced — D54),
-  then `release-prep --check` (every shipped version reference agrees, example pins included). Run
-  before claiming a change is complete.
+  then `release-prep --check` (every shipped version reference agrees, example pins included), then
+  the devkit's universal gates (SEN1). Run before claiming a change is complete.
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the

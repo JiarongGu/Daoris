@@ -92,13 +92,13 @@ public sealed class HookTests : IDisposable
         });
         var peer = Peer(plugin);
 
-        await peer.InitializeAsync("D:/home", "D:/home/plugins/.data/acme.gate", ["quest/consider", "session/ended"], CancellationToken.None);
+        await peer.InitializeAsync("C:/somewhere/data", "C:/somewhere/data/plugins/.data/acme.gate", ["quest/consider", "session/ended"], CancellationToken.None);
 
         var sent = plugin.Frame(0).GetProperty("params");
         Assert.Equal(1, sent.GetProperty("protocolVersion").GetInt32());
         Assert.Equal("acme.gate", sent.GetProperty("plugin").GetString());
-        Assert.Equal("D:/home", sent.GetProperty("home").GetString());
-        Assert.Equal("D:/home/plugins/.data/acme.gate", sent.GetProperty("data").GetString());
+        Assert.Equal("C:/somewhere/data", sent.GetProperty("home").GetString());
+        Assert.Equal("C:/somewhere/data/plugins/.data/acme.gate", sent.GetProperty("data").GetString());
         // The process is the fact; the manifest was the claim. It listens on one of the two it declared.
         Assert.Equal(["quest/consider"], peer.Points);
     }
@@ -245,7 +245,7 @@ public sealed class HookTests : IDisposable
 
     private static PluginEntry Plugin(string id, params string[] points) =>
         new(new PluginManifest(id, 1, id, "1.0.0", "", [], new PluginHooks(["node", "hooks.mjs"], points), []),
-            $"D:/home/plugins/{id}", $"D:/home/plugins/.data/{id}", Enabled: true, Problem: null);
+            $"C:/somewhere/data/plugins/{id}", $"C:/somewhere/data/plugins/.data/{id}", Enabled: true, Problem: null);
 
     private static PluginCatalog Catalog(string home, params (string Id, string[] Points)[] plugins)
     {

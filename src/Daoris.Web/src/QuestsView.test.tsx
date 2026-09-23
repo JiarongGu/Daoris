@@ -11,7 +11,7 @@ import { QuestsView } from './QuestsView';
 
 // What a quest carries (D65 §2): a link, a file kept on this machine (it has a path — which the
 // page must never SHOW), and a file named on the record whose bytes stayed where it was published.
-const KEPT_PATH = 'D:/home/quests/abc123/attachments/ab12cd34ef56-before.png';
+const KEPT_PATH = 'C:/somewhere/data/quests/abc123/attachments/ab12cd34ef56-before.png';
 const QUESTS = [{
   id: 'abc123', from: 'game', to: 'engine',
   title: 'Expose a streaming budget', body: 'World streaming needs a per-frame cap.',
@@ -353,7 +353,7 @@ describe('QuestsView', () => {
     // A picture is shown as one — from the host's own route, never from the path.
     expect(within(dialog).getByRole('img', { name: 'before.png' })).toBeInTheDocument();
     // 🔴 A page does not name a machine path, even one it was answered.
-    expect(dialog.textContent).not.toContain('D:/home');
+    expect(dialog.textContent).not.toContain('C:/somewhere');
   });
 
   it('a file named on the record but not kept here is said to be elsewhere, not offered as a link', async () => {

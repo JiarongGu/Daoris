@@ -4903,3 +4903,34 @@ no update action — measured by nobody yet, which is AGT2c.
 trap. Integrated here: CLI 382 (was 334), driver 462 (was 447), modules 107, release rehearsal 56/56,
 family 256/256, deploy 39/39, and the universal gates with the private list saw the five vendor files
 clean.
+
+## SEN1 — the devkit's sensitive gate was red, and nothing a session runs ran it (2026-09-24)
+
+- [x] ~~**SEN1 — the devkit's `sensitive` gate is red on this repository.** `daoris-devkit verify
+  --universal-only` flags placeholder home paths (`/home/…`, `/Users/…`) in five test fixtures:
+  `home.test.ts`, `AdapterTests.cs`, `HookTests.cs`, `QuestExchangeTests.cs` and
+  `QuestsView.test.tsx`. Use the neutral `C:/somewhere/…` convention, then find which gate list let a
+  red universal gate pass, since the release workflow is meant to run them. Found by MAP3c,
+  2026-09-24. Held until the parallel INT4b/INT4c branches merge, because both may touch these files.~~
+✅ **done 2026-09-24** — six fixtures, not five: INT4b's `IntakeTests.cs` had joined them. Every
+placeholder is `C:/somewhere/…` now, and the Daoris home's is `C:/somewhere/data`, which is where
+D63 put it. `npm run verify` runs the universal gates last, and a dogfood test holds the row there.
+
+**Which list let it pass: none of the ones a session runs.** The universal gates were declared in
+`daoris.gates.json` and run by the release workflow (DEVKIT3), which is dispatched by hand and has
+not been dispatched since the fixtures landed (four commits, 2026-09-23). The workflow's comment
+said the private half "runs locally and in the pre-commit hook". No hook is installed here: DEVKIT3
+left `install-hooks` to the owner, because it changes how the owner's own commits behave. So the
+scan ran only when someone remembered to. Three of the six were not Unix homes at all. They were
+`D:/home/…` standing for the Daoris home, and the pattern `/(?:home|Users)/…` has no way to know
+that. That is the same reason `C:/somewhere` is the convention.
+
+**`verify` carries `--allow-builtins-only`**, which is not a weakening here. The flag only matters
+when the private list is absent. Locally the list is present and the scan runs all 15 patterns. On a
+runner it is absent, and the workflow's own step already passes the same flag. Without the flag, the
+workflow's *Verify gate* step would fail closed on every run. **Watched failing**: one fixture
+restored to its old Unix-home placeholder turned `npm run verify` red (exit 1), naming the file. The workflow
+comment now says what is true. Installing the hook remains the owner's call.
+
+CLI 383 (was 382), driver 462, service 448, web 684, and the universal gates are 5/5 with the private
+list.

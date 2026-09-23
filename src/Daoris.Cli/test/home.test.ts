@@ -19,7 +19,7 @@ test('the home is the variable and nothing else', () => {
 
 // 🔴 No default under the user profile — that is the decision, not an omission.
 test('absent, it is absent rather than the user profile', () => {
-  assert.equal(daorisHome({ HOME: '/home/someone', USERPROFILE: 'C:/Users/someone' }), null);
+  assert.equal(daorisHome({ HOME: 'D:/somewhere/profile', USERPROFILE: 'C:/somewhere/profile' }), null);
 });
 
 test('a file under the home is the home joined, or null when there is none', () => {

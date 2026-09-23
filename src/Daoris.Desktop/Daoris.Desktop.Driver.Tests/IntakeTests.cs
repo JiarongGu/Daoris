@@ -41,7 +41,7 @@ public sealed class IntakeTests : IDisposable
         new("a1b2c3", "work", sentence, "Proposed", "declarations")
         {
             Links = ["https://tickets.example/T-9"],
-            Attachments = [new QuestFileView("shot.png", "abc", 12, "/home/asks/a1b2c3/shot.png")],
+            Attachments = [new QuestFileView("shot.png", "abc", 12, "C:/somewhere/data/asks/a1b2c3/shot.png")],
             Proposed = ["media-api"],
         };
 
@@ -118,7 +118,7 @@ public sealed class IntakeTests : IDisposable
         Assert.Contains("use the media config instead of hard coding the video field name", prompt);
         Assert.Contains("ask `#a1b2c3`", prompt);
         Assert.Contains("https://tickets.example/T-9", prompt);
-        Assert.Contains("/home/asks/a1b2c3/shot.png", prompt);
+        Assert.Contains("C:/somewhere/data/asks/a1b2c3/shot.png", prompt);
         Assert.Contains("quest_publish", prompt);
         Assert.Contains("AGENTS.md", prompt);
         // Where the declarations do not settle it, the person decides — never a guess.

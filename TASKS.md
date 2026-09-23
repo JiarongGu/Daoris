@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: AGT6, INT4d, SEN1.** INT3 and MAP3d wait on the owner's call, INT4f and INT6 on the owner's presence.
+- **Actionable: AGT6, INT4d.** INT3 and MAP3d wait on the owner's call, INT4f and INT6 on the owner's presence.
   **Four are the owner's** (ACP2 and DEPLOY1's second half each cost a login, AGT2c two downloads;
   PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -249,8 +249,8 @@ the traps that are not in any contract, because they were found rather than desi
   arrives — and **a new direction from the owner outranks all of them**.
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 382 + `check` + doc
-  budgets + version agreement),
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 383 + `check` + doc
+  budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (448),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
   (462), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (107), `npm run rehearse:family` (256/256), `npm run test:web` (684 vitest + 19 Playwright),
@@ -267,7 +267,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Nineteen items are open** — three of them D67's —
+the archive; its decision is **D53, accepted**). **Eighteen items are open** — three of them D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Four are **the owner's** to make or spend rather than work anyone can pick up (ACP2,
@@ -472,13 +472,6 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
   limitation. The owner's call, and the study says so rather than assuming it.
 
 ### Open — the arc's leftovers, in the order they are worth doing
-
-- [ ] **SEN1 — the devkit's `sensitive` gate is red on this repository.** `daoris-devkit verify
-  --universal-only` flags placeholder home paths (`/home/…`, `/Users/…`) in five test fixtures:
-  `home.test.ts`, `AdapterTests.cs`, `HookTests.cs`, `QuestExchangeTests.cs` and
-  `QuestsView.test.tsx`. Use the neutral `C:/somewhere/…` convention, then find which gate list let a
-  red universal gate pass, since the release workflow is meant to run them. Found by MAP3c,
-  2026-09-24. Held until the parallel INT4b/INT4c branches merge, because both may touch these files.
 
 ### Held — each waits on a trigger that has not arrived
 

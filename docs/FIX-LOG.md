@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A gate declared and in the workflow was still red for a day: nothing a session runs ran it (2026-09-24)
+
+**Symptom.** MAP3c ran `daoris-devkit verify --universal-only` and the sensitive gate was red. It
+flagged placeholder home paths in six test fixtures, which four landings on 2026-09-23 had added.
+
+**Root cause.** The universal gates ran in exactly one place, the release workflow, and that is
+dispatched by hand. The workflow's comment claimed the private half also ran "locally and in the
+pre-commit hook". No hook was ever installed, because DEVKIT3 left that to the owner. The dogfood test
+held *the declared set* and *the workflow* in agreement. The list a session actually runs before
+committing, `npm run verify`, was never part of that agreement. Three of the fixtures were
+`D:/home/…`, meaning the Daoris home rather than a Unix home, and the pattern cannot tell the
+difference.
+
+**Fix.** The fixtures use `C:/somewhere/…`. `npm run verify` runs `verify --universal-only
+--allow-builtins-only` last. The flag only matters when the private list is absent, so locally all
+15 patterns run. A dogfood test holds the declared universal row inside `verify`. The workflow
+comment says what is true.
+
+**Verify.** The new dogfood test failed first, naming the missing row. With the fix, `npm run
+verify` is green with `sensitive 15 patterns, nothing found`. With one fixture restored to
+its old Unix-home placeholder, it exits 1 naming the file. This entry was the next thing the gate
+caught: its first draft quoted that placeholder.
+
 ## A red test for a verb that installs ran the real installer (2026-09-24)
 
 **Symptom.** While AGT2b's tests were being watched fail, `_fixtures/` grew by about 0.9 GB: three

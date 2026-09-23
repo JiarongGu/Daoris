@@ -174,7 +174,7 @@ public sealed class AdapterTests
 
     // ——— What a quest carries (D65 §2): its links, and its files — handed by name and by directory.
 
-    private const string Kept = "D:/home/quests/abc123/attachments";
+    private const string Kept = "C:/somewhere/data/quests/abc123/attachments";
 
     private static SessionTarget Carrying() => Target() with
     {
