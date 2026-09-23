@@ -268,10 +268,12 @@ public sealed class DriverModule : ModuleBase
                             _loop.Harnesses.Home, report.Adapter,
                             settings.ResolveVersion(report.Adapter, null, null),
                             _loop.Harnesses.Toolchain(report.Adapter)?.Binary ?? []),
-                        // Whether this harness CAN be pinned at all. A harness that declares no
-                        // package has no version for Daoris to fetch, and a surface offering the
-                        // control anyway would be a button whose only outcome is a refusal.
-                        Pinnable = _loop.Harnesses.Toolchain(report.Adapter)?.Package is { Length: > 0 },
+                        // Whether this harness CAN be pinned at all. A harness that declares neither
+                        // a package nor a maker's channel (AGT2b) has no version for Daoris to fetch,
+                        // and a surface offering the control anyway would be a button whose only
+                        // outcome is a refusal.
+                        Pinnable = _loop.Harnesses.Toolchain(report.Adapter) is { } pinnable
+                            && (pinnable.Package is { Length: > 0 } || pinnable.Channel is { Length: > 0 }),
                         // Whether this door can run a sign-in at all — the same rule: a harness that
                         // declares no login flow gets no "Sign in" whose only outcome is a refusal.
                         SignsIn = _loop.Harnesses.Toolchain(report.Adapter)?.LoginArguments is { Count: > 0 },

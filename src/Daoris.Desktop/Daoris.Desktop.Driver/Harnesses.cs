@@ -137,7 +137,11 @@ public sealed record HarnessToolchain(
     string? KeyVariable = null,
     // The words this tool prints when its provider refuses the account's credential (AGT3b) — read
     // from a failed session's last lines, so the account is not spent again. Measured, never guessed.
-    string? Refused = null)
+    string? Refused = null,
+    // The maker's OWN release channel a pin fetches from (AGT2b), verified end to end — never npm.
+    // A toolchain declares this or `Package`, never both: which source a pin came from is not left
+    // for anyone to work out. The CLI's `channel` is the twin.
+    string? Channel = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -443,9 +447,12 @@ public sealed record HarnessSettings(
     /// installed at the pin.
     /// </summary>
     /// <remarks>
-    /// <b>npm's layout, because npm is how these harnesses ship</b>: <c>--prefix &lt;dir&gt;</c> puts
-    /// the shims in <c>&lt;dir&gt;/node_modules/.bin</c>, with a <c>.cmd</c> beside the shell script
-    /// on Windows — whichever exists is the answer.
+    /// <b>Two layouts, the vendor's first</b> (AGT2b). A pin from a maker's own channel lands as
+    /// <c>&lt;dir&gt;/bin/&lt;binary&gt;</c> — <c>.exe</c> on Windows — and is moved there only once it
+    /// verified, so finding it is the proof. Then <b>npm's layout, for what ships only there</b>:
+    /// <c>--prefix &lt;dir&gt;</c> puts the shims in <c>&lt;dir&gt;/node_modules/.bin</c>, with a
+    /// <c>.cmd</c> beside the shell script on Windows. A pin npm made before AGT2b still resolves. The
+    /// CLI's <c>managedBinary</c> is the twin.
     ///
     /// <para>🔴 A pin whose directory is not there answers null, and every caller falls back to
     /// <c>PATH</c> and <b>says so</b>. Silently running a different tool than the one the person
@@ -456,7 +463,11 @@ public sealed record HarnessSettings(
     {
         if (string.IsNullOrWhiteSpace(version) || binary.Count == 0) return null;
 
-        var bin = Path.Combine(ManagedHome(home, harness, version), "node_modules", ".bin");
+        var managed = ManagedHome(home, harness, version);
+        var vendor = Path.Combine(managed, "bin", OperatingSystem.IsWindows() ? binary[0] + ".exe" : binary[0]);
+        if (File.Exists(vendor)) return vendor;
+
+        var bin = Path.Combine(managed, "node_modules", ".bin");
         foreach (var candidate in new[]
                  {
                      Path.Combine(bin, binary[0] + ".cmd"),
@@ -1477,13 +1488,21 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 /// </summary>
 public sealed class HarnessRun
 {
-    private readonly Process _process;
+    private readonly Process? _process;
+    private readonly CancellationTokenSource? _download;
 
     internal HarnessRun(Process process) => _process = process;
+
+    /// <summary>
+    /// A pin from a maker's channel (AGT2b): no process at all — Daoris downloads it — so there is
+    /// nothing to answer, and stopping it is cancelling the download.
+    /// </summary>
+    internal HarnessRun(CancellationTokenSource download) => _download = download;
 
     /// <summary>Answer the harness's prompt — one line, as a terminal would send it.</summary>
     public void Send(string line)
     {
+        if (_process is null) return; // A download asks nothing.
         try
         {
             _process.StandardInput.WriteLine(line);
@@ -1500,9 +1519,10 @@ public sealed class HarnessRun
     {
         try
         {
-            if (!_process.HasExited) _process.Kill(entireProcessTree: true);
+            _download?.Cancel();
+            if (_process is { HasExited: false }) _process.Kill(entireProcessTree: true);
         }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception)
+        catch (Exception error) when (error is InvalidOperationException or Win32Exception or ObjectDisposedException)
         {
             // Ended between the look and the kill.
         }
@@ -1537,12 +1557,16 @@ public static class HarnessActions
 
     /// <summary>
     /// Install one version into the directory Daoris owns (TOOL2/D57), leaving the machine's own
-    /// install alone. npm's own `--prefix`, aimed somewhere Daoris chose.
+    /// install alone: from the maker's own channel, verified, where the toolchain declares one
+    /// (AGT2b) — else npm's own `--prefix`, aimed somewhere Daoris chose.
     /// </summary>
+    /// <param name="transport">How a channel is reached — the network, unless a test holds its own.</param>
     public static Task<int> PinAsync(
         HarnessToolchain toolchain, string home, string harness, string version, Action<string> write,
-        CancellationToken ct = default, Action<HarnessRun>? started = null) =>
-        toolchain.Package is { Length: > 0 } package
+        CancellationToken ct = default, Action<HarnessRun>? started = null, HttpMessageHandler? transport = null) =>
+        toolchain.Channel is { Length: > 0 } channel
+            ? PinFromChannelAsync(toolchain, channel, home, harness, version, write, ct, started, transport)
+            : toolchain.Package is { Length: > 0 } package
             ? RunAsync(
                 ["npm", "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
                  $"{package}@{version}"],
@@ -1550,6 +1574,40 @@ public static class HarnessActions
             : throw new DriverException(
                 "that agent declares no package, so Daoris has no sanctioned way to fetch a version "
                 + "of it. Install it with its own tooling and Daoris will find it on PATH.");
+
+    /// <summary>
+    /// A pin from the maker's channel (AGT2b). 🔴 A version it cannot verify is refused before a byte
+    /// is fetched — and never handed to npm instead, which would be the same trust by another road.
+    /// An install already in place is the proof it verified, so re-pinning it fetches nothing.
+    /// </summary>
+    private static async Task<int> PinFromChannelAsync(
+        HarnessToolchain toolchain, string channel, string home, string harness, string version,
+        Action<string> write, CancellationToken ct, Action<HarnessRun>? started, HttpMessageHandler? transport)
+    {
+        if (channel != ClaudeReleases.Channel)
+        {
+            throw new DriverException(
+                $"this build installs from no `{channel}` channel, so nothing was fetched or pinned. `daoris agent "
+                + $"pin {harness} {version}` in a terminal knows every channel Daoris does.");
+        }
+        ClaudeReleases.RefuseVersion(version);
+
+        if (HarnessSettings.ManagedBinary(home, harness, version, toolchain.Binary) is { } present)
+        {
+            write($"{toolchain.Product ?? harness} {version} is already installed where Daoris keeps it — nothing was downloaded.");
+            write(present);
+            return 0;
+        }
+
+        using var download = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        started?.Invoke(new HarnessRun(download));
+        write($"installing {toolchain.Product ?? harness} {version} from {toolchain.Maker ?? "its maker"}'s own release "
+            + "channel, into a directory Daoris owns.");
+        await ClaudeReleases.InstallAsync(
+            HarnessSettings.ManagedHome(home, harness, version), version, write, download.Token, transport)
+            .ConfigureAwait(false);
+        return 0;
+    }
 
     /// <summary>Update a present harness through its own updater.</summary>
     public static Task<int> UpdateAsync(

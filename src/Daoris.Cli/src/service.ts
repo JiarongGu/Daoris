@@ -13,8 +13,17 @@
 //
 // Two tests enforce exactly that shape. The second is the one that matters — a gate breaks by an
 // innocuous import three modules deep acquiring a socket, not by an obvious `fetch`.
+//
+// It reaches one other kind of host (AGT2b): a vendor's release channel, for `agent pin`. That is the
+// same shape of conversation — a person asked for it, and no gate runs it — so it lives here rather
+// than giving the toolchain a socket of its own; the dispatcher hands the fetcher in.
 
+import { createWriteStream } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { once } from 'node:events';
+import { finished } from 'node:stream/promises';
 import { DaorisError } from './errors.ts';
+import type { Fetcher } from './channels.ts';
 
 /** Where the service is, and the key it wants — supplied by the environment, never committed. */
 export function endpoint(env: NodeJS.ProcessEnv = process.env): { url: string; key: string | null } {
@@ -75,4 +84,55 @@ export async function request(
 /** The service's own sentence, or a bare status when it did not compose one. */
 export function refusal(status: number, json: Record<string, unknown> | null): string {
   return typeof json?.error === 'string' ? json.error : `the service answered ${status}`;
+}
+
+/**
+ * A vendor's release channel, over HTTPS (AGT2b). It fetches and nothing else: every judgement about
+ * what arrived — the signature, the hashes, the version — is `channels.ts`'s, where it is tested
+ * without a network.
+ *
+ * @remarks
+ * A download is streamed to disk and hashed on the way, never held whole: a Claude Code binary is
+ * over 200 MB. A 404 answers null, because "that version is not there" is an answer the caller words;
+ * anything else that is not a 2xx is refused here with the address and the status.
+ */
+export function releaseFetcher(): Fetcher {
+  return {
+    async bytes(url) {
+      const response = await get(url);
+      return response ? Buffer.from(await response.arrayBuffer()) : null;
+    },
+
+    async save(url, to) {
+      const response = await get(url);
+      if (!response?.body) return null;
+
+      const hash = createHash('sha256');
+      let size = 0;
+      const out = createWriteStream(to);
+      try {
+        for await (const chunk of response.body as AsyncIterable<Uint8Array>) {
+          hash.update(chunk);
+          size += chunk.length;
+          if (!out.write(chunk)) await once(out, 'drain');
+        }
+      } finally {
+        out.end();
+        await finished(out);
+      }
+
+      return { sha256: hash.digest('hex'), size };
+    },
+  };
+
+  async function get(url: string): Promise<Response | null> {
+    const response = await fetch(url, { redirect: 'follow', headers: { 'user-agent': 'daoris' } })
+      .catch((error: Error) => {
+        throw new DaorisError(`could not reach ${new URL(url).host} — ${error.message}. Nothing was installed.`);
+      });
+
+    if (response.status === 404) return null;
+    if (!response.ok) throw new DaorisError(`${url} answered ${response.status} — nothing was installed.`);
+    return response;
+  }
 }

@@ -125,7 +125,12 @@ public sealed class ClaudeAcpTests : IDisposable
         var acp = Adapter().Toolchain;
         var pipe = AdapterSet.Built().Resolve("claude-code").Toolchain;
 
-        Assert.NotEqual(acp?.Package, pipe?.Package);
+        // Since AGT2b they do not even share a SOURCE: `claude` pins from Anthropic's release bucket,
+        // verified, and the adapter — which ships only on npm — from its package.
+        Assert.Equal(ClaudeReleases.Channel, pipe?.Channel);
+        Assert.Null(pipe?.Package);
+        Assert.Null(acp?.Channel);
+        Assert.NotNull(acp?.Package);
         Assert.NotEqual(acp?.Binary[0], pipe?.Binary[0]);
         // The binary is the PACKAGE's name, not the adapter's — verified against the installed one.
         Assert.Equal("claude-agent-acp", acp?.Binary[0]);

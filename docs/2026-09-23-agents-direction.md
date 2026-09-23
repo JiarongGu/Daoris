@@ -67,7 +67,7 @@ confirmed.
   updates itself, and it could, so the tool's own switch is now set. AGT2b fetches Claude Code from
   its release bucket at the pinned version, checked against the signed manifest, and Codex from its
   releases once the Windows archive and version choice are confirmed. npm stays for what ships
-  only there.
+  only there. **Built 2026-09-24**: `docs/2026-09-22-toolchain-design.md` §3a.
 - **AGT3 — an account that is an API key.** Each tool has its own way: Claude Code reads
   `ANTHROPIC_API_KEY` or a cloud provider's credentials; Codex signs in with one read from stdin
   (`codex login --with-api-key`, [auth](https://developers.openai.com/codex/auth)) and stores it in

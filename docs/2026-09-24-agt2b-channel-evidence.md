@@ -103,7 +103,22 @@ no update action.
     own binary distribution".
 - **OpenAI**: Apache-2.0. No page was found that speaks to third-party automated installers.
 
-## 4. Not confirmed
+## 4. What the build relies on (AGT2b, as built)
+
+`docs/2026-09-22-toolchain-design.md` §3a is the design. It relies on the following facts from
+this document and on nothing from §5.
+- **Claude Code:** the bucket layout, the platform names, the manifest's `version`, `platforms`,
+  `binary`, `checksum` and `size`, the signature's shape, the key and its fingerprint, and the first
+  signed version.
+- **Codex:** `release.json` and the GitHub fallback, the asset `digest`, the SUMS file, the targets,
+  and `bin/codex(.exe)` inside the package.
+
+The vendors' own files are kept byte for byte under `src/Daoris.Cli/test/fixtures/vendor/`, fetched
+once on 2026-09-24. They are the Claude Code 2.1.281 manifest and its signature, the release key,
+and the Codex 0.156.1 `release.json` and `codex-package_SHA256SUMS`. Both artefacts' tests verify
+against them, and `.gitattributes` keeps them unnormalized.
+
+## 5. Not confirmed
 
 - What `claude install <version>` verifies, and what `manifestSignatureEnforcement` and the darwin
   `bundle` field mean.

@@ -1,15 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
+import { gzipSync } from 'node:zlib';
 import {
   TOOLCHAINS, addKeyAccount, commandHarness, harnessesPath, keyOf, managedBinary, managedHome,
   nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
   resolveVersion, signInNew, writeHarnessSettings,
 } from '../src/toolchain.ts';
 import type { Toolchain } from '../src/toolchain.ts';
+import { CODEX_RELEASES, codexTarget } from '../src/channels.ts';
+import type { Fetcher } from '../src/channels.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
+import { TAR_END, tarEntry } from './_tar.ts';
 
 /**
  * `daoris agent` — management parity for the toolchain (D49 §4, D50).
@@ -770,5 +775,155 @@ test('a pin with nothing installed at it probes as absent rather than as PATH', 
 
   assert.equal(report.present, false);
   assert.match(report.problem ?? '', /9\.9\.9/);
+  fx.cleanup();
+});
+
+// ——— AGT2b: the two makers that publish their own channel are pinned from it; npm stays for the rest.
+
+test('Claude Code and Codex pin from their makers’ own channels, and everything else from npm', () => {
+  assert.equal(TOOLCHAINS['claude-code']!.channel, 'claude-code-releases');
+  assert.equal(TOOLCHAINS.codex!.channel, 'codex-releases');
+  // One source per pin: a harness declaring both would leave "which one did it come from" open.
+  for (const [name, toolchain] of Object.entries(TOOLCHAINS)) {
+    assert.ok(Boolean(toolchain.channel) !== Boolean(toolchain.package),
+      `${name} must pin from exactly one source — a channel or a package`);
+  }
+  // The doors and dsh ship only on npm.
+  for (const name of ['claude-code-acp', 'codex-acp', 'dsh']) assert.ok(TOOLCHAINS[name]!.package, name);
+});
+
+/**
+ * A vendor's install lands as `<version>/bin/<binary>` — the package's own layout for Codex, and the
+ * same shape for Claude Code's one file. npm's layout still resolves, because a pin made before this
+ * change is still an install somebody made; the vendor's is asked first.
+ */
+test('a managed install in the vendor’s layout resolves, ahead of npm’s', () => {
+  const fx = makeFixture('harness-managed-vendor');
+  const managed = managedHome(fx.root, 'codex', '0.156.1');
+  const windows = process.platform === 'win32';
+  mkdirSync(join(managed, 'bin'), { recursive: true });
+  mkdirSync(join(managed, 'node_modules', '.bin'), { recursive: true });
+  const vendor = join(managed, 'bin', windows ? 'codex.exe' : 'codex');
+  writeFileSync(vendor, '', 'utf8');
+  writeFileSync(join(managed, 'node_modules', '.bin', windows ? 'codex.cmd' : 'codex'), '', 'utf8');
+
+  assert.equal(managedBinary(fx.root, 'codex', '0.156.1', ['codex']), vendor);
+  fx.cleanup();
+});
+
+test('pin refuses a Claude Code from before signed manifests, before anything is fetched', () => {
+  const fx = makeFixture('harness-pin-unsigned');
+  const error = captureError(() => run(['pin', 'claude-code', '2.1.87'], at(fx)));
+
+  assert.match(error.message, /2\.1\.89/);
+  assert.equal(readHarnessSettings(at(fx)).versions['claude-code'], undefined);
+  fx.cleanup();
+});
+
+/** The whole verb over a fetcher the test holds: fetch, verify, unpack, and only then pin. */
+async function runPin(argv: string[], path: string, fetcher: Fetcher): Promise<{ code: number; out: string }> {
+  const saved = process.env.DAORIS_HARNESS_CONFIG;
+  process.env.DAORIS_HARNESS_CONFIG = path;
+  const lines: string[] = [];
+  try {
+    const code = await commandHarness({
+      root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
+    }, fetcher);
+    return { code, out: lines.join('\n') };
+  } finally {
+    if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
+    else process.env.DAORIS_HARNESS_CONFIG = saved;
+  }
+}
+
+/** A Codex release for THIS machine, in the vendor's metadata shape, served from a table. */
+function codexServed(version: string, pkg: Buffer): { fetcher: Fetcher; asked: string[] } {
+  const target = codexTarget();
+  const name = `codex-package-${target}.tar.gz`;
+  const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
+  const sums = Buffer.from(`${hash(pkg)}  ${name}\n`);
+  const base = `${CODEX_RELEASES}/${version}`;
+  const files: Record<string, Buffer> = {
+    [`${base}/release.json`]: Buffer.from(JSON.stringify({
+      tag_name: `rust-v${version}`,
+      assets: [
+        { name, digest: `sha256:${hash(pkg)}`, browser_download_url: `${base}/${name}` },
+        { name: 'codex-package_SHA256SUMS', digest: `sha256:${hash(sums)}`, browser_download_url: `${base}/codex-package_SHA256SUMS` },
+      ],
+    })),
+    [`${base}/${name}`]: pkg,
+    [`${base}/codex-package_SHA256SUMS`]: sums,
+  };
+  const asked: string[] = [];
+  return {
+    asked,
+    fetcher: {
+      async bytes(url) {
+        asked.push(url);
+        return files[url] ?? null;
+      },
+      async save(url, to) {
+        asked.push(url);
+        const bytes = files[url];
+        if (!bytes) return null;
+        writeFileSync(to, bytes);
+        return { sha256: hash(bytes), size: bytes.length };
+      },
+    },
+  };
+}
+
+function codexPackage(): Buffer {
+  const exe = process.platform === 'win32' ? '.exe' : '';
+  return gzipSync(Buffer.concat([
+    tarEntry('codex-package.json', '{}'), tarEntry(`bin/codex${exe}`, 'codex', '0', 0o755), TAR_END,
+  ]));
+}
+
+test('pin fetches from the channel, verifies, installs, and only then pins', async () => {
+  const fx = makeFixture('harness-pin-channel');
+  const { fetcher, asked } = codexServed('0.156.1', codexPackage());
+
+  const result = await runPin(['pin', 'codex', '0.156.1'], at(fx), fetcher);
+
+  assert.equal(result.code, 0, result.out);
+  assert.equal(readHarnessSettings(at(fx)).versions.codex, '0.156.1');
+  assert.ok(managedBinary(fx.root, 'codex', '0.156.1', ['codex']), 'the pin points at nothing');
+  assert.equal(asked.length, 3);
+  assert.match(result.out, /OpenAI's own release channel/);
+  fx.cleanup();
+});
+
+test('a channel install that does not verify pins nothing, and says so', async () => {
+  const fx = makeFixture('harness-pin-channel-refused');
+  const served = codexServed('0.156.1', codexPackage());
+  const lying: Fetcher = {
+    bytes: served.fetcher.bytes,
+    // The right metadata, and the wrong bytes where the package should be.
+    async save(url, to) {
+      writeFileSync(to, 'not the package');
+      return url ? { sha256: createHash('sha256').update('not the package').digest('hex'), size: 15 } : null;
+    },
+  };
+
+  await assert.rejects(runPin(['pin', 'codex', '0.156.1'], at(fx), lying), /Nothing was pinned/);
+  assert.equal(readHarnessSettings(at(fx)).versions.codex, undefined);
+  assert.equal(managedBinary(fx.root, 'codex', '0.156.1', ['codex']), null);
+  fx.cleanup();
+});
+
+test('re-pinning a version already installed downloads nothing', async () => {
+  const fx = makeFixture('harness-pin-channel-present');
+  const managed = managedHome(fx.root, 'codex', '0.156.1');
+  mkdirSync(join(managed, 'bin'), { recursive: true });
+  writeFileSync(join(managed, 'bin', process.platform === 'win32' ? 'codex.exe' : 'codex'), '', 'utf8');
+  const { fetcher, asked } = codexServed('0.156.1', codexPackage());
+
+  const result = await runPin(['pin', 'codex', '0.156.1'], at(fx), fetcher);
+
+  assert.equal(result.code, 0);
+  assert.deepEqual(asked, []);
+  assert.match(result.out, /nothing was downloaded/);
+  assert.equal(readHarnessSettings(at(fx)).versions.codex, '0.156.1');
   fx.cleanup();
 });

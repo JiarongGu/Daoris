@@ -303,7 +303,7 @@ function reachableFrom(entry: string): Set<string> {
  * append to without thinking.
  */
 test('the file-local management verbs reach no network module either', () => {
-  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts']) {
+  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts', 'plugins.ts']) {
     const seen = reachableFrom(entry);
 
     assert.equal(
@@ -311,6 +311,25 @@ test('the file-local management verbs reach no network module either', () => {
       `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
     assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
   }
+});
+
+/**
+ * `agent pin` DOES reach a network since AGT2b — a maker's release channel — and the usage text says
+ * it is the one verb of its class that does. It reaches it the way `connect` reaches a service:
+ * through `service.ts`, which the DISPATCHER hands in. So the toolchain and everything that judges a
+ * download (the channel, the signature, the archive) import no network module, and the one place the
+ * two meet is a line in `cli.ts` a reviewer can read.
+ */
+test('agent pin reaches a release channel only through the fetcher the dispatcher hands in', () => {
+  for (const entry of ['channels.ts', 'openpgp.ts', 'tarball.ts']) {
+    const seen = reachableFrom(entry);
+    assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
+    assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
+  }
+
+  const dispatcher = readText(join(cliRoot, 'src', 'cli.ts'));
+  assert.match(dispatcher, /import \{ releaseFetcher \} from '\.\/service\.ts';/);
+  assert.match(dispatcher, /agent: \(args\) => commandHarness\(args, releaseFetcher\(\)\)/);
 });
 
 /**

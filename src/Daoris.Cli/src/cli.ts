@@ -13,6 +13,7 @@ import { commandConnect } from './connect.ts';
 import { commandImport, commandRetire } from './manage.ts';
 import { commandRemote } from './remotes.ts';
 import { commandHarness } from './toolchain.ts';
+import { releaseFetcher } from './service.ts';
 import { commandDriver } from './driverconfig.ts';
 import { commandPlugin } from './plugins.ts';
 import type { CommandArgs } from './types.ts';
@@ -64,7 +65,9 @@ const USAGE = `daoris <command> [options]
                          profile default <agent> <profile> [--workspace W]
                          pin <agent> <version> [--workspace W]
                                                    install that version somewhere
-                                                   Daoris owns, and run it
+                                                   Daoris owns, and run it. Claude
+                                                   Code and Codex come from their
+                                                   makers' own channels, verified
                          unpin <agent> [--workspace W]
                                                    back to whatever is on PATH
   driver [verb]        what this machine drives ($DAORIS_HOME/driver.json):
@@ -89,10 +92,11 @@ const USAGE = `daoris <command> [options]
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them. remote, agent, driver and plugin are
-  management too and reach no network — they edit files under the Daoris home
-  ($DAORIS_HOME, the installed application's own data folder; nothing lives under
-  your profile), and agent spawns each agent's own tooling. Every doctrine
-  command is offline.
+  management too — they edit files under the Daoris home ($DAORIS_HOME, the
+  installed application's own data folder; nothing lives under your profile),
+  and agent spawns each agent's own tooling. Of them only agent pin opens a
+  connection itself: a maker's release channel, for Claude Code and Codex.
+  Every doctrine command is offline.
 
 Options:
   --dry-run            print the plan; write nothing
@@ -123,7 +127,8 @@ const commands: Record<string, (args: CommandArgs) => ExitCode | Promise<ExitCod
   retire: commandRetire,
   import: commandImport,
   remote: commandRemote,
-  agent: commandHarness,
+  // `pin` fetches a vendor's release (AGT2b) through the one module that may reach a network.
+  agent: (args) => commandHarness(args, releaseFetcher()),
   driver: commandDriver,
   plugin: commandPlugin,
   analyze: commandAnalyze,

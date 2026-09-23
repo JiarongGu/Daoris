@@ -94,11 +94,11 @@ has never been trusted in refuses **naming the action that fixes it**.
 `docs/2026-09-22-toolchain-design.md` is the contract.
 
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
-no gate ever runs them. `remote`, `agent` and `driver` are management too and reach no network at
-all; they edit files under **the Daoris home** (`DAORIS_HOME` — the installed application's own
-`data/`, set once for your account, never your profile; D63), refusing with none set, and `agent`
-additionally spawns each agent's own installer, updater or login flow, only ever when you ask it
-to. Every other command above is offline by construction. **The machine's registry
+no gate ever runs them. `remote`, `agent` and `driver` are management too; they edit files under
+**the Daoris home** (`DAORIS_HOME` — the installed application's own `data/`, set once for your
+account, never your profile; D63), refusing with none set. `agent` runs each agent's own installer,
+updater or login flow when asked, and `agent pin` fetches Claude Code or Codex from its maker's
+channel, verified. Every other command above is offline by construction. **The machine's registry
 is the authority** on who is in the family: being in a folder is not being a member, so a repository
 joins by connecting and leaves by retiring. `import` is the old folder scan, demoted to something a
 person runs, and safe to re-run because it states no workspace and unstated wiring is preserved. A

@@ -814,7 +814,9 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
             LoggedIn: @"""loggedIn""\s*:\s*true",
             LoggedOut: @"""loggedIn""\s*:\s*false",
             Account: @"""email""\s*:\s*""([^""]+)"""),
-        Package: "@anthropic-ai/claude-code",
+        // A pin comes from the release bucket, against its SIGNED manifest (AGT2b) — the npm package
+        // installs the same native binary, with nothing but npm's own integrity check behind it.
+        Channel: ClaudeReleases.Channel,
         // 🔴 Where it records the workspaces a person has accepted (DEPLOY1). Read before every
         // driven spawn, because an untrusted tree makes the repository's own allow-list inert and
         // the session cannot then take or close its quest — nine minutes and a real login, three

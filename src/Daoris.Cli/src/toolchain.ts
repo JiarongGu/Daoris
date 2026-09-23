@@ -27,6 +27,8 @@
 // It is a MANAGEMENT command and it opens no socket. It does spawn processes — that is the whole
 // point: install, update and login are each harness's OWN mechanism, run by Daoris rather than
 // remembered by hand. `child_process` is a Node built-in, so the zero-dependency guarantee stands.
+// `pin` fetches a vendor's release (AGT2b) through a fetcher the dispatcher hands in — the network
+// stays in `service.ts`, and nothing here can open one of its own.
 //
 // DAORIS NEVER SEES, STORES OR COPIES A SIGN-IN. An API key is the one exception, and only when a
 // person gives one (`agent key`, D67 §1). It manages directories and names; login runs the
@@ -43,6 +45,8 @@ import { normalizeWorkspace } from './remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
 import { readPlugins, resolvable } from './plugins.ts';
+import { installFromChannel, refuseVersion } from './channels.ts';
+import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -92,6 +96,12 @@ export interface Toolchain {
    * I own". A harness that declares no package cannot be pinned, and says so.
    */
   package?: string;
+  /**
+   * The maker's OWN release channel a managed install fetches from (AGT2b), when the maker publishes
+   * one — verified end to end in `channels.ts`, never through npm. A harness declares this or
+   * `package`, never both: which source a pin came from is not left for anyone to work out.
+   */
+  channel?: Channel;
   /** Its own updater, as arguments to the binary. */
   update?: string[];
   /** Its own login flow, as arguments to the binary, run with a profile home in the environment. */
@@ -161,7 +171,9 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     version: ['--version'],
     profileVariable: 'CLAUDE_CONFIG_DIR',
     install: ['npm', 'install', '-g', '@anthropic-ai/claude-code'],
-    package: '@anthropic-ai/claude-code',
+    // A pin comes from the release bucket, against its SIGNED manifest (AGT2b) — the npm package
+    // installs the same native binary, with nothing but npm's own integrity check behind it.
+    channel: 'claude-code-releases',
     update: ['update'],
     login: ['auth', 'login'],
     // It answers JSON — and volunteers an email, an organisation and a subscription tier with it.
@@ -205,7 +217,10 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     version: ['--version'],
     profileVariable: 'CODEX_HOME',
     install: ['npm', 'install', '-g', '@openai/codex'],
-    package: '@openai/codex',
+    // A pin comes from the release's own package, by both of its published hashes (AGT2b). No
+    // `pinnedEnv`: an executable outside Codex's own standalone layout gets no update action, so a
+    // pin stays the version pinned without a switch (the channel evidence, §2).
+    channel: 'codex-releases',
     update: ['update'],
     login: ['login'],
     // ANCHORED, and that is load-bearing: this harness answers a sentence rather than a field, and
@@ -373,9 +388,13 @@ export function managedHome(home: string, harness: string, version: string): str
  * The executable inside a managed install, or null when there is no pin or nothing installed at it.
  *
  * @remarks
- * **npm's layout, because npm is how these harnesses ship**: `--prefix <dir>` puts the package under
- * `<dir>/node_modules` and its shims in `<dir>/node_modules/.bin`. Windows gets a `.cmd` beside the
- * shell script, so whichever exists is the answer.
+ * **Two layouts, the vendor's first** (AGT2b). A pin from a maker's own channel lands as
+ * `<dir>/bin/<binary>` — `.exe` on Windows — which is Codex's package layout and the same shape for
+ * Claude Code's one file; it is moved into place only once it verified, so finding it is the proof.
+ * Then **npm's layout, for what ships only there**: `--prefix <dir>` puts the package under
+ * `<dir>/node_modules` and its shims in `<dir>/node_modules/.bin`, with a `.cmd` beside the shell
+ * script on Windows. A pin npm made before AGT2b still resolves — it is an install somebody made.
+ * The driver's `ManagedBinary` is the twin.
  *
  * 🔴 **A pin whose directory is not there answers null, and the caller must say so** rather than
  * quietly falling back to `PATH` — that would run a different tool than the one the person asked for
@@ -389,7 +408,11 @@ export function managedBinary(
   const name = binary[0];
   if (!name) return null;
 
-  const bin = join(managedHome(home, harness, version), 'node_modules', '.bin');
+  const managed = managedHome(home, harness, version);
+  const vendor = join(managed, 'bin', process.platform === 'win32' ? `${name}.exe` : name);
+  if (existsSync(vendor)) return vendor;
+
+  const bin = join(managed, 'node_modules', '.bin');
   for (const candidate of [join(bin, `${name}.cmd`), join(bin, name)]) {
     if (existsSync(candidate)) return candidate;
   }
@@ -727,8 +750,14 @@ export function signInNew(
  * @remarks
  * Verbs, not flags: `install` and `login` do entirely different things to different parts of the
  * machine, and a boolean distinguishing them is the shape that eventually gets defaulted wrong.
+ *
+ * `releases` is how `pin` reaches a vendor's channel (AGT2b): handed in by the dispatcher from
+ * `service.ts`, so this module never holds a socket of its own. Every other verb is synchronous and
+ * never touches it.
  */
-export function commandHarness({ argv, write }: CommandArgs): ExitCode {
+export function commandHarness(
+  { argv, write }: CommandArgs, releases: Fetcher | null = null,
+): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = harnessesPath();
   const home = harnessHome(path);
@@ -793,7 +822,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
     // The managed toolchain (TOOL2/D57): Daoris owns where this version lives and which one runs.
     case 'pin': {
       const { name, toolchain } = required(argv, 'pin');
-      if (!toolchain.package) {
+      if (!toolchain.package && !toolchain.channel) {
         throw new DaorisError(
           `\`${name}\` declares no package, so Daoris has no sanctioned way to fetch a version of `
           + 'it. Install it with its own tooling and Daoris will find it on PATH.');
@@ -802,6 +831,14 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
       const version = bare(argv, 2, 'pin', '<agent> <version>');
       const where = managedHome(home, name, version);
       const workspace = flagValue(argv, '--workspace');
+
+      // The maker's own channel (AGT2b). A version it cannot verify is refused HERE, before a
+      // single byte is fetched — and never handed to npm instead, which would be the same trust by
+      // another road.
+      if (toolchain.channel) {
+        refuseVersion(toolchain.channel, version);
+        return pinFromChannel(name, toolchain, toolchain.channel, version, where, workspace);
+      }
 
       write(`daoris: installing \`${toolchain.package}@${version}\` into a directory Daoris owns.`);
       write(`  ${where}`);
@@ -814,13 +851,7 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
         return installed;
       }
 
-      pinTo(name, version, workspace);
-      write(workspace
-        ? `daoris: \`${name}\` runs at ${version} for the \`${workspace}\` circle on this machine.`
-        : `daoris: \`${name}\` runs at ${version} on this machine.`);
-      write('  Sessions spawn this binary rather than whatever is on PATH. `daoris agent unpin`');
-      write('  puts it back, and the version is on every session record either way.');
-      return 0;
+      return pinned(name, version, workspace);
     }
 
     case 'unpin': {
@@ -863,6 +894,53 @@ export function commandHarness({ argv, write }: CommandArgs): ExitCode {
     default:
       throw new DaorisError(
         `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile`);
+  }
+
+  /**
+   * Install one version from its maker's own channel, verified, and only then pin to it (AGT2b).
+   *
+   * @remarks
+   * An install already in place is the proof it verified — the channel moves it there only after
+   * every check — so re-pinning it fetches nothing, which is what `unpin` promises.
+   */
+  async function pinFromChannel(
+    name: string, toolchain: Toolchain, channel: Channel, version: string, where: string,
+    workspace: string | undefined,
+  ): Promise<ExitCode> {
+    const present = managedBinary(home, name, version, toolchain.binary);
+    if (present) {
+      write(`daoris: \`${name}\` ${version} is already installed where Daoris keeps it — nothing was downloaded.`);
+      write(`  ${present}`);
+      return pinned(name, version, workspace);
+    }
+
+    if (!releases) {
+      throw new DaorisError(`this build was given no way to reach ${toolchain.maker ?? 'the maker'}'s release channel, so nothing was fetched or pinned.`);
+    }
+
+    write(`daoris: installing ${toolchain.product ?? name} ${version} from ${toolchain.maker ?? 'its maker'}'s own `
+      + 'release channel, into a directory Daoris owns.');
+    write(`  ${where}`);
+    try {
+      await installFromChannel({ channel, version, where, fetcher: releases, write });
+    } catch (error) {
+      if (!(error instanceof DaorisError)) throw error;
+      throw new DaorisError(`${error.message}\n  Nothing was pinned: a pin naming a version that is not `
+        + 'there would run a different tool than the one you asked for.', error.exitCode);
+    }
+
+    return pinned(name, version, workspace);
+  }
+
+  /** Write the pin, and say what it now means. */
+  function pinned(name: string, version: string, workspace: string | undefined): ExitCode {
+    pinTo(name, version, workspace);
+    write(workspace
+      ? `daoris: \`${name}\` runs at ${version} for the \`${workspace}\` circle on this machine.`
+      : `daoris: \`${name}\` runs at ${version} on this machine.`);
+    write('  Sessions spawn this binary rather than whatever is on PATH. `daoris agent unpin`');
+    write('  puts it back, and the version is on every session record either way.');
+    return 0;
   }
 
   /** Write one pin, machine-wide or for one circle. Null takes it off. */

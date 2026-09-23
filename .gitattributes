@@ -9,6 +9,10 @@
 # authority should not rest on every reader remembering to normalize.
 * text=auto eol=lf
 
+# A vendor's release files, kept byte for byte (AGT2b): a signature and a published hash speak for
+# exact bytes, and a normalized fixture would fail its own verification for a reason that is ours.
+src/Daoris.Cli/test/fixtures/vendor/** -text
+
 # Written by `daoris sync`, which writes LF atomically. Never a merge conflict worth resolving by
 # hand: regenerate it instead.
 daoris.lock -merge

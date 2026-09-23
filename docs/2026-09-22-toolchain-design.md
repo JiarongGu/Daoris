@@ -54,7 +54,9 @@ seam. Building them together would mean one change that cannot be reviewed.
   harnesses, `npm install --prefix <dir> <package>@<version>`, which is the same mechanism already
   declared, aimed somewhere Daoris owns. No vendoring, no bundling: **a harness's own packaging stays
   its own problem** (D53's note on dsh's 561 MB), and the version installed is asserted rather than
-  assumed.
+  assumed. **As built since AGT2b (2026-09-24), Claude Code and Codex are fetched from their makers'
+  own channels and verified**; npm stays for what ships only there — the two ACP adapters and dsh.
+  §3a is how.
 - **Selection is: the explicit command, then the managed pin, then `PATH` — and it decides every
   question about that binary, not only which one to spawn.** *Is it installed? Which version? Is this
   profile logged in?* are all asked of the **resolved** binary. Stated because it was got wrong: the
@@ -89,6 +91,112 @@ plus an asserted version buys the same certainty at none of that cost.
 **Rejected: making the managed path the default the moment it exists.** A machine that has been
 driving on its own `claude` would silently switch tool versions under a running arrangement. Absent
 means `PATH`, and a pin is a thing the person did.
+
+## 3a. The makers' own channels, as built (AGT2b, 2026-09-24)
+
+Every URL, shape and name below was checked first, and the checks are in
+`docs/2026-09-24-agt2b-channel-evidence.md`. Nothing that document lists as unconfirmed is relied on.
+A toolchain declares **a `channel` or a `package`, never both**, so where a pin came from is never an
+open question. The CLI's `channels.ts` and the driver's `ReleaseChannel.cs` are twins.
+
+**Claude Code, from Anthropic's release bucket.** Each step runs only if the one before it passed.
+1. Fetch `<version>/manifest.json` and the detached signature beside it.
+2. Verify the signature under the **pinned** release key: v4, RSA, SHA-512, fingerprint
+   `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`. Daoris carries the key rather than fetching it.
+   A test holds the carried key equal to the published one, and the verifier still checks the key
+   against the pin.
+3. Read the version the manifest signed. A genuine manifest served under another version's URL
+   verifies perfectly, and this is the only check that stops it.
+4. Fetch that platform's binary directly. Its SHA-256 and size must match the manifest.
+
+It never runs the bootstrap or `claude install`: the bootstrap always fetches latest, and what the
+subcommand verifies is undocumented.
+
+The OpenPGP verifier has no dependency: packets are parsed by hand and the RSA is the platform's.
+It reads one shape only (armoured, detached, binary document, v4 RSA) and refuses anything else by
+name. The signer must be the pinned **primary** key; a subkey is refused rather than trusted.
+Revocation and expiry are not read, because the pin is the decision. **A key rotation is a reviewed
+change to one line in each twin.**
+
+**Before 2.1.89 there is no signature, so there is no pin.** The first signed manifest is 2.1.89's;
+2.1.87's `.sig` answers 404. An earlier version is refused before anything is fetched, and the
+refusal says what still works: install it with its own tooling, and Daoris runs it from `PATH`.
+
+**Codex, from its release's own package.** Each step runs only if the one before it passed.
+1. Fetch `release.json`. If it does not answer (a 404 or no connection), ask the GitHub release
+   instead. Metadata that answers and then fails a check is refused and never traded for a second
+   opinion.
+2. The metadata's tag must name the pinned version.
+3. The `SHA256SUMS` file's hash must match the metadata's digest for it.
+4. The package's line in that file must equal the metadata's own digest for the package. Two
+   published hashes that disagree refuse before anything large is fetched.
+5. Download the package and check its hash.
+6. Unpack it whole, because the executable finds `rg` and its helpers through the package's own
+   layout.
+
+A download address must be HTTPS. The unpacking has no dependency (gzip is `node:zlib`) and refuses:
+- an absolute name
+- a `..` name
+- a Windows stream name
+- a link of either kind
+- a header that fails its checksum
+- an archive that stops before its end marker
+
+**Codex has no signature to check** (evidence §2), so its trust is TLS to the vendor's host plus
+two published hashes that must agree. That is less than Claude Code's chain, and the design says so
+rather than implying parity.
+
+**The layout.** A channel install is staged at `<version>.part` and moved to
+`toolchain/<agent>/<version>/` only once everything verified. Every refusal removes the staging. So
+`bin/<binary>` (`.exe` on Windows) exists only if it verified: **finding it is the proof**, and
+re-pinning an installed version downloads nothing. `managedBinary` / `ManagedBinary` look for the
+vendor's layout first and npm's after it, because a pin npm made before this change is still an
+install somebody made.
+
+**Staying pinned.** Claude Code keeps AGT2a's `DISABLE_UPDATES=1` on every pinned spawn. Codex
+declares no switch: per the evidence, an executable outside Codex's own standalone layout gets no
+update action. That is documented but not measured on a real pinned install, which spends a real
+download; AGT2c is that measurement.
+
+**Where the network is.** In the CLI it is still only in `service.ts`. `releaseFetcher()` is handed
+to `agent pin` by the dispatcher (`cli.ts`), so `toolchain.ts` and everything that judges a download
+import no network module. A dogfood test holds both halves, and the usage text names `agent pin` as
+the one management verb that opens a connection itself. The driver fetches through its own
+`HttpClient`, with no timeout: a Claude Code binary is over 200 MB, and the person's *stop* cancels
+it.
+
+**Two doors (D50).**
+- **Terminal:** `daoris agent pin claude-code <v>` and `daoris agent pin codex <v>`.
+- **Screen:** the Machine view's pin control, for Claude Code only. The driver declares no `codex`
+  toolchain; its Codex is the `codex-acp` door, an npm package that still pins from npm. Anything
+  a screen can set, a terminal can, and this is the reverse case, which D50 allows.
+
+**The vendor's terms** (evidence §3):
+- **The binary is installed and run as published.** The bytes that verified are the bytes that
+  land. Nothing is patched, wrapped or repacked, and setting the executable bit is the only change.
+- **No credential is intermediated.** The fetch carries none. Accounts are still directories
+  Daoris never reads (D49 §4, D66 §3), and a sign-in is still the tool's own flow.
+- **Daoris redistributes nothing.** Each machine fetches from the vendor's own host because a
+  person on that machine pinned a version. Running Claude Code *in a product or service* is under
+  the Commercial Terms, and that question belongs to whoever deploys Daoris that way.
+
+**Rejected:**
+- **npm as a fallback when the channel refuses.** The same trust by another road: a verification
+  failure must never quietly downgrade to a weaker check.
+- **The bootstrap and `claude install <version>`.** One always fetches latest, and the other
+  verifies nothing documented.
+- **Fetching the release key at install time.** One more fetch, and a key that could be swapped in
+  transit. The pin would still catch a swap, so this was rejected on cost, not safety.
+- **The GitHub releases of `anthropics/claude-code`.** Signed, but no setup document names them, so
+  whether they are a supported channel is unconfirmed.
+- **Codex's bare `.exe` asset.** It loses the helpers the package carries.
+
+**What the gates do not cover:**
+- No test touches the network, so the real fetchers (`releaseFetcher`, the driver's `HttpClient`)
+  against the real hosts are unexercised.
+- The unpacking is tested on packages built in the test, never on a real Codex tarball.
+- Musl detection and Windows arm64 are mapped but never run.
+- The first real pin of each is AGT2c's to observe.
 
 ## 4. Measurement
 
