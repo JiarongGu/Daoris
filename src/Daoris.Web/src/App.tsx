@@ -13,6 +13,7 @@ import {
 } from './ui';
 import { OverviewView } from './OverviewView';
 import { ConvergenceView } from './ConvergenceView';
+import { MapView } from './MapView';
 import { SearchView } from './SearchView';
 import { QuestsView } from './QuestsView';
 import { ProjectsView } from './ProjectsView';
@@ -32,7 +33,7 @@ import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
 
-type Tab = 'overview' | 'sessions' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
+type Tab = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'settings';
 
 /**
  * Whether the person was last watching Sessions — a per-browser preference like the language and the
@@ -81,6 +82,9 @@ const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
   { tab: 'sessions', icon: 'frameWork', shellOnly: true },
   { tab: 'quests', icon: 'quests' },
   { tab: 'projects', icon: 'projects' },
+  // The workspace map (MAP2, D67 §3) — a view of its own, the owner's choice: how the repositories
+  // are wired, read at a glance.
+  { tab: 'map', icon: 'map' },
   { tab: 'convergence', icon: 'convergence' },
   { tab: 'search', icon: 'search' },
 ];
@@ -379,6 +383,7 @@ export function App() {
                   />
                 )}
                 {view === 'projects' && <ProjectsView notify={notify} />}
+                {view === 'map' && <MapView notify={notify} onOpenConvergence={() => setView('convergence')} />}
                 {view === 'convergence' && (
                   <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
                 )}

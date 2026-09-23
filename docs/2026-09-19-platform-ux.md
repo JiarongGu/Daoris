@@ -226,6 +226,11 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   non-adopters as the marked list with the join steps proposed as text.
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the
   drawer instead of a centered modal.
+- **Map** (MAP2) — the circle's repositories on a ring, the quests between them as directed arrows
+  with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
+  the chosen node or line holds, and a legend says every mark in words. It adds no actions. What the
+  window taught it (names outward, wide hit strokes, arrowheads in the map's units) is in
+  `docs/2026-09-23-map-design.md` §1.
 - **Settings** (D66) — *Appearance* first, for everyone: the theme and the language, each a
   segmented choice. Then, on the desktop only, **This machine**: the home's path under its heading,
   then cards that are *sections of one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,

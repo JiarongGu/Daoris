@@ -392,6 +392,10 @@ The first version: doctrine that installs, is checked, and flows back.
   the agent at spawn through `ANTHROPIC_API_KEY`. It is shown back only as its last four
   characters, and reads *unchecked*, because the tool says signed in for any key, a wrong one
   included. Removing the account removes its key. A sign-in stays the tool's, as before.
+- **A map of the workspace** (MAP2, D67 §3). *Map* on the activity bar draws the circle's
+  repositories, the quests that went between them (one arrow per direction, counted, solid while
+  any is open), and where two repositories learned the same thing. Choose a repository or a line to
+  see what it holds. It reads only what the service already serves, so it works in a browser too.
 - **An account its provider refused is not spent again** (AGT3b). A session that fails with the
   tool's own "API Error: 401" ends saying which account was refused and what fixes it. Further
   starts on that account are held, instead of each sitting through the tool's minutes of silent

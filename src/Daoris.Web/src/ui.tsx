@@ -8,7 +8,7 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowLeftRight, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy, FileDiff, GitMerge,
   Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, LogIn, Monitor,
-  Paperclip, Plus, RotateCw, Search, Settings, SquareArrowOutUpRight, SquareTerminal,
+  Network, Paperclip, Plus, RotateCw, Search, Settings, SquareArrowOutUpRight, SquareTerminal,
   Trash2, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,8 @@ const ICONS = {
   quests: ArrowLeftRight,
   projects: Layers,
   convergence: GitMerge,
+  // The workspace map (MAP2): repositories as nodes, and what moved between them.
+  map: Network,
   search: Search,
   // A GEAR (D66): Settings is the application's settings page now, and a gear is what every
   // application draws for one. The sliders it wore as "Machine" read as a mixer, not a place.

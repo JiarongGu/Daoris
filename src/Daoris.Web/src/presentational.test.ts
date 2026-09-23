@@ -47,7 +47,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
     FORBIDDEN.filter((rule) => rule.pattern.test(source)).map((rule) => `${path} imports ${rule.what}`));
 }
 
-const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx}}', {
+// `map/` since MAP2: the map's drawing and detail are molecules, and MapView above them is the view.
+const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

@@ -4250,3 +4250,22 @@ answers turned AGT5 (the wiring) into the roadmap's MAP arc (MAP1–MAP3).
 Dated studies and evidence (the dsh evaluation, the plugin study, the ACP3 probe) keep the old verb,
 because they record what was run. CLI 324, driver 369, modules 97, web 555 + 16, family 212/212,
 deploy 39/39.
+
+## MAP2 — the workspace topology (2026-09-23)
+
+- [x] **MAP2 — the workspace topology**, a view of its own (`docs/2026-09-23-map-design.md` §1).
+
+✅ **done 2026-09-23.** *Map* on the activity bar and in the palette. It draws the circle's
+repositories on a ring, the quests between them as one directed arrow per direction (solid while
+any is open, faint once all are closed), and a shared finding as a dashed line. It reads only what
+the service already serves (registry, quests, convergence, sessions), so it needs no model and shows
+no machine path. `map/topology.ts` holds the model and layout as pure functions. `MapCanvas` and
+`MapDetail` are molecules, and the presentational test now covers `map/`. A quest with an end off
+the map (an ask, an outside repository) is counted rather than drawn.
+
+**Found on the window, in both themes**: names always below were crossed by the arrow into the
+top node, so they now sit outward (`placeLabel`, tested). Arrowheads that scaled with the line
+made the chosen line's head twice the size of the others, so they are now sized in the map's units.
+Found by the browser gate: a two-pixel curve could not be pressed, so every line now has a wide
+invisible hit stroke and a count disc on the line. Web 571 + 17 (the e2e presses the game → engine
+line and reads its quests), CLI 331.

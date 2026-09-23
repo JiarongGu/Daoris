@@ -122,6 +122,23 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
+/**
+ * **The workspace map** (MAP2, D67 §3) — a view of its own, over the real host: the family's two
+ * repositories as nodes, and the quests the tests above sent from the game to the engine as one line.
+ */
+test('the map draws the family and the quests that moved between them', async ({ page }) => {
+  await page.goto('/');
+  await nav(page, 'Map').click();
+  await expect(page.getByRole('heading', { name: 'Map' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^engine, \d+ open/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^game, \d+ open/ })).toBeVisible();
+
+  // The line's count sits on the line, and is where a person aims.
+  await page.getByRole('button', { name: /quests? from game to engine$/ }).locator('circle').click();
+  await expect(page.getByText('game → engine')).toBeVisible();
+  await expect(page.getByText('Develop the streaming cap')).toBeVisible();
+});
+
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();

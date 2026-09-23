@@ -6,9 +6,10 @@
 
 What each map draws, from which data, and where it lives. The owner settled the two open choices
 the same day (§1 and §3). The order is MAP2, then MAP1, then MAP3: MAP2 needs no new
-data, MAP1 needs the machine's wiring, and MAP3 needs a feed that does not exist yet.
+data, MAP1 needs the machine's wiring, and MAP3 needs a feed that does not exist yet. **MAP2 is
+built** (2026-09-23), and §1 describes it as it is.
 
-## 1. MAP2 — the workspace topology (first)
+## 1. MAP2 — the workspace topology
 
 **What it answers.** Which repositories are in this circle, what each is for, and how work and
 knowledge move between them. That is the thing a person otherwise reconstructs from five views.
@@ -17,22 +18,39 @@ knowledge move between them. That is the thing a person otherwise reconstructs f
 
 | On the map | From | Shows |
 |---|---|---|
-| A **node** per repository | the registry (`/api/registry`, scoped by workspace) | name; summary on hover; how many quests are open to it; whether a session is working there |
+| A **node** per repository | the registry (`/api/registry`, scoped by workspace) | name; how many quests are open to it, wherever they came from; whether a session is working there (ringed, and said in words) |
 | A **quest edge**, directed, from → to | the quest store | how many quests went that way. Solid while any is open, faint once all are closed. `then` chains are drawn as the same edge, one step on |
 | A **knowledge edge**, undirected and dotted | the convergence detector | two repositories that learned the same thing in different words. This is the one edge no text comparison finds (D17) |
 | **Declarations** (`owns`, `accepts`) | the registry | in the node's detail, not as edges: they are what each repository says of itself, and the edges are what actually happened |
 
-**Layout.** A pure function, `layout(nodes, edges) → positions`, deterministic and ordered by name,
-so the picture does not move between two looks at the same data. A ring for a small circle, and
-layers by quest flow once it grows. Tested as a function, then drawn as SVG on the design tokens
-(D41): status never by colour alone, and both themes. **No graph library**: a family is a handful
-to a few dozen repositories, and a layout engine would cost more in bundle and in look than it
-buys. MAP3 may need one; that is MAP3's decision.
+**A quest with an end off the map is counted, not drawn.** An ask's sender (`ask #…`) or a
+repository outside the circle is not a node; the map says how many such quests there are, and they
+still count toward the receiver's open number.
 
-**What a person does with it.** Hovering a node lights its edges. Clicking a node opens its detail:
-the declaration, the quests to and from it, its sessions. Clicking an edge opens those quests. The
-map adds no actions of its own: every act stays where it already lives (the quest drawer, the
-session view).
+**Layout.** Two pure functions in `src/Daoris.Web/src/map/`: `buildTopology` (the data above into
+nodes and edges) and `layoutRing` (positions, deterministic and ordered by name, so the picture does
+not move between two looks at the same data). A ring from the top, one node alone at the centre.
+Layers by quest flow are for a circle too big for a ring to read, and wait until one exists. Drawn
+as SVG on the design tokens (D41): status never by colour alone, and both themes. **No graph
+library**: a family is a handful to a few dozen repositories, and a layout engine would cost more in
+bundle and in look than it buys. MAP3 may need one; that is MAP3's decision.
+
+**Three things only the window showed** (2026-09-23), each now held by the code or a test:
+- **A name goes on the side facing away from the centre** (`placeLabel`). Every line runs inward, so
+  the outside is where no line arrives. With names always below, the arrow into the top node ran
+  through its name.
+- **A line is pressed through a wide invisible stroke**, and its count sits on the line at the
+  curve's midpoint. A two-pixel curve was a line nobody could press: in the browser gate the map
+  itself took the click.
+- **Arrowheads are sized in the map's units**, not the line's. A head that grew with the line's
+  width made the chosen line's arrow twice the size of the others.
+
+**What a person does with it.** Hovering a node lights its edges and dims the rest. Choosing a node
+(pointer or keyboard; every node and edge is a button) opens its detail: summary, declaration, and
+the quests into and out of it with their states in words. Choosing a quest edge lists that
+direction's quests. Choosing a knowledge edge says how many findings the pair shares and opens
+Convergence. The map adds no actions of its own: every act stays where it already lives (the quest
+drawer, the session view).
 
 **What it may show where.** Everything above is service-visible and carries no machine path, so the
 map works in a browser and against a shared deployment (D47 §4). A session's account and tree are

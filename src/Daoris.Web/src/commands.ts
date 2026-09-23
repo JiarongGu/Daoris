@@ -5,7 +5,7 @@ import type { IconName } from './ui';
 // can assert rather than a screen somebody has to arrange.
 
 /** The application's views (D66): one list, the activity bar's. */
-export type View = 'overview' | 'sessions' | 'quests' | 'projects' | 'convergence' | 'search' | 'settings';
+export type View = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'settings';
 
 /** A named thing a person can do, from anywhere. */
 export type Command = {
@@ -70,6 +70,7 @@ export function commands(world: {
     { view: 'sessions', icon: 'frameWork', keywords: 'work watch console conversation', shellOnly: true },
     { view: 'quests', icon: 'quests' },
     { view: 'projects', icon: 'projects' },
+    { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
     { view: 'convergence', icon: 'convergence' },
     { view: 'search', icon: 'search' },
     // Everywhere since D66: a browser has appearance to set, if nothing of a machine.
