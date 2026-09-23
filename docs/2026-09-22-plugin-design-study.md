@@ -81,6 +81,26 @@ indistinguishable from leaks.
 And Yaorin's, which costs nothing: **a manifest declares its API version and its capabilities, and the
 host reads both before it loads anything.**
 
+## 5a. Read again after D64 (2026-09-23) — what else the two references offer, and why not now
+
+Both trees were read a second time once the plugin system existed, looking for the next thing worth
+taking. Recorded so the next reader does not redo the survey:
+
+| Reference feature | Daoris's answer | Verdict |
+|---|---|---|
+| dsh's hook bridges (`dsh-hooks-claude-code`, `-codex`) map a harness's hook files onto its extension points | HELP3 — *where the guard lives* — has a measured third answer (`--settings` at spawn, ACP4's shape) | **Owner's** (a design question), not a build |
+| dsh's scheduled tasks and `/loop` | A plugin on `quest/consider` (the tracked example holds by title; a clock is one line more) | **Plugin territory now**, nothing for the host |
+| dsh's session query and search over session logs | The Work frame lists sessions; nothing searches transcripts | Not asked for; transcripts are machine-local by D47 §4, so it would be shell-only — **held until somebody wants it** |
+| dsh's workflow engine, agent teams, PTC runtime | — | **D1**: Daoris is process tooling, not an LLM product |
+| dsh's `--dump-config` (see the tree your machine boots) | `daoris status --machine`, `daoris plugin list`, `daoris harness list` | Already three doors; no fourth |
+| Yaorin's self-improvement cortex (memory, scoring, traces around every model call) | The knowledge index is the memory; no model runs in Daoris (D24) | **Declined** — the harness owns its own learning |
+| Yaorin's plugin tasks as durable jobs with progress | A session IS the job, with a record, a transcript and a console | Already true |
+| Yaorin's UI federation for plugin screens | D52: no plugin views | **Declined again** |
+| Yaorin's cross-device pairing | The remote (D47) | Already true, differently |
+
+The system taken from the two references is complete for what a plugin can do today; what would
+change it is a plugin somebody writes asking for a point the host lacks (PLUG7).
+
 ## 6. What this study does not settle
 
 - **Whether core should be overridable at all** (PLUG2) reopens D4's "no opt-out", which was a
