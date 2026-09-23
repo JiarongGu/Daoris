@@ -5,8 +5,9 @@ namespace Daoris.Service.Tests;
 
 /// <summary>
 /// A shared quest at the exchange (D68): every verb commits on this machine, whoever the receiver is,
-/// and nothing waits on a remote. What may leave is decided at the sync, by the receiver (design §8);
-/// what a quest carries leaves as names, never bytes; and a chain is all shared or all local.
+/// and nothing fails because a remote is down; a take on a shared quest claims by push (D69). What may
+/// leave is decided by the receiver (design §8); what a quest carries leaves as names, never bytes;
+/// and a chain is all shared or all local.
 /// </summary>
 public sealed class QuestShareTests : IAsyncLifetime
 {
@@ -55,6 +56,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _connection.DisposeAsync();
+        if (_remoteConnection is not null) await _remoteConnection.DisposeAsync();
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
@@ -65,24 +67,101 @@ public sealed class QuestShareTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(dir, "daoris.json"), manifest);
     }
 
-    /// <summary>The ordinary machine: its one circle wired to a remote — or, with false, no remote at all.</summary>
-    private QuestExchange Exchange(bool wired = true, QuestFiles? files = null) =>
-        new(_service, _quests, wired ? _ => true : null, files);
+    /// <summary>
+    /// The ordinary machine: its one circle wired to <paramref name="remote"/> — offline by default, and
+    /// with null, a machine with no remote at all.
+    /// </summary>
+    private QuestExchange Exchange(IQuestRemote? remote, QuestFiles? files = null) =>
+        new(_service, _quests, new OneRemote(remote), files);
+
+    private QuestExchange Exchange(QuestFiles? files = null) => Exchange(new UnreachableRemote(), files);
+
+    /// <summary>A second store, standing in for the remote itself.</summary>
+    private async Task<QuestStore> RemoteStoreAsync()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        _remoteConnection = connection;
+        return await QuestStore.OpenAsync(connection);
+    }
+
+    private SqliteConnection? _remoteConnection;
 
     /// <summary>
-    /// 🔴 Nothing waits on a remote (D68 §1): a quest to a joined receiver is published HERE, and a verb
-    /// on it commits HERE — the sync carries both later. Before, this publish wrote through or failed.
+    /// 🔴 Nothing fails because a remote is down (D68 §1): a quest to a joined receiver is published HERE,
+    /// and a take on it commits HERE — unconfirmed, and the answer says so and why. The sync carries both
+    /// when the remote answers again.
     /// </summary>
     [Fact]
-    public async Task A_shared_quest_is_published_and_moved_here()
+    public async Task A_shared_quest_is_published_and_taken_here_while_the_remote_is_down()
     {
         var published = await Exchange().PublishAsync("Asker", "Federated", "Do it", "why", Now);
         var taken = await Exchange().RespondAsync(published.Quest!.Id, "take", null, Now.AddHours(1));
 
         Assert.Equal(QuestPublishRefusal.None, published.Refusal);
         Assert.Equal(QuestRespondRefusal.None, taken.Refusal);
+        Assert.Contains("UNCONFIRMED", taken.Message);
+        Assert.Contains("could not be reached", taken.Message);
         Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(published.Quest.Id))!.Status);
+        Assert.Equal(QuestClaim.Unconfirmed, await _quests.ClaimAsync(published.Quest.Id));
         Assert.Equal(2, (await _quests.PendingAsync(Workspaces.Default, _ => true)).Count);
+    }
+
+    /// <summary>The claim by push (D69): a take on a shared quest waits for the remote, which numbers it.</summary>
+    [Fact]
+    public async Task A_take_on_a_shared_quest_claims_at_the_remote_before_it_answers()
+    {
+        var remote = await RemoteStoreAsync();
+        var exchange = Exchange(new StoreRemote(remote));
+        var published = await exchange.PublishAsync("Asker", "Federated", "Do it", "why", Now);
+
+        var taken = await exchange.RespondAsync(published.Quest!.Id, "take", null, Now.AddHours(1));
+
+        Assert.Equal(QuestRespondRefusal.None, taken.Refusal);
+        Assert.Contains("the remote confirmed the claim", taken.Message);
+        Assert.Equal(QuestStatus.Taken, (await remote.FindAsync(published.Quest.Id))!.Status);
+        Assert.Equal(QuestClaim.Held, await _quests.ClaimAsync(published.Quest.Id));
+        Assert.Empty(await _quests.PendingAsync(Workspaces.Default, _ => true));
+    }
+
+    /// <summary>
+    /// 🔴 The online race, decided before any work (D69): another machine's take reached the remote
+    /// first, so this take is rebased into a conflict and the session hears the stand-down it always
+    /// has. The quest is the winner's, here too, and the loser's attempt is kept on it.
+    /// </summary>
+    [Fact]
+    public async Task A_take_that_lost_at_the_remote_stands_down_and_is_kept_as_a_conflict()
+    {
+        var remote = await RemoteStoreAsync();
+        var exchange = Exchange(new StoreRemote(remote));
+        var published = await exchange.PublishAsync("Asker", "Federated", "Do it", "why", Now);
+        await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
+        await remote.MoveAsync(published.Quest!.Id, QuestStatus.Taken, "another machine's session", Now.AddMinutes(5));
+
+        var taken = await exchange.RespondAsync(published.Quest.Id, "take", "this machine's session", Now.AddMinutes(6));
+
+        Assert.Equal(QuestRespondRefusal.AlreadyTaken, taken.Refusal);
+        Assert.Contains("taken on another machine first", taken.Message);
+        Assert.Contains("Stand down", taken.Message);
+        var here = (await _quests.FindAsync(published.Quest.Id))!;
+        Assert.Equal("another machine's session", here.Note);
+        Assert.Equal(_quests.Machine, Assert.Single(here.Conflicts).Machine);
+        Assert.Equal(QuestClaim.Lost, await _quests.ClaimAsync(published.Quest.Id));
+    }
+
+    /// <summary>Silence means local: a take on a quest nobody shares is complete when it commits, and asks nothing.</summary>
+    [Fact]
+    public async Task A_take_on_a_quest_nobody_shares_never_asks_the_remote()
+    {
+        var remote = new StoreRemote(await RemoteStoreAsync());
+        var exchange = Exchange(remote);
+        var published = await exchange.PublishAsync("Asker", "Homebody", "Stay home", "why", Now);
+
+        var taken = await exchange.RespondAsync(published.Quest!.Id, "take", null, Now.AddHours(1));
+
+        Assert.Equal(QuestRespondRefusal.None, taken.Refusal);
+        Assert.Equal($"Quest `#{published.Quest.Id}` is now Taken.", taken.Message);
+        Assert.Equal(0, remote.Calls);
     }
 
     /// <summary>
@@ -138,7 +217,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     [Fact]
     public async Task The_same_chain_is_fit_on_a_machine_with_no_remote()
     {
-        var outcome = await Exchange(wired: false).PublishAsync(
+        var outcome = await Exchange(remote: null).PublishAsync(
             new QuestAsk("Asker", "Federated", "Develop", "why") { Then = [new QuestStep("Homebody", "Verify", "b")] }, Now);
 
         Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);

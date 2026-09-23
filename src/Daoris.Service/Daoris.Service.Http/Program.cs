@@ -117,14 +117,14 @@ if (Access.RefuseStartup(mode, urls) is { } refusal)
 // the construction itself is HostComposition's, shared with the MCP host so the two cannot drift.
 var embedder = HostComposition.BuildEmbedder(options);
 
-// Every verb commits in this host's store and the driver's sync carries it (D68). What a LOCAL host
-// needs of the remotes map is only whether a circle is wired, which a chain's composition asks — read
-// from the map when asked. A shared host IS a remote, and wires nothing.
+// Every verb commits in this host's store (D68). A LOCAL host syncs its quests with the remote each
+// circle names — when its driver asks, and when a take on a shared quest claims by push (D69) — reading
+// the remotes map when asked. A shared host IS a remote, and wires nothing.
 // A shared deployment is fed, not scanned (D47 §4) — and not only at the refresh route: the service
 // indexes on first use when its store is empty, so a shared host composed with the filesystem source
 // would scan the server's own disk on its first request and serve what it found to keyed callers.
 var composed = await ServiceFactory.CreateAsync(
-    options, embedder, wired: mode == ServiceMode.Local ? RemoteConfig.IsWired : null,
+    options, embedder, remotes: mode == ServiceMode.Local ? new ConfiguredQuestRemotes() : null,
     source: mode == ServiceMode.Shared ? new EmptyKnowledgeSource() : null,
     // A quest's files are kept by the machine that has them (D65 §2): a local host keeps them under
     // its home, and a shared host keeps none — it holds names, and its door refuses bytes outright.
@@ -737,11 +737,6 @@ app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 // SHARED host is fed by desktops — records and content arrive attributed to the key that carried
 // them — and orders the quest operations they push; a LOCAL host is fed by nobody, and its sync doors
 // answer only its own driver. A door with no meaning in a mode does not exist in that mode.
-const string OperationShape =
-    "every operation names its machine, sequence, quest, kind and time; a publish carries from, to, title and "
-    + "body, every file its name, sha256 and size, and every step its to, title and body; a conflict names "
-    + "what it attempted";
-
 if (mode == ServiceMode.Shared)
 {
     // Session records, keyed by origin + id — the judgement already ran where the process lived; the
@@ -823,81 +818,56 @@ if (mode == ServiceMode.Shared)
     });
 
     // The remote's quest doors (D68, sync design §8): what it accepted after a number, in its order,
-    // and a push rebased on one, judged quest by quest through the same table every machine uses.
+    // and a push rebased on one, judged quest by quest through the same table every machine uses. The
+    // wire is Core's (QuestWire), the one the machines' client writes — two hands, one shape.
     app.MapGet("/api/quests/operations", async (ComposedService s, long? since, CancellationToken ct) =>
-    {
-        var fetched = await s.Quests.OperationsSinceAsync(since ?? 0, ct: ct);
-        return Results.Ok(new QuestOperationsResponse(
-            fetched.Operations.Select(ToOperationWire).ToList(), fetched.Through, fetched.More));
-    });
+        Results.Text(QuestWire.Page(await s.Quests.OperationsSinceAsync(since ?? 0, ct: ct)), "application/json"));
 
-    app.MapPost("/api/quests/operations", async (ComposedService s, QuestPushRequest body, CancellationToken ct) =>
+    app.MapPost("/api/quests/operations", async (ComposedService s, HttpRequest request, CancellationToken ct) =>
     {
-        if (FromOperationWires(body.Operations, numbered: false) is not { } pushed)
+        using var body = new StreamReader(request.Body);
+        if (QuestWire.ReadPush(await body.ReadToEndAsync(ct)) is not var (@base, pushed))
         {
-            return Results.BadRequest(new ErrorResponse(OperationShape));
+            return Results.BadRequest(new ErrorResponse(QuestWire.Shape));
         }
 
         // The remote re-judges a publish as its own door would (JudgeReceived), and files it by the
         // receiver's registration HERE — the push names no workspace (SYNC0a).
         var registered = await s.Service.RegistryAsync(ct: ct);
-        var pushedTo = await s.Quests.ReceiveAsync(
-            body.Base ?? 0, pushed,
+        var judged = await s.Quests.ReceiveAsync(
+            @base, pushed,
             asked => s.Exchange.JudgeReceived(asked, registered),
             asked => registered.FirstOrDefault(r =>
                 string.Equals(r.Repository, asked.To, StringComparison.OrdinalIgnoreCase))?.InWorkspace ?? Workspaces.Default,
             ct);
-
-        return Results.Ok(new QuestPushResponse(
-            pushedTo.Accepted.Select(a => new QuestAcceptanceWire(a.Machine, a.Sequence, a.Number)).ToList(),
-            pushedTo.Behind,
-            pushedTo.Refused.Select(r => new QuestPushRefusalWire(r.Quest, r.Reason)).ToList()));
+        return Results.Text(QuestWire.Pushed(judged), "application/json");
     });
 }
 else
 {
-    // The machine's quest doors (D68, sync design §8) — what the driver's sync moves bytes through.
-    // Replaying and rebasing happen in the store, through the one table; the driver judges nothing.
-    app.MapGet("/api/quests/sync", async (ComposedService s, string? workspace, CancellationToken ct) =>
-        Results.Ok(new QuestCursorResponse(
-            Workspaces.Normalize(workspace), await s.Quests.CursorAsync(Workspaces.Normalize(workspace), ct))));
-
-    app.MapPost("/api/quests/sync", async (ComposedService s, QuestIntegrateRequest body, CancellationToken ct) =>
+    // The machine's quest doors (D69): a pass of fetch, rebase and push for one circle — what the
+    // driver's tick asks for, and the same pass a take on a shared quest runs as it claims — and where
+    // THIS machine's claim on a quest stands, which is how its driver knows a session to stop.
+    app.MapPost("/api/quests/sync", async (ComposedService s, string? workspace, CancellationToken ct) =>
     {
-        if (FromOperationWires(body.Operations, numbered: true) is not { } fetched)
+        var circle = Workspaces.Normalize(workspace);
+        if (s.Remotes?.For(circle) is not { } remote)
         {
-            return Results.BadRequest(new ErrorResponse(OperationShape + " — and a fetched one carries the number the remote gave it"));
+            return Results.Ok(new QuestSyncResponse(circle, s.Quests.Machine, Wired: false, 0, [], [], [], null));
         }
 
-        var circle = Workspaces.Normalize(body.Workspace);
-        var integrated = await s.Quests.IntegrateAsync(circle, fetched, body.Through ?? 0, ct);
-
-        // What may leave follows the receiver (sync design §8): joined in this circle, whether its
-        // checkout is here or a teammate's row came down without one. Silence means local.
-        var shared = (await s.Service.RegistryAsync(ct: ct))
-            .Where(r => r.Joined && Workspaces.Same(r.InWorkspace, circle))
-            .Select(r => r.Repository)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var pending = await s.Quests.PendingAsync(circle, shared.Contains, ct);
-
-        return Results.Ok(new QuestIntegrateResponse(
-            integrated.Cursor,
-            pending.Select(ToOperationWire).ToList(),
-            integrated.Conflicts.Select(ToOperationWire).ToList()));
+        var pass = await QuestSync.RunAsync(s.Quests, s.Service, remote, circle, ct);
+        return Results.Ok(new QuestSyncResponse(
+            circle, s.Quests.Machine, Wired: true, pass.Pushed,
+            pass.Conflicts.Select(c => new QuestConflictNote(c.Quest, (c.Attempted ?? QuestStatus.Open).ToString())).ToList(),
+            pass.Refused.Select(r => new QuestPushRefusalWire(r.Quest, r.Reason)).ToList(),
+            pass.Behind,
+            pass.Problem));
     });
 
-    app.MapPost("/api/quests/sync/accepted", async (ComposedService s, QuestAcceptedRequest body, CancellationToken ct) =>
-    {
-        var accepted = (body.Accepted ?? []).ToList();
-        if (accepted.Any(a => string.IsNullOrWhiteSpace(a.Machine) || a.Sequence is null || a.Number is null))
-        {
-            return Results.BadRequest(new ErrorResponse("every acceptance names its machine, its sequence and its number"));
-        }
-
-        await s.Quests.AcceptedAsync(
-            accepted.Select(a => new QuestAcceptance(a.Machine!, a.Sequence!.Value, a.Number!.Value)).ToList(), ct);
-        return Results.Ok(new FeedResponse(accepted.Count, $"{accepted.Count} operation(s) accepted."));
-    });
+    app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>
+        Results.Ok(new QuestClaimResponse(
+            id.TrimStart('#'), (await s.Quests.ClaimAsync(id.TrimStart('#'), ct)).ToString().ToLowerInvariant())));
 }
 
 app.Run();
@@ -935,67 +905,6 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => n
     q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
     q.Parent,
     q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At)).ToList());
-
-// An operation as both quest doors carry it (sync design §8): a publish's ask without its workspace,
-// files by name, and nothing a record may not name.
-static QuestOperationWire ToOperationWire(QuestOperation o) => new(
-    o.Number, o.Machine, o.Sequence, o.Quest, o.Kind.ToString().ToLowerInvariant(), o.At, o.Note,
-    o.Attempted?.ToString(),
-    o.Published is not { } asked
-        ? null
-        : new QuestAskedWire(
-            asked.From, asked.To, asked.Title, asked.Body, asked.Links,
-            asked.Attachments.Select(a => new QuestFileWire(a.Name, a.Sha256, a.Bytes)).ToList(),
-            asked.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
-            asked.Parent));
-
-// Operations off the wire — null when any is not whole, because an operation half-read is one the
-// store would replay as something nobody made. A publish arrives in the default circle; the store
-// files it by the receiving side's wiring (SYNC0a).
-static IReadOnlyList<QuestOperation>? FromOperationWires(IReadOnlyList<QuestOperationWire>? wires, bool numbered)
-{
-    var operations = new List<QuestOperation>();
-    foreach (var w in wires ?? [])
-    {
-        if (string.IsNullOrWhiteSpace(w.Machine) || w.Sequence is null || string.IsNullOrWhiteSpace(w.Quest)
-            || w.At is null || (numbered && w.Number is null)
-            || !Enum.TryParse<QuestOperationKind>(w.Kind ?? "", ignoreCase: true, out var kind) || !Enum.IsDefined(kind))
-        {
-            return null;
-        }
-
-        QuestStatus? attempted = null;
-        if (kind == QuestOperationKind.Conflict)
-        {
-            if (!Enum.TryParse<QuestStatus>(w.Attempted ?? "", ignoreCase: true, out var lost) || !Enum.IsDefined(lost)) return null;
-            attempted = lost;
-        }
-
-        Quest? published = null;
-        if (kind == QuestOperationKind.Published)
-        {
-            if (w.Asked is not { From: { } from, To: { } to, Title: { } title, Body: { } body } asked
-                || (asked.Attachments ?? []).Any(a => a.Name is null || a.Sha256 is null || a.Bytes is null)
-                || (asked.Then ?? []).Any(s => s.To is null || s.Title is null || s.Body is null))
-            {
-                return null;
-            }
-
-            published = new Quest(w.Quest, from, to, title, body, QuestStatus.Open, null, w.At.Value, w.At.Value)
-            {
-                Links = asked.Links ?? [],
-                Attachments = (asked.Attachments ?? []).Select(a => new QuestAttachment(a.Name!, a.Sha256!, a.Bytes!.Value)).ToList(),
-                Then = (asked.Then ?? []).Select(s => new QuestStep(s.To!, s.Title!, s.Body!)).ToList(),
-                Parent = asked.Parent,
-            };
-        }
-
-        operations.Add(new QuestOperation(
-            w.Quest, kind, w.Machine, w.Sequence.Value, w.At.Value, w.Note, published, attempted, numbered ? w.Number : null));
-    }
-
-    return operations;
-}
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.

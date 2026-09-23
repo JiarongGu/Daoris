@@ -39,12 +39,6 @@ public sealed record RemoteConfig(string Url, string Key)
         Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath);
 
     /// <summary>
-    /// Whether a workspace has a remote on this machine — read from the map at the moment it is asked,
-    /// so a circle wired a moment ago is wired now (SYNC0d's lesson, for the hosts).
-    /// </summary>
-    public static bool IsWired(string workspace) => Load().ContainsKey(Workspaces.Normalize(workspace));
-
-    /// <summary>
     /// The testable shape: the same judgement over injected surroundings.
     /// </summary>
     /// <remarks>

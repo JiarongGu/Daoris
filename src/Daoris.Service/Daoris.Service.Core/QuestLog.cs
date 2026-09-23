@@ -51,6 +51,22 @@ public sealed record QuestOperation(
     QuestStatus? Attempted = null,
     long? Number = null);
 
+/// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
+public enum QuestClaim
+{
+    /// <summary>This machine never took it.</summary>
+    None,
+
+    /// <summary>A remote numbered this machine's take: the quest is this machine's, everywhere.</summary>
+    Held,
+
+    /// <summary>The take is only here — no remote answered yet, or there is none.</summary>
+    Unconfirmed,
+
+    /// <summary>Another machine's take reached the remote first; this one is a conflict on the quest.</summary>
+    Lost,
+}
+
 /// <summary>A number a remote gave one operation, named by the machine and sequence that made it.</summary>
 public sealed record QuestAcceptance(string Machine, long Sequence, long Number);
 

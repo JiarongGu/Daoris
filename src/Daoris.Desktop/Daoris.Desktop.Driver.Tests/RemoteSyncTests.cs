@@ -184,89 +184,36 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
-    /// 🔴 An operation crosses as the contract's fields and nothing else (D68, D47 §4): a publish's ask
-    /// with its links, its files BY NAME, its chain — and never a path, a workspace or anything a host
-    /// answered beyond the contract, even one a buggy host sent. The receiving side files a publish by
-    /// its own wiring (SYNC0a), so a workspace riding along would be a feed naming its own circle.
+    /// A quest pass, as a person hears it (D69): each move of this machine's that lost, each quest the
+    /// remote would not keep — in its own words — and a circle still moving after every round.
     /// </summary>
     [Fact]
-    public void A_pending_operation_crosses_as_the_contract_and_never_a_path_or_a_workspace()
+    public void A_quest_pass_becomes_the_sentences_a_person_reads()
     {
-        const string integrated = """
-            { "cursor": 4, "conflicts": [],
-              "pending": [
-                { "machine": "m1", "sequence": 7, "quest": "abcdefabcdef", "kind": "published",
-                  "at": "2026-09-24T10:00:00+00:00", "workspace": "aurora", "root": "/srv/mine/shared",
-                  "asked": { "from": "Quiet", "to": "Shared", "title": "For us", "body": "b", "parent": "fff000",
-                             "workspace": "aurora",
-                             "links": ["https://tickets.example/T-1"],
-                             "attachments": [{ "name": "before.png", "sha256": "ab12", "bytes": 2048, "path": "/srv/mine/before.png" }],
-                             "then": [{ "to": "Shared", "title": "Report on {parent}", "body": "Say it." }] } },
-                { "machine": "m1", "sequence": 8, "quest": "abcdefabcdef", "kind": "taken",
-                  "at": "2026-09-24T10:05:00+00:00", "note": "mine" }
-              ] }
+        const string pass = """
+            { "workspace": "default", "machine": "m1", "wired": true, "pushed": 2,
+              "conflicts": [{ "quest": "q1", "attempted": "Taken" }],
+              "refused": [{ "quest": "q3", "reason": "`Stranger` is not registered at this deployment." }],
+              "behind": ["q2"], "problem": null }
             """;
 
-        var (cursor, pending, _) = RemoteSyncPayloads.Integrated(integrated);
-        var push = RemoteSyncPayloads.Push(cursor, pending);
+        var read = RemoteSyncPayloads.QuestSync(pass);
 
-        using var document = JsonDocument.Parse(push);
-        Assert.Equal(4, document.RootElement.GetProperty("base").GetInt64());
-        var published = document.RootElement.GetProperty("operations")[0];
-        var asked = published.GetProperty("asked");
-        Assert.Equal("m1", published.GetProperty("machine").GetString());
-        Assert.Equal(7, published.GetProperty("sequence").GetInt64());
-        Assert.Equal("https://tickets.example/T-1", asked.GetProperty("links")[0].GetString());
-        Assert.Equal(2048, asked.GetProperty("attachments")[0].GetProperty("bytes").GetInt64());
-        Assert.Equal("Report on {parent}", asked.GetProperty("then")[0].GetProperty("title").GetString());
-        Assert.Equal("fff000", asked.GetProperty("parent").GetString());
-        Assert.Equal("mine", document.RootElement.GetProperty("operations")[1].GetProperty("note").GetString());
-        Assert.DoesNotContain("/srv/mine", push);
-        Assert.DoesNotContain("aurora", push);
+        Assert.True(read.Wired);
+        Assert.Null(read.Problem);
+        Assert.Equal(3, read.Notes.Count);
+        Assert.Contains(read.Notes, n => n.Contains("#q1") && n.Contains("`Taken`") && n.Contains("kept on the quest as a conflict"));
+        Assert.Contains(read.Notes, n => n.Contains("#q3") && n.Contains("not registered at this deployment"));
+        Assert.Contains(read.Notes, n => n.Contains("1 quest(s) moved at the remote"));
     }
 
-    /// <summary>A fetched page keeps each operation's number — the order the remote gave it is the order it replays in.</summary>
+    /// <summary>A host answering something that is not a pass is a wall the sync names, never an empty pass.</summary>
     [Fact]
-    public void A_fetched_page_keeps_every_number_and_says_how_far_it_reaches()
+    public void An_answer_that_is_not_a_pass_is_a_wall()
     {
-        const string page = """
-            { "through": 12, "more": true, "operations": [
-                { "number": 11, "machine": "m2", "sequence": 3, "quest": "q1", "kind": "taken", "at": "2026-09-24T10:00:00+00:00" },
-                { "number": 12, "machine": "m2", "sequence": 4, "quest": "q1", "kind": "conflict", "attempted": "Taken",
-                  "at": "2026-09-24T10:01:00+00:00", "note": "late" } ] }
-            """;
-
-        var (operations, through, more) = RemoteSyncPayloads.Page(page);
-        var integrate = RemoteSyncPayloads.Integrate("aurora", operations, through);
-
-        using var document = JsonDocument.Parse(integrate);
-        Assert.True(more);
-        Assert.Equal(12, document.RootElement.GetProperty("through").GetInt64());
-        Assert.Equal("aurora", document.RootElement.GetProperty("workspace").GetString());
-        Assert.Equal(
-            [11L, 12L],
-            document.RootElement.GetProperty("operations").EnumerateArray().Select(o => o.GetProperty("number").GetInt64()));
-        Assert.Equal("Taken", document.RootElement.GetProperty("operations")[1].GetProperty("attempted").GetString());
-    }
-
-    /// <summary>A push's answer: the numbers to record, the quests to go round for, and each refusal in the remote's words.</summary>
-    [Fact]
-    public void A_push_answer_names_what_was_accepted_what_is_behind_and_what_was_refused()
-    {
-        const string answer = """
-            { "accepted": [{ "machine": "m1", "sequence": 7, "number": 13 }],
-              "behind": ["q2"],
-              "refused": [{ "quest": "q3", "reason": "`Stranger` is not registered at this deployment." }] }
-            """;
-
-        var (acceptedJson, accepted, behind, refused) = RemoteSyncPayloads.Pushed(answer);
-
-        using var document = JsonDocument.Parse(acceptedJson);
-        Assert.Equal(1, accepted);
-        Assert.Equal(13, document.RootElement.GetProperty("accepted")[0].GetProperty("number").GetInt64());
-        Assert.Equal(["q2"], behind);
-        Assert.Contains("#q3", Assert.Single(refused));
-        Assert.Contains("not registered at this deployment", refused[0]);
+        Assert.Contains("not one", Assert.Throws<DriverException>(() => RemoteSyncPayloads.QuestSync("[]")).Message);
+        Assert.Equal("lost", RemoteSyncPayloads.Claim("""{ "quest": "q1", "claim": "lost" }"""));
+        Assert.Equal("none", RemoteSyncPayloads.Claim("[]"));
     }
 
     /// <summary>
@@ -475,8 +422,9 @@ public sealed class RemoteSyncRunTests : IDisposable
                 """),
             _ when url.StartsWith($"{Local}/api/entries") => Json("[]"),
             _ when url.StartsWith($"{Remote}/api/registry") && request.Method == HttpMethod.Get => Json("[]"),
-            // The quest doors answer objects; an empty one is a cursor of zero, a page of nothing,
-            // and nothing pending — a quiet circle.
+            // The host's quest pass: wired, and quiet.
+            _ when url.StartsWith($"{Local}/api/quests/sync") =>
+                Json("""{ "wired": true, "conflicts": [], "refused": [], "behind": [], "problem": null }"""),
             _ => Json("{}"),
         };
     }
@@ -491,99 +439,64 @@ public sealed class RemoteSyncRunTests : IDisposable
         var report = await sync.RunOnceAsync();
 
         Assert.Null(report.Problem);
+        Assert.Empty(report.Notes);
         var order = transport.Calls;
         int At(string fragment) => order.FindIndex(call => call.Contains(fragment));
         Assert.True(At($"POST {Remote}/api/registry") >= 0, string.Join("\n", order));
         Assert.True(At($"POST {Remote}/api/registry") < At($"POST {Remote}/api/feed/sessions"));
         Assert.True(At($"POST {Remote}/api/feed/sessions") < At($"POST {Remote}/api/feed/entries"));
         Assert.True(At($"POST {Remote}/api/feed/entries") < At($"GET {Remote}/api/registry"));
-        Assert.True(At($"GET {Remote}/api/registry") < At($"GET {Remote}/api/quests/operations"));
+        Assert.True(At($"GET {Remote}/api/registry") < At($"POST {Local}/api/quests/sync?workspace=default"));
     }
 
     /// <summary>
-    /// Fetch, rebase, push (D68 §3): the cursor comes from this machine's host, the fetch starts there,
-    /// what is pending goes up rebased ON that cursor, and the numbers the remote gave come back to be
-    /// recorded. The driver moves the bytes; both hosts judge.
+    /// 🔴 The quest pass is the HOST's (D69): the driver asks for it and reads what it says, and never
+    /// speaks to the remote's quest doors itself — one implementation of the sync, shared with the take
+    /// that claims by push, rather than two that drift.
     /// </summary>
     [Fact]
-    public async Task What_is_pending_is_pushed_on_the_cursor_and_its_numbers_recorded()
+    public async Task The_driver_asks_its_host_for_the_quest_pass_and_never_touches_the_remotes_quests()
     {
-        var bodies = new Dictionary<string, string>();
         using var transport = new StubTransport
         {
-            Answer = request =>
-            {
-                var url = request.RequestUri!.ToString();
-                if (request.Content is not null) bodies[$"{request.Method} {url}"] = request.Content.ReadAsStringAsync().Result;
-                return url switch
-                {
-                    _ when url.StartsWith($"{Local}/api/quests/sync/accepted") => Json("""{ "accepted": 1 }"""),
-                    _ when url.StartsWith($"{Local}/api/quests/sync") && request.Method == HttpMethod.Get =>
-                        Json("""{ "workspace": "default", "cursor": 5 }"""),
-                    _ when url.StartsWith($"{Local}/api/quests/sync") => Json("""
-                        { "cursor": 5, "conflicts": [], "pending": [
-                          { "machine": "m1", "sequence": 7, "quest": "q1", "kind": "taken", "at": "2026-09-24T10:00:00+00:00" } ] }
-                        """),
-                    _ when url.StartsWith($"{Remote}/api/quests/operations") && request.Method == HttpMethod.Get =>
-                        Json("""{ "operations": [], "through": 5, "more": false }"""),
-                    _ when url.StartsWith($"{Remote}/api/quests/operations") => Json("""
-                        { "accepted": [{ "machine": "m1", "sequence": 7, "number": 6 }], "behind": [], "refused": [] }
-                        """),
-                    _ => AnswerHealthy(request),
-                };
-            },
+            Answer = request => request.RequestUri!.ToString().StartsWith($"{Local}/api/quests/sync")
+                ? Json("""
+                    { "wired": true, "conflicts": [{ "quest": "q9", "attempted": "Taken" }],
+                      "refused": [], "behind": [], "problem": null }
+                    """)
+                : AnswerHealthy(request),
         };
         using var sync = new RemoteSync(
             Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
 
         var report = await sync.RunOnceAsync();
 
-        Assert.Null(report.Problem);
-        Assert.Contains($"GET {Remote}/api/quests/operations?since=5", transport.Calls);
-        Assert.Contains("\"base\":5", bodies[$"POST {Remote}/api/quests/operations"]);
-        Assert.Contains("\"number\":6", bodies[$"POST {Local}/api/quests/sync/accepted"]);
-        Assert.Equal(1, transport.Calls.Count(call => call.StartsWith($"POST {Remote}/api/quests/operations")));
-    }
-
-    /// <summary>
-    /// A quest another machine moved first sends the pass round again — fetch, rebase, push — and a
-    /// bounded number of times, so a circle that never settles costs one pass a tick, and says so.
-    /// </summary>
-    [Fact]
-    public async Task A_quest_found_behind_goes_round_again_a_bounded_number_of_times()
-    {
-        using var transport = new StubTransport
-        {
-            Answer = request =>
-            {
-                var url = request.RequestUri!.ToString();
-                return url switch
-                {
-                    _ when url.StartsWith($"{Local}/api/quests/sync/accepted") => Json("{}"),
-                    _ when url.StartsWith($"{Local}/api/quests/sync") && request.Method == HttpMethod.Get => Json("""{ "cursor": 0 }"""),
-                    _ when url.StartsWith($"{Local}/api/quests/sync") => Json("""
-                        { "cursor": 0, "conflicts": [{ "quest": "q9", "attempted": "Taken" }], "pending": [
-                          { "machine": "m1", "sequence": 1, "quest": "q1", "kind": "taken", "at": "2026-09-24T10:00:00+00:00" } ] }
-                        """),
-                    _ when url.StartsWith($"{Remote}/api/quests/operations") && request.Method == HttpMethod.Get =>
-                        Json("""{ "operations": [], "through": 0, "more": false }"""),
-                    _ when url.StartsWith($"{Remote}/api/quests/operations") =>
-                        Json("""{ "accepted": [], "behind": ["q1"], "refused": [] }"""),
-                    _ => AnswerHealthy(request),
-                };
-            },
-        };
-        using var sync = new RemoteSync(
-            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
-
-        var report = await sync.RunOnceAsync();
-
-        Assert.Null(report.Problem);
-        Assert.Equal(
-            RemoteSync.QuestRounds,
-            transport.Calls.Count(call => call.StartsWith($"POST {Remote}/api/quests/operations")));
-        Assert.Contains(report.Notes, note => note.Contains("every one of 3 rounds"));
+        Assert.Contains($"POST {Local}/api/quests/sync?workspace=default", transport.Calls);
+        Assert.DoesNotContain(transport.Calls, call => call.Contains($"{Remote}/api/quests"));
         Assert.Contains(report.Notes, note => note.Contains("#q9") && note.Contains("conflict"));
+    }
+
+    /// <summary>A pass that hit a wall is the sync's problem, named — and a host with no remote for the circle is said.</summary>
+    [Fact]
+    public async Task A_pass_that_hit_a_wall_is_named_and_an_unwired_host_is_said()
+    {
+        var answer = """{ "wired": true, "problem": "the remote could not be reached (connection refused)" }""";
+        using var transport = new StubTransport
+        {
+            Answer = request => request.RequestUri!.ToString().StartsWith($"{Local}/api/quests/sync")
+                ? Json(answer)
+                : AnswerHealthy(request),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var walled = await sync.RunOnceAsync();
+        answer = """{ "wired": false }""";
+        var unwired = await sync.RunOnceAsync();
+
+        Assert.Contains("quests: the remote could not be reached", walled.Problem);
+        Assert.Null(unwired.Problem);
+        Assert.Contains(unwired.Notes, note => note.Contains("has no remote for `default`"));
     }
 
     [Fact]

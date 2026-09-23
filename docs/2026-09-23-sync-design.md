@@ -76,14 +76,19 @@ history the remote has not seen yet, like an unpushed commit.
 
 ## 4. The lock, online and offline — decided: claim by push
 
-**Before a driven session starts, the driver takes the quest locally and, when the quest's workspace
-has a reachable remote, pushes the take and waits.** Accepted: the session starts. Rejected (another
-machine's take reached the remote first): the take rebases into a conflict and nothing spawns. That is
-D47's guarantee, no duplicate work while online, kept by a fast-forward instead of by a remote home.
+**The take itself claims by push (D69).** A take commits on the machine where it was made. When the
+quest's workspace has a remote, the take is then pushed and awaited before the answer returns.
+Accepted: the quest is taken. Lost (another machine's take reached the remote first): the take
+rebases into a conflict, and the answer is *already taken, stand down*, so the session stands down
+before any work. That is D47's guarantee, no duplicate work while online, kept by a fast-forward
+instead of by a remote home. It holds for a driven session and an outside one alike, because the
+session is still the one that claims (D46). A take by the driver on the session's behalf was the
+first wording here, and D69 records why it was not built.
 
-**Unreachable: the take stays local, marked unconfirmed, and the session runs.** Offline work is
-allowed, and this is the trade D47 declined: two machines offline can both work one quest. §5 is how
-that ends.
+**Unreachable: the take stays local, unconfirmed, and the session runs.** Offline work is allowed,
+and this is the trade D47 declined: two machines offline can both work one quest. §5 is how that
+ends. Once a machine's take has lost, its later moves on that quest were made on a claim it never
+held, so the rebase turns them into conflicts too.
 
 ## 5. Conflicts — decided: first push wins, the loser is kept
 
@@ -103,8 +108,10 @@ processes (D47 §6 unchanged).
   running no longer holds the sync back: the sync gets its own cadence beside the tick. Before, a
   tick ran sessions to completion inside itself, so no sync ran for up to 30 minutes.
 - **On demand**: `daoris-driver sync [status|pull|push] [--workspace <name>]`, the terminal door
-  (D50). The screen door is a *Sync now* action. The sync stays in the driver because git provenance
-  needs a spawn, and the service spawns nothing (D46 §7).
+  (D50). The screen door is a *Sync now* action. The knowledge feed stays in the driver, because git
+  provenance needs a spawn and the service spawns nothing (D46 §7). The quest sync runs in the hosts
+  (D69), because a take pushes and awaits from the door it was made at. The driver's tick asks its
+  local host for a pass.
 - **Seen**: the status bar shows, per workspace, what is ahead (unpushed), behind (fetched, not yet
   seen) and in conflict, with the time of the last sync. Conflicts are listed where they can be
   acted on.
@@ -146,11 +153,13 @@ ever numbered, so the order is simply the order the operations were made.
   remote already holds, by machine and sequence, is answered with its number, so a retried push is
   harmless.
 
-**The machine's doors** (local mode only): `GET /api/quests/sync?workspace=` answers the cursor.
-`POST /api/quests/sync` integrates what was fetched, rebases, and answers what is pending.
-`POST /api/quests/sync/accepted` records the numbers a push was given. The driver moves bytes
-between the two hosts and judges nothing. Replaying and rebasing happen in the store, through the
-one table.
+**The machine's doors** (local mode only, D69): `POST /api/quests/sync?workspace=` runs one pass of
+fetch, rebase and push, and answers what a person should hear about it: conflicts, refusals, what is
+still behind, and the wall if there was one. `GET /api/quests/{id}/claim` says where this machine's
+claim on a quest stands (held, unconfirmed, lost or none). The pass is the host's (`QuestSync`), and
+there is one of it: a take on a shared quest runs it to claim by push, and the driver's tick asks for
+it. Replaying and rebasing happen in the store, through the one table. The remote's doors and the
+host's client speak one wire, `QuestWire`.
 
 **What is pushed: quests whose receiver is joined** in that workspace, whether the joined
 repository is on this machine or is a teammate's registered here without a root. Silence means

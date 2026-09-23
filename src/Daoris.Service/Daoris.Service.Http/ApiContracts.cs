@@ -129,32 +129,17 @@ public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, 
 public sealed record FeedEntriesRequest(
     string Repository, IReadOnlyList<FeedEntryRecord>? Entries,
     string? Commit, DateTimeOffset? CommittedAt, string? Branch);
-// One operation on the wire (D68, sync design §8), the same shape through both doors. Machine and
-// sequence name it anywhere; `Number` is where the remote placed it, absent while it is pending. A
-// publish carries the ask and NO workspace, because the receiving side files it by its own wiring
-// (SYNC0a). Files travel BY NAME: there is no field for bytes, a root or a transcript. Absent, not
-// policed (D47 §4). Nullable on the way in, because a door judges what arrived.
-public sealed record QuestFileWire(string? Name, string? Sha256, long? Bytes);
-public sealed record QuestAskedWire(
-    string? From, string? To, string? Title, string? Body, IReadOnlyList<string>? Links,
-    IReadOnlyList<QuestFileWire>? Attachments, IReadOnlyList<QuestStepWire>? Then, string? Parent);
-public sealed record QuestOperationWire(
-    long? Number, string? Machine, long? Sequence, string? Quest, string? Kind, DateTimeOffset? At,
-    string? Note = null, string? Attempted = null, QuestAskedWire? Asked = null);
-// The remote's doors: what it accepted after a number, and a push rebased on one.
-public sealed record QuestOperationsResponse(IReadOnlyList<QuestOperationWire> Operations, long Through, bool More);
-public sealed record QuestPushRequest(long? Base, IReadOnlyList<QuestOperationWire>? Operations);
-public sealed record QuestAcceptanceWire(string? Machine, long? Sequence, long? Number);
+// A machine's quest sync (D69), as its driver reads it: what one pass pushed, the moves of this
+// machine that became conflicts, what the remote would not keep, what is still behind, and the wall,
+// if there was one. `Machine` is this store's id — how the driver tells its own conflicts from others'.
+// The operations themselves never cross this door; the remote's doors speak Core's `QuestWire`.
+public sealed record QuestConflictNote(string Quest, string Attempted);
 public sealed record QuestPushRefusalWire(string Quest, string Reason);
-public sealed record QuestPushResponse(
-    IReadOnlyList<QuestAcceptanceWire> Accepted, IReadOnlyList<string> Behind, IReadOnlyList<QuestPushRefusalWire> Refused);
-// The machine's doors: its cursor, what a fetch integrates (answering what is pending), and the
-// numbers a push was given.
-public sealed record QuestCursorResponse(string Workspace, long Cursor);
-public sealed record QuestIntegrateRequest(string? Workspace, IReadOnlyList<QuestOperationWire>? Operations, long? Through);
-public sealed record QuestIntegrateResponse(
-    long Cursor, IReadOnlyList<QuestOperationWire> Pending, IReadOnlyList<QuestOperationWire> Conflicts);
-public sealed record QuestAcceptedRequest(IReadOnlyList<QuestAcceptanceWire>? Accepted);
+public sealed record QuestSyncResponse(
+    string Workspace, string Machine, bool Wired, int Pushed, IReadOnlyList<QuestConflictNote> Conflicts,
+    IReadOnlyList<QuestPushRefusalWire> Refused, IReadOnlyList<string> Behind, string? Problem);
+// Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4).
+public sealed record QuestClaimResponse(string Quest, string Claim);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map (MAP3a). `File` is which candidate was read, and null when the repository
 // keeps none; `Problem` is why a file was refused whole, verbatim — and then both lists are empty,
@@ -203,13 +188,8 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(SessionActionResponse))]
 [JsonSerializable(typeof(FeedSessionsRequest))]
 [JsonSerializable(typeof(FeedEntriesRequest))]
-[JsonSerializable(typeof(QuestOperationsResponse))]
-[JsonSerializable(typeof(QuestPushRequest))]
-[JsonSerializable(typeof(QuestPushResponse))]
-[JsonSerializable(typeof(QuestCursorResponse))]
-[JsonSerializable(typeof(QuestIntegrateRequest))]
-[JsonSerializable(typeof(QuestIntegrateResponse))]
-[JsonSerializable(typeof(QuestAcceptedRequest))]
+[JsonSerializable(typeof(QuestSyncResponse))]
+[JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(CodeMapResponse))]
 [JsonSerializable(typeof(FeedRefusalResponse))]

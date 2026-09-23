@@ -57,6 +57,9 @@ public sealed record ComposedService(
     /// <summary>Asks made at a workspace, and the judgement over them (D65 §1a).</summary>
     public AskDesk Asks { get; init; } = null!;
 
+    /// <summary>This machine's remotes, by workspace — what a sync pass runs against (D69). Null on a remote.</summary>
+    public IQuestRemotes? Remotes { get; init; }
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -129,11 +132,11 @@ public static class ServiceFactory
         IVectorProvider? embedder = null,
         IVectorStore? vectors = null,
         IDisclosurePolicy? disclosure = null,
-        // Whether a workspace has a remote on this machine (D48 §5) — what a chain's composition asks,
-        // because a chain is all shared or all local (D68). Passed in like the embedder: the deployment
-        // decides, and both doors get the same exchange so neither can drift. A shared host passes
-        // nothing — it is the remote.
-        Func<string, bool>? wired = null,
+        // This machine's remotes, by workspace (D48 §5) — what a take claims at (D69) and what a chain's
+        // composition asks, because a chain is all shared or all local (D68). Passed in like the
+        // embedder: the deployment decides, and both doors get the same exchange so neither can drift.
+        // A shared host passes nothing — it is the remote.
+        IQuestRemotes? remotes = null,
         // What the index reads from, when the deployment is not the usual scan-this-folder one. A
         // shared host passes EmptyKnowledgeSource, because it is fed and never scans (D47 §4) — the
         // route refusal alone would leave the index-on-first-use path free to scan the server's disk.
@@ -208,7 +211,7 @@ public static class ServiceFactory
             }
         }
 
-        var exchange = new QuestExchange(service, quests, wired, files);
+        var exchange = new QuestExchange(service, quests, remotes, files);
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
@@ -217,6 +220,7 @@ public static class ServiceFactory
         {
             Store = store,
             Files = files,
+            Remotes = remotes,
             // An ask's quests go through the same exchange every other door uses (D65 §1a).
             Asks = new AskDesk(service, asks, exchange, files),
         };

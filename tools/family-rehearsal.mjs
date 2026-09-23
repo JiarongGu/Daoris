@@ -78,6 +78,35 @@ const driver = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once'
     ...harness,
   }, DRIVE_TIMEOUT);
 
+/**
+ * The same driver, running WHILE the gate acts — for a session that must be alive when something
+ * happens to it (D68 §5: a losing session stopped). Same environment, same timeout, same answer.
+ */
+const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once' }) =>
+  new Promise((resolve) => {
+    const child = spawn('dotnet', [driverDll, mode], {
+      cwd: scratch,
+      env: {
+        ...process.env,
+        DAORIS_SERVICE_URL: serviceUrl,
+        DAORIS_DRIVER_CONFIG: config,
+        ...NO_REMOTE,
+        ...NO_HARNESS,
+        ...remote,
+        ...harness,
+      },
+    });
+    children.push(child);
+    let out = '';
+    child.stdout.on('data', (chunk) => { out += chunk; });
+    child.stderr.on('data', (chunk) => { out += chunk; });
+    const timer = setTimeout(() => child.kill('SIGKILL'), DRIVE_TIMEOUT);
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      resolve({ code: code ?? -1, out });
+    });
+  });
+
 /** One HTTP call against a host. The key rides only when a step is meant to be authorized. */
 async function api(method, path, { body, key, base = BASE } = {}) {
   const response = await fetch(`${base}${path}`, {
@@ -412,7 +441,7 @@ const respond = async (action, reason) => {
     },
     body: JSON.stringify({ action, reason }),
   });
-  return { ok: response.ok, text: await response.text() };
+  return { ok: response.ok, status: response.status, text: await response.text() };
 };
 
 // The failure DRV6 was written from, reproduced exactly: a session that dies BEFORE taking its
@@ -423,13 +452,16 @@ if (/never lands/i.test(title)) {
   process.exit(1);
 }
 
-// The claiming judgement a real session has (D46 §3): if somebody already has the quest, stand down
-// CLEANLY — exit 0 with the quest still theirs is exactly the shape the driver concludes stood-down from.
+// The claiming judgement a real session has (D46 §3): if somebody already has the quest — here, or
+// at the remote first (D69's claim by push) — stand down CLEANLY. Exit 0 with the quest still theirs
+// is exactly the shape the driver concludes stood-down from. Read by the status the door answers,
+// never by its wording, which is written for a person and changes.
 const takeAnswer = await respond('take', null);
 if (!takeAnswer.ok) {
-  if (/already taken/i.test(takeAnswer.text)) process.exit(0);
+  if (takeAnswer.status === 409) process.exit(0);
   throw new Error('take failed: ' + takeAnswer.text);
 }
+console.log('stub: take answered ' + takeAnswer.text.split('"message":"')[1]?.split('"')[0]);
 // A session says things while it works, and the driver captures every line: to the transcript on
 // disk (the durable record, D46 §4) and to the live console (D49 §2). This is what the gate reads
 // back out of the transcript afterwards.
@@ -438,6 +470,15 @@ console.log('stub: taking quest ' + id);
 // (D49 §4) — observable, so the gate can assert the session really ran in that configuration home
 // rather than trusting the record's word for it.
 console.log('stub: config home ' + (process.env.DAORIS_STUB_CONFIG_DIR ?? '(the harness’s own)'));
+
+// A session that is still working when something happens to its claim (D68 §5): it lingers — up to
+// a minute, well inside the driver's timeout — before it commits anything, so a driver that stops it
+// for a take that lost stops it with nothing landed. If nothing stops it, it finishes, and the gate
+// that expected it stopped sees a commit and fails.
+if (/linger/i.test(title)) {
+  console.log('stub: lingering');
+  for (let wait = 0; wait < 240; wait += 1) await new Promise((resolve) => setTimeout(resolve, 250));
+}
 
 // What the quest carried (D65 §2), as a session meets it: the links its target names, and each file
 // in the directory it was handed — READ, so the gate proves the bytes arrived rather than the name.
@@ -1073,7 +1114,10 @@ run('git init -q', borealis);
 run(`git ${GIT_ID} add -A`, borealis);
 run(`git ${GIT_ID} commit -q -m "borealis is born"`, borealis);
 
-const hostB = await startServer({
+// Kept whole, like the remote's, so machine b's host can be restarted over the same store — pointed
+// at a remote that is not there, which is how this phase takes ONE machine offline while the other
+// stays on (D68 §5).
+const hostBEnv = {
   DAORIS_KNOWLEDGE_ROOT: familyB,
   DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge-b.db'),
   ASPNETCORE_URLS: HOST_B_BASE,
@@ -1083,7 +1127,8 @@ const hostB = await startServer({
   // a's quest files on disk and call them here — two simulated machines quietly sharing one, which
   // is exactly the disclosure boundary this phase exists to prove (D65 §2).
   DAORIS_HOME: join(scratch, 'home-b'),
-}, HOST_B_BASE);
+};
+let hostB = await startServer(hostBEnv, HOST_B_BASE);
 check('machine b’s host is up, carrying its remote', hostB !== null);
 const borealisConnect = run(`node "${cliBin}" connect`, borealis, { DAORIS_SERVICE_URL: HOST_B_BASE });
 check('borealis connects on machine b', borealisConnect.code === 0, borealisConnect.out);
@@ -1312,11 +1357,10 @@ check(
   stillTheirs.text,
 );
 
-// The OFFLINE race (D68 §5): both machines act before either pushes — the same ask published on each,
-// and each takes it through its own door. Machine a pushes first and wins. Machine b's push is behind;
-// it fetches, rebases — its copy of the ask is the same ask again and goes, its take becomes a
-// CONFLICT on the quest — and pushes that. Nothing is dropped and nothing is merged: every machine
-// shows the winner's state and the loser's attempt.
+// The ONLINE race at the take (D69): both machines hold the same ask, and both take it while the
+// remote answers. The take claims by push, so machine a's take is confirmed before its answer
+// returns — and machine b's, pushed a moment later, finds the quest already taken there: it is
+// rebased into a CONFLICT on the quest, and b hears the stand-down before any work starts.
 const contested = {
   from: 'newcomer', to: 'borealis', title: 'Both machines took this', body: 'The loser is kept, not lost.',
 };
@@ -1333,20 +1377,18 @@ const takeOnB = await api('POST', `/api/quests/${contestedId}/respond`, {
   base: HOST_B_BASE, body: { action: 'take', reason: 'machine b’s own session' },
 });
 check(
-  'each machine’s take commits on its own machine — no remote is asked',
-  takeOnA.status === 200 && takeOnB.status === 200,
-  `${takeOnA.text}\n${takeOnB.text}`,
+  'a take claims by push: the first is confirmed by the remote before it answers',
+  takeOnA.status === 200 && /the remote confirmed the claim/.test(takeOnA.text),
+  takeOnA.text,
 );
-driveA('--once');
-const losingTick = driveB('--once');
 const conflictOnB = ((await api('GET', '/api/quests?includeClosed=true', { base: HOST_B_BASE })).json ?? [])
   .find((q) => q.id === contestedId);
 check(
-  'the losing take is rebased into a conflict on the quest, and the tick says so',
-  losingTick.code === 0 && /kept on the quest as a conflict/.test(losingTick.out)
+  '…and the second stands down before any work, its take kept on the quest as a conflict',
+  takeOnB.status === 409 && /taken on another machine first/.test(takeOnB.text)
     && conflictOnB?.status === 'Taken' && conflictOnB.conflicts?.length === 1
     && conflictOnB.conflicts[0].attempted === 'Taken' && conflictOnB.conflicts[0].note === 'machine b’s own session',
-  `${losingTick.out}\n${JSON.stringify(conflictOnB)}`,
+  `${takeOnB.text}\n${JSON.stringify(conflictOnB)}`,
 );
 driveA('--once');
 const conflictAtRemote = ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
@@ -1358,31 +1400,119 @@ check(
   `${JSON.stringify(conflictAtRemote)}\n${JSON.stringify(conflictOnA)}`,
 );
 
-// A remote that is DOWN (D68 §1): every verb commits locally and always succeeds locally. The tick
-// names the wall and carries on, and the first tick after the remote returns pushes what waited. (A machine with NO remote at all is
-// phases 1–10: nothing in them changed for this.)
+// The OFFLINE race (D68 §4/§5): with the remote DOWN, every verb still commits locally and succeeds
+// — a take stands UNCONFIRMED, and the answer says so. The tick names the wall and carries on. When
+// the remote returns, machine a's tick pushes first and wins; machine b's fetches, rebases its take
+// into a conflict, and says so. (A machine with NO remote at all is phases 1–10: nothing in them
+// changed for this.)
 if (remoteHost && !remoteHost.killed) remoteHost.kill();
 await sleep(700);
-const whileDown = await api('POST', '/api/quests', {
-  body: { from: 'newcomer', to: 'borealis', title: 'Published while the remote was down', body: 'It waits, committed.' },
+const offline = {
+  from: 'newcomer', to: 'borealis', title: 'Taken on both machines while the remote was down', body: 'It waits, committed.',
+};
+const offlineOnA = await api('POST', '/api/quests', { body: offline });
+await api('POST', '/api/quests', { base: HOST_B_BASE, body: offline });
+const offlineId = offlineOnA.json?.quest?.id ?? '';
+const offlineTakeA = await api('POST', `/api/quests/${offlineId}/respond`, { body: { action: 'take', reason: null } });
+const offlineTakeB = await api('POST', `/api/quests/${offlineId}/respond`, {
+  base: HOST_B_BASE, body: { action: 'take', reason: 'machine b, offline' },
 });
-const whileDownId = whileDown.json?.quest?.id ?? '';
-const takenWhileDown = await api('POST', `/api/quests/${whileDownId}/respond`, { body: { action: 'take', reason: null } });
 const downTick = driveA('--once');
 check(
-  'with the remote down, a shared quest is published and taken locally, and the tick names the wall',
-  whileDown.status === 200 && takenWhileDown.status === 200 && downTick.code === 0 && /sync {2}/.test(downTick.out),
-  `${whileDown.text}\n${takenWhileDown.text}\n${downTick.out}`,
+  'with the remote down, both machines take the quest locally — UNCONFIRMED, and said — and the tick names the wall',
+  offlineTakeA.status === 200 && /UNCONFIRMED/.test(offlineTakeA.text)
+    && offlineTakeB.status === 200 && /UNCONFIRMED/.test(offlineTakeB.text)
+    && downTick.code === 0 && /sync {2}/.test(downTick.out),
+  `${offlineTakeA.text}\n${offlineTakeB.text}\n${downTick.out}`,
 );
 remoteHost = await startServer(remoteEnv, REMOTE_BASE);
 const backTick = driveA('--once');
 const caughtUp = ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
-  .find((q) => q.id === whileDownId);
+  .find((q) => q.id === offlineId);
 check(
   '…and the first tick after it returns pushes what waited',
-  remoteHost !== null && backTick.code === 0 && caughtUp?.status === 'Taken',
+  remoteHost !== null && backTick.code === 0 && caughtUp?.status === 'Taken' && caughtUp.conflicts?.length === 0,
   `${backTick.out}\n${JSON.stringify(caughtUp)}`,
 );
+const losingTick = driveB('--once');
+const offlineOnB = ((await api('GET', '/api/quests?includeClosed=true', { base: HOST_B_BASE })).json ?? [])
+  .find((q) => q.id === offlineId);
+check(
+  '…and the machine whose take arrived second rebases it into a conflict, and its tick says so',
+  losingTick.code === 0 && /kept on the quest as a conflict/.test(losingTick.out)
+    && offlineOnB?.conflicts?.length === 1 && offlineOnB.conflicts[0].note === 'machine b, offline',
+  `${losingTick.out}\n${JSON.stringify(offlineOnB)}`,
+);
+
+// A LOSING SESSION STOPPED (D68 §5): a session on machine b takes its quest while b cannot reach the
+// remote — so the take stands unconfirmed and the session works. Machine a, still online, takes the
+// same quest and wins. When b reaches the remote again, the sync running BESIDE the session finds b's
+// take lost, and b's driver stops its own session — before it lands anything — with the reason on
+// the record. Deterministic by construction: b is offline exactly as long as this phase says.
+const lingering = await api('POST', '/api/quests', {
+  body: { from: 'newcomer', to: 'borealis', title: 'A session that lingers', body: 'Worked on two machines at once.' },
+});
+const lingeringId = lingering.json?.quest?.id ?? '';
+driveA('--once');
+// b learns of it without driving it: held for one tick.
+const bConfig = (extra) => writeFileSync(driverConfigB, `${JSON.stringify({
+  drivable: ['borealis'], adapter: 'stub', cap: 2, timeoutMinutes: 2, pollSeconds: 1,
+  commands: { stub: ['node', stubAgent] }, ...extra,
+}, null, 2)}\n`);
+bConfig({ holds: ['borealis'] });
+driveB('--once');
+// b goes offline: its host is restarted pointed at a remote that is not there.
+if (hostB && !hostB.killed) hostB.kill();
+await sleep(700);
+hostB = await startServer({ ...hostBEnv, DAORIS_REMOTE_URL: 'http://localhost:5191' }, HOST_B_BASE);
+bConfig({ holds: [] });
+const lingeringRun = driverInBackground({
+  serviceUrl: HOST_B_BASE, config: driverConfigB,
+  remote: { DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyB },
+  harness: { DAORIS_HARNESS_CONFIG: machineBHarness },
+});
+// Waited on until the session has its take's ANSWER and is lingering — its own transcript says so —
+// not merely until it spawned, nor until the take committed: the host answers only after its push
+// failed, and restarting it under a take still in flight would cut the answer off, not the take.
+let lingeringSession;
+for (let attempt = 0; attempt < 160; attempt += 1) {
+  await sleep(250);
+  lingeringSession = ((await api('GET', '/api/sessions?repository=borealis', { base: HOST_B_BASE })
+    .catch(() => ({ json: [] }))).json ?? []).find((s) => s.quest === lingeringId && s.state === 'working');
+  if (lingeringSession && existsSync(lingeringSession.transcript ?? '')
+      && readFileSync(lingeringSession.transcript, 'utf8').includes('stub: lingering')) {
+    break;
+  }
+}
+const claimWhileOffline = await api('GET', `/api/quests/${lingeringId}/claim`, { base: HOST_B_BASE }).catch(() => null);
+check(
+  'a session on machine b takes its quest while b cannot reach the remote — unconfirmed, and it works',
+  lingeringSession !== undefined && claimWhileOffline?.json?.claim === 'unconfirmed',
+  `${JSON.stringify(lingeringSession)}\n${claimWhileOffline?.text}`,
+);
+const winsOnA = await api('POST', `/api/quests/${lingeringId}/respond`, { body: { action: 'take', reason: 'machine a, online' } });
+check('machine a, online, takes the same quest and the remote confirms it', /the remote confirmed the claim/.test(winsOnA.text), winsOnA.text);
+// b comes back: the same host, over the same store, pointed at the remote again.
+if (hostB && !hostB.killed) hostB.kill();
+await sleep(700);
+hostB = await startServer(hostBEnv, HOST_B_BASE);
+const lingered = await lingeringRun;
+const stoppedRecord = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true', { base: HOST_B_BASE })).json ?? [])
+  .find((s) => s.quest === lingeringId);
+check(
+  '…and when b reaches the remote again, its driver stops its own losing session, with the reason on the record',
+  lingered.code === 0 && /stop {2}session/.test(lingered.out)
+    && stoppedRecord?.state === 'stood-down' && /another machine's take on the quest reached the remote first/.test(stoppedRecord.note ?? ''),
+  `${lingered.out}\n${JSON.stringify(stoppedRecord)}`,
+);
+check(
+  '…before it landed anything: no commit for that quest in borealis, and the quest is machine a’s',
+  !new RegExp(`stub: answer quest ${lingeringId}`).test(run('git log --oneline', borealis).out)
+    && ((await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [])
+      .some((q) => q.id === lingeringId && q.status === 'Taken' && q.note === 'machine a, online'),
+  run('git log --oneline', borealis).out,
+);
+bConfig({});
 
 const remoteSessions = await api('GET', '/api/sessions?includeClosed=true', { base: REMOTE_BASE, key: keyA });
 const fedRecords = remoteSessions.json ?? [];
@@ -2721,9 +2851,10 @@ if (totals.failures) {
   console.log('  minted keys — a quest committed on one machine, pushed, fetched and driven to done on the');
   console.log('  other under a named account, its file known there by name and its bytes kept home, the');
   console.log('  closure crossing back with the tool version but never the account name; a machine that');
-  console.log('  saw the quest taken first leaving it alone; both machines taking one quest offline, the');
-  console.log('  second rebased into a conflict every machine holds; verbs committing while the remote');
-  console.log('  was down and pushed when it returned; knowledge crossing only where declared; and the remote store scanned to hold no');
+  console.log('  saw the quest taken first leaving it alone; a take claiming by push, the second of two');
+  console.log('  standing down before any work; both machines taking one quest offline, the second');
+  console.log('  rebased into a conflict every machine holds; a session that took offline and lost, stopped');
+  console.log('  by its own driver before it landed anything; knowledge crossing only where declared; and the remote store scanned to hold no');
   console.log('  machine path, no transcript, no file’s bytes, and nothing a repository kept home. And WORKSPACES');
   console.log('  (D48): two circles on one machine, wired by `connect --workspace` and written into no');
   console.log('  tracked file — a search answering from one circle while the other held the same');

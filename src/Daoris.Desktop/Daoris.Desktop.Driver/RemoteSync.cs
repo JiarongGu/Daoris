@@ -285,66 +285,31 @@ public sealed class RemoteSync : IDisposable
         }
     }
 
-    /// <summary>How many times one pass goes round when the remote says a quest moved first.</summary>
-    public const int QuestRounds = 3;
-
     /// <summary>
-    /// Fetch, rebase, push for this circle's quests (D68 §3, sync design §8): what the remote accepted
-    /// since this machine's cursor comes down and is integrated — the host rebases what is pending on
-    /// top — and what is still pending goes up, rebased on that cursor. A quest the remote finds behind
-    /// sends the pass round again, a bounded number of times.
+    /// Fetch, rebase, push for this circle's quests — asked of this machine's HOST, which runs the pass
+    /// (D69): a take claims by push from the door it was made at, and the tick runs the same code by
+    /// asking for it, so there is one implementation of the sync and not two that drift.
     /// </summary>
     /// <returns>
-    /// What a person should hear: a move of this machine's that became a conflict, and a quest the
-    /// remote would not take, in its own words. Neither is a failure of the sync, which worked.
+    /// What a person should hear: a move of this machine's that became a conflict, a quest the remote
+    /// would not take, a quest still behind. None is a failure of the sync, which worked.
     /// </returns>
+    /// <exception cref="DriverException">The pass hit a wall — named, and reported as the sync's problem.</exception>
     private async Task<IReadOnlyList<string>> SyncQuestsAsync(CancellationToken ct)
     {
-        var notes = new List<string>();
-        var circle = Uri.EscapeDataString(_workspace);
-        for (var round = 1; round <= QuestRounds; round++)
+        var pass = RemoteSyncPayloads.QuestSync(await DriverHttp.PostAsync(
+            _local, $"{_localBase}/api/quests/sync?workspace={Uri.EscapeDataString(_workspace)}", "{}", ct)
+            .ConfigureAwait(false));
+
+        if (!pass.Wired)
         {
-            var cursor = RemoteSyncPayloads.Cursor(await DriverHttp.GetAsync(
-                _local, $"{_localBase}/api/quests/sync?workspace={circle}", ct).ConfigureAwait(false));
-
-            var fetched = new List<string>();
-            var through = cursor;
-            while (true)
-            {
-                var page = RemoteSyncPayloads.Page(await DriverHttp.GetAsync(
-                    _remote, $"{_remoteBase}/api/quests/operations?since={through}", ct).ConfigureAwait(false));
-                fetched.AddRange(page.Operations);
-                through = Math.Max(through, page.Through);
-                if (!page.More) break;
-            }
-
-            var integrated = RemoteSyncPayloads.Integrated(await DriverHttp.PostAsync(
-                _local, $"{_localBase}/api/quests/sync",
-                RemoteSyncPayloads.Integrate(_workspace, fetched, through), ct).ConfigureAwait(false));
-            notes.AddRange(integrated.Conflicts.Select(conflict =>
-                $"quest `#{conflict.Quest}`: this machine's `{conflict.Attempted}` reached the remote after "
-                + "another machine's move, and is kept on the quest as a conflict."));
-            if (integrated.Pending.Count == 0) break;
-
-            var pushed = RemoteSyncPayloads.Pushed(await DriverHttp.PostAsync(
-                _remote, $"{_remoteBase}/api/quests/operations",
-                RemoteSyncPayloads.Push(integrated.Cursor, integrated.Pending), ct).ConfigureAwait(false));
-            if (pushed.Accepted > 0)
-            {
-                await DriverHttp.PostAsync(
-                    _local, $"{_localBase}/api/quests/sync/accepted", pushed.AcceptedJson, ct).ConfigureAwait(false);
-            }
-
-            notes.AddRange(pushed.Refused);
-            if (pushed.Behind.Count == 0) break;
-            if (round == QuestRounds)
-            {
-                notes.Add(
-                    $"{pushed.Behind.Count} quest(s) moved at the remote on every one of {QuestRounds} rounds; "
-                    + "what is pending stays pending, and the next pass goes round again.");
-            }
+            // The driver has a remote for this circle and the host that holds the quests does not: two
+            // readers of two different maps. Said, because a sync that silently skipped quests would
+            // look exactly like a circle with nothing to share.
+            return [$"this machine's host has no remote for `{_workspace}`, so its quests did not sync — "
+                    + "the host and the driver are reading different remotes maps."];
         }
 
-        return notes;
+        return pass.Problem is { } wall ? throw new DriverException($"quests: {wall}") : pass.Notes;
     }
 }

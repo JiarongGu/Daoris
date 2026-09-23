@@ -166,7 +166,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
 | `POST /api/feed/sessions` · `/api/feed/entries` | shared mode only: what a desktop's sync feeds up (D47) |
 | `GET /api/quests/operations?since=N` · `POST /api/quests/operations` | shared mode only: what the remote accepted after number N, in its order, and a push of a machine's quest operations rebased on N, judged quest by quest (D68) |
-| `GET /api/quests/sync?workspace=` · `POST /api/quests/sync` · `POST /api/quests/sync/accepted` | local mode only: a workspace's cursor, integrating what a fetch brought (rebasing what is pending and answering it), and recording the numbers a push was given (D68) |
+| `POST /api/quests/sync?workspace=` · `GET /api/quests/{id}/claim` | local mode only: one pass of fetch, rebase and push for a workspace's quests, answering its conflicts, refusals and wall; and where this machine's claim on a quest stands — held, unconfirmed, lost or none (D69). A take on a shared quest runs the same pass before it answers |
 
 There are exactly two trust shapes (D47 §7, as amended). **Local** — the default — trusts the
 loopback: the OS account is the boundary (D21), and the host refuses to start bound anywhere else.

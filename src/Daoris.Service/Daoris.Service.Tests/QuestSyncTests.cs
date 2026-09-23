@@ -37,28 +37,12 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// One sync pass of one machine against the remote, as the driver runs it: cursor, fetch, integrate,
-    /// push what is pending, record what was accepted — and round again, a bounded number of times,
+    /// One pass of one machine against the remote — the real <see cref="QuestSync"/>, through the real
+    /// wire: cursor, fetch, integrate, push what is pending, record what was accepted, and round again
     /// while the remote says a quest moved first.
     /// </summary>
-    private async Task<QuestPush?> SyncAsync(
-        QuestStore machine, Func<string, bool>? shared = null, Func<Quest, string?>? judge = null)
-    {
-        QuestPush? last = null;
-        for (var round = 0; round < 3; round++)
-        {
-            var fetched = await _remote.OperationsSinceAsync(await machine.CursorAsync(Workspaces.Default));
-            var integrated = await machine.IntegrateAsync(Workspaces.Default, fetched.Operations, fetched.Through);
-            var pending = await machine.PendingAsync(Workspaces.Default, shared ?? (_ => true));
-            if (pending.Count == 0) return last;
-
-            last = await _remote.ReceiveAsync(integrated.Cursor, pending, judge ?? (_ => null), _ => Workspaces.Default);
-            await machine.AcceptedAsync(last.Accepted);
-            if (last.Behind.Count == 0) return last;
-        }
-
-        return last;
-    }
+    private Task<QuestSyncReport> SyncAsync(QuestStore machine, Func<string, bool>? shared = null) =>
+        QuestSync.RunAsync(machine, shared ?? (_ => true), new StoreRemote(_remote), Workspaces.Default);
 
     private static Task<Quest> Publish(QuestStore store, string title = "Cross the machines", string body = "why") =>
         store.PublishAsync("Asker", "Federated", title, body, Now);
@@ -121,8 +105,11 @@ public sealed class QuestSyncTests : IAsyncLifetime
         var lost = await SyncAsync(_b);
         await SyncAsync(_a);
 
-        Assert.NotNull(lost);
         Assert.Empty(lost.Refused);
+        Assert.Null(lost.Problem);
+        Assert.Equal(QuestStatus.Taken, Assert.Single(lost.Conflicts).Attempted);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+        Assert.Equal(QuestClaim.Held, await _a.ClaimAsync(quest.Id));
         foreach (var store in new[] { _a, _b, _remote })
         {
             var held = (await store.FindAsync(quest.Id))!;
@@ -132,6 +119,34 @@ public sealed class QuestSyncTests : IAsyncLifetime
             Assert.Equal(_b.Machine, conflict.Machine);
             Assert.Equal(QuestStatus.Taken, conflict.Attempted);
             Assert.Equal("B's session.", conflict.Note);
+        }
+    }
+
+    /// <summary>
+    /// 🔴 D69: once a machine's take has lost, its later moves on that quest were made on a claim it
+    /// never held — an offline session that finished its work would otherwise CLOSE the quest over the
+    /// winner's take, because the table allows done from taken. They become conflicts too.
+    /// </summary>
+    [Fact]
+    public async Task A_close_made_on_a_take_that_lost_is_a_conflict_too()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(2));
+        await _b.MoveAsync(quest.Id, QuestStatus.Done, "Finished offline.", Now.AddHours(3));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        foreach (var store in new[] { _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal(QuestStatus.Taken, held.Status);
+            Assert.Equal(
+                [QuestStatus.Taken, QuestStatus.Done],
+                held.Conflicts.Select(c => c.Attempted));
         }
     }
 
@@ -341,6 +356,62 @@ public sealed class QuestSyncTests : IAsyncLifetime
         var pending = Assert.Single(await store.PendingAsync(Workspaces.Default, _ => true));
         Assert.Equal(("aaaaaaaaaaaa", 1L, (long?)null), (pending.Quest, pending.Sequence, pending.Number));
         Assert.True((await store.MoveAsync("aaaaaaaaaaaa", QuestStatus.Taken, null, Now)).Moved);
+    }
+
+    /// <summary>
+    /// A remote that cannot be reached is a wall the pass NAMES, never an exception out of it — the take
+    /// that ran it stands here, unconfirmed, and nothing about the store moved.
+    /// </summary>
+    [Fact]
+    public async Task An_unreachable_remote_is_named_and_leaves_everything_pending()
+    {
+        var quest = await Publish(_a);
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, null, Now);
+
+        var pass = await QuestSync.RunAsync(_a, _ => true, new UnreachableRemote(), Workspaces.Default);
+
+        Assert.Contains("could not be reached", pass.Problem);
+        Assert.Equal(2, (await _a.PendingAsync(Workspaces.Default, _ => true)).Count);
+        Assert.Equal(QuestClaim.Unconfirmed, await _a.ClaimAsync(quest.Id));
+        Assert.Equal(QuestClaim.None, await _b.ClaimAsync(quest.Id));
+    }
+
+    /// <summary>
+    /// The wire both hosts speak carries an operation whole — a publish's ask with its files by name,
+    /// its chain and its parent; a conflict with what it attempted; a number — and nothing half-made.
+    /// </summary>
+    [Fact]
+    public void An_operation_crosses_the_wire_whole_and_a_half_made_one_does_not_cross_at_all()
+    {
+        var asked = new Quest("abcdefabcdef", "Asker", "Federated", "Do it", "why", QuestStatus.Open, null, Now, Now, "aurora")
+        {
+            Links = ["https://tickets.example/T-1"],
+            Attachments = [new QuestAttachment("trace.log", new string('a', 64), 300)],
+            Then = [new QuestStep("Federated", "Verify {parent}", "b")],
+            Parent = "fedcbafedcba",
+        };
+        var page = new QuestFetch(
+        [
+            new QuestOperation("abcdefabcdef", QuestOperationKind.Published, "m1", 1, Now, Published: asked, Number: 7),
+            new QuestOperation("abcdefabcdef", QuestOperationKind.Conflict, "m2", 4, Now, "late", Attempted: QuestStatus.Taken, Number: 8),
+        ], 8, More: true);
+
+        var json = QuestWire.Page(page);
+        var back = QuestWire.ReadPage(json)!;
+
+        Assert.DoesNotContain("aurora", json);
+        Assert.True(back.More);
+        Assert.Equal(8, back.Through);
+        var published = back.Operations[0];
+        Assert.Equal((7L, "m1", 1L), (published.Number!.Value, published.Machine, published.Sequence));
+        Assert.Equal("trace.log", Assert.Single(published.Published!.Attachments).Name);
+        Assert.Equal("Verify {parent}", Assert.Single(published.Published.Then).Title);
+        Assert.Equal("fedcbafedcba", published.Published.Parent);
+        Assert.Equal(Workspaces.Default, published.Published.Workspace);
+        Assert.Equal((QuestStatus.Taken, "late"), (back.Operations[1].Attempted!.Value, back.Operations[1].Note));
+        Assert.Null(QuestWire.ReadPage("""{ "operations": [{ "machine": "m1", "quest": "q", "kind": "taken", "at": "2026-09-24T10:00:00Z" }] }"""));
+        Assert.Null(QuestWire.ReadPush("""{ "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "conflict", "at": "2026-09-24T10:00:00Z" }] }"""));
+        Assert.Null(QuestWire.ReadPage("[]"));
     }
 
     [Fact]

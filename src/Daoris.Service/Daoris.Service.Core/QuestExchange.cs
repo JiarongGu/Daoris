@@ -114,15 +114,17 @@ public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Mes
 /// two hosts phrasing them differently is two behaviours in all the ways that matter.</para>
 ///
 /// <para><b>Every verb commits here</b> (D68): a quest shared with a team is published, taken and
-/// closed on this machine like any other, and reaches the remote on the next sync. Nothing waits on a
-/// remote, and nothing fails because one is down.</para>
+/// closed on this machine like any other, and reaches the remote on the next sync. Nothing fails
+/// because a remote is down. One verb WAITS on it when it answers: a take on a shared quest claims by
+/// push (D69), so a take that lost is known before any work starts.</para>
 /// </remarks>
-/// <param name="wired">
-/// Whether a workspace has a remote on this machine — read when a chain is composed, because a chain's
-/// steps must all be shared or all be local. Null on a machine with none, and on a remote itself.
+/// <param name="remotes">
+/// This machine's remotes, by workspace — what a take claims at, and what a chain's composition asks,
+/// because a chain's steps must all be shared or all be local. Null on a machine with none, and on a
+/// remote itself.
 /// </param>
 public sealed class QuestExchange(
-    KnowledgeService service, QuestStore quests, Func<string, bool>? wired = null, QuestFiles? files = null)
+    KnowledgeService service, QuestStore quests, IQuestRemotes? remotes = null, QuestFiles? files = null)
 {
     /// <summary>How many links a quest carries — a ticket and its neighbours, not a bibliography.</summary>
     public const int MaxLinks = 20;
@@ -225,7 +227,7 @@ public sealed class QuestExchange(
         // A chain is judged now, while the person or the intake composing it can still act on the
         // answer — not at a close nobody is watching (D65 §4). Whether this circle shares with a team
         // is this machine's wiring; whether a receiver is shared is its registration (design §8).
-        var circleWired = wired?.Invoke(home) ?? false;
+        var circleWired = remotes?.For(home) is not null;
         if (JudgeChain(ask, registered, home, circleWired, circleWired && target.Joined, addressable) is { } unfitChain)
         {
             return new(QuestPublishRefusal.BadChain, unfitChain, Quest: null, addressable);
@@ -302,6 +304,53 @@ public sealed class QuestExchange(
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// A take on a shared quest claims by push (D69): committed here a moment ago, it is pushed now and
+    /// its answer awaited, so a take that lost is known before any work starts. Null for a quest this
+    /// machine does not share — its take is the local one, and the answer the ordinary one.
+    /// </summary>
+    /// <returns>
+    /// Taken when the remote numbered it. <see cref="QuestRespondRefusal.AlreadyTaken"/> when another
+    /// machine's take reached it first — the take is a conflict on the quest now, and the session stands
+    /// down on the same sentence it always has. Taken, UNCONFIRMED, when the remote did not answer or did
+    /// not take it: offline work is allowed (D68 §4), and the next sync decides.
+    /// </returns>
+    private async Task<QuestRespondOutcome?> ClaimByPushAsync(Quest quest, CancellationToken ct)
+    {
+        if (remotes?.For(quest.Workspace) is not { } remote) return null;
+
+        // Only a quest whose receiver is joined in its circle ever leaves this machine (design §8); a
+        // take on any other is complete the moment it commits.
+        var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
+        if (!registered.Any(r => r.Joined && Workspaces.Same(r.InWorkspace, quest.Workspace)
+                                 && string.Equals(r.Repository, quest.To, StringComparison.OrdinalIgnoreCase)))
+        {
+            return null;
+        }
+
+        var pass = await QuestSync.RunAsync(quests, service, remote, quest.Workspace, ct).ConfigureAwait(false);
+        return await quests.ClaimAsync(quest.Id, ct).ConfigureAwait(false) switch
+        {
+            QuestClaim.Held => new(
+                QuestRespondRefusal.None,
+                $"Quest `#{quest.Id}` is now Taken — the remote confirmed the claim.",
+                await quests.FindAsync(quest.Id, ct).ConfigureAwait(false)),
+            QuestClaim.Lost => new(
+                QuestRespondRefusal.AlreadyTaken,
+                $"Quest `#{quest.Id}` was taken on another machine first — its take reached the remote before this "
+                + "one, which is kept on the quest as a conflict. Stand down rather than doubling the work.",
+                Quest: null),
+            _ => new(
+                QuestRespondRefusal.None,
+                $"Quest `#{quest.Id}` is now Taken, UNCONFIRMED: "
+                + (pass.Problem ?? pass.Refused.FirstOrDefault(r => r.Quest == quest.Id)?.Reason
+                    ?? "the remote has not taken the claim yet")
+                + ". The take stands on this machine until a sync reaches the remote. Carry on — and if "
+                + "another machine's take reached it first, this session will be stopped.",
+                await quests.FindAsync(quest.Id, ct).ConfigureAwait(false)),
+        };
     }
 
     /// <summary>
@@ -529,6 +578,12 @@ public sealed class QuestExchange(
         if (move.Quest is null)
         {
             return new(QuestRespondRefusal.NotFound, $"No quest `#{id.TrimStart('#')}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (move.Moved && status == QuestStatus.Taken
+            && await ClaimByPushAsync(move.Quest, ct).ConfigureAwait(false) is { } claimed)
+        {
+            return claimed;
         }
 
         if (move.Moved)

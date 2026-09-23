@@ -14,6 +14,9 @@ public sealed class SessionProcesses
     {
         public required Process Process;
         public bool StopRequested;
+
+        /// <summary>Why the driver ended it, when the driver did — null when the person did.</summary>
+        public string? Reason;
     }
 
     private readonly object _gate = new();
@@ -29,16 +32,18 @@ public sealed class SessionProcesses
     }
 
     /// <summary>
-    /// End a session's process, marking the end as the person's. True when there was one to stop;
-    /// false is an answer too — the session already finished, and its record says how.
+    /// End a session's process, marking the end as the person's — or, with a <paramref name="reason"/>,
+    /// as the driver's own, for that reason. True when there was one to stop; false is an answer too —
+    /// the session already finished, and its record says how.
     /// </summary>
-    public bool Stop(string sessionId)
+    public bool Stop(string sessionId, string? reason = null)
     {
         Entry? entry;
         lock (_gate)
         {
             if (!_running.TryGetValue(sessionId, out entry)) return false;
             entry.StopRequested = true;
+            entry.Reason ??= reason;
         }
 
         try
@@ -57,6 +62,12 @@ public sealed class SessionProcesses
     public bool WasStopRequested(string sessionId)
     {
         lock (_gate) return _running.TryGetValue(sessionId, out var entry) && entry.StopRequested;
+    }
+
+    /// <summary>Why the driver ended this session itself — null when nobody did, or the person did.</summary>
+    public string? StopReason(string sessionId)
+    {
+        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Reason : null;
     }
 
     /// <summary>

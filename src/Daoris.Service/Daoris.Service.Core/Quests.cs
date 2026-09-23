@@ -726,9 +726,15 @@ public sealed class QuestStore
     {
         var conflicts = new List<QuestOperation>();
         Quest? quest = null;
+
+        // Once this machine's take has lost, its later moves on the quest were made on a claim it never
+        // held (D69): an offline session that finished would otherwise close the quest over the winner's
+        // take, because the table allows done from taken. Every pending operation is this machine's.
+        var claimLost = false;
         foreach (var operation in await HistoryAsync(id, transaction, ct).ConfigureAwait(false))
         {
-            if (operation.Number is not null || QuestLog.Applies(quest, operation))
+            var lostClaim = claimLost && operation.Number is null && QuestTransitions.Target(operation.Kind) is not null;
+            if (!lostClaim && (operation.Number is not null || QuestLog.Applies(quest, operation)))
             {
                 quest = QuestLog.Applies(quest, operation) ? QuestLog.Step(quest, operation) : quest;
                 continue;
@@ -751,6 +757,7 @@ public sealed class QuestStore
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
             quest = QuestLog.Step(quest, lost);
             conflicts.Add(lost);
+            claimLost |= operation.Kind == QuestOperationKind.Taken;
 
             if (operation.Kind == QuestOperationKind.Done)
             {
@@ -858,6 +865,36 @@ public sealed class QuestStore
             }
 
             return pending;
+        }, ct);
+
+    /// <summary>
+    /// Where THIS machine's claim on a quest stands (D68 §4, D69): held once a remote numbered its take,
+    /// unconfirmed while the take is only here, lost once the rebase made it a conflict — and none when
+    /// this machine never took it. A take on a machine with no remote is never numbered, so it stays
+    /// unconfirmed, which nothing acts on.
+    /// </summary>
+    public Task<QuestClaim> ClaimAsync(string id, CancellationToken ct = default) =>
+        InGateAsync(async () =>
+        {
+            await using var command = _connection.CreateCommand();
+            command.CommandText = $"SELECT {OperationColumns} FROM quest_log WHERE quest = $id AND machine = $machine";
+            command.Parameters.AddWithValue("$id", id);
+            command.Parameters.AddWithValue("$machine", Machine);
+
+            var claim = QuestClaim.None;
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                var operation = ReadOperation(reader);
+                if (operation.Kind == QuestOperationKind.Taken)
+                {
+                    return operation.Number is null ? QuestClaim.Unconfirmed : QuestClaim.Held;
+                }
+
+                if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken }) claim = QuestClaim.Lost;
+            }
+
+            return claim;
         }, ct);
 
     /// <summary>Record the numbers a push was given — the operations stop being pending.</summary>

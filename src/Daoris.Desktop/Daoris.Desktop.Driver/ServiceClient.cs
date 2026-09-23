@@ -76,6 +76,13 @@ public sealed class ServiceClient : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
+    /// driver learns that a session it is running took a quest another machine took first.
+    /// </summary>
+    public async Task<string> ClaimAsync(string id, CancellationToken ct = default) =>
+        RemoteSyncPayloads.Claim(await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false));
+
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? harnessVersion = null, string? profile = null,

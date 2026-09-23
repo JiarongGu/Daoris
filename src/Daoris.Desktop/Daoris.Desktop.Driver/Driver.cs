@@ -75,6 +75,19 @@ public sealed class Driver(
     // which is every test that does not care and nothing that runs on a machine.
     HookSet? hooks = null)
 {
+    /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
+    public const string LostClaim =
+        "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
+        + "session's take is a conflict on the quest and its work would double someone else's.";
+
+    // How often the sync runs BESIDE sessions still working (D68 §6): the watch loop's own cadence, so
+    // a session no longer holds the sync back for its whole run, and one choice sets both.
+    private readonly TimeSpan _syncBeside = TimeSpan.FromSeconds(Math.Max(1, config.PollSeconds));
+
+    // Which quest each session this driver is running holds — what the sync beside the sessions checks
+    // this machine's claim on. A session's entry lives exactly as long as its process.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _live = new(StringComparer.Ordinal);
+
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.
     private readonly SessionProcesses _processes = processes ?? new SessionProcesses();
@@ -107,15 +120,20 @@ public sealed class Driver(
         {
             if (sync is null) return;
             var synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
-            if (synced.Problem is not null)
-            {
-                events.Add($"sync  {synced.Problem}");
-            }
 
-            // What the remote understood and deliberately did not take (D48 §6) — a stale or branch
-            // feed, a quest it would not keep, a move that lost to another machine's. Reported as its
-            // own kind of line, because each is news about the family, not a fault in this machine.
-            foreach (var note in synced.Notes) events.Add($"held  {note}");
+            // Locked: beside running sessions this writes while their runs write too (D68 §6).
+            lock (events)
+            {
+                if (synced.Problem is not null)
+                {
+                    events.Add($"sync  {synced.Problem}");
+                }
+
+                // What the remote understood and deliberately did not take (D48 §6) — a stale or
+                // branch feed, a quest it would not keep, a move that lost to another machine's.
+                // Reported as its own kind of line: each is news about the family, not a fault here.
+                foreach (var note in synced.Notes) events.Add($"held  {note}");
+            }
         }
 
         await SyncAsync().ConfigureAwait(false);
@@ -181,7 +199,19 @@ public sealed class Driver(
                 if (held is not null) heldAt[start.Quest.Id] = held;
             }
         });
-        await Task.WhenAll(runs).ConfigureAwait(false);
+        // The sync runs BESIDE the sessions, not only around them (D68 §6): a session no longer holds
+        // it back for its whole run. Each pass is followed by a look at every session this driver is
+        // running — one whose take came back LOST is stopped, because its quest is another machine's
+        // and its work would double theirs (D68 §5). An unconfirmed take keeps working.
+        var all = Task.WhenAll(runs);
+        while (sync is not null && !all.IsCompleted)
+        {
+            if (await Task.WhenAny(all, Task.Delay(_syncBeside, ct)).ConfigureAwait(false) == all) break;
+            await SyncAsync().ConfigureAwait(false);
+            await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+        }
+
+        await all.ConfigureAwait(false);
 
         // What ended, told to whoever listens — contained: nothing a plugin says here changes the
         // record, which moved on the exit code and the quest before this line ran (D46 §4).
@@ -199,6 +229,32 @@ public sealed class Driver(
         if (concluded.Count > 0) await SyncAsync().ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded);
+    }
+
+    /// <summary>
+    /// Stop every session this driver is running whose take LOST (D68 §5) — found by asking this
+    /// machine's host where its claim on the session's quest stands. A driver stops only its own
+    /// processes (D47 §6), and the record says why, not that the person did.
+    /// </summary>
+    private async Task StopLostClaimsAsync(List<string> events, CancellationToken ct)
+    {
+        foreach (var (quest, session) in _live)
+        {
+            string claim;
+            try
+            {
+                claim = await service.ClaimAsync(quest, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+            {
+                continue; // The host did not answer; the next pass asks again.
+            }
+
+            if (claim == "lost" && _processes.Stop(session, LostClaim))
+            {
+                lock (events) events.Add($"stop  session {session} (#{quest}): {LostClaim}");
+            }
+        }
     }
 
     /// <summary>
@@ -393,6 +449,8 @@ public sealed class Driver(
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             using var tracked = _processes.Track(sessionId, process);
             using var _ = new Disposer(() => SpawnServers.Remove(handed));
+            _live[quest.Id] = sessionId;
+            using var live = new Disposer(() => _live.TryRemove(quest.Id, out var _));
 
             // Which door this harness is held over (D53). The protocol door drives an ACP session on
             // the same process; the pipe door reads its text. Both end the same way — the record is
@@ -427,7 +485,12 @@ public sealed class Driver(
             // The person's stop outranks the observation: a killed session leaves the same signals as
             // a crashed one, and only this flag knows whose decision the end was.
             var status = await service.QuestStatusAsync(quest.Id, ct).ConfigureAwait(false) ?? "Open";
-            var conclusion = _processes.WasStopRequested(sessionId)
+            var stoppedFor = _processes.StopReason(sessionId);
+            var conclusion = stoppedFor is not null
+                // The driver's own stop, for a take that lost (D68 §5): the quest was someone else's,
+                // which is what standing down has always meant — and the reason says who decided.
+                ? new SessionConclusion("stood-down", stoppedFor)
+                : _processes.WasStopRequested(sessionId)
                 ? new SessionConclusion("stopped", "the person stopped it.")
                 : exitCode is int code
                     ? Observation.Conclude(code, status)
@@ -461,7 +524,7 @@ public sealed class Driver(
                 // that outranks the observation two lines above. Read once, used for both.
                 new SessionEnded(
                     sessionId, quest.To, conclusion.State,
-                    ByPerson: _processes.WasStopRequested(sessionId), conclusion.Note,
+                    ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
                     Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
                 null);
         }

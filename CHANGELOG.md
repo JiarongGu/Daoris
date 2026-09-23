@@ -464,15 +464,18 @@ The first version: doctrine that installs, is checked, and flows back.
   sync rides the driver tick. It feeds registrations, session records (keyed by origin) and opted-in
   knowledge content **up**, and mirrors teammates' registrations **down**. For quests it runs
   **fetch, rebase, push**: the remote orders what it accepts, the first push wins, and a move that
-  lost is kept on the quest as a **conflict** rather than dropped. A quest leaves a machine only when
-  its receiver is joined. What may leave a machine at all is two manifest declarations — **join**
+  lost is kept on the quest as a **conflict** rather than dropped. **A take claims by push** (D69).
+  A take on a shared quest waits for the remote's answer, so a take that lost stands down before any
+  work. Offline, the take stands unconfirmed, and a session whose take later loses is stopped by its
+  own machine's driver. A quest leaves a machine only when its receiver is joined. What may leave a machine at all is two manifest declarations — **join**
   and **share knowledge** — and silence means local. Roots, transcripts and a file's bytes have no
   field in anything fed.
 - **Proven by a two-machine rehearsal.** The family rehearsal grows a remote phase with a shared host
   and two simulated machines. A quest published on one is driven to done on the other and the closure
-  crosses back. A machine that sees a quest already taken leaves it alone. Both machines taking one
-  quest offline end with the second's take kept as a conflict everywhere. Verbs made while the remote
-  is down are pushed when it returns. Knowledge crosses only where declared, keys are refused without
+  crosses back. A machine that sees a quest already taken leaves it alone. When both machines take one
+  quest online, the second stands down before any work. When both take it offline, the second's take
+  is kept as a conflict everywhere. A session that took offline and lost is stopped before it lands
+  anything. Verbs made while the remote is down are pushed when it returns. Knowledge crosses only where declared, keys are refused without
   being echoed, and the remote store is scanned to hold no machine path — no model in the gate.
   A two-workspace phase joins it: two circles on one machine, a search answering from one while the
   other holds the same lesson word for word, and a quest across the boundary refused with both sides

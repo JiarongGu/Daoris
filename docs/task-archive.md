@@ -4421,3 +4421,46 @@ names the wall, and the next tick pushes). It also proves the closure reaches th
 tick that made it, which is the only check on the tick's second sync. Service 381 (28 relay and
 mirror tests removed, 21 added), driver 400, modules 105, web 619 + 18, family 220/220, deploy 39/39,
 verify green.
+
+## SYNC3 — claim by push (2026-09-24)
+
+- [x] **SYNC3 — claim by push**, unconfirmed takes offline, a losing session stopped.
+
+✅ **done 2026-09-24**, the fourth of D68's build. It is built as **D69**, which the owner chose over
+the design's first wording. The sync design's §4 had the driver take the quest before spawning, which
+is the alternative D46 rejected: Taken has no way back to Open, so a spawn failing after the take
+would strand the quest. **The take itself claims by push instead**:
+- A take on a shared quest commits locally, runs one sync pass, and answers from this machine's
+  claim afterwards (`QuestStore.ClaimAsync`).
+- Held: *the remote confirmed the claim*.
+- Lost: the existing *already taken — stand down*, before any work.
+- Anything else: taken, **UNCONFIRMED**, with the wall named.
+
+So the session is still the claimant, driven or not.
+
+**The quest sync moved into the hosts** so the take and the tick run one implementation:
+- `QuestSync` is the pass. `IQuestRemote`/`HttpQuestRemote` is its transport, and the service opens
+  this one socket and still spawns nothing.
+- `QuestWire` is the single wire, spoken by the remote's doors and by the host's client.
+- The driver's quest pass is one call to `POST /api/quests/sync?workspace=`. The three byte-moving
+  local doors from SYNC2 are gone.
+- **A losing session is stopped.** The tick syncs beside running sessions every `pollSeconds`, asks
+  `GET /api/quests/{id}/claim` for each, and stops one whose take lost. The session ends
+  `stood-down`, with the reason on the record and `ByPerson` false.
+- **The rebase learned D69's rule**: once a machine's take has lost, its later pending moves on that
+  quest are conflicts too. That closes the gap SYNC2 found, where an offline loser's finished close
+  fast-forwarded over the winner's take. A test failed before the rule and passes after it.
+
+**Found**:
+- The rehearsal's stub stood down on the words "already taken", which the lost-claim sentence does
+  not contain. It now reads the 409, because wording is written for a person.
+- The lingering-session proof was cut off twice by restarting machine b's host while the stub's
+  take was still in flight. First the gate waited only for the session to spawn. Then it waited for
+  the take to commit, but the host answers only after its failed push. The gate now waits for the
+  stub's own transcript to say it is lingering.
+- One `HookTests` failure appeared in a run under heavy load (a 2m20s suite that normally takes
+  28s). It did not recur in five runs and SYNC3 does not touch hooks. It is recorded here as one
+  sighting, per TEST1's rule.
+
+Service 387, driver 399, modules 105, web 619 + 18, family 225/225 (three runs), deploy 39/39,
+verify green.
