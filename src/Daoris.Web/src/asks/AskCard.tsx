@@ -21,8 +21,9 @@ export const firstLine = (sentence: string) => sentence.split('\n', 1)[0].trim()
 
 /**
  * Which tier answered, in the words for it (`model-decoupling`: said, never implied) — the record's
- * sentence, or the card's short form. A tier this page has no word for — INT4b's session, or anything
- * after it — is shown as the service wrote it rather than as a blank or a guess.
+ * sentence, or the card's short form. A tier this page has no word for is shown as the service wrote
+ * it rather than as a blank or a guess. Every tier the service writes has words in both catalogues,
+ * held from the service's side (`AskTierCatalogueTests`), since that side decides which exist.
  */
 export function tierWords(
   t: (key: string, options?: Record<string, unknown>) => string, tier: string, form: 'sentence' | 'short' = 'sentence',

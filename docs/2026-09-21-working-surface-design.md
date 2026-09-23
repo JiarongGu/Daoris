@@ -204,7 +204,8 @@ not the mechanism.
 
 - **Overview keeps the landing** (D40 — "is anything sitting" is still the first question) and gains
   one band: **what needs you.** Parked sessions first, then finished-and-unreviewed work, then quests
-  sitting that nobody can take. Every row is a door.
+  sitting that nobody can take. Every row is a door. *Amended 2026-09-24 (INT4d):* an ask waiting
+  on a person comes after the parked sessions and before the quests (intake design §1h).
 - **`AwaitingPerson` gets a surface at last.** It has meant "only the person can clear this" since
   D46 and has never been rendered anywhere. In Work it wears the warn treatment in the rail, its
   analysis sits at the top of the head — options, recommendation, reason, as `autonomous-development`

@@ -229,13 +229,28 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   quest before the list holds it. So the record names it by id, and makes it a door only once the
 >   page can open it. A button that closes one drawer and opens nothing is a dead click.
 
+> **Amended 2026-09-24, asks in *What needs you* (INT4d).** Held by vitest and a Playwright check,
+> and **not yet looked at on the real window**.
+>
+> - **A row is a door only where its destination exists.** A parked session opens in Sessions,
+>   which only the desktop has. A quest nobody can take opens in its own drawer, and an ask opens in
+>   its record, in a browser as on the desktop. A row with nowhere to go is text rather than a
+>   button. Before this, a browser's parked row was a button that did nothing.
+> - **An ask reads by what it waits for**: *proposed, not yet published*, or *its intake asked
+>   you*. Its place is named as a circle, because a bare circle name among repository names reads
+>   as one more repository.
+> - **A record says who answered.** The tier is in words, and an intake session is a line of the
+>   record: its state, then its tool. The tool is a door into Sessions wherever Sessions exists.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*
   (row = pill · title · route · how long — and, on the desktop, *sitting — why*, the driver's own
   sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
-  quest drawer; repository rows go to Projects.
+  quest drawer; repository rows go to Projects. Above the tiles, *What needs you* (working surface
+  §4) lists parked sessions, then asks waiting on a person (INT4d), then quests nobody can take, and
+  it is absent when nothing waits.
 - **Quests** — the primary page action is *Ask* (INT4c): its composer and each ask's record are
   drawers, and the asks sit above the quests as a group of their own, a card per ask. *New quest*
   opens the **compose drawer**; the list stays scannable (pill, title, route,

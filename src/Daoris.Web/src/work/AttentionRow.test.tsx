@@ -7,9 +7,19 @@ const PARKED: Attention = {
   id: 's1a2b3c4',
   kind: 'parked',
   title: 'Expose a streaming budget on the chunk API',
-  repository: 'engine',
+  where: 'engine',
   since: '2026-09-21T09:00:00Z',
   detail: 'Two ways forward; I recommend the second.',
+};
+
+/** An ask the declarations proposed and nobody has settled (INT4d) — it waits in a circle. */
+const PROPOSAL: Attention = {
+  id: '7c1e9a04b2d5',
+  kind: 'proposal',
+  title: 'The chunk streamer stalls on a cold cache.',
+  where: 'aurora',
+  since: '2026-09-21T09:00:00Z',
+  detail: 'The declarations propose engine, game. Nothing is published until you choose.',
 };
 
 describe('a row in what needs you', () => {
@@ -37,8 +47,22 @@ describe('a row in what needs you', () => {
     expect(screen.getByText('nobody here can take this')).toBeInTheDocument();
   });
 
+  /** A bare circle name among repository names reads as one more repository. */
+  it('names an ask by what it waits for, and its place as a circle', () => {
+    render(<AttentionRow item={PROPOSAL} />);
+
+    expect(screen.getByText('proposed, not yet published')).toBeInTheDocument();
+    expect(screen.getByText('circle aurora')).toBeInTheDocument();
+    expect(screen.getByText(/propose engine, game/)).toBeInTheDocument();
+  });
+
+  it('names an ask whose intake parked asking by that', () => {
+    render(<AttentionRow item={{ ...PROPOSAL, kind: 'intake', detail: 'published nothing.' }} />);
+    expect(screen.getByText('its intake asked you')).toBeInTheDocument();
+  });
+
   it('renders without a detail — a park that said nothing is still worth a row', () => {
-    render(<AttentionRow item={{ ...PARKED, detail: null }} />);
+    render(<AttentionRow item={{ ...PARKED, detail: null }} onOpen={() => {}} />);
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 });
@@ -53,9 +77,14 @@ describe('opening one', () => {
     expect(open).toHaveBeenCalledWith(PARKED);
   });
 
-  it('stays inert where there is nowhere to go — knowing is the half that travels', async () => {
+  /**
+   * A door opens something, or it is not a door (platform language §4): a browser's parked row was a
+   * button that did nothing. Knowing is the half that travels, so the row is still there — as text.
+   */
+  it('is no door where there is nowhere to go, and still says what is waiting', () => {
     render(<AttentionRow item={PARKED} />);
-    await userEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('button')).toBeInTheDocument();
+
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByText('Expose a streaming budget on the chunk API')).toBeInTheDocument();
   });
 });

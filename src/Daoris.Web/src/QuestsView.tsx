@@ -41,7 +41,9 @@ const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '', links: '', f
  * other door, refusals surfaced verbatim — the service's sentence is the contract, so it is never
  * translated or rephrased here.
  */
-export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocused, asking, onAsked }: {
+export function QuestsView({
+  notify, onAttend, opening, onOpened, focus, onFocused, asking, onAsked, askFocus, onAskFocused,
+}: {
   notify: Notify;
   /**
    * The palette asked for the ask composer (INT4c) — an event like `opening`, consumed by identity and
@@ -49,6 +51,12 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
    */
   asking?: boolean;
   onAsked?: () => void;
+  /**
+   * An ask a door asked to see — Overview's band, where an ask waits on a person (INT4d). An event
+   * like `focus`: its record opens once the ask is loaded, and the holder is told so it can clear it.
+   */
+  askFocus?: string | null;
+  onAskFocused?: () => void;
   /**
    * A quest a door asked to see — the status bar's conflict list (SYNC6b). An event like `opening`:
    * the drawer opens on it once the quest is loaded, and the holder is told so it can clear it.
@@ -334,6 +342,9 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
           const quest = everything.data?.find((candidate) => candidate.id === id);
           if (quest) openDetail(quest);
         }}
+        focus={askFocus}
+        onFocused={onAskFocused}
+        onAttend={onAttend}
       />
 
       {quests.isPending && <SkeletonRows rows={4} />}

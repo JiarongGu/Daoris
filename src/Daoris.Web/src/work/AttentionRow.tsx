@@ -1,35 +1,47 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
+import { cn } from '../lib/cn';
 import { Dot } from '../ui';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
  *
  * @remarks
- * **Two kinds, and they are different questions.** A `parked` session is stopped at a checkpoint
- * only a person can clear (D46). An `unanswerable` quest is addressed to a repository this
- * deployment has no registration for — it will sit forever, and nothing else says so.
+ * **Four kinds, and they are different questions.** A `parked` session is stopped at a checkpoint
+ * only a person can clear (D46). An ask is a `proposal` while nothing serves it: the declarations
+ * proposed, and only a person publishes (INT4a). An ask is `intake` when its intake session parked
+ * asking the person (D65 §1b). That session is counted as the ask, never twice. An `unanswerable`
+ * quest is addressed to a repository this deployment has no registration for. It will sit forever,
+ * and nothing else says so.
  *
- * A third kind belongs here by design §4 — **finished work nobody has looked at** — and is not
+ * A fifth kind belongs here by design §4 — **finished work nobody has looked at** — and is not
  * buildable yet: nothing records that anybody looked. It arrives with the *viewed* mark SURF6
  * introduces, and the band says as much rather than leaving a silent gap.
  */
 export type Attention = {
-  /** The session or quest id — what the door opens. */
+  /** The session, ask or quest id — what the door opens. */
   id: string;
-  kind: 'parked' | 'unanswerable';
-  /** What it is, derived: a session's identity or a quest's title. */
+  kind: 'parked' | 'proposal' | 'intake' | 'unanswerable';
+  /** What it is, derived: a session's identity, an ask's first line, or a quest's title. */
   title: string;
-  repository: string;
-  /** When it started waiting — a park's last move, a quest's filing. */
+  /** Where it waits: the repository, or for an ask its circle, because an ask has no repository yet. */
+  where: string;
+  /** When it started waiting — a park's last move, an ask's asking, a quest's filing. */
   since: string;
-  /** The session's analysis, or the sentence explaining why nobody can take the quest. */
+  /** The session's analysis, or the sentence explaining what the person is being asked to settle. */
   detail?: string | null;
 };
+
+/** The kinds that wait in a circle rather than in a repository. */
+const IN_A_CIRCLE: ReadonlySet<Attention['kind']> = new Set(['proposal', 'intake']);
 
 /**
  * A row in *what needs you* — and a **door**, because a band that only counted would send people
  * looking for the thing it just told them about.
+ *
+ * **A door opens something, or it is not a door** (platform language §4). Handed no `onOpen`, the
+ * row has nowhere to go, as a parked session in a browser has no Sessions. So it is text rather than
+ * a button: it still says what is waiting, because knowing is the half that travels.
  *
  * A molecule: it is handed the item and reports a click.
  */
@@ -39,27 +51,40 @@ export function AttentionRow({ item, onOpen }: {
 }) {
   const { t } = useTranslation();
 
+  const body = (
+    <>
+      <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        <span className="min-w-0 truncate text-body font-semibold text-ink">{item.title}</span>
+        <span className="shrink-0 font-mono text-meta text-ink-faint">
+          {t('work.attention.since', { ago: ago(item.since) })}
+        </span>
+      </span>
+      <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-small">
+        <Dot tone="parked" label={t(`work.attention.${item.kind}`)} />
+        <span className="text-accent">
+          {IN_A_CIRCLE.has(item.kind) ? t('work.attention.circle', { circle: item.where }) : item.where}
+        </span>
+      </span>
+      {item.detail && (
+        <span className="mt-0.5 line-clamp-2 block text-small text-ink-soft">{item.detail}</span>
+      )}
+    </>
+  );
+  const shape = 'block w-full border-l-[3px] border-l-st-open px-3 py-2 text-left';
+
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => onOpen?.(item)}
-        className="block w-full border-l-[3px] border-l-st-open px-3 py-2 text-left transition-colors duration-(--speed) hover:bg-accent-soft/50"
-      >
-        <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          <span className="min-w-0 truncate text-body font-semibold text-ink">{item.title}</span>
-          <span className="shrink-0 font-mono text-meta text-ink-faint">
-            {t('work.attention.since', { ago: ago(item.since) })}
-          </span>
-        </span>
-        <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-small">
-          <Dot tone="parked" label={t(`work.attention.${item.kind}`)} />
-          <span className="text-accent">{item.repository}</span>
-        </span>
-        {item.detail && (
-          <span className="mt-0.5 line-clamp-2 block text-small text-ink-soft">{item.detail}</span>
-        )}
-      </button>
+      {onOpen
+        ? (
+          <button
+            type="button"
+            onClick={() => onOpen(item)}
+            className={cn(shape, 'transition-colors duration-(--speed) hover:bg-accent-soft/50')}
+          >
+            {body}
+          </button>
+        )
+        : <div className={shape}>{body}</div>}
     </li>
   );
 }

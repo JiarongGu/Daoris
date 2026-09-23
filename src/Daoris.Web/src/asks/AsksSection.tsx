@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ask } from '../api';
 import { linksOf, toUpload } from '../attachments';
 import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
-import { useAsk, useAsks, useCloseAsk, usePublishAsk, useQuests, useRegistry } from '../queries';
+import { useAsk, useAsks, useCloseAsk, usePublishAsk, useQuests, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
 import { type Notify, SectionTitle, useErrorNotify } from '../ui';
 import { AskCard } from './AskCard';
@@ -27,7 +27,9 @@ const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', ...NO_CARRY };
  *
  * The organism: it holds the hooks so the three molecules below it hold none (components §2).
  */
-export function AsksSection({ notify, includeClosed, composing, onComposingChange, onOpenQuest }: {
+export function AsksSection({
+  notify, includeClosed, composing, onComposingChange, onOpenQuest, focus, onFocused, onAttend,
+}: {
   notify: Notify;
   includeClosed: boolean;
   /** Whether the composer is open — the view's header and the palette open it; this closes it. */
@@ -35,6 +37,11 @@ export function AsksSection({ notify, includeClosed, composing, onComposingChang
   onComposingChange: (composing: boolean) => void;
   /** A quest the ask became, to open in the view's own drawer. */
   onOpenQuest: (id: string) => void;
+  /** An ask a door named (INT4d) — an event, consumed by identity and cleared by its holder. */
+  focus?: string | null;
+  onFocused?: () => void;
+  /** The door into Sessions for an ask's intake session — absent where Sessions is (a browser). */
+  onAttend?: (session: string) => void;
 }) {
   const { t } = useTranslation();
   const scope = useScope();
@@ -43,6 +50,7 @@ export function AsksSection({ notify, includeClosed, composing, onComposingChang
   // unscoped, they are every circle's, which is exactly the list the composer asks the person to pick from.
   const family = useRegistry();
   const everything = useQuests(null, true);
+  const sessions = useSessions(null, true);
   const ask = useAsk();
   const publish = usePublishAsk();
   const close = useCloseAsk();
@@ -56,6 +64,23 @@ export function AsksSection({ notify, includeClosed, composing, onComposingChang
   const [held, setHeld] = useState<Ask | null>(null);
   const listed = held ? asks.data?.find((candidate) => candidate.id === held.id) : undefined;
   const shown = listed && held && Date.parse(listed.updated) > Date.parse(held.updated) ? listed : held;
+  // Its intake session's record, ended ones included — the record says who answered (INT4d). A
+  // session record is the host's HTTP, so a browser on this machine reads it too.
+  const intake = shown?.intake
+    ? sessions.data?.find((session) => session.id === shown.intake) ?? null
+    : null;
+
+  // An ask a door named (INT4d), consumed by identity for the quest composer's reason (frontend §4b):
+  // the last one seen is remembered, a new one opens its record once the ask is loaded, and the holder
+  // is told from an effect. Forgotten once the holder clears it, so the same ask asked twice opens twice.
+  const [focusSeen, setFocusSeen] = useState<string | null>(null);
+  const focused = focus ? asks.data?.find((candidate) => candidate.id === focus) : undefined;
+  if (focus && focused && focus !== focusSeen) {
+    setFocusSeen(focus);
+    setHeld(focused);
+  }
+  if (!focus && focusSeen) setFocusSeen(null);
+  useEffect(() => { if (focus && focusSeen === focus) onFocused?.(); }, [focus, focusSeen, onFocused]);
 
   const circles = [...new Set((family.data ?? []).map((row) => row.workspace ?? 'default'))].sort();
   const fixed = scope.workspace ?? (circles.length === 1 ? circles[0] : null);
@@ -135,6 +160,8 @@ export function AsksSection({ notify, includeClosed, composing, onComposingChang
           ask={shown}
           receivers={receiversIn(shown.workspace)}
           questTitles={questTitles}
+          intake={intake}
+          onAttend={onAttend}
           busy={busy}
           onPublish={(to) => onPublish(shown.id, to)}
           onClose={(reason) => onClose(shown.id, reason)}

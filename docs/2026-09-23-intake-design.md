@@ -250,6 +250,37 @@ The ask's record links the intake session and every quest it published; the Work
 chain as one thread (the attended session's timeline already reads the protocol). The report is
 the records, which is what a person verifies (D37).
 
+*As built (INT4d, 2026-09-24):* an ask that waits on a person is listed in Overview's *What needs
+you*, and its record says who answered it.
+
+- **Which asks wait.** A live ask waits on the person unless its intake session is queued, starting
+  or working. While an intake runs, the ask is the harness's until it ends. Two kinds of row come
+  from it. A **proposal** is an ask no intake is serving, or whose intake ended without publishing:
+  the declarations proposed, and only a person publishes. **Its intake asked you** is an ask whose
+  intake parked `awaiting-person`. The page cannot know whether this machine names an intake
+  harness, so an ask the loop has not picked up yet shows as a proposal until it does. The proposal
+  is the person's to take either way, and the band never guesses what a driver will do next.
+- **One thing, one row.** A parked intake is also a parked session, and the ask's row stands for
+  both. The parked session leaves the list only while its ask is in hand and live. A parked intake
+  whose ask the page has not loaded stays a parked-session row, so nothing waiting is ever dropped
+  because a list did not arrive.
+- **Where the row leads.** Both kinds open the ask's record in Quests, in a browser as on the
+  desktop. The answer is there: publish to a repository, or close. The question is on the intake's
+  transcript, and the record is the way to it.
+- **What the row says.** The ask's first line, its circle, and how long it has waited: since it was
+  asked, or since its intake parked. Under that is the service's sentence about a refused receiver,
+  verbatim, or what the declarations proposed. An intake that asked shows its own parked note,
+  verbatim, as any parked session does.
+- **The record names who answered.** The tier `intake` has words in both catalogues. A service test
+  holds every tier the desk can write against both catalogues, from the side that decides which
+  tiers exist. The intake session is a line of the record: its state, then its tool. On the desktop
+  the tool is a door into Sessions. A browser has no Sessions, so there the session is named and is
+  not a door. An intake the page has not loaded is named by its id.
+- **Order and count.** Parked sessions come first, because they hold a working tree. Asks come next,
+  oldest first, because nothing downstream moves until the person settles one. Quests nobody can
+  take come last. The band and the Sessions badge share `needsAPerson`, so the badge counts these
+  asks too, as it already counted the quests nobody can take.
+
 ## 2. What is deliberately not built
 
 - **A model inside Daoris.** The intake is a session; the harness carries the model (D24, D1).

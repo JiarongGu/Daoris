@@ -1,4 +1,4 @@
-import type { Ask } from '../api';
+import type { Ask, Session } from '../api';
 
 // Asks in each state a real machine reaches, for the stories and the molecule tests alike — one set, so
 // what a reviewer designs against is what the tests assert against.
@@ -42,8 +42,28 @@ export const CLOSED: Ask = {
   ...PROPOSED, id: '2a3b4c5d6e7f', state: 'Closed', note: 'Answered in the design review instead.', updated: hoursAgo(1),
 };
 
-/** A tier this page has no word for (INT4b's session, or anything later) — shown as the service wrote it. */
+/** A tier this page has no word for (anything after INT4b's) — shown as the service wrote it. */
 export const UNKNOWN_TIER: Ask = { ...PUBLISHED, id: 'f0e1d2c3b4a5', tier: 'intake-session' };
+
+/** The session an intake opened for an ask (D65 §1b): a chat in the ask's name, in its circle. */
+export const INTAKE_SESSION: Session = {
+  id: 'i9n8t7k6a5b4', repository: 'ask #3e4f5a6b7c8d', adapter: 'claude-code', kind: 'chat',
+  state: 'completed', ask: '3e4f5a6b7c8d', harnessVersion: '2.1.4', workspace: 'aurora',
+  note: 'published onto ask `#3e4f5a6b7c8d` — it became #9a8b7c.',
+  created: hoursAgo(2), updated: hoursAgo(1),
+};
+
+/** Its intake read the ask and published it — the tier says so, and the record names the session. */
+export const BY_INTAKE: Ask = {
+  ...PUBLISHED, id: '3e4f5a6b7c8d', tier: 'intake', intake: INTAKE_SESSION.id, quests: ['9a8b7c6d5e4f'],
+};
+
+/** Its intake could not settle whose it is, and parked asking the person (D65 §1b). */
+export const INTAKE_ASKED: Ask = { ...PROPOSED, id: '3e4f5a6b7c8d', intake: INTAKE_SESSION.id };
+export const INTAKE_PARKED: Session = {
+  ...INTAKE_SESSION, state: 'awaiting-person',
+  note: 'published nothing: the declarations did not settle ask `#3e4f5a6b7c8d`, so it asks you rather than guess.',
+};
 
 /** A CJK sentence, long, so the card's one line and the record's title are both tried. */
 export const LONG_CJK: Ask = {

@@ -289,6 +289,62 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(page.getByText(/^Asks · /)).toHaveCount(0);
 });
 
+/**
+ * **An ask that waits on a person is in *What needs you*, and its record says who answered** (INT4d),
+ * over the real host. A proposal waits until a person settles it. An intake that parks asking is ONE
+ * row, the ask's, because the answer is on the ask. A browser opens the ask's record from the band,
+ * and names the intake session there without a door, because a browser has no Sessions. The intake is
+ * opened and parked through the doors the driver uses. The driver is not running here, and the
+ * record is what a page reads.
+ */
+test('an ask waiting on a person is in What needs you, and its record names its intake (INT4d)', async ({ page, request }) => {
+  const sentence = 'the release notes should explain the streaming budget';
+  const asked = await request.post('/api/asks', { data: { workspace: 'default', sentence } });
+  expect(asked.ok(), await asked.text()).toBe(true);
+  const ask = (await asked.json() as { ask: { id: string; state: string } }).ask;
+  expect(ask.state).toBe('Proposed');
+
+  await page.goto('/');
+  const band = page.getByRole('region', { name: 'What needs you' });
+  const proposed = band.getByRole('button', { name: new RegExp(sentence) });
+  await expect(proposed).toContainText('proposed, not yet published');
+  await expect(proposed).toContainText('circle default');
+  await proposed.click();
+  await expect(page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'Where it belongs' })).toBeVisible();
+
+  // Its intake opens, works, and parks asking the person.
+  const room = join(repoRoot, '_fixtures', 'web-e2e', 'intake', 'default');
+  const opened = await request.post('/api/sessions/intake', { data: { ask: ask.id, adapter: 'stub', room } });
+  expect(opened.ok(), await opened.text()).toBe(true);
+  const session = (await opened.json() as { session: { id: string } }).session;
+  for (const state of ['starting', 'working']) {
+    await request.post(`/api/sessions/${session.id}/state`, { data: { state } });
+  }
+  const parked = await request.post(`/api/sessions/${session.id}/state`, {
+    data: { state: 'awaiting-person', note: 'published nothing: it asks you rather than guess.' },
+  });
+  expect(parked.ok(), await parked.text()).toBe(true);
+
+  await page.goto('/');
+  const asking = page.getByRole('region', { name: 'What needs you' }).getByRole('button', { name: new RegExp(sentence) });
+  await expect(asking).toContainText('its intake asked you');
+  await expect(asking).toContainText('published nothing: it asks you rather than guess.');
+  // One thing, one row: the parked intake is the ask's row, not a parked session beside it.
+  await expect(page.getByRole('region', { name: 'What needs you' }).getByText('parked at a checkpoint')).toHaveCount(0);
+
+  await asking.click();
+  const intake = page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'intake session' });
+  await expect(intake.getByText('awaiting person')).toBeVisible();
+  await expect(intake.getByText('stub', { exact: true })).toBeVisible();
+  await expect(intake.getByRole('button')).toHaveCount(0);
+
+  // Leave the family as found: the ask closed, and its parked intake ended the way the driver's next
+  // tick would end it.
+  const closed = await request.post(`/api/asks/${ask.id}/close`, { data: { reason: 'Rehearsed only.' } });
+  expect(closed.ok(), await closed.text()).toBe(true);
+  await request.post(`/api/sessions/${session.id}/state`, { data: { state: 'stopped', note: 'the person closed it.' } });
+});
+
 test('a project created mid-run joins, and the platform shows it (D44)', async ({ page }) => {
   // The lifecycle the next real family needs proven: a project that did not exist when the host
   // started is born, joins through the REAL CLI — init, declare, sync, check, connect — and becomes a

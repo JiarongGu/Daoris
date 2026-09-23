@@ -147,7 +147,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `sessionOrigin(session)` | which machine holds it, or null for this deployment's own (SURF4b) | D55 asks a row for *where it runs* and says it is already in the record: the feed keys a mirrored record by `origin/id` (D47 §6). Reading that is a derivation, not a component's business |
 | `treeName(tree)` | a session tree's last segment (SURF4b) | Daoris owns where trees live (D51 §2), so the last segment is the branch — meaningful rather than a guess. The rail has no room for the path, and the path is machine-local besides |
 | `elapsed(from, to?)` | a span, where `ago` is a point (SURF4b) | D55's second added fact. A start in this machine's future reads as brand new: records travel between machines and clocks do not |
-| `needsAPerson(sessions, quests, registry)` | what is waiting, parked first (SURF5) | one derivation for the band and the Work switch's count — two answers to "how many need me" disagree the first time either is edited |
+| `needsAPerson(sessions, quests, registry, asks)` | what is waiting, parked first (SURF5); asks waiting on a person since INT4d | one derivation for the band and the Work switch's count — two answers to "how many need me" disagree the first time either is edited |
 | `sessionTimeline(session, quest?)` | the observed events, oldest first (SURF4c) | the record carries no event log, so what a timeline may honestly say is a derivation — and one place to change when the record grows one |
 | `readEvidence(evidence)` | the driver's sentence, and the commits inside it (SURF4c) | reads the bundle's **shape**, never its words: no English literal is matched, so a reworded header is harmless rather than a silently empty list |
 
@@ -163,7 +163,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `TimelineEntry` | one observed event: state change, quest transition, commit landed | each kind · a long commit subject · an entry with no note |
 | `SessionTimeline` | the observed layer over `sessionTimeline()` — props-only (SURF4c) | just queued · parked · whole · nothing landed |
 | `Composer` | the chat input with its two endings | idle, sending, session ended mid-typing, refused |
-| `AttentionRow` | one row of Overview's *what needs you* band | parked · quest nobody can take · no detail · long + CJK. ~~finished-unreviewed~~ — **not buildable before SURF6**: nothing records that anybody looked |
+| `AttentionRow` | one row of Overview's *what needs you* band | parked · quest nobody can take · a proposed ask · an ask whose intake asked · no door · no detail · long + CJK. ~~finished-unreviewed~~ — **not buildable before SURF6**: nothing records that anybody looked |
 | `AwaitingPerson` | a parked session's analysis and the person's three moves (SURF5) | parked · nothing said · a move in flight · declining |
 | `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
 

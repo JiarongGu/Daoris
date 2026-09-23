@@ -12,39 +12,68 @@ const PARKED: Attention = {
   id: 's1a2b3c4',
   kind: 'parked',
   title: 'Expose a streaming budget on the chunk API',
-  repository: 'engine',
+  where: 'engine',
   since: at(38),
   detail: 'Two ways forward; I recommend capping on the chunk API, which is what the quest asks for.',
+};
+
+/** An ask waiting on a person (INT4d): its place is its circle, named as one. */
+const PROPOSAL: Attention = {
+  id: '7c1e9a04b2d5',
+  kind: 'proposal',
+  title: 'The chunk streamer stalls on a cold cache — cap its hydration per frame.',
+  where: 'aurora',
+  since: at(190),
+  detail: 'The declarations propose engine, game. Nothing is published until you choose.',
 };
 
 const meta: Meta = { title: 'Work/Attention' };
 export default meta;
 
-/** The band's rows: both kinds, a long title, and one that said nothing. */
+/**
+ * The band's rows, in the band's order: parked, the two kinds of ask, a quest nobody can take, a long
+ * title, one that said nothing — and last, a parked row with no door, as a browser shows it.
+ */
 export const Rows: StoryObj = {
   render: () => (
     <ul className="m-0 max-w-2xl list-none border border-line bg-raised p-0">
-      <AttentionRow item={PARKED} />
+      <AttentionRow item={PARKED} onOpen={() => {}} />
+      <AttentionRow
+        item={{
+          ...PROPOSAL,
+          id: '3e4f5a6b7c8d',
+          kind: 'intake',
+          title: 'Tidy the release notes.',
+          since: at(12),
+          detail: 'published nothing: the declarations did not settle ask `#3e4f5a6b7c8d`, so it asks you rather than guess — its question ends its transcript.',
+        }}
+        onOpen={() => {}}
+      />
+      <AttentionRow item={PROPOSAL} onOpen={() => {}} />
       <AttentionRow
         item={{
           id: '7a82cc',
           kind: 'unanswerable',
           title: 'Expose a streaming budget on the chunk API',
-          repository: 'retired',
+          where: 'retired',
           since: at(19_000),
           detail: '`retired` is not on this deployment\'s register, so no agent will ever pull this quest.',
         }}
+        onOpen={() => {}}
       />
-      <AttentionRow item={{ ...PARKED, id: 'quiet', detail: null, since: at(4) }} />
+      <AttentionRow item={{ ...PARKED, id: 'quiet', detail: null, since: at(4) }} onOpen={() => {}} />
       <AttentionRow
         item={{
           ...PARKED,
           id: 'cjk',
           title: '让世界流式加载在每一帧内限制水合工作量，并把预算暴露在区块 API 上，供上层调度器读取',
-          repository: '世界流式加载引擎',
+          where: '世界流式加载引擎',
           detail: '有两条路可走；我建议在区块 API 上限流，这正是委托所要求的。',
         }}
+        onOpen={() => {}}
       />
+      {/* No door: a parked session in a browser, which has no Sessions to open it in. */}
+      <AttentionRow item={{ ...PARKED, id: 'browser' }} />
     </ul>
   ),
 };

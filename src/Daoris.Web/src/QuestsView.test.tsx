@@ -278,6 +278,60 @@ describe('QuestsView', () => {
       expect(await screen.findByRole('dialog', { name: 'Ask the circle' })).toBeInTheDocument();
       expect(onAsked).toHaveBeenCalledTimes(1);
     });
+
+    /** Overview's band names an ask waiting on a person (INT4d); Quests opens its record, once. */
+    it('an ask a door names opens its record, once', async () => {
+      ASKS = [PROPOSED];
+      const onAskFocused = vi.fn();
+      function Focused() {
+        const [pending, setPending] = useState<string | null>('7c1e9a04b2d5');
+        return (
+          <QuestsView
+            notify={() => {}}
+            askFocus={pending}
+            onAskFocused={() => { onAskFocused(); setPending(null); }}
+          />
+        );
+      }
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider><Focused /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+
+      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
+      expect(within(record).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+      expect(onAskFocused).toHaveBeenCalledTimes(1);
+    });
+
+    /** The record's intake line is a door into Sessions only where the view is handed one (INT4d). */
+    it('an ask\'s intake session opens where Sessions exists', async () => {
+      const INTAKE = {
+        id: 'i9n8t7k6a5b4', quest: null, repository: 'ask #7c1e9a04b2d5', adapter: 'stub', kind: 'chat',
+        state: 'awaiting-person', ask: '7c1e9a04b2d5', note: 'published nothing.',
+        created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
+      };
+      ASKS = [{ ...PROPOSED, intake: INTAKE.id }];
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.startsWith('/api/sessions')) return Response.json([...SESSIONS, INTAKE]);
+        return respond(url);
+      }));
+      const onAttend = vi.fn();
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider><QuestsView notify={() => {}} onAttend={onAttend} /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+
+      await userEvent.click(await screen.findByText('Cap the hydration per frame.'));
+      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
+      const line = within(record).getByRole('region', { name: 'intake session' });
+      await userEvent.click(await within(line).findByRole('button', { name: 'stub' }));
+      expect(onAttend).toHaveBeenCalledWith('i9n8t7k6a5b4');
+    });
   });
 
   // ——— A chain (D65 §4).

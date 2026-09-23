@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Ask } from '../api';
-import { ago, size } from '../format';
-import { Button, Drawer, Icon, Pill, SectionTitle, SelectField } from '../ui';
+import type { Ask, Session } from '../api';
+import { ago, sessionTool, size } from '../format';
+import { Button, Drawer, Icon, Pill, SectionTitle, SelectField, SESSION_TONE } from '../ui';
 import { ASK_TONE, firstLine, tierWords } from './AskCard';
 
 /**
@@ -16,6 +16,10 @@ import { ASK_TONE, firstLine, tierWords } from './AskCard';
  * chosen instead. The service judges every publish; its sentence reaches the person verbatim, through
  * the holder.
  *
+ * **The record says who answered** (INT4d): the tier in words, and the intake session that served
+ * it, if one did. On the desktop that session is a door into Sessions, where its question is on its
+ * transcript. A browser has no Sessions, so there it is named and nothing pretends to open it.
+ *
  * **A closed ask becomes nothing more** — its reason stays and no verb is offered.
  *
  * The ask's files are named and never located: the host answers their path to this machine only, and a
@@ -23,12 +27,18 @@ import { ASK_TONE, firstLine, tierWords } from './AskCard';
  *
  * Props only, no hook from the query layer or the shell (components §2).
  */
-export function AskRecord({ ask, receivers, questTitles, busy = false, onPublish, onClose, onOpenQuest, onDismiss }: {
+export function AskRecord({
+  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onOpenQuest, onDismiss,
+}: {
   ask: Ask;
   /** Whom the ask can be published to: the adopted repositories in its circle. */
   receivers: string[];
   /** Titles of the quests this page holds, by id — one it has not loaded is named by its id, and not opened. */
   questTitles: Record<string, string>;
+  /** The record of the intake session that served it (INT4d), when the page holds it. */
+  intake?: Session | null;
+  /** The door into Sessions — absent where there are none, which is a browser. */
+  onAttend?: (session: string) => void;
   busy?: boolean;
   onPublish: (to: string) => void;
   onClose: (reason: string) => void;
@@ -93,6 +103,37 @@ export function AskRecord({ ask, receivers, questTitles, busy = false, onPublish
           </>
         )}
       </dl>
+
+      {ask.intake && (
+        /* Who answered (INT4d): the session the intake ran as — its state, then its tool, and its note,
+           verbatim like every driver sentence. A door into Sessions only where Sessions exists, and
+           only onto a record the page holds; one it does not is named by its id. */
+        <section aria-label={t('asks.record.intake')} className="mb-4">
+          <SectionTitle>{t('asks.record.intake')}</SectionTitle>
+          {intake ? (
+            <>
+              <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <Pill tone={SESSION_TONE[intake.state]}>{t(`sessionState.${intake.state}`)}</Pill>
+                {onAttend ? (
+                  <button
+                    type="button"
+                    onClick={() => onAttend(intake.id)}
+                    className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-accent underline-offset-2 hover:underline"
+                  >
+                    {sessionTool(intake)}
+                  </button>
+                ) : (
+                  <span className="min-w-0 truncate font-mono text-meta text-ink-soft">{sessionTool(intake)}</span>
+                )}
+                <span className="font-mono text-meta text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
+              </p>
+              {intake.note && <p className="mt-1.5 mb-0 text-body text-ink-soft">{intake.note}</p>}
+            </>
+          ) : (
+            <span className="font-mono text-meta text-ink-soft">#{ask.intake.slice(0, 6)}</span>
+          )}
+        </section>
+      )}
 
       {ask.quests.length > 0 && (
         <section aria-label={t('asks.record.quests')} className="mb-4">

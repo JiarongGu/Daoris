@@ -23,6 +23,7 @@ const REGISTRY = [
 /** What Overview's band is made of, when the fixtures below hand it something to show. */
 let QUESTS: unknown[] = [];
 let SESSIONS: unknown[] = [];
+let ASKS: unknown[] = [];
 /** Where a circle stands with its remote (SYNC6b) — no remote, unless a test wires one. */
 let SYNC: unknown = { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] };
 
@@ -35,6 +36,7 @@ function respond(url: string): Response {
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/sync')) return Response.json(SYNC);
+  if (url.startsWith('/api/asks')) return Response.json(ASKS);
   throw new Error(`unstubbed request: ${url}`);
 }
 
@@ -228,5 +230,67 @@ describe('the attention band', () => {
     expect(screen.getByText('nobody here can take this')).toBeInTheDocument();
     // The category the design names third is not invented: it needs SURF6's viewed mark.
     expect(screen.getByText(/once review exists/)).toBeInTheDocument();
+  });
+
+  /**
+   * A door opens something, or it is not a door (platform language §4). A browser has no Sessions, so
+   * a parked row is text there; a quest nobody can take opens its own drawer, which a browser has.
+   */
+  it('makes a row a door only where its destination exists', async () => {
+    SESSIONS = [{
+      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
+      state: 'awaiting-person', note: 'two ways forward.',
+      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
+    }];
+    QUESTS = [{
+      id: '7a82cc', from: 'engine', to: 'retired', title: 'Expose a streaming budget',
+      body: 'a per-frame cap.', status: 'Open',
+      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+    }];
+    shell();
+
+    const band = await screen.findByRole('region', { name: 'What needs you' });
+    expect(within(band).queryByRole('button', { name: /two ways forward/ })).toBeNull();
+    expect(within(band).getByText('two ways forward.')).toBeInTheDocument();
+
+    await userEvent.click(within(band).getByRole('button', { name: /Expose a streaming budget/ }));
+    const drawer = await screen.findByRole('dialog', { name: 'Expose a streaming budget' });
+    expect(within(drawer).getByText('#7a82cc')).toBeInTheDocument();
+  });
+
+  /**
+   * INT4d: an ask waits on a person — a proposal only a person publishes, or an intake that parked
+   * asking — and its row is a door into the ask's record in Quests, where the answer is. The parked
+   * intake is a session awaiting a person too, and is counted once: as the ask.
+   */
+  it('names each ask waiting on a person once, and opens its record where it is answered', async () => {
+    const proposed = {
+      id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.\n\nThe trace is attached.',
+      state: 'Proposed', tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
+      links: [], attachments: [], quests: [],
+      proposal: [{ repository: 'engine', score: 3, matched: ['frame', 'hydration'] }],
+    };
+    ASKS = [
+      proposed,
+      { ...proposed, id: '0b9f3c21aa77', sentence: 'Tidy the release notes.', proposal: [], intake: 'i9n8t7k6' },
+    ];
+    SESSIONS = [{
+      id: 'i9n8t7k6', quest: null, repository: 'ask #0b9f3c21aa77', adapter: 'stub', kind: 'chat',
+      state: 'awaiting-person', ask: '0b9f3c21aa77', note: 'published nothing: it asks you rather than guess.',
+      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T09:30:00Z',
+    }];
+    try {
+      shell();
+
+      expect(await screen.findByText('proposed, not yet published')).toBeInTheDocument();
+      expect(screen.getByText('its intake asked you')).toBeInTheDocument();
+      expect(screen.queryByText('parked at a checkpoint')).toBeNull();
+
+      await userEvent.click(screen.getByRole('button', { name: /Cap the hydration per frame\./ }));
+      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
+      expect(within(record).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+    } finally {
+      ASKS = [];
+    }
   });
 });

@@ -8,7 +8,10 @@ import { NO_CARRY } from '../compose/carry';
 import { AskCard } from './AskCard';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
-import { CLOSED, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER, UNMATCHED } from './fixtures';
+import {
+  BY_INTAKE, CLOSED, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
+  UNMATCHED,
+} from './fixtures';
 
 // An ask's three molecules (INT4c), props in and states out: no service and no shell, so every state
 // the record can be in is an ordinary assertion (components §2).
@@ -135,6 +138,47 @@ describe('AskRecord', () => {
 
     expect(within(drawer).getByText('the asker named the receiver')).toBeInTheDocument();
     expect(within(drawer).getByRole('combobox', { name: 'publish to another' })).toBeInTheDocument();
+  });
+
+  // ——— Who answered (INT4d): the tier INT4b added, and the intake session that served it.
+
+  it('says an intake session answered, in the words for it', () => {
+    const { drawer } = record(BY_INTAKE, { intake: INTAKE_SESSION });
+    expect(within(drawer).getByText('an intake session read it and published it')).toBeInTheDocument();
+  });
+
+  /** On the desktop the session is a door into Sessions, where its transcript and console are. */
+  it('names its intake session by state and tool, and opens it where Sessions exists', async () => {
+    const onAttend = vi.fn();
+    const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED, onAttend });
+    const line = within(drawer).getByRole('region', { name: 'intake session' });
+
+    expect(within(line).getByText('awaiting person')).toBeInTheDocument();
+    await userEvent.click(within(line).getByRole('button', { name: 'claude-code · 2.1.4' }));
+    expect(onAttend).toHaveBeenCalledWith('i9n8t7k6a5b4');
+  });
+
+  /** A browser has no Sessions: the session is named, and nothing pretends to open it. */
+  it('names its intake session without a door where Sessions does not exist', () => {
+    const { drawer } = record(BY_INTAKE, { intake: INTAKE_SESSION });
+    const line = within(drawer).getByRole('region', { name: 'intake session' });
+
+    expect(within(line).getByText('claude-code · 2.1.4')).toBeInTheDocument();
+    expect(within(line).getByText('completed')).toBeInTheDocument();
+    expect(within(line).queryByRole('button')).toBeNull();
+  });
+
+  it('names an intake session the page has not loaded by its id, and offers no door that would open nothing', () => {
+    const { drawer } = record(BY_INTAKE, { onAttend: vi.fn() });
+    const line = within(drawer).getByRole('region', { name: 'intake session' });
+
+    expect(within(line).getByText('#i9n8t7')).toBeInTheDocument();
+    expect(within(line).queryByRole('button')).toBeNull();
+  });
+
+  it('has no intake line for an ask no intake served', () => {
+    const { drawer } = record(PROPOSED);
+    expect(within(drawer).queryByRole('region', { name: 'intake session' })).toBeNull();
   });
 });
 

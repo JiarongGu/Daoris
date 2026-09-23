@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import {
-  useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions, useStatus,
+  useAsks, useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions, useStatus,
   useSyncStanding, useWorkspaces,
 } from './queries';
 import { useScope } from './scope';
@@ -24,7 +24,7 @@ import { useDriver, useOpenWindow, useRemotes, useSyncNow } from './shell';
 import { SyncStatus } from './work/SyncStatus';
 import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
-import type { Attention } from './work/AttentionRow';
+import type { AttentionDoors } from './work/AttentionBand';
 import { needsAPerson } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
@@ -108,6 +108,8 @@ export function App() {
   const [questFocus, setQuestFocus] = useState<string | null>(null);
   // The palette asked for the ask composer (INT4c) — an event Quests consumes, like the two above.
   const [asking, setAsking] = useState(false);
+  // An ask a door asked Quests to open in its record — Overview's band (INT4d). The same kind of event.
+  const [askFocus, setAskFocus] = useState<string | null>(null);
   // The palette (SURF9), and what it asks the Work frame to do. Both are events consumed on arrival
   // rather than state, for the reason the quest composer's opening draft is.
   const [palette, setPalette] = useState(false);
@@ -136,6 +138,8 @@ export function App() {
   const running = useSessions(null, false);
   const remotes = useRemotes();
   const registry = useRegistry();
+  // The asks still waiting (INT4d), from the cache Quests fills — the count below includes them.
+  const asks = useAsks(false);
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
@@ -187,7 +191,7 @@ export function App() {
   // The second of design §4's two counts, from the one derivation the band uses — two answers to
   // "how many need me" would disagree the first time either was edited.
   const waiting = needsAPerson(
-    running.data ?? [], outstanding.data ?? [], registry.data ?? []).length;
+    running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? []).length;
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.
@@ -251,11 +255,15 @@ export function App() {
     setView('sessions');
   };
 
-  // A row in Overview's band is a door into whatever is waiting — a parked session opens in
-  // Sessions, and a quest nobody can take opens where quests are answered.
-  const openAttention = (item: Attention) => {
-    if (item.kind === 'parked') openInWork(item.id);
-    else setView('quests');
+  // A row in Overview's band is a door into whatever is waiting, wherever that exists. A parked
+  // session opens in Sessions, which only a shell has. An ask opens its record, where it is answered
+  // (INT4d), and a quest nobody can take opens its own drawer. Both of those a browser has too.
+  const openAsk = (id: string) => { setAskFocus(id); setView('quests'); };
+  const attentionDoors: AttentionDoors = {
+    ...(attached ? { parked: (item) => openInWork(item.id) } : {}),
+    proposal: (item) => openAsk(item.id),
+    intake: (item) => openAsk(item.id),
+    unanswerable: (item) => { setQuestFocus(item.id); setView('quests'); },
   };
 
   return (
@@ -400,7 +408,7 @@ export function App() {
                 {view === 'overview' && (
                   <OverviewView
                     onNavigate={setView}
-                    onAttend={attached ? openAttention : undefined}
+                    doors={attentionDoors}
                     notify={notify}
                   />
                 )}
@@ -414,6 +422,8 @@ export function App() {
                     onFocused={() => setQuestFocus(null)}
                     asking={asking}
                     onAsked={() => setAsking(false)}
+                    askFocus={askFocus}
+                    onAskFocused={() => setAskFocus(null)}
                   />
                 )}
                 {view === 'projects' && <ProjectsView notify={notify} />}

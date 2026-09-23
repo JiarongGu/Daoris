@@ -1,15 +1,30 @@
 import i18n from '../i18n';
-import type { Quest, Registration, Session } from '../api';
+import type { Ask, Quest, Registration, Session } from '../api';
+import { firstLine } from '../asks/AskCard';
 import { sessionTitle } from './identity';
 import type { Attention } from './AttentionRow';
+
+/** The intake states in which an ask is the harness's to answer, not yet the person's (D65 §1b). */
+const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting', 'working']);
 
 /**
  * What is waiting on a person, oldest first within each kind (design §4).
  *
  * @remarks
- * **Parked first, because a parked session is holding a working tree while it waits.** Then the
- * quests nobody here can take — which sit forever and which nothing else surfaces, since the quest
- * list shows them among every other open one.
+ * **Parked first, because a parked session is holding a working tree while it waits.** Then the asks
+ * waiting on a person (INT4d), because nothing downstream moves until the person settles one and an
+ * ask holds nothing while it waits. Then the quests nobody here can take — which sit forever and
+ * which nothing else surfaces, since the quest list shows them among every other open one.
+ *
+ * **An ask waits on the person unless its intake is busy with it.** Proposed with nothing serving it
+ * (or its intake ended without publishing), only a person publishes, so it is a `proposal`. An intake
+ * that parked asking the person makes it `intake`. The page cannot know whether this machine names
+ * an intake harness, so an ask the driver has not picked up yet is a proposal until it is. It is the
+ * person's to take either way, and the band never guesses what a driver will do next.
+ *
+ * **One thing is counted once.** A parked intake is a session awaiting a person too, and its ask's
+ * row stands for it, because the answer is on the ask (publish or close). It leaves the parked list
+ * only while its ask is in hand and live, so a list that did not arrive never hides it.
  *
  * **A quest is unanswerable when this deployment has no registration for its receiver.** The
  * publish door already refuses a quest addressed to a non-adopter, so the way one comes to exist is
@@ -25,14 +40,42 @@ export function needsAPerson(
   sessions: readonly Session[],
   quests: readonly Quest[],
   registry: readonly Registration[],
+  asks: readonly Ask[],
 ): Attention[] {
+  const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
+  const intakeOf = (ask: Ask) =>
+    ask.intake ? sessions.find((session) => session.id === ask.intake) : undefined;
+
+  const waitingAsks = live
+    .filter((ask) => !INTAKE_BUSY.has(intakeOf(ask)?.state ?? 'completed'))
+    .map((ask): Attention => {
+      const intake = intakeOf(ask);
+      const asked = intake?.state === 'awaiting-person';
+      return {
+        id: ask.id,
+        kind: asked ? 'intake' : 'proposal',
+        title: firstLine(ask.sentence),
+        where: ask.workspace,
+        since: asked ? intake.updated : ask.asked,
+        detail: asked
+          ? intake.note
+          // A refused receiver's sentence is the service's, verbatim; otherwise what was proposed.
+          : ask.note ?? (ask.proposal.length > 0
+            ? i18n.t('work.attention.proposalWhy', {
+              repositories: ask.proposal.map((match) => match.repository).join(', '),
+            })
+            : i18n.t('work.attention.proposalNobody')),
+      };
+    });
+
+  const standsFor = new Set(live.map((ask) => ask.intake).filter(Boolean));
   const parked = sessions
-    .filter((session) => session.state === 'awaiting-person')
+    .filter((session) => session.state === 'awaiting-person' && !standsFor.has(session.id))
     .map((session): Attention => ({
       id: session.id,
       kind: 'parked',
       title: sessionTitle(session, quests.find((quest) => quest.id === session.quest)),
-      repository: session.repository,
+      where: session.repository,
       since: session.updated,
       detail: session.note,
     }));
@@ -44,11 +87,11 @@ export function needsAPerson(
       id: quest.id,
       kind: 'unanswerable',
       title: quest.title,
-      repository: quest.to,
+      where: quest.to,
       since: quest.filed,
       detail: i18n.t('work.attention.unanswerableWhy', { repository: quest.to }),
     }));
 
   const oldestFirst = (a: Attention, b: Attention) => a.since.localeCompare(b.since);
-  return [...parked.sort(oldestFirst), ...unanswerable.sort(oldestFirst)];
+  return [...parked.sort(oldestFirst), ...waitingAsks.sort(oldestFirst), ...unanswerable.sort(oldestFirst)];
 }

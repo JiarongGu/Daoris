@@ -122,6 +122,8 @@ export type Ask = {
   proposal: DeclarationMatch[];
   /** The quests it became, in the order they were published. */
   quests: string[];
+  /** The intake session that served it (D65 §1b), once one opened — absent for every other ask. */
+  intake?: string | null;
 };
 export type AskAction = { ask: Ask; message: string; quest?: Quest | null };
 export type Registration = {
@@ -165,6 +167,8 @@ export type Session = {
    * no path. Surfaces show its last segment, which is the branch the tree was cut for.
    */
   tree?: string | null;
+  /** The ask an intake session answers (D65 §1b) — absent for every other session. */
+  ask?: string | null;
 };
 
 /**
