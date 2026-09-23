@@ -158,13 +158,14 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 |---|---|
 | `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
 | `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands |
-| `GET /api/code-map/{repository}` | a repository's own code map (MAP3a), read from its committed `docs/code-map.json` and judged whole; local mode reads the checkout, and a repository with no checkout here answers with no file |
+| `GET /api/code-map/{repository}` | a repository's own code map (MAP3a), read from its committed `docs/code-map.json` and judged whole; a repository with a checkout here is read from it, and one without answers with what was fed (MAP3b), or with no file |
 | `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape |
 | `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason |
 | `GET /api/quests/{id}/attachments/{sha256}` | local mode, loopback only: a kept file, served sandboxed (`Content-Security-Policy: sandbox`, `nosniff`), and anything but an image, a PDF or text as a download, so an attached page never runs on the platform's origin |
 | `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46) |
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
-| `POST /api/feed/sessions` · `/api/feed/entries` | shared mode only: what a desktop's sync feeds up (D47) |
+| `POST /api/feed/sessions` · `/api/feed/entries` · `/api/feed/code-map` | shared mode only: what a desktop's sync feeds up (D47, MAP3b) |
+| `GET /api/feed/held?repository=` | shared mode only: the commits a repository's knowledge and code map stand on here — what a feeding machine asks git about (SYNC5a) |
 | `GET /api/quests/operations?since=N` · `POST /api/quests/operations` | shared mode only: what the remote accepted after number N, in its order, and a push of a machine's quest operations rebased on N, judged quest by quest (D68) |
 | `POST /api/sync?workspace=` · `GET /api/quests/{id}/claim` | local mode only: one pass for a workspace — the quests' fetch, rebase and push, then the session records both ways — answering its conflicts, refusals, record counts and wall; and where this machine's claim on a quest stands — held, unconfirmed, lost or none (D69). A take on a shared quest runs the quest half before it answers |
 | `GET /api/sessions/since?since=N` | shared mode only: the team's session records held after revision N, in order — every origin but the caller's own (SYNC4) |
@@ -183,11 +184,19 @@ the desktop's sync loop, which runs once per wired circle, does the rest.
 
 **A shared deployment takes knowledge from a named commit on the canonical line** (D48 §6). Each feed
 carries `{ commit, committedAt, branch }` stamped from git by the machine that holds the checkout; the
-deployment refuses one from a branch that is not the repository's declared default, and one older than
-what it already holds — both as *information*, because the machine behind is simply behind. Wholesale
+deployment refuses one from a branch that is not the repository's declared default. Wholesale
 replacement then keeps deletion correct for free, and `/api/repositories` answers the commit each copy
 stands on, so staleness is visible rather than assumed. A checkout git cannot answer for feeds no
-knowledge; its session records and quests still travel.
+knowledge, and neither does one with uncommitted changes; its session records and quests still travel.
+
+**Which feed wins is decided by ancestry where git can say** (SYNC5a, `FeedOrder`). The deployment
+cannot run git, so the feeding machine asks it: a commit that descends from the one held names it as
+`base`, and the deployment takes the feed while it still holds that commit — or refuses it as *moved*.
+Without a base, commit time decides, and an older feed is refused as *stale*. The same commit is
+compared by a digest the deployment computes over what it would store: equal is already held, and
+different keeps the first reading. Every one of those refusals is *information*: the machine behind
+is simply behind. The code map (MAP3b) is fed and ordered the same way, at its own commit, and judged
+whole again at the door.
 
 `ConvergenceDetector` answers a different question: **which repositories learned the same thing
 independently?** It automates the survey that produced this project's own canon — reading twelve

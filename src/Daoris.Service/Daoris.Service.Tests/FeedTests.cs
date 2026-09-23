@@ -13,6 +13,7 @@ public sealed class FeedTests : IAsyncLifetime
 
     private readonly InMemoryKnowledgeStore _store = new();
     private Microsoft.Data.Sqlite.SqliteConnection _connection = null!;
+    private RegistrationStore _registrations = null!;
     private KnowledgeService _service = null!;
 
     public async Task InitializeAsync()
@@ -22,13 +23,13 @@ public sealed class FeedTests : IAsyncLifetime
         // must survive a restart or the first feed after one would always win.
         _connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
-        var registrations = await RegistrationStore.OpenAsync(_connection);
+        _registrations = await RegistrationStore.OpenAsync(_connection);
 
         // Registrations are the only family here — the remote's own shape, and since D48 §3 every
         // deployment's shape: the registry is an explicit list, never a view over a folder.
         _service = new KnowledgeService(
             _store, new LexicalKnowledgeSearch(_store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly, registry: new Registry(), registrations: registrations);
+            DisclosurePolicy.LocalOnly, registry: new Registry(), registrations: _registrations);
     }
 
     public async Task DisposeAsync() => await _connection.DisposeAsync();
@@ -43,10 +44,11 @@ public sealed class FeedTests : IAsyncLifetime
         "What was learned.", "docs/DECISIONS.md", title);
 
     /// <summary>The ordinary feed: the canonical line, at a moment in its history.</summary>
+    /// <param name="onBase">The commit the deployment held when this machine checked its ancestry (SYNC5a).</param>
     private static FeedProvenance From(
         string commit = "aaaa1111bbbb2222", string branch = "main", string at = "2026-09-20T09:00:00Z",
-        string? origin = "person@machine-a") =>
-        new(commit, DateTimeOffset.Parse(at), branch, origin);
+        string? origin = "person@machine-a", string? onBase = null) =>
+        new(commit, DateTimeOffset.Parse(at), branch, origin) { Base = onBase };
 
     [Fact]
     public async Task Feeding_an_unjoined_repository_is_refused()
@@ -269,6 +271,218 @@ public sealed class FeedTests : IAsyncLifetime
         var outcome = await _service.FeedAsync("Open", [Entry()], From(branch: "feature/x"));
 
         Assert.Equal(FeedRefusal.NotDefaultBranch, outcome.Refusal);
+    }
+
+    // ——— Ancestry and the digest (SYNC5a, sync design §8). The machine with the checkout asks git
+    // whether its commit descends from the one held; the deployment checks that it still holds it.
+
+    /// <summary>
+    /// The same commit read the same way changes nothing — not even who is credited with it. A tick
+    /// that re-sends what is already held must not rewrite the record of who fed it first.
+    /// </summary>
+    [Fact]
+    public async Task The_same_commit_with_the_same_content_is_already_held()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedAsync("Open", [Entry()], From(origin: "person@machine-a"));
+
+        var again = await _service.FeedAsync("Open", [Entry()], From(origin: "person@machine-b"));
+
+        Assert.True(again.Accepted);
+        Assert.Contains("already", again.Message);
+        Assert.Equal("person@machine-a", (await _service.SummarizeAsync()).Single().Fed!.Origin);
+    }
+
+    /// <summary>
+    /// SYNC0c: two machines on one commit whose readings differ used to replace each other on every
+    /// tick. The first reading of a commit stands, and the second hears why — as information.
+    /// </summary>
+    [Fact]
+    public async Task The_same_commit_read_differently_keeps_the_first_reading_and_says_so()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedAsync("Open", [Entry("As machine A read it")], From(origin: "person@machine-a"));
+
+        var other = await _service.FeedAsync(
+            "Open", [Entry("As machine B read it")], From(origin: "person@machine-b"));
+
+        Assert.Equal(FeedRefusal.ContentDiffers, other.Refusal);
+        Assert.True(other.Information);
+        Assert.Contains("aaaa1111", other.Message);
+        Assert.Contains("person@machine-a", other.Message);
+        Assert.Equal("As machine A read it", (await _store.AllAsync()).Single().Title);
+    }
+
+    /// <summary>
+    /// Ancestry decides where it was asked, not the clock. A commit that descends from the one held is
+    /// a fast-forward even when its committer's clock reads earlier — a rebase keeps author dates and a
+    /// machine's clock can be wrong, and neither makes a descendant stale.
+    /// </summary>
+    [Fact]
+    public async Task A_feed_on_the_commit_held_is_a_fast_forward_whatever_its_clock_says()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedAsync("Open", [Entry("Before")], From("parentparent", at: "2026-09-20T12:00:00Z"));
+
+        var child = await _service.FeedAsync(
+            "Open", [Entry("After")], From("childchild", at: "2026-09-20T11:00:00Z", onBase: "parentparent"));
+
+        Assert.True(child.Accepted);
+        Assert.Equal("After", (await _store.AllAsync()).Single().Title);
+        Assert.Equal("childchild", (await _service.SummarizeAsync()).Single().Fed!.Commit);
+    }
+
+    /// <summary>
+    /// The compare-and-swap half: this machine checked against a commit another machine has since
+    /// replaced, so its answer is out of date. Information, and the next pass asks git again.
+    /// </summary>
+    [Fact]
+    public async Task A_feed_checked_against_a_commit_no_longer_held_is_refused_as_moved()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedAsync(
+            "Open", [Entry("Fed in between")], From("betweenbetween", at: "2026-09-20T12:00:00Z", origin: "person@machine-b"));
+
+        var late = await _service.FeedAsync(
+            "Open", [Entry("Checked earlier")], From("latelate", at: "2026-09-20T13:00:00Z", onBase: "parentparent"));
+
+        Assert.Equal(FeedRefusal.Moved, late.Refusal);
+        Assert.True(late.Information);
+        Assert.Contains("betweenb", late.Message);
+        Assert.Equal("Fed in between", (await _store.AllAsync()).Single().Title);
+    }
+
+    /// <summary>
+    /// A row recorded before digests existed has none to compare, so the same commit is taken once and
+    /// the digest recorded — refusing it would freeze every repository fed by an older deployment.
+    /// </summary>
+    [Fact]
+    public async Task A_commit_held_without_a_digest_is_taken_once_and_then_compared()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _registrations.RecordProvenanceAsync("Open", From(origin: "person@machine-a"));
+
+        var first = await _service.FeedAsync("Open", [Entry("Read now")], From(origin: "person@machine-b"));
+        var second = await _service.FeedAsync("Open", [Entry("Read otherwise")], From(origin: "person@machine-c"));
+
+        Assert.True(first.Accepted);
+        Assert.Equal(FeedRefusal.ContentDiffers, second.Refusal);
+        Assert.Equal("Read now", (await _store.AllAsync()).Single().Title);
+    }
+
+    /// <summary>The digest is over what the entries SAY, in no particular order of arrival.</summary>
+    [Fact]
+    public void The_digest_ignores_order_and_hears_every_field()
+    {
+        var one = Entry("One");
+        var two = Entry("Two");
+
+        Assert.Equal(FeedDigest.Of([one, two]), FeedDigest.Of([two, one]));
+        Assert.NotEqual(FeedDigest.Of([one]), FeedDigest.Of([one with { Body = "Said otherwise." }]));
+        Assert.NotEqual(FeedDigest.Of([one]), FeedDigest.Of([one with { Anchor = "elsewhere" }]));
+        // Two fields that meet at a boundary must not collide with two that meet elsewhere.
+        Assert.NotEqual(
+            FeedDigest.Of([one with { Title = "ab", Body = "c" }]),
+            FeedDigest.Of([one with { Title = "a", Body = "bc" }]));
+    }
+
+    // ——— The code map, fed (MAP3b): the same gates and the same judgement as knowledge, and the file
+    // judged whole again at the door by the reader that judges it on disk.
+
+    private const string MapJson = """
+        {"version":1,"modules":[{"id":"core","path":"src/Core","summary":"the heart"},{"id":"web","path":"src/Web","summary":"the face"}],
+         "dependencies":[{"from":"web","to":"core","kind":"project"}]}
+        """;
+
+    /// <summary>A shared deployment has no checkout; what was fed is the map it answers with.</summary>
+    [Fact]
+    public async Task A_fed_code_map_is_what_a_repository_with_no_checkout_answers()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+
+        var outcome = await _service.FeedCodeMapAsync("Open", "docs/code-map.json", MapJson, From());
+        var read = (await _service.CodeMapAsync("Open"))!;
+
+        Assert.True(outcome.Accepted);
+        Assert.Equal("docs/code-map.json", read.File);
+        Assert.Null(read.Problem);
+        Assert.Equal(["core", "web"], read.Map!.Modules.Select(m => m.Id));
+        Assert.Equal("web", read.Map.Dependencies.Single().From);
+    }
+
+    /// <summary>Judged whole at the door: a map that breaks a rule is refused naming the break, and nothing of it is kept.</summary>
+    [Fact]
+    public async Task A_fed_code_map_that_breaks_a_rule_is_refused_whole()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+
+        var outcome = await _service.FeedCodeMapAsync(
+            "Open", "docs/code-map.json",
+            """{"version":1,"modules":[{"id":"core","path":"/etc/core","summary":"x"}],"dependencies":[]}""",
+            From());
+
+        Assert.Equal(FeedRefusal.Malformed, outcome.Refusal);
+        Assert.False(outcome.Information);
+        Assert.Contains("repository-relative", outcome.Message);
+        Assert.Null((await _service.CodeMapAsync("Open"))!.File);
+    }
+
+    /// <summary>The file it names is one the reader would have found — a feed cannot invent where a map lives.</summary>
+    [Fact]
+    public async Task A_fed_code_map_names_a_file_the_reader_would_have_found()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+
+        var outcome = await _service.FeedCodeMapAsync("Open", "../secrets.json", MapJson, From());
+
+        Assert.Equal(FeedRefusal.Malformed, outcome.Refusal);
+        Assert.Contains("docs/code-map.json", outcome.Message);
+    }
+
+    /// <summary>
+    /// A newer commit with no map deletes the held one — and the commit stays held, so a checkout from
+    /// before the deletion cannot bring the map back.
+    /// </summary>
+    [Fact]
+    public async Task A_newer_commit_with_no_map_deletes_the_held_one_for_good()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedCodeMapAsync("Open", "docs/code-map.json", MapJson, From("withmap", at: "2026-09-20T09:00:00Z"));
+
+        var removed = await _service.FeedCodeMapAsync(
+            "Open", file: null, map: null, From("withoutmap", at: "2026-09-20T10:00:00Z", onBase: "withmap"));
+        var older = await _service.FeedCodeMapAsync(
+            "Open", "docs/code-map.json", MapJson, From("oldermap", at: "2026-09-20T08:00:00Z"));
+
+        Assert.True(removed.Accepted);
+        Assert.Equal(FeedRefusal.Stale, older.Refusal);
+        Assert.Null((await _service.CodeMapAsync("Open"))!.File);
+    }
+
+    /// <summary>A code map is knowledge about the repository: it leaves only with the second declaration.</summary>
+    [Fact]
+    public async Task A_code_map_from_a_repository_that_does_not_share_knowledge_is_refused()
+    {
+        await Register("Reserved", joined: true, shares: false);
+
+        var outcome = await _service.FeedCodeMapAsync("Reserved", "docs/code-map.json", MapJson, From());
+
+        Assert.Equal(FeedRefusal.NotSharing, outcome.Refusal);
+        Assert.Null((await _service.CodeMapAsync("Reserved"))!.File);
+    }
+
+    /// <summary>The map keeps its own place in the history: a knowledge feed does not move it, nor the reverse.</summary>
+    [Fact]
+    public async Task The_code_map_and_the_knowledge_are_held_at_their_own_commits()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedCodeMapAsync("Open", "docs/code-map.json", MapJson, From("mapcommit", at: "2026-09-20T09:00:00Z"));
+        await _service.FeedAsync("Open", [Entry()], From("knowcommit", at: "2026-09-20T10:00:00Z"));
+
+        var held = await _service.HeldAsync("Open");
+
+        Assert.Equal("knowcommit", held.Knowledge);
+        Assert.Equal("mapcommit", held.CodeMap);
     }
 }
 

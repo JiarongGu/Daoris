@@ -292,11 +292,122 @@ public sealed class RemoteSyncTests
         {
             RemoteSyncPayloads.Registration(repo, "main"),
             RemoteSyncPayloads.Entries(repo.Repository, "[]", Head).Json,
+            RemoteSyncPayloads.CodeMap(repo.Repository, LocalMap, Head, onBase: null).Json!,
         })
         {
             Assert.DoesNotContain("private", payload);
             Assert.DoesNotContain("root", payload);
         }
+    }
+
+    // ——— Ancestry (SYNC5a): git on this machine says how its commit stands to the one held, and the
+    // feed carries the held commit it checked against, so the deployment can take it as a fast-forward.
+
+    [Fact]
+    public void An_entries_feed_names_the_held_commit_it_was_checked_against()
+    {
+        using var based = JsonDocument.Parse(RemoteSyncPayloads.Entries("Shared", "[]", Head, onBase: "parentparent").Json);
+        using var unbased = JsonDocument.Parse(RemoteSyncPayloads.Entries("Shared", "[]", Head).Json);
+
+        Assert.Equal("parentparent", based.RootElement.GetProperty("base").GetString());
+        Assert.False(unbased.RootElement.TryGetProperty("base", out _));
+    }
+
+    /// <summary>What this machine's host answered for its code map (MAP3a's door).</summary>
+    private const string LocalMap = """
+        { "repository": "Shared", "file": "docs/code-map.json", "problem": null,
+          "modules": [{ "id": "core", "path": "src/Core", "summary": "the heart" }, { "id": "web", "path": "src/Web", "summary": "the face" }],
+          "dependencies": [{ "from": "web", "to": "core", "kind": "project" }] }
+        """;
+
+    /// <summary>The map travels as the file it was read from, in the file's own shape, so the deployment judges it as the reader does.</summary>
+    [Fact]
+    public void A_code_map_feeds_as_the_file_it_was_read_from()
+    {
+        var feed = RemoteSyncPayloads.CodeMap("Shared", LocalMap, Head, onBase: "parentparent");
+
+        Assert.Null(feed.Problem);
+        using var document = JsonDocument.Parse(feed.Json!);
+        var root = document.RootElement;
+        Assert.Equal("Shared", root.GetProperty("repository").GetString());
+        Assert.Equal("docs/code-map.json", root.GetProperty("file").GetString());
+        Assert.Equal("aaaa1111bbbb2222", root.GetProperty("commit").GetString());
+        Assert.Equal("parentparent", root.GetProperty("base").GetString());
+
+        using var map = JsonDocument.Parse(root.GetProperty("map").GetString()!);
+        Assert.Equal(1, map.RootElement.GetProperty("version").GetInt32());
+        Assert.Equal(["core", "web"], map.RootElement.GetProperty("modules").EnumerateArray().Select(m => m.GetProperty("id").GetString()));
+        Assert.Equal("core", map.RootElement.GetProperty("dependencies")[0].GetProperty("to").GetString());
+    }
+
+    /// <summary>
+    /// A checkout that keeps no map says so — that is how a deletion travels. One whose map is broken
+    /// feeds nothing and says why: the deployment would refuse it whole, and only this side can fix it.
+    /// </summary>
+    [Fact]
+    public void No_map_feeds_as_none_and_a_broken_map_does_not_feed()
+    {
+        var none = RemoteSyncPayloads.CodeMap(
+            "Shared", """{ "repository": "Shared", "file": null, "problem": null, "modules": [], "dependencies": [] }""",
+            Head, onBase: null);
+        var broken = RemoteSyncPayloads.CodeMap(
+            "Shared", """{ "repository": "Shared", "file": "code-map.json", "problem": "`code-map.json` is not JSON", "modules": [], "dependencies": [] }""",
+            Head, onBase: null);
+
+        using var document = JsonDocument.Parse(none.Json!);
+        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("map").ValueKind);
+        Assert.Null(broken.Json);
+        Assert.Contains("not JSON", broken.Problem);
+    }
+
+    [Fact]
+    public void What_the_deployment_holds_is_read_per_feed()
+    {
+        Assert.Equal(
+            ("aaaa", (string?)null),
+            RemoteSyncPayloads.Held("""{ "repository": "Shared", "knowledge": "aaaa", "codeMap": null }"""));
+        Assert.Equal(((string?)null, (string?)null), RemoteSyncPayloads.Held("{}"));
+    }
+
+    /// <summary>Nothing held, or the very commit held: nothing for git to answer, and the feed goes.</summary>
+    [Fact]
+    public void Nothing_held_feeds_unbased_and_the_same_commit_feeds_on_itself()
+    {
+        var fresh = RemoteSyncPayloads.Order("Shared", "knowledge", Head, held: null, relation: null);
+        var same = RemoteSyncPayloads.Order("Shared", "knowledge", Head, held: Head.Commit, relation: null);
+
+        Assert.True(fresh.Feed);
+        Assert.Null(fresh.Base);
+        Assert.True(same.Feed);
+        Assert.Equal(Head.Commit, same.Base);
+    }
+
+    [Fact]
+    public void A_descendant_feeds_on_the_held_commit_and_a_diverged_one_lets_commit_time_decide()
+    {
+        var descends = RemoteSyncPayloads.Order("Shared", "knowledge", Head, "parentparent", TreeRelation.Descends);
+        var diverged = RemoteSyncPayloads.Order("Shared", "knowledge", Head, "cousincousin", TreeRelation.Diverged);
+
+        Assert.Equal((true, "parentparent", (string?)null), (descends.Feed, descends.Base, descends.Note));
+        Assert.Equal((true, (string?)null, (string?)null), (diverged.Feed, diverged.Base, diverged.Note));
+    }
+
+    /// <summary>
+    /// Behind, or not fetched: this machine feeds nothing, and says which — the first is caught up by
+    /// a pull, the second by a fetch, and neither is a failure.
+    /// </summary>
+    [Fact]
+    public void A_checkout_behind_or_unaware_of_the_held_commit_feeds_nothing_and_says_why()
+    {
+        var behind = RemoteSyncPayloads.Order("Shared", "knowledge", Head, "futurefuture", TreeRelation.Behind);
+        var unknown = RemoteSyncPayloads.Order("Shared", "code map", Head, "strangerstranger", TreeRelation.Unknown);
+
+        Assert.False(behind.Feed);
+        Assert.Contains("futurefu", behind.Note);
+        Assert.Contains("ahead of this checkout", behind.Note);
+        Assert.False(unknown.Feed);
+        Assert.Contains("code map", unknown.Note);
+        Assert.Contains("fetch", unknown.Note);
     }
 }
 
@@ -324,12 +435,16 @@ public sealed class RemoteSyncRunTests : IDisposable
     private sealed class StubTransport : HttpMessageHandler
     {
         public List<string> Calls { get; } = [];
+
+        /// <summary>What each POST carried, by URL — the last one wins.</summary>
+        public Dictionary<string, string> Bodies { get; } = [];
         public Func<HttpRequestMessage, HttpResponseMessage>? Answer { get; init; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Calls.Add($"{request.Method} {request.RequestUri}");
-            return Task.FromResult(Answer!(request));
+            if (request.Content is not null) Bodies[request.RequestUri!.ToString()] = await request.Content.ReadAsStringAsync(ct);
+            return Answer!(request);
         }
     }
 
@@ -376,6 +491,8 @@ public sealed class RemoteSyncRunTests : IDisposable
         int At(string fragment) => order.FindIndex(call => call.Contains(fragment));
         Assert.True(At($"POST {Remote}/api/registry") >= 0, string.Join("\n", order));
         Assert.True(At($"POST {Remote}/api/registry") < At($"POST {Remote}/api/feed/entries"));
+        // The code map rides beside the knowledge (MAP3b): a checkout with none still says so.
+        Assert.True(At($"POST {Remote}/api/feed/entries") < At($"POST {Remote}/api/feed/code-map"));
         // Session records ride the host's pass (SYNC4): the driver never feeds them itself.
         Assert.DoesNotContain(order, call => call.Contains("/api/feed/sessions"));
         Assert.True(At($"POST {Remote}/api/feed/entries") < At($"GET {Remote}/api/registry"));
@@ -453,6 +570,78 @@ public sealed class RemoteSyncRunTests : IDisposable
 
         Assert.NotNull(report.Problem);
         Assert.Contains("expired", report.Problem);
+    }
+
+    /// <summary>
+    /// A feed speaks for a commit, so a checkout with work in flight feeds neither knowledge nor map —
+    /// its index would describe the working tree, not the commit it names.
+    /// </summary>
+    [Fact]
+    public async Task A_checkout_with_uncommitted_work_feeds_nothing_and_says_so()
+    {
+        File.WriteAllText(Path.Combine(_tree.Root, "draft.md"), "not yet committed\n");
+        using var transport = new StubTransport { Answer = AnswerHealthy };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Null(report.Problem);
+        Assert.DoesNotContain(transport.Calls, call => call.Contains("/api/feed/"));
+        Assert.Contains(report.Notes, note => note.Contains("`Shared`") && note.Contains("uncommitted"));
+    }
+
+    /// <summary>
+    /// The deployment holds an earlier commit of this checkout's own line: both feeds name it as their
+    /// base, which is what lets the deployment take them as a fast-forward — and the map goes too.
+    /// </summary>
+    [Fact]
+    public async Task A_checkout_ahead_of_what_is_held_feeds_both_on_the_held_commit()
+    {
+        var parent = _tree.Output("rev-parse HEAD");
+        _tree.Commit("second.md");
+        using var transport = new StubTransport
+        {
+            Answer = request => request.RequestUri!.ToString().StartsWith($"{Remote}/api/feed/held")
+                ? Json($$"""{ "repository": "Shared", "knowledge": "{{parent}}", "codeMap": "{{parent}}" }""")
+                : AnswerHealthy(request),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.Empty(report.Notes);
+        foreach (var door in new[] { "entries", "code-map" })
+        {
+            using var body = JsonDocument.Parse(transport.Bodies[$"{Remote}/api/feed/{door}"]);
+            Assert.Equal(parent, body.RootElement.GetProperty("base").GetString());
+            Assert.Equal(_tree.Output("rev-parse HEAD"), body.RootElement.GetProperty("commit").GetString());
+        }
+    }
+
+    /// <summary>The deployment holds a commit this checkout has not reached: nothing goes, and the note says to pull.</summary>
+    [Fact]
+    public async Task A_checkout_behind_what_is_held_feeds_nothing()
+    {
+        var parent = _tree.Output("rev-parse HEAD");
+        _tree.Commit("second.md");
+        var ahead = _tree.Output("rev-parse HEAD");
+        _tree.Git($"reset -q --hard {parent}");
+        using var transport = new StubTransport
+        {
+            Answer = request => request.RequestUri!.ToString().StartsWith($"{Remote}/api/feed/held")
+                ? Json($$"""{ "repository": "Shared", "knowledge": "{{ahead}}", "codeMap": "{{ahead}}" }""")
+                : AnswerHealthy(request),
+        };
+        using var sync = new RemoteSync(
+            Local, null, RemoteTarget.DefaultWorkspace, new RemoteTarget(Remote, "dk_test"), transport);
+
+        var report = await sync.RunOnceAsync();
+
+        Assert.DoesNotContain(transport.Calls, call => call.Contains("/api/feed/entries") || call.Contains("/api/feed/code-map"));
+        // One note, not one per feed: both stand on the same held commit.
+        Assert.Single(report.Notes, note => note.Contains("ahead of this checkout"));
     }
 
     [Fact]
@@ -848,7 +1037,10 @@ internal sealed class GitTree : IDisposable
         Git($"{Identity} commit -q -m \"the fixture is born\"");
     }
 
-    public void Git(string arguments)
+    public void Git(string arguments) => Output(arguments);
+
+    /// <summary>Run git and answer what it printed, trimmed — a SHA, a branch name.</summary>
+    public string Output(string arguments)
     {
         using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
@@ -859,7 +1051,17 @@ internal sealed class GitTree : IDisposable
             RedirectStandardError = true,
             UseShellExecute = false,
         })!;
+        var stdout = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
+        return stdout.Trim();
+    }
+
+    /// <summary>Add a file and commit it, so the history moves on by one.</summary>
+    public void Commit(string file)
+    {
+        File.WriteAllText(Path.Combine(Root, file), $"# {file}\n");
+        Git($"{Identity} add -A");
+        Git($"{Identity} commit -q -m \"{file}\"");
     }
 
     public void Dispose()
@@ -954,5 +1156,40 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         {
             Directory.Delete(plain, recursive: true);
         }
+    }
+
+    // ——— How this checkout's commit stands to one a deployment holds (SYNC5a): only git can say.
+
+    [Fact]
+    public async Task A_later_commit_descends_and_an_earlier_one_is_behind()
+    {
+        var first = _tree.Output("rev-parse HEAD");
+        _tree.Commit("second.md");
+        var second = _tree.Output("rev-parse HEAD");
+
+        Assert.Equal(TreeRelation.Descends, await WorkingTree.RelationAsync(_tree.Root, held: first, head: second));
+        Assert.Equal(TreeRelation.Behind, await WorkingTree.RelationAsync(_tree.Root, held: second, head: first));
+    }
+
+    [Fact]
+    public async Task Two_lines_from_one_parent_have_diverged()
+    {
+        var parent = _tree.Output("rev-parse HEAD");
+        _tree.Commit("ours.md");
+        var ours = _tree.Output("rev-parse HEAD");
+        _tree.Git($"checkout -q -b theirs {parent}");
+        _tree.Commit("theirs.md");
+        var theirs = _tree.Output("rev-parse HEAD");
+
+        Assert.Equal(TreeRelation.Diverged, await WorkingTree.RelationAsync(_tree.Root, held: theirs, head: ours));
+    }
+
+    /// <summary>A commit this checkout has never fetched is unknown — not diverged, which would be a claim about it.</summary>
+    [Fact]
+    public async Task A_commit_this_checkout_does_not_have_is_unknown()
+    {
+        Assert.Equal(
+            TreeRelation.Unknown,
+            await WorkingTree.RelationAsync(_tree.Root, held: "0123456789abcdef0123456789abcdef01234567", head: _tree.Output("rev-parse HEAD")));
     }
 }

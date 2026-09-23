@@ -7,7 +7,27 @@ namespace Daoris.Driver;
 /// <param name="Commit">The full SHA of HEAD.</param>
 /// <param name="CommittedAt">The committer date, which is what orders two points in one history.</param>
 /// <param name="Branch">The line this checkout is on; `(detached)` where it is on none.</param>
-public sealed record TreeProvenance(string Commit, DateTimeOffset CommittedAt, string Branch);
+public sealed record TreeProvenance(string Commit, DateTimeOffset CommittedAt, string Branch)
+{
+    /// <summary>The form a person reads in a note.</summary>
+    public string ShortCommit => Commit.Length <= 8 ? Commit : Commit[..8];
+}
+
+/// <summary>How this checkout's commit stands to one a deployment holds, as git answered (SYNC5a).</summary>
+public enum TreeRelation
+{
+    /// <summary>This checkout's commit has the held one in its history: a fast-forward.</summary>
+    Descends,
+
+    /// <summary>The held commit has this checkout's in its history: the checkout is behind.</summary>
+    Behind,
+
+    /// <summary>Neither is in the other's history — two lines from a common past.</summary>
+    Diverged,
+
+    /// <summary>This checkout does not have the held commit, so git cannot say.</summary>
+    Unknown,
+}
 
 /// <summary>
 /// The questions the driver asks a working tree: is it clean enough to spawn into, what landed while
@@ -88,6 +108,43 @@ public static class WorkingTree
 
         return null;
     }
+
+    /// <summary>
+    /// How <paramref name="head"/> stands to <paramref name="held"/> — the question a deployment
+    /// cannot ask, because it has no checkout (SYNC5a).
+    /// </summary>
+    /// <remarks>
+    /// Whether the commit is here is asked first and on its own: `merge-base` fails the same way for a
+    /// commit it does not have as for anything else, and an unknown commit reported as diverged would
+    /// let commit time replace a history this machine has never seen.
+    /// </remarks>
+    public static async Task<TreeRelation> RelationAsync(
+        string root, string held, string head, CancellationToken ct = default)
+    {
+        // The held commit is the REMOTE's answer and becomes a git argument, so it must be a commit id
+        // and nothing else — a value starting with `-` would be read as an option.
+        if (!IsCommitId(held) || !IsCommitId(head)) return TreeRelation.Unknown;
+
+        var (known, _, _) = await GitAsync(root, ["cat-file", "-e", $"{held}^{{commit}}"], ct).ConfigureAwait(false);
+        if (known != 0) return TreeRelation.Unknown;
+
+        // `--is-ancestor` answers 0 for yes and 1 for no; anything else is git failing to answer.
+        var (descends, _, _) = await GitAsync(root, ["merge-base", "--is-ancestor", held, head], ct).ConfigureAwait(false);
+        if (descends == 0) return TreeRelation.Descends;
+        if (descends != 1) return TreeRelation.Unknown;
+
+        var (behind, _, _) = await GitAsync(root, ["merge-base", "--is-ancestor", head, held], ct).ConfigureAwait(false);
+        return behind switch
+        {
+            0 => TreeRelation.Behind,
+            1 => TreeRelation.Diverged,
+            _ => TreeRelation.Unknown,
+        };
+    }
+
+    /// <summary>A full or abbreviated commit id: hex, and long enough to mean one commit.</summary>
+    private static bool IsCommitId(string text) =>
+        text.Length is >= 7 and <= 64 && text.All(char.IsAsciiHexDigit);
 
     /// <summary>Clean means: a git repository, with nothing uncommitted.</summary>
     public static async Task<(bool Clean, string Detail)> CleanAsync(string root, CancellationToken ct = default)

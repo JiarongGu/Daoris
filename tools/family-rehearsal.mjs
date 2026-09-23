@@ -1224,6 +1224,17 @@ check(
   lesson.status === 200 && (lesson.json ?? []).some((h) => h.repository === 'newcomer'),
   lesson.text.slice(0, 300),
 );
+
+// What the remote holds, and at which commit (SYNC5a): the question a feeding machine asks git about
+// before its next feed. A clean checkout fed both its knowledge and its code map — none, here, which
+// is itself a statement at that commit.
+const newcomerHead = run('git rev-parse HEAD', newcomer).out.trim();
+const heldNewcomer = await api('GET', '/api/feed/held?repository=newcomer', { base: REMOTE_BASE, key: keyA });
+check(
+  'the remote holds the newcomer’s knowledge and code map at the commit its checkout stands on',
+  heldNewcomer.json?.knowledge === newcomerHead && heldNewcomer.json?.codeMap === newcomerHead,
+  `${newcomerHead}\n${heldNewcomer.text}`,
+);
 const withheld = await api('GET', `/api/search?q=${encodeURIComponent('keeps this lesson at home')}`, {
   base: REMOTE_BASE, key: keyA,
 });
@@ -1673,10 +1684,14 @@ check(
 // machine's map says where, and it names one circle. `lantern` joins aurora so the crossing has a
 // sender the remote knows: a quest needs both sides registered where it homes.
 const lantern = circleMember('lantern', 'A lamp in the aurora circle.', 'Light the batch before capping it.');
+// Committed, as a reviewed declaration is: since SYNC5a a checkout with work in flight feeds no
+// knowledge, because the feed speaks for a commit and the index would describe the working tree.
 const declareJoin = (directory, knowledge) => {
   const declaration = JSON.parse(readFileSync(join(directory, 'daoris.json'), 'utf8'));
   declaration.remote = { join: true, knowledge };
   writeFileSync(join(directory, 'daoris.json'), `${JSON.stringify(declaration, null, 2)}\n`);
+  run(`git ${GIT_ID} add -A`, directory);
+  run(`git ${GIT_ID} commit -q -m "join the remote"`, directory);
 };
 declareJoin(atelier, true);
 declareJoin(foundry, true);
@@ -1918,6 +1933,120 @@ check(
   JSON.stringify(served),
 );
 
+// Ancestry, where it was asked (SYNC5a). The feeding machine asks git whether its commit descends
+// from the one held, and names that commit as its `base`; the door checks it still holds it. Commit
+// time is only the fallback for a feed that could not be ordered — the checks above.
+const fastForward = await feed({
+  repository: 'atelier',
+  entries: [fedEntry('The fast-forwarded lesson')],
+  commit: 'abab0000cdcd1111',
+  // OLDER than what is held: a rebase keeps author dates and a clock can be wrong. A descendant is
+  // not stale because of either.
+  committedAt: hoursFromNow(-72),
+  branch: 'main',
+  base: 'ffff9999eeee8888',
+});
+check(
+  'a feed based on the held commit is a fast-forward, whatever its clock says',
+  fastForward.status === 200 && (await heldTitles('atelier')).join() === 'The fast-forwarded lesson',
+  fastForward.text,
+);
+
+const moved = await feed({
+  repository: 'atelier',
+  entries: [fedEntry('A lesson checked against the past')],
+  commit: 'efef2222abab3333',
+  committedAt: hoursFromNow(2),
+  branch: 'main',
+  base: 'ffff9999eeee8888',
+});
+check(
+  'a feed checked against a commit no longer held is refused as moved — information, not a wall',
+  moved.status === 409 && moved.json?.information === true && /moved/.test(moved.text) && /abab0000/.test(moved.text),
+  moved.text,
+);
+
+// SYNC0c: the same commit, read two ways, used to replace itself on every tick. The first reading
+// stands; the same reading again is simply already held.
+const sameCommit = (title) => feed({
+  repository: 'atelier', entries: [fedEntry(title)], commit: 'abab0000cdcd1111',
+  committedAt: hoursFromNow(-72), branch: 'main',
+});
+const readAgain = await sameCommit('The fast-forwarded lesson');
+const readOtherwise = await sameCommit('The same commit, read another way');
+check(
+  'the same commit fed again with the same content is already held',
+  readAgain.status === 200 && /already held/.test(readAgain.text),
+  readAgain.text,
+);
+check(
+  '…and read differently, the first reading stands and the second hears why, as information',
+  readOtherwise.status === 409 && readOtherwise.json?.information === true
+    && (await heldTitles('atelier')).join() === 'The fast-forwarded lesson',
+  readOtherwise.text,
+);
+
+// The code map rides the same judgement at its own commit (MAP3b). The driver fed atelier's with its
+// knowledge a phase ago — none, since atelier keeps none — and a shared deployment has no checkout,
+// so what is fed is what it answers with.
+const heldAtelier = (await api('GET', '/api/feed/held?repository=atelier', { base: AURORA_BASE, key: keyC })).json;
+check(
+  'the driver fed atelier’s code map beside its knowledge, at the commit it spoke for',
+  heldAtelier?.codeMap === drivenProvenance?.commit && heldAtelier?.knowledge === 'abab0000cdcd1111',
+  JSON.stringify(heldAtelier),
+);
+const fedMap = JSON.stringify({
+  version: 1,
+  modules: [
+    { id: 'studio', path: 'src/Studio', summary: 'where the work is done' },
+    { id: 'kiln', path: 'src/Kiln', summary: 'what fires it' },
+  ],
+  dependencies: [{ from: 'studio', to: 'kiln', kind: 'project' }],
+});
+const feedMap = (map, commit) => api('POST', '/api/feed/code-map', {
+  base: AURORA_BASE, key: keyC,
+  body: {
+    repository: 'atelier', file: 'docs/code-map.json', map, commit,
+    committedAt: hoursFromNow(3), branch: 'main', base: heldAtelier?.codeMap,
+  },
+});
+const mapFed = await feedMap(fedMap, 'c0de0000c0de1111');
+const mapAtAurora = await api('GET', '/api/code-map/atelier', { base: AURORA_BASE, key: keyC });
+check(
+  'a fed code map is what a deployment with no checkout answers with',
+  mapFed.status === 200 && mapAtAurora.json?.file === 'docs/code-map.json'
+    && (mapAtAurora.json?.modules ?? []).map((m) => m.id).join() === 'studio,kiln'
+    && mapAtAurora.json?.dependencies?.[0]?.to === 'kiln',
+  `${mapFed.text}\n${mapAtAurora.text}`,
+);
+const brokenMap = await feedMap(
+  JSON.stringify({ version: 1, modules: [{ id: 'studio', path: '/srv/studio', summary: 'x' }], dependencies: [] }),
+  'c0de2222c0de3333',
+);
+check(
+  '…judged whole at the door: a map that breaks a rule is refused naming the break, and nothing of it is kept',
+  brokenMap.status === 400 && /repository-relative/.test(brokenMap.text)
+    && ((await api('GET', '/api/code-map/atelier', { base: AURORA_BASE, key: keyC })).json?.modules ?? [])
+      .map((m) => m.id).join() === 'studio,kiln',
+  brokenMap.text,
+);
+
+// The driver's half: the deployment now holds commits atelier's checkout has never seen, so git
+// cannot say how its own commit stands to them — and the driver feeds nothing rather than let commit
+// time replace a history it cannot see. A note, never a wall.
+const unaware = driver({
+  serviceUrl: BASE, config: driverConfig, mode: '--once',
+  remote: { DAORIS_REMOTE_URL: AURORA_BASE, DAORIS_REMOTE_KEY: keyC, DAORIS_REMOTE_WORKSPACE: 'aurora' },
+});
+const heldAfter = (await api('GET', '/api/feed/held?repository=atelier', { base: AURORA_BASE, key: keyC })).json;
+check(
+  'a checkout that does not have the held commit feeds nothing and says a fetch would let git answer',
+  unaware.code === 0 && /held {2}.*`atelier`'s knowledge is held at `abab0000`, a commit this checkout does not have/.test(unaware.out)
+    && /code map is held at `c0de0000`/.test(unaware.out) && !/sync {2}/.test(unaware.out)
+    && heldAfter?.knowledge === 'abab0000cdcd1111' && heldAfter?.codeMap === 'c0de0000c0de1111',
+  `${unaware.out}\n${JSON.stringify(heldAfter)}`,
+);
+
 if (auroraHost && !auroraHost.killed) auroraHost.kill();
 await sleep(700);
 const auroraBytes = readFileSync(auroraDb, 'latin1');
@@ -1928,7 +2057,9 @@ check(
 );
 check(
   '…and nothing a refused feed carried',
-  !auroraBytes.includes('last week') && !auroraBytes.includes('unmerged lesson'),
+  !auroraBytes.includes('last week') && !auroraBytes.includes('unmerged lesson')
+    && !auroraBytes.includes('checked against the past') && !auroraBytes.includes('read another way')
+    && !auroraBytes.includes('/srv/studio'),
   'a refused feed left its entries in the store',
 );
 
@@ -2880,7 +3011,12 @@ if (totals.failures) {
   console.log('  from — a newer commit replacing wholesale and carrying a deletion with it, a stale');
   console.log('  one refused as information rather than as a failure, an unmerged branch refused');
   console.log('  though it was newer, a feed naming no commit refused outright, and the commit each');
-  console.log('  copy stands on served back so staleness is seen rather than assumed. And a');
+  console.log('  copy stands on served back so staleness is seen rather than assumed. Then by');
+  console.log('  ANCESTRY (SYNC5a): a feed based on the held commit taken whatever its clock said,');
+  console.log('  one checked against a commit since replaced refused as moved, the same commit read');
+  console.log('  twice already held and read two ways keeping the first, a code map fed, answered');
+  console.log('  and judged whole at the door, and a checkout that has not seen the held commit');
+  console.log('  feeding nothing and saying why. And a');
   console.log('  CONVERSATION (D49 §3): a chat held from a terminal with no model in it — answering');
   console.log('  what it heard, publishing the work that came up rather than editing across, ending');
   console.log('  on end-of-input as a first-class record with no quest and a transcript of its own,');

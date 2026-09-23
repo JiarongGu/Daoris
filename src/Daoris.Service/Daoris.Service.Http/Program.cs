@@ -707,9 +707,9 @@ app.MapGet("/api/registry", async (
         r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch)));
 
 // A repository's code map (MAP3a): its modules and how they depend on each other, read from its own
-// committed file — never written to (D32). Local mode reads the checkout on each ask; a repository
-// with no checkout here answers with no file, until a feed brings one (MAP3b). The file's content is
-// repository-relative by its own rules, so nothing machine-local rides this door.
+// committed file — never written to (D32). A repository with a checkout here is read from it on each
+// ask; one without answers with what was fed (MAP3b), or with no file when nothing was. The file's
+// content is repository-relative by its own rules, so nothing machine-local rides this door.
 app.MapGet("/api/code-map/{repository}", async (ComposedService s, string repository, CancellationToken ct) =>
     await s.Service.CodeMapAsync(repository, ct) is { } read
         ? Results.Ok(new CodeMapResponse(
@@ -808,26 +808,39 @@ if (mode == ServiceMode.Shared)
                 entry.RelativePath ?? "", entry.Anchor));
         }
 
-        // The commit this feed speaks for (D48 §6). Whole or nothing, like every pair in this system:
-        // half a provenance cannot be compared with what is held, and the door must not assemble a
-        // plausible one out of the half it got.
-        var provenance = body.Commit is { Length: > 0 } commit
-            && body.CommittedAt is { } committedAt
-            && body.Branch is { Length: > 0 } branch
-                // The origin is the key's own identity — recorded because the write carried it, not
-                // because a second identity model was invented (D47 §7).
-                ? new FeedProvenance(commit, committedAt, branch, http.Items["daoris.principal"] as string)
-                : null;
+        var outcome = await s.Service.FeedAsync(
+            body.Repository, entries,
+            FedFrom(body.Commit, body.CommittedAt, body.Branch, body.Base, http), ct);
+        return FeedAnswer(outcome);
+    });
 
-        var outcome = await s.Service.FeedAsync(body.Repository, entries, provenance, ct);
-        if (outcome.Accepted) return Results.Ok(new FeedResponse(outcome.Entries, outcome.Message));
+    // A repository's code map (MAP3b) — what this deployment answers `GET /api/code-map` with, having
+    // no checkout. Judged whole again by the reader that judges the file on disk, and ordered exactly
+    // as the knowledge feed is, at its own commit.
+    app.MapPost("/api/feed/code-map", async (
+        ComposedService s, HttpContext http, FeedCodeMapRequest body, CancellationToken ct) =>
+    {
+        if (string.IsNullOrWhiteSpace(body.Repository))
+        {
+            return Results.BadRequest(new ErrorResponse("repository is required"));
+        }
 
-        // A feed with no commit is a malformed request; everything else is a state conflict — this
-        // deployment holds something the feed cannot replace. The `information` flag is what lets a
-        // sync report a stale or branch feed as news rather than as a wall (§6).
-        return outcome.Refusal == FeedRefusal.NoProvenance
-            ? Results.BadRequest(new FeedRefusalResponse(outcome.Message, outcome.Information))
-            : Results.Conflict(new FeedRefusalResponse(outcome.Message, outcome.Information));
+        return FeedAnswer(await s.Service.FeedCodeMapAsync(
+            body.Repository, body.File, body.Map,
+            FedFrom(body.Commit, body.CommittedAt, body.Branch, body.Base, http), ct));
+    });
+
+    // Which commit each feed of a repository stands on here — what a feeding machine asks git about
+    // before it feeds (SYNC5a): the deployment cannot run git, so the question travels to the checkout.
+    app.MapGet("/api/feed/held", async (ComposedService s, string? repository, CancellationToken ct) =>
+    {
+        if (string.IsNullOrWhiteSpace(repository))
+        {
+            return Results.BadRequest(new ErrorResponse("repository is required"));
+        }
+
+        var held = await s.Service.HeldAsync(repository, ct);
+        return Results.Ok(new FeedHeldResponse(repository, held.Knowledge, held.CodeMap));
     });
 
     // The remote's quest doors (D68, sync design §8): what it accepted after a number, in its order,
@@ -894,6 +907,29 @@ return 0;
 // answer is no for everyone — structural absence, not a policed permission: the deployment whose
 // callers are the network has no branch that serves a path.
 bool MachineLocal(HttpContext http) => mode == ServiceMode.Local && IsLoopback(http);
+
+// The commit a feed speaks for (D48 §6). Whole or nothing, like every pair in this system: half a
+// provenance cannot be compared with what is held, and the door must not assemble a plausible one out
+// of the half it got. The origin is the key's own identity — recorded because the write carried it,
+// not because a second identity model was invented (D47 §7).
+static FeedProvenance? FedFrom(
+    string? commit, DateTimeOffset? committedAt, string? branch, string? checkedAgainst, HttpContext http) =>
+    commit is { Length: > 0 } && committedAt is { } at && branch is { Length: > 0 }
+        ? new FeedProvenance(commit, at, branch, http.Items["daoris.principal"] as string)
+        {
+            Base = string.IsNullOrWhiteSpace(checkedAgainst) ? null : checkedAgainst.Trim(),
+        }
+        : null;
+
+// A feed with no commit or a malformed map is a bad request; everything else is a state conflict —
+// this deployment holds something the feed cannot replace. The `information` flag is what lets a sync
+// report a stale, moved or branch feed as news rather than as a wall (§6).
+static IResult FeedAnswer(FeedOutcome outcome) =>
+    outcome.Accepted
+        ? Results.Ok(new FeedResponse(outcome.Entries, outcome.Message))
+        : outcome.Refusal is FeedRefusal.NoProvenance or FeedRefusal.Malformed
+            ? Results.BadRequest(new FeedRefusalResponse(outcome.Message, outcome.Information))
+            : Results.Conflict(new FeedRefusalResponse(outcome.Message, outcome.Information));
 
 // A convergence is a prompt to look, so the suggestion says what to read and where the change goes —
 // never "apply this". Doctrine that appeared without anyone choosing it is the failure this project

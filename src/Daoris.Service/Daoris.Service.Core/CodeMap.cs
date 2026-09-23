@@ -149,6 +149,45 @@ public static class CodeMapReader
         }
     }
 
+    /// <summary>
+    /// A judged map in the file's own shape and one canonical form — what a deployment keeps of a fed
+    /// map (MAP3b), so that two readings saying the same thing hash alike whatever their whitespace.
+    /// </summary>
+    public static string Write(CodeMap map)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("version", 1);
+            writer.WriteStartArray("modules");
+            foreach (var module in map.Modules)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("id", module.Id);
+                writer.WriteString("path", module.Path);
+                writer.WriteString("summary", module.Summary);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("dependencies");
+            foreach (var dependency in map.Dependencies)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("from", dependency.From);
+                writer.WriteString("to", dependency.To);
+                writer.WriteString("kind", dependency.Kind);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+    }
+
     private static bool Array(JsonElement root, string name, out JsonElement value) =>
         root.TryGetProperty(name, out value) && value.ValueKind == JsonValueKind.Array;
 

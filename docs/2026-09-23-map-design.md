@@ -131,8 +131,8 @@ setting up gets set up for one repository and never for the rest.
 
 **Where it is read.** In local mode the service reads the file from the registered checkout on each
 request. That is the person's machine showing the person's state, as the local index already does
-(WSP4). A shared deployment holds what was fed, per repository, with the commit it speaks for and
-refused when older (WSP4's three rules, unchanged). The page opens it from a MAP2 node's detail and
+(WSP4). A shared deployment holds what was fed, per repository, at the commit it speaks for, ordered
+exactly as knowledge is (the sync design's §8, SYNC5a). The page opens it from a MAP2 node's detail and
 lays it out in layers by dependency: a pure function, tested, and still no graph library.
 
 **Who produces it — decided (owner, 2026-09-23): both.** A tool per stack where one exists (Roslyn
@@ -156,6 +156,12 @@ detail offers *Open its code map*. The map is laid out by `layerModules`, longes
 a module sits above it and a recorded cycle still places every module once. An arrow that skips a
 layer bows out past the column: drawn straight, it ran behind the box between and vanished (seen on
 the window). The example engine keeps a map and the game keeps none, and the browser gate opens both.
+
+**MAP3b is built (2026-09-24)**, with SYNC5a. The desktop's sync reads the map from its own host and
+feeds the file's text to `POST /api/feed/code-map`. The deployment judges it whole again and keeps it
+in canonical form (`CodeMapReader.Write`) in `fed_code_maps`. A commit with no map keeps the row
+with no body. The code-map door answers from that store for a repository with no checkout here.
+A teammate's map is not yet brought down to other machines (MAP3e).
 
 **Build order.** MAP3a: the contract, the local read, the page, and the example family carrying a
 map. MAP3b: the feed to a shared deployment, with WSP4's provenance. MAP3c: a tool producer (the

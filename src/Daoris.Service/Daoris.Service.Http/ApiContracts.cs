@@ -116,10 +116,20 @@ public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, 
 // The three provenance fields are the feed's claim about WHICH point in the history it speaks for
 // (D48 §6). Nullable on the wire and judged at the door: a feed that names no commit cannot be
 // compared with what is held, and a wholesale replacement that cannot be compared is the flapping
-// this exists to end.
+// this exists to end. `Base` is the held commit the feeding machine asked git about (SYNC5a); absent,
+// commit time decides.
 public sealed record FeedEntriesRequest(
     string Repository, IReadOnlyList<FeedEntryRecord>? Entries,
-    string? Commit, DateTimeOffset? CommittedAt, string? Branch);
+    string? Commit, DateTimeOffset? CommittedAt, string? Branch, string? Base = null);
+// A repository's code map, fed (MAP3b): the file's text as one string, judged whole again at the door,
+// or null when the checkout keeps none at that commit. The provenance is the entries feed's, field for
+// field — one judgement, two feeds.
+public sealed record FeedCodeMapRequest(
+    string Repository, string? File, string? Map,
+    string? Commit, DateTimeOffset? CommittedAt, string? Branch, string? Base = null);
+// Which commit a repository's knowledge and code map stand on at this deployment — what a feeding
+// machine asks git about before it feeds (SYNC5a). Null where nothing has fed.
+public sealed record FeedHeldResponse(string Repository, string? Knowledge, string? CodeMap);
 // A machine's sync pass (D69, SYNC4), as its driver reads it: what the quest half pushed, the moves of
 // this machine that became conflicts, what the remote would not keep, what is still behind; how many
 // session records went up and came down; and the wall, if there was one. `Machine` is this store's id.
@@ -181,6 +191,8 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(SessionActionResponse))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]
+[JsonSerializable(typeof(FeedCodeMapRequest))]
+[JsonSerializable(typeof(FeedHeldResponse))]
 [JsonSerializable(typeof(SyncResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(FeedResponse))]

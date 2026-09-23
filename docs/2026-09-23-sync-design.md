@@ -192,6 +192,29 @@ never this machine's lock: a teammate's session holds a tree on the teammate's m
 doors are `POST /api/feed/sessions` (existing) and `GET /api/sessions/since?since=N` at the remote,
 and the host's pass door becomes `POST /api/sync?workspace=` for quests and sessions together.
 
+**Knowledge and the code map by ancestry (SYNC5a).** A feed names the commit the deployment held
+when this machine checked it (`base`). Git on the machine with the checkout answers whether that
+commit is in its history; the deployment cannot run git. The deployment's rules:
+- It takes the feed when it still holds `base`. That is a fast-forward, checked the way a
+  compare-and-swap is.
+- It answers *moved* when another machine fed in between.
+- It falls back to commit time when the machine could not order the feed: a diverged history, or an
+  older client.
+
+A machine that is behind, or that has not fetched the commit the deployment holds, feeds nothing and
+says so. The same commit fed twice is a no-op when the content digest matches. When the digest
+differs, the first reading of that commit stands, reported as information, and that ends SYNC0c. A
+machine feeds knowledge only from a clean checkout, so that what it sends is the commit's content and
+not work in flight. The code map (MAP3b) rides the same judgement and is re-judged whole at the door
+by `CodeMapReader`. A newer commit with no map deletes the held one and keeps the commit held. The
+doors are `GET /api/feed/held?repository=` (the commits a feeding machine asks git about) and
+`POST /api/feed/code-map` beside the existing entries feed, which now carries `base`. The digest is
+computed at the deployment, never taken from the wire.
+
+**Registrations and the travelling retire (SYNC5b).** The machine holding a checkout owns its row.
+Other machines' copies are updated and removed rather than mirrored once, and a retire travels as a
+tombstone (SYNC0b).
+
 ## 9. Build order
 
 - **SYNC0d first**, on its own: a newly wired remote takes effect without a restart. It stands under

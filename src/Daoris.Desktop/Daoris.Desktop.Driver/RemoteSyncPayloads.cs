@@ -117,8 +117,10 @@ public static class RemoteSyncPayloads
     /// knowledge means the deletion. That is only safe because the provenance travels with it — a
     /// replacement the receiver cannot order against what it holds is how two machines flap.
     /// </remarks>
+    /// <param name="onBase">The held commit git said this checkout descends from (SYNC5a); null lets
+    /// commit time decide at the deployment.</param>
     public static (string Json, int Count) Entries(
-        string repository, string entriesJson, TreeProvenance? provenance)
+        string repository, string entriesJson, TreeProvenance? provenance, string? onBase = null)
     {
         using var document = JsonDocument.Parse(entriesJson);
         var count = 0;
@@ -126,12 +128,7 @@ public static class RemoteSyncPayloads
         {
             writer.WriteStartObject();
             writer.WriteString("repository", repository);
-            if (provenance is not null)
-            {
-                writer.WriteString("commit", provenance.Commit);
-                writer.WriteString("committedAt", provenance.CommittedAt.ToString("O"));
-                writer.WriteString("branch", provenance.Branch);
-            }
+            WriteProvenance(writer, provenance, onBase);
 
             writer.WriteStartArray("entries");
             foreach (var entry in document.RootElement.EnumerateArray())
@@ -151,6 +148,124 @@ public static class RemoteSyncPayloads
         });
 
         return (json, count);
+    }
+
+    private static void WriteProvenance(Utf8JsonWriter writer, TreeProvenance? provenance, string? onBase)
+    {
+        if (provenance is null) return;
+
+        writer.WriteString("commit", provenance.Commit);
+        writer.WriteString("committedAt", provenance.CommittedAt.ToString("O"));
+        writer.WriteString("branch", provenance.Branch);
+        if (!string.IsNullOrWhiteSpace(onBase)) writer.WriteString("base", onBase);
+    }
+
+    // ——— What is fed from a checkout besides its knowledge, and in what order (SYNC5a, MAP3b).
+
+    /// <param name="Json">The feed, or null when there is nothing this machine may send.</param>
+    /// <param name="Problem">Why nothing goes — the reader's own sentence about this checkout's file.</param>
+    public sealed record CodeMapFeed(string? Json, string? Problem);
+
+    /// <summary>
+    /// This checkout's code map as the deployment hears it (MAP3b): the file it was read from and its
+    /// text in the file's own shape, rebuilt from what this machine's host judged — or no map, which is
+    /// how a deletion travels.
+    /// </summary>
+    /// <remarks>
+    /// A map the host refused feeds nothing. The deployment would refuse it whole for the same reason,
+    /// and only this side has the file to fix, so the problem is said here.
+    /// </remarks>
+    /// <param name="codeMapJson">The host's answer from its code-map door.</param>
+    public static CodeMapFeed CodeMap(
+        string repository, string codeMapJson, TreeProvenance provenance, string? onBase)
+    {
+        using var document = JsonDocument.Parse(codeMapJson);
+        var root = document.RootElement;
+        if (Text(root, "problem") is { Length: > 0 } problem) return new CodeMapFeed(null, problem);
+
+        var file = Text(root, "file");
+        string? map = file is null ? null : Write(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("version", 1);
+            writer.WriteStartArray("modules");
+            foreach (var module in Items(root, "modules"))
+            {
+                writer.WriteStartObject();
+                writer.WriteString("id", Text(module, "id"));
+                writer.WriteString("path", Text(module, "path"));
+                writer.WriteString("summary", Text(module, "summary"));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("dependencies");
+            foreach (var dependency in Items(root, "dependencies"))
+            {
+                writer.WriteStartObject();
+                writer.WriteString("from", Text(dependency, "from"));
+                writer.WriteString("to", Text(dependency, "to"));
+                writer.WriteString("kind", Text(dependency, "kind"));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+
+        return new CodeMapFeed(Write(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("repository", repository);
+            WriteProvenance(writer, provenance, onBase);
+            if (file is null) writer.WriteNull("file");
+            else writer.WriteString("file", file);
+            if (map is null) writer.WriteNull("map");
+            else writer.WriteString("map", map);
+            writer.WriteEndObject();
+        }), null);
+    }
+
+    /// <summary>Which commit the deployment holds this repository's knowledge and code map at; null where nothing has fed.</summary>
+    public static (string? Knowledge, string? CodeMap) Held(string heldJson)
+    {
+        using var document = JsonDocument.Parse(heldJson);
+        var root = document.RootElement;
+        return root.ValueKind == JsonValueKind.Object ? (Text(root, "knowledge"), Text(root, "codeMap")) : (null, null);
+    }
+
+    /// <param name="Feed">Whether anything goes to the deployment.</param>
+    /// <param name="Base">The held commit the feed names as its base, when git said it descends from it.</param>
+    /// <param name="Note">What a person should hear when nothing goes; null when the feed goes.</param>
+    public sealed record FeedPlan(bool Feed, string? Base, string? Note);
+
+    /// <summary>
+    /// Whether to feed, and on what base (SYNC5a) — this machine's half of the ordering, decided from
+    /// what git answered about the held commit.
+    /// </summary>
+    /// <param name="what">What would be fed, as the note says it: "knowledge", "code map".</param>
+    /// <param name="held">The commit the deployment holds, or null where nothing has fed.</param>
+    /// <param name="relation">What git said; null when there was nothing to ask.</param>
+    public static FeedPlan Order(
+        string repository, string what, TreeProvenance here, string? held, TreeRelation? relation)
+    {
+        if (held is null) return new FeedPlan(true, null, null);
+        if (string.Equals(held, here.Commit, StringComparison.OrdinalIgnoreCase)) return new FeedPlan(true, held, null);
+
+        var shortHeld = held.Length <= 8 ? held : held[..8];
+        return relation switch
+        {
+            TreeRelation.Descends => new FeedPlan(true, held, null),
+            // Two lines from a common past: git cannot order them, so the deployment falls back to
+            // commit time — the one question left that it can answer on its own.
+            TreeRelation.Diverged => new FeedPlan(true, null, null),
+            TreeRelation.Behind => new FeedPlan(false, null,
+                $"`{repository}`'s {what} is held at `{shortHeld}`, which is ahead of this checkout "
+                + $"(`{here.ShortCommit}`) — nothing fed. A pull catches this checkout up; nothing is wrong."),
+            _ => new FeedPlan(false, null,
+                $"`{repository}`'s {what} is held at `{shortHeld}`, a commit this checkout does not have — "
+                + "nothing fed until a fetch lets git say how the two relate."),
+        };
     }
 
     // ——— The quest sync (D69). The host runs the pass — fetch, rebase, push — because a take claims by
@@ -273,6 +388,11 @@ public static class RemoteSyncPayloads
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
+
+    private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+            ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object).ToList()
+            : [];
 
     private static IReadOnlyList<string> Strings(JsonElement element, string name)
     {

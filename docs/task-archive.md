@@ -4498,3 +4498,43 @@ the one rule the web and the driver share. Not looked at on the window: the scra
 remote, so no teammate records.
 
 Service 395, driver 397, modules 105, web 620 + 18, family 226/226, deploy 39/39, verify green.
+
+## SYNC5a — knowledge and the code map by ancestry (2026-09-24)
+
+- [x] **SYNC5a — knowledge and the code map by ancestry**, a content digest for the same commit
+  (fixes SYNC0c; carries MAP3b). Design §8.
+
+✅ **done 2026-09-24**, the sixth of D68's build. **Ancestry is asked where the checkout is.** Before
+it feeds, the driver reads what the remote holds (`GET /api/feed/held`) and asks git how its commit
+stands to it (`WorkingTree.RelationAsync`: `cat-file -e`, then `merge-base --is-ancestor` both
+ways):
+- It descends: the feed names the held commit as its `base`.
+- Diverged: no base, and commit time decides at the door.
+- Behind, or the held commit is not in this checkout: nothing is fed, and a note says a pull or a
+  fetch.
+
+**The door checks the base the way a compare-and-swap is checked.** `FeedOrder.Judge` in Core takes
+a feed whose base is still held, whatever its clock says, and answers *moved* when another machine
+fed in between. The judgement and the write run under one gate.
+
+**The same commit is compared by digest** (`FeedDigest`, SHA-256 over the normalized entries in
+identity order, every field length-prefixed). It is computed at the deployment, never taken from the
+wire. Same content: *already held*, and the first feeder stays credited. Other content: the first
+reading stands, as information (SYNC0c). A row from before digests takes the same commit once.
+
+**A feed speaks for a commit, so only a clean checkout feeds.** The host's index and map describe
+the working tree, and a dirty one would send work in flight under the commit's name. The rehearsal's
+own fixture was that case: `declareJoin` edited three manifests and never committed them. It commits
+now, as a reviewed declaration is.
+
+**MAP3b rides the same judgement.** `POST /api/feed/code-map` takes the file's text, judges it whole
+again with `CodeMapReader`, and keeps it in canonical form (`CodeMapReader.Write`) in
+`fed_code_maps`, at its own commit. A newer commit with no map keeps the row with no body, so an
+older checkout cannot bring the map back. `CodeMapAsync` answers from the fed store for a repository
+with no checkout here. Retire removes the fed map with the provenance. The remote's held value
+becomes a git argument, so the driver takes it only as a hex commit id.
+
+**Left open**: a teammate's fed map lives at the remote only, so a machine without the checkout
+still answers "no map" for it (MAP3e).
+
+Service 408, driver 410, modules 105, web 620 + 18, family 235/235, deploy 39/39, verify green.

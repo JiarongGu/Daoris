@@ -21,6 +21,19 @@ public sealed record FeedProvenance(
 {
     /// <summary>The form a person reads, in a sentence or a table cell.</summary>
     public string ShortCommit => Commit.Length <= 8 ? Commit : Commit[..8];
+
+    /// <summary>
+    /// The commit this deployment held when the feeding machine asked git whether <see cref="Commit"/>
+    /// descends from it (SYNC5a). Null where the machine could not order the two: nothing was held, the
+    /// histories diverged, or the client predates the rule — and then commit time decides.
+    /// </summary>
+    public string? Base { get; init; }
+
+    /// <summary>
+    /// What the fed content says, hashed by the deployment (<see cref="FeedDigest"/>) — how the same
+    /// commit fed twice is told from the same commit read two ways. Null on a row from before SYNC5a.
+    /// </summary>
+    public string? Digest { get; init; }
 }
 
 /// <summary>How much one repository contributes to the index, and what it was fed from.</summary>
@@ -53,6 +66,21 @@ public enum FeedRefusal
     /// the index keeps the newer view, and the machine that is behind is simply behind.
     /// </summary>
     Stale,
+
+    /// <summary>
+    /// The feeding machine checked its ancestry against a commit another machine has since replaced
+    /// (SYNC5a). Information: the next pass asks git again, against what is held then.
+    /// </summary>
+    Moved,
+
+    /// <summary>
+    /// The commit held, read differently (SYNC0c). The first reading stands, as information: two
+    /// readings of one commit are two tools disagreeing, and flapping between them helps nobody.
+    /// </summary>
+    ContentDiffers,
+
+    /// <summary>What was fed breaks the rules of its own shape — a code map judged whole at the door.</summary>
+    Malformed,
 }
 
 /// <param name="Refusal"><see cref="FeedRefusal.None"/> when the feed was taken.</param>
@@ -72,7 +100,8 @@ public sealed record FeedOutcome(FeedRefusal Refusal, string Message, int Entrie
     /// the deployment kept the canonical newer one. A sync that logged those as failures would teach
     /// the person to ignore its failures, which is the one thing a report must never do.
     /// </remarks>
-    public bool Information => Refusal is FeedRefusal.Stale or FeedRefusal.NotDefaultBranch;
+    public bool Information =>
+        Refusal is FeedRefusal.Stale or FeedRefusal.NotDefaultBranch or FeedRefusal.Moved or FeedRefusal.ContentDiffers;
 }
 
 /// <summary>
@@ -113,6 +142,9 @@ public sealed class KnowledgeService(
     /// </remarks>
     private readonly ConvergenceDetector _convergence = new(store, embedder, vectors);
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
+
+    /// <summary>One feed judged and written at a time (SYNC5a): the check and the write are one step.</summary>
+    private readonly SemaphoreSlim _feedGate = new(1, 1);
     private bool _everRefreshed;
 
     /// <summary>Whether semantic recall is available, which depends on an embedder being configured.</summary>
@@ -309,25 +341,189 @@ public sealed class KnowledgeService(
         string repository, IReadOnlyList<KnowledgeEntry> entries, FeedProvenance? provenance = null,
         CancellationToken ct = default)
     {
+        var (registration, refused) = await AdmitAsync(repository, provenance, "knowledge", ct).ConfigureAwait(false);
+        if (refused is not null) return refused;
+
+        var normalized = entries
+            .Select(entry => entry with
+            {
+                Repository = registration!.Repository,
+                Provenance = Provenance.Local,
+                // The RECEIVING deployment's wiring decides the circle, never the feed's claim about it
+                // (D48): a feed that could name its own workspace could write itself into someone
+                // else's, which is the scoping bug that becomes a disclosure.
+                Workspace = registration.InWorkspace,
+            })
+            .ToList();
+        var arriving = provenance! with { Digest = FeedDigest.Of(normalized) };
+
+        // The judgement and the write are one step, so two feeds arriving together cannot both find
+        // the same commit held and both take: that is what makes the base a compare-and-swap.
+        await _feedGate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            var held = registrations is null
+                ? null
+                : await registrations.ProvenanceAsync(registration!.Repository, ct).ConfigureAwait(false);
+
+            var verdict = FeedOrder.Judge(held, arriving);
+            if (verdict == FeedVerdict.AlreadyHeld)
+            {
+                return new(
+                    FeedRefusal.None,
+                    $"`{registration!.Repository}` is already held at `{arriving.ShortCommit}` with this content.",
+                    normalized.Count);
+            }
+
+            if (verdict != FeedVerdict.Take) return NotTaken(verdict, registration!.Repository, "knowledge", held!, arriving);
+
+            await store.ReplaceRepositoryAsync(registration!.Repository, normalized, ct).ConfigureAwait(false);
+
+            // Recorded AFTER the entries land, so a store that fails mid-replace never claims a commit
+            // it does not hold — the next feed from that commit would then be refused as a duplicate
+            // of work that never happened.
+            if (registrations is not null)
+            {
+                await registrations.RecordProvenanceAsync(registration.Repository, arriving, ct)
+                    .ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _feedGate.Release();
+        }
+
+        return new(
+            FeedRefusal.None,
+            $"Indexed {normalized.Count} entries from `{registration.Repository}` at `{arriving.ShortCommit}`.",
+            normalized.Count);
+    }
+
+    /// <summary>
+    /// Accept one repository's code map from a feed (MAP3b) — the map a deployment with no checkout
+    /// answers with. The same gates and the same ordering as knowledge, each held at its own commit.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Judged whole again here</b>, by the reader that judges the file on disk: the feeding
+    /// machine's reading is a claim, and a map this deployment stores is one it has checked. What is
+    /// kept is the map rewritten in its canonical form, so its digest is over what it says.</para>
+    ///
+    /// <para>A null map is the repository saying it keeps none at that commit. The held map goes and
+    /// the commit stays, so a checkout from before the deletion cannot bring the map back.</para>
+    /// </remarks>
+    /// <param name="file">Which candidate the map was read from; ignored when there is no map.</param>
+    /// <param name="map">The file's text, or null when the checkout keeps no map.</param>
+    public async Task<FeedOutcome> FeedCodeMapAsync(
+        string repository, string? file, string? map, FeedProvenance? provenance, CancellationToken ct = default)
+    {
+        var (registration, refused) = await AdmitAsync(repository, provenance, "a code map", ct).ConfigureAwait(false);
+        if (refused is not null) return refused;
+
+        // A composition without the store has nowhere to hold what was fed. Every real one has it
+        // (ServiceFactory), so this is a wiring mistake, said as one.
+        var held = registrations
+            ?? throw new InvalidOperationException("a fed code map is held in the registration store, and this service was composed without one");
+
+        string? body = null;
+        string? name = null;
+        var modules = 0;
+        if (map is not null)
+        {
+            if (file is null || !CodeMapReader.Candidates.Contains(file, StringComparer.Ordinal))
+            {
+                return new(
+                    FeedRefusal.Malformed,
+                    $"`{registration!.Repository}` fed a code map from `{file}`, and a code map is read from "
+                    + $"{string.Join(" or ", CodeMapReader.Candidates.Select(c => $"`{c}`"))} — nowhere else.",
+                    Entries: 0);
+            }
+
+            if (System.Text.Encoding.UTF8.GetByteCount(map) > CodeMapReader.MaxBytes)
+            {
+                return new(
+                    FeedRefusal.Malformed,
+                    $"`{file}` is over {CodeMapReader.MaxBytes / 1024 / 1024} MB — a code map is a small file.",
+                    Entries: 0);
+            }
+
+            var (parsed, problem) = CodeMapReader.Parse(map, file);
+            if (problem is not null) return new(FeedRefusal.Malformed, problem, Entries: 0);
+
+            body = CodeMapReader.Write(parsed!);
+            name = file;
+            modules = parsed!.Modules.Count;
+        }
+
+        var arriving = provenance! with { Digest = FeedDigest.Of($"{name}\n{body}") };
+
+        await _feedGate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            var standing = await held.CodeMapProvenanceAsync(registration!.Repository, ct).ConfigureAwait(false);
+            var verdict = FeedOrder.Judge(standing, arriving);
+            if (verdict == FeedVerdict.AlreadyHeld)
+            {
+                return new(
+                    FeedRefusal.None,
+                    $"`{registration.Repository}`'s code map is already held at `{arriving.ShortCommit}` as it reads.",
+                    modules);
+            }
+
+            if (verdict != FeedVerdict.Take) return NotTaken(verdict, registration.Repository, "code map", standing!, arriving);
+
+            await held.RecordCodeMapAsync(registration.Repository, name, body, arriving, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _feedGate.Release();
+        }
+
+        return new(
+            FeedRefusal.None,
+            body is null
+                ? $"`{registration.Repository}` keeps no code map at `{arriving.ShortCommit}`; none is held here now."
+                : $"Held `{registration.Repository}`'s code map ({modules} modules) at `{arriving.ShortCommit}`.",
+            modules);
+    }
+
+    /// <summary>
+    /// Which commit this deployment holds a repository's knowledge and code map at — what a feeding
+    /// machine asks git about before it feeds (SYNC5a).
+    /// </summary>
+    public async Task<FeedHeld> HeldAsync(string repository, CancellationToken ct = default) =>
+        registrations is null
+            ? new FeedHeld(null, null)
+            : new FeedHeld(
+                (await registrations.ProvenanceAsync(repository, ct).ConfigureAwait(false))?.Commit,
+                (await registrations.CodeMapProvenanceAsync(repository, ct).ConfigureAwait(false))?.Commit);
+
+    /// <summary>
+    /// The door every feed from a checkout passes: joined, sharing, naming a commit, on the canonical
+    /// line. Phrased once here so the knowledge feed and the code map feed cannot drift on it.
+    /// </summary>
+    /// <param name="what">What was fed, as the refusal says it: "knowledge", "a code map".</param>
+    private async Task<(Registration? Registration, FeedOutcome? Refused)> AdmitAsync(
+        string repository, FeedProvenance? provenance, string what, CancellationToken ct)
+    {
         var registration = (await RegistryAsync(ct: ct).ConfigureAwait(false))
             .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
 
         if (registration is null || !registration.Joined)
         {
-            return new(
+            return (null, new(
                 FeedRefusal.NotJoined,
                 $"`{repository}` has not joined this deployment — the manifest's `remote.join` is the "
                 + "declaration that admits it, and silence means local.",
-                Entries: 0);
+                Entries: 0));
         }
 
         if (!registration.SharesKnowledge)
         {
-            return new(
+            return (null, new(
                 FeedRefusal.NotSharing,
                 $"`{registration.Repository}` joined without sharing knowledge — its records travel, its "
-                + "knowledge stays home. `remote.knowledge` is the declaration that changes that.",
-                Entries: 0);
+                + "knowledge and its code map stay home. `remote.knowledge` is the declaration that changes that.",
+                Entries: 0));
         }
 
         // ——— Which point in the history is speaking (D48 §6). Wholesale replacement is the right
@@ -336,12 +532,12 @@ public sealed class KnowledgeService(
         // older one. Unguarded, two machines feeding one repository are a flapping generator.
         if (provenance is null)
         {
-            return new(
+            return (null, new(
                 FeedRefusal.NoProvenance,
-                $"`{registration.Repository}` fed knowledge without naming a commit. This deployment "
-                + "replaces a repository's knowledge wholesale, so it takes a feed only from a point in "
+                $"`{registration.Repository}` fed {what} without naming a commit. This deployment "
+                + "replaces what a repository fed wholesale, so it takes a feed only from a point in "
                 + "the history it can compare with what it already holds.",
-                Entries: 0);
+                Entries: 0));
         }
 
         if (registration.DefaultBranch is { Length: > 0 } canonical
@@ -350,64 +546,50 @@ public sealed class KnowledgeService(
             // The branch, the PR and the review already display work in flight better than an index
             // would. Records and quests still travel from any checkout: they are records of activity,
             // not claims of truth.
-            return new(
+            return (null, new(
                 FeedRefusal.NotDefaultBranch,
-                $"`{registration.Repository}` fed knowledge from `{provenance.Branch}`, and its canonical "
-                + $"line is `{canonical}` — unmerged lessons are not yet the family's. Its session records "
+                $"`{registration.Repository}` fed {what} from `{provenance.Branch}`, and its canonical "
+                + $"line is `{canonical}` — what is unmerged is not yet the family's. Its session records "
                 + "and quests still travel from this checkout.",
-                Entries: 0);
+                Entries: 0));
         }
 
-        var held = registrations is null
-            ? null
-            : await registrations.ProvenanceAsync(registration.Repository, ct).ConfigureAwait(false);
+        return (registration, null);
+    }
 
-        // Same commit re-feeds are idempotent, as they always were. Equal times with different commits
-        // are unorderable, so the arriving one takes: a tie is not evidence of staleness.
-        if (held is not null
-            && !string.Equals(held.Commit, provenance.Commit, StringComparison.OrdinalIgnoreCase)
-            && provenance.CommittedAt < held.CommittedAt)
+    /// <summary>A feed the ordering did not take, said as the information it is.</summary>
+    private static FeedOutcome NotTaken(
+        FeedVerdict verdict, string repository, string what, FeedProvenance held, FeedProvenance arriving)
+    {
+        var from = held.Origin is null ? "" : $", from {held.Origin}";
+        return verdict switch
         {
-            return new(
+            FeedVerdict.ContentDiffers => new(
+                FeedRefusal.ContentDiffers,
+                $"`{repository}`'s {what} is held at `{held.ShortCommit}` as {held.Origin ?? "it was first"} read it, "
+                + "and this machine read the same commit differently. The first reading stands: two readings of "
+                + "one commit are two tools disagreeing, not two histories.",
+                Entries: 0),
+            FeedVerdict.Moved => new(
+                FeedRefusal.Moved,
+                $"`{repository}`'s {what} moved here since this machine checked: it asked git about "
+                + $"`{Short(arriving.Base!)}`, and this deployment now holds `{held.ShortCommit}`{from}. "
+                + "Nothing is lost — the next pass asks git again.",
+                Entries: 0),
+            _ => new(
                 FeedRefusal.Stale,
-                $"`{registration.Repository}` is already fed from a newer commit "
+                $"`{repository}`'s {what} is already fed from a newer commit "
                 // `.UtcDateTime`, because the sentence writes `Z`. A commit time carries the
                 // committer's own offset, so formatting it directly printed a local wall clock and
                 // called it UTC — an explanation that contradicted the correct ordering underneath it.
-                + $"(`{held.ShortCommit}`, {held.CommittedAt.UtcDateTime:yyyy-MM-dd HH:mm}Z"
-                + $"{(held.Origin is null ? "" : $", from {held.Origin}")}) — this feed is from "
-                + $"`{provenance.ShortCommit}`, {provenance.CommittedAt.UtcDateTime:yyyy-MM-dd HH:mm}Z, so the index "
-                + "keeps what it has. Nothing is wrong: this checkout is simply behind.",
-                Entries: 0);
-        }
-
-        var normalized = entries
-            .Select(entry => entry with
-            {
-                Repository = registration.Repository,
-                Provenance = Provenance.Local,
-                // The RECEIVING deployment's wiring decides the circle, never the feed's claim about it
-                // (D48): a feed that could name its own workspace could write itself into someone
-                // else's, which is the scoping bug that becomes a disclosure.
-                Workspace = registration.InWorkspace,
-            })
-            .ToList();
-        await store.ReplaceRepositoryAsync(registration.Repository, normalized, ct).ConfigureAwait(false);
-
-        // Recorded AFTER the entries land, so a store that fails mid-replace never claims a commit it
-        // does not hold — the next feed from that commit would then be refused as a duplicate of work
-        // that never happened.
-        if (registrations is not null)
-        {
-            await registrations.RecordProvenanceAsync(registration.Repository, provenance, ct)
-                .ConfigureAwait(false);
-        }
-
-        return new(
-            FeedRefusal.None,
-            $"Indexed {normalized.Count} entries from `{registration.Repository}` at `{provenance.ShortCommit}`.",
-            normalized.Count);
+                + $"(`{held.ShortCommit}`, {held.CommittedAt.UtcDateTime:yyyy-MM-dd HH:mm}Z{from}) — this feed is from "
+                + $"`{arriving.ShortCommit}`, {arriving.CommittedAt.UtcDateTime:yyyy-MM-dd HH:mm}Z, so this "
+                + "deployment keeps what it has. Nothing is wrong: this checkout is simply behind.",
+                Entries: 0),
+        };
     }
+
+    private static string Short(string commit) => commit.Length <= 8 ? commit : commit[..8];
 
     /// <summary>Re-read every repository and rebuild the index.</summary>
     public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)
@@ -467,18 +649,29 @@ public sealed class KnowledgeService(
     /// <summary>
     /// A registered repository's code map (MAP3a), read from its checkout on each ask — the person's
     /// machine showing the person's state, as the local index does (WSP4). Null for a repository
-    /// nobody registered; an empty read for one with no checkout here, whose map arrives by feed (MAP3b).
+    /// nobody registered. One with no checkout here answers with what was fed (MAP3b), judged again on
+    /// the way out, or with no file when nothing was.
     /// </summary>
-    public Task<CodeMapRead?> CodeMapAsync(string repository, CancellationToken ct = default)
+    public async Task<CodeMapRead?> CodeMapAsync(string repository, CancellationToken ct = default)
     {
         var registration = (registry?.Read(new Dictionary<string, int>()) ?? [])
             .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
-        if (registration is null) return Task.FromResult<CodeMapRead?>(null);
+        if (registration is null) return null;
 
-        return Task.FromResult<CodeMapRead?>(
-            string.IsNullOrWhiteSpace(registration.Root) || !Directory.Exists(registration.Root)
-                ? new CodeMapRead(null, null, null)
-                : CodeMapReader.Read(registration.Root));
+        if (!string.IsNullOrWhiteSpace(registration.Root) && Directory.Exists(registration.Root))
+        {
+            return CodeMapReader.Read(registration.Root);
+        }
+
+        if (registrations is null
+            || await registrations.FedCodeMapAsync(registration.Repository, ct).ConfigureAwait(false)
+                is not { File: { } file, Body: { } body })
+        {
+            return new CodeMapRead(null, null, null);
+        }
+
+        var (map, problem) = CodeMapReader.Parse(body, file);
+        return new CodeMapRead(map, file, problem);
     }
 
     /// <summary>

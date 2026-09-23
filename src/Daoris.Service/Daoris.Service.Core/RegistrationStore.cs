@@ -71,9 +71,28 @@ public sealed class RegistrationStore
                   branch       TEXT NOT NULL,
                   origin       TEXT NULL
                 );
+
+                -- A repository's fed code map (MAP3b), at its own commit: the map and the knowledge are
+                -- fed separately and either can be refused while the other is taken. A NULL body is the
+                -- repository saying it keeps none at that commit — the row stays, so a checkout from
+                -- before the deletion cannot bring the map back.
+                CREATE TABLE IF NOT EXISTS fed_code_maps (
+                  repository   TEXT PRIMARY KEY,
+                  file         TEXT NULL,
+                  body         TEXT NULL,
+                  commit_id    TEXT NOT NULL,
+                  committed_at TEXT NOT NULL,
+                  branch       TEXT NOT NULL,
+                  origin       TEXT NULL,
+                  digest       TEXT NOT NULL
+                );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
+
+        // What the held knowledge says, hashed (SYNC5a). NULL on every row from before it, which the
+        // ordering reads as "compare nothing, take the same commit once".
+        await EnsureColumnAsync("feed_provenance", "digest", "digest TEXT NULL", ct).ConfigureAwait(false);
 
         // A store created before the driver existed has no root column — and one created before the
         // remote existed has no declaration columns. Registrations must survive the upgrade: a schema
@@ -97,16 +116,21 @@ public sealed class RegistrationStore
             ("default_branch", "default_branch TEXT NULL"),
         })
         {
-            await using var probe = _connection.CreateCommand();
-            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('registrations') WHERE name = $name";
-            probe.Parameters.AddWithValue("$name", column);
-            var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
-            if (present == 0)
-            {
-                await using var alter = _connection.CreateCommand();
-                alter.CommandText = $"ALTER TABLE registrations ADD COLUMN {definition}";
-                await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-            }
+            await EnsureColumnAsync("registrations", column, definition, ct).ConfigureAwait(false);
+        }
+    }
+
+    private async Task EnsureColumnAsync(string table, string column, string definition, CancellationToken ct)
+    {
+        await using var probe = _connection.CreateCommand();
+        probe.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $name";
+        probe.Parameters.AddWithValue("$name", column);
+        var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
+        if (present == 0)
+        {
+            await using var alter = _connection.CreateCommand();
+            alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {definition}";
+            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
     }
 
@@ -180,12 +204,61 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText =
-            "SELECT commit_id, committed_at, branch, origin FROM feed_provenance "
+            "SELECT commit_id, committed_at, branch, origin, digest FROM feed_provenance "
             + "WHERE repository = $repository COLLATE NOCASE";
         command.Parameters.AddWithValue("$repository", repository);
 
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>What commit a repository's code map was last fed from, or null where none has fed (MAP3b).</summary>
+    public async Task<FeedProvenance?> CodeMapProvenanceAsync(string repository, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText =
+            "SELECT commit_id, committed_at, branch, origin, digest FROM fed_code_maps "
+            + "WHERE repository = $repository COLLATE NOCASE";
+        command.Parameters.AddWithValue("$repository", repository);
+
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>The fed code map as held: which file it was, and its canonical text — both null when none is.</summary>
+    public async Task<(string? File, string? Body)?> FedCodeMapAsync(string repository, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT file, body FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE";
+        command.Parameters.AddWithValue("$repository", repository);
+
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
+
+        return (reader.IsDBNull(0) ? null : reader.GetString(0), reader.IsDBNull(1) ? null : reader.GetString(1));
+    }
+
+    /// <summary>Hold a repository's code map at a commit — or, with no body, hold that it keeps none there.</summary>
+    public async Task RecordCodeMapAsync(
+        string repository, string? file, string? body, FeedProvenance provenance, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO fed_code_maps (repository, file, body, commit_id, committed_at, branch, origin, digest)
+            VALUES ($repository, $file, $body, $commit, $committed_at, $branch, $origin, $digest)
+            ON CONFLICT (repository) DO UPDATE SET
+              file = $file, body = $body, commit_id = $commit, committed_at = $committed_at,
+              branch = $branch, origin = $origin, digest = $digest
+            """;
+        command.Parameters.AddWithValue("$repository", repository);
+        command.Parameters.AddWithValue("$file", (object?)file ?? DBNull.Value);
+        command.Parameters.AddWithValue("$body", (object?)body ?? DBNull.Value);
+        command.Parameters.AddWithValue("$commit", provenance.Commit);
+        command.Parameters.AddWithValue("$committed_at", provenance.CommittedAt.ToString("O"));
+        command.Parameters.AddWithValue("$branch", provenance.Branch);
+        command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
+        command.Parameters.AddWithValue("$digest", provenance.Digest ?? "");
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>Every repository's fed provenance, for the one read a summary needs.</summary>
@@ -214,24 +287,30 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO feed_provenance (repository, commit_id, committed_at, branch, origin)
-            VALUES ($repository, $commit, $committed_at, $branch, $origin)
+            INSERT INTO feed_provenance (repository, commit_id, committed_at, branch, origin, digest)
+            VALUES ($repository, $commit, $committed_at, $branch, $origin, $digest)
             ON CONFLICT (repository) DO UPDATE SET
-              commit_id = $commit, committed_at = $committed_at, branch = $branch, origin = $origin
+              commit_id = $commit, committed_at = $committed_at, branch = $branch, origin = $origin,
+              digest = $digest
             """;
         command.Parameters.AddWithValue("$repository", repository);
         command.Parameters.AddWithValue("$commit", provenance.Commit);
         command.Parameters.AddWithValue("$committed_at", provenance.CommittedAt.ToString("O"));
         command.Parameters.AddWithValue("$branch", provenance.Branch);
         command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
+        command.Parameters.AddWithValue("$digest", (object?)provenance.Digest ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>A held commit, read as (commit, committed_at, branch, origin, digest).</summary>
     private static FeedProvenance Read(SqliteDataReader reader) => new(
         reader.GetString(0),
         DateTimeOffset.Parse(reader.GetString(1), null, System.Globalization.DateTimeStyles.RoundtripKind),
         reader.GetString(2),
-        reader.IsDBNull(3) ? null : reader.GetString(3));
+        reader.IsDBNull(3) ? null : reader.GetString(3))
+    {
+        Digest = reader.IsDBNull(4) ? null : reader.GetString(4),
+    };
 
     /// <summary>
     /// Take a repository off the map. <b>Nothing on disk is touched</b>: this ends a registration, and
@@ -246,6 +325,7 @@ public sealed class RegistrationStore
         // though this deployment still held a newer commit — which it would not.
         command.CommandText = """
             DELETE FROM feed_provenance WHERE repository = $repository COLLATE NOCASE;
+            DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE;
             DELETE FROM registrations WHERE repository = $repository COLLATE NOCASE;
             """;
         command.Parameters.AddWithValue("$repository", repository);

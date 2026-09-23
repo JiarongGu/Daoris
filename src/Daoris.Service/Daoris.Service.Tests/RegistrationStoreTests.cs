@@ -172,6 +172,37 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         Assert.Equal("/srv/Elder", upgraded.Root);
         Assert.True(upgraded.Joined);
     }
+
+    /// <summary>
+    /// A commit held before digests existed survives the upgrade with none (SYNC5a) — which the
+    /// ordering reads as "compare nothing, take the same commit once" — and records one from then on.
+    /// </summary>
+    [Fact]
+    public async Task A_provenance_table_from_before_digests_gains_the_column_and_keeps_its_rows()
+    {
+        await using var old = new SqliteConnection("Data Source=:memory:");
+        await old.OpenAsync();
+        await using (var create = old.CreateCommand())
+        {
+            create.CommandText = """
+                CREATE TABLE feed_provenance (
+                  repository TEXT PRIMARY KEY, commit_id TEXT NOT NULL, committed_at TEXT NOT NULL,
+                  branch TEXT NOT NULL, origin TEXT NULL
+                );
+                INSERT INTO feed_provenance VALUES ('Elder', 'aaaa1111', '2026-09-20T09:00:00.0000000+00:00', 'main', NULL);
+                """;
+            await create.ExecuteNonQueryAsync();
+        }
+
+        var store = await RegistrationStore.OpenAsync(old);
+        var held = await store.ProvenanceAsync("Elder");
+
+        Assert.Equal("aaaa1111", held!.Commit);
+        Assert.Null(held.Digest);
+
+        await store.RecordProvenanceAsync("Elder", held with { Digest = "d1g35t" });
+        Assert.Equal("d1g35t", (await store.ProvenanceAsync("Elder"))!.Digest);
+    }
 }
 
 /// <summary>

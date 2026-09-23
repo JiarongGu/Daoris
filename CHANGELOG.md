@@ -400,6 +400,10 @@ The first version: doctrine that installs, is checked, and flows back.
   drawn in layers, with what uses a module above it; choose one to see its path, its summary, what
   it depends on and what uses it. Daoris reads the file and never writes it. A file that breaks a
   rule is refused whole, with the sentence naming the break, rather than half drawn.
+- **A shared deployment answers with a fed code map** (MAP3b). The desktop's sync feeds a sharing
+  repository's map beside its knowledge, at the same commit and by the same ordering rules. The
+  deployment judges it whole again before it keeps it. A commit with no map removes the one held, and
+  an older checkout cannot bring it back.
 - **What a start runs on** (MAP1b). Settings shows, for each workspace, the agent, account and
   version a driven session would start with, and which setting chose each: this workspace's
   default, this machine's, or the agent's own sign-in; a pin, or PATH. A start the driver would
@@ -523,6 +527,16 @@ The first version: doctrine that installs, is checked, and flows back.
   canonical view is one the repository deleted — and `/api/repositories` answers the commit each copy
   stands on, shown on Projects, because an index is a claim about a commit and staleness someone can
   see beats freshness they must assume.
+- **Ancestry decides where git can say.** Before it feeds, the driver asks the deployment which commit
+  it holds and asks git how its own commit stands to it. A descendant feeds with that commit as its
+  base, and the deployment takes it as a fast-forward whatever its clock says. If another machine
+  fed in between, the feed is refused as *moved*. A checkout that is behind, or has not fetched the
+  held commit, feeds nothing and says whether a pull or a fetch would fix it. Commit time decides
+  only for diverged histories.
+- **The same commit is one reading.** A deployment hashes what it would store. The same commit with
+  the same content is already held; read differently, the first reading stands and the second
+  machine hears why, instead of the two replacing each other on every tick. And only a clean
+  checkout feeds, because a feed speaks for a commit and work in flight is not yet that commit's.
 - **A refusal can be information.** A stale or branch feed is the rules working, not a fault, so it is
   flagged as such on the wire and the sync reports it as news rather than as a wall. Records and
   quests still travel from any checkout; only knowledge waits for the canonical line. A checkout git

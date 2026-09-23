@@ -242,20 +242,72 @@ public sealed class RemoteSync : IDisposable
                 continue;
             }
 
-            var content = RemoteSyncPayloads.Entries(repo.Repository, await DriverHttp.GetAsync(
-                _local, $"{_localBase}/api/entries?repository={Uri.EscapeDataString(repo.Repository)}", ct)
-                .ConfigureAwait(false), provenance);
-
-            if (await DriverHttp.PostInformableAsync(
-                    _remote, $"{_remoteBase}/api/feed/entries", content.Json, ct).ConfigureAwait(false)
-                is { } note)
+            // A feed speaks for a commit, and the host's index and map are read from the working tree —
+            // so a tree with work in flight would send that work under the commit's name (SYNC5a).
+            var (clean, _) = await WorkingTree.CleanAsync(repo.Root, ct).ConfigureAwait(false);
+            if (!clean)
             {
-                notes.Add(note);
+                notes.Add(
+                    $"`{repo.Repository}` fed no knowledge and no code map: its checkout has uncommitted changes, "
+                    + $"and a feed speaks for a commit (`{provenance.ShortCommit}`) — what is uncommitted is not yet "
+                    + "that commit's. Its records still travel.");
+                continue;
+            }
+
+            var name = Uri.EscapeDataString(repo.Repository);
+            var (heldKnowledge, heldMap) = RemoteSyncPayloads.Held(await DriverHttp.GetAsync(
+                _remote, $"{_remoteBase}/api/feed/held?repository={name}", ct).ConfigureAwait(false));
+
+            var knowledge = await PlanAsync(repo, provenance, heldKnowledge, "knowledge", ct).ConfigureAwait(false);
+            if (knowledge.Note is { } knowledgeNote) notes.Add(knowledgeNote);
+            if (knowledge.Feed)
+            {
+                var content = RemoteSyncPayloads.Entries(repo.Repository, await DriverHttp.GetAsync(
+                    _local, $"{_localBase}/api/entries?repository={name}", ct)
+                    .ConfigureAwait(false), provenance, knowledge.Base);
+
+                if (await DriverHttp.PostInformableAsync(
+                        _remote, $"{_remoteBase}/api/feed/entries", content.Json, ct).ConfigureAwait(false)
+                    is { } note)
+                {
+                    notes.Add(note);
+                }
+            }
+
+            // Held at the same commit, the map's answer is the knowledge's — said once, not twice.
+            var map = string.Equals(heldMap, heldKnowledge, StringComparison.OrdinalIgnoreCase)
+                ? knowledge with { Note = null }
+                : await PlanAsync(repo, provenance, heldMap, "code map", ct).ConfigureAwait(false);
+            if (map.Note is { } mapNote) notes.Add(mapNote);
+            if (map.Feed)
+            {
+                var feed = RemoteSyncPayloads.CodeMap(repo.Repository, await DriverHttp.GetAsync(
+                    _local, $"{_localBase}/api/code-map/{name}", ct).ConfigureAwait(false), provenance, map.Base);
+
+                if (feed.Problem is { } problem)
+                {
+                    notes.Add($"`{repo.Repository}`'s code map was not fed: {problem}");
+                }
+                else if (await DriverHttp.PostInformableAsync(
+                        _remote, $"{_remoteBase}/api/feed/code-map", feed.Json!, ct).ConfigureAwait(false)
+                    is { } note)
+                {
+                    notes.Add(note);
+                }
             }
         }
 
         return notes;
     }
+
+    /// <summary>Ask git how this checkout stands to what is held — only when there is something to ask.</summary>
+    private static async Task<RemoteSyncPayloads.FeedPlan> PlanAsync(
+        RemoteSyncPayloads.JoinedRepository repo, TreeProvenance here, string? held, string what, CancellationToken ct) =>
+        RemoteSyncPayloads.Order(
+            repo.Repository, what, here, held,
+            held is null || string.Equals(held, here.Commit, StringComparison.OrdinalIgnoreCase)
+                ? null
+                : await WorkingTree.RelationAsync(repo.Root, held, here.Commit, ct).ConfigureAwait(false));
 
     /// <summary>The remote's registry comes down as foreign rows only — teammates' repositories become
     /// addressable here, while everything this machine holds keeps its own registration.</summary>
