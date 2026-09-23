@@ -8,6 +8,7 @@ import {
 } from '../shell';
 import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession } from './AttendedSession';
+import { sessionOrigin } from './identity';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
@@ -121,6 +122,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIn
   // tree, but it was given its whole target at once and has no channel to speak into — an input
   // box nothing is listening to is worse than none (the reasoning Projects used to carry).
   const conversation = attended?.kind === 'chat';
+  // A teammate's record came down with the sync (SYNC4) and its process is on THEIR machine: it is
+  // read here, and nothing this window sends could reach it — so it gets no moves and no composer.
+  const here = attended ? sessionOrigin(attended) === null : false;
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that.
@@ -247,13 +251,13 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIn
             session={attended}
             quest={quest}
             resolving={resolve.isPending}
-            onResolve={onResolve}
+            onResolve={here ? onResolve : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             onSession={(session) => attend(session.id)}
           />
         </div>
 
-        {conversation && attended && (
+        {conversation && here && attended && (
           <Composer
             live={live}
             sending={send.isPending}

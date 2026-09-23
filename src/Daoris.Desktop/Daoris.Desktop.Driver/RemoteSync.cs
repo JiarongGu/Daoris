@@ -204,8 +204,8 @@ public sealed class RemoteSync : IDisposable
         }
     }
 
-    /// <summary>Registrations, then records, then content — the remote must know who is joined before
-    /// their records arrive (D47 §9).</summary>
+    /// <summary>Registrations, then content — the remote must know who is joined before their records
+    /// and content arrive (D47 §9). Session records ride the host's pass with the quests (SYNC4).</summary>
     /// <returns>What the remote deliberately did not take, in its own words.</returns>
     private async Task<IReadOnlyList<string>> FeedUpAsync(
         IReadOnlyList<RemoteSyncPayloads.JoinedRepository> joined, CancellationToken ct)
@@ -222,15 +222,6 @@ public sealed class RemoteSync : IDisposable
                 _remote, $"{_remoteBase}/api/registry",
                 RemoteSyncPayloads.Registration(repo, defaultBranch), ct)
                 .ConfigureAwait(false);
-        }
-
-        var names = joined.Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var records = RemoteSyncPayloads.Sessions(
-            await DriverHttp.GetAsync(_local, $"{_localBase}/api/sessions?includeClosed=true", ct).ConfigureAwait(false),
-            names);
-        if (records is { } feed)
-        {
-            await DriverHttp.PostAsync(_remote, $"{_remoteBase}/api/feed/sessions", feed.Json, ct).ConfigureAwait(false);
         }
 
         foreach (var repo in joined.Where(r => r.SharesKnowledge))
@@ -286,9 +277,10 @@ public sealed class RemoteSync : IDisposable
     }
 
     /// <summary>
-    /// Fetch, rebase, push for this circle's quests — asked of this machine's HOST, which runs the pass
-    /// (D69): a take claims by push from the door it was made at, and the tick runs the same code by
-    /// asking for it, so there is one implementation of the sync and not two that drift.
+    /// Fetch, rebase, push for this circle's quests, then its session records both ways — asked of this
+    /// machine's HOST, which runs the pass (D69, SYNC4): a take claims by push from the door it was made
+    /// at, and the tick runs the same code by asking for it, so there is one implementation of the sync
+    /// and not two that drift.
     /// </summary>
     /// <returns>
     /// What a person should hear: a move of this machine's that became a conflict, a quest the remote
@@ -297,8 +289,8 @@ public sealed class RemoteSync : IDisposable
     /// <exception cref="DriverException">The pass hit a wall — named, and reported as the sync's problem.</exception>
     private async Task<IReadOnlyList<string>> SyncQuestsAsync(CancellationToken ct)
     {
-        var pass = RemoteSyncPayloads.QuestSync(await DriverHttp.PostAsync(
-            _local, $"{_localBase}/api/quests/sync?workspace={Uri.EscapeDataString(_workspace)}", "{}", ct)
+        var pass = RemoteSyncPayloads.Pass(await DriverHttp.PostAsync(
+            _local, $"{_localBase}/api/sync?workspace={Uri.EscapeDataString(_workspace)}", "{}", ct)
             .ConfigureAwait(false));
 
         if (!pass.Wired)
@@ -306,7 +298,7 @@ public sealed class RemoteSync : IDisposable
             // The driver has a remote for this circle and the host that holds the quests does not: two
             // readers of two different maps. Said, because a sync that silently skipped quests would
             // look exactly like a circle with nothing to share.
-            return [$"this machine's host has no remote for `{_workspace}`, so its quests did not sync — "
+            return [$"this machine's host has no remote for `{_workspace}`, so its quests and records did not sync — "
                     + "the host and the driver are reading different remotes maps."];
         }
 

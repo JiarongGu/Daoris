@@ -57,6 +57,20 @@ public sealed class StrikeTests
     }
 
     /// <summary>
+    /// A teammate's failed session came down with the sync keyed `origin/id` (SYNC4). A strike is this
+    /// driver's judgement of its OWN attempts, so a failure on another machine parks nothing here.
+    /// </summary>
+    [Fact]
+    public void A_teammates_failure_is_not_this_machines_strike()
+    {
+        Assert.Empty(ServiceClient.ReadStrikes("""
+            [{ "id": "b@two/s1", "quest": "q1", "repository": "Game", "state": "failed" },
+             { "id": "b@two/s2", "quest": "q1", "repository": "Game", "state": "failed" },
+             { "id": "b@two/s3", "quest": "q1", "repository": "Game", "state": "failed" }]
+            """));
+    }
+
+    /// <summary>
     /// The mark round-trips through the file both doors edit, beside the limit — and beside every
     /// field this build has no verb for, which is the counterpart-set worry that has bitten this
     /// family twice (the harness pin, and profiles before it).

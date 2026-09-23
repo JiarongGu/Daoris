@@ -461,8 +461,10 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A quest is its history, and the remote is where histories meet** (D68). Every verb — publish,
   take, done, decline — commits on the machine where it was made and always succeeds there, whether
   or not a remote is wired, reachable or down. Quest ids are twelve hex characters. The desktop's
-  sync rides the driver tick. It feeds registrations, session records (keyed by origin) and opted-in
-  knowledge content **up**, and mirrors teammates' registrations **down**. For quests it runs
+  sync rides the driver tick. It feeds registrations and opted-in knowledge content **up**, and
+  mirrors teammates' registrations **down**. **Session records travel both ways by cursor**: each is
+  sent when it changes, and every machine sees the team's records, read-only and keyed by origin. A
+  teammate's session is never this machine's lock. For quests it runs
   **fetch, rebase, push**: the remote orders what it accepts, the first push wins, and a move that
   lost is kept on the quest as a **conflict** rather than dropped. **A take claims by push** (D69).
   A take on a shared quest waits for the remote's answer, so a take that lost stands down before any

@@ -115,74 +115,6 @@ public sealed class RemoteSyncTests
         Assert.DoesNotContain("private", payload);
     }
 
-    [Fact]
-    public void Session_records_feed_for_joined_repositories_without_their_transcripts()
-    {
-        const string sessionsJson = """
-            [
-              { "id": "ab12cd34", "quest": "abc123", "repository": "Shared", "adapter": "stub",
-                "state": "completed", "note": "the quest reached done.", "evidence": "deadbee add note",
-                "transcript": "C:/somewhere/private/sessions/ab12cd34.log",
-                "created": "2026-09-20T10:00:00+00:00", "updated": "2026-09-20T10:01:00+00:00" },
-              { "id": "ef56ab78", "quest": "def456", "repository": "Homebody", "adapter": "stub",
-                "state": "working", "created": "2026-09-20T10:00:00+00:00", "updated": "2026-09-20T10:00:00+00:00" },
-              { "id": "elsewhere/99aa88bb", "quest": "aaa111", "repository": "Shared", "adapter": "stub",
-                "state": "completed", "created": "2026-09-20T09:00:00+00:00", "updated": "2026-09-20T09:01:00+00:00" }
-            ]
-            """;
-        var joined = new HashSet<string>(["Shared", "Quiet"], StringComparer.OrdinalIgnoreCase);
-
-        var feed = RemoteSyncPayloads.Sessions(sessionsJson, joined);
-
-        Assert.NotNull(feed);
-        Assert.Equal(1, feed!.Value.Count);
-        Assert.DoesNotContain("transcript", feed.Value.Json);
-        Assert.DoesNotContain("private", feed.Value.Json);
-
-        using var document = JsonDocument.Parse(feed.Value.Json);
-        var record = Assert.Single(document.RootElement.GetProperty("records").EnumerateArray().ToList());
-        Assert.Equal("ab12cd34", record.GetProperty("id").GetString());
-        Assert.Equal("the quest reached done.", record.GetProperty("note").GetString());
-    }
-
-    /// <summary>
-    /// Which TOOL produced a session travels; which ACCOUNT it ran as does not (D49 §4).
-    /// </summary>
-    /// <remarks>
-    /// The harness version is a fact about a tool, and a teammate reading a record deserves it. The
-    /// profile NAME is this machine's wiring — and it is the one field here a person is likely to name
-    /// after themselves — so it is dropped at parse, exactly as the transcript is: machine-local
-    /// material leaves this function, or it leaves the machine.
-    /// </remarks>
-    [Fact]
-    public void The_tool_version_crosses_and_the_account_name_does_not()
-    {
-        const string sessionsJson = """
-            [{ "id": "ab12cd34", "quest": "abc123", "repository": "Shared", "adapter": "claude-code",
-               "state": "completed", "harnessVersion": "2.1.220 (Claude Code)", "profile": "jane-personal",
-               "created": "2026-09-20T09:00:00+00:00", "updated": "2026-09-20T09:05:00+00:00" }]
-            """;
-
-        var feed = RemoteSyncPayloads.Sessions(sessionsJson, new HashSet<string>(["Shared"]));
-
-        Assert.NotNull(feed);
-        Assert.Contains("2.1.220", feed!.Value.Json);
-        Assert.DoesNotContain("jane-personal", feed.Value.Json);
-        Assert.DoesNotContain("profile", feed.Value.Json);
-    }
-
-    /// <summary>A record already carrying an origin is somebody else's, mirrored here — never re-fed.</summary>
-    [Fact]
-    public void Nothing_to_feed_is_null_not_an_empty_envelope()
-    {
-        const string onlyMirrored = """
-            [{ "id": "elsewhere/99aa88bb", "quest": "a", "repository": "Shared", "adapter": "stub",
-               "state": "completed", "created": "2026-09-20T09:00:00+00:00", "updated": "2026-09-20T09:00:00+00:00" }]
-            """;
-
-        Assert.Null(RemoteSyncPayloads.Sessions(onlyMirrored, new HashSet<string>(["Shared"])));
-    }
-
     /// <summary>
     /// A quest pass, as a person hears it (D69): each move of this machine's that lost, each quest the
     /// remote would not keep — in its own words — and a circle still moving after every round.
@@ -197,7 +129,7 @@ public sealed class RemoteSyncTests
               "behind": ["q2"], "problem": null }
             """;
 
-        var read = RemoteSyncPayloads.QuestSync(pass);
+        var read = RemoteSyncPayloads.Pass(pass);
 
         Assert.True(read.Wired);
         Assert.Null(read.Problem);
@@ -211,7 +143,7 @@ public sealed class RemoteSyncTests
     [Fact]
     public void An_answer_that_is_not_a_pass_is_a_wall()
     {
-        Assert.Contains("not one", Assert.Throws<DriverException>(() => RemoteSyncPayloads.QuestSync("[]")).Message);
+        Assert.Contains("not one", Assert.Throws<DriverException>(() => RemoteSyncPayloads.Pass("[]")).Message);
         Assert.Equal("lost", RemoteSyncPayloads.Claim("""{ "quest": "q1", "claim": "lost" }"""));
         Assert.Equal("none", RemoteSyncPayloads.Claim("[]"));
     }
@@ -423,7 +355,7 @@ public sealed class RemoteSyncRunTests : IDisposable
             _ when url.StartsWith($"{Local}/api/entries") => Json("[]"),
             _ when url.StartsWith($"{Remote}/api/registry") && request.Method == HttpMethod.Get => Json("[]"),
             // The host's quest pass: wired, and quiet.
-            _ when url.StartsWith($"{Local}/api/quests/sync") =>
+            _ when url.StartsWith($"{Local}/api/sync") =>
                 Json("""{ "wired": true, "conflicts": [], "refused": [], "behind": [], "problem": null }"""),
             _ => Json("{}"),
         };
@@ -443,10 +375,11 @@ public sealed class RemoteSyncRunTests : IDisposable
         var order = transport.Calls;
         int At(string fragment) => order.FindIndex(call => call.Contains(fragment));
         Assert.True(At($"POST {Remote}/api/registry") >= 0, string.Join("\n", order));
-        Assert.True(At($"POST {Remote}/api/registry") < At($"POST {Remote}/api/feed/sessions"));
-        Assert.True(At($"POST {Remote}/api/feed/sessions") < At($"POST {Remote}/api/feed/entries"));
+        Assert.True(At($"POST {Remote}/api/registry") < At($"POST {Remote}/api/feed/entries"));
+        // Session records ride the host's pass (SYNC4): the driver never feeds them itself.
+        Assert.DoesNotContain(order, call => call.Contains("/api/feed/sessions"));
         Assert.True(At($"POST {Remote}/api/feed/entries") < At($"GET {Remote}/api/registry"));
-        Assert.True(At($"GET {Remote}/api/registry") < At($"POST {Local}/api/quests/sync?workspace=default"));
+        Assert.True(At($"GET {Remote}/api/registry") < At($"POST {Local}/api/sync?workspace=default"));
     }
 
     /// <summary>
@@ -459,7 +392,7 @@ public sealed class RemoteSyncRunTests : IDisposable
     {
         using var transport = new StubTransport
         {
-            Answer = request => request.RequestUri!.ToString().StartsWith($"{Local}/api/quests/sync")
+            Answer = request => request.RequestUri!.ToString().StartsWith($"{Local}/api/sync")
                 ? Json("""
                     { "wired": true, "conflicts": [{ "quest": "q9", "attempted": "Taken" }],
                       "refused": [], "behind": [], "problem": null }
@@ -471,7 +404,7 @@ public sealed class RemoteSyncRunTests : IDisposable
 
         var report = await sync.RunOnceAsync();
 
-        Assert.Contains($"POST {Local}/api/quests/sync?workspace=default", transport.Calls);
+        Assert.Contains($"POST {Local}/api/sync?workspace=default", transport.Calls);
         Assert.DoesNotContain(transport.Calls, call => call.Contains($"{Remote}/api/quests"));
         Assert.Contains(report.Notes, note => note.Contains("#q9") && note.Contains("conflict"));
     }
@@ -483,7 +416,7 @@ public sealed class RemoteSyncRunTests : IDisposable
         var answer = """{ "wired": true, "problem": "the remote could not be reached (connection refused)" }""";
         using var transport = new StubTransport
         {
-            Answer = request => request.RequestUri!.ToString().StartsWith($"{Local}/api/quests/sync")
+            Answer = request => request.RequestUri!.ToString().StartsWith($"{Local}/api/sync")
                 ? Json(answer)
                 : AnswerHealthy(request),
         };

@@ -153,7 +153,7 @@ ever numbered, so the order is simply the order the operations were made.
   remote already holds, by machine and sequence, is answered with its number, so a retried push is
   harmless.
 
-**The machine's doors** (local mode only, D69): `POST /api/quests/sync?workspace=` runs one pass of
+**The machine's doors** (local mode only, D69): `POST /api/sync?workspace=` runs one pass of
 fetch, rebase and push, and answers what a person should hear about it: conflicts, refusals, what is
 still behind, and the wall if there was one. `GET /api/quests/{id}/claim` says where this machine's
 claim on a quest stands (held, unconfirmed, lost or none). The pass is the host's (`QuestSync`), and
@@ -181,6 +181,16 @@ follow-up that was published only by a close that has now lost, when nothing els
 first fetch runs from cursor zero, so it brings every row back as history. A tick syncs before it
 plans and again after any session concludes, so a closure reaches the remote within the tick that
 made it.
+
+**Session records ride the same pass (SYNC4).** A machine's own records go up by a cursor: the
+store gives every write the next revision, and a push sends what changed since the last one it made
+for that workspace, for joined repositories only. The team's records come down by the remote's
+revision cursor. A fetch leaves out the caller's own records, so nothing comes back doubled. A fetched
+record keeps its `origin/id`, the id the web already reads as *elsewhere*. It is read-only, and it is
+never this machine's lock: a teammate's session holds a tree on the teammate's machine, not here
+(D47 §6). So neither the ledger's one-session-per-tree check nor the driver's planner counts it. The
+doors are `POST /api/feed/sessions` (existing) and `GET /api/sessions/since?since=N` at the remote,
+and the host's pass door becomes `POST /api/sync?workspace=` for quests and sessions together.
 
 ## 9. Build order
 

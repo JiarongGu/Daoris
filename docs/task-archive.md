@@ -4464,3 +4464,37 @@ So the session is still the claimant, driven or not.
 
 Service 387, driver 399, modules 105, web 619 + 18, family 225/225 (three runs), deploy 39/39,
 verify green.
+
+## SYNC4 — session records both ways, by cursor (2026-09-24)
+
+- [x] **SYNC4 — session records both ways, by cursor.**
+
+✅ **done 2026-09-24**, the fifth of D68's build. **Up by cursor.** Every write to the session
+store takes the next `revision`, computed inside the one statement so SQLite's write lock keeps it
+monotonic. A push sends this machine's own records (no `origin`) changed since the workspace's
+`pushed` cursor, for joined repositories only. So a record crosses when it changes, not every tick.
+**Down by cursor.** The remote's new `GET /api/sessions/since` returns records after a revision,
+leaving out the caller's own (its key says which), and a machine files them in its sync's circle,
+keyed `origin/id`. **The pass moved into the host** beside the quests (D69's reasoning):
+`SessionSync` in Core, `SessionWire` as the one shape for the feed and the fetch, and the transport
+renamed `IRemote`/`HttpRemote` now that it carries both. The host's door is `POST /api/sync`. The
+driver no longer feeds records, and its payload builder went with the feed.
+
+**Read-only, and never this machine's lock** (D47 §6):
+- The ledger's `ActiveForAsync` ignores records with an origin. A mirrored record has no tree, and
+  the lock reads a treeless record as holding every tree, so a teammate's working session would have
+  locked the repository here.
+- The driver's snapshot and strikes skip `origin/id` records, so a teammate's session spends none
+  of this machine's cap and parks none of its quests.
+- The Work view offers no moves and no composer on a teammate's session. That test failed before the
+  fix, which I confirmed by stashing it.
+
+**An upgrade derives what it can**: a mirrored row's origin from its id, and each row's revision
+from its insertion order. So a store from before the sync pushes its own records and knows whose is
+whose.
+
+**Found**: `sessionOrigin` already existed in the web (`origin/id` means *elsewhere*), so the id is
+the one rule the web and the driver share. Not looked at on the window: the scratch machine has no
+remote, so no teammate records.
+
+Service 395, driver 397, modules 105, web 620 + 18, family 226/226, deploy 39/39, verify green.

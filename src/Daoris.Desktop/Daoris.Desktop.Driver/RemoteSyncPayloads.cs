@@ -109,56 +109,6 @@ public static class RemoteSyncPayloads
     });
 
     /// <summary>
-    /// The session records worth feeding: joined repositories only, and never the transcript — the
-    /// field is dropped here, at parse, so no later step could forward it. Null when nothing qualifies.
-    /// </summary>
-    public static (string Json, int Count)? Sessions(string sessionsJson, IReadOnlySet<string> joined)
-    {
-        using var document = JsonDocument.Parse(sessionsJson);
-        var count = 0;
-        var json = Write(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("records");
-            foreach (var session in document.RootElement.EnumerateArray())
-            {
-                var repository = Text(session, "repository") ?? "";
-                var id = Text(session, "id") ?? "";
-                // A record already carrying an origin is somebody else's, mirrored here — feeding it
-                // back would launder another machine's record through this machine's identity.
-                if (!joined.Contains(repository) || id.Contains('/')) continue;
-
-                count++;
-                writer.WriteStartObject();
-                writer.WriteString("id", id);
-                // A chat serves no quest (D49 §3) — the field is omitted rather than sent empty, and
-                // the KIND travels so a teammate sees that somebody was talking rather than that work
-                // was planned. Omitted-when-absent, because a blank quest id reads as one that failed
-                // to parse.
-                Copy(writer, session, "quest");
-                Copy(writer, session, "kind");
-                // Which TOOL produced this travels (D49 §4); which ACCOUNT it ran as does not. The
-                // profile name is dropped here, at parse, exactly as the transcript is — machine-local
-                // material leaves this function or it leaves the machine.
-                Copy(writer, session, "harnessVersion");
-                writer.WriteString("repository", repository);
-                writer.WriteString("adapter", Text(session, "adapter"));
-                writer.WriteString("state", Text(session, "state"));
-                Copy(writer, session, "note");
-                Copy(writer, session, "evidence");
-                writer.WriteString("created", Text(session, "created"));
-                writer.WriteString("updated", Text(session, "updated"));
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-        });
-
-        return count == 0 ? null : (json, count);
-    }
-
-    /// <summary>
     /// One sharing repository's content for the remote's ingest, stamped with the point in its history
     /// that it came from (D48 §6).
     /// </summary>
@@ -210,15 +160,15 @@ public static class RemoteSyncPayloads
     /// <param name="Wired">Whether the HOST has a remote for this circle — false when it reads another map than the driver.</param>
     /// <param name="Notes">What a person should hear: a move of this machine's that lost, a quest the remote would not keep, a quest still behind.</param>
     /// <param name="Problem">The wall the pass hit, in the host's words; null when it reached the remote.</param>
-    public sealed record QuestPass(bool Wired, IReadOnlyList<string> Notes, string? Problem);
+    public sealed record SyncPass(bool Wired, IReadOnlyList<string> Notes, string? Problem);
 
     /// <summary>The host's answer to a quest pass, as the notes and the wall the tick reports.</summary>
-    public static QuestPass QuestSync(string passJson)
+    public static SyncPass Pass(string passJson)
     {
         using var document = JsonDocument.Parse(passJson);
         if (document.RootElement.ValueKind != JsonValueKind.Object)
         {
-            throw new DriverException($"a host answered a quest pass with something that is not one: {Clip(document.RootElement.GetRawText())}");
+            throw new DriverException($"a host answered a sync pass with something that is not one: {Clip(document.RootElement.GetRawText())}");
         }
 
         var root = document.RootElement;
@@ -246,7 +196,7 @@ public static class RemoteSyncPayloads
                       + "pending, and the next pass goes round again.");
         }
 
-        return new QuestPass(
+        return new SyncPass(
             root.TryGetProperty("wired", out var wired) && wired.ValueKind == JsonValueKind.True,
             notes,
             Text(root, "problem"));

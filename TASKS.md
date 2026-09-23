@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**331 CLI tests, 387 service, 399 driver, 105 desktop modules, 619 web unit, 18 Playwright**, 59
-devkit, 56/56 release rehearsal, **225/225 family rehearsal** (it names its own phases when you run
+**331 CLI tests, 395 service, 397 driver, 105 desktop modules, 620 web unit, 18 Playwright**, 59
+devkit, 56/56 release rehearsal, **226/226 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -240,7 +240,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: SYNC4–6 (D68); MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
+- **Actionable: SYNC5–6 (D68); MAP3c, AGT6, INT4b, INT4c, AGT2b.** INT3 and MAP3d wait on the owner's call, INT6 on the owner's presence.
   **Three are the owner's** (ACP2 and DEPLOY1's second half each cost a login; PLUG2 is a
   decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -250,9 +250,9 @@ the traps that are not in any contract, because they were found rather than desi
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 331 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (387),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (395),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (399), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (105), `npm run rehearse:family` (225/225), `npm run test:web` (619 vitest + 18 Playwright),
+  (397), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (105), `npm run rehearse:family` (226/226), `npm run test:web` (620 vitest + 18 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -266,7 +266,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Twenty-two items are open** — three of them D68's and four D67's —
+the archive; its decision is **D53, accepted**). **Twenty-one items are open** — two of them D68's and four D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
@@ -277,7 +277,7 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D68's SYNC arc first, the owner's newest direction (SYNC4–6 in order; SYNC1–3 are in the archive); then D67's
+🔴 **D68's SYNC arc first, the owner's newest direction (SYNC5–6 in order; SYNC1–4 are in the archive); then D67's
 remaining items (AGT2b last — npm already installs the native build), then INT4b and INT4c.** They
 outrank the rest. Each is one session-sized landing, TDD, gates green, moved to the archive.
 
@@ -451,9 +451,8 @@ screen.
 ### The remote as a git remote (owner, 2026-09-23 → D68)
 
 `docs/2026-09-23-sync-design.md`: every verb commits locally; sync is fetch, rebase, push. Today's
-five defects (SYNC0a–e) are in its §0. SYNC0d and SYNC1–3 are in the archive. In order:
+five defects (SYNC0a–e) are in its §0. SYNC0d and SYNC1–4 are in the archive. In order:
 
-- [ ] **SYNC4 — session records both ways, by cursor.**
 - [ ] **SYNC5 — knowledge, code map and registrations by ancestry**, a content digest, retire as a
   tombstone (fixes SYNC0b, SYNC0c; carries MAP3b).
 - [ ] **SYNC6 — the surfaces**: ahead, behind, conflicts; *Sync now*; `daoris-driver sync`.

@@ -79,7 +79,7 @@ var embedder = HostComposition.BuildEmbedder(serviceOptions);
 // A quest's files are kept under the home of the machine that has them (D65 §2) — this one, always:
 // the MCP host is a local door. No home, no keeper, and a publish carrying files is refused (D63).
 var composed = await ServiceFactory.CreateAsync(
-    serviceOptions, embedder, remotes: new ConfiguredQuestRemotes(), files: QuestFiles.FromEnvironment());
+    serviceOptions, embedder, remotes: new ConfiguredRemotes(), files: QuestFiles.FromEnvironment());
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);

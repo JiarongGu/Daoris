@@ -1319,6 +1319,17 @@ check(
   tickBack.code === 0 && (closureOnA.json ?? []).some((q) => q.id === crossingId && q.status === 'Done'),
   closureOnA.text,
 );
+// Every machine sees the team's records (SYNC4): b's session came down to a keyed by its origin, the
+// id the platform reads as "elsewhere" — with nothing that stays on b's machine — and none of a's
+// own records came back doubled under a's key.
+const recordsOnA = (await api('GET', '/api/sessions?includeClosed=true')).json ?? [];
+check(
+  'machine a sees machine b’s session record, keyed by b’s origin, with nothing machine-local — and none of its own doubled',
+  recordsOnA.some((s) => s.id.startsWith('person@machine-b/') && s.quest === crossingId && s.state === 'completed'
+    && !s.transcript && !s.profile && !s.tree)
+    && !recordsOnA.some((s) => s.id.startsWith('person@machine-a/')),
+  JSON.stringify(recordsOnA.filter((s) => s.id.includes('/'))),
+);
 
 // The ONLINE race (D46 §2, D68): two machines both believe they can drive one quest. The quest is
 // published on machine a and pushed; an outside taker (standing in for another machine whose take
@@ -2850,7 +2861,8 @@ if (totals.failures) {
   console.log('  (D47, D68): two machines and a shared host with');
   console.log('  minted keys — a quest committed on one machine, pushed, fetched and driven to done on the');
   console.log('  other under a named account, its file known there by name and its bytes kept home, the');
-  console.log('  closure crossing back with the tool version but never the account name; a machine that');
+  console.log('  closure crossing back with the tool version but never the account name, and the session');
+  console.log('  record arriving on the first machine keyed by its origin, read-only; a machine that');
   console.log('  saw the quest taken first leaving it alone; a take claiming by push, the second of two');
   console.log('  standing down before any work; both machines taking one quest offline, the second');
   console.log('  rebased into a conflict every machine holds; a session that took offline and lost, stopped');

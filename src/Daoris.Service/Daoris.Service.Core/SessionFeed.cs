@@ -98,7 +98,10 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                 // the store's mirror writes literal NULLs. Two guards for one rule, the same doubling
                 // the transcript gets — because a name a person chose for themselves, or a path on
                 // their disk, is the kind of thing that leaks through whichever half somebody forgot.
-                Profile: null, Tree: null), ct)
+                Profile: null, Tree: null)
+                {
+                    Origin = origin,
+                }, ct)
                 .ConfigureAwait(false);
         }
 

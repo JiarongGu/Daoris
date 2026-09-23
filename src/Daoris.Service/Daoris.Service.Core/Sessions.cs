@@ -112,6 +112,13 @@ public sealed record Session(
     string? Tree = null,
     string? BaseCommit = null)
 {
+    /// <summary>
+    /// Whose record this is, when it is not this machine's: the key the remote knew its machine by
+    /// (D47 §6). Null for this machine's own; a record that has one is the team's — its id is
+    /// `origin/id`, it is read-only here, and it holds no tree on this machine (SYNC4).
+    /// </summary>
+    public string? Origin { get; init; }
+
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson;
@@ -210,11 +217,7 @@ public sealed class SessionStore
             ("base_commit", "base_commit TEXT NULL"),
         })
         {
-            await using var probe = _connection.CreateCommand();
-            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = $name";
-            probe.Parameters.AddWithValue("$name", column);
-            var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
-            if (present == 0)
+            if (!await HasColumnAsync(column, ct).ConfigureAwait(false))
             {
                 await using var alter = _connection.CreateCommand();
                 alter.CommandText = $"ALTER TABLE sessions ADD COLUMN {definition}";
@@ -223,7 +226,58 @@ public sealed class SessionStore
         }
 
         await RelaxQuestAsync(ct).ConfigureAwait(false);
+
+        // SYNC4, after the rebuild above so it cannot drop them: whose record a row is, and the order
+        // this store wrote them in. Both are DERIVED for rows that already exist — a mirrored row's id
+        // already carries its origin, and the order rows were written in is the order they were
+        // inserted — so a store from before the sync pushes and serves every record it holds.
+        if (!await HasColumnAsync("origin", ct).ConfigureAwait(false))
+        {
+            await using var alter = _connection.CreateCommand();
+            alter.CommandText = """
+                ALTER TABLE sessions ADD COLUMN origin TEXT NULL;
+                UPDATE sessions SET origin = substr(id, 1, instr(id, '/') - 1) WHERE instr(id, '/') > 0;
+                """;
+            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        if (!await HasColumnAsync("revision", ct).ConfigureAwait(false))
+        {
+            await using var alter = _connection.CreateCommand();
+            alter.CommandText = """
+                ALTER TABLE sessions ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
+                UPDATE sessions SET revision = rowid;
+                """;
+            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        await using (var cursor = _connection.CreateCommand())
+        {
+            cursor.CommandText = """
+                CREATE TABLE IF NOT EXISTS session_cursor (
+                  workspace TEXT PRIMARY KEY COLLATE NOCASE,
+                  pushed    INTEGER NOT NULL DEFAULT 0,
+                  fetched   INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE INDEX IF NOT EXISTS sessions_revision ON sessions (revision);
+                """;
+            await cursor.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
     }
+
+    private async Task<bool> HasColumnAsync(string column, CancellationToken ct)
+    {
+        await using var probe = _connection.CreateCommand();
+        probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = $name";
+        probe.Parameters.AddWithValue("$name", column);
+        return Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
+    }
+
+    /// <summary>
+    /// The next revision, as one statement's subquery — so under SQLite's write lock no two writes can
+    /// take the same number and none can land behind one already read (SYNC4's cursor rests on it).
+    /// </summary>
+    private const string NextRevision = "(SELECT COALESCE(MAX(revision), 0) + 1 FROM sessions)";
 
     /// <summary>
     /// Let `quest` be null on a table created before chats existed (D49 §3).
@@ -293,9 +347,9 @@ public sealed class SessionStore
             Blank(harnessVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit));
 
         await using var command = _connection.CreateCommand();
-        command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit)
+        command.CommandText = $"""
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, {NextRevision})
             """;
         command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$kind", session.Kind.ToString());
@@ -336,9 +390,9 @@ public sealed class SessionStore
         };
 
         await using var command = _connection.CreateCommand();
-        command.CommandText = """
+        command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, evidence = $evidence,
-              transcript = $transcript, updated = $updated WHERE id = $id
+              transcript = $transcript, updated = $updated, revision = {NextRevision} WHERE id = $id
             """;
         command.Parameters.AddWithValue("$state", moved.State.ToString());
         command.Parameters.AddWithValue("$note", (object?)moved.Note ?? DBNull.Value);
@@ -354,19 +408,23 @@ public sealed class SessionStore
     /// <summary>
     /// Copy another machine's session record into this store, whole (D47 §6). The judgement already ran
     /// where the process lived — the ledger's rules governed the original — so a fed record upserts
-    /// verbatim and is never re-judged. The caller keys it by origin + id; the transcript never arrives,
-    /// because the feed has no field for a machine path.
+    /// verbatim and is never re-judged. The caller keys it by origin + id and names the origin; the
+    /// transcript never arrives, because no wire has a field for a machine path.
     /// </summary>
     public async Task MirrorAsync(Session record, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
-        command.CommandText = """
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL)
+        command.CommandText = $"""
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, {NextRevision})
             ON CONFLICT (id) DO UPDATE SET
               state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace,
-              kind = $kind, harness_version = $harnessVersion
+              kind = $kind, harness_version = $harnessVersion, origin = $origin, revision = {NextRevision}
             """;
+        // Whose record: named, or read from the id a mirror is always keyed by — never empty, because
+        // a mirrored row with no origin would count as this machine's own and hold its trees.
+        command.Parameters.AddWithValue(
+            "$origin", record.Origin ?? (record.Id.IndexOf('/') is > 0 and var slash ? record.Id[..slash] : record.Id));
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(record.Workspace));
         command.Parameters.AddWithValue("$kind", record.Kind.ToString());
         // The version crosses; the PROFILE NAME and the TREE never do — machine-local, like the
@@ -406,6 +464,12 @@ public sealed class SessionStore
     /// tree in its repository; and an ask that names no tree is answered by any active session there.
     /// The lock errs toward refusing, because a refusal is a sentence naming what holds the tree and
     /// the other way round is two agents in one working tree.
+    ///
+    /// <para><b>The team's records are not this machine's lock</b> (D47 §6, SYNC4). A teammate's
+    /// session holds a tree on THEIR machine — the tree is the unit of exclusion, and it is per machine
+    /// by definition — so a record that came down with an origin is never counted here, however
+    /// active it is. Counting it would let a machine that went quiet mid-session lock a repository on
+    /// every other machine for good.</para>
     /// </remarks>
     public async Task<Session?> ActiveForAsync(
         string repository, string? tree = null, CancellationToken ct = default)
@@ -413,7 +477,7 @@ public sealed class SessionStore
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             SELECT * FROM sessions
-            WHERE repository = $repository AND state IN ({ActiveStates})
+            WHERE repository = $repository AND state IN ({ActiveStates}) AND origin IS NULL
               AND ($tree IS NULL OR tree IS NULL OR tree = $tree)
             LIMIT 1
             """;
@@ -451,6 +515,95 @@ public sealed class SessionStore
 
     private const string ActiveStates = "'Queued', 'Starting', 'Working', 'AwaitingPerson'";
 
+    // ——— SYNC4: records both ways, by cursor.
+
+    /// <summary>
+    /// This machine's OWN records in a workspace written after <paramref name="revision"/>, in the
+    /// order they were written, each with its revision — what a push sends. A record from the team is
+    /// never here: it is somebody else's to feed, and feeding it would launder it through this key.
+    /// </summary>
+    public async Task<IReadOnlyList<(Session Session, long Revision)>> OwnChangedSinceAsync(
+        long revision, string workspace, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            SELECT *, revision AS rev FROM sessions
+            WHERE origin IS NULL AND revision > $revision AND workspace = $workspace COLLATE NOCASE
+            ORDER BY revision
+            """;
+        command.Parameters.AddWithValue("$revision", revision);
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+
+        var changed = new List<(Session, long)>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            changed.Add((Read(reader), reader.GetInt64(reader.GetOrdinal("rev"))));
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// A remote's side: the team's records it holds after <paramref name="since"/>, in revision order,
+    /// one page at a time — leaving out <paramref name="caller"/>'s own, which it already has, while
+    /// still moving the page past them so they are not scanned again.
+    /// </summary>
+    public async Task<SessionFetch> TeamSinceAsync(
+        long since, string? caller, int limit = 500, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            SELECT *, revision AS rev FROM sessions
+            WHERE origin IS NOT NULL AND revision > $since
+            ORDER BY revision LIMIT $take
+            """;
+        command.Parameters.AddWithValue("$since", since);
+        command.Parameters.AddWithValue("$take", limit + 1);
+
+        var scanned = new List<(Session Session, long Revision)>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            scanned.Add((Read(reader), reader.GetInt64(reader.GetOrdinal("rev"))));
+        }
+
+        var more = scanned.Count > limit;
+        var page = more ? scanned[..limit] : scanned;
+        return new SessionFetch(
+            page.Where(s => !string.Equals(s.Session.Origin, caller, StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.Session)
+                .ToList(),
+            page.Count == 0 ? since : page[^1].Revision,
+            more);
+    }
+
+    /// <summary>How far this machine has pushed its own records to a workspace's remote, and fetched the team's.</summary>
+    public async Task<(long Pushed, long Fetched)> CursorAsync(string workspace, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT pushed, fetched FROM session_cursor WHERE workspace = $workspace";
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? (reader.GetInt64(0), reader.GetInt64(1)) : (0, 0);
+    }
+
+    /// <summary>Move a workspace's cursors forward — never back, so a late answer cannot re-send the past.</summary>
+    public async Task AdvanceCursorAsync(
+        string workspace, long? pushed = null, long? fetched = null, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO session_cursor (workspace, pushed, fetched) VALUES ($workspace, $pushed, $fetched)
+            ON CONFLICT (workspace) DO UPDATE SET
+              pushed = MAX(pushed, excluded.pushed), fetched = MAX(fetched, excluded.fetched)
+            """;
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        command.Parameters.AddWithValue("$pushed", pushed ?? 0);
+        command.Parameters.AddWithValue("$fetched", fetched ?? 0);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
     private static Session Read(SqliteDataReader reader) => new(
         reader.GetString(reader.GetOrdinal("id")),
         reader.IsDBNull(reader.GetOrdinal("quest")) ? null : reader.GetString(reader.GetOrdinal("quest")),
@@ -474,7 +627,10 @@ public sealed class SessionStore
         reader.IsDBNull(reader.GetOrdinal("profile")) ? null : reader.GetString(reader.GetOrdinal("profile")),
         reader.IsDBNull(reader.GetOrdinal("tree")) ? null : reader.GetString(reader.GetOrdinal("tree")),
         reader.IsDBNull(reader.GetOrdinal("base_commit"))
-            ? null : reader.GetString(reader.GetOrdinal("base_commit")));
+            ? null : reader.GetString(reader.GetOrdinal("base_commit")))
+    {
+        Origin = reader.IsDBNull(reader.GetOrdinal("origin")) ? null : reader.GetString(reader.GetOrdinal("origin")),
+    };
 
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
     private static string? Blank(string? value) =>

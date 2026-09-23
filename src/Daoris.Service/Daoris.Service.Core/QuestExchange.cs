@@ -124,7 +124,7 @@ public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Mes
 /// remote itself.
 /// </param>
 public sealed class QuestExchange(
-    KnowledgeService service, QuestStore quests, IQuestRemotes? remotes = null, QuestFiles? files = null)
+    KnowledgeService service, QuestStore quests, IRemotes? remotes = null, QuestFiles? files = null)
 {
     /// <summary>How many links a quest carries — a ticket and its neighbours, not a bibliography.</summary>
     public const int MaxLinks = 20;

@@ -112,15 +112,6 @@ public sealed record OpenChatRequest(
     string? BaseCommit = null);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
-// `Quest` is null for a chat and `Kind` says which it was (D49 §3) — both travel, because a teammate
-// seeing a record deserves to know somebody was talking rather than that work was planned. So does
-// `HarnessVersion` (D49 §4): which tool produced this is a fact about a tool. There is deliberately
-// NO profile field — which account a session ran as is machine-local, like the transcript.
-public sealed record FeedSessionRecord(
-    string Id, string? Quest, string Repository, string? Adapter, string? State,
-    string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated, string? Kind,
-    string? HarnessVersion);
-public sealed record FeedSessionsRequest(IReadOnlyList<FeedSessionRecord>? Records);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
 // The three provenance fields are the feed's claim about WHICH point in the history it speaks for
 // (D48 §6). Nullable on the wire and judged at the door: a feed that names no commit cannot be
@@ -129,15 +120,17 @@ public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, 
 public sealed record FeedEntriesRequest(
     string Repository, IReadOnlyList<FeedEntryRecord>? Entries,
     string? Commit, DateTimeOffset? CommittedAt, string? Branch);
-// A machine's quest sync (D69), as its driver reads it: what one pass pushed, the moves of this
-// machine that became conflicts, what the remote would not keep, what is still behind, and the wall,
-// if there was one. `Machine` is this store's id — how the driver tells its own conflicts from others'.
-// The operations themselves never cross this door; the remote's doors speak Core's `QuestWire`.
+// A machine's sync pass (D69, SYNC4), as its driver reads it: what the quest half pushed, the moves of
+// this machine that became conflicts, what the remote would not keep, what is still behind; how many
+// session records went up and came down; and the wall, if there was one. `Machine` is this store's id.
+// Neither operations nor records cross this door — the remote's doors speak Core's `QuestWire` and
+// `SessionWire`, and this one only says what a pass did.
 public sealed record QuestConflictNote(string Quest, string Attempted);
 public sealed record QuestPushRefusalWire(string Quest, string Reason);
-public sealed record QuestSyncResponse(
+public sealed record SyncResponse(
     string Workspace, string Machine, bool Wired, int Pushed, IReadOnlyList<QuestConflictNote> Conflicts,
-    IReadOnlyList<QuestPushRefusalWire> Refused, IReadOnlyList<string> Behind, string? Problem);
+    IReadOnlyList<QuestPushRefusalWire> Refused, IReadOnlyList<string> Behind,
+    int SessionsPushed, int SessionsFetched, string? Problem);
 // Where this machine's claim on one quest stands: none, held, unconfirmed or lost (D68 §4).
 public sealed record QuestClaimResponse(string Quest, string Claim);
 public sealed record FeedResponse(int Accepted, string Message);
@@ -186,9 +179,9 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(OpenChatRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
-[JsonSerializable(typeof(FeedSessionsRequest))]
+
 [JsonSerializable(typeof(FeedEntriesRequest))]
-[JsonSerializable(typeof(QuestSyncResponse))]
+[JsonSerializable(typeof(SyncResponse))]
 [JsonSerializable(typeof(QuestClaimResponse))]
 [JsonSerializable(typeof(FeedResponse))]
 [JsonSerializable(typeof(CodeMapResponse))]

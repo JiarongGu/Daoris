@@ -124,7 +124,7 @@ var embedder = HostComposition.BuildEmbedder(options);
 // indexes on first use when its store is empty, so a shared host composed with the filesystem source
 // would scan the server's own disk on its first request and serve what it found to keyed callers.
 var composed = await ServiceFactory.CreateAsync(
-    options, embedder, remotes: mode == ServiceMode.Local ? new ConfiguredQuestRemotes() : null,
+    options, embedder, remotes: mode == ServiceMode.Local ? new ConfiguredRemotes() : null,
     source: mode == ServiceMode.Shared ? new EmptyKnowledgeSource() : null,
     // A quest's files are kept by the machine that has them (D65 §2): a local host keeps them under
     // its home, and a shared host keeps none — it holds names, and its door refuses bytes outright.
@@ -741,9 +741,9 @@ if (mode == ServiceMode.Shared)
 {
     // Session records, keyed by origin + id — the judgement already ran where the process lived; the
     // record upserts whole and is never re-judged (D47 §6). There is no transcript field to strip,
-    // because the DTO carries none. Only joined repositories' records are taken (§4).
-    app.MapPost("/api/feed/sessions", async (
-        ComposedService s, HttpContext http, FeedSessionsRequest body, CancellationToken ct) =>
+    // because the wire (Core's SessionWire, the one the machines' client writes) has none. Only
+    // joined repositories' records are taken (§4).
+    app.MapPost("/api/feed/sessions", async (ComposedService s, HttpContext http, CancellationToken ct) =>
     {
         // Unreachable while the shared gate stamps every /api caller — kept deliberately: the origin
         // is the record's attribution, and a gate refactor that dropped the stamp must fail HERE,
@@ -754,13 +754,13 @@ if (mode == ServiceMode.Shared)
             return Results.BadRequest(new ErrorResponse("the feed carries its key's identity — this door answers only keyed callers"));
         }
 
-        var outcome = await new SessionFeed(s.Service, s.Sessions).FeedAsync(
-            origin,
-            (body.Records ?? []).Select(r => new FedSessionRecord(
-                r.Id, r.Quest, r.Repository, r.Adapter, r.State, r.Note, r.Evidence, r.Created, r.Updated,
-                r.Kind, r.HarnessVersion))
-                .ToList(),
-            ct);
+        using var body = new StreamReader(http.Request.Body);
+        if (SessionWire.ReadFeed(await body.ReadToEndAsync(ct)) is not { } records)
+        {
+            return Results.BadRequest(new ErrorResponse("a feed is `records`, each with its created and updated times"));
+        }
+
+        var outcome = await new SessionFeed(s.Service, s.Sessions).FeedAsync(origin, records, ct);
 
         return outcome.Refusal switch
         {
@@ -768,6 +768,19 @@ if (mode == ServiceMode.Shared)
             SessionFeedRefusal.NotJoined => Results.Conflict(new ErrorResponse(outcome.Message)),
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
+    });
+
+    // The team's records, down (SYNC4): what this deployment holds after a revision, in order — every
+    // origin but the caller's own, which the caller already has. Keyed callers only, like the feed:
+    // the caller's key is what says which records are its own.
+    app.MapGet("/api/sessions/since", async (ComposedService s, HttpContext http, long? since, CancellationToken ct) =>
+    {
+        if (http.Items["daoris.principal"] is not string caller || string.IsNullOrWhiteSpace(caller))
+        {
+            return Results.BadRequest(new ErrorResponse("the team's records are read by a keyed caller — its key says which are its own"));
+        }
+
+        return Results.Text(SessionWire.Page(await s.Sessions.TeamSinceAsync(since ?? 0, caller, ct: ct)), "application/json");
     });
 
     // Knowledge content — never vectors (D47 §4): each deployment embeds with its own provider, and
@@ -845,24 +858,28 @@ if (mode == ServiceMode.Shared)
 }
 else
 {
-    // The machine's quest doors (D69): a pass of fetch, rebase and push for one circle — what the
-    // driver's tick asks for, and the same pass a take on a shared quest runs as it claims — and where
-    // THIS machine's claim on a quest stands, which is how its driver knows a session to stop.
-    app.MapPost("/api/quests/sync", async (ComposedService s, string? workspace, CancellationToken ct) =>
+    // The machine's sync door (D69, SYNC4): one pass for one circle — the quests' fetch, rebase and
+    // push, then the session records both ways — what the driver's tick asks for. The quest half is
+    // the same pass a take on a shared quest runs as it claims. And where THIS machine's claim on a
+    // quest stands, which is how its driver knows a session to stop.
+    app.MapPost("/api/sync", async (ComposedService s, string? workspace, CancellationToken ct) =>
     {
         var circle = Workspaces.Normalize(workspace);
         if (s.Remotes?.For(circle) is not { } remote)
         {
-            return Results.Ok(new QuestSyncResponse(circle, s.Quests.Machine, Wired: false, 0, [], [], [], null));
+            return Results.Ok(new SyncResponse(circle, s.Quests.Machine, Wired: false, 0, [], [], [], 0, 0, null));
         }
 
-        var pass = await QuestSync.RunAsync(s.Quests, s.Service, remote, circle, ct);
-        return Results.Ok(new QuestSyncResponse(
-            circle, s.Quests.Machine, Wired: true, pass.Pushed,
-            pass.Conflicts.Select(c => new QuestConflictNote(c.Quest, (c.Attempted ?? QuestStatus.Open).ToString())).ToList(),
-            pass.Refused.Select(r => new QuestPushRefusalWire(r.Quest, r.Reason)).ToList(),
-            pass.Behind,
-            pass.Problem));
+        var quests = await QuestSync.RunAsync(s.Quests, s.Service, remote, circle, ct);
+        var sessions = await SessionSync.RunAsync(s.Sessions, s.Service, remote, circle, ct);
+        return Results.Ok(new SyncResponse(
+            circle, s.Quests.Machine, Wired: true, quests.Pushed,
+            quests.Conflicts.Select(c => new QuestConflictNote(c.Quest, (c.Attempted ?? QuestStatus.Open).ToString())).ToList(),
+            quests.Refused.Select(r => new QuestPushRefusalWire(r.Quest, r.Reason)).ToList(),
+            quests.Behind,
+            sessions.Pushed,
+            sessions.Fetched,
+            quests.Problem ?? sessions.Problem));
     });
 
     app.MapGet("/api/quests/{id}/claim", async (ComposedService s, string id, CancellationToken ct) =>

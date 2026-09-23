@@ -518,6 +518,22 @@ describe('clearing a parked session', () => {
       .toHaveBeenCalledWith(expect.stringContaining('Declining needs a reason'), 'error'));
   });
 
+  /**
+   * A teammate's record came down with the sync keyed `origin/id` (SYNC4) and is READ-ONLY here: the
+   * process is on their machine, so nothing this window sends could reach it. It shows what it is
+   * waiting on — and offers no moves and no composer, because a button that cannot work is a lie.
+   */
+  it('offers no moves and no composer on a teammate\'s session', async () => {
+    SESSIONS = [{ ...PARKED, id: 'person@machine-b/p4rk3d00', kind: 'chat' }];
+    show('person@machine-b/p4rk3d00');
+
+    expect((await screen.findAllByText(/I recommend the second/)).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'stop it' })).toBeNull();
+    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+  });
+
   /** A driven session that is not parked gets no moves: there is nothing waiting on anybody. */
   it('offers no moves on a session nobody is waiting for', async () => {
     SESSIONS = [DRIVEN];

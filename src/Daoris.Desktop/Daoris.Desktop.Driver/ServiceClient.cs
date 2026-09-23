@@ -349,12 +349,19 @@ public sealed class ServiceClient : IDisposable
         return (null, null);
     }
 
+    /// <remarks>
+    /// THIS machine's sessions only. A teammate's record came down with the sync keyed `origin/id` — the
+    /// same rule the platform reads it by — and it holds nothing here (D47 §6, SYNC4): counted, it would
+    /// spend this machine's cap on work another machine is doing, block a repository whose tree that
+    /// machine holds and this one does not, and park-notify for a session nobody here can reach.
+    /// </remarks>
     private static IReadOnlyList<SessionView> ReadSessions(string json)
     {
         using var document = JsonDocument.Parse(json);
         var sessions = new List<SessionView>();
         foreach (var session in document.RootElement.EnumerateArray())
         {
+            if (IsTeams(session)) continue;
             sessions.Add(new SessionView(
                 Text(session, "id") ?? "",
                 Text(session, "repository") ?? "",
@@ -383,6 +390,9 @@ public sealed class ServiceClient : IDisposable
         var strikes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var session in document.RootElement.EnumerateArray())
         {
+            // A strike is this driver's own judgement of its own attempts: a teammate's failure there
+            // says nothing about whether THIS machine's next try would fail.
+            if (IsTeams(session)) continue;
             if (!string.Equals(Text(session, "state"), "failed", StringComparison.OrdinalIgnoreCase)) continue;
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
 
@@ -391,6 +401,9 @@ public sealed class ServiceClient : IDisposable
 
         return strikes;
     }
+
+    /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
+    internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;
 
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

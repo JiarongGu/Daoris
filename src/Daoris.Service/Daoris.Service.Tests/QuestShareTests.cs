@@ -71,7 +71,7 @@ public sealed class QuestShareTests : IAsyncLifetime
     /// The ordinary machine: its one circle wired to <paramref name="remote"/> — offline by default, and
     /// with null, a machine with no remote at all.
     /// </summary>
-    private QuestExchange Exchange(IQuestRemote? remote, QuestFiles? files = null) =>
+    private QuestExchange Exchange(IRemote? remote, QuestFiles? files = null) =>
         new(_service, _quests, new OneRemote(remote), files);
 
     private QuestExchange Exchange(QuestFiles? files = null) => Exchange(new UnreachableRemote(), files);
