@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**317 CLI tests, 330 service, 356 driver, 96 desktop modules, 534 web unit, 16 Playwright**, 59
-devkit, 56/56 release rehearsal, **206/206 family rehearsal** (it names its own phases when you run
+**317 CLI tests, 348 service, 357 driver, 96 desktop modules, 534 web unit, 16 Playwright**, 59
+devkit, 56/56 release rehearsal, **212/212 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -108,10 +108,6 @@ answers once the process has started; `HARNESS_INPUT` answers its prompt and `HA
 it. Signing in sits on the account's row (`SignIn`), tooltips follow the editor's rules (`Tip`), and
 no spawn opens a console window — all three were the owner's asks that day, all three seen on the
 installed shell, all three in `docs/FIX-LOG.md` or `docs/2026-09-19-platform-ux.md` §4.
-
-🔴 **A quest carries links and files** (INT2, D65 as amended): the bytes stay on the machine that
-published them, and the host, never the driver, says where each lies. Building it found an event
-prop consumed during render in two places (`docs/FIX-LOG.md`; frontend architecture §4b).
 
 🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
 (DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that
@@ -243,8 +239,9 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **The actionable row is the regular task's** (D65): **INT4** (the intake) is ready to build;
-  INT3 waits on the owner's yes and INT6 needs the owner present. Everything
+- **The actionable rows are the regular task's** (D65): **INT4b** (the intake session) and
+  **INT4c** (its desktop door) are ready to build; INT3 waits on the owner's yes and INT6 needs the
+  owner present. Everything
   else still waits on something. **Three are the owner's** (ACP2 and DEPLOY1's second half each
   cost a real login; PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's
   transcripts, TOOL5 and CANON2 on a repository naming what it wants, HARNESS1 on the same, REH1
@@ -255,9 +252,9 @@ the traps that are not in any contract, because they were found rather than desi
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 317 + `check` + doc
   budgets + version agreement),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (330),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (348),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (356), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (96), `npm run rehearse:family` (206/206), `npm run test:web` (534 vitest + 16 Playwright),
+  (357), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (96), `npm run rehearse:family` (212/212), `npm run test:web` (534 vitest + 16 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -271,18 +268,18 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Fourteen items are open** and every closed one is
+the archive; its decision is **D53, accepted**). **Fifteen items are open** and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Three are **decisions** the owner has to make rather than work anyone can pick up (ACP2,
 DEPLOY1's second half, PLUG2); one more (TOOL4) is held by D57 until TOOL3 has run; and the
 last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
 that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
 question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
-design's §5 is realised and what waits is a tool somebody names. The other four are the regular
+design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **INT4 is the next build** (D65): no login, no external event, and its intake composes chains
-with INT5's `then`. INT3 waits on the owner's yes. Each item is one session-sized landing, TDD, gates green, moved to the archive on
+🔴 **INT4b and INT4c are the next builds** (D65): no login, no external event. INT4b's row lists the
+traps the plumbing map found. INT3 waits on the owner's yes. Each item is one session-sized landing, TDD, gates green, moved to the archive on
 completion.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
@@ -440,17 +437,22 @@ both are the owner's.**
 workspace; an **intake session** (the harness carries the model, D24) reads the ticket, decides
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
-engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2 and INT5 are in the
-archive**: a plugin hands every session its servers, a quest carries links and files, and a quest
-can name what comes next.
+engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT4a and INT5 are in
+the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
+screen.
 
 - [ ] ⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
   requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
   owner's yes first** — it amends the letter of D34/D46.
-- [ ] **INT4 — the intake.** The ask record; the room under `<home>/intake/<workspace>/` seeded
-  from the registry; `daoris-driver ask --workspace … [--file …] [--url …] "…"` and the desktop
-  composer at workspace scope; `intakeAdapter` in `driver.json`; the declarations-only tier that
-  proposes and reports itself. Proven with no model by the rehearsal; a real ask is the owner's.
+- [ ] **INT4b — the intake session.** The room under `<home>/intake/<workspace>/`, seeded with an
+  `AGENTS.md` of the circle's declarations; `intakeAdapter` in `driver.json`; an ask with a harness
+  runs a session there that decides from the declarations, publishes the quests (chains included)
+  onto INT4a's ask, and asks the person rather than guessing. Proven by a stub intake agent; a real
+  ask is the owner's. 🔴 **Read the design's §1b traps first**: eight things the conversation
+  plumbing assumes that an intake breaks, starting with a chat being handed no connector.
+- [ ] **INT4c — the desktop door.** The screen twin of `daoris-driver ask` (D50): a composer at the
+  status bar's workspace scope, with the quest composer's drop, paste and links, and the ask's
+  record (the proposal, the tier, its quests, *publish to…* and *close*).
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 

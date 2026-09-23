@@ -24,10 +24,16 @@ public sealed record QuestUpload(string Name, byte[] Content);
 /// called <c>image.png</c> — two files, and the same file dropped twice one; the name after it is what
 /// lets a session know which file is the screenshot.</para>
 /// </remarks>
-public sealed class QuestFiles(string home)
+public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
 {
     /// <summary>The folder under the home that holds every quest's own.</summary>
     public const string Folder = "quests";
+
+    /// <summary>
+    /// The same keeper for another kind of record under the same home — an ask keeps its files beside
+    /// the quests it may become (D65 §1a), with the same layout and the same naming rules.
+    /// </summary>
+    public QuestFiles For(string otherFolder) => new(home, otherFolder);
 
     /// <summary>A kept name's longest — a path under a deep home still has to open on Windows.</summary>
     public const int MaxNameLength = 100;
@@ -40,7 +46,7 @@ public sealed class QuestFiles(string home)
         DaorisHome.Resolve() is { } home ? new QuestFiles(home) : null;
 
     /// <summary>The directory a session is handed for one quest.</summary>
-    public string DirectoryOf(string questId) => Path.Combine(home, Folder, questId, "attachments");
+    public string DirectoryOf(string questId) => Path.Combine(home, folder, questId, "attachments");
 
     /// <summary>Where one attachment of one quest lies, whether or not it is there.</summary>
     public string PathOf(string questId, QuestAttachment attachment) =>

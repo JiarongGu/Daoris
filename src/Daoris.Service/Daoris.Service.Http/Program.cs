@@ -451,6 +451,56 @@ if (mode == ServiceMode.Local)
     });
 }
 
+// Asks (D65 §1a): a sentence entered at a WORKSPACE, answered by the tier this machine has — the
+// declarations with no harness, a named receiver at once. LOCAL mode only: the intake is this
+// machine's, like a quest file's bytes, and a shared deployment has no door here.
+if (mode == ServiceMode.Local)
+{
+    app.MapGet("/api/asks", async (
+        ComposedService s, HttpContext http, string? workspace, bool? includeClosed, CancellationToken ct) =>
+        (await s.Asks.ListAsync(workspace, includeClosed ?? false, ct)).Select(a => ToAsk(a, s.Files, MachineLocal(http))));
+
+    app.MapPost("/api/asks", async (ComposedService s, HttpContext http, AskRequestBody body, CancellationToken ct) =>
+    {
+        var uploads = new List<QuestUpload>();
+        foreach (var file in body.Attachments ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(file.Name) || file.Content is null)
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    "every attachment needs its name and its content — an ask is made on the machine that has the file"));
+            }
+
+            uploads.Add(new QuestUpload(file.Name, file.Content));
+        }
+
+        var outcome = await s.Asks.AskAsync(
+            new AskRequest(body.Workspace ?? "", body.Sentence ?? "")
+            {
+                Links = body.Links ?? [],
+                Uploads = uploads,
+                To = body.To,
+            },
+            DateTimeOffset.UtcNow, ct);
+        return AskAnswer(outcome, s, http);
+    });
+
+    app.MapPost("/api/asks/{id}/publish", async (
+        ComposedService s, HttpContext http, string id, AskPublishRequest body, CancellationToken ct) =>
+    {
+        if (string.IsNullOrWhiteSpace(body.To))
+        {
+            return Results.BadRequest(new ErrorResponse("to is required — the repository this ask becomes a quest for"));
+        }
+
+        return AskAnswer(await s.Asks.PublishAsync(id, body.To, DateTimeOffset.UtcNow, ct), s, http);
+    });
+
+    app.MapPost("/api/asks/{id}/close", async (
+        ComposedService s, HttpContext http, string id, AskCloseRequest body, CancellationToken ct) =>
+        AskAnswer(await s.Asks.CloseAsync(id, body.Reason ?? "", DateTimeOffset.UtcNow, ct), s, http));
+}
+
 // The driver's session records (D46). State only: the service never spawns a process — the record is
 // what the platform renders and what survives a driver restart; the process handle stays with the
 // driver that owns it. Judgement is the shared ledger's, so this door and any other cannot drift.
@@ -844,6 +894,31 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => n
         Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
     q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
     q.Parent);
+
+// An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
+// refused, whose message already says the ask was kept and where it was proposed instead.
+IResult AskAnswer(AskOutcome outcome, ComposedService s, HttpContext http) => outcome.Refusal switch
+{
+    AskRefusal.None => Results.Ok(new AskActionResponse(
+        ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message,
+        outcome.Quest is null ? null : ToQuest(outcome.Quest, s.Files, MachineLocal(http)))),
+    AskRefusal.UnknownWorkspace or AskRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+    AskRefusal.Closed or AskRefusal.QuestRefused => Results.Conflict(new ErrorResponse(outcome.Message)),
+    _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+};
+
+// The ask's record — its kept files' paths answered to this machine only, the quest files' rule.
+static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
+{
+    var kept = files?.For(AskDesk.Folder);
+    return new(
+        a.Id, a.Workspace, a.Sentence, a.State.ToString(), a.Tier, a.Asked, a.Updated, a.Asker, a.Note, a.Links,
+        a.Attachments.Select(f => new QuestAttachmentResponse(
+            f.Name, f.Sha256, f.Bytes,
+            Path: machineLocal && kept is not null && kept.Has(a.Id, f) ? kept.PathOf(a.Id, f) : null)).ToList(),
+        a.Proposal.Select(m => new DeclarationMatchResponse(m.Repository, m.Score, m.Matched)).ToList(),
+        a.Quests);
+}
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(
     entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),

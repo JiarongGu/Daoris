@@ -4030,4 +4030,48 @@ second existing only once the first closed. Playwright proves the real host's cl
 step, and the drawer shows it.
 
 Gates: verify (317), service 330, driver 356, modules 96, web 534 + 16, family 206/206, deploy
+39/39. *(The modules count was from a run made before the scrollbar edit, which turned the
+palette test red; found and fixed by INT4a — FIX-LOG 2026-09-23.)*
+
+## INT4a — the ask, and its floor (2026-09-23)
+
+- [x] **INT4 — the intake** *(split 2026-09-23 into INT4a, INT4b, INT4c; this is the first
+  third)*. The ask record; the room under `<home>/intake/<workspace>/` seeded from the registry;
+  `daoris-driver ask --workspace … [--file …] [--url …] "…"` and the desktop composer at workspace
+  scope; `intakeAdapter` in `driver.json`; the declarations-only tier that proposes and reports
+  itself. Proven with no model by the rehearsal; a real ask is the owner's.
+
+✅ **INT4a done 2026-09-23.** It covers the ask record, the declarations-only tier and the terminal
+door; the room and `intakeAdapter` are INT4b, and the desktop composer is INT4c. The split exists
+because the row named three landings, and `model-decoupling` says which comes first: the floor that
+works with no provider.
+
+**The ask.** `AskStore` and `AskDesk` hold a sentence entered at a workspace: its links, the files it
+keeps under `<home>/asks/<id>/`, who asked, and what became of it (`open → proposed | published →
+closed`). Every record names the tier that answered.
+
+**The tier.** `DeclarationsTier` ranks the circle's adopted repositories by the words their summary,
+`owns` and `accepts` share with the sentence, using the index's tokenizer, CJK bigrams included. It
+drops a sentence's glue, folds a plural, and counts an owned word double. It proposes the top three
+with the matched words as evidence and **publishes nothing**.
+
+**Named receivers.** `--to` publishes at once through the exchange, asked by `ask #<id>` in the
+ask's circle (`QuestAsk.Workspace`, new); a refused `--to` keeps the ask with its proposal.
+`daoris-driver ask` has three forms (ask, `--publish <id> --to`, `--close <id> --reason`), with
+exit codes 0 answered, 1 refused, 2 tool error. The HTTP door is local-mode only.
+
+**Proven by** the family rehearsal: an ask with no harness proposes the engine and says *by
+declarations only; no intake harness ran*, publishing nothing. A person closes it. A refused `--to`
+keeps the ask. A named `--to newcomer` with a link and a file becomes a quest the driver drives to
+done, whose session read the file.
+
+**Two defects found on the way, both fixed** (FIX-LOG):
+- **The planner's crash** (DRV2 × D51): the planner keyed active sessions by repository, and D51's
+  two conversations in one repository broke every tick.
+- **INT5's palette test**: INT5's scrollbar edit had turned the desktop palette test red, after its
+  modules run.
+
+**The map for INT4b** found eight traps in the conversation plumbing, all written into INT4b's row.
+
+Gates: verify (317), service 348, driver 357, modules 96, web 534 + 16, family 212/212, deploy
 39/39.

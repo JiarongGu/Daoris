@@ -50,6 +50,21 @@ public sealed record PublishQuestRequest(
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire>? Then = null);
 public sealed record RespondQuestRequest(string? Action, string? Reason);
+// An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
+// and `To` is the asker naming the receiver, which publishes at once.
+public sealed record AskRequestBody(
+    string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
+    IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To);
+public sealed record AskPublishRequest(string? To);
+public sealed record AskCloseRequest(string? Reason);
+public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
+// `Tier` is said on every record (model-decoupling): which tier answered, never implied.
+public sealed record AskResponse(
+    string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
+    DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
+    IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
+    IReadOnlyList<string> Quests);
+public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(
     int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent);
@@ -140,6 +155,11 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(IEnumerable<QuestResponse>))]
 [JsonSerializable(typeof(PublishQuestRequest))]
 [JsonSerializable(typeof(RespondQuestRequest))]
+[JsonSerializable(typeof(AskRequestBody))]
+[JsonSerializable(typeof(AskPublishRequest))]
+[JsonSerializable(typeof(AskCloseRequest))]
+[JsonSerializable(typeof(AskActionResponse))]
+[JsonSerializable(typeof(IEnumerable<AskResponse>))]
 [JsonSerializable(typeof(QuestActionResponse))]
 [JsonSerializable(typeof(RefreshResponse))]
 [JsonSerializable(typeof(RegisterRequest))]

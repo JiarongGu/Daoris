@@ -42,6 +42,13 @@ workspace scope set, or from a terminal (`daoris-driver ask --workspace <name> [
 "…"`) — two doors, D50. It is held as an **ask**: the sentence, its links, its attachments, who asked,
 when, and what became of it.
 
+*As built (INT4a, 2026-09-23; D65 as amended):* the ask is a service record, local mode only, and
+`daoris-driver ask` is its terminal door. With no intake harness, the declarations tier proposes,
+publishes nothing, and says *by declarations only; no intake harness ran*. `--to` publishes at once.
+`ask --publish <id> --to <repo>` turns a proposal into a quest, and `ask --close <id> --reason` ends
+it. An ask's quests are asked by `ask #<id>`, in its circle. The intake session (§1b) is INT4b; the
+desktop composer is INT4c.
+
 ### 1b. The intake session — the driver's brain is a session, not a model
 
 Daoris opens a **conversation** (SES2) for the ask, in a working tree it owns: `<home>/intake/
@@ -61,6 +68,28 @@ settings choose. **The no-model tier is deterministic and reports itself**: an a
 is proposed *as a proposal* — never published unasked — and the report says *"by declarations only;
 no intake harness ran"*. The intake never edits a repository: it publishes, which is the whole
 constraint (D32).
+
+**Traps for the build (INT4b), found by mapping the conversation plumbing on 2026-09-23.** Each is
+something the existing code assumes that an intake session breaks:
+
+- **A chat is handed no connector** on either door. ACP's `KnowledgeConnector.Offer` and the pipe
+  door's `SpawnServers` hand only the driven path's.
+- **`ChatRunner` writes raw lines to stdin**, so an ACP `intakeAdapter` would receive text that isn't
+  JSON-RPC. The intake is one turn (the ask is its target), so it belongs on the **driven capture
+  path**, where `AcpSession` frames one prompt.
+- **The MCP `quest_publish` cannot name the ask or its circle**, and the room matches no
+  registration, so the ambient workspace is null. The connector handed to an intake session needs
+  the ask in its environment, and must publish *as* `ask #<id>` in that circle.
+- **`SessionLedger.OpenChatAsync` refuses an unregistered repository**, so the intake needs its own
+  open, with the workspace from the caller. An older build reads an unknown `SessionKind` as
+  `Driven`.
+- **`DriverConfig.ToJson` writes fixed keys**, so `intakeAdapter` must be modelled in the C# record,
+  the CLI twin (`driverconfig.ts`) and `DriverModule.State`, or the next toggle deletes it.
+- **`WorkingTree.HeadAsync` walks up.** A room under a home inside a checkout (the rehearsal's) would
+  report that checkout's HEAD. Copy `SessionTrees`' `--show-toplevel` guard, or record no base.
+- **Never route the intake through `SessionTrees`**: its paths are `<workspace>/<repository>`.
+- **`chat` and `trees` in the driver host sit outside its `try`**, so a `DriverException` there
+  crashes rather than exiting 2. `ask` catches its own.
 
 ### 1c. Files and links on a quest
 

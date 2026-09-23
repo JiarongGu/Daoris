@@ -201,6 +201,30 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, done.Quest!.Status);
     }
 
+    // ——— An ask asks (D65 §1a): a sender that is not a repository names the circle it asks from.
+
+    /// <summary>
+    /// An ask has no registry row, so nothing but the ask can say which circle it was made in — and
+    /// the workspace is still the unit of sharing (D48 §4): named, its quest lands there; unnamed, the
+    /// sender is placed where any unregistered sender always was.
+    /// </summary>
+    [Fact]
+    public async Task A_sender_that_is_not_a_repository_asks_from_the_circle_it_names()
+    {
+        var quiet = (await _service.RegistryAsync()).First(r => r.Repository == "Quiet");
+        await _service.RegisterAsync(quiet with { Workspace = "tools" }, Now);
+
+        var named = await _exchange.PublishAsync(
+            new QuestAsk("ask #a1b2c3", "Quiet", "Use the media config", "Asked at the workspace.") { Workspace = "tools" },
+            Now);
+        var unnamed = await _exchange.PublishAsync(
+            new QuestAsk("ask #d4e5f6", "Quiet", "Another ask", "No circle named."), Now);
+
+        Assert.Equal(QuestPublishRefusal.None, named.Refusal);
+        Assert.Equal("tools", named.Quest!.Workspace);
+        Assert.Equal(QuestPublishRefusal.CrossWorkspace, unnamed.Refusal);
+    }
+
     // ——— A chain (D65 §4): judged when composed, published at the moment the quest closes done.
 
     private Task<QuestPublishOutcome> Chain(params QuestStep[] then) =>

@@ -61,6 +61,12 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
 
     /// <summary>What to ask next when this closes done (D65 §4) — judged here, when the chain is composed.</summary>
     public IReadOnlyList<QuestStep> Then { get; init; } = [];
+
+    /// <summary>
+    /// The circle a sender that is NOT a repository asks from — an ask (D65 §1a), which has no registry
+    /// row to say it. Ignored for a registered sender, whose row is the machine's wiring and decides.
+    /// </summary>
+    public string? Workspace { get; init; }
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -173,7 +179,9 @@ public sealed class QuestExchange(
         var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
         var sender = registered.FirstOrDefault(r =>
             string.Equals(r.Repository, from, StringComparison.OrdinalIgnoreCase));
-        var home = sender?.InWorkspace ?? Workspaces.Default;
+        // A registered sender's row decides its circle. A sender with none — an ask (D65 §1a) — names
+        // its own, and silence places it where an unregistered sender always was.
+        var home = sender?.InWorkspace ?? Workspaces.Normalize(ask.Workspace);
 
         // Who can be asked is who shares the asker's circle. A refusal that listed the whole machine
         // would be offering repositories this one may not address.
@@ -333,6 +341,18 @@ public sealed class QuestExchange(
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The same judgement over what an ASK carries (D65 §1a) — an ask keeps its links and files until
+    /// it becomes quests, and a limit it did not share with them would be refused only later, at a
+    /// publish nobody is watching.
+    /// </summary>
+    public (QuestPublishRefusal? Refusal, string Message, IReadOnlyList<string> Links) JudgeCarry(
+        IReadOnlyList<string> links, IReadOnlyList<QuestUpload> uploads)
+    {
+        var carried = Judge(new QuestAsk("", "", "", "") { Links = links, Uploads = uploads });
+        return (carried.Refusal, carried.Message, carried.Links);
     }
 
     /// <summary>What a publish carries once judged: the links and files a record may name, or why not.</summary>

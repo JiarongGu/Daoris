@@ -5,16 +5,17 @@
 
 @import "tailwindcss";
 
-/* 🔴 Native chrome follows the theme (2026-09-23). A scrollbar is painted by the browser, not by the
-   page, and with no `color-scheme` it is painted light whatever the tokens say — seen as a pale OS
-   bar down a dark drawer the first time a composer grew long enough to scroll. The bar wears the
-   line token rather than the OS grey, like every other border here. */
+/* 🔴 ONE light :root and ONE dark one: the desktop's native chrome copies these tokens, and its
+   test (ChromePaletteTests) reads the first block as light and the second as dark. A third block
+   ahead of them shifted both and turned that test red (FIX-LOG 2026-09-23). */
 :root {
+  /* 🔴 Native chrome follows the theme (2026-09-23). A scrollbar is painted by the browser, not by
+     the page, and with no `color-scheme` it is painted light whatever the tokens say — seen as a pale
+     OS bar down a dark drawer the first time a composer grew long enough to scroll. The bar wears the
+     line token rather than the OS grey, like every other border here. */
   color-scheme: light dark;
   scrollbar-color: var(--line-strong) transparent;
-}
 
-:root {
   --ink: #1a1a18;
   --ink-soft: #5b5a55;
   --ink-faint: #8a887f;

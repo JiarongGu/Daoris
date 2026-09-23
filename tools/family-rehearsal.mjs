@@ -600,6 +600,53 @@ check(
   chainRun.out,
 );
 
+// AN ASK (D65 §1a): a sentence entered at a WORKSPACE, not at a repository. With no intake harness
+// the declarations tier answers — it proposes, says that is all that ran, and publishes NOTHING. A
+// receiver named with --to is the asker deciding: published at once, asked BY the ask, carrying its
+// link and file, and driven like any quest. `daoris-driver ask` is the terminal door (D50).
+const askVerb = (args) => driver({ serviceUrl: BASE, config: driverConfig, mode: `ask ${args}` });
+const questCount = async () => ((await api('GET', '/api/quests?includeClosed=true')).json ?? []).length;
+const questsBeforeAsk = await questCount();
+const proposedAsk = askVerb('--workspace default "the rendering of the asset pipeline stalls whenever the simulation runs"');
+check(
+  'an ask with no intake harness is answered by declarations only, and says so, proposing the engine',
+  proposedAsk.code === 0 && /by declarations only; no intake harness ran/.test(proposedAsk.out)
+    && /proposed, best first: `engine`/.test(proposedAsk.out),
+  proposedAsk.out,
+);
+check('…and publishes nothing — a proposal is a person’s to accept', (await questCount()) === questsBeforeAsk, proposedAsk.out);
+const proposedAskId = /ask\s+#([0-9a-f]{6})/.exec(proposedAsk.out)?.[1] ?? '';
+const closedAsk = askVerb(`--close ${proposedAskId} --reason "Asked again with the receiver named."`);
+check('a person closes their own ask, with the reason', closedAsk.code === 0 && /is closed/.test(closedAsk.out), closedAsk.out);
+const refusedAsk = askVerb('--to nobody-here "a receiver nobody registered"');
+check(
+  'a named receiver that cannot be asked is refused in the exchange’s words — and the ask is kept',
+  refusedAsk.code === 1 && /nobody-here/.test(refusedAsk.out) && /kept as/.test(refusedAsk.out),
+  refusedAsk.out,
+);
+const askBrief = join(scratch, 'ask-brief.txt');
+writeFileSync(askBrief, 'the brief an ask carried\n');
+const namedAsk = askVerb(
+  `--workspace default --to newcomer --url https://tickets.example/T-77 --file "${askBrief}" "make the newcomer answer an ask"`);
+const namedAskId = /ask\s+#([0-9a-f]{6})/.exec(namedAsk.out)?.[1] ?? '';
+const namedQuestId = /quest\s+#([0-9a-f]{6})/.exec(namedAsk.out)?.[1] ?? '';
+const namedQuest = ((await api('GET', '/api/quests?repository=newcomer')).json ?? []).find((q) => q.id === namedQuestId);
+check(
+  'a receiver named with --to is published at once — asked BY the ask, carrying its link and its file',
+  namedAsk.code === 0 && namedQuest?.from === `ask #${namedAskId}`
+    && namedQuest.links?.[0] === 'https://tickets.example/T-77' && namedQuest.attachments?.[0]?.name === 'ask-brief.txt',
+  `${namedAsk.out}\n${JSON.stringify(namedQuest)}`,
+);
+const askRun = drive();
+const askSession = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => s.quest === namedQuestId);
+const askSaid = existsSync(askSession?.transcript ?? '') ? readFileSync(askSession.transcript, 'utf8') : '';
+check(
+  '…and the driver drives it like any quest: the ask became work, and its session read the file',
+  askSession?.state === 'completed' && askSaid.includes('-ask-brief.txt reads the brief an ask carried'),
+  `${askRun.out}\n${askSaid.split('\n').filter((line) => line.startsWith('stub:')).join('\n')}`,
+);
+
 // Declining is a real answer, and it is the session's answer — the driver only observes it.
 const declineAsk = await api('POST', '/api/quests', {
   body: {

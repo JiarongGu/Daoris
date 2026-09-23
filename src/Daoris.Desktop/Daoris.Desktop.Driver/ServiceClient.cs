@@ -150,6 +150,79 @@ public sealed class ServiceClient : IDisposable
         return (Text(session, "id"), Text(document.RootElement, "message") ?? "");
     }
 
+    /// <summary>
+    /// Make an ask at a workspace (D65 §1a) — the sentence, its links, and files read from this
+    /// machine. The service answers with what became of it; a refusal is an answer, not an exception.
+    /// </summary>
+    public Task<AskAnswer> AskAsync(
+        string workspace, string sentence, IReadOnlyList<string> links,
+        IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default) =>
+        PostAskAsync("/api/asks", writer =>
+        {
+            writer.WriteString("workspace", workspace);
+            writer.WriteString("sentence", sentence);
+            writer.WriteStartArray("links");
+            foreach (var link in links) writer.WriteStringValue(link);
+            writer.WriteEndArray();
+            writer.WriteStartArray("attachments");
+            foreach (var (name, content) in files)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("name", name);
+                writer.WriteBase64String("content", content);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            if (to is not null) writer.WriteString("to", to);
+        }, ct);
+
+    /// <summary>A person turns an ask into a quest for <paramref name="to"/>.</summary>
+    public Task<AskAnswer> PublishAskAsync(string id, string to, CancellationToken ct = default) =>
+        PostAskAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}/publish", w => w.WriteString("to", to), ct);
+
+    /// <summary>A person closes their own ask, with the reason.</summary>
+    public Task<AskAnswer> CloseAskAsync(string id, string reason, CancellationToken ct = default) =>
+        PostAskAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}/close", w => w.WriteString("reason", reason), ct);
+
+    private async Task<AskAnswer> PostAskAsync(string path, Action<Utf8JsonWriter> write, CancellationToken ct)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            write(writer);
+            writer.WriteEndObject();
+        });
+
+        using var response = await _http.PostAsync(
+            $"{_base}{path}", new StringContent(body, Encoding.UTF8, "application/json"), ct)
+            .ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(payload);
+        }
+        catch (JsonException)
+        {
+            // A host older than asks answers a bare 404 — said plainly rather than parsed as nothing.
+            return new AskAnswer(false, $"the service at {_base} has no ask door ({(int)response.StatusCode}) — is it older than this driver?", null, null);
+        }
+
+        using (document)
+        {
+            var root = document.RootElement;
+            if (!response.IsSuccessStatusCode) return new AskAnswer(false, Text(root, "error") ?? payload, null, null);
+
+            return new AskAnswer(
+                true,
+                Text(root, "message") ?? "",
+                root.TryGetProperty("ask", out var ask) ? Text(ask, "id") : null,
+                root.TryGetProperty("quest", out var quest) && quest.ValueKind == JsonValueKind.Object ? Text(quest, "id") : null);
+        }
+    }
+
     /// <summary>Move a session's record. The ledger judges; the driver reports what it observed.</summary>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
@@ -328,3 +401,10 @@ public sealed class ServiceClient : IDisposable
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 }
+
+/// <summary>What the service said to an ask, a publish or a close (D65 §1a).</summary>
+/// <param name="Ok">Whether it did what was asked — false is a refusal, said in <paramref name="Message"/>.</param>
+/// <param name="Message">The service's whole sentence, verbatim.</param>
+/// <param name="AskId">The ask it answered about, when it answered with one.</param>
+/// <param name="QuestId">The quest this call published, when it published one.</param>
+public sealed record AskAnswer(bool Ok, string Message, string? AskId, string? QuestId);

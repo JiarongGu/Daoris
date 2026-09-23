@@ -70,6 +70,15 @@ never collides with an older quest of the same words. The whole chain is judged 
 every step must be addressable from the asker, and every step must live in the same home as the
 first, because each is published wherever the one before it closes.
 
+**An ask is a sentence entered at a workspace, not at a repository** (D65 §1a). It keeps its words,
+links and files (under `<home>/asks/<id>/`), who asked, and what became of it, and every record names
+the tier that answered. With no intake harness, the **declarations tier** ranks the workspace's
+adopted repositories by the words their summary, `owns` and `accepts` share with the sentence. It
+proposes, with the matched words as evidence, and **publishes nothing**; a person turns a proposal
+into a quest. Naming the receiver publishes at once. An ask's quests are asked *by the ask*
+(`ask #<id>`), in the ask's own circle. The same words in the same circle are the same ask. Asks
+are machine-local: a local host's door, and `daoris-driver ask` from a terminal.
+
 The judgement behind those — who may be addressed, what a refusal says, what declining requires —
 lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would
 drift, and the same ask would be deliverable through one door and refused at the other, which for a
@@ -150,6 +159,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `GET /api/status` · `/api/search` · `/api/entry` · `/api/entries` · `/api/convergence` · `/api/repositories` | the read surface, same as the UI's |
 | `GET /api/registry` · `POST /api/registry` | who is out there; where `daoris connect` lands |
 | `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape |
+| `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason |
 | `GET /api/quests/{id}/attachments/{sha256}` | local mode, loopback only: a kept file, served sandboxed (`Content-Security-Policy: sandbox`, `nosniff`), and anything but an image, a PDF or text as a download, so an attached page never runs on the platform's origin |
 | `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46) |
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |

@@ -162,7 +162,13 @@ public static class Planner
     public static IReadOnlyList<Consideration> Plan(Snapshot snapshot, DriverConfig config)
     {
         var considerations = new List<Consideration>();
-        var blockedBy = snapshot.Active.ToDictionary(s => s.Repository, s => s.Id, StringComparer.OrdinalIgnoreCase);
+        // 🔴 Grouped, never keyed straight off the list: two active sessions in one repository is a
+        // state D51 allows (a conversation in the checkout, another in a tree of its own), and a
+        // dictionary built from the list threw on the second — every tick failed while both were open.
+        // Either blocks the repository; the first is the one the reason names.
+        var blockedBy = snapshot.Active
+            .GroupBy(s => s.Repository, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First().Id, StringComparer.OrdinalIgnoreCase);
         var startedThisTick = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var slots = config.Cap - snapshot.Active.Count;
 

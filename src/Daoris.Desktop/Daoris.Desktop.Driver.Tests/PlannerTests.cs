@@ -90,6 +90,21 @@ public sealed class PlannerTests
         QuestView[] quests, RepoView[]? repos = null, SessionView[]? active = null, DriverConfig? config = null) =>
         Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config());
 
+    /// <summary>
+    /// 🔴 Two active sessions in ONE repository is a state D51 allows — a conversation in the checkout
+    /// and another in a tree of its own. The plan keyed the active sessions by repository and threw on
+    /// the second, so every tick failed for as long as both were open and nothing could start.
+    /// </summary>
+    [Fact]
+    public void Two_active_sessions_in_one_repository_block_it_rather_than_break_the_tick()
+    {
+        var plan = Plan([Quest()], active: [new SessionView("s1", "Game"), new SessionView("s2", "Game")], config: Config(cap: 5));
+
+        var only = Assert.Single(plan);
+        Assert.Equal(StartVerdict.RepositoryBusy, only.Verdict);
+        Assert.Contains("s1", only.Reason);
+    }
+
     [Fact]
     public void An_open_quest_for_a_drivable_repository_starts()
     {

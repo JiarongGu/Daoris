@@ -38,8 +38,8 @@ about a neighbour could only either ignore it or trespass.
 ## Current state
 
 **Built and proven; nothing published.** Fifteen commands, 317 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 330, `Daoris.Devkit` 59, and the
-driver 356. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 348, `Daoris.Devkit` 59, and the
+driver 357. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -52,7 +52,7 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
 quest lock hardened into code, and the desktop's sync loop feeding up and mirroring down. **The family
-rehearsal gates all of it with no model, no account and no credential** (206/206) — it names its own
+rehearsal gates all of it with no model, no account and no credential** (212/212) — it names its own
 phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
 **The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
@@ -213,7 +213,7 @@ Run every command from the **workspace root**, not from a package directory.
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
   driver drive?" gate, since D47 the "does the remote cross?" gate, and since D48 the "does the
-  boundary hold?" gate. 206 checks over the example family, from both examples current and clean
+  boundary hold?" gate. 212 checks over the example family, from both examples current and clean
   through a quest's whole life, the workspace boundary refused naming both sides, two simulated
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to

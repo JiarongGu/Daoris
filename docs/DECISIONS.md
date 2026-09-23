@@ -2408,3 +2408,19 @@ Five choices, each with its reason:
 
 `{parent}` in a step's words becomes the parent's id at the moment of publishing, and a chain carries
 at most five steps after its first quest.
+
+**Amended 2026-09-23, building INT4a: the ask is a record, and its floor is the declarations.**
+INT4 split in three, because its row named three landings: **INT4a** is the ask and the no-model
+tier, **INT4b** the intake session, and **INT4c** the desktop door. The floor comes first
+(`model-decoupling`: ship what works with no provider, and let the model raise the ceiling). What
+INT4a settled:
+- **An ask's quests are asked BY the ask.** Their sender is `ask #<id>`, which cannot collide with a
+  repository name and leads a reader back to the person's words. The exchange places the quest in
+  the ask's own circle (`QuestAsk.Workspace`), because an ask has no registry row to say it.
+- **The declarations tier proposes and never publishes.** Word overlap cannot tell a sentence that
+  owns a problem from one that mentions it, and a quest published on a guess lands in a repository
+  that did not ask for it. The proposal names its evidence, the matched words, and a word a
+  repository declares it *owns* counts double.
+- **A named receiver the exchange refuses keeps the ask.** The sentence is still what the person
+  meant, so the refusal arrives with the declarations' proposal as somewhere to go.
+- **Asks are local mode only**, like a quest file's bytes: the intake is this machine's.

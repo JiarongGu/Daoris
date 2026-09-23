@@ -369,6 +369,17 @@ The first version: doctrine that installs, is checked, and flows back.
   every step must be addressable, and every step must live in the same home. The composer offers
   a next step; the drawer shows what is coming and what a quest follows; `quest_publish` takes the
   list; and a driven session is told both what its quest follows and what closing it will publish.
+- **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
+  [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
+  and files, who asked, and what became of it, naming the tier that answered on every record. With
+  no intake harness, the **declarations tier** ranks the workspace's repositories by the words their
+  summary, `owns` and `accepts` share with the sentence, proposes with that evidence, and publishes
+  nothing. `--to` publishes at once, asked by `ask #<id>` in the ask's circle, carrying its links
+  and files. A refused `--to` keeps the ask with its proposal. `ask --publish <id> --to <repo>` and
+  `ask --close <id> --reason "…"` finish it. The same words in the same circle are the same ask.
+- **Two conversations in one repository no longer break the driver.** A conversation in a checkout
+  beside another in its own tree (D51) made every tick fail on a duplicate key, starting nothing
+  until one ended.
 - **Scrollbars follow the theme.** A scrollbar is painted by the browser, and with no
   `color-scheme` it stayed light down a dark drawer. The page now declares both schemes, and the
   bar wears the line token.

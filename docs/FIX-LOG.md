@@ -5,6 +5,53 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## INT5 landed with the desktop's palette test red (2026-09-23)
+
+**Symptom.** Running the modules suite for INT4a failed
+`ChromePaletteTests.EveryCopiedTokenMatchesTheStylesheet` in both themes. The previous commit
+(`daf2a03`, INT5) had claimed *modules 96* in its message.
+
+**Root cause.** Two things. First, the look at the composer in INT5 found a light scrollbar in dark,
+and the fix added a new `:root` block to `tokens.css`, **ahead** of the light one. The shell's native
+chrome copies the tokens, and its test reads the first `:root` as light and the second as dark, so
+a third block ahead of both shifted everything. Second, and the real cause: that edit came **after**
+INT5's modules run. The vitest suite and the deployment rehearsal were re-run, and the one suite
+that reads `tokens.css` from C# was not. The commit message reported a count from a run that
+predated its last change.
+
+**Fix.** The two properties live inside the existing light `:root`. A comment at the top of the file
+names the one-light-one-dark rule and the test that reads it.
+
+**Verify.** Modules 96 again; vitest 534. The rule the second cause breaks is older than this entry:
+a gate count in a commit message is for the tree as committed, so every suite a late edit can reach
+is re-run after that edit.
+
+**Commit.** pending
+
+## Two sessions in one repository broke every driver tick (2026-09-23)
+
+**Symptom.** Found by reading, not by a person: mapping the conversation plumbing for the intake
+turned up `Planner.cs` building `snapshot.Active.ToDictionary(s => s.Repository, …)`. A test with
+two active sessions in one repository threw `ArgumentException: An item with the same key has
+already been added. Key: Game`. A person holding a conversation in a checkout while a second runs in
+a tree of its own would see the driver fail on every tick, and start nothing, for as long as both
+were open.
+
+**Root cause.** A regression by composition. The planner's dictionary (`a9c9e9a`, DRV2) was written
+when the ledger allowed one active session per repository, so the key was unique by construction.
+SURF2 (`8d695bb`, D51) moved the lock onto the **tree**, and two active sessions in one repository
+became legal, but nothing revisited the planner's assumption. The family rehearsal creates exactly
+that state (section 14, through the ledger) and never ticks the driver while it stands, so no gate
+reached it.
+
+**Fix.** `Planner.Plan` groups the active sessions by repository before keying them. Either blocks the
+repository, and the first is the one the reason names.
+
+**Verify.** `PlannerTests`, *two active sessions in one repository block it rather than break the
+tick*: failed with the exception above before the fix, passes after. Driver 357.
+
+**Commit.** pending
+
 ## "Send it back as a quest" opened no composer (2026-09-23)
 
 **Symptom.** Found by a test, then seen on the window. The first unit test to hand `QuestsView` an

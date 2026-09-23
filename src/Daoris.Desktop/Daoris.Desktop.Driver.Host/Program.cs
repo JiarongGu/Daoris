@@ -24,6 +24,12 @@ using Daoris.Driver;
 //                 session, end of input ends it. One session per working tree (D51) — and --own-tree
 //                 opens the conversation in a worktree of its own, beside your work in the checkout.
 //
+//   ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… "…"
+//                 ask at a WORKSPACE (D65 §1a): the service answers with the tier that answered —
+//                 by declarations only (proposes, publishes nothing), or the receiver --to names.
+//   ask --publish <id> --to <repo> · ask --close <id> --reason "…"
+//                 turn an ask into a quest, or close it with the reason.
+//
 //   trees [list | remove <path> [--force]]
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced.
@@ -43,6 +49,12 @@ if (OperatingSystem.IsWindows())
 if (args is ["chat", .. var chatArgs])
 {
     return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
+}
+
+// An ask from a terminal (D65 §1a, D50): the page's composer at workspace scope is the other door.
+if (args is ["ask", .. var askArgs])
+{
+    return await Daoris.Driver.Host.AskConsole.RunAsync(askArgs);
 }
 
 // The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —

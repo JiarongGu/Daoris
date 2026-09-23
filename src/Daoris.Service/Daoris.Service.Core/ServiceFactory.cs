@@ -54,6 +54,9 @@ public sealed record ComposedService(
     /// </summary>
     public QuestFiles? Files { get; init; }
 
+    /// <summary>Asks made at a workspace, and the judgement over them (D65 §1a).</summary>
+    public AskDesk Asks { get; init; } = null!;
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -148,6 +151,7 @@ public static class ServiceFactory
         var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var asks = await AskStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
 
         // The registry is the authority now (D48 §3): the list is what has been registered, not what a
         // folder happens to hold. Loaded before the first read so a restart is invisible to a client.
@@ -204,14 +208,17 @@ public static class ServiceFactory
             }
         }
 
+        var exchange = new QuestExchange(service, quests, remoteQuests, files);
         return new ComposedService(
-            service, quests, new QuestExchange(service, quests, remoteQuests, files),
+            service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
             // repository it runs in, and therefore which circle its record belongs to (D49 §3).
             sessions, new SessionLedger(quests, sessions, service), keys, service.SemanticEnabled)
         {
             Store = store,
             Files = files,
+            // An ask's quests go through the same exchange every other door uses (D65 §1a).
+            Asks = new AskDesk(service, asks, exchange, files),
         };
     }
 
