@@ -208,10 +208,10 @@ can break the tool that reads it:
 | **Doctrine** for a stack | a pack — `canon/packs/<name>/pack.json` + its tiers |
 | **A gate** | a row in `daoris.gates.json` |
 | **A harness** to drive sessions on | nothing — speak the **Agent Client Protocol** |
-| **A plugin** on one machine | a folder under the home's `plugins/` with a `plugin.json` (D64): it *declares* ACP-door configurations and may *speak* from a process of its own |
+| **A plugin** on one machine | a folder under the home's `plugins/` with a `plugin.json` (D64): it *declares* ACP-door configurations and the servers sessions are handed, and may *speak* from its own process |
 
 A pack and a plugin each declare the API they need (`"apiVersion"`), read first. The harness seam is
-a protocol, not a registry; a plugin is a folder, not a catalogue. `docs/2026-09-23-plugin-design.md`
+a protocol, not a registry; a plugin a folder, not a catalogue. `docs/2026-09-23-plugin-design.md`
 is the contract.
 
 ## Beyond the CLI: the service, the platform, the driver

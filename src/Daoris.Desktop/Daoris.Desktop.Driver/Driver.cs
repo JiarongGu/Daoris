@@ -87,6 +87,10 @@ public sealed class Driver(
     // declare (D64 §3). Set once per tick, before any start is run.
     private AdapterSet _adapters = adapters;
 
+    // The servers this tick hands every session (D65 §1f): what the contributing plugins declare,
+    // beside the knowledge host. Read with the catalogue, once per tick.
+    private IReadOnlyList<AcpMcpServer> _servers = [];
+
     // The worktree half of D51, beside the transcripts under the same home.
     private readonly SessionTrees _trees = new(home);
 
@@ -113,13 +117,15 @@ public sealed class Driver(
         }
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
-        // last look is spawnable now, a hook process disabled since is stopped now. The catalogue
-        // refuses a name this build carries before anything of that plugin is taken.
+        // last look is spawnable now, a server declared since is handed now, a hook process
+        // disabled since is stopped now. The catalogue refuses a name this build carries before
+        // anything of that plugin is taken.
+        var catalog = PluginCatalog.Load(home, adapters.Names);
+        _adapters = adapters.WithPlugins(catalog);
+        _servers = catalog.Servers;
+        _harnesses.Use(_adapters);
         if (hooks is not null)
         {
-            var catalog = PluginCatalog.Load(home, adapters.Names);
-            _adapters = adapters.WithPlugins(catalog);
-            _harnesses.Use(_adapters);
             events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
         }
 
@@ -357,9 +363,20 @@ public sealed class Driver(
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
+            // The servers the plugins hand this session (D65 §1f). The protocol door carries them on
+            // the wire below; a pipe-door harness that takes a file at spawn is handed one under
+            // Daoris's home, and the file goes when the session does.
+            string? handed = null;
+            if (adapter.Wire == SessionWire.Pipe && _servers.Count > 0)
+            {
+                handed = SpawnServers.Write(home, sessionId, _servers);
+                if (handed is not null) adapter.HandServers(info, handed);
+            }
+
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             using var tracked = _processes.Track(sessionId, process);
+            using var _ = new Disposer(() => SpawnServers.Remove(handed));
 
             // Which door this harness is held over (D53). The protocol door drives an ACP session on
             // the same process; the pipe door reads its text. Both end the same way — the record is
@@ -560,9 +577,16 @@ public sealed class Driver(
                      + "`npm run publish:service -- --install` lands one.");
             }
 
+            // The knowledge host first, then whatever the plugins hand every session (D65 §1f): a
+            // browser, a ticket system — tools the session can reach, under the repository's own
+            // posture like every other tool it has.
+            var offered = new List<AcpMcpServer>();
+            if (connector is not null) offered.Add(connector);
+            offered.AddRange(_servers);
+
             var outcome = await new AcpSession(
                     process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture)
-                .RunAsync(cwd, prompt, ct, connector is null ? [] : [connector]).ConfigureAwait(false);
+                .RunAsync(cwd, prompt, ct, offered).ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "

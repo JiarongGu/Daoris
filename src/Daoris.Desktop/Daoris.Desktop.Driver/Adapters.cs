@@ -137,6 +137,19 @@ public interface ISessionAdapter
     /// </remarks>
     bool Interactive => false;
 
+    /// <summary>
+    /// Hand a pipe-door session the MCP servers Daoris offers it (D65 §1f), written to a file under
+    /// Daoris's home — the harness's own way of taking servers at spawn, where it has one. The
+    /// protocol door carries them on the wire instead (ACP4) and never comes here.
+    /// </summary>
+    /// <remarks>
+    /// Default: nothing — a harness with no such flag is handed nothing, and says nothing, which
+    /// is the silence-preserves rule every adapter default follows. An adapter opts in when the
+    /// flag is real and verified against the binary, like every other claim about somebody else's
+    /// tool.
+    /// </remarks>
+    void HandServers(ProcessStartInfo info, string configFile) { }
+
     /// <summary>The process that would be a CHAT: the same spawn, with stdin open.</summary>
     ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
         throw new DriverException(
@@ -612,6 +625,19 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         var resolved = Resolve(command);
         return Spawning.ChatInRoot(
             target, resolved[0], resolved.Skip(1).Concat(["--permission-mode", "acceptEdits"]));
+    }
+
+    /// <summary>
+    /// `--mcp-config &lt;file&gt;` — verified on the binary (`claude --help`, 2026-09-23: *"Load MCP
+    /// servers from JSON files"*). The file is Daoris's, under its home; the repository's own
+    /// `.mcp.json` is untouched and still governs its own servers. What the session may CALL stays
+    /// the repository's allow-list (D37, D46 §5) — a server offered is a tool available, not a tool
+    /// approved.
+    /// </summary>
+    public void HandServers(ProcessStartInfo info, string configFile)
+    {
+        info.ArgumentList.Add("--mcp-config");
+        info.ArgumentList.Add(configFile);
     }
 
     /// <summary>

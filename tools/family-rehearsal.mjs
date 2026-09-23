@@ -2253,15 +2253,17 @@ check(
 
 // -------------------------------------------------- 18. a plugin that declares, and speaks
 
-section('18. Two plugins: one declares a harness, one holds a quest with a sentence (D64)');
+section('18. Three plugins: one declares a harness, one hands a server, one holds a quest with a sentence (D64, D65)');
 
-// A plugin is a folder under the home (D63) with a manifest. Two here, one for each thing a plugin
+// A plugin is a folder under the home (D63) with a manifest. Three here, one for each thing a plugin
 // can do. `rehearsal.agent` DECLARES a harness — the ACP stub agent above, as a configuration of the
 // door, so a session runs on a harness this build never named; it is written here because it has to
-// name that agent's scratch path. `hold-by-title` SPEAKS — a process the driver starts, asks and
-// stops — and it is the TRACKED example under `examples/plugins/`, installed with the real
-// `daoris plugin add`, so the example somebody copies is the one this gate drives. No code of either
-// loads anywhere.
+// name that agent's scratch path. `browser` HANDS every session a server (D65 §1f) — the tracked
+// example declaring the Playwright MCP, which nothing here runs: what the gate proves is that a
+// declared server reaches the session over the door, in the agent's own account of what it was
+// offered. `hold-by-title` SPEAKS — a process the driver starts, asks and stops. The last two are the
+// TRACKED examples under `examples/plugins/`, installed with the real `daoris plugin add`, so the
+// example somebody copies is the one this gate drives. No code of any of them loads anywhere.
 //
 // The driver's home is the directory its config sits in (the per-file override wins, D63), which in
 // this rehearsal is `scratch` — so the plugins live there, and the CLI's two doors onto the same
@@ -2287,12 +2289,20 @@ check(
 );
 const pluginFolder = join(scratch, 'plugins', 'hold-by-title');
 
+const browserAdded = run(`node "${cliBin}" plugin add "${join(examplesRoot, 'plugins', 'browser')}"`, scratch, PLUGIN_HOME);
+check(
+  '`daoris plugin add` takes the tracked browser example, which declares a server and nothing else',
+  browserAdded.code === 0 && /added plugin `browser`/.test(browserAdded.out),
+  browserAdded.out,
+);
+
 // The CLI twin reads the same folder by the same rules.
 const pluginList = run(`node "${cliBin}" plugin list`, scratch, PLUGIN_HOME);
 check(
-  '`daoris plugin list` names both, what each declares and what each speaks on',
+  '`daoris plugin list` names all three — what each declares, hands and speaks on',
   pluginList.code === 0
     && /rehearsal\.agent[\s\S]*declares gate-agent/.test(pluginList.out)
+    && /browser[\s\S]*hands sessions browser/.test(pluginList.out)
     && /hold-by-title[\s\S]*speaks on quest\/consider, session\/ended/.test(pluginList.out),
   pluginList.out,
 );
@@ -2343,10 +2353,20 @@ check(
 const gateRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
   .find((s) => s.quest === gatePassId);
 check(
-  'the record names the declared harness, and neither plugin anywhere',
+  'the record names the declared harness, and no plugin anywhere',
   gateRecord?.state === 'completed' && gateRecord?.adapter === 'gate-agent'
-    && !/rehearsal\.agent|hold-by-title/.test(JSON.stringify(gateRecord)),
+    && !/rehearsal\.agent|hold-by-title|"browser"/.test(JSON.stringify(gateRecord)),
   JSON.stringify(gateRecord),
+);
+
+// 🔴 INT1, read back from what the AGENT said it received: the plugin's server rides `session/new`
+// BESIDE the knowledge host, never in its place — and the browser example is proven to reach a
+// session without anything running the browser.
+const gateTranscript = existsSync(gateRecord?.transcript ?? '') ? readFileSync(gateRecord.transcript, 'utf8') : '';
+check(
+  'the session is handed the plugin\'s server beside the knowledge host, over the protocol',
+  /mcp servers offered: daoris-knowledge, browser/.test(gateTranscript),
+  gateTranscript.slice(0, 600),
 );
 
 const endedLog = join(scratch, 'plugins', '.data', 'hold-by-title', 'ended.log');

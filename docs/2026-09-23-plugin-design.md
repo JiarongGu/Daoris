@@ -67,7 +67,10 @@ repository names one, and a scratch run redirects it with everything else.
       "profileVariable": "ACME_HOME", "package": "@acme/agent",
       "install": ["npm", "install", "-g", "@acme/agent"], "versionArguments": ["--version"] }
   ],
-  "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider", "session/ended"] }
+  "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider", "session/ended"] },
+  "servers": [
+    { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest"], "env": {} }
+  ]
 }
 ```
 
@@ -85,6 +88,13 @@ repository names one, and a scratch run redirects it with everything else.
   work that out for itself (Yaorin's lesson, verbatim in its own SDK).
 - **`hooks`** names a process and the **points** it listens on. Nothing else about the process is
   declared: what it does is spoken.
+- **`servers`** declares MCP servers **every session is handed**, beside Daoris's own knowledge host
+  (D65 §1f): `name` is what the agent calls it, `command` runs it, `env` rides with it, and
+  `${plugin}` is expanded in both. Over the protocol door they ride `session/new`; over the pipe door
+  a harness that takes a file at spawn is handed one written under the home for that session — never
+  the repository's own `.mcp.json`. The knowledge host's name is refused, and a name two plugins
+  claim keeps the first by id. A server handed is a tool *available*, not a tool *approved*: what a
+  session may call stays the repository's allow-list (D37).
 
 A plugin with only `harnesses` never runs anything — it is Yaorin's `definitions: true`, and most
 plugins will be that.

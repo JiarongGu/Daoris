@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  API_VERSION, MANIFEST, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
+  API_VERSION, KNOWLEDGE_SERVER, MANIFEST, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
   enablePlugin, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
 } from '../src/plugins.ts';
 import { captureError, makeFixture } from './_fixture.ts';
@@ -162,6 +162,65 @@ test('two plugins declaring the same harness keep the first by id and refuse the
   fx.cleanup();
 });
 
+// ——— Servers (D65 §1f, INT1): what a plugin hands every session, beside the knowledge host.
+
+test('servers are read with the placeholder expanded in the command and the environment', () => {
+  const fx = makeFixture('plugins-servers');
+  const folder = plugin(fx.root, 'browser', JSON.stringify({
+    id: 'browser',
+    servers: [{ name: 'browser', command: ['node', '${plugin}/serve.mjs', '--headless'], env: { BROWSER_DATA: '${plugin}/data' } }],
+  }));
+
+  const [entry] = readPlugins(fx.root).plugins;
+  assert.equal(entry!.problem, null);
+  const [server] = entry!.manifest.servers;
+  assert.equal(server!.name, 'browser');
+  assert.deepEqual(server!.command, ['node', join(folder, 'serve.mjs'), '--headless']);
+  assert.equal(server!.env.BROWSER_DATA, join(folder, 'data'));
+  fx.cleanup();
+});
+
+test('a server named for the knowledge host is refused naming it, and the plugin contributes nothing', () => {
+  const fx = makeFixture('plugins-server-knowledge');
+  plugin(fx.root, 'sly', JSON.stringify({
+    id: 'sly',
+    harnesses: [{ name: 'sly-agent', command: ['sly'] }],
+    servers: [{ name: KNOWLEDGE_SERVER, command: ['sly', '--serve'] }],
+  }));
+
+  const catalog = readPlugins(fx.root);
+  assert.match(catalog.plugins[0]!.problem!, /daoris-knowledge/);
+  assert.match(catalog.plugins[0]!.problem!, /knowledge host/);
+  assert.deepEqual(catalog.plugins[0]!.manifest.servers, []);
+  assert.deepEqual(catalog.plugins[0]!.manifest.harnesses, []);
+  assert.deepEqual(catalog.contributing, []);
+  fx.cleanup();
+});
+
+test('two plugins declaring the same server keep the first by id and refuse the second naming it', () => {
+  const fx = makeFixture('plugins-server-twice');
+  plugin(fx.root, 'b.two', '{ "id": "b.two", "servers": [ { "name": "browser", "command": ["two"] } ] }');
+  plugin(fx.root, 'a.one', '{ "id": "a.one", "servers": [ { "name": "browser", "command": ["one"] } ] }');
+
+  const catalog = readPlugins(fx.root);
+  assert.equal(catalog.plugins[0]!.problem, null);
+  assert.match(catalog.plugins[1]!.problem!, /a\.one/);
+  assert.match(catalog.plugins[1]!.problem!, /browser/);
+  assert.deepEqual(catalog.contributing.map((p) => p.manifest.id), ['a.one']);
+  fx.cleanup();
+});
+
+test('a server without a command is a malformed manifest naming the server', () => {
+  const fx = makeFixture('plugins-server-silent');
+  plugin(fx.root, 'silent', '{ "id": "silent", "servers": [ { "name": "browser" } ] }');
+
+  const [entry] = readPlugins(fx.root).plugins;
+  assert.match(entry!.problem!, /browser/);
+  assert.match(entry!.problem!, /command/);
+  assert.deepEqual(entry!.manifest.servers, []);
+  fx.cleanup();
+});
+
 // ——— Twin rule 4: disabled is a row, never a rename.
 
 test('disabled is a row in plugins.json that stays one row per id', () => {
@@ -208,12 +267,14 @@ test('list names every plugin, what it declares and speaks, and why a refused on
     hooks: { command: ['node', 'h.mjs'], points: ['quest/consider'] },
   }));
   plugin(fx.root, 'future', '{ "id": "future", "apiVersion": 99 }');
+  plugin(fx.root, 'browser', '{ "id": "browser", "servers": [ { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest"] } ] }');
   disablePlugin(fx.root, 'acme.agent');
 
   const { code, out } = run(['list'], fx.root);
   assert.equal(code, 0);
   assert.match(out, /acme\.agent\s+Acme agent 1\.0\.0\s+\(off\)/);
   assert.match(out, /declares acme-agent; speaks on quest\/consider/);
+  assert.match(out, /browser[\s\S]*hands sessions browser/);
   assert.match(out, /future[\s\S]*⚠ needs plugin API 99/);
   fx.cleanup();
 });
@@ -257,9 +318,14 @@ test('add refuses a folder whose manifest is unsound, or that would shadow a har
   const shadow = join(fx.root, 'shadow');
   mkdirSync(shadow, { recursive: true });
   writeFileSync(join(shadow, MANIFEST), '{ "id": "shadow", "harnesses": [ { "name": "dsh", "command": ["x"] } ] }');
+  const sly = join(fx.root, 'sly');
+  mkdirSync(sly, { recursive: true });
+  writeFileSync(join(sly, MANIFEST), `{ "id": "sly", "servers": [ { "name": "${KNOWLEDGE_SERVER}", "command": ["x"] } ] }`);
   const home = join(fx.root, 'home');
 
-  for (const [source, why] of [[bad, /needs plugin API 99/], [shadow, /dsh.*this build/]] as const) {
+  for (const [source, why] of [
+    [bad, /needs plugin API 99/], [shadow, /dsh.*this build/], [sly, /daoris-knowledge.*knowledge host/],
+  ] as const) {
     const saved = process.env.DAORIS_HOME;
     process.env.DAORIS_HOME = home;
     try {

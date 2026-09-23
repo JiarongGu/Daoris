@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 313 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fifteen commands, 317 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 278, `Daoris.Devkit` 59, and the
-driver 340. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+driver 346. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -52,7 +52,7 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
 quest lock hardened into code, and the desktop's sync loop feeding up and mirroring down. **The family
-rehearsal gates all of it with no model, no account and no credential** (193/193) — it names its own
+rehearsal gates all of it with no model, no account and no credential** (195/195) — it names its own
 phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
 **The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
@@ -151,13 +151,13 @@ risk, **authorship** was.
   workspace provides. **It has a gate now** (DEPLOY2 → **D60**). 🔴 **Stop a running
   shell before building** — an orphaned host holds the build's own assemblies.
 - **A plugin is a folder that declares, and may speak** (**D64**, `docs/2026-09-23-plugin-design.md`):
-  a manifest under `plugins/`, a declared harness on the ACP door, behaviour spoken over a wire —
-  **never code loaded into a host**, no view, no registry.
+  a manifest under `plugins/`: harnesses on the ACP door, servers every session is handed,
+  behaviour spoken over a wire — **never code loaded into a host**, no registry.
 - 🔴 **The current direction is the regular task** (owner, 2026-09-23 → **D65**,
   `docs/2026-09-23-intake-design.md`): an ask with files and links enters at the workspace, an
-  **intake session** decides the owning repository from the declarations and publishes quests, a
-  plugin-declared **browser server** puts testing in the session's hands, and `then` chains quests.
-  **The driver's brain is a session, not a model** (D24 holds); INT3 waits on the owner's yes.
+  **intake session** decides the owning repository and publishes quests, a plugin-declared
+  **browser server** puts testing in the session's hands, and `then` chains quests. **The driver's
+  brain is a session, not a model** (D24); INT3 waits on the owner's yes.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -213,7 +213,7 @@ Run every command from the **workspace root**, not from a package directory.
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), since D46 the "does the
   driver drive?" gate, since D47 the "does the remote cross?" gate, and since D48 the "does the
-  boundary hold?" gate. 193 checks over the example family, from both examples current and clean
+  boundary hold?" gate. 195 checks over the example family, from both examples current and clean
   through a quest's whole life, the workspace boundary refused naming both sides, two simulated
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to

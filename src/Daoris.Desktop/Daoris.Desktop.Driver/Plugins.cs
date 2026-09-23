@@ -25,6 +25,16 @@ public sealed record PluginHarness(
 /// <summary>What a plugin speaks (D64 §4): the process, and the points it listens on.</summary>
 public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
 
+/// <summary>
+/// An MCP server a plugin hands to every session (D65 §1f) — a browser, a ticket system, whatever
+/// the session should be able to reach. Beside the knowledge host, never instead of it.
+/// </summary>
+/// <param name="Name">What the agent calls it — tools arrive as `mcp__&lt;name&gt;__&lt;tool&gt;`. The knowledge host's name is refused.</param>
+/// <param name="Command">The program and its arguments, `${plugin}` already expanded.</param>
+/// <param name="Environment">What the server is started with, as declared.</param>
+public sealed record PluginServer(
+    string Name, IReadOnlyList<string> Command, IReadOnlyDictionary<string, string> Environment);
+
 /// <summary>A plugin's manifest, as read — with everything a refused plugin would have contributed already removed.</summary>
 public sealed record PluginManifest(
     string Id,
@@ -33,10 +43,11 @@ public sealed record PluginManifest(
     string Version,
     string Description,
     IReadOnlyList<PluginHarness> Harnesses,
-    PluginHooks? Hooks)
+    PluginHooks? Hooks,
+    IReadOnlyList<PluginServer> Servers)
 {
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
-    public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null);
+    public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);
 }
 
 /// <summary>
@@ -112,8 +123,19 @@ public sealed class PluginCatalog
         Signature = string.Join("\n", Contributing.Select(p =>
             $"{p.Manifest.Id}\t{p.Manifest.Version}\t{p.Folder}\t"
             + string.Join(",", p.Manifest.Harnesses.Select(h => h.Name))
-            + "\t" + (p.Manifest.Hooks is { } hooks ? string.Join(" ", hooks.Command) + "|" + string.Join(",", hooks.Points) : "")));
+            + "\t" + (p.Manifest.Hooks is { } hooks ? string.Join(" ", hooks.Command) + "|" + string.Join(",", hooks.Points) : "")
+            + "\t" + string.Join(",", p.Manifest.Servers.Select(s => s.Name))));
     }
+
+    /// <summary>
+    /// Every server the contributing plugins hand to a session, in catalogue order, as the protocol
+    /// door carries one (ACP4). The knowledge host is not among them: it is Daoris's own, offered
+    /// first by the driver, and a plugin may not declare its name.
+    /// </summary>
+    public IReadOnlyList<AcpMcpServer> Servers => Contributing
+        .SelectMany(p => p.Manifest.Servers)
+        .Select(s => new AcpMcpServer(s.Name, s.Command[0], s.Command.Skip(1).ToList(), s.Environment))
+        .ToList();
 
     /// <summary>
     /// Read the home's plugins.
@@ -128,6 +150,7 @@ public sealed class PluginCatalog
         var disabled = new HashSet<string>(PluginState.Load(home).Disabled, StringComparer.OrdinalIgnoreCase);
         var reserved = new HashSet<string>(reservedHarnesses ?? [], StringComparer.OrdinalIgnoreCase);
         var declaredBy = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var servedBy = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var entries = new List<PluginEntry>();
 
         foreach (var folder in Directory.EnumerateDirectories(root).OrderBy(Path.GetFileName, StringComparer.Ordinal))
@@ -160,14 +183,35 @@ public sealed class PluginCatalog
                     }
                 }
 
+                // A server's name is what the agent calls it, and two plugins claiming one would
+                // give the session two tools under one name — the first by id keeps it. The
+                // knowledge host's name is Daoris's own and is refused outright.
+                foreach (var server in problem is null ? manifest.Servers : [])
+                {
+                    if (string.Equals(server.Name, KnowledgeConnector.ServerName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        problem = $"declares server `{server.Name}`, which is Daoris's own knowledge host — "
+                            + "a plugin hands a session servers beside it, never in its place.";
+                        break;
+                    }
+
+                    if (servedBy.TryGetValue(server.Name, out var other))
+                    {
+                        problem = $"declares server `{server.Name}`, which plugin `{other}` already declares — "
+                            + "the first by id keeps it, and this plugin contributes nothing.";
+                        break;
+                    }
+                }
+
                 if (problem is null)
                 {
                     foreach (var harness in manifest.Harnesses) declaredBy[harness.Name] = manifest.Id;
+                    foreach (var server in manifest.Servers) servedBy[server.Name] = manifest.Id;
                 }
             }
 
-            // Nothing of a refused plugin is taken — not a harness, not a hook.
-            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null };
+            // Nothing of a refused plugin is taken — not a harness, not a hook, not a server.
+            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [] };
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
         }
@@ -279,6 +323,52 @@ public sealed class PluginCatalog
                 hooks = new PluginHooks(command, points);
             }
 
+            var servers = new List<PluginServer>();
+            if (root.TryGetProperty("servers", out var handed))
+            {
+                if (handed.ValueKind != JsonValueKind.Array)
+                {
+                    return (PluginManifest.Empty(id), "`servers` must be an array.");
+                }
+
+                foreach (var row in handed.EnumerateArray())
+                {
+                    var name = Text(row, "name")?.Trim();
+                    if (string.IsNullOrWhiteSpace(name) || !IdShape.IsMatch(name))
+                    {
+                        return (PluginManifest.Empty(id),
+                            "a declared server needs a `name` — lowercase letters, digits, dots and dashes; it is what the agent calls it.");
+                    }
+
+                    var command = Strings(row, "command", folder);
+                    if (command is not { Count: > 0 })
+                    {
+                        return (PluginManifest.Empty(id), $"server `{name}` needs a `command` — what to run.");
+                    }
+
+                    var environment = new Dictionary<string, string>(StringComparer.Ordinal);
+                    if (row.TryGetProperty("env", out var env))
+                    {
+                        if (env.ValueKind != JsonValueKind.Object)
+                        {
+                            return (PluginManifest.Empty(id), $"server `{name}`'s `env` must be an object of strings.");
+                        }
+
+                        foreach (var pair in env.EnumerateObject())
+                        {
+                            if (pair.Value.ValueKind != JsonValueKind.String)
+                            {
+                                return (PluginManifest.Empty(id), $"server `{name}`'s `env` must be an object of strings.");
+                            }
+
+                            environment[pair.Name] = Expand(pair.Value.GetString()!, folder);
+                        }
+                    }
+
+                    servers.Add(new PluginServer(name, command, environment));
+                }
+            }
+
             return (new PluginManifest(
                 id,
                 apiVersion,
@@ -286,7 +376,8 @@ public sealed class PluginCatalog
                 Text(root, "version") ?? "",
                 Text(root, "description") ?? "",
                 harnesses,
-                hooks), null);
+                hooks,
+                servers), null);
         }
     }
 

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -316,5 +318,115 @@ public sealed class PluginCatalogTests : IDisposable
 
         Plugin("b.other", """{ "id": "b.other", "hooks": { "command": ["node", "h.mjs"], "points": ["session/ended"] } }""");
         Assert.NotEqual(off, PluginCatalog.Load(_home).Signature);
+    }
+
+    // ——— Servers (D65 §1f, INT1): what a plugin hands every session, beside the knowledge host.
+
+    [Fact]
+    public void Servers_are_read_with_the_placeholder_expanded_and_offered_as_the_wire_names_them()
+    {
+        var folder = Plugin("browser", """
+            { "id": "browser",
+              "servers": [ { "name": "browser", "command": ["node", "${plugin}/serve.mjs", "--headless"],
+                             "env": { "BROWSER_DATA": "${plugin}/data" } } ] }
+            """);
+
+        var catalog = PluginCatalog.Load(_home);
+        var entry = Assert.Single(catalog.Plugins);
+        Assert.Null(entry.Problem);
+
+        var server = Assert.Single(catalog.Servers);
+        Assert.Equal("browser", server.Name);
+        Assert.Equal("node", server.Command);
+        Assert.Equal([Path.Combine(folder, "serve.mjs"), "--headless"], server.Arguments);
+        Assert.Equal(Path.Combine(folder, "data"), server.Environment["BROWSER_DATA"]);
+
+        // The loop watches the signature: a plugin that hands a new server is a change worth a reconcile.
+        Plugin("second", """{ "id": "second", "servers": [ { "name": "other", "command": ["other"] } ] }""");
+        Assert.NotEqual(catalog.Signature, PluginCatalog.Load(_home).Signature);
+        Assert.Equal(2, PluginCatalog.Load(_home).Servers.Count);
+    }
+
+    [Fact]
+    public void A_server_named_for_the_knowledge_host_is_refused_naming_it_and_the_plugin_contributes_nothing()
+    {
+        Plugin("sly", $$"""
+            { "id": "sly", "harnesses": [ { "name": "sly-agent", "command": ["sly"] } ],
+              "servers": [ { "name": "{{KnowledgeConnector.ServerName}}", "command": ["sly", "--serve"] } ] }
+            """);
+
+        var catalog = PluginCatalog.Load(_home);
+        var entry = Assert.Single(catalog.Plugins);
+
+        Assert.Contains(KnowledgeConnector.ServerName, entry.Problem);
+        Assert.Contains("knowledge host", entry.Problem);
+        Assert.Empty(catalog.Servers);
+        Assert.Empty(entry.Manifest.Harnesses);
+        Assert.Empty(catalog.Contributing);
+    }
+
+    [Fact]
+    public void Two_plugins_declaring_the_same_server_keep_the_first_by_id_and_refuse_the_second_naming_it()
+    {
+        Plugin("b.two", """{ "id": "b.two", "servers": [ { "name": "browser", "command": ["two"] } ] }""");
+        Plugin("a.one", """{ "id": "a.one", "servers": [ { "name": "browser", "command": ["one"] } ] }""");
+
+        var catalog = PluginCatalog.Load(_home);
+
+        Assert.Null(catalog.Plugins[0].Problem);
+        Assert.Contains("a.one", catalog.Plugins[1].Problem);
+        Assert.Contains("browser", catalog.Plugins[1].Problem);
+        Assert.Equal("one", Assert.Single(catalog.Servers).Command);
+    }
+
+    [Fact]
+    public void A_server_without_a_command_is_a_malformed_manifest_naming_the_server()
+    {
+        Plugin("silent", """{ "id": "silent", "servers": [ { "name": "browser" } ] }""");
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Contains("browser", entry.Problem);
+        Assert.Contains("command", entry.Problem);
+        Assert.Empty(entry.Manifest.Servers);
+    }
+
+    /// <summary>
+    /// The pipe door's half: a harness that takes a file at spawn is handed one written under the
+    /// home, in that harness's own shape — never in the repository, which is the whole reason it is
+    /// handed at spawn rather than written to a `.mcp.json` the driver does not own (D32).
+    /// </summary>
+    [Fact]
+    public void The_pipe_door_is_handed_a_file_under_the_home_in_the_harness_own_shape_and_the_file_goes_with_the_session()
+    {
+        var server = new AcpMcpServer(
+            "browser", "npx", ["-y", "@playwright/mcp@latest"],
+            new Dictionary<string, string> { ["HEADLESS"] = "1" });
+
+        Assert.Null(SpawnServers.Write(_home, "s1", []));
+
+        var path = SpawnServers.Write(_home, "s1", [server]);
+        Assert.NotNull(path);
+        Assert.StartsWith(Path.Combine(_home, SpawnServers.Folder), path);
+
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var written = document.RootElement.GetProperty("mcpServers").GetProperty("browser");
+        Assert.Equal("npx", written.GetProperty("command").GetString());
+        Assert.Equal(["-y", "@playwright/mcp@latest"], written.GetProperty("args").EnumerateArray().Select(a => a.GetString()!));
+        Assert.Equal("1", written.GetProperty("env").GetProperty("HEADLESS").GetString());
+
+        // Claude Code takes it as `--mcp-config <file>` — verified against `claude --help`, like every
+        // other claim about somebody else's tool. The default adapter takes nothing and says nothing.
+        var info = new ProcessStartInfo();
+        AdapterSet.Built().Resolve("claude-code").HandServers(info, path);
+        Assert.Equal(["--mcp-config", path], info.ArgumentList);
+
+        var stub = new ProcessStartInfo();
+        AdapterSet.Built().Resolve("stub").HandServers(stub, path);
+        Assert.Empty(stub.ArgumentList);
+
+        SpawnServers.Remove(path);
+        Assert.False(File.Exists(path));
+        SpawnServers.Remove(path); // gone is fine; gone twice is fine
     }
 }

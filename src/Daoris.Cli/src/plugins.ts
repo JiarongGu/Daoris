@@ -82,6 +82,9 @@ export interface PluginHarness {
 
 export interface PluginHooks { command: string[]; points: string[] }
 
+/** An MCP server a plugin hands to every session (D65 §1f) — beside the knowledge host, never in its place. */
+export interface PluginServer { name: string; command: string[]; env: Record<string, string> }
+
 export interface PluginManifest {
   id: string;
   apiVersion: number;
@@ -90,7 +93,11 @@ export interface PluginManifest {
   description: string;
   harnesses: PluginHarness[];
   hooks: PluginHooks | null;
+  servers: PluginServer[];
 }
+
+/** The knowledge host's server name — Daoris's own, which a plugin may not claim. */
+export const KNOWLEDGE_SERVER = 'daoris-knowledge';
 
 export interface PluginEntry {
   manifest: PluginManifest;
@@ -117,7 +124,7 @@ export function dataFolder(home: string, id: string): string {
 }
 
 const empty = (id: string): PluginManifest =>
-  ({ id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null });
+  ({ id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [] });
 
 /** `plugins.json`: which plugins are disabled. An unreadable file disables nothing — the safe direction. */
 export function readPluginState(home: string): { disabled: string[] } {
@@ -246,6 +253,32 @@ export function readManifest(folderName: string, folder: string): { manifest: Pl
     hooks = { command, points };
   }
 
+  const servers: PluginServer[] = [];
+  const handed = (root as Record<string, unknown>).servers;
+  if (handed !== undefined) {
+    if (!Array.isArray(handed)) return { manifest: empty(id), problem: '`servers` must be an array.' };
+    for (const row of handed) {
+      const name = text(row, 'name')?.trim();
+      if (!name || !ID_SHAPE.test(name)) {
+        return { manifest: empty(id), problem: 'a declared server needs a `name` — lowercase letters, digits, dots and dashes; it is what the agent calls it.' };
+      }
+      const command = strings(row, 'command', folder);
+      if (!command || command.length === 0) {
+        return { manifest: empty(id), problem: `server \`${name}\` needs a \`command\` — what to run.` };
+      }
+      const env: Record<string, string> = {};
+      const declared = typeof row === 'object' && row !== null ? (row as Record<string, unknown>).env : undefined;
+      if (declared !== undefined) {
+        if (typeof declared !== 'object' || declared === null || Array.isArray(declared)
+          || !Object.values(declared).every((value) => typeof value === 'string')) {
+          return { manifest: empty(id), problem: `server \`${name}\`'s \`env\` must be an object of strings.` };
+        }
+        for (const [key, value] of Object.entries(declared as Record<string, string>)) env[key] = expand(value, folder);
+      }
+      servers.push({ name, command, env });
+    }
+  }
+
   return {
     manifest: {
       id,
@@ -255,6 +288,7 @@ export function readManifest(folderName: string, folder: string): { manifest: Pl
       description: text(root, 'description') ?? '',
       harnesses,
       hooks,
+      servers,
     },
     problem: null,
   };
@@ -273,6 +307,7 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
   const disabled = new Set(readPluginState(home).disabled.map((d) => d.toLowerCase()));
   const taken = new Set([...reserved].map((name) => name.toLowerCase()));
   const declaredBy = new Map<string, string>();
+  const servedBy = new Map<string, string>();
 
   for (const folderName of readdirSync(root).sort()) {
     // `.data/` and any other dot-folder is the catalogue's own, never a plugin.
@@ -298,13 +333,30 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
           break;
         }
       }
+      // A server's name is what the agent calls it; two plugins claiming one would give a session
+      // two tools under one name. The knowledge host's name is Daoris's own.
+      for (const server of problem === null ? manifest.servers : []) {
+        const key = server.name.toLowerCase();
+        if (key === KNOWLEDGE_SERVER) {
+          problem = `declares server \`${server.name}\`, which is Daoris's own knowledge host — `
+            + 'a plugin hands a session servers beside it, never in its place.';
+          break;
+        }
+        const other = servedBy.get(key);
+        if (other) {
+          problem = `declares server \`${server.name}\`, which plugin \`${other}\` already declares — `
+            + 'the first by id keeps it, and this plugin contributes nothing.';
+          break;
+        }
+      }
       if (problem === null) {
         for (const harness of manifest.harnesses) declaredBy.set(harness.name.toLowerCase(), manifest.id);
+        for (const server of manifest.servers) servedBy.set(server.name.toLowerCase(), manifest.id);
       }
     }
 
-    // Nothing of a refused plugin is taken — not a harness, not a hook.
-    if (problem !== null) manifest = { ...manifest, harnesses: [], hooks: null };
+    // Nothing of a refused plugin is taken — not a harness, not a hook, not a server.
+    if (problem !== null) manifest = { ...manifest, harnesses: [], hooks: null, servers: [] };
 
     plugins.push({ manifest, folder, data: dataFolder(home, manifest.id), enabled, problem });
   }
@@ -333,6 +385,9 @@ function describe(entry: PluginEntry): string {
     parts.push(`declares ${entry.manifest.harnesses.map((h) => h.name).join(', ')}`);
   }
   if (entry.manifest.hooks) parts.push(`speaks on ${entry.manifest.hooks.points.join(', ')}`);
+  if (entry.manifest.servers.length > 0) {
+    parts.push(`hands sessions ${entry.manifest.servers.map((s) => s.name).join(', ')}`);
+  }
   return parts.length > 0 ? parts.join('; ') : 'declares nothing and speaks nothing';
 }
 
@@ -392,6 +447,10 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
           throw new DaorisError(`plugin \`${manifest.id}\` declares harness \`${harness.name}\`, which this build already `
             + 'carries — a plugin adds a harness and never replaces one. Nothing was copied.');
         }
+      }
+      if (manifest.servers.some((server) => server.name.toLowerCase() === KNOWLEDGE_SERVER)) {
+        throw new DaorisError(`plugin \`${manifest.id}\` declares server \`${KNOWLEDGE_SERVER}\`, which is Daoris's own `
+          + 'knowledge host — a plugin hands a session servers beside it, never in its place. Nothing was copied.');
       }
 
       const target = join(pluginsRoot(home), manifest.id);

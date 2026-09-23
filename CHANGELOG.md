@@ -303,6 +303,14 @@ The first version: doctrine that installs, is checked, and flows back.
   the plugin kept; a declared harness on the roster wears the plugin it came from.
   `examples/plugins/hold-by-title` is the tracked example of a plugin that speaks — the one the
   family rehearsal installs with the real `daoris plugin add` and drives.
+- **A plugin hands every session its servers** (D65 §1f). A manifest's `servers` row declares MCP
+  servers by name, command and environment, `${plugin}` expanded; the driver offers them beside the
+  knowledge host over the protocol door, and over the pipe door hands a harness that takes a file at
+  spawn one written under the home for that session — never the repository's own. The knowledge
+  host's name is refused, and a name two plugins claim keeps the first by id; `plugin list` says what
+  each hands. `examples/plugins/browser` declares the Playwright MCP, which is how *test it in a
+  browser* becomes something a session can do; the family rehearsal proves it reaches a session from
+  the agent's own account of what it was offered.
 - **A conversation can run on a declared harness.** Both chat doors resolve the harness through the
   live adapter set — the desktop's through the roster the driver's tick updates, the terminal's by
   reading the home's plugins — so a plugin added after the shell started is a harness a chat can

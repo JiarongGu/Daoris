@@ -3922,3 +3922,26 @@ on/off as the row `plugins.json` holds, and Remove naming what the plugin kept. 
 wears a chip naming its plugin. `PLUGINS` and `PLUGIN_ACTION` on the bridge, two refusal codes in
 both catalogues, and the driver state's `plugin` per harness. Gates: verify (313), driver 339,
 modules 93, web 507 + 14, family 192/192, deploy 36/36.
+
+## INT1 — plugins declare MCP servers handed to every session (2026-09-23)
+
+- [x] **INT1 — plugins declare MCP servers handed to every session.** `servers` in `plugin.json`
+  (name, command, arguments, environment, `${plugin}` expanded); the driver offers them beside the
+  knowledge host over ACP (`session/new`), and over the pipe door by `--mcp-config` pointed at a
+  file written under the home per spawn — never the repository. The example plugin declares the
+  Playwright MCP. Proven by the family rehearsal's stub reporting every server offered.
+
+✅ **done 2026-09-23** — the first slice of D65, and the one that puts *test it in a browser* in a
+session's hands without a browser extension or a line of Daoris code. `PluginServer` on the
+manifest in both twins, read by the same rules: a name in the id shape, a command, an optional
+`env` of strings, the placeholder expanded in both; the knowledge host's name refused naming it,
+and one name two plugins claim kept by the first id — a refused plugin contributes no server, as it
+contributes no harness and no hook. `PluginCatalog.Servers` is what a tick hands: the driver now
+reads the catalogue **every** tick (it had been read only when hooks were owned), offers the servers
+after the connector on `session/new`, and over the pipe door writes `SpawnServers` — the harness's
+own `mcpServers` shape under `<home>/spawn/<session>.mcp.json`, handed by the adapter that takes a
+file (`--mcp-config`, verified against `claude --help`; the default adapter takes nothing) and
+removed when the session ends. `examples/plugins/browser` is the tracked example; the family
+rehearsal installs it beside the other two and reads `daoris-knowledge, browser` back from the
+agent's own account of what it was offered. What a session may *call* stays the repository's
+allow-list (D37). Gates: verify (317), driver 346, modules 93, family 195/195, deploy 39/39.

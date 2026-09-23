@@ -430,11 +430,6 @@ the owning repository from the declarations, and publishes quests; a plugin-decl
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
 engine. Nothing new runs a model and nothing new orchestrates.
 
-- [ ] **INT1 — plugins declare MCP servers handed to every session.** `servers` in `plugin.json`
-  (name, command, arguments, environment, `${plugin}` expanded); the driver offers them beside the
-  knowledge host over ACP (`session/new`), and over the pipe door by `--mcp-config` pointed at a
-  file written under the home per spawn — never the repository. The example plugin declares the
-  Playwright MCP. Proven by the family rehearsal's stub reporting every server offered.
 - [ ] **INT2 — links and attachments on a quest.** `links` travel with the quest; `attachments`
   are copied under `<home>/quests/<id>/attachments/` by content hash, machine-local; the compose
   drawer takes drops and pastes; the composed target names them and `DAORIS_QUEST_ATTACHMENTS`
