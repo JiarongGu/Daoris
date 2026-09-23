@@ -4681,3 +4681,42 @@ shared `userEvent` carries pointer state between tests. The tests use AppMenu's 
 `setup()`, then the keyboard). The stories keep `defaultOpen` for review.
 
 Service 424, driver 427, modules 106, web 639 + 18, family 248/248, deploy 39/39, verify green.
+
+## SYNC6c — dismissing a conflict (2026-09-24)
+
+- [x] **SYNC6c — dismissing a conflict**: the conflict list's action, an operation that travels and
+  changes no status. Design §5, §9.
+
+✅ **done 2026-09-24**, the last of D68's build. **The arc is closed.**
+
+**A conflict has a name every machine knows.** When the rebase turns a move into a conflict, the
+move keeps its machine and sequence. So `QuestConflict` carries the `Sequence`, and the quest answer
+carries it too.
+
+**A dismissal is an operation.** `QuestOperationKind.Dismissed` names its conflict
+(`QuestOperationRef`), and it rides the log, the payload and `QuestWire` like any other. On the wire,
+a dismissal that names nothing is half-made and does not cross. `QuestLog.Applies` takes it for any
+quest there is, and `Step` removes the named conflict and moves no status. So two people dismissing
+one conflict make one dismissal, never a refusal at the remote or a new conflict in the rebase. The
+rebase's rule for moves after a lost take reads only status moves, so it leaves a dismissal alone.
+
+**The doors**:
+- `QuestStore.DismissAsync` dismisses the conflict named, or every one the quest carries when none
+  is named.
+- `POST /api/quests/{id}/conflicts/dismiss` works in both modes, beside `respond`. It is not a
+  `respond` action, because every one of those moves the status.
+- The drawer shows *Dismiss* beside each conflict, and stays open on the quest as it now stands.
+- `daoris-driver sync dismiss <quest>` is the terminal form (D50).
+
+**An old cache gains its names.** Conflicts cached before this carry no sequence, so they could not
+be named. The store replays those quests from the log as it opens (`RecacheUnnamedConflictsAsync`),
+because the log has always kept the sequence.
+
+**The rehearsal proves it end to end.** Machine b dismisses the offline race's conflict from a
+terminal. After one pass on each machine, it is gone on b, on the remote and on a, and the take
+stands. **Looked at on the real window**, in both themes. One conflict was seeded into the scratch
+machine's store, which was backed up first and restored after. The section sits above the body with
+the "needs a person" edge, and *Dismiss* toasted the service's sentence and removed the section.
+The quest's status did not move.
+
+Service 430, driver 427, modules 106, web 640 + 18, family 249/249, deploy 39/39, verify green.

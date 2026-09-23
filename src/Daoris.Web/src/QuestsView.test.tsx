@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -121,6 +121,44 @@ describe('QuestsView', () => {
     expect(within(conflicts).getByText(/Machine b7f2c9d1 tried to mark it Taken/)).toBeInTheDocument();
     expect(within(conflicts).getByText('machine b, offline')).toBeInTheDocument();
     expect(within(conflicts).getByText(/nothing was merged/)).toBeInTheDocument();
+  });
+
+  /**
+   * SYNC6c: a person dismisses a conflict by name — the machine and sequence of the move that lost —
+   * and the service's sentence is what they are told. The dismissal travels with the next pass.
+   */
+  it('dismisses a conflict by name and says what the service answered', async () => {
+    const conflicted = [{
+      ...QUESTS[0], status: 'Taken',
+      conflicts: [{ machine: 'b7f2c9d1', sequence: 12, attempted: 'Taken', note: 'machine b, offline', at: '2026-09-02T00:00:00Z' }],
+    }];
+    let dismissed: unknown = null;
+    const notify = vi.fn();
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/conflicts/dismiss') {
+        dismissed = JSON.parse(String(init.body));
+        return Response.json({
+          quest: { ...conflicted[0], conflicts: [] },
+          message: 'Dismissed one conflict on quest `#abc123`; every machine drops it on its next sync.',
+        });
+      }
+      return url.startsWith('/api/quests') ? Response.json(conflicted) : respond(url);
+    }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><QuestsView notify={notify} /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const conflicts = within(await screen.findByRole('dialog')).getByRole('region', { name: 'Conflicts' });
+
+    await userEvent.click(within(conflicts).getByRole('button', { name: /dismiss/i }));
+
+    await waitFor(() => expect(dismissed).toEqual({ machine: 'b7f2c9d1', sequence: 12 }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Dismissed one conflict on quest `#abc123`; every machine drops it on its next sync.'));
   });
 
   /** The sync item's conflict list names a quest; Quests opens it, and the holder is told, once. */

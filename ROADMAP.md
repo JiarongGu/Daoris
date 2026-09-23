@@ -128,8 +128,8 @@ with INT3 (registered is drivable) waiting on the owner's yes.
 
 ## The newest direction: the remote as a git remote (D68, set 2026-09-23)
 
-**Every machine commits locally; sync is fetch, rebase, push** (`docs/2026-09-23-sync-design.md`;
-SYNC0d–SYNC6 first).
+**Every machine commits locally; sync is fetch, rebase, push** (`docs/2026-09-23-sync-design.md`).
+**Built**, SYNC0d through SYNC6c; the archive has each landing.
 
 ## The next direction: agents, and the map (D67, set 2026-09-23)
 

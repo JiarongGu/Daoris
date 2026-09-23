@@ -376,6 +376,85 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestClaim.None, await _b.ClaimAsync(quest.Id));
     }
 
+    // ——— Dismissing a conflict (SYNC6c): a person's act on one machine, and the conflict goes on every
+    // machine — an operation like any other, pushed and fetched, which moves no status.
+
+    /// <summary>Both machines take one quest; the loser is kept on it. A person on either machine dismisses it, and it goes everywhere.</summary>
+    private async Task<Quest> RacedAsync()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+        return quest;
+    }
+
+    [Fact]
+    public async Task A_dismissal_on_one_machine_clears_the_conflict_on_every_machine()
+    {
+        var quest = await RacedAsync();
+        var conflict = Assert.Single((await _b.FindAsync(quest.Id))!.Conflicts);
+
+        var dismissed = await _b.DismissAsync(quest.Id, conflict.Machine, conflict.Sequence, Now.AddHours(3));
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Equal(1, dismissed.Dismissed);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Empty(held.Conflicts);
+            Assert.Equal(QuestStatus.Taken, held.Status);
+        }
+
+        Assert.Empty((await _a.StandingAsync(Workspaces.Default, _ => true)).Conflicts);
+    }
+
+    /// <summary>Naming no conflict dismisses every one the quest carries — the terminal's form; naming one leaves the rest.</summary>
+    /// <summary>
+    /// A cache from before dismissals holds conflicts with no sequence, and a conflict with no sequence
+    /// cannot be named to dismiss. The store fills them in from the log as it opens.
+    /// </summary>
+    [Fact]
+    public async Task A_cached_conflict_from_before_dismissals_gains_its_sequence_on_open()
+    {
+        var quest = await RacedAsync();
+        var original = Assert.Single((await _b.FindAsync(quest.Id))!.Conflicts);
+        var connection = _connections[1];
+        await using (var strip = connection.CreateCommand())
+        {
+            strip.CommandText = $"UPDATE quests SET conflicts = replace(conflicts, '\"sequence\":{original.Sequence},', '') WHERE id = $id";
+            strip.Parameters.AddWithValue("$id", quest.Id);
+            await strip.ExecuteNonQueryAsync();
+        }
+
+        Assert.Equal(0, Assert.Single((await _b.FindAsync(quest.Id))!.Conflicts).Sequence);
+        var reopened = await QuestStore.OpenAsync(connection);
+
+        Assert.Equal(original.Sequence, Assert.Single((await reopened.FindAsync(quest.Id))!.Conflicts).Sequence);
+    }
+
+    [Fact]
+    public async Task Dismissing_names_one_conflict_or_every_one_the_quest_carries()
+    {
+        var quest = await RacedAsync();
+
+        var elsewhere = await _a.DismissAsync(quest.Id, "not-a-machine", 1, Now.AddHours(3));
+        Assert.Equal(0, elsewhere.Dismissed);
+        Assert.Single(elsewhere.Quest!.Conflicts);
+
+        var every = await _a.DismissAsync(quest.Id, machine: null, sequence: null, Now.AddHours(4));
+        Assert.Equal(1, every.Dismissed);
+        Assert.Empty(every.Quest!.Conflicts);
+
+        Assert.Equal(0, (await _a.DismissAsync(quest.Id, machine: null, sequence: null, Now.AddHours(5))).Dismissed);
+        Assert.Null((await _a.DismissAsync("nosuchquest", null, null, Now)).Quest);
+    }
+
     // ——— Where a circle stands (SYNC6a): what this machine has not pushed, the quests carrying a
     // conflict, and how the last pass ended — what the status bar and `daoris-driver sync status` read.
 
@@ -488,6 +567,23 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Null(QuestWire.ReadPage("""{ "operations": [{ "machine": "m1", "quest": "q", "kind": "taken", "at": "2026-09-24T10:00:00Z" }] }"""));
         Assert.Null(QuestWire.ReadPush("""{ "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "conflict", "at": "2026-09-24T10:00:00Z" }] }"""));
         Assert.Null(QuestWire.ReadPage("[]"));
+    }
+
+    /// <summary>A dismissal crosses naming the conflict it dismisses; one that names none is half-made and does not cross.</summary>
+    [Fact]
+    public void A_dismissal_crosses_the_wire_naming_its_conflict()
+    {
+        var page = new QuestFetch(
+        [
+            new QuestOperation("abcdefabcdef", QuestOperationKind.Dismissed, "m1", 5, Now,
+                Dismisses: new QuestOperationRef("m2", 4), Number: 9),
+        ], 9, More: false);
+
+        var back = Assert.Single(QuestWire.ReadPage(QuestWire.Page(page))!.Operations);
+
+        Assert.Equal(QuestOperationKind.Dismissed, back.Kind);
+        Assert.Equal(new QuestOperationRef("m2", 4), back.Dismisses);
+        Assert.Null(QuestWire.ReadPush("""{ "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "dismissed", "at": "2026-09-24T10:00:00Z" }] }"""));
     }
 
     [Fact]

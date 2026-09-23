@@ -90,6 +90,9 @@ public sealed record QuestAttachment(string Name, string Sha256, long Bytes);
 /// <param name="FollowUp">The chain's next step, published by this close — null when there was none.</param>
 public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null);
 
+/// <summary>What a dismissal did: the quest as it now stands (null when there is no such quest), and how many conflicts went.</summary>
+public sealed record QuestDismissal(Quest? Quest, int Dismissed);
+
 /// <summary>
 /// Quests, held by the service rather than written into anyone's repository.
 /// </summary>
@@ -159,7 +162,46 @@ public sealed class QuestStore
         await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
         store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
         await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
+        await store.RecacheUnnamedConflictsAsync(ct).ConfigureAwait(false);
         return store;
+    }
+
+    /// <summary>
+    /// A cache written before dismissals (SYNC6c) holds conflicts without the sequence that names them,
+    /// and a conflict that cannot be named cannot be dismissed. Those quests are replayed from the log,
+    /// which has always kept the sequence — the cache is only ever what the history replays to.
+    /// </summary>
+    private async Task RecacheUnnamedConflictsAsync(CancellationToken ct)
+    {
+        const string Unnamed = "SELECT id FROM quests WHERE conflicts <> '[]' AND conflicts NOT LIKE '%\"sequence\"%'";
+
+        await using (var probe = _connection.CreateCommand())
+        {
+            probe.CommandText = $"SELECT EXISTS ({Unnamed})";
+            if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
+        }
+
+        await InTransactionAsync(async transaction =>
+        {
+            var ids = new List<string>();
+            await using (var select = _connection.CreateCommand())
+            {
+                select.Transaction = transaction;
+                select.CommandText = Unnamed;
+                await using var reader = await select.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await reader.ReadAsync(ct).ConfigureAwait(false)) ids.Add(reader.GetString(0));
+            }
+
+            foreach (var id in ids)
+            {
+                if (QuestLog.Replay(await HistoryAsync(id, transaction, ct).ConfigureAwait(false)) is { } quest)
+                {
+                    await WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
+                }
+            }
+
+            return ids.Count;
+        }, ct).ConfigureAwait(false);
     }
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
@@ -450,7 +492,7 @@ public sealed class QuestStore
     /// </summary>
     private async Task<QuestOperation> AppendAsync(
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
-        SqliteTransaction transaction, CancellationToken ct)
+        SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null)
     {
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
@@ -465,13 +507,14 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$kind", KindText(kind));
         command.Parameters.AddWithValue("$machine", Machine);
         command.Parameters.AddWithValue("$at", at.ToString("O"));
-        command.Parameters.AddWithValue("$payload", PayloadJson(note, published, attempted: null));
+        command.Parameters.AddWithValue("$payload", PayloadJson(note, published, attempted: null, dismisses));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
         return new QuestOperation(
             quest, kind, Machine, sequence, at, note,
-            published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Conflicts = [] });
+            published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Conflicts = [] },
+            Dismisses: dismisses);
     }
 
     /// <summary>
@@ -496,7 +539,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$sequence", operation.Sequence);
         command.Parameters.AddWithValue("$at", operation.At.ToString("O"));
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted));
+            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, operation.Dismisses));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -647,6 +690,41 @@ public sealed class QuestStore
             }
 
             return new QuestMove(moved, Moved: true, followUp);
+        }, ct);
+
+    /// <summary>
+    /// A person dismisses a conflict (SYNC6c) — one named by its machine and sequence, or, naming none,
+    /// every one the quest carries. Each is a <see cref="QuestOperationKind.Dismissed"/> operation,
+    /// committed here and carried by the next pass like any other, so the conflict goes on every
+    /// machine. It moves no status.
+    /// </summary>
+    /// <returns>The quest as it now stands (null: no such quest) and how many conflicts went.</returns>
+    public Task<QuestDismissal> DismissAsync(
+        string id, string? machine, long? sequence, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async transaction =>
+        {
+            var history = await HistoryAsync(id, transaction, ct).ConfigureAwait(false);
+            if (QuestLog.Replay(history) is not { } quest)
+            {
+                // No such quest — or a row the log never saw, which has raced nobody and carries none.
+                return new QuestDismissal(await FindAsync(id, transaction, ct).ConfigureAwait(false), 0);
+            }
+
+            var named = quest.Conflicts
+                .Where(conflict => machine is null
+                    || (conflict.Machine == machine && (sequence is null || conflict.Sequence == sequence)))
+                .ToList();
+            var written = new List<QuestOperation>(history);
+            foreach (var conflict in named)
+            {
+                written.Add(await AppendAsync(
+                    id, QuestOperationKind.Dismissed, now, note: null, published: null, transaction, ct,
+                    new QuestOperationRef(conflict.Machine, conflict.Sequence)).ConfigureAwait(false));
+            }
+
+            var standing = QuestLog.Replay(written)!;
+            if (named.Count > 0) await WriteCacheAsync(standing, transaction, ct).ConfigureAwait(false);
+            return new QuestDismissal(standing, named.Count);
         }, ct);
 
     // ——— A machine's half of the sync (D68 §3, design §8).
@@ -1236,9 +1314,13 @@ public sealed class QuestStore
                 Parent = payload.TryGetProperty("parent", out var parent) ? parent.GetString() : null,
             };
 
+        QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
+            ? new QuestOperationRef(named.GetProperty("machine").GetString() ?? "", named.GetProperty("sequence").GetInt64())
+            : null;
+
         return new QuestOperation(
             quest, kind, reader.GetString(2), reader.GetInt64(3), at, note, published, attempted,
-            reader.IsDBNull(6) ? null : reader.GetInt64(6));
+            reader.IsDBNull(6) ? null : reader.GetInt64(6), dismisses);
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
@@ -1248,8 +1330,21 @@ public sealed class QuestStore
     /// What an operation carries. A publish carries the quest's words and everything it carries — all
     /// a replay needs to make the quest, on this machine or another — and a move carries its note.
     /// </summary>
-    private static string PayloadJson(string? note, Quest? published, QuestStatus? attempted) => Json(writer =>
+    private static string PayloadJson(
+        string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null) => Json(writer =>
     {
+        if (dismisses is not null)
+        {
+            // A dismissal carries the conflict it names (SYNC6c), and nothing else.
+            writer.WriteStartObject();
+            writer.WriteStartObject("dismisses");
+            writer.WriteString("machine", dismisses.Machine);
+            writer.WriteNumber("sequence", dismisses.Sequence);
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+            return;
+        }
+
         if (attempted is { } lost)
         {
             writer.WriteStartObject();
@@ -1287,6 +1382,7 @@ public sealed class QuestStore
         {
             writer.WriteStartObject();
             writer.WriteString("machine", conflict.Machine);
+            writer.WriteNumber("sequence", conflict.Sequence);
             writer.WriteString("attempted", conflict.Attempted.ToString());
             if (conflict.Note is not null) writer.WriteString("note", conflict.Note);
             writer.WriteString("at", conflict.At.ToString("O"));
@@ -1304,7 +1400,9 @@ public sealed class QuestStore
                 item.GetProperty("machine").GetString() ?? "",
                 Enum.Parse<QuestStatus>(item.GetProperty("attempted").GetString()!, ignoreCase: true),
                 item.TryGetProperty("note", out var note) ? note.GetString() : null,
-                DateTimeOffset.Parse(item.GetProperty("at").GetString()!)))
+                DateTimeOffset.Parse(item.GetProperty("at").GetString()!),
+                // Absent from a cache written before dismissals: zero, which the open refills.
+                item.TryGetProperty("sequence", out var sequence) ? sequence.GetInt64() : 0))
             .ToList();
     }
 

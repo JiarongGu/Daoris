@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The sync, from a terminal (SYNC6a, D50): `daoris-driver sync [status] [--workspace &lt;name&gt;]`.
+/// The sync, from a terminal (SYNC6a, D50): `daoris-driver sync [status | dismiss &lt;quest&gt;] [--workspace &lt;name&gt;]`.
 /// </summary>
 /// <remarks>
 /// <para><b>`sync` runs the pass the tick runs</b> — the registrations, knowledge and code map up by
@@ -21,13 +21,14 @@ internal static class SyncConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        string? workspace = null;
+        string? workspace = null, dismiss = null;
         var status = false;
         for (var i = 0; i < args.Length; i++)
         {
             switch (args[i])
             {
                 case "status": status = true; break;
+                case "dismiss" when i + 1 < args.Length: dismiss = args[++i]; break;
                 case "--workspace" when i + 1 < args.Length: workspace = args[++i]; break;
                 default: return Usage();
             }
@@ -37,6 +38,14 @@ internal static class SyncConsole
         {
             using var service = ServiceClient.FromEnvironment();
             if (status) return await StatusAsync(service, workspace).ConfigureAwait(false);
+
+            // A person's dismissal (SYNC6c): committed on this machine, and carried by the next pass —
+            // the tick's, or `sync` run straight after.
+            if (dismiss is not null)
+            {
+                Console.WriteLine($"sync: {await service.DismissConflictsAsync(dismiss).ConfigureAwait(false)}");
+                return 0;
+            }
 
             using var sync = RemoteSyncSet.FromEnvironment(
                 service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable));
@@ -99,10 +108,11 @@ internal static class SyncConsole
 
     private static int Usage()
     {
-        Console.Error.WriteLine("usage: daoris-driver sync [status] [--workspace <name>]");
-        Console.Error.WriteLine("  sync          one pass now, for every circle with a remote or the one named");
-        Console.Error.WriteLine("  sync status   where each circle stands on this machine — ahead, behind, in conflict,");
-        Console.Error.WriteLine("                and when it last reached its remote; reaches no remote itself");
+        Console.Error.WriteLine("usage: daoris-driver sync [status | dismiss <quest>] [--workspace <name>]");
+        Console.Error.WriteLine("  sync                    one pass now, for every circle with a remote or the one named");
+        Console.Error.WriteLine("  sync status             where each circle stands on this machine — ahead, behind, in");
+        Console.Error.WriteLine("                          conflict, and when it last reached its remote; reaches no remote");
+        Console.Error.WriteLine("  sync dismiss <quest>    dismiss the conflicts a quest carries; the next pass carries it");
         return 2;
     }
 }

@@ -62,8 +62,13 @@ export type Quest = {
    */
   conflicts?: QuestConflict[];
 };
-/** A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its own words, verbatim. */
-export type QuestConflict = { machine: string; attempted: Quest['status']; note?: string | null; at: string };
+/**
+ * A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its
+ * own words, verbatim. `machine` and `sequence` name it on every machine — what a dismissal names.
+ */
+export type QuestConflict = {
+  machine: string; sequence: number; attempted: Quest['status']; note?: string | null; at: string;
+};
 /**
  * Where a circle stands on this machine (SYNC6a), read from its own host without reaching the
  * remote. A circle with no remote here answers `wired: false` and nothing else of use.
@@ -241,6 +246,9 @@ export const api = {
     `/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`,
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
+  // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
+  dismissConflict: (id: string, machine: string, sequence: number) =>
+    post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
   refresh: () => post<RefreshReport>('/api/refresh', {}),

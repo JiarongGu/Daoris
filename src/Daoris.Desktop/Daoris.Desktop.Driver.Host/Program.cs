@@ -34,9 +34,10 @@ using Daoris.Driver;
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced.
 //
-//   sync [status] [--workspace <name>]
+//   sync [status | dismiss <quest>] [--workspace <name>]
 //                 one pass now, the tick's own, for every circle with a remote or the one named; with
-//                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a).
+//                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a);
+//                 with `dismiss`, the conflicts a quest carries go, here and at the next pass (SYNC6c).
 //
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`

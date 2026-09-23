@@ -23,7 +23,7 @@ public static class QuestWire
     public const string Shape =
         "every operation names its machine, sequence, quest, kind and time; a publish carries from, to, title and "
         + "body, every file its name, sha256 and size, and every step its to, title and body; a conflict names "
-        + "what it attempted";
+        + "what it attempted; a dismissal names the conflict's machine and sequence";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
     public static string Page(QuestFetch page) => Json(writer =>
@@ -132,6 +132,13 @@ public static class QuestWire
         writer.WriteString("at", operation.At.ToString("O"));
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
+        if (operation.Dismisses is { } named)
+        {
+            writer.WriteStartObject("dismisses");
+            writer.WriteString("machine", named.Machine);
+            writer.WriteNumber("sequence", named.Sequence);
+            writer.WriteEndObject();
+        }
         if (operation.Published is { } asked)
         {
             writer.WriteStartObject("asked");
@@ -216,6 +223,21 @@ public static class QuestWire
             attempted = lost;
         }
 
+        // A dismissal that names no conflict would dismiss nothing on every machine it reached, which is
+        // a half-made operation, not a harmless one.
+        QuestOperationRef? dismisses = null;
+        if (kind == QuestOperationKind.Dismissed)
+        {
+            if (!item.TryGetProperty("dismisses", out var named) || named.ValueKind != JsonValueKind.Object
+                || Text(named, "machine") is not { Length: > 0 } conflictMachine
+                || Number(named, "sequence") is not { } conflictSequence)
+            {
+                return null;
+            }
+
+            dismisses = new QuestOperationRef(conflictMachine, conflictSequence);
+        }
+
         Quest? published = null;
         if (kind == QuestOperationKind.Published)
         {
@@ -260,7 +282,8 @@ public static class QuestWire
         }
 
         return new QuestOperation(
-            quest, kind, machine, sequence, at, Text(item, "note"), published, attempted, numbered ? number : null);
+            quest, kind, machine, sequence, at, Text(item, "note"), published, attempted, numbered ? number : null,
+            dismisses);
     }
 
     private static JsonElement? Parse(string json)

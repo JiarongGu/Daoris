@@ -37,7 +37,8 @@ public sealed record QuestAttachmentResponse(string Name, string Sha256, long By
 public sealed record QuestStepWire(string? To, string? Title, string? Body);
 // `Then` is what this quest's close will publish next; `Parent` the quest whose close published it;
 // `Conflicts` the moves that lost to another machine's (D68 §5), kept for a person.
-public sealed record QuestConflictResponse(string Machine, string Attempted, string? Note, DateTimeOffset At);
+// `Machine` and `Sequence` name the conflict on every machine — what a dismissal names (SYNC6c).
+public sealed record QuestConflictResponse(string Machine, string Attempted, string? Note, DateTimeOffset At, long Sequence);
 public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
     string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
@@ -52,6 +53,8 @@ public sealed record PublishQuestRequest(
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire>? Then = null);
 public sealed record RespondQuestRequest(string? Action, string? Reason);
+// A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
+public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
 // and `To` is the asker naming the receiver, which publishes at once.
 public sealed record AskRequestBody(
@@ -182,6 +185,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(IEnumerable<QuestResponse>))]
 [JsonSerializable(typeof(PublishQuestRequest))]
 [JsonSerializable(typeof(RespondQuestRequest))]
+[JsonSerializable(typeof(DismissConflictRequest))]
 [JsonSerializable(typeof(AskRequestBody))]
 [JsonSerializable(typeof(AskPublishRequest))]
 [JsonSerializable(typeof(AskCloseRequest))]

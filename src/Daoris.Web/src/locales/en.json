@@ -341,6 +341,7 @@
   "quests.detail.conflicts": "Conflicts",
   "quests.detail.conflictsHint": "Another machine's move reached the remote first. What this one attempted is kept here for a person; nothing was merged.",
   "quests.detail.conflictLine": "Machine {{machine}} tried to mark it {{attempted}}",
+  "quests.detail.dismiss": "Dismiss",
   "quests.compose.title": "New quest",
   "quests.compose.meta": "published to the service; pulled by its owner",
   "quests.compose.hint": "Say what is needed and why, with the evidence — never the change you would make; whoever works there may see a better answer.",

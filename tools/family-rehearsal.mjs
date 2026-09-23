@@ -1496,6 +1496,24 @@ check(
   losingStatus.out,
 );
 
+// A person dismisses that conflict (SYNC6c), on the machine that lost, from a terminal: an operation
+// like any other, so the next pass carries it and every machine stops showing it.
+const dismissedOnB = syncB(`dismiss ${offlineId}`);
+syncB('--workspace default');
+syncA('--workspace default');
+const dismissedEverywhere = await Promise.all([
+  api('GET', '/api/quests?includeClosed=true'),
+  api('GET', '/api/quests?includeClosed=true', { base: HOST_B_BASE }),
+  api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA }),
+]);
+check(
+  'a conflict dismissed on machine b goes everywhere with the next passes — b, the remote and a — and the take stands',
+  dismissedOnB.code === 0 && /Dismissed one conflict/.test(dismissedOnB.out)
+    && dismissedEverywhere.every((answer) => (answer.json ?? []).some((q) => q.id === offlineId
+      && q.status === 'Taken' && (q.conflicts ?? []).length === 0)),
+  `${dismissedOnB.out}\n${dismissedEverywhere.map((answer) => answer.text.slice(0, 300)).join('\n')}`,
+);
+
 // On demand: the pass runs when asked, not when the tick comes round. The quest is declined straight
 // after, and synced the same way, so nothing later in the run finds an extra quest open to drive.
 const whenAsked = await api('POST', '/api/quests', {

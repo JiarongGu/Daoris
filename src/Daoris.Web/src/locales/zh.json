@@ -341,6 +341,7 @@
   "quests.detail.conflicts": "冲突",
   "quests.detail.conflictsHint": "另一台机器的操作先到达远端。本次的尝试保留在此，交由人来处理；没有做任何合并。",
   "quests.detail.conflictLine": "机器 {{machine}} 曾尝试将其标为{{attempted}}",
+  "quests.detail.dismiss": "清除",
   "quests.compose.title": "新建委托",
   "quests.compose.meta": "发布至服务；由归属方拉取",
   "quests.compose.hint": "说清需要什么、为什么，并附上证据——绝不要写你打算做的改动；在那里做事的人也许能看出更好的答案。",

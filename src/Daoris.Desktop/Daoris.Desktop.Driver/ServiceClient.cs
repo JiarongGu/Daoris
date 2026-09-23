@@ -80,6 +80,19 @@ public sealed class ServiceClient : IDisposable
     /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
     /// driver learns that a session it is running took a quest another machine took first.
     /// </summary>
+    /// <summary>
+    /// Dismiss every conflict a quest carries (SYNC6c) — the terminal's form of the drawer's button. The
+    /// service's sentence comes back verbatim, including "nothing to dismiss".
+    /// </summary>
+    /// <exception cref="DriverException">The service refused, in its own words — no such quest.</exception>
+    public async Task<string> DismissConflictsAsync(string quest, CancellationToken ct = default)
+    {
+        using var answer = JsonDocument.Parse(await DriverHttp.PostAsync(
+            _http, $"{_base}/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/conflicts/dismiss", "{}", ct)
+            .ConfigureAwait(false));
+        return Text(answer.RootElement, "message") ?? "";
+    }
+
     /// <summary>Where a circle stands on this machine (SYNC6a) — read from its host, without reaching the remote.</summary>
     public async Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default) =>
         RemoteSyncPayloads.Standing(await GetAsync($"/api/sync?workspace={Uri.EscapeDataString(workspace)}", ct).ConfigureAwait(false));

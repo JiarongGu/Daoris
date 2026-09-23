@@ -1,7 +1,9 @@
 import { type ClipboardEvent, type DragEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type Quest, type QuestStep, type Session } from './api';
-import { usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
+import {
+  useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
+} from './queries';
 import { useConsidered, useDriver, useStopSession } from './shell';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
 import { admit, isImage, linksOf, MAX_FILE_BYTES, MAX_FILES, toUpload } from './attachments';
@@ -139,6 +141,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
   const stop = useStopSession();
   const publish = usePublishQuest();
   const respond = useRespondQuest();
+  const dismiss = useDismissConflict();
   // Every query this view renders from, the arc's new ones included — a session surface or driver
   // bridge that fails silently is indistinguishable from a family with no driver attached.
   useErrorNotify(quests.error ?? registry.error ?? sessions.error ?? driver.error, notify);
@@ -210,6 +213,17 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
         setDetail(null);
         setDeclining(false);
         setReason('');
+      },
+      onError: (e) => notify(sentence(e), 'error'),
+    });
+
+  // A person's dismissal (SYNC6c): the drawer stays open on the quest as it now stands, because the
+  // quest itself did not move — only what it was waiting on.
+  const onDismiss = (quest: Quest, machine: string, sequence: number) =>
+    dismiss.mutate({ id: quest.id, machine, sequence }, {
+      onSuccess: (result) => {
+        notify(result.message);
+        setDetail(result.quest);
       },
       onError: (e) => notify(sentence(e), 'error'),
     });
@@ -439,15 +453,29 @@ export function QuestsView({ notify, onAttend, opening, onOpened, focus, onFocus
               <p className="m-0 mb-2 text-small text-ink-soft">{t('quests.detail.conflictsHint')}</p>
               <ul className="m-0 grid list-none gap-1.5 p-0">
                 {detail.conflicts!.map((conflict) => (
-                  <li key={`${conflict.machine}-${conflict.at}`} className="grid gap-0.5 text-body">
-                    <span className="inline-flex flex-wrap items-center gap-1.5">
-                      <Icon name="conflict" size={12} className="text-warn" />
-                      {t('quests.detail.conflictLine', {
-                        machine: conflict.machine, attempted: t(`status.${conflict.attempted}`),
-                      })}
-                      <span className="text-meta text-ink-faint">· {ago(conflict.at)}</span>
+                  <li
+                    key={`${conflict.machine}-${conflict.sequence}`}
+                    className="flex items-start justify-between gap-3 text-body"
+                  >
+                    <span className="grid min-w-0 gap-0.5">
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <Icon name="conflict" size={12} className="text-warn" />
+                        {t('quests.detail.conflictLine', {
+                          machine: conflict.machine, attempted: t(`status.${conflict.attempted}`),
+                        })}
+                        <span className="text-meta text-ink-faint">· {ago(conflict.at)}</span>
+                      </span>
+                      {conflict.note && <span className="text-small text-ink-soft">{conflict.note}</span>}
                     </span>
-                    {conflict.note && <span className="text-small text-ink-soft">{conflict.note}</span>}
+                    {/* Seen, and nothing more to do here: the dismissal travels, so every machine
+                        stops showing it (SYNC6c). */}
+                    <Button
+                      variant="ghost"
+                      disabled={dismiss.isPending}
+                      onClick={() => onDismiss(detail, conflict.machine, conflict.sequence)}
+                    >
+                      {t('quests.detail.dismiss')}
+                    </Button>
                   </li>
                 ))}
               </ul>

@@ -44,7 +44,7 @@ went up only, all of them, every tick. Five defects, none covered by a test:
 
 | Record | Its history | Push is accepted when |
 |---|---|---|
-| **Quest** | Operations: `published`, `taken`, `done`, `declined`, `conflict`. Each has the machine that made it (a stable machine id under the home, not the key, which rotates), a per-machine sequence, the time, and its payload (note, reason, session) | Per quest, a fast-forward: nothing new has reached that quest at the remote since the push was rebased (§3) |
+| **Quest** | Operations: `published`, `taken`, `done`, `declined`, `conflict`, `dismissed` (§5). Each has the machine that made it (a stable machine id under the home, not the key, which rotates), a per-machine sequence, the time, and its payload (note, reason, session) | Per quest, a fast-forward: nothing new has reached that quest at the remote since the push was rebased (§3) |
 | **Knowledge, code map** | The repository's own git — Daoris keeps no second history | The pushed commit descends from the one the remote holds (`git merge-base --is-ancestor`, asked on the machine with the checkout). The same commit is a no-op only if its content digest matches |
 | **Registration** | The manifest at a commit; a retire is a tombstone that travels | Same ancestry rule as knowledge. The machine holding the checkout owns the row; others pull it, updated and removed |
 | **Session record** | Owned by the machine that ran it; append-only | Always, by origin + id: two machines cannot write the same record |
@@ -97,6 +97,13 @@ quest**: which machine, what it attempted, its note, its session and that sessio
 (commits, which stay in the repository they were made in). The quest shows its state *and* the
 conflict, until a person dismisses it or acts, for instance by publishing a follow-up. Nothing is
 thrown away, and nothing is merged automatically into a second truth.
+
+**Dismissing is an operation that travels** (SYNC6c). A conflict keeps the machine and sequence of
+the move that lost, which names it on every machine. A person dismisses it from the quest's drawer,
+or with `daoris-driver sync dismiss <quest>` for every conflict the quest carries. That appends a
+`dismissed` operation naming it, which the next pass carries like any other. It moves no status. It
+applies to any quest there is, whether or not the conflict is still there, so two people dismissing
+one conflict make one dismissal, never a refusal or a new conflict.
 
 A losing take whose session is still running is stopped by its own machine's driver, with the reason
 in the record (*another machine's take reached the remote first*). A driver stops only its own
@@ -278,4 +285,4 @@ tombstone (SYNC0b).
   - **SYNC6b — the screen door.** The status bar's sync item, and *Sync now* over the bridge running
     the same pass as the terminal. The conflict list links each quest to where it can be acted on.
   - **SYNC6c — dismissing a conflict.** A person's dismissal is an operation that travels, so every
-    machine stops showing it. It changes no status, and it is the conflict list's action.
+    machine stops showing it (§5). It changes no status.

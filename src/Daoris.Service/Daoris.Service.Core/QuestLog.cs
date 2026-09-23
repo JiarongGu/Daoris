@@ -20,7 +20,20 @@ public enum QuestOperationKind
     /// than dropped, and shown on the quest until a person acts. It moves no status.
     /// </summary>
     Conflict,
+
+    /// <summary>
+    /// A person dismissed one conflict (SYNC6c): it stops being shown, on every machine, because the
+    /// dismissal travels like any other operation. It names the conflict and moves no status.
+    /// </summary>
+    Dismissed,
 }
+
+/// <summary>
+/// One operation, named where it was made: the machine and its sequence. What a dismissal names the
+/// conflict by — the losing move keeps its machine and sequence when it becomes a conflict, so the name
+/// is the same on every machine that holds it.
+/// </summary>
+public sealed record QuestOperationRef(string Machine, long Sequence);
 
 /// <summary>One operation in a quest's history.</summary>
 /// <param name="Quest">The quest it happened to.</param>
@@ -40,6 +53,7 @@ public enum QuestOperationKind
 /// Where the remote placed it in its order (design §8) — null while it is pending, and always on a
 /// machine with no remote.
 /// </param>
+/// <param name="Dismisses">For a <see cref="QuestOperationKind.Dismissed"/>: the conflict it dismisses.</param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -49,7 +63,8 @@ public sealed record QuestOperation(
     string? Note = null,
     Quest? Published = null,
     QuestStatus? Attempted = null,
-    long? Number = null);
+    long? Number = null,
+    QuestOperationRef? Dismisses = null);
 
 /// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
 public enum QuestClaim
@@ -93,7 +108,12 @@ public sealed record QuestIntegration(long Cursor, IReadOnlyList<QuestOperation>
 /// <param name="Attempted">What it tried to move the quest to.</param>
 /// <param name="Note">Its note or reason, as it was given.</param>
 /// <param name="At">When it was made.</param>
-public sealed record QuestConflict(string Machine, QuestStatus Attempted, string? Note, DateTimeOffset At);
+/// <param name="Sequence">
+/// The losing move's sequence on <paramref name="Machine"/> — with it, the conflict's name everywhere,
+/// which is what a dismissal names (SYNC6c). Zero only in a cache written before dismissals, which the
+/// store refills from the log as it opens.
+/// </param>
+public sealed record QuestConflict(string Machine, QuestStatus Attempted, string? Note, DateTimeOffset At, long Sequence = 0);
 
 /// <summary>
 /// The one transition table (D47 §5, kept by D68): judged by the store before an operation is written,
@@ -147,11 +167,13 @@ public static class QuestLog
     /// <summary>
     /// Whether an operation moves a quest standing at <paramref name="quest"/>: a publish only begins
     /// one, a move goes only where the table allows, and a conflict is recorded on any quest there is.
+    /// A dismissal applies to any quest there is, whether or not its conflict is still there: two
+    /// people dismissing one conflict is one dismissal, never a refusal or a new conflict.
     /// </summary>
     public static bool Applies(Quest? quest, QuestOperation operation) => operation.Kind switch
     {
         QuestOperationKind.Published => quest is null,
-        QuestOperationKind.Conflict => quest is not null,
+        QuestOperationKind.Conflict or QuestOperationKind.Dismissed => quest is not null,
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -168,8 +190,16 @@ public static class QuestLog
             Conflicts =
             [
                 .. quest.Conflicts,
-                new QuestConflict(operation.Machine, operation.Attempted ?? QuestStatus.Open, operation.Note, operation.At),
+                new QuestConflict(
+                    operation.Machine, operation.Attempted ?? QuestStatus.Open, operation.Note, operation.At, operation.Sequence),
             ],
+        },
+        QuestOperationKind.Dismissed => quest! with
+        {
+            Conflicts = quest.Conflicts
+                .Where(conflict => operation.Dismisses is not { } named
+                    || conflict.Machine != named.Machine || conflict.Sequence != named.Sequence)
+                .ToList(),
         },
         _ => quest! with { Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, Updated = operation.At },
     };

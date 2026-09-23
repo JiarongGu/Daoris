@@ -565,6 +565,11 @@ The first version: doctrine that installs, is checked, and flows back.
   machine that has only asks to make. When the feed hits a wall, the quest pass still runs, and that
   is where the try is recorded, so the status bar can no longer say `synced` while the sync is
   failing.
+- **A conflict can be dismissed, everywhere** (SYNC6c). The quest's drawer has *Dismiss* beside each
+  move that lost the race, and `daoris-driver sync dismiss <quest>` dismisses every one a quest
+  carries. A dismissal is an operation like a take, so the next pass carries it and every machine
+  stops showing the conflict. It moves no status, and two people dismissing one conflict make one
+  dismissal.
 - **A refusal can be information.** A stale or branch feed is the rules working, not a fault, so it is
   flagged as such on the wire and the sync reports it as news rather than as a wall. Records and
   quests still travel from any checkout; only knowledge waits for the canonical line. A checkout git

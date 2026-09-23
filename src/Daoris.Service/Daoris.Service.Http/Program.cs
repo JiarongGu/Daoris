@@ -412,6 +412,29 @@ app.MapPost("/api/quests/{id}/respond", async (
     };
 });
 
+// A person dismissing a conflict (SYNC6c): committed here like any verb, and carried by the next pass,
+// so the conflict goes on every machine. It moves no status, which is why it is not a `respond`
+// action — every one of those is a move through the table.
+app.MapPost("/api/quests/{id}/conflicts/dismiss", async (
+    ComposedService s, HttpContext http, string id, DismissConflictRequest body, CancellationToken ct) =>
+{
+    var quest = id.TrimStart('#');
+    var dismissal = await s.Quests.DismissAsync(quest, body.Machine, body.Sequence, DateTimeOffset.UtcNow, ct);
+    if (dismissal.Quest is null)
+    {
+        return Results.NotFound(new ErrorResponse($"quest `#{quest}` is not one this service holds."));
+    }
+
+    return Results.Ok(new QuestActionResponse(
+        ToQuest(dismissal.Quest, s.Files, MachineLocal(http)),
+        dismissal.Dismissed switch
+        {
+            0 => $"quest `#{quest}` carries no such conflict — nothing to dismiss.",
+            1 => $"Dismissed one conflict on quest `#{quest}`; every machine drops it on its next sync.",
+            var count => $"Dismissed {count} conflicts on quest `#{quest}`; every machine drops them on its next sync.",
+        }));
+});
+
 // A quest's file, whole — so a person reading the drawer can open the screenshot the quest carries.
 // LOCAL mode only and to a caller on this machine only: the bytes never left it (D65 §2), and a shared
 // deployment has no door here because it has none of them. Found by hash, never by a path a caller
@@ -1020,7 +1043,7 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => n
         Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
     q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
     q.Parent,
-    q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At)).ToList());
+    q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList());
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.

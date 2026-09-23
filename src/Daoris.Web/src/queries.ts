@@ -170,6 +170,20 @@ export const useRespondQuest = () => {
   });
 };
 
+/** Dismiss one conflict (SYNC6c) — and where each circle stands moves with it. */
+export const useDismissConflict = () => {
+  const invalidate = useInvalidateQuestWork();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, machine, sequence }: { id: string; machine: string; sequence: number }) =>
+      api.dismissConflict(id, machine, sequence),
+    onSuccess: () => {
+      invalidate();
+      void client.invalidateQueries({ queryKey: keys.allSync });
+    },
+  });
+};
+
 export const useRefreshIndex = () => {
   const client = useQueryClient();
   return useMutation({

@@ -224,6 +224,57 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal(Now.AddHours(3), replayed.Updated);
     }
 
+    // ——— Dismissing a conflict (SYNC6c): a person's act that travels. It names the conflict by the
+    // machine and sequence of the move that lost — the conflict's identity on every machine.
+
+    private static QuestOperation Lost(string machine, long sequence, string note) =>
+        new("q1", QuestOperationKind.Conflict, machine, sequence, Now.AddHours(sequence), note, Attempted: QuestStatus.Taken);
+
+    private static QuestOperation Dismissal(long sequence, string machine, long conflict) =>
+        new("q1", QuestOperationKind.Dismissed, "m1", sequence, Now.AddHours(sequence),
+            Dismisses: new QuestOperationRef(machine, conflict));
+
+    [Fact]
+    public void A_dismissal_removes_the_conflict_it_names_and_moves_nothing()
+    {
+        var replayed = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Op(1, QuestOperationKind.Taken),
+            Lost("m2", 7, "machine b's take"),
+            Lost("m3", 4, "machine c's take"),
+            Dismissal(2, "m2", 7),
+        ])!;
+
+        var kept = Assert.Single(replayed.Conflicts);
+        Assert.Equal(("m3", 4L), (kept.Machine, kept.Sequence));
+        Assert.Equal(QuestStatus.Taken, replayed.Status);
+        Assert.Equal(Now.AddHours(1), replayed.Updated);
+    }
+
+    /// <summary>Two people dismissing the same conflict is one dismissal: a second applies, and removes nothing.</summary>
+    [Fact]
+    public void Dismissing_a_conflict_already_gone_changes_nothing()
+    {
+        var once = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Lost("m2", 7, "lost"),
+            Dismissal(1, "m2", 7),
+        ])!;
+        var twice = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Lost("m2", 7, "lost"),
+            Dismissal(1, "m2", 7),
+            Dismissal(2, "m2", 7),
+        ])!;
+
+        Assert.Empty(once.Conflicts);
+        Assert.True(QuestLog.Applies(once, Dismissal(2, "m2", 7)));
+        Assert.Equal(Shape(once), Shape(twice));
+    }
+
     /// <summary>The ask is the quest: a history with nothing published is no quest at all.</summary>
     [Fact]
     public void A_history_with_nothing_published_is_no_quest()
