@@ -5080,3 +5080,36 @@ Built in a parallel worktree and cherry-picked. Driver +3, modules 109 → 111, 
 the window** in both themes: no composer, *open ask #id* as a plain button (a running intake has
 asked nothing yet), *stop it* with its line, and the running intake's room shown busy. **Filed:
 INT4i**, a driven quest session on the protocol door is still tracked as taking a person's line.
+
+## INT3c — an unadopted repository can be opted into driving from Projects (2026-09-24)
+
+- [x] ~~**INT3c — Projects offers an unadopted repository no *drive on this machine* control.** D70
+  makes one drivable over the protocol door once opted in, but only the adopters' cards carry the
+  control. The terminal's `daoris driver` can opt it in; the screen cannot (D50). Found at INT3's
+  integration.~~
+✅ **done 2026-09-24**. The driving row (drive, hold once driven, own tree per session) is one
+molecule, `projects/DriverChoices`. It sits on an adopter's card and on an unadopted repository with
+a root here (`canBeAsked`), because the planner treats the two alike once past the door. One with no
+root gets nothing. *Manage* stays off the unadopted row, because it writes a declaration into the
+repository. On a machine whose adapter rides the direct door, the row says a quest there sits until
+it drives on a protocol agent. The control is kept rather than hidden: an opt-in outlives an adapter
+change, and hiding it would leave the screen unable to set what the terminal can. The door is read
+from the roster (`doorOf`: the adapter and its entry's `wire`). When the roster cannot say, nothing is
+said. The group's paragraph now claims only what is proven (INT3b). Built in a parallel worktree.
+**Looked at on the window** in both themes. Web 766 → 781.
+
+## INT4i — a driven quest session takes no person's line, on either door (2026-09-24)
+
+- [x] ~~**INT4i — a driven protocol-door session still takes a person's line.** Its stdin carries the
+  driver's JSON-RPC frames, and it is tracked as taking input (`Driver.cs`, where a quest session is
+  tracked), so a `SESSION_INPUT` for it would write into the protocol stream. The page offers it no
+  box. INT4h fixed the intake half. Found by INT4h.~~
+✅ **done 2026-09-24**. Measured by a real tick before the fix. On the protocol door, `Send` for a
+driven session answered `true`: the line was written into the stdin carrying the driver's frames. On
+the pipe door it answered `false` with no reason, which the bridge turns into *it ended*. The executor
+now tracks a driven session with the driver's sentence (`Driver.TakesNoMessages(quest)`), so `Send`
+and `CloseInput` refuse before anything is written. The bridge's existing refusal carries that
+sentence for `SESSION_INPUT` and `END_CHAT`. Conversations are untouched, and only they take turns
+with a person. The test INT4h named as missing now exists: a driven quest through a real tick on both
+doors (`DrivenSessionInputTests`). Driver design §4. Built in a parallel worktree. Driver 477 → 479;
+with INT3c: modules 111, web 781 + 21, family 265/265, deploy 39/39, verify green.

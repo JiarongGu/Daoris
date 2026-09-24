@@ -489,6 +489,14 @@ The first version: doctrine that installs, is checked, and flows back.
   which door could carry it, and the publish tells the asker so. Every place that offers a receiver
   offers exactly who can be asked. Adding a folder with no manifest from Projects now registers it as
   not adopted.
+- **An unadopted repository can be opted into driving from Projects** (INT3c). One registered here
+  with a root carries the same driving row as an adopter: drive, hold, own tree per session. On a
+  machine that drives on a direct agent, the row says a quest there will sit until it drives on a
+  protocol one. The group's explanation now says only what is proven about a real agent there.
+- **A driven session takes no messages either** (INT4i). A line sent to a session the driver started
+  on a quest landed, on the protocol door, in the driver's own JSON-RPC stream, and on the pipe door
+  came back as "it ended". The driver now refuses it in its own words, naming the quest and saying
+  that stopping is the one move that reaches it. Conversations are unchanged.
 - **A running intake takes no messages** (INT4h). Sessions gave it a message box, and a typed line
   either went nowhere or, on the protocol door, landed in the middle of the driver's own JSON-RPC
   stream. It has no box now: its head says why, opens the ask it serves, and carries its stop. The

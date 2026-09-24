@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**383 CLI tests, 454 service, 477 driver, 111 desktop modules, 766 web unit, 21 Playwright**, 73
+**383 CLI tests, 454 service, 479 driver, 111 desktop modules, 781 web unit, 21 Playwright**, 73
 devkit, 56/56 release rehearsal, **265/265 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -241,22 +241,21 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: INT3c, INT4i.** 🔴 **The owner authorized real sessions on this machine's
-  Claude Code account, 2026-09-24**: ACP2's driven run, INT4f and the ACP measurement DEPLOY1 needs.
-  Not the AGT2c downloads. INT6 waits on the owner's presence; PLUG2, HELP3 and DEPLOY1's decision on
-  the owner's answer.
-  **Four are the owner's** (ACP2 and DEPLOY1's second half each cost a login, AGT2c two downloads;
-  PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
-  on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
-  guard lives; PLUG7 on a plugin asking for a service-side point. Take one only when its trigger
-  arrives — and **a new direction from the owner outranks all of them**.
+- **Being built, as parallel worktrees: PLUG2 (D71), DEPLOY1's second half (D73), and PERM1 (D72),
+  which absorbs HELP3 and INT3b.** 🔴 **The owner authorized real sessions on this machine's Claude
+  Code account, 2026-09-24.** ACP2's driven run and INT4f wait only on trust for their scratch
+  folders. The permission check refused an agent's write to the account's `.claude.json`, so the
+  grant is the owner's. **The owner's**: AGT2c (two downloads, not authorized) and INT6 (presence).
+  **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1 on a
+  repository naming what it wants; REH1 and TEST1 on a captured recurrence; PLUG7 on a plugin asking
+  for a service-side point. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 383 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (454),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (477), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (111), `npm run rehearse:family` (265/265), `npm run test:web` (766 vitest + 21 Playwright),
+  (479), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (111), `npm run rehearse:family` (265/265), `npm run test:web` (781 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -270,19 +269,15 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Seventeen items are open** — one of them D67's —
-and every closed one is
-in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Four are **the owner's** to make or spend rather than work anyone can pick up (ACP2,
-DEPLOY1's second half, PLUG2, AGT2c); one more (TOOL4) is held by D57 until TOOL3 has run; and the
-last four are **held**, each waiting on an external trigger that has not arrived. Two more joined
-that class by being read rather than by anyone deciding to defer them: 🔴 **HELP3 is a design
-question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a trigger** — the toolchain
-design's §5 is realised and what waits is a tool somebody names. The other five are the regular
-task's (D65, below) and PLUG7, held.
+the archive; its decision is **D53, accepted**). **Fifteen items are open**, and every closed one is
+in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
+ships. Four are being built (PLUG2, DEPLOY1's second half, and PERM1 with HELP3 and INT3b folded
+in). Four wait on the owner (ACP2's and INT4f's trust, AGT2c, INT6), and seven on a trigger (see
+*Handover*).
 
-🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **D67's buildable items,
-INT3, INT4d, INT4g, INT4h and MAP3d are closed too; next are INT3c and INT4i.** Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
+(2026-09-24, in the archive). Each landing is one session-sized item, TDD, gates green, moved to the
+archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -308,7 +303,9 @@ wire evidence.
   **mode**, not a flag; the permission answerer against Claude Code's real requests; the record naming
   adapter, harness version and profile as today. Closes with **the real driven run** (DRV4's shape) —
   the owner supplies the login. **This is D23's "on proof".** The pipe door stays supported until it
-  passes.
+  passes. **Run 2026-09-24** (`tools/acp2-proof.mjs --drive`, with the login authorized): the keyless
+  half passed 6/6, and the driven run held on its scratch repository's trust, 11/13 with no login
+  spent. It passes once that folder is trusted.
 
   ⏸ **Driven for real 2026-09-22 to 11 of 13 checks**; the two missing were ACP4 (no MCP server
   handed over), which has since landed. Re-run 2026-09-23: readiness 6/6, then the drive was held by
@@ -448,17 +445,10 @@ screen.
   room's allow-list anyway. Proven only with the stub (D70's last paragraph). The likely answer is to
   allow the connector's own tools at session creation, a posture D52 permits there. 🔴 **The owner
   answered, 2026-09-24**: it is part of PERM1 (D72, under HELP3).
-- [ ] **INT3c — Projects offers an unadopted repository no *drive on this machine* control.** D70
-  makes one drivable over the protocol door once opted in, but only the adopters' cards carry the
-  control. The terminal's `daoris driver` can opt it in; the screen cannot (D50). Found at INT3's
-  integration.
-- [ ] **INT4i — a driven protocol-door session still takes a person's line.** Its stdin carries the
-  driver's JSON-RPC frames, and it is tracked as taking input (`Driver.cs`, where a quest session is
-  tracked), so a `SESSION_INPUT` for it would write into the protocol stream. The page offers it no
-  box. INT4h fixed the intake half. Found by INT4h.
 - [ ] **INT4f — a real ask through a real intake harness.** INT4b is proven by a stub. What is
   unseen: the MCP host publishing as the ask under a real harness's environment, and the room's
-  trust hold for an intake. It spends a login, so it is the owner's.
+  trust hold for an intake. The login is authorized (2026-09-24). It waits on the room being trusted,
+  which is the owner's grant.
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 

@@ -20,7 +20,8 @@ conversations.
 and `CloseInput` refuse it before anything is written, and the bridge answers with the driver's
 sentence. The screen gives a running intake no box. The trap: **an open stdin is not an
 invitation.** On the protocol door it belongs to the protocol. A driven quest session on that door
-has the same exposure (INT4i).
+had the same exposure, fixed the same way as INT4i. A real tick showed `Send` answering `true` there
+before the fix (`DrivenSessionInputTests`).
 
 **Verify.** `A_session_that_takes_no_input_is_never_written_into_even_with_its_stdin_open` (a real
 process with stdin open hears nothing), `A_running_intake_takes_no_messages_and_says_where_the_answer_goes`
