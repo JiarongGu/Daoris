@@ -754,7 +754,7 @@ app.MapDelete("/api/registry/{repository}", async (
             ? $"`{repository}` is no longer registered here. Nothing was deleted: its files, its history "
               + "and its doctrine are its own — it has simply stopped being addressable and indexed on "
               + "this machine, and its entries leave the index on the next refresh."
-              + (circle is null ? "" : $" It leaves the `{circle}` circle's deployment too, on the next sync.")
+              + (circle is null ? "" : $" It leaves the `{circle}` workspace's deployment too, on the next sync.")
             : $"`{repository}` was not registered here, so there was nothing to retire."));
 });
 

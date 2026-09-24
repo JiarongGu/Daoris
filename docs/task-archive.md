@@ -5459,3 +5459,17 @@ repository count and its repositories, from the same unscoped registry answer th
 reads. It is offered in a browser too, with none of the machine's wiring. Seen on the empty install:
 all three say 还没有工作区. A body that began by repeating its own title lost the repetition. Web
 unit 850 → 853.
+
+## FRAME5 — one word at the other doors (2026-09-24)
+
+- [x] ~~**FRAME5 — one word at the other doors.** The sentences the CLI, the driver and the service
+  print, which three artefacts' tests assert verbatim.~~
+✅ **done 2026-09-24** (D75 §4), which closes the D75 arc. 23 printed sentences now say
+*workspace*: 10 in the CLI (permissions, remotes, the toolchain's pins, the intake's hint), 9 in the
+driver and its host (the intake room's own words to its agent, the rule-scope refusal, the sync's
+lines and usage), 3 in the service (the ask refusal, the ledger, the retire message), and one in
+the MCP tool description an agent reads for `permission_propose`'s scope. Identifiers, SQL comments and `{circle}` variables
+stay, because nobody reads them. `one-word.test.ts` in the CLI suite scans the string literals of
+all three artefacts and was seen failing on the service's old ask refusal. Three assertions moved
+with the words: a CLI permissions test, a driver sync test and a family-rehearsal check. CLI 443 →
+445, driver 586, modules 118, service 469, verify green.

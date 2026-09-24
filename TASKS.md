@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**443 CLI tests, 469 service, 586 driver, 118 desktop modules, 853 web unit, 21 Playwright**, 73
+**445 CLI tests, 469 service, 586 driver, 118 desktop modules, 853 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -241,9 +241,9 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **The owner's newest direction is the menus by domain** (D75, FRAME5 left), and it outranks the
-  rest. Beyond it, surface work is whatever the next look at the install finds (POLISH2 and POLISH3
-  are in the archive). 🔴 **The owner authorized real sessions on this
+- **The owner's newest direction, the menus by domain (D75), is built and closed** (FRAME1–FRAME5).
+  Beyond it, surface work is whatever the next look at the install finds (POLISH2, POLISH3 and the
+  FRAME items are in the archive). 🔴 **The owner authorized real sessions on this
   machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
   (16/16), INT4j (17/17) and PERM2b (14/14) one each. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
@@ -252,7 +252,7 @@ the traps that are not in any contract, because they were found rather than desi
   for a service-side point. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 443 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 445 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (469),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
@@ -270,9 +270,9 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Eleven items are open**, and every closed one
+the archive; its decision is **D53, accepted**). **Ten items are open**, and every closed one
 is in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. One is the owner's new direction and buildable now (FRAME5, D75), three wait on the
+ships. The owner's menus-by-domain direction (D75) is closed; three wait on the
 owner (TRUST2, AGT2c, INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
@@ -423,11 +423,9 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
 > *"I think we can use the topbar menu to have more different domain of setup, this is closer to ide
 > logic, and I dont see workspace anymore?"*
 
-`docs/2026-09-24-menus-design.md` is the contract; the owner chose each shape from options (D75).
-Take them in order, and look at each on the installed application before it closes.
-
-- [ ] **FRAME5 — one word at the other doors.** The sentences the CLI, the driver and the service
-  print, which three artefacts' tests assert verbatim.
+**Closed 2026-09-24.** `docs/2026-09-24-menus-design.md` is the contract, the owner chose each shape
+from options (D75), and FRAME1–FRAME5 are in the archive. Nothing here is open; a new menu or
+Settings domain is built against that design, not against this heading.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

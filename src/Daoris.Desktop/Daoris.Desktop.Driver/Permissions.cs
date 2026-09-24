@@ -313,7 +313,7 @@ public static class PermissionRules
         if (name is not { } given || string.IsNullOrWhiteSpace(given))
         {
             throw new DriverException(
-                $"a {(scope == RuleScope.Workspace ? "circle" : "repository")} scope needs its name.");
+                $"a {(scope == RuleScope.Workspace ? "workspace" : "repository")} scope needs its name.");
         }
 
         var key = given.Trim();

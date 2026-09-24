@@ -136,7 +136,7 @@ public sealed class SessionLedger(
                 SessionOpenRefusal.RepositoryBusy,
                 $"The intake room for `{ask.Workspace}` already has a running session — `{running.Id}` "
                 + $"({Spell(running.State)}{(running.Ask is { } other ? $", ask `#{other}`" : "")}). One intake runs "
-                + "per circle at a time; the next ask is taken when it ends.",
+                + "per workspace at a time; the next ask is taken when it ends.",
                 Session: null);
         }
 

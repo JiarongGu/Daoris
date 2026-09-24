@@ -347,8 +347,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         {
             return new(
                 AskRefusal.UnknownWorkspace,
-                $"`{workspace}` is not a workspace this machine holds — an ask is made in a circle, and the "
-                + $"circle is whom it can reach. Held here: {string.Join(", ", held)}.",
+                $"`{workspace}` is not a workspace this machine holds — an ask is made in a workspace, and the "
+                + $"workspace is whom it can reach. Held here: {string.Join(", ", held)}.",
                 Ask: null);
         }
 

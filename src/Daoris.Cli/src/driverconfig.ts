@@ -284,7 +284,7 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
         write('  An intake already waiting on you still waits; answering its ask ends it.');
       } else {
         write(`daoris: an ask the declarations do not settle opens an intake session via \`${named}\`.`);
-        write('  It reads the circle\'s declarations, publishes the quests itself, and asks you where they do not');
+        write('  It reads the workspace\'s declarations, publishes the quests itself, and asks you where they do not');
         write('  settle it. 🔴 Every intake spends a real login on that harness\'s account.');
         if (!(named in TOOLCHAINS)) {
           write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');

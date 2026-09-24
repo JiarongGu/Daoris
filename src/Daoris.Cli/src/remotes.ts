@@ -143,7 +143,7 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
       writeRemotes(target, remotes);
       write(`daoris: \`${workspace}\` is no longer wired on this machine.`);
       write('  Nothing at the deployment changed: the key stays valid there until an operator revokes');
-      write('  it, and what that workspace already fed stays where it is. This circle now syncs');
+      write('  it, and what that workspace already fed stays where it is. This workspace now syncs');
       write('  nowhere from here, silently — which is what having no remote has always meant.');
       return 0;
     }
@@ -191,7 +191,7 @@ function requireName(argv: string[], verb: string): string {
   if (!name) {
     throw new DaorisError(
       `\`remote ${verb}\` needs a workspace name — e.g. \`daoris remote ${verb} aurora\`. `
-      + 'The name is the circle, and it is what a shared deployment declares itself to be.');
+      + 'The name is the workspace, and it is what a shared deployment declares itself to be.');
   }
 
   return name;

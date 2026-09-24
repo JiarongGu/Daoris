@@ -875,7 +875,7 @@ export function commandHarness(
 
       pinTo(name, null, workspace);
       write(workspace
-        ? `daoris: the \`${workspace}\` circle no longer pins \`${name}\` on this machine.`
+        ? `daoris: the \`${workspace}\` workspace no longer pins \`${name}\` on this machine.`
         : `daoris: \`${name}\` runs from PATH again on this machine.`);
       write('  Nothing was deleted — the managed install stays where it is, and re-pinning that');
       write('  version needs no download.');
@@ -965,7 +965,7 @@ export function commandHarness(
   function pinned(name: string, version: string, workspace: string | undefined): ExitCode {
     pinTo(name, version, workspace);
     write(workspace
-      ? `daoris: \`${name}\` runs at ${version} for the \`${workspace}\` circle on this machine.`
+      ? `daoris: \`${name}\` runs at ${version} for the \`${workspace}\` workspace on this machine.`
       : `daoris: \`${name}\` runs at ${version} on this machine.`);
     write('  Sessions spawn this binary rather than whatever is on PATH. `daoris agent unpin`');
     write('  puts it back, and the version is on every session record either way.');
@@ -1025,7 +1025,7 @@ export function commandHarness(
       }
 
       for (const [circle, map] of Object.entries(settings.workspaceVersions)) {
-        if (map[name]) write(`  ${''.padEnd(14)} pinned ${map[name]} for the \`${circle}\` circle`);
+        if (map[name]) write(`  ${''.padEnd(14)} pinned ${map[name]} for the \`${circle}\` workspace`);
       }
 
       if (report.profiles.length === 0) {

@@ -243,7 +243,7 @@ test('`rules allow|ask|deny` writes the scope named, and `rules` lists every sco
     assert.match(out, /connector/);
     assert.match(out, /no-push/);
     assert.match(out, /Bash\(npm run test:\*\)/);
-    assert.match(out, /circle `default`/);
+    assert.match(out, /workspace `default`/);
     assert.match(out, /repository `engine`/);
     // Said once, where a person reads it: the rules are Claude Code's, and no other agent is handed them.
     assert.match(out, /Claude Code/);

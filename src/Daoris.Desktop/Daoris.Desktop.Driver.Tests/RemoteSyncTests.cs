@@ -325,7 +325,7 @@ public sealed class RemoteSyncTests
             { "workspace": "aurora", "wired": true, "ahead": 1, "behind": [], "conflicts": [], "synced": null, "tried": null, "problem": null }
             """).Describe();
 
-        Assert.Equal(["tools  no remote on this machine's host — nothing of this circle leaves it"], unwired);
+        Assert.Equal(["tools  no remote on this machine's host — nothing of this workspace leaves it"], unwired);
         Assert.Equal(["aurora  1 ahead · 0 behind · 0 in conflict · not synced yet"], fresh);
     }
 

@@ -1841,7 +1841,7 @@ const retireOwed = await api('GET', '/api/registry/retired?workspace=default', {
 check(
   'retiring a joined checkout on machine b leaves a retire owed to its circle, and the sentence says so',
   retiredOnB.code === 0 && (retireOwed.json?.repositories ?? []).includes('borealis')
-    && /leaves the `default` circle's deployment too/.test(retiredOnB.out),
+    && /leaves the `default` workspace's deployment too/.test(retiredOnB.out),
   `${retiredOnB.out}\n${retireOwed.text}`,
 );
 driveB('--once');
@@ -2094,7 +2094,7 @@ const toolsQuest = await api('POST', '/api/quests', {
   },
 });
 check(
-  'a quest in a circle with no remote is refused locally, and reaches no deployment',
+  'a quest in a workspace with no remote is refused locally, and reaches no deployment',
   toolsQuest.status === 400
     && ((await api('GET', '/api/quests?includeClosed=true', { base: AURORA_BASE, key: keyC })).json ?? [])
       .every((q) => q.from !== 'foundry'),

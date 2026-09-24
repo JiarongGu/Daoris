@@ -396,6 +396,13 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Convergence answers about three times faster**, with the same answers: about seven seconds a
   call on a 1,052-entry index before, under two and a half after. A drawer no longer dims half the
   status bar, and two accounts signed in as one person say which is the tool's own.
+- **The menus are the setup domains** (D75). The title bar carries *Daoris · Workspace · Agents ·
+  View*, and each setup item opens its own domain. Settings is one page with its domains in a
+  list, one shown at a time, as an IDE's settings are. The Workspace menu lists every workspace with
+  what it holds and scopes the window, and can import a folder of repositories as `daoris import`
+  does. The workspace is named in the title bar and the status bar in every state, *no workspace
+  yet* included. And the scope has one name everywhere, *workspace* / 工作区, in the interface and in
+  what the CLI, the driver and the service print.
 - **An account is made by signing in, and Remove removes it** (D66 §3). *Sign in to another
   account* runs the tool's own sign-in into a fresh account and keeps it only if the sign-in
   finished; the name box that came first is gone. Accounts are listed by who is signed in (the email

@@ -142,7 +142,7 @@ public sealed class RemoteSyncSet : IDisposable
         {
             throw new DriverException(
                 $"this machine has no remote for `{RemoteTarget.Workspace(workspace)}` — `daoris remote add` wires one, "
-                + "and a circle with none syncs nowhere.");
+                + "and a workspace with none syncs nowhere.");
         }
 
         var problems = new List<string>();

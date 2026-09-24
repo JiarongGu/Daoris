@@ -435,7 +435,7 @@ public sealed class KnowledgeTools(
     public string ProposePermission(
         [Description("add (a rule to a list), remove (a rule from a scope), or default (switch one of Daoris's defaults).")]
         string action,
-        [Description("Where it reaches: machine (every session here), workspace (one circle), or repository (one repository). Prefer the narrowest that is enough.")]
+        [Description("Where it reaches: machine (every session here), workspace (every session in one workspace), or repository (one repository). Prefer the narrowest that is enough.")]
         string scope,
         [Description("Why: what you were doing, and what the change would allow or stop. The person decides on this.")]
         string why,

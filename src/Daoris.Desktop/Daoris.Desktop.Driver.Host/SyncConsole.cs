@@ -91,7 +91,7 @@ internal static class SyncConsole
             : RemoteTarget.Load().Keys.Order(StringComparer.Ordinal).ToList();
         if (circles.Count == 0)
         {
-            Console.WriteLine("sync: no remote is wired on this machine — every circle is local, and nothing is ahead of anything.");
+            Console.WriteLine("sync: no remote is wired on this machine — every workspace is local, and nothing is ahead of anything.");
             return 0;
         }
 
@@ -109,8 +109,8 @@ internal static class SyncConsole
     private static int Usage()
     {
         Console.Error.WriteLine("usage: daoris-driver sync [status | dismiss <quest>] [--workspace <name>]");
-        Console.Error.WriteLine("  sync                    one pass now, for every circle with a remote or the one named");
-        Console.Error.WriteLine("  sync status             where each circle stands on this machine — ahead, behind, in");
+        Console.Error.WriteLine("  sync                    one pass now, for every workspace with a remote or the one named");
+        Console.Error.WriteLine("  sync status             where each workspace stands on this machine — ahead, behind, in");
         Console.Error.WriteLine("                          conflict, and when it last reached its remote; reaches no remote");
         Console.Error.WriteLine("  sync dismiss <quest>    dismiss the conflicts a quest carries; the next pass carries it");
         return 2;

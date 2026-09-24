@@ -136,7 +136,7 @@ public static class IntakeRoom
         text.Append("## Who owns what\n\n");
         if (declared.Count == 0)
         {
-            text.Append("_No repository in this circle has declared what it owns — nothing here can be decided from\n");
+            text.Append("_No repository in this workspace has declared what it owns — nothing here can be decided from\n");
             text.Append("declarations. Say so, and ask the person._\n\n");
         }
 
@@ -251,7 +251,7 @@ public static class IntakePrompt
             text.Append('\n');
         }
 
-        text.Append("`AGENTS.md` in this room lists every repository in the circle — what each owns, what it\n");
+        text.Append("`AGENTS.md` in this room lists every repository in the workspace — what each owns, what it\n");
         text.Append("accepts, and where it is. Decide from those declarations; the `registry` tool answers the same,\n");
         text.Append("live.");
         if (ask.Proposed.Count > 0)

@@ -20,7 +20,7 @@ public sealed record SyncStanding(
     /// </summary>
     public IReadOnlyList<string> Describe()
     {
-        if (!Wired) return [$"{Workspace}  no remote on this machine's host — nothing of this circle leaves it"];
+        if (!Wired) return [$"{Workspace}  no remote on this machine's host — nothing of this workspace leaves it"];
 
         var lines = new List<string>
         {
@@ -390,7 +390,7 @@ public static class RemoteSyncPayloads
         var root = document.RootElement;
         if (root.ValueKind != JsonValueKind.Object)
         {
-            throw new DriverException($"a host answered a circle's standing with something that is not one: {Clip(root.GetRawText())}");
+            throw new DriverException($"a host answered a workspace's standing with something that is not one: {Clip(root.GetRawText())}");
         }
 
         DateTimeOffset? At(string name) =>

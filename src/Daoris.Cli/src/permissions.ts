@@ -216,11 +216,11 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
   const workspace = flagValue(argv, '--workspace');
   const repository = flagValue(argv, '--repository');
   if (workspace !== undefined && repository !== undefined) {
-    throw new DaorisError('a rule reaches one scope — name a circle with `--workspace` or a repository with `--repository`, not both.');
+    throw new DaorisError('a rule reaches one scope — name a workspace with `--workspace` or a repository with `--repository`, not both.');
   }
   const scope: RuleScope = workspace !== undefined ? 'workspace' : repository !== undefined ? 'repository' : 'machine';
   const name = workspace ?? repository ?? null;
-  const where = scope === 'machine' ? 'every session on this machine' : `${scope === 'workspace' ? 'circle' : 'repository'} \`${name}\``;
+  const where = scope === 'machine' ? 'every session on this machine' : `${scope === 'workspace' ? 'workspace' : 'repository'} \`${name}\``;
 
   switch (verb) {
     case 'list':
@@ -287,7 +287,7 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
       write(`  ${shipped.id.padEnd(10)} ${on ? 'on ' : 'off'}  ${shipped.list}  ${what}`);
     }
     show('This machine', file.machine);
-    for (const [circle, held] of Object.entries(file.workspaces)) show(`circle \`${circle}\``, held);
+    for (const [circle, held] of Object.entries(file.workspaces)) show(`workspace \`${circle}\``, held);
     for (const [repo, held] of Object.entries(file.repositories)) show(`repository \`${repo}\``, held);
     return 0;
   }
@@ -303,7 +303,7 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
 function edit(file: PermissionFile, scope: RuleScope, name: string | null, change: (held: RuleLists) => RuleLists): PermissionFile {
   if (scope === 'machine') return { ...file, machine: change(file.machine) };
   if (!name?.trim()) {
-    throw new DaorisError(`a ${scope === 'workspace' ? 'circle' : 'repository'} scope needs its name.`);
+    throw new DaorisError(`a ${scope === 'workspace' ? 'workspace' : 'repository'} scope needs its name.`);
   }
 
   const key = name.trim();
