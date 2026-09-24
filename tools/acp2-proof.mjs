@@ -448,6 +448,17 @@ async function drivenRun() {
     adapter: ADAPTER, timeoutMinutes: 10, pollSeconds: 5, notify: false,
   }, null, 2)}\n`);
 
+  // 🔴 The person's rule that lets a session COMMIT (PERM1, D72). The driver's home is the folder its
+  // driver.json sits in, so the rules live beside it. Without them the first real runs (2026-09-24)
+  // took the quest over the connector — whose tools Daoris's defaults allow — made the edit, and were
+  // refused `git add`/`git commit`: the repository's own allow-list is ignored in a folder the agent
+  // has never trusted (DEPLOY1's measurement), so they declined honestly with no commit. `cd` is
+  // here because the agent prefixes its commit with one, and every part of a compound command must
+  // be allowed.
+  writeFileSync(join(scratch, 'permissions.json'), `${JSON.stringify({
+    machine: { allow: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'] },
+  }, null, 2)}\n`);
+
   console.log('  ..    driving — this is the step that spends the login');
   const run = capture(`dotnet "${driverDll}" --until-idle`, scratch, {
     env: { ...env, DAORIS_DRIVER_CONFIG: configPath },

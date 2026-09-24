@@ -256,6 +256,67 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// 🔴 The first real Claude Code run over this door (ACP2, 2026-09-24) died at its first tool call,
+    /// three sessions in a row, each "exited without touching its quest". A real `tool_call` carries
+    /// `content` as a LIST, and the renderer read it as an object: the throw killed the reader, whose
+    /// `finally` then said the agent's stream had ended — a false sentence over a lost exception. The
+    /// stub had only ever sent the flat shape.
+    /// </summary>
+    [Fact]
+    public async Task A_real_tool_call_whose_content_is_a_list_is_rendered_and_the_turn_goes_on()
+    {
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call","toolCallId":"c1","title":"mcp__daoris-knowledge__quest_respond","kind":"other","status":"pending","rawInput":{"quest":"abc123","action":"take"},"content":[]}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call_update","toolCallId":"c1","status":"completed","content":[{"type":"content","content":{"type":"text","text":"Taken."}}]}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add)
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Contains(lines, line => line.Contains("quest_respond"));
+        Assert.Contains(lines, line => line.Contains("completed"));
+    }
+
+    /// <summary>
+    /// And whatever else a wire that is somebody else's may send: an update this client cannot read is
+    /// shown as itself, and the turn goes on. One unreadable frame must never cost a session.
+    /// </summary>
+    [Fact]
+    public async Task An_update_this_client_cannot_read_is_shown_and_the_turn_goes_on()
+    {
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":7,"content":"not an object"}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add)
+            .RunAsync("D:/fam/Game", "do something", CancellationToken.None);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Contains(lines, line => line.Contains("not an object"));
+    }
+
+    /// <summary>
     /// An update shape this build has never seen is rendered as itself rather than dropped. The wire
     /// is somebody else's and it grows; a console that silently omitted the one new update type would
     /// be a transcript with a hole in it that nothing reports.

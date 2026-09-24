@@ -269,7 +269,18 @@ public sealed class AcpSession(
                     continue;
                 }
 
-                await DispatchAsync(frame).ConfigureAwait(false);
+                try
+                {
+                    await DispatchAsync(frame).ConfigureAwait(false);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    // 🔴 One frame this client could not read is shown, and the reading goes on. A
+                    // throw here used to end the reader, and its `finally` then said the agent's
+                    // stream had ended — a false sentence over a lost exception, which is how the
+                    // first real run died at its first tool call (ACP2, 2026-09-24).
+                    onLine($"[unreadable frame: {error.Message}] {Compact(frame)}");
+                }
             }
         }
         catch (OperationCanceledException)
@@ -468,8 +479,7 @@ public sealed class AcpSession(
     /// </remarks>
     private void Measure(JsonElement update)
     {
-        if (!update.TryGetProperty("sessionUpdate", out var kind)
-            || kind.GetString() != "usage_update"
+        if (Kind(update) != "usage_update"
             || Number(update, "used") is not { } used
             || Number(update, "size") is not { } size)
         {
@@ -491,7 +501,7 @@ public sealed class AcpSession(
 
     internal static string? Render(JsonElement update)
     {
-        var kind = update.TryGetProperty("sessionUpdate", out var k) ? k.GetString() : null;
+        var kind = Kind(update);
         var text = Text(update);
 
         return kind switch
@@ -507,10 +517,26 @@ public sealed class AcpSession(
         };
     }
 
-    /// <summary>`content.text`, which is where every textual update carries its words.</summary>
+    /// <summary>
+    /// `content.text`, which is where every textual update carries its words.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Only when `content` is an OBJECT. A real `tool_call` carries it as a list, and reading a list
+    /// as an object throws — which, in the reader, took the whole turn down at the first tool call of
+    /// the first real run (ACP2, 2026-09-24).
+    /// </remarks>
     private static string? Text(JsonElement update) =>
-        update.TryGetProperty("content", out var content) && content.TryGetProperty("text", out var t)
-            ? t.GetString()
+        update.TryGetProperty("content", out var content)
+            && content.ValueKind == JsonValueKind.Object
+            && content.TryGetProperty("text", out var t)
+            && t.ValueKind == JsonValueKind.String
+                ? t.GetString()
+                : null;
+
+    /// <summary>Which update this is, or null when the wire did not say in a string.</summary>
+    private static string? Kind(JsonElement update) =>
+        update.TryGetProperty("sessionUpdate", out var kind) && kind.ValueKind == JsonValueKind.String
+            ? kind.GetString()
             : null;
 
     private static string? Field(JsonElement element, string name) =>
