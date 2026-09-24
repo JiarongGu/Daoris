@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 587 driver, 118 desktop modules, 867 web unit, 21 Playwright**, 73
+**446 CLI tests, 473 service, 604 driver, 120 desktop modules, 874 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -259,7 +259,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (473),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (587), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (867 vitest + 21 Playwright),
+  (604), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (120), `npm run rehearse:family` (271/271), `npm run test:web` (874 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -442,10 +442,6 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24).
-- [ ] **CONV1 — the event record.** Daoris's event vocabulary (D76 §1); the ACP door maps
-  `session/update` into it where `Acp.cs` flattens it today; events appended to
-  `sessions/<id>.events.jsonl`; a live bridge event and a paged history read; the console keeps its
-  lines. No new rendering yet: a test reads a session back after a restart.
 - [ ] **CONV2 — the conversation view.** The centre renders the events: the person's and the agent's
   messages, Markdown, code with copy, thinking folded, tool calls as cards (generic, then read, edit,
   shell, search), a turn's work folded, follow-the-tail with *back to bottom*, history a page at a

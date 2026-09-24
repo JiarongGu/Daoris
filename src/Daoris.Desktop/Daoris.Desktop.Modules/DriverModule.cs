@@ -159,6 +159,25 @@ public sealed class DriverModule : ModuleBase
             // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
             // that just opened catches up, and how one that missed a batch closes the gap — the
             // sequence numbers are the driver's, so neither side has to remember the other.
+            // A session's conversation (D76 §2): the newest page, an earlier one (`before`), or only
+            // what is newer (`after`) — how a page opens a session after a restart, loads earlier
+            // turns, and closes a gap in the live events. From the record under the home, so it
+            // answers whether or not this app was running when the session spoke.
+            case "SESSION_HISTORY":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                long? Number(string name) => request.Payload is { } payload
+                    && payload.TryGetProperty(name, out var value)
+                    && value.ValueKind == JsonValueKind.Number
+                        ? value.GetInt64()
+                        : null;
+
+                var page = Number("after") is { } after
+                    ? _loop.Events.After(id, after)
+                    : _loop.Events.Page(id, Number("before"), (int)(Number("limit") ?? SessionEvents.PageLimit));
+                return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest };
+            }
+
             case "TAIL_SESSION":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

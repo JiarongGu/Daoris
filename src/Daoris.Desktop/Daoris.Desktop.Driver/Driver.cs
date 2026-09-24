@@ -80,7 +80,11 @@ public sealed partial class Driver(
     // The plugins that speak (D64), shared across ticks like the process registry: their processes
     // outlive a tick, and the tick asks them at its points. Null where no plugin is read at all,
     // which is every test that does not care and nothing that runs on a machine.
-    HookSet? hooks = null)
+    HookSet? hooks = null,
+    // Where a session's structure is kept (D76 §2), shared so the shell hears each event as it is
+    // written. Null means this driver keeps the record itself, under the home, with nobody watching —
+    // the headless host's case: the record still exists for a surface opened later.
+    SessionEvents? events = null)
 {
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
@@ -122,6 +126,9 @@ public sealed partial class Driver(
 
     // The worktree half of D51, beside the transcripts under the same home.
     private readonly SessionTrees _trees = new(home);
+
+    // The conversation half of D76, beside the transcripts it enriches.
+    private readonly SessionEvents _events = events ?? new SessionEvents(Path.Combine(home, "sessions"));
 
     /// <summary>
     /// The door this machine's starts ride — the configured adapter's wire, read against this tick's
@@ -809,14 +816,38 @@ public sealed partial class Driver(
             output?.Append(sessionId, text);
         }
 
+        // The record's half (D76 §2). A record that cannot be written costs a console line, never the
+        // session: the conversation enriches the run, it does not run it.
+        void Event(SessionEvent e)
+        {
+            try
+            {
+                _events.Append(sessionId, e);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+            {
+                Line($"[the conversation record could not keep an event: {error.Message}]");
+            }
+        }
+
+        // A driver line that is also part of the conversation: a note in the record as well.
+        void Said(string text)
+        {
+            Line(text);
+            Event(new SessionEvent { Kind = SessionEventKind.Note, Text = text });
+        }
+
         var errors = PumpAsync(process.StandardError, file, sessionId, output, ct);
 
         try
         {
+            // What was asked, first: the target the driver composed is the conversation's opening line.
+            Event(new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt });
+
             // What this harness is doing that daoris has not been able to govern (ACP3). On the
             // transcript rather than swallowed: it is a fact about how this session ran, and the
             // person can act on it in one command.
-            if (harnessNotice is { Length: > 0 }) Line(harnessNotice);
+            if (harnessNotice is { Length: > 0 }) Said(harnessNotice);
 
             // The session's voice (ACP4). Located per run rather than once, because a machine can
             // gain the host between ticks — and a machine that has none still drives, without a
@@ -824,7 +855,7 @@ public sealed partial class Driver(
             var connector = Connector(sessionId, scope);
             if (connector is null)
             {
-                Line(scope is null
+                Said(scope is null
                     ? $"— no {KnowledgeConnector.ExecutableName} on this machine, so this session has no "
                       + "connector: it can do the work but cannot take or close its own quest. "
                       + "`npm run publish:service -- --install` lands one."
@@ -839,7 +870,7 @@ public sealed partial class Driver(
             offered.AddRange(_servers);
 
             var outcome = await new AcpSession(
-                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta)
+                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event)
                 .RunAsync(cwd, prompt, ct, offered).ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
@@ -852,7 +883,7 @@ public sealed partial class Driver(
             // A protocol failure is a fact about this run and belongs in its transcript. It does not
             // conclude the record either: the process still has an exit code, and the quest still
             // has a state, and those two are what the conclusion is made of.
-            Line($"— the ACP session failed: {error.Message}");
+            Said($"— the ACP session failed: {error.Message}");
             return null;
         }
         finally

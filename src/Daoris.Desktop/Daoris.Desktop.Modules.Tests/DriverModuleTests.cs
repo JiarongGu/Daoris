@@ -473,6 +473,47 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// D76 §2 (CONV1): a session's conversation is read back over the bridge a page at a time — the
+    /// newest first, then earlier, then only what is newer — from the record under the home, so it
+    /// answers after a restart when the console's window is long gone.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_conversation_is_read_back_a_page_at_a_time()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        for (var i = 1; i <= 5; i++)
+        {
+            loop.Events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = $"m{i}" });
+        }
+
+        var latest = await AnswerAsync(module, "SESSION_HISTORY", new { id = "s1", limit = 2 });
+        Assert.Equal("s1", latest.GetProperty("session").GetString());
+        Assert.Equal(["m4", "m5"], latest.GetProperty("events").EnumerateArray().Select(e => e.GetProperty("text").GetString()));
+        Assert.True(latest.GetProperty("earlier").GetBoolean());
+        Assert.Equal(5, latest.GetProperty("latest").GetInt64());
+        Assert.Equal("message", latest.GetProperty("events")[0].GetProperty("kind").GetString());
+
+        var earlier = await AnswerAsync(module, "SESSION_HISTORY", new { id = "s1", before = 4, limit = 2 });
+        Assert.Equal(["m2", "m3"], earlier.GetProperty("events").EnumerateArray().Select(e => e.GetProperty("text").GetString()));
+
+        var newer = await AnswerAsync(module, "SESSION_HISTORY", new { id = "s1", after = 3 });
+        Assert.Equal(["m4", "m5"], newer.GetProperty("events").EnumerateArray().Select(e => e.GetProperty("text").GetString()));
+
+        var none = await AnswerAsync(module, "SESSION_HISTORY", new { id = "nothing-here" });
+        Assert.Empty(none.GetProperty("events").EnumerateArray());
+    }
+
+    /// <summary>An id arrives from the page, so one that is not an id is refused in a sentence, never read.</summary>
+    [Fact]
+    public async Task A_history_asked_for_by_a_path_is_refused()
+    {
+        var refusal = await RefusalAsync(Module(), "SESSION_HISTORY", new { id = "../escape" });
+
+        Assert.Contains("is not a session id", refusal);
+    }
+
+    /// <summary>
     /// A cold start is the state a person meets most often, and it must be a SENTENCE: the loop's
     /// service is not answering yet, so there is nothing to put behind a conversation.
     /// </summary>

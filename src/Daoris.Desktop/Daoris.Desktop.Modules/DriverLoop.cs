@@ -36,6 +36,14 @@ public sealed class DriverLoop(
     public SessionOutput Output { get; } = new();
 
     /// <summary>
+    /// What sessions did, as typed events (D76 §2) — the conversation the page renders, kept under the
+    /// home beside the transcripts so it outlives the console's window and a restart. Machine-local by
+    /// the same rule, and reachable only over this bridge.
+    /// </summary>
+    public SessionEvents Events { get; } = new(Path.Combine(
+        Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!, "sessions"));
+
+    /// <summary>
     /// What sessions consumed (TOOL3/D57 §4) — machine-local by the same rule as the console and the
     /// profile name it records, and reachable only over this bridge. Its home is the Daoris home,
     /// which is the directory `driver.json` sits in.
@@ -203,6 +211,11 @@ public sealed class DriverLoop(
                 Lines = lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
             }));
 
+        // The conversation's events, the same way (D76, CONV1): the page reads the history once over
+        // `SESSION_HISTORY` and takes everything after it from here, asking for a gap it notices.
+        using var conversation = new EventRelay(Events, (session, events) =>
+            eventBus.EmitAsync("DAORIS", "SESSION_EVENTS", new { Session = session, Events = events.ToArray() }));
+
         // Conversations share everything the loop has — the same service, the same process registry
         // (so one lock and one "stop" reach both kinds), the same console buffer.
         // …and the same harness roster, so one probe serves both doors and a login the person just
@@ -220,7 +233,7 @@ public sealed class DriverLoop(
         string? lastConsidered = null;
         string? lastAsked = null;
 
-        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks);
+        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events);
         await _watch.RunAsync(
             async (report, ticked) =>
             {

@@ -24,7 +24,10 @@ public sealed class DriverWatch(
     SessionUsage? usage = null,
     // The plugins that speak (D64), owned by whoever owns this loop and stopped with it; every tick
     // reconciles them against the catalogue, so an edit between ticks takes effect at the next.
-    HookSet? hooks = null)
+    HookSet? hooks = null,
+    // Where a session's structure is kept (D76 §2), shared so the shell hears each event live. Null
+    // in the headless host: each tick's driver keeps the record under the home with nobody watching.
+    SessionEvents? events = null)
 {
     private CancellationTokenSource _pause = new();
 
@@ -62,7 +65,7 @@ public sealed class DriverWatch(
             try
             {
                 var report = await new Driver(
-                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks)
+                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events)
                     .TickAsync(ct).ConfigureAwait(false);
                 await onReport(report, config).ConfigureAwait(false);
             }

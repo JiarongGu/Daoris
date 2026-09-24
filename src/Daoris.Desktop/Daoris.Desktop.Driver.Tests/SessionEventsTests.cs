@@ -1,0 +1,196 @@
+using System.Text;
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// A session's structure, kept as typed events on the machine (D76 §1–2, CONV1).
+/// </summary>
+/// <remarks>
+/// The console is a window that forgets; this is the record the page reads a conversation back
+/// from, after a restart as well as live. So the tests are about what survives: the order, the
+/// sequence across a new instance, a page at a time, and a file that stays bounded and inside its
+/// folder.
+/// </remarks>
+public sealed class SessionEventsTests : IDisposable
+{
+    private readonly string _directory = Path.Combine(
+        Path.GetTempPath(), "daoris-events-" + Guid.NewGuid().ToString("N")[..8]);
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_directory)) Directory.Delete(_directory, recursive: true);
+    }
+
+    private static SessionEvent Message(string text) => new() { Kind = SessionEventKind.Message, Text = text };
+
+    [Fact]
+    public void Each_event_is_numbered_in_order_and_written_as_one_line_beside_the_transcript()
+    {
+        var events = new SessionEvents(_directory);
+        var heard = new List<(string Session, SessionEvent Event)>();
+        events.Evented += (session, e) => heard.Add((session, e));
+
+        var first = events.Append("a1b2c3", Message("working on it"));
+        var second = events.Append("a1b2c3", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+
+        Assert.Equal(1, first.Seq);
+        Assert.Equal(2, second.Seq);
+        Assert.NotEqual(default, first.At);
+        Assert.Equal([1L, 2L], heard.Select(h => h.Event.Seq));
+        Assert.All(heard, h => Assert.Equal("a1b2c3", h.Session));
+
+        var file = Path.Combine(_directory, "a1b2c3.events.jsonl");
+        var lines = File.ReadAllLines(file);
+        Assert.Equal(2, lines.Length);
+        Assert.Contains("\"working on it\"", lines[0]);
+        Assert.DoesNotContain("\r", File.ReadAllText(file));
+        Assert.False(File.ReadAllBytes(file).AsSpan().StartsWith(Encoding.UTF8.Preamble), "no BOM");
+    }
+
+    /// <summary>
+    /// 🔴 The whole point (D76 §2): the console's window was gone after a restart, and the page said
+    /// "nothing from this session is held here". A new instance reads the record back, and carries
+    /// the sequence on rather than starting again at one.
+    /// </summary>
+    [Fact]
+    public void A_new_instance_reads_a_session_back_and_carries_its_sequence_on()
+    {
+        var before = new SessionEvents(_directory);
+        before.Append("a1b2c3", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "cap it" });
+        before.Append("a1b2c3", Message("capped at 4 per frame"));
+
+        var after = new SessionEvents(_directory);
+        var page = after.Page("a1b2c3");
+        var next = after.Append("a1b2c3", Message("and tested"));
+
+        Assert.Equal(["cap it", "capped at 4 per frame"], page.Events.Select(e => e.Text));
+        Assert.Equal("person", page.Events[0].Origin);
+        Assert.Equal(2, page.Latest);
+        Assert.False(page.Earlier);
+        Assert.Equal(3, next.Seq);
+    }
+
+    [Fact]
+    public void A_page_is_the_latest_events_and_says_when_there_are_earlier_ones()
+    {
+        var events = new SessionEvents(_directory);
+        for (var i = 1; i <= 5; i++) events.Append("a1b2c3", Message($"m{i}"));
+
+        var latest = events.Page("a1b2c3", limit: 2);
+        var earlier = events.Page("a1b2c3", before: latest.Events[0].Seq, limit: 2);
+        var first = events.Page("a1b2c3", before: earlier.Events[0].Seq, limit: 2);
+
+        Assert.Equal(["m4", "m5"], latest.Events.Select(e => e.Text));
+        Assert.True(latest.Earlier);
+        Assert.Equal(["m2", "m3"], earlier.Events.Select(e => e.Text));
+        Assert.True(earlier.Earlier);
+        Assert.Equal(["m1"], first.Events.Select(e => e.Text));
+        Assert.False(first.Earlier);
+        Assert.All([latest, earlier, first], page => Assert.Equal(5, page.Latest));
+    }
+
+    /// <summary>How a page that missed a live batch closes the gap without re-reading the start.</summary>
+    [Fact]
+    public void After_answers_only_what_is_newer()
+    {
+        var events = new SessionEvents(_directory);
+        for (var i = 1; i <= 4; i++) events.Append("a1b2c3", Message($"m{i}"));
+
+        Assert.Equal(["m3", "m4"], events.After("a1b2c3", 2).Events.Select(e => e.Text));
+    }
+
+    [Fact]
+    public void A_session_with_no_record_answers_an_empty_page_rather_than_nothing()
+    {
+        var page = new SessionEvents(_directory).Page("f00d");
+
+        Assert.Empty(page.Events);
+        Assert.Equal(0, page.Latest);
+        Assert.False(page.Earlier);
+    }
+
+    /// <summary>One torn or foreign line must cost that line, never the conversation around it.</summary>
+    [Fact]
+    public void A_line_that_cannot_be_read_is_skipped_and_the_rest_still_reads()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("a1b2c3", Message("before"));
+        File.AppendAllText(Path.Combine(_directory, "a1b2c3.events.jsonl"), "{not json\n");
+        events.Append("a1b2c3", Message("after"));
+
+        Assert.Equal(["before", "after"], new SessionEvents(_directory).Page("a1b2c3").Events.Select(e => e.Text));
+    }
+
+    /// <summary>
+    /// The id arrives from the page (a history request), so it names a file only when it is an id:
+    /// nothing outside the folder is read or written, whatever a caller sends.
+    /// </summary>
+    [Theory]
+    [InlineData("../escape")]
+    [InlineData("a/b")]
+    [InlineData("a\\b")]
+    [InlineData("")]
+    [InlineData("..")]
+    public void An_id_that_is_not_an_id_is_refused(string id)
+    {
+        var events = new SessionEvents(_directory);
+
+        Assert.Throws<DriverException>(() => events.Append(id, Message("x")));
+        Assert.Throws<DriverException>(() => events.Page(id));
+    }
+
+    /// <summary>
+    /// Live events go out a window at a time, grouped by session, as console lines do — and a reader
+    /// that is gone costs its own view, never the record.
+    /// </summary>
+    [Fact]
+    public async Task Events_are_relayed_a_batch_per_session_and_a_lost_reader_costs_nothing()
+    {
+        var events = new SessionEvents(_directory);
+        var batches = new List<(string Session, long[] Seqs)>();
+        using (var relay = new EventRelay(events, (session, batch) =>
+        {
+            batches.Add((session, [.. batch.Select(e => e.Seq)]));
+            return Task.CompletedTask;
+        }, TimeSpan.FromMinutes(5)))
+        {
+            events.Append("a1b2c3", Message("one"));
+            events.Append("a1b2c3", Message("two"));
+            events.Append("d4e5f6", Message("theirs"));
+            await relay.FlushAsync();
+        }
+
+        Assert.Equal(["a1b2c3", "d4e5f6"], batches.Select(b => b.Session));
+        Assert.Equal([1L, 2L], batches[0].Seqs);
+        Assert.Equal([1L], batches[1].Seqs);
+
+        using var broken = new EventRelay(events, (_, _) => throw new InvalidOperationException("the window closed"), TimeSpan.FromMinutes(5));
+        events.Append("a1b2c3", Message("said anyway"));
+        await broken.FlushAsync();
+        Assert.Equal("said anyway", events.Page("a1b2c3").Events[^1].Text);
+    }
+
+    /// <summary>
+    /// One event is one line, and a line is bounded: a tool that printed a megabyte must not make the
+    /// record unreadable a page at a time. What was cut is said, never silently lost.
+    /// </summary>
+    [Fact]
+    public void A_huge_field_is_cut_and_says_it_was()
+    {
+        var events = new SessionEvents(_directory);
+        var huge = new string('x', SessionEvents.TextLimit + 500);
+
+        var kept = events.Append("a1b2c3", new SessionEvent
+        {
+            Kind = SessionEventKind.Tool,
+            Id = "c1",
+            Content = [new ToolContent("text", Text: huge)],
+            Output = huge,
+        });
+
+        Assert.True(kept.Content![0].Text!.Length < huge.Length);
+        Assert.EndsWith($"({huge.Length} chars)", kept.Content[0].Text);
+        Assert.True(kept.Output!.Length <= SessionEvents.RawLimit + 40);
+    }
+}

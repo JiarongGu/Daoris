@@ -155,6 +155,12 @@ the derived title is free and true, and a rename is a store column plus a surfac
   *finish* closes stdin and lets the harness wind up (`completed`), *stop* is the person's interrupt
   (`stopped`).
 
+> **Amended by D76 (2026-09-25).** The rejection below stands for a pipe's TEXT and no further. The
+> protocol door (D53) and Claude Code's `stream-json` are the harnesses' own structured wires, so a
+> session's messages, thoughts, tool calls, plan and usage now reach the page as typed events the
+> driver keeps beside the transcript, and the stream becomes a **conversation**. The console stays, as
+> its raw view. `docs/2026-09-24-reference-gap-study.md` is why; CONV1–CONV5 are the build.
+
 **Rejected: parsing the stream into steps.** The research's activity panel — "3 of 7 steps", with
 progressive disclosure — assumes structured progress events. Daoris has none, and the only way to get
 them is to parse another program's stdout, which turns the adapter seam into a screen-scraper that

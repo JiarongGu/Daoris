@@ -99,13 +99,18 @@ public sealed record AcpOutcome(
 /// What <c>session/new</c> carries in <c>_meta</c> — the adapter's own vocabulary for the rules Daoris
 /// composed (PERM1, D72) — or null, and then no <c>_meta</c> is sent at all.
 /// </param>
+/// <param name="onEvent">
+/// Where the wire's STRUCTURE goes (D76 §1, CONV1): every update as a <see cref="SessionEvent"/>, beside
+/// the line the console gets. Null where nobody keeps the record.
+/// </param>
 public sealed class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
     Action<string> onLine,
     TimeSpan? closeTimeout = null,
     string? posture = null,
-    object? meta = null)
+    object? meta = null,
+    Action<SessionEvent>? onEvent = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -215,6 +220,7 @@ public sealed class AcpSession(
             var stopReason = result.TryGetProperty("stopReason", out var reason)
                 ? reason.GetString() ?? "unknown"
                 : "unknown";
+            Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = stopReason });
 
             // Closed politely so the agent can flush and persist; its exit is still what the driver
             // observes, and a close that fails changes nothing about the run that already happened.
@@ -266,6 +272,7 @@ public sealed class AcpSession(
                     // promise and not this client's guarantee — so the line is shown rather than
                     // dropped, and the run continues.
                     onLine(line);
+                    Emit(new SessionEvent { Kind = SessionEventKind.Raw, Raw = line });
                     continue;
                 }
 
@@ -280,6 +287,10 @@ public sealed class AcpSession(
                     // stream had ended — a false sentence over a lost exception, which is how the
                     // first real run died at its first tool call (ACP2, 2026-09-24).
                     onLine($"[unreadable frame: {error.Message}] {Compact(frame)}");
+                    Emit(new SessionEvent
+                    {
+                        Kind = SessionEventKind.Raw, Title = "unreadable frame", Text = error.Message, Raw = Compact(frame),
+                    });
                 }
             }
         }
@@ -323,6 +334,24 @@ public sealed class AcpSession(
             Interlocked.Increment(ref _updates);
             Measure(update);
             if (Render(update) is { } rendered) onLine(rendered);
+            if (Map(update) is { } structured) Emit(structured);
+        }
+    }
+
+    /// <summary>
+    /// An event to whoever keeps the record — and a record that fails costs a line on the console,
+    /// never the turn: the conversation enriches the session, it does not run it.
+    /// </summary>
+    private void Emit(SessionEvent e)
+    {
+        if (onEvent is null) return;
+        try
+        {
+            onEvent(e);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            onLine($"[the conversation record could not keep an event: {error.Message}]");
         }
     }
 
@@ -398,8 +427,10 @@ public sealed class AcpSession(
 
         var tool = frame.TryGetProperty("params", out var q) && q.TryGetProperty("toolCall", out var call)
             ? Compact(call) : "a tool call";
-        onLine($"  permission refused: {tool} — the repository's own configuration governs, and the "
-               + "driver may not widen it");
+        var refused = $"permission refused: {tool} — the repository's own configuration governs, and the "
+                      + "driver may not widen it";
+        onLine($"  {refused}");
+        Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = refused });
 
         await SendAsync(new JsonObject
         {
@@ -515,6 +546,131 @@ public sealed class AcpSession(
             null => $"[update] {Compact(update)}",
             _ => $"[{kind}] {Compact(update)}",
         };
+    }
+
+    /// <summary>
+    /// One update as an event in Daoris's vocabulary (D76 §1) — the structure <see cref="Render"/>
+    /// flattens for the console, kept.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The protocol's own fields, renamed and nothing more.</b> A tool call's kind, title,
+    /// status, places and content are what the wire says they are; nothing is inferred from a title or
+    /// parsed out of text, which is the line D52 drew and D76 keeps.</para>
+    ///
+    /// <para>🔴 <b>Every read is shape-checked.</b> The wire is somebody else's and it grows: a real
+    /// <c>tool_call</c> carries <c>content</c> as a list where a stub sent an object, and reading one as
+    /// the other took a whole turn down (ACP2). A field of an unexpected shape is absent here, never a
+    /// throw.</para>
+    ///
+    /// <para><b>An update this build does not know is kept raw</b>, with its kind as the title, for
+    /// the same reason the console shows it: a record with a silent hole in it reports nothing.</para>
+    /// </remarks>
+    internal static SessionEvent? Map(JsonElement update)
+    {
+        var kind = Kind(update);
+        return kind switch
+        {
+            "agent_message_chunk" => Text(update) is { } message
+                ? new SessionEvent { Kind = SessionEventKind.Message, Text = message }
+                : null,
+            "agent_thought_chunk" => Text(update) is { } thought
+                ? new SessionEvent { Kind = SessionEventKind.Thought, Text = thought }
+                : null,
+            "user_message_chunk" => Text(update) is { } said
+                ? new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said }
+                : null,
+            "tool_call" or "tool_call_update" => new SessionEvent
+            {
+                Kind = SessionEventKind.Tool,
+                Id = StringField(update, "toolCallId"),
+                Title = StringField(update, "title"),
+                ToolKind = StringField(update, "kind"),
+                Status = StringField(update, "status"),
+                Locations = Locations(update),
+                Content = Contents(update),
+                Input = update.TryGetProperty("rawInput", out var input) ? Compact(input) : null,
+                Output = update.TryGetProperty("rawOutput", out var output) ? Compact(output) : null,
+            },
+            "plan" => new SessionEvent { Kind = SessionEventKind.Plan, Entries = Entries(update) },
+            "usage_update" => new SessionEvent
+            {
+                Kind = SessionEventKind.Usage, Used = Number(update, "used"), Size = Number(update, "size"),
+            },
+            _ => new SessionEvent { Kind = SessionEventKind.Raw, Title = kind ?? "update", Raw = Compact(update) },
+        };
+    }
+
+    /// <summary>A string field, or null when absent or not a string.</summary>
+    private static string? StringField(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    /// <summary>The paths a tool call names in <c>locations</c>, when it is a list of objects with one.</summary>
+    private static IReadOnlyList<string>? Locations(JsonElement update)
+    {
+        if (!update.TryGetProperty("locations", out var locations) || locations.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var paths = locations.EnumerateArray()
+            .Where(location => location.ValueKind == JsonValueKind.Object)
+            .Select(location => StringField(location, "path"))
+            .OfType<string>()
+            .ToList();
+        return paths.Count == 0 ? null : paths;
+    }
+
+    /// <summary>
+    /// A tool call's <c>content</c> in ACP's three shapes — a content block (its text), a diff, a
+    /// terminal — when it is a list. Anything else in the list is kept as its raw JSON, as text.
+    /// </summary>
+    private static IReadOnlyList<ToolContent>? Contents(JsonElement update)
+    {
+        if (!update.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var items = new List<ToolContent>();
+        foreach (var item in content.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object) continue;
+            switch (StringField(item, "type"))
+            {
+                case "diff":
+                    items.Add(new ToolContent("diff", Path: StringField(item, "path"),
+                        OldText: StringField(item, "oldText"), NewText: StringField(item, "newText")));
+                    break;
+                case "terminal":
+                    items.Add(new ToolContent("terminal", Text: StringField(item, "terminalId")));
+                    break;
+                case "content" when item.TryGetProperty("content", out var block) && block.ValueKind == JsonValueKind.Object:
+                    items.Add(StringField(block, "type") == "text"
+                        ? new ToolContent("text", Text: StringField(block, "text"))
+                        : new ToolContent(StringField(block, "type") ?? "content", Text: Compact(block)));
+                    break;
+                default:
+                    items.Add(new ToolContent("raw", Text: Compact(item)));
+                    break;
+            }
+        }
+
+        return items.Count == 0 ? null : items;
+    }
+
+    /// <summary>A plan's entries, each with its content; one without content is skipped.</summary>
+    private static IReadOnlyList<PlanEntry>? Entries(JsonElement update)
+    {
+        if (!update.TryGetProperty("entries", out var entries) || entries.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        return [.. entries.EnumerateArray()
+            .Where(entry => entry.ValueKind == JsonValueKind.Object && StringField(entry, "content") is not null)
+            .Select(entry => new PlanEntry(StringField(entry, "content")!, StringField(entry, "status"), StringField(entry, "priority")))];
     }
 
     /// <summary>

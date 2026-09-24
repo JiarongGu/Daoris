@@ -68,6 +68,10 @@ review** — `SESSION_DIFF` returns a session's landed work as a bounded diff, m
 `base_commit` the spawn records, read-only by construction and desktop-only for the console's
 reason (🔴 it confirms `rev-parse --show-toplevel` names the tree it was given, because git
 searches UPWARD and would otherwise answer for the repository above it);
+since D76 **the conversation** — `SESSION_HISTORY` reads a session's record a page at a time
+(newest, `before`, or `after` for a gap) and batched `SESSION_EVENTS` carry what it does next, both
+from the typed events the driver keeps as `sessions/<id>.events.jsonl` beside each transcript, mapped
+from the door's own wire (ACP's `session/update` today) and never parsed from a console line;
 and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine has and `HARNESS_ACTION`
 for the person's install, update or login, each spawning that harness's own mechanism and relaying it
 through the console under `<harness>:<action>`, never a session id, because it is not a session),

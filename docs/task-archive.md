@@ -5530,3 +5530,35 @@ fed host the guard exists for. On the republished install, *rebuild index* took 
 repositories to none. The empty index then showed Overview's repositories card as a heading over a
 footnote, so it has an empty state too. `docs/FIX-LOG.md` has the mechanism. Service 470 → 473,
 web unit 866 → 867, Playwright 21/21, family 271/271.
+
+## CONV1 — the event record (2026-09-25)
+
+- [x] ~~**CONV1 — the event record.** Daoris's event vocabulary (D76 §1); the ACP door maps
+  `session/update` into it where `Acp.cs` flattens it today; events appended to
+  `sessions/<id>.events.jsonl`; a live bridge event and a paged history read; the console keeps its
+  lines. No new rendering yet: a test reads a session back after a restart.~~
+✅ **done 2026-09-25**, the first landing of D76.
+
+- **The vocabulary** (`SessionEvents.cs`): user (the person's, or the driver's composed target),
+  message, thought, tool (with its ACP kind, status, places, input, output and content: text, diff
+  or terminal), plan, usage, turn (the wire's stop reason, a self-report), note (the driver's own
+  sentence) and raw (anything this build does not know, kept rather than dropped).
+- **The protocol door keeps its structure.** `AcpSession` takes an `onEvent` beside `onLine`, and
+  `Map` turns each update into an event with every read shape-checked (the ACP2 lesson: a real
+  `tool_call` carries its content as a list). The console still gets its lines, unchanged. A
+  refused permission is a note, an unreadable frame is raw, and the turn's end is an event.
+- **The record** is `sessions/<id>.events.jsonl` under the home, one event per line, numbered per
+  session and carried on across a new instance. It is read a page at a time: newest, `before`, or
+  `after` for a gap. A torn line costs itself, a large field is cut and says how long it was, and an
+  id that is not an id names no file. The driven session and the intake both write it; the headless
+  host keeps it too, with nobody watching. The pipe door stays text until CONV3.
+- **The bridge**: `SESSION_HISTORY` for a page and batched `SESSION_EVENTS` live. The batching
+  moved into `BatchRelay<T>`, which the console's relay and the new event relay now share, rather
+  than being copied.
+- **The page** has `useSessionEvents`: the newest page on open, live batches merged by sequence,
+  a batch that skips ahead closed by asking `after`, earlier pages on request. Nothing renders it
+  yet; that is CONV2.
+
+On the way, the modules suite showed POLISH4a had left one assertion looking for "D37"; fixed in its
+own commit (`75ae868`). Driver 587 → 604, modules 118 → 120, web unit 867 → 874, family 271/271,
+deploy 39/39.

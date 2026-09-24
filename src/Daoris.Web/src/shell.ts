@@ -6,6 +6,7 @@ import type { Consideration, TrustHold } from './signals';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
+import { type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
 import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 
@@ -422,6 +423,96 @@ export function useSessionConsole(sessionId: string | null) {
   });
 
   return { lines, live, dropped };
+}
+
+/**
+ * A session's conversation (D76, CONV1): its record read back a page at a time, and its live events
+ * merged in as the driver writes them.
+ *
+ * @remarks
+ * **The console's two-source rule, for events.** The newest page is asked for once on open, and
+ * live batches arrive as `SESSION_EVENTS`. The driver's sequence numbers make them one record:
+ * anything already held is dropped, and a batch that skips ahead is a batch that missed something,
+ * closed by asking for what came `after` the last held — never shown as two halves joined.
+ *
+ * **It outlives a restart**, which the console does not: the history is the record under the home,
+ * so a conversation that happened while this window was closed still reads back.
+ *
+ * Desktop-only for the console's reason (D47 §4): a browser has no bridge, and holds nothing here.
+ */
+export function useSessionEvents(sessionId: string | null) {
+  const { isAvailable } = useShenora();
+  const [events, setEvents] = useState<SessionEvent[]>([]);
+  const [earlier, setEarlier] = useState(false);
+  // The newest sequence held, and which session it belongs to — read inside the event handler, which
+  // must not re-subscribe every time an event arrives.
+  const latest = useRef(0);
+  const attended = useRef<string | null>(null);
+
+  const history = useCallback(
+    (payload: Record<string, unknown>) =>
+      getBridge().invoke<EventPage>('DAORIS.DRIVER', 'SESSION_HISTORY', { payload }),
+    [],
+  );
+
+  const hold = useCallback((incoming: readonly SessionEvent[]) => {
+    if (incoming.length === 0) return;
+    latest.current = Math.max(latest.current, incoming[incoming.length - 1]!.seq);
+    setEvents((held) => mergeEvents(held, incoming));
+  }, []);
+
+  useEffect(() => {
+    attended.current = sessionId;
+    latest.current = 0;
+    setEvents([]);
+    setEarlier(false);
+    if (!isAvailable || !sessionId) return;
+
+    let current = true;
+    void history({ id: sessionId })
+      .then((page) => {
+        if (!current || !page) return;
+        hold(page.events ?? []);
+        setEarlier(Boolean(page.earlier));
+      })
+      // A record that failed to load is a quiet absence: the session's head above it is already there.
+      .catch(() => {});
+
+    return () => { current = false; };
+  }, [isAvailable, sessionId, history, hold]);
+
+  useShenoraEvent('DAORIS', 'SESSION_EVENTS', (payload) => {
+    const batch = payload as { session?: string; events?: SessionEvent[] } | undefined;
+    const id = attended.current;
+    if (!id || batch?.session !== id || !batch.events?.length) return;
+
+    const first = batch.events[0]!.seq;
+    if (latest.current > 0 && first > latest.current + 1) {
+      void history({ id, after: latest.current })
+        .then((page) => { if (attended.current === id) hold(page?.events ?? []); })
+        .catch(() => {});
+      return;
+    }
+
+    hold(batch.events);
+  });
+
+  /** The page before the oldest held — "load earlier". */
+  const loadEarlier = useCallback(async () => {
+    const id = attended.current;
+    const oldest = events[0]?.seq;
+    if (!id || oldest === undefined) return;
+    try {
+      const page = await history({ id, before: oldest });
+      if (attended.current !== id || !page) return;
+      setEvents((held) => mergeEvents(held, page.events ?? []));
+      setEarlier(Boolean(page.earlier));
+    } catch {
+      // Nothing more to show is the same to a reader as nothing more held; the button stays.
+    }
+  }, [events, history]);
+
+  return { events, earlier, loadEarlier };
 }
 
 /**

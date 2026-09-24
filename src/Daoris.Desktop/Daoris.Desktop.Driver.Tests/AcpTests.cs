@@ -256,6 +256,130 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// D76 §1 (CONV1): the wire's structure reaches the record as typed events, where it used to be
+    /// flattened into console lines and lost — the message, the thought, the tool call with its kind,
+    /// its places, its input and its diff, the plan, the usage, and the turn's end. The console still
+    /// gets its lines; the events are beside them, not instead.
+    /// </summary>
+    [Fact]
+    public async Task The_wires_structure_reaches_the_record_as_typed_events()
+    {
+        var lines = new List<string>();
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"agent_thought_chunk","content":{"type":"text","text":"the cap belongs in the streamer"}}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"plan","entries":[{"content":"read the streamer","priority":"high","status":"completed"},{"content":"cap it","priority":"medium","status":"in_progress"}]}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call","toolCallId":"c1","title":"Edit src/chunk.rs","kind":"edit","status":"pending","locations":[{"path":"src/chunk.rs","line":12}],"rawInput":{"file":"src/chunk.rs"},"content":[]}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call_update","toolCallId":"c1","status":"completed","content":[{"type":"diff","path":"src/chunk.rs","oldText":"let cap = 0;","newText":"let cap = 4;"},{"type":"content","content":{"type":"text","text":"Edited."}}]}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"Capped at "}}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"4 per frame."}}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":38000,"size":200000}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, onEvent: events.Add)
+            .RunAsync("D:/fam/Game", "cap the hydration", CancellationToken.None);
+
+        Assert.Equal(
+            [SessionEventKind.Thought, SessionEventKind.Plan, SessionEventKind.Tool, SessionEventKind.Tool,
+             SessionEventKind.Message, SessionEventKind.Message, SessionEventKind.Usage, SessionEventKind.Turn],
+            events.Select(e => e.Kind));
+
+        Assert.Equal("the cap belongs in the streamer", events[0].Text);
+        Assert.Equal(["read the streamer", "cap it"], events[1].Entries!.Select(entry => entry.Content));
+        Assert.Equal("in_progress", events[1].Entries![1].Status);
+
+        var call = events[2];
+        Assert.Equal("c1", call.Id);
+        Assert.Equal("Edit src/chunk.rs", call.Title);
+        Assert.Equal("edit", call.ToolKind);
+        Assert.Equal("pending", call.Status);
+        Assert.Equal(["src/chunk.rs"], call.Locations);
+        Assert.Contains("src/chunk.rs", call.Input);
+
+        var done = events[3];
+        Assert.Equal("c1", done.Id);
+        Assert.Equal("completed", done.Status);
+        Assert.Equal("diff", done.Content![0].Type);
+        Assert.Equal("let cap = 4;", done.Content[0].NewText);
+        Assert.Equal("let cap = 0;", done.Content[0].OldText);
+        Assert.Equal("text", done.Content[1].Type);
+        Assert.Equal("Edited.", done.Content[1].Text);
+
+        Assert.Equal("Capped at 4 per frame.", string.Concat(events[4].Text, events[5].Text));
+        Assert.Equal((38000L, 200000L), (events[6].Used!.Value, events[6].Size!.Value));
+        Assert.Equal("end_turn", events[7].StopReason);
+
+        // The console is unchanged: the lines are still there for the raw view.
+        Assert.Contains(lines, line => line.Contains("Edit src/chunk.rs"));
+    }
+
+    /// <summary>A refusal is part of what happened in the conversation, so it is in the record too.</summary>
+    [Fact]
+    public async Task A_refused_permission_is_a_note_in_the_record()
+    {
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out var method)) return null; // the client's answer
+
+            switch (method.GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c9","title":"git push"},"options":[{"optionId":"no","name":"Reject","kind":"reject_once"}]}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add)
+            .RunAsync("D:/fam/Game", "push it", CancellationToken.None);
+
+        var note = Assert.Single(events, e => e.Kind == SessionEventKind.Note);
+        Assert.Contains("permission refused", note.Text);
+        Assert.Contains("git push", note.Text);
+    }
+
+    /// <summary>
+    /// An update this build does not know is kept raw rather than dropped — the record's version of
+    /// the console's rule that a wire that grows must not leave a silent hole.
+    /// </summary>
+    [Fact]
+    public async Task An_unknown_update_is_kept_raw_in_the_record()
+    {
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"available_commands_update","availableCommands":[{"name":"compact"}]}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add)
+            .RunAsync("D:/fam/Game", "hello", CancellationToken.None);
+
+        var raw = Assert.Single(events, e => e.Kind == SessionEventKind.Raw);
+        Assert.Equal("available_commands_update", raw.Title);
+        Assert.Contains("compact", raw.Raw);
+    }
+
+    /// <summary>
     /// 🔴 The first real Claude Code run over this door (ACP2, 2026-09-24) died at its first tool call,
     /// three sessions in a row, each "exited without touching its quest". A real `tool_call` carries
     /// `content` as a LIST, and the renderer read it as an object: the throw killed the reader, whose
