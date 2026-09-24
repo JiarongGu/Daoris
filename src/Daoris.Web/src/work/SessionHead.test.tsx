@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../i18n';
 import type { Quest, Session } from '../api';
 import { SessionHead } from './SessionHead';
@@ -22,6 +22,17 @@ const session = (over: Partial<Session> = {}): Session => ({
   updated: '2026-09-21T11:56:00Z',
   ...over,
 });
+
+/** An intake parked asking the person (INT4b): a chat in the ask's name, in Daoris's own room. */
+const INTAKE: Partial<Session> = {
+  id: 'i9n8t7k6',
+  quest: null,
+  kind: 'chat',
+  repository: 'ask #0fda18',
+  ask: '0fda18',
+  state: 'awaiting-person',
+  tree: 'C:/somewhere/data/intake/default',
+};
 
 const quest = (over: Partial<Quest> = {}): Quest => ({
   id: '7a82cc',
@@ -121,6 +132,42 @@ describe('the attended session\'s head', () => {
 
     expect(screen.queryByText('This one is waiting on you')).not.toBeInTheDocument();
     expect(screen.queryByText('the process exited 1')).not.toBeInTheDocument();
+  });
+
+  /**
+   * INT4g: an intake serves an ask and runs in Daoris's own room, which is not a repository's tree
+   * (INT4b). Its record says so rather than reading `repository: ask #…`.
+   */
+  it('names an intake\'s ask and room rather than a repository and a tree', () => {
+    render(<SessionHead session={session({ ...INTAKE, state: 'working' })} />);
+
+    expect(screen.getByRole('heading', { name: 'intake for ask #0fda18' })).toBeInTheDocument();
+    expect(screen.getByText('ask')).toBeInTheDocument();
+    expect(screen.getByText('#0fda18')).toBeInTheDocument();
+    expect(screen.getByText('room')).toBeInTheDocument();
+    expect(screen.queryByText('repository')).toBeNull();
+    expect(screen.queryByText('tree')).toBeNull();
+  });
+
+  /**
+   * INT4g: a parked intake's answer is on its ask. Finish, decline and stop each ended the record
+   * without answering the ask, which then fell back to a proposal — so the head leads to the ask.
+   */
+  it('gives a parked intake its ask as the answer, not a parked session\'s three moves', () => {
+    const onAnswerAsk = vi.fn();
+    render(
+      <SessionHead
+        session={session({ ...INTAKE, note: 'published nothing: it asks you rather than guess.' })}
+        onResolve={() => {}}
+        onAnswerAsk={onAnswerAsk}
+      />,
+    );
+
+    expect(screen.getByText('published nothing: it asks you rather than guess.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'decline…' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'answer ask #0fda18' }));
+    expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
   });
 
   it('speaks the active catalog', async () => {

@@ -49,6 +49,20 @@ describe('a session title', () => {
     await i18n.changeLanguage('en');
   });
 
+  /**
+   * INT4g: an intake is opened as a chat (INT4b, so every build reads it as a session nothing plans
+   * from), and it is not a conversation — it serves an ask. It says so, by the ask's reference, in
+   * the way a quest reference stands in for a quest not in hand.
+   */
+  it('names an intake by the ask it serves, never as a conversation', async () => {
+    const intake = session({ kind: 'chat', repository: 'ask #0fda18', ask: '0fda18' });
+    expect(sessionTitle(intake)).toBe('intake for ask #0fda18');
+
+    await i18n.changeLanguage('zh');
+    expect(sessionTitle(intake)).toBe('请求 #0fda18 的受理会话');
+    await i18n.changeLanguage('en');
+  });
+
   it('prefers the quest over the kind — a chat that took one is still about that quest', () => {
     expect(sessionTitle(session({ kind: 'chat', quest: '7a82cc' }), quest()))
       .toBe('Expose a streaming budget on the chunk API');

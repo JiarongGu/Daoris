@@ -8,7 +8,7 @@ import {
 } from '../shell';
 import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession } from './AttendedSession';
-import { sessionOrigin } from './identity';
+import { isIntake, sessionOrigin } from './identity';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
@@ -62,7 +62,7 @@ function remember(key: string, value: string): void {
  * pane with extra chrome — so the timeline stays in the attended column and moves when it has
  * company.
  */
-export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIntentTaken }: {
+export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken }: {
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -77,6 +77,11 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIn
    * goes through the channel `repository-owns-its-work` sanctions rather than around it.
    */
   onSendBack?: (repository: string) => void;
+  /**
+   * Open the ask a parked intake is waiting on (INT4g). Its answer is there — publish or close —
+   * and the ask's record is the application's to open, in Quests, the way the attention band does.
+   */
+  onAnswerAsk?: (ask: string) => void;
   /**
    * What the command palette asked for (SURF9) — an event, consumed on arrival, because leaving it
    * set would reopen the drawer every time anything here re-rendered.
@@ -125,6 +130,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIn
   // A teammate's record came down with the sync (SYNC4) and its process is on THEIR machine: it is
   // read here, and nothing this window sends could reach it — so it gets no moves and no composer.
   const here = attended ? sessionOrigin(attended) === null : false;
+  // A parked intake has asked and ended (INT4b): an intake is one turn, and there is no process
+  // left to hear a message. Its answer is on the ask (INT4g), so it gets no composer at all.
+  const askingIntake = attended ? isIntake(attended) && attended.state === 'awaiting-person' : false;
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that.
@@ -252,12 +260,13 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, intent, onIn
             quest={quest}
             resolving={resolve.isPending}
             onResolve={here ? onResolve : undefined}
+            onAnswerAsk={here ? onAnswerAsk : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             onSession={(session) => attend(session.id)}
           />
         </div>
 
-        {conversation && here && attended && (
+        {conversation && here && attended && !askingIntake && (
           <Composer
             live={live}
             sending={send.isPending}

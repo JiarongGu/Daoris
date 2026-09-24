@@ -74,6 +74,14 @@ const PARKED = {
   note: 'Two ways forward; I recommend the second.',
 };
 
+/** An intake that could not settle whose an ask is, parked asking the person (INT4b). */
+const PARKED_INTAKE = {
+  id: 'i9n8t7k6', quest: null, repository: 'ask #0fda18', ask: '0fda18', adapter: 'stub',
+  state: 'awaiting-person', kind: 'chat', tree: 'C:/somewhere/data/intake/default',
+  note: 'published nothing: it asks you rather than guess.',
+  created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
+};
+
 let SESSIONS: unknown[] = [DRIVEN];
 
 function respond(url: string): Response {
@@ -532,6 +540,41 @@ describe('clearing a parked session', () => {
     expect(screen.queryByRole('button', { name: 'stop it' })).toBeNull();
     expect(screen.queryByLabelText('message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+  });
+
+  /**
+   * INT4g: a parked intake's answer is on its ask, which the application opens in Quests — so the
+   * frame hands the door up. No composer: an intake is one turn (INT4b), and a parked one has no
+   * process left to hear a message.
+   */
+  it('leads a parked intake to its ask, with no composer and none of the three moves', async () => {
+    SESSIONS = [PARKED_INTAKE];
+    const onAnswerAsk = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="i9n8t7k6" onSelect={vi.fn()} notify={() => {}} onAnswerAsk={onAnswerAsk} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: 'answer ask #0fda18' }));
+    expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
+    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+    expect(screen.queryByLabelText('message')).toBeNull();
+  });
+
+  /** Stopping stays: the person may end the intake and settle the ask later, as a proposal. */
+  it('stops a parked intake over the driver, and nothing more', async () => {
+    SESSIONS = [PARKED_INTAKE];
+    show('i9n8t7k6');
+    await userEvent.click(await screen.findByRole('button', { name: 'stop it' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
+      payload: { id: 'i9n8t7k6', state: 'stopped' },
+    });
   });
 
   /** A driven session that is not parked gets no moves: there is nothing waiting on anybody. */

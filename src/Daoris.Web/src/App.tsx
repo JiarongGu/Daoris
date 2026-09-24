@@ -400,6 +400,8 @@ export function App() {
                 setOpening({ from: repository });
                 setView('quests');
               }}
+              // A parked intake's answer is on its ask (INT4g): the same door the band's ask rows use.
+              onAnswerAsk={openAsk}
             />
           )
           : (

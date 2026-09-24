@@ -282,6 +282,25 @@ you*, and its record says who answered it.
   take come last. The band and the Sessions badge share `needsAPerson`, so the badge counts these
   asks too, as it already counted the quests nobody can take.
 
+*As built (INT4g, 2026-09-24):* a parked intake in Sessions leads to its ask.
+
+- **The answer is on the ask.** A parked session's three moves (finish, decline, stop) each ended
+  the intake's record without answering its ask, which then fell back to a proposal. *Finish* also
+  wrote `completed`, which §1b reserves for an intake that published. So a parked intake offers
+  *answer ask #id* instead: a door to the ask's record in Quests, the same one the band's rows open.
+  Publish and close already live there, and `daoris-driver ask --publish/--close` are the terminal's
+  twins. The driver needs nothing new, because the next tick ends a parked intake whose ask was
+  answered (`completed` for a publish, `stopped` for a close). A driver test drives the publish
+  through a tick, and a unit test holds both.
+- **Stop stays, and says what it leaves.** Ending the intake without answering is a real choice. It
+  goes through the ledger as `stopped`, as before, and the surface says the ask stays a proposal for
+  the person to publish or close.
+- **No composer.** An intake is one turn, and a parked one has no process left to hear a message.
+  A running intake keeps the composer, whose *stop* is the only way to end it early.
+- **Named for what it serves.** An intake's title is *intake for ask #id*, never *conversation*. Its
+  rail kind is *intake*, its head says *ask* and *room*, and a parked one's rail group claims no busy
+  room, because the room's lock is the process.
+
 ## 2. What is deliberately not built
 
 - **A model inside Daoris.** The intake is a session; the harness carries the model (D24, D1).

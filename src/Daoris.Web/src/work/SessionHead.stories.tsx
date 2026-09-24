@@ -70,6 +70,32 @@ export const Parked: Story = {
   },
 };
 
+/**
+ * A parked INTAKE (INT4g): it serves an ask and runs in Daoris's own room, so the record says *ask*
+ * and *room* rather than *repository* and *tree*, and its answer is a door to the ask.
+ */
+export const IntakeAsking: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      id: 'i9n8t7k6',
+      quest: null,
+      kind: 'chat',
+      repository: 'ask #0fda18',
+      ask: '0fda18',
+      adapter: 'claude-code-acp',
+      state: 'awaiting-person',
+      tree: 'C:/somewhere/data/intake/default',
+      created: at(14),
+      updated: at(12),
+      note: 'published nothing: the declarations did not settle ask `#0fda18`, so it asks you rather than guess — its question ends its transcript.',
+    },
+    quest: null,
+    onResolve: () => {},
+    onAnswerAsk: () => {},
+  },
+};
+
 /** Ended, so the clock reads as a lifetime rather than an age. */
 export const Finished: Story = {
   args: {

@@ -6,7 +6,7 @@ import { useDriver } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { RepositoryGroup } from './RepositoryGroup';
 import { SessionRow } from './SessionRow';
-import { ownTree } from './identity';
+import { isIntake, ownTree } from './identity';
 
 /**
  * The rail: everything running, grouped by the repository it runs in (design §3).
@@ -83,7 +83,10 @@ export function SessionRail({ selected = null, onSelect, notify }: {
         <p className="px-3 py-2 text-small text-ink-faint">{t('work.rail.empty.headline')}</p>
       )}
       {ordered.map(([repository, rows]) => {
-        const holding = rows.find((session) => SESSION_ACTIVE.has(session.state));
+        // A parked session holds its working tree, and a parked INTAKE holds nothing: it has asked
+        // and ended, and the room's lock is the process (INT4b), so it claims no busy (INT4g).
+        const holding = rows.find((session) => SESSION_ACTIVE.has(session.state)
+          && !(isIntake(session) && session.state === 'awaiting-person'));
         const registration = registered.get(repository);
         return (
           <RepositoryGroup

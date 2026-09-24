@@ -273,6 +273,22 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   circle has two. Two rows called "a start in aurora" naming different agents would read as one
 >   fact stated twice, and wrongly.
 
+> **Amended 2026-09-24, a parked intake in Sessions (INT4g).** Held by vitest, and **not yet looked
+> at on the real window** (Sessions is desktop-only, so Playwright does not reach it).
+>
+> - **A move offered where the answer is not is a dead end.** A parked intake was offered a parked
+>   session's three moves, and each one ended the record without answering its ask, which fell back
+>   to a proposal. *Finish* even wrote `completed`, which reads later as a publish. The intake's
+>   answer is on the ask, so its one answering move is a door: *answer ask #id* opens the ask's
+>   record in Quests, where publish and close already live.
+> - **A move that stays says what it does not do.** *Stop it* stays, because ending the intake
+>   without answering is a real choice, and it says the ask then stays a proposal.
+> - **No box where nothing listens.** An intake is one turn, and a parked one has no process, so it
+>   gets no composer. The "answer it in the box below" line goes with it.
+> - **A record is named for what it serves.** An intake reads *intake for ask #id*, its rail kind is
+>   *intake*, and its head says *ask* and *room* rather than *repository* and *tree*. A parked
+>   intake holds no room, so its rail group claims nothing busy.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

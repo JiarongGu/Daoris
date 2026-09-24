@@ -104,6 +104,22 @@ describe('the session rail', () => {
     expect(await screen.findByText('busy · streaming-budget')).toBeInTheDocument();
   });
 
+  /**
+   * INT4g: a parked intake has asked and ended — no process, so it holds no room (INT4b: "the room's
+   * lock is the process"). Its group claims nothing busy; a parked REPOSITORY session still does,
+   * because it holds its working tree.
+   */
+  it('claims no busy room for a parked intake', async () => {
+    SESSIONS = [{
+      ...base, id: 'i9n8t7k6', quest: null, kind: 'chat', repository: 'ask #0fda18', ask: '0fda18',
+      state: 'awaiting-person',
+    }];
+    show(<SessionRail notify={() => {}} />);
+
+    const group = (await screen.findByText('ask #0fda18')).closest('section')!;
+    expect(within(group).queryByText('busy')).toBeNull();
+  });
+
   it('says busy without a name when the session holds the registered root', async () => {
     show(<SessionRail notify={() => {}} />);
 

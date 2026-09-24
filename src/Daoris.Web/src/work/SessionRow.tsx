@@ -3,7 +3,7 @@ import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
 import { Dot, SESSION_ACTIVE, SESSION_DOT } from '../ui';
 import { cn } from '../lib/cn';
-import { ownTree, sessionOrigin, sessionTitle } from './identity';
+import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention (design §3).
@@ -43,7 +43,8 @@ export function SessionRow({ session, quest, root, selected = false, onSelect }:
   // what keeps a rail of a dozen rows readable at 18rem. What the two absences MEAN is on the
   // helpers that produce them.
   const meta = [
-    t(session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
+    // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g).
+    t(isIntake(session) ? 'work.intake.kind' : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
     tree ? t('work.rail.inTree', { tree }) : null,
     origin ? t('work.rail.on', { origin }) : null,
     t('work.rail.moved', { ago: ago(session.updated) }),

@@ -76,6 +76,15 @@ describe('a session row', () => {
     expect(screen.getByText(/chat/)).toBeInTheDocument();
   });
 
+  /** INT4g: an intake is a chat only by the way it was opened; the row says what it is. */
+  it('says an intake is one, serving its ask — not a chat', () => {
+    render(<SessionRow session={session({ kind: 'chat', repository: 'ask #0fda18', ask: '0fda18' })} />);
+
+    expect(screen.getByText('intake for ask #0fda18')).toBeInTheDocument();
+    expect(screen.getByText(/^intake · moved/)).toBeInTheDocument();
+    expect(screen.queryByText(/chat/)).toBeNull();
+  });
+
   it('names a session with no quest by its derived identity rather than by nothing', () => {
     render(<SessionRow session={session({ kind: 'chat', quest: null })} />);
     expect(screen.getByText('conversation')).toBeInTheDocument();

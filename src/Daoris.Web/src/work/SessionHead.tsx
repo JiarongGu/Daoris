@@ -2,8 +2,9 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago, elapsed, sessionTool } from '../format';
 import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE } from '../ui';
+import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
-import { sessionOrigin, sessionTitle } from './identity';
+import { isIntake, sessionOrigin, sessionTitle } from './identity';
 
 /**
  * The attended session's record (design §3): what it is, where it runs, what it ran as, and — when
@@ -30,26 +31,41 @@ import { sessionOrigin, sessionTitle } from './identity';
  * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
  * can be passed unconditionally.
  */
-export function SessionHead({ session, quest, resolving = false, onResolve }: {
+export function SessionHead({ session, quest, resolving = false, onResolve, onAnswerAsk }: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
   resolving?: boolean;
   /** How a parked session is cleared. Absent where nothing can act — a browser, or a story. */
   onResolve?: (state: Resolution, note: string | null) => void;
+  /**
+   * Open the ask a parked intake is waiting on (INT4g) — its answer is there, not on the session.
+   * Absent where nothing can open it.
+   */
+  onAnswerAsk?: (ask: string) => void;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
   const parked = session.state === 'awaiting-person';
+  const intake = isIntake(session);
 
   return (
     <header className="grid gap-2.5">
-      {parked && onResolve && (
+      {parked && intake && (onResolve || onAnswerAsk) && (
+        <AwaitingIntake
+          ask={session.ask!}
+          note={session.note}
+          pending={resolving}
+          onAnswer={onAnswerAsk}
+          onStop={onResolve ? () => onResolve('stopped', null) : undefined}
+        />
+      )}
+      {parked && !intake && onResolve && (
         <AwaitingPerson note={session.note} pending={resolving} onResolve={onResolve} />
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
-      {parked && !onResolve && session.note && (
+      {parked && !onResolve && !(intake && onAnswerAsk) && session.note && (
         <div className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
           <p className="m-0 text-small font-semibold text-st-open">{t('work.head.waiting')}</p>
           <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{session.note}</p>
@@ -66,8 +82,12 @@ export function SessionHead({ session, quest, resolving = false, onResolve }: {
 
       <MetaLine
         items={[
-          { label: t('work.head.repository'), value: session.repository },
-          { label: t('work.head.tree'), value: session.tree ?? null, mono: true },
+          // An intake serves an ask and runs in Daoris's own room, never a repository's tree
+          // (INT4b) — its record says so rather than `repository: ask #…` (INT4g).
+          intake
+            ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
+            : { label: t('work.head.repository'), value: session.repository },
+          { label: t(intake ? 'work.intake.room' : 'work.head.tree'), value: session.tree ?? null, mono: true },
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool(session) },
           { label: t('work.head.machine'), value: sessionOrigin(session) },

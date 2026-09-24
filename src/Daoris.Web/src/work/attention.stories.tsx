@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type Attention, AttentionRow } from './AttentionRow';
+import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson } from './AwaitingPerson';
 
 // The two surfaces of attention (design §4): the row Overview's band is made of, and the parked
@@ -103,6 +104,29 @@ export const Resolving: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
       <AwaitingPerson note={ANALYSIS} pending onResolve={() => {}} />
+    </div>
+  ),
+};
+
+const QUESTION = 'published nothing: the declarations did not settle ask `#0fda18` (engine and game both accept a UI bug), so it asks you rather than guess — its question ends its transcript.';
+
+/**
+ * A parked INTAKE (INT4g): its answer is on the ask, so the door leads there. No finish, no
+ * decline, no box to answer in, and a stop that says the ask stays a proposal.
+ */
+export const IntakeAsking: StoryObj = {
+  render: () => (
+    <div className="max-w-3xl">
+      <AwaitingIntake ask="0fda18" note={QUESTION} onAnswer={() => {}} onStop={() => {}} />
+    </div>
+  ),
+};
+
+/** Where nothing can act — a mirrored record — it still says where the answer lives. */
+export const IntakeAskingReadOnly: StoryObj = {
+  render: () => (
+    <div className="max-w-3xl">
+      <AwaitingIntake ask="0fda18" note={QUESTION} />
     </div>
   ),
 };

@@ -22,12 +22,19 @@ import type { Quest, Session } from '../api';
  * carry one today (`note` is what the driver observed, not what the chat is about), so a chat wears
  * its kind. When the composer gives the record an opening line, this function is the only place
  * that changes — which is the point of it existing.
+ *
+ * An intake is opened as a chat, so every build reads it as a session nothing plans from (INT4b),
+ * and it is not a conversation: it serves an ask, and says so by the ask's reference (INT4g).
  */
 export function sessionTitle(session: Session, quest?: Quest | null): string {
   if (quest?.title) return quest.title;
   if (session.quest) return `#${session.quest}`;
+  if (session.ask) return i18n.t('work.intake.title', { ask: session.ask });
   return i18n.t(session.kind === 'chat' ? 'work.identity.conversation' : 'work.identity.session');
 }
+
+/** Whether a session is an intake (INT4b): the one kind of record that names an ask. */
+export const isIntake = (session: Session): boolean => Boolean(session.ask);
 
 /**
  * Which machine holds this session — or null when it is the deployment's own.

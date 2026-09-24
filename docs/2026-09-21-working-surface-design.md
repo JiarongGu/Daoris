@@ -212,6 +212,8 @@ not the mechanism.
   requires, never a bare "may I?" — and the person's moves are exactly the three the ledger already
   allows from that state (`completed`, `declined`, `stopped`, each with a note). **No new states**: a
   surface that invented one would be a second lifecycle to keep in step with the first.
+  *Amended 2026-09-24 (INT4g):* a parked **intake** is the exception to the three. Its answer is on
+  its ask, so it offers a door to the ask's record and a stop (intake design §1h).
 - **The sidebar carries two counts**: sessions live, and how many need a person. The second one is the
   only badge that wears a status hue, because it is the only one that is a status.
 - **An OS notification on park and on end** — and never for an ending the person caused, because a
