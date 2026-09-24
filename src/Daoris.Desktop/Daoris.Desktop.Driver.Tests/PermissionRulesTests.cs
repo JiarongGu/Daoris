@@ -39,6 +39,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__quest_list",
         "mcp__daoris-knowledge__quest_respond",
         "mcp__daoris-knowledge__quest_publish",
+        "mcp__daoris-knowledge__permission_propose",
     ];
 
     /// <summary>What the `commit` default allows (PERM4).</summary>

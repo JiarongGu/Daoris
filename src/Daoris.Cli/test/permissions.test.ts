@@ -27,6 +27,7 @@ const CONNECTOR = [
   'mcp__daoris-knowledge__quest_list',
   'mcp__daoris-knowledge__quest_respond',
   'mcp__daoris-knowledge__quest_publish',
+  'mcp__daoris-knowledge__permission_propose',
 ];
 
 function run(argv: string[], home: string): { code: number; out: string } {

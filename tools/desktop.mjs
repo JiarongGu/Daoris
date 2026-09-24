@@ -74,12 +74,19 @@ export const REDIRECTED = [
  * shell's sync loop would feed a real deployment from a scratch store. A key is the same shape of
  * mistake one layer down. Redirecting them is not enough, because the file only governs when the
  * environment is silent.
+ *
+ * The rules home (PERM2, D74) is where a session's proposal to change the rules is written. The driver
+ * sets it on every connector it hands over, to its own home. A connector it did not hand, such as a
+ * repository's own `.mcp.json` in a pipe-door session, inherits the environment instead, and an inherited
+ * one would file a scratch session's proposal among the real machine's. Unset, it falls back to the
+ * redirected `DAORIS_HOME`.
  */
 export const CLEARED = [
   'DAORIS_REMOTE_URL',
   'DAORIS_REMOTE_KEY',
   'DAORIS_REMOTE_WORKSPACE',
   'DAORIS_SERVICE_KEY',
+  'DAORIS_RULES_HOME',
 ];
 
 /**

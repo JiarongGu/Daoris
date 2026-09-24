@@ -102,11 +102,13 @@ public static class PermissionRules
             [.. new[]
             {
                 "registry", "knowledge_search", "knowledge_get", "knowledge_repositories",
-                "knowledge_convergence", "quest_list", "quest_respond", "quest_publish",
+                "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose",
             }.Select(tool => ConnectorPrefix + tool)],
-            // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's.
-            "A session takes and closes its own quest, and publishes what it finds for others, through "
-            + "Daoris's connector — and anything it would have to ask for is refused."),
+            // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
+            // `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person.
+            "A session takes and closes its own quest, publishes what it finds for others and proposes a "
+            + "change to these rules, through Daoris's connector — and anything it would have to ask for is "
+            + "refused."),
         // 🔴 The owner's answer to PERM4 (2026-09-24), from a measured failure: in a folder the agent had
         // never trusted, a real driven session made its edit, was refused the commit — the repository's
         // own allow-list does not apply there — and declined. `cd` because the agent prefixes its commit

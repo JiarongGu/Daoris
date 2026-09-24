@@ -58,7 +58,7 @@ unknown key written by a newer build is kept on every write.
 
 | Id | List | Rules | Why |
 |---|---|---|---|
-| `connector` | allow | the Daoris connector's own tools: `registry`, `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `quest_list`, `quest_respond`, `quest_publish` (each as `mcp__daoris-knowledge__<tool>`) | A driven session must be able to take and close its own quest and publish the requests it finds (INT3b). `knowledge_refresh` is not in it: rebuilding the index is the machine's job, not a session's. |
+| `connector` | allow | the Daoris connector's own tools: `registry`, `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `quest_list`, `quest_respond`, `quest_publish`, `permission_propose` (each as `mcp__daoris-knowledge__<tool>`) | A driven session must be able to take and close its own quest and publish the requests it finds (INT3b), and propose a change to these rules (PERM2, §6), which only proposes. `knowledge_refresh` is not in it: rebuilding the index is the machine's job, not a session's. |
 | `commit` | allow | `Bash(cd:*)`, `Bash(git add:*)`, `Bash(git commit:*)` | A driven session commits its own work in its own tree (D37). **The owner's answer to PERM4**, from a measured failure: untrusted, a real session made its edit, was refused the commit and declined (§3a). |
 | `no-push` | deny | `Bash(git push)`, `Bash(git push:*)` | A push leaves the machine, and it stays the person's (D37). Held as a structural refusal, never as a script's exit code (HELP3's probe 4: PowerShell 5.1 collapses a native exit). |
 | `tree-guard` | deny, **a hook** | none — it judges `Edit\|Write\|MultiEdit\|NotebookEdit` | A session writes files only inside its own tree (D51). A rule cannot say "outside" (below), so this is a PreToolUse hook (§3b). |
@@ -174,26 +174,37 @@ Both doors write the same file, and a hand edit keeps working because **the file
 the CLI's `permissions.ts` and the driver's `PermissionRules.cs` read it by the same rules, with a
 test on each side and a test that holds the two defaults tables together.
 
-## 6. An agent updating the rules — phase 2, PERM2
+## 6. An agent updating the rules — PERM2, as built (D74)
 
 The owner's words include *"which daoris can also use llm to update those"*. An "LLM" here is a
-**session**: the harness carries the model and Daoris calls none (D24). The design:
+**session**: the harness carries the model and Daoris calls none (D24). 🔴 The owner answered the
+open question on 2026-09-24: **a widening never applies without the person**, in any scope, for any
+tool.
 
-- **A connector tool**, `permission_propose {list, rule, scope, why}`. A session that was refused
-  something, or that finds a rule too wide, proposes the change in its own words. It is recorded by the
-  service beside the session, like an ask.
-- **Narrowing applies at once.** A new `deny` or `ask`, or an `allow` removed, is written at the next
-  tick. It can only make agents do less, and the record says which session made it.
-- **Widening waits for the person.** A new `allow`, a `deny` or `ask` removed, or a default switched
-  off is shown on the screen as a proposal with the session's reason, and applies on the person's yes,
-  from either door. This is the line D37 and D52 draw: a better approval surface must not widen
-  autonomy, and what an agent may do is exactly that boundary. Letting agents widen their own
-  permissions would make the rules decoration.
-- **Every change is recorded with who made it**: the person, or the session by id.
+- **A connector tool**, `permission_propose {action, scope, name?, list?, rule?, id?, on?, why}`, in
+  the `connector` default. `action` is `add` (a rule to `allow`, `ask` or `deny`), `remove` (a rule),
+  or `default` (switch the one named by `id` on or off). A session that was refused something, or
+  that finds a rule too wide, proposes the change in its own words. It proposes and never applies.
+- **Written as a file, not a row**: `<home>/proposals/<id>.json`. The home is the one the driver
+  names on the connector it hands a session (`DAORIS_RULES_HOME`, beside `DAORIS_SESSION_ID`), else
+  `DAORIS_HOME`. The rules are machine-local, so a proposal to change them never reaches the
+  service's store, a remote or a browser (D47 §4). D74 has why.
+- **The tick settles each before it spawns anything.** It judges the change against the rules as they
+  stand. A **narrowing** is applied at once: adding to `deny`, adding to `ask` unless that scope
+  denies the rule, removing an `allow`, `connector` or `commit` switched off, `no-push` or
+  `tree-guard` switched on. That tick's sessions are already handed it. Anything else that changes
+  the file **widens** and is held as `waiting`. The judgement is conservative, so a change classed as
+  narrowing cannot widen any composition.
+- **The person answers a widening from either door**: `daoris agent rules proposals | accept <id> |
+  decline <id> [--note "…"]`, and the card's *Proposed by agents* section, where earlier proposals are
+  one press away. A waiting widening is also a `rule` row in *What needs you*, whose door opens this
+  card. Both are desktop only.
+- **Every change is recorded with who made it**: the session by id (and its ask, for an intake), the
+  driver or the person who settled it, and the note that says why.
 
-**Question for the owner, not decided against their words:** may an agent's widening ever apply
-without the person, for example within one repository's scope, or for a tool that only reads? The
-default above says no.
+**What it does not reach**: a pipe-door quest session speaks through its repository's own
+`.mcp.json`, which names no session, so its proposal is filed under `DAORIS_HOME` as one from *a
+session the driver did not start*.
 
 ## 7. What was not chosen
 

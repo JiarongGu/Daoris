@@ -273,6 +273,9 @@ export function App() {
     unanswerable: (item) => { setQuestFocus(item.id); setView('quests'); },
     // A folder waiting on the person's trust (D73) opens the question itself. Only a shell has one.
     ...(attached ? { trust: (item) => item.trust && setTrusting(item.trust) } : {}),
+    // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is
+    // answered beside them. Only a shell reads the rules.
+    ...(attached ? { rule: () => setView('settings') } : {}),
   };
 
   return (

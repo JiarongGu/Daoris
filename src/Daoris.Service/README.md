@@ -95,6 +95,26 @@ like an ignored one.
 Stored beside the index in the same database: quests are service state as the index is, and two files
 would be two things to back up and two that can disagree about which repositories exist.
 
+## Proposing a change to what agents may do
+
+A session that finds the rules it was handed wrong says so: `permission_propose` (PERM2, D74) proposes
+adding a rule to `allow`, `ask` or `deny`, removing one, or switching one of Daoris's defaults, in one
+of D72's scopes (the machine, a `workspace`, a `repository`), with the reason. **It proposes and never
+applies.** Whether a change narrows depends on the rules as they stand, which only the driver reads:
+it applies a narrowing at its next tick and holds a widening, which 🔴 **never applies without the
+person** (`daoris agent rules accept|decline`, or the Settings card).
+
+**A proposal is a file, not a row here.** One JSON file each under `<home>/proposals/`, where the
+home is the one the driver names on the connector it hands a session (`DAORIS_RULES_HOME`), or else
+`DAORIS_HOME`. The rules are machine-local, so a proposal to change them is too: it is never fed to a
+remote and never served over HTTP. The file records the session that proposed it
+(`DAORIS_SESSION_ID`, set by the driver on every connector it hands over: each protocol-door session,
+and an intake on either door), the ask when that session is an intake, and the folder it ran in, which
+the screen is never shown. A pipe-door quest session talks through its repository's own connector,
+which names no session, so its proposal lands under `DAORIS_HOME` as one from *a session the driver
+did not start*. A malformed rule, a scope with no name or an empty reason is refused with nothing
+written. With no home at all, every proposal is refused.
+
 **The semantic pass has been proven on a real pair.** Two repositories derived the same principle
 independently and wrote it in different vocabulary; word overlap scores them at **25%**, below the
 duplicate threshold, so the CLI's `doctor` structurally cannot see them. Indexed here with a local

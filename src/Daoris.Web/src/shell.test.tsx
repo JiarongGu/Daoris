@@ -611,6 +611,27 @@ describe('the rules card', () => {
       'DAORIS.DRIVER', 'RULE_ACTION', { payload: { action: 'remove', rule: 'Bash(make:*)', scope: 'repository', name: 'engine' } });
   });
 
+  /** PERM2 (D74): the person's answer to an agent's proposal lands as `daoris agent rules accept|decline` would. */
+  it('a proposal accepted on the screen lands on the bridge by its id, and says what changed', async () => {
+    const proposed = {
+      ...RULES,
+      proposals: [{
+        id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
+        why: 'The docs it needs are on the web.', session: 'i9n8t7k6', proposed: '2026-09-24T11:00:00Z',
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'RULES' || type === 'RULE_PROPOSAL' ? proposed : WIRING));
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+
+    const row = await screen.findByRole('listitem', { name: 'proposal #p0000002' });
+    await userEvent.click(within(row).getByRole('button', { name: 'accept' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Accepted: allow WebFetch for every session on this machine. Sessions started from now on are handed it.'));
+  });
+
   /** A shell older than the rules answers something else to a question it never heard: no card, no blank page. */
   it('an older shell gets no card', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'RULES' ? undefined : WIRING));
@@ -1380,7 +1401,8 @@ describe('the shell push channel (ShellSignals)', () => {
     // And where each circle stands with its remote (SYNC6b): every tick runs a pass. And the asks: a
     // tick takes them (INT4b) and the band reads them (INT4d) — seen on the window, an ask made by the
     // other door was missing from *What needs you*, and its parked intake read as a bare session.
-    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.driver, keys.allRepositories, keys.allSync]) {
+    // And the rules: a tick settles what agents proposed about them (PERM2), and the band reads that.
+    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.driver, keys.allRepositories, keys.allSync, keys.rules]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
   });
@@ -1663,5 +1685,25 @@ describe('trusting a folder the driver is holding (D73)', () => {
     expect(trust).toHaveBeenCalledWith(expect.objectContaining({
       kind: 'trust', trust: { folder: HOLD.folder, trustFile: HOLD.trustFile },
     }));
+  });
+
+  /** PERM2 (D74): a widening an agent proposed waits on the person, read from the machine's rules. */
+  it('a widening the driver is holding waits in *What needs you*, and its row is a door', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'RULES'
+      ? {
+        path: 'C:/somewhere/data/permissions.json', defaults: [], scopes: [],
+        proposals: [{
+          id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
+          why: 'The docs it needs are on the web.', session: 'i9n8t7k6', proposed: '2026-09-24T11:00:00Z',
+        }],
+      }
+      : DRIVER_STATE));
+    const rule = vi.fn();
+    show(<OverviewView onNavigate={() => {}} notify={() => {}} doors={{ rule }} />);
+
+    const band = await screen.findByRole('region', { name: 'What needs you' });
+    await userEvent.click(await within(band).findByRole('button', { name: /allow WebFetch for every session on this machine/ }));
+
+    expect(rule).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rule', id: 'p0000002', where: 'session i9n8t7k6' }));
   });
 });

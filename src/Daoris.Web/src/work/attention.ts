@@ -1,6 +1,8 @@
 import i18n from '../i18n';
 import type { Ask, Quest, Registration, Session } from '../api';
 import { firstLine } from '../asks/AskCard';
+import type { RuleProposal } from '../settings/AgentRules';
+import { proposalAuthor, proposalChange } from '../settings/proposals';
 import type { TrustHold } from '../signals';
 import { sessionTitle } from './identity';
 import type { Attention } from './AttentionRow';
@@ -39,6 +41,12 @@ const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting'
  * granted. One row per folder, since the oldest thing it holds. Only the shell's tick says so, so a
  * browser has none.
  *
+ * **An agent's proposal to widen the rules (PERM2, D74) sits after the asks.** 🔴 A widening never
+ * applies without the person, so the driver holds it as `waiting` and only they can settle it. The
+ * session that proposed it carries on meanwhile, so it holds nothing up the way an ask does. A narrowing
+ * applied itself, and one the driver has not judged yet may be one, so neither is here. Only the shell
+ * reads the rules, so a browser has none.
+ *
  * **The design's middle category — finished work nobody has looked at — is deliberately absent.**
  * Nothing records that anybody looked, so any row here would be a guess. It arrives with the
  * *viewed* mark SURF6 brings, and the band says so rather than leaving the gap silent.
@@ -49,6 +57,7 @@ export function needsAPerson(
   registry: readonly Registration[],
   asks: readonly Ask[],
   untrusted: readonly TrustHold[] = [],
+  proposals: readonly RuleProposal[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -125,11 +134,24 @@ export function needsAPerson(
     });
   }
 
+  const widenings = proposals
+    .filter((proposal) => proposal.state === 'waiting')
+    .map((proposal): Attention => ({
+      id: proposal.id,
+      kind: 'rule',
+      title: proposalChange(proposal),
+      where: proposalAuthor(proposal),
+      since: proposal.proposed,
+      // The session's own reason, verbatim.
+      detail: proposal.why,
+    }));
+
   const oldestFirst = (a: Attention, b: Attention) => a.since.localeCompare(b.since);
   return [
     ...parked.sort(oldestFirst),
     ...[...folders.values()].sort(oldestFirst),
     ...waitingAsks.sort(oldestFirst),
+    ...widenings.sort(oldestFirst),
     ...unanswerable.sort(oldestFirst),
   ];
 }

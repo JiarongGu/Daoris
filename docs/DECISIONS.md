@@ -2909,6 +2909,11 @@ this one.
   through without asking. That is more than a read, and only the tree guard would still stand in its
   way.
 
+**Amended 2026-09-24: phase 2 is built (PERM2 → D74).** An agent proposes over its connector
+(`permission_propose`, now in the `connector` default). The driver's tick applies a narrowing and holds
+a widening, and 🔴 a widening never applies without the person: the owner's answer to the question
+above.
+
 ## D73 — The agent's trust in a folder is asked, then written, and never silently (2026-09-24)
 
 **Decision.** DEPLOY1's second half, option (b), is the owner's answer (2026-09-24): Daoris asks per
@@ -2982,3 +2987,80 @@ written only on the person's word.
   screen grants only what the driver is holding.
 - **Granting by default in the terminal**, with no `--yes`. Granting on the first keystroke is the
   silent option with one more word in front of it.
+
+## D74 — An agent proposes a change to the rules; a narrowing applies at the tick, a widening waits for the person (2026-09-24)
+
+**Decision.** PERM2, the second half of D72's owner's words: *"which daoris can also use llm to update
+those too"*. The "LLM" is a session. The harness carries the model and Daoris calls none (D24). 🔴 The
+owner answered D72's open question on 2026-09-24: **a widening never applies without the person.**
+
+- **A connector tool, `permission_propose`.** It takes `action` (`add` a rule to `allow`, `ask` or
+  `deny`, `remove` one, or switch a `default` on or off), `scope` (D72's three) with its `name`, and
+  `why`, which is required. It is in the `connector` default, so every session Daoris starts may call
+  it. It **proposes and never applies**. A malformed rule, a scope with no name or an empty reason is
+  refused with nothing written.
+- **A proposal is a file under the home**: `<home>/proposals/<id>.json`, one per proposal, written
+  atomically by the MCP host (`RuleProposalBox`). It records the change, the reason, the session that
+  proposed it and its ask when it is an intake, the folder it ran in, and `state: proposed`. The home
+  is the one the driver names on every connector it hands over (`DAORIS_RULES_HOME`, beside
+  `DAORIS_SESSION_ID`), else `DAORIS_HOME`.
+- **The driver's tick settles it before it spawns anything.** It judges the change against the rules
+  as they stand. A narrowing is applied at once and marked `applied`, so that tick's sessions are
+  already handed it. A widening is marked `waiting`, and the tick says so. A change the rules already
+  hold is `unchanged`, and one they cannot take is `refused` in the driver's words.
+- **Narrowing, precisely**: adding to `deny`, adding to `ask` unless the rule sits in that scope's
+  `deny`, removing an `allow`, switching the `connector` or `commit` default off, and switching
+  `no-push` or `tree-guard` on. Everything else that changes the file widens. The judgement is per
+  scope and conservative: a change classed as narrowing only adds a refusal or removes an allowance,
+  so in no composition does it let a session do more. Some changes classed as widening would change
+  nothing in effect (an `allow` another scope denies), and they wait anyway.
+- **The person answers from either door** (D50): `daoris agent rules proposals | accept <id> |
+  decline <id> [--note "…"]`, and the Settings card's *Proposed by agents*, with a `rule` row in
+  *What needs you* for every waiting one (desktop only: the rules never reach a browser). A yes applies the change whatever it does. A no changes
+  nothing and keeps the person's reason. Only a proposal not yet settled is answered. A settled one is
+  history.
+- **Every change is recorded with who made it.** Settling rewrites `state` and `settled` (`at`, `by`:
+  `the driver` or `the person`, and the note) and keeps every key the session wrote. The file is the
+  contract, read by `RuleProposals.cs` in the driver and `ruleproposals.ts` in the CLI, with the same
+  reading and answering cases asserted on both sides. Only the driver classifies.
+
+**Why a file, and not a row in the service's store** (the design's first sketch, "recorded by the
+service beside the session"). The rules are machine-local, so a proposal to change them is too. A file
+under the home is never fed to a remote and never served over HTTP (D47 §4), with no guard to write
+and none to forget. The CLI stays file-only: `daoris agent rules accept` opens no socket, which a
+store row would have forced on it. One file per proposal means two sessions proposing at once never
+write the same file. And the MCP host already writes machine-local files beside its store: a quest's
+attachments.
+
+**Why the tick classifies, and not the door.** Whether a change narrows depends on the rules as they
+stand, and only the driver and the person's doors read them. The MCP host is a service artefact that
+never opens `permissions.json`. So its answer says both outcomes plainly, and the one place that knows
+applies the difference.
+
+**Limits, stated.**
+- A pipe-door quest session talks through its repository's own `.mcp.json`, which names no session.
+  Its proposal lands under `DAORIS_HOME` as one from *a session the driver did not start*. The protocol
+  door, and an intake on either door, name the session.
+- A person answering from the terminal while the tick settles the same proposal can both apply it. A
+  proposal applies the same edit twice without harm, and the last mark written stands. Two writers of
+  `permissions.json` at the same instant lose one edit, as they did before this (PERM1's two doors).
+- The folder a session ran in is a machine path. It stays in the file and never rides the bridge. The
+  screen is told who proposed, never where they stood.
+- **Unproven until a real session runs**: that an agent, handed the tool and a refusal, proposes a
+  change it needs. The keyless half is proven: the connector's write, the tick's settling and spawn,
+  both doors' answers.
+
+**Rejected.**
+- **A row in the service's store**, above: every guard D47 §4 needs, for a fact that never leaves the
+  machine.
+- **The MCP host applying a narrowing itself.** It would write `permissions.json` from a service
+  artefact, while the driver may be composing the same file for a spawn. And the host would need to
+  read the rules to classify, so there would be two classifiers.
+- **Classifying at the door.** The door cannot see the rules, so it would have to guess, and the guess
+  would be wrong exactly when a scope already held the rule.
+- **Any widening without the person**, including within one repository's scope or for a tool that only
+  reads. The owner said no. A better approval surface must not widen autonomy (D37, D52), and what an
+  agent may do is exactly that boundary. Agents that widen their own permissions make the rules
+  decoration.
+- **Deleting a proposal once settled.** The record of who changed what, and who declined what, is the
+  point.

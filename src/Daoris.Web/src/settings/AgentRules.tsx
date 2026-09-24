@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, CheckField, Icon, Pill, Prose, SectionTitle, SelectField, SettingRow } from '../ui';
+import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
 export type RuleListName = 'allow' | 'ask' | 'deny';
 export type RuleScopeName = 'machine' | 'workspace' | 'repository';
@@ -15,13 +16,48 @@ export type RuleDefault = { id: string; list: RuleListName; rules: string[]; why
  */
 export type RuleScopeRow = { scope: RuleScopeName; name?: string; allow: string[]; ask: string[]; deny: string[] };
 
-/** The driver's RULES answer (PERM1, D72): the file, the defaults, and every scope it holds. */
-export type AgentRulesState = { path: string; problem?: string; defaults: RuleDefault[]; scopes: RuleScopeRow[] };
+/**
+ * An agent's proposal to change these rules (PERM2, D74), as the connector wrote it and the driver or
+ * the person settled it. Structured, so the page says it in the person's language. What the wire
+ * leaves out is absent: a session the driver did not start carries no `session`.
+ */
+export type RuleProposal = {
+  id: string;
+  state: 'proposed' | 'waiting' | 'applied' | 'accepted' | 'declined' | 'refused' | 'unchanged';
+  action: 'add' | 'remove' | 'default';
+  scope: RuleScopeName;
+  name?: string;
+  list?: RuleListName;
+  rule?: string;
+  default?: string;
+  on?: boolean;
+  why: string;
+  session?: string;
+  ask?: string;
+  proposed: string;
+  settled?: string;
+  /** `the driver` or `the person` — who settled it. */
+  settledBy?: string;
+  /** The driver's own sentence, or the person's reason. */
+  note?: string;
+};
+
+/**
+ * The driver's RULES answer (PERM1, D72): the file, the defaults, and every scope it holds — and since
+ * PERM2 what agents proposed about them, which a shell older than that never sends.
+ */
+export type AgentRulesState = {
+  path: string; problem?: string; defaults: RuleDefault[]; scopes: RuleScopeRow[]; proposals?: RuleProposal[];
+};
 
 export type RuleAddition = { list: RuleListName; rule: string; scope: RuleScopeName; name: string | undefined };
 
 const LISTS: readonly RuleListName[] = ['allow', 'ask', 'deny'];
 const LIST_TONE = { allow: 'done', ask: 'open', deny: 'declined' } as const;
+/** A settled proposal's tone: what changed the rules is done, what did not is neither. */
+const SETTLED_TONE: Record<RuleProposal['state'], 'open' | 'done' | 'declined' | 'neutral'> = {
+  proposed: 'open', waiting: 'open', applied: 'done', accepted: 'done', declined: 'declined', refused: 'declined', unchanged: 'neutral',
+};
 const MACHINE = 'machine';
 
 /**
@@ -38,8 +74,12 @@ const MACHINE = 'machine';
  *
  * A rarely-used form is one press away rather than open on every visit (platform-ux §4). Props only,
  * no hook from the query layer or the shell (components §2).
+ *
+ * **What agents proposed sits first** (PERM2, D74), because a widening waiting there is the one thing on
+ * this card that is waiting on the person: a narrowing applied itself at the driver's tick, and 🔴 a
+ * widening never applies without them. What was settled is history, one press away.
  */
-export function AgentRules({ rules, circles, repositories, busy = false, onSwitchDefault, onRemove, onAdd }: {
+export function AgentRules({ rules, circles, repositories, busy = false, onSwitchDefault, onRemove, onAdd, onAnswer }: {
   rules: AgentRulesState;
   /** The circles a rule can reach — the machine's own, from the registry. */
   circles: string[];
@@ -49,9 +89,12 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
   onSwitchDefault: (id: string, on: boolean) => void;
   onRemove: (target: { scope: RuleScopeName; name: string | undefined; rule: string }) => void;
   onAdd: (addition: RuleAddition) => void;
+  /** The person's answer to an agent's proposal, by its id: `true` accepts it. */
+  onAnswer: (id: string, accept: boolean) => void;
 }) {
   const { t } = useTranslation();
   const [adding, setAdding] = useState(false);
+  const [history, setHistory] = useState(false);
   const [list, setList] = useState<RuleListName>('allow');
   const [rule, setRule] = useState('');
   const [where, setWhere] = useState(MACHINE);
@@ -61,6 +104,9 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
     : t(row.scope === 'workspace' ? 'settings.rules.scopeWorkspace' : 'settings.rules.scopeRepository', { name: row.name ?? '' });
 
   const held = rules.scopes.filter((row) => LISTS.some((name) => row[name].length > 0));
+  const proposals = rules.proposals ?? [];
+  const open = proposals.filter((proposal) => OPEN_STATES.has(proposal.state));
+  const settled = proposals.filter((proposal) => !OPEN_STATES.has(proposal.state));
 
   // The scope choice as one value: `machine`, `workspace:<circle>` or `repository:<name>`.
   const places = [
@@ -90,6 +136,75 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
         <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           {rules.problem}
         </p>
+      )}
+
+      {proposals.length > 0 && (
+        <div className="mb-3">
+          <SectionTitle level={3}>{t('settings.rules.proposals.title')}</SectionTitle>
+          <Prose className="text-small">{t('settings.rules.proposals.hint')}</Prose>
+          {open.length > 0 && (
+            <ul className="m-0 mt-2 list-none p-0">
+              {open.map((proposal) => (
+                <li
+                  key={proposal.id}
+                  aria-label={t('settings.rules.proposals.row', { id: proposal.id })}
+                  className="border-l-[3px] border-l-st-open py-2 pl-3"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Pill tone="open">{t(`settings.rules.proposals.state.${proposal.state}`)}</Pill>
+                    <span className="min-w-0 flex-1 break-all font-mono text-body">{proposalChange(proposal)}</span>
+                    <Button disabled={busy} onClick={() => onAnswer(proposal.id, true)}>
+                      {t('settings.rules.proposals.accept')}
+                    </Button>
+                    <Button variant="ghost" disabled={busy} onClick={() => onAnswer(proposal.id, false)}>
+                      {t('settings.rules.proposals.decline')}
+                    </Button>
+                  </div>
+                  <p className="m-0 mt-1 text-meta text-ink-faint">
+                    {t('settings.rules.proposals.from', { author: proposalAuthor(proposal) })}
+                  </p>
+                  {/* The session's own reason, verbatim: content, never translated. */}
+                  <p className="m-0 mt-0.5 max-w-prose text-body text-ink-soft">{proposal.why}</p>
+                  <p className="m-0 mt-0.5 text-small text-ink-faint">
+                    {t(proposal.state === 'waiting' ? 'settings.rules.proposals.widens' : 'settings.rules.proposals.unjudged')}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {settled.length > 0 && (
+            <>
+              <Button variant="ghost" className="mt-2" aria-expanded={history} onClick={() => setHistory(!history)}>
+                <Icon name={history ? 'chevronDown' : 'chevronRight'} size={13} />
+                {t('settings.rules.proposals.earlier', { count: settled.length })}
+              </Button>
+              {history && (
+                <ul className="m-0 list-none p-0">
+                  {settled.map((proposal) => (
+                    <li
+                      key={proposal.id}
+                      aria-label={t('settings.rules.proposals.row', { id: proposal.id })}
+                      className="border-t border-line py-1.5 first:border-t-0"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Pill tone={SETTLED_TONE[proposal.state]}>{t(`settings.rules.proposals.state.${proposal.state}`)}</Pill>
+                        <span className="min-w-0 flex-1 break-all font-mono text-body">{proposalChange(proposal)}</span>
+                      </div>
+                      <p className="m-0 mt-0.5 text-meta text-ink-faint">
+                        {t('settings.rules.proposals.from', { author: proposalAuthor(proposal) })}
+                        {' · '}
+                        {t(proposal.settledBy === 'the person' ? 'settings.rules.proposals.byPerson' : 'settings.rules.proposals.byDriver')}
+                        {/* The driver's sentence or the person's reason, verbatim. */}
+                        {proposal.note ? ` — ${proposal.note}` : ''}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       <SectionTitle level={3}>{t('settings.rules.defaults')}</SectionTitle>

@@ -630,6 +630,82 @@ public sealed class DriverModuleTests : Bridge
         Assert.False(File.Exists(PermissionRules.PathOf(Home)));
     }
 
+    /// <summary>A proposal exactly as the connector writes it (PERM2) — THE FILE is the contract.</summary>
+    private void Propose(
+        string id, string state, string action, string? list = null, string? rule = null,
+        string scope = "machine", string? name = null, string? session = "s1a2b3c4", string? ask = null,
+        string proposed = "2026-09-24T10:00:00.0000000+00:00")
+    {
+        var folder = Path.Combine(Home, RuleProposals.Folder);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, $"{id}.json"), JsonSerializer.Serialize(new
+        {
+            id,
+            proposed,
+            by = new { session, ask, folder = "C:/somewhere/engine" },
+            change = new { action, scope, name, list, rule, @default = (string?)null, on = (bool?)null },
+            why = "The tests need it.",
+            state,
+        }));
+    }
+
+    /// <summary>
+    /// What agents proposed about the rules (PERM2, D74) rides the same answer as the rules: the person
+    /// reads a waiting widening beside the rules it would change, and the history of every other.
+    /// </summary>
+    [Fact]
+    public async Task The_rules_carry_every_proposal_newest_first_with_who_made_it()
+    {
+        Propose("p0000001", "applied", "add", list: "deny", rule: "Bash(rm:*)", session: null);
+        Propose("p0000002", "waiting", "add", list: "allow", rule: "WebFetch", scope: "workspace", name: "default",
+            session: "i9n8t7k6", ask: "a1b2c3", proposed: "2026-09-24T11:00:00.0000000+00:00");
+
+        var answered = await AnswerAsync(Module(), "RULES");
+
+        var proposals = answered.GetProperty("proposals").EnumerateArray().ToList();
+        Assert.Equal(["p0000002", "p0000001"], proposals.Select(p => p.GetProperty("id").GetString()!).ToArray());
+        var waiting = proposals[0];
+        Assert.Equal("waiting", waiting.GetProperty("state").GetString());
+        Assert.Equal("add", waiting.GetProperty("action").GetString());
+        Assert.Equal("allow", waiting.GetProperty("list").GetString());
+        Assert.Equal("WebFetch", waiting.GetProperty("rule").GetString());
+        Assert.Equal("workspace", waiting.GetProperty("scope").GetString());
+        Assert.Equal("default", waiting.GetProperty("name").GetString());
+        Assert.Equal("i9n8t7k6", waiting.GetProperty("session").GetString());
+        Assert.Equal("a1b2c3", waiting.GetProperty("ask").GetString());
+        Assert.Equal("The tests need it.", waiting.GetProperty("why").GetString());
+        // 🔴 The folder a session ran in is a machine path, and it stays in the file: the page is told
+        // who proposed, never where they stood.
+        Assert.False(waiting.TryGetProperty("folder", out _));
+        // A session the driver did not start carries none, which the bridge leaves out.
+        Assert.True(!proposals[1].TryGetProperty("session", out var none) || none.ValueKind is JsonValueKind.Null);
+    }
+
+    /// <summary>The screen's half of `daoris agent rules accept|decline` (D50), answered with the rules after it.</summary>
+    [Fact]
+    public async Task A_proposal_answered_on_the_screen_lands_as_the_terminal_would_leave_it()
+    {
+        Propose("p0000007", "waiting", "add", list: "allow", rule: "WebFetch");
+        Propose("p0000008", "waiting", "add", list: "allow", rule: "Bash(curl:*)");
+        var module = Module();
+
+        var accepted = await AnswerAsync(module, "RULE_PROPOSAL", new { id = "p0000007", accept = true });
+        Assert.Equal(["WebFetch"], PermissionRules.Load(Home).Machine.Allow);
+        var row = accepted.GetProperty("proposals").EnumerateArray().Single(p => p.GetProperty("id").GetString() == "p0000007");
+        Assert.Equal("accepted", row.GetProperty("state").GetString());
+        Assert.Equal("the person", row.GetProperty("settledBy").GetString());
+
+        var declined = await AnswerAsync(module, "RULE_PROPOSAL", new { id = "p0000008", accept = false, note = "Not from a session." });
+        Assert.Equal(["WebFetch"], PermissionRules.Load(Home).Machine.Allow);
+        Assert.Equal("Not from a session.", declined.GetProperty("proposals").EnumerateArray()
+            .Single(p => p.GetProperty("id").GetString() == "p0000008").GetProperty("note").GetString());
+
+        var again = await RefusalAsync(module, "RULE_PROPOSAL", new { id = "p0000007", accept = false });
+        Assert.Contains(Refusals.DriverRefused, again);
+        Assert.Contains("already", again);
+        Assert.Contains("no proposal", await RefusalAsync(module, "RULE_PROPOSAL", new { id = "nope1234", accept = true }));
+    }
+
     /// <summary>A declared harness is on the roster with the plugin it came from beside it (D64).</summary>
     [Fact]
     public async Task A_declared_harness_is_on_the_roster_naming_the_plugin_it_came_from()

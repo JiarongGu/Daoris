@@ -8,27 +8,31 @@ import { Dot } from '../ui';
  * One thing that is waiting on a person, as Overview's band shows it.
  *
  * @remarks
- * **Four kinds, and they are different questions.** A `parked` session is stopped at a checkpoint
+ * **Every kind is a different question.** A `parked` session is stopped at a checkpoint
  * only a person can clear (D46). An ask is a `proposal` while nothing serves it: the declarations
  * proposed, and only a person publishes (INT4a). An ask is `intake` when its intake session parked
  * asking the person (D65 §1b). That session is counted as the ask, never twice. An `unanswerable`
  * quest is addressed to a repository this deployment has no registration for. It will sit forever,
  * and nothing else says so. A `trust` row is a folder the agent has not been trusted in, where the
- * driver is holding a start (D73): only the person can give that grant.
+ * driver is holding a start (D73): only the person can give that grant. A `rule` row is an agent's
+ * proposal to widen what agents may do (PERM2, D74), which never applies without the person.
  *
  * A fifth kind belongs here by design §4 — **finished work nobody has looked at** — and is not
  * buildable yet: nothing records that anybody looked. It arrives with the *viewed* mark SURF6
  * introduces, and the band says as much rather than leaving a silent gap.
  */
 export type Attention = {
-  /** The session, ask or quest id — what the door opens; for a `trust` row, the folder. */
+  /** The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal. */
   id: string;
-  kind: 'parked' | 'proposal' | 'intake' | 'unanswerable' | 'trust';
+  kind: 'parked' | 'proposal' | 'intake' | 'unanswerable' | 'trust' | 'rule';
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
   trust?: TrustHold;
   /** What it is, derived: a session's identity, an ask's first line, or a quest's title. */
   title: string;
-  /** Where it waits: the repository, or for an ask its circle, because an ask has no repository yet. */
+  /**
+   * Where it waits: the repository, or for an ask its circle, because an ask has no repository yet.
+   * For a `rule` row, who proposed it: the rules are the machine's, so the proposer is the place.
+   */
   where: string;
   /** When it started waiting — a park's last move, an ask's asking, a quest's filing. */
   since: string;

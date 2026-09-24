@@ -14,7 +14,11 @@ namespace Daoris.Knowledge;
 /// variable can publish on an ask's behalf — as a person could — but cannot claim a harness decided.</para>
 /// </remarks>
 /// <param name="Ask">The ask the session answers, or null for every other session.</param>
-/// <param name="Session">The session answering it — what the ask's record is checked against.</param>
+/// <param name="Session">
+/// The session answering it — what the ask's record is checked against. The driver names it for every
+/// session it starts, and a rule proposal records it as the author (PERM2); with no ask it changes
+/// nothing about a publish.
+/// </param>
 public sealed record IntakeScope(string? Ask, string? Session)
 {
     /// <summary>Which ask — set by the driver on an intake's spawn and on the connector it offers.</summary>

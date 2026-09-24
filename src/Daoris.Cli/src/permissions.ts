@@ -57,10 +57,13 @@ export interface PermissionFile {
   problem?: string;
 }
 
-/** The connector's own tools. Not `knowledge_refresh`: rebuilding the index is the machine's job. */
+/**
+ * The connector's own tools. Not `knowledge_refresh`: rebuilding the index is the machine's job. And
+ * `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person.
+ */
 const CONNECTOR_TOOLS = [
   'registry', 'knowledge_search', 'knowledge_get', 'knowledge_repositories',
-  'knowledge_convergence', 'quest_list', 'quest_respond', 'quest_publish',
+  'knowledge_convergence', 'quest_list', 'quest_respond', 'quest_publish', 'permission_propose',
 ];
 
 /** What Daoris ships. 🔴 The driver's `PermissionRules.cs` holds the same table, and a test reads this one. */
@@ -69,8 +72,9 @@ export const DEFAULTS: readonly PermissionDefault[] = [
     id: 'connector',
     list: 'allow',
     rules: CONNECTOR_TOOLS.map((tool) => `mcp__daoris-knowledge__${tool}`),
-    why: 'A session takes and closes its own quest, and publishes what it finds for others, through '
-      + "Daoris's connector — and anything it would have to ask for is refused.",
+    why: 'A session takes and closes its own quest, publishes what it finds for others and proposes a '
+      + "change to these rules, through Daoris's connector — and anything it would have to ask for is "
+      + 'refused.',
   },
   // 🔴 The owner's answer to PERM4 (2026-09-24): in a folder the agent never trusted, a real driven
   // session made its edit and was refused the commit, because the repository's own allow-list does not
@@ -253,7 +257,8 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
     }
 
     default:
-      throw new DaorisError(`unknown rules verb '${verb}' — one of: list, allow, ask, deny, remove, default`);
+      throw new DaorisError(
+        `unknown rules verb '${verb}' — one of: list, allow, ask, deny, remove, default, proposals, accept, decline`);
   }
 
   /** The bare tokens after the verb — a flag and its value are not operands. At least one is needed. */

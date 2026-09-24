@@ -682,6 +682,20 @@ public sealed class DriverModule : ModuleBase
                 return Rules(file);
             }
 
+            // The screen's half of `daoris agent rules accept|decline` (PERM2, D74): the person's answer
+            // to an agent's proposal. 🔴 The only way a widening an agent proposed ever applies.
+            case "RULE_PROPOSAL":
+            {
+                await Task.CompletedTask;
+                RuleProposals.Answer(
+                    _loop.Home,
+                    PayloadHelper.GetRequiredValue<string>(request.Payload, "id"),
+                    PayloadHelper.GetRequiredValue<bool>(request.Payload, "accept"),
+                    Optional(request, "note"),
+                    DateTimeOffset.UtcNow);
+                return Rules(PermissionRules.Load(_loop.Home));
+            }
+
             // What sessions consumed (TOOL3/D57 §4) — measured before it is managed.
             //
             // 🔴 Over this bridge and nowhere else. Per-account usage names a credential profile, and
@@ -972,6 +986,28 @@ public sealed class DriverModule : ModuleBase
             .Concat(file.Repositories.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (Scope: "repository", Name: (string?)p.Key, Lists: p.Value)))
             .Select(held => new { held.Scope, held.Name, held.Lists.Allow, held.Lists.Ask, held.Lists.Deny })
             .ToArray(),
+        // What agents proposed about these rules (PERM2, D74), newest first. Structured rather than a
+        // sentence, so the page says it in the person's language. 🔴 Not the folder the session ran in:
+        // it is a machine path, and the page is told who proposed, never where they stood.
+        Proposals = RuleProposals.Load(_loop.Home).Select(proposal => new
+        {
+            proposal.Id,
+            State = proposal.State.ToString().ToLowerInvariant(),
+            proposal.Change.Action,
+            Scope = proposal.Change.Scope.ToString().ToLowerInvariant(),
+            proposal.Change.Name,
+            List = proposal.Change.List?.ToString().ToLowerInvariant(),
+            proposal.Change.Rule,
+            proposal.Change.Default,
+            proposal.Change.On,
+            proposal.Why,
+            proposal.Session,
+            proposal.Ask,
+            Proposed = proposal.Proposed.ToString("O"),
+            Settled = proposal.Settled?.ToString("O"),
+            proposal.SettledBy,
+            proposal.Note,
+        }).ToArray(),
     };
 
     private static RuleScope ScopeOf(IpcRequest request) => Optional(request, "scope") switch

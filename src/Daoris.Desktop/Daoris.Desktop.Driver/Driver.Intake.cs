@@ -173,7 +173,7 @@ public sealed partial class Driver
             string? preamble = null;
             if (adapter.Wire == SessionWire.Pipe)
             {
-                var connector = Connector(scope);
+                var connector = Connector(sessionId, scope);
                 if (connector is null) preamble = NoConnectorForIntake;
                 handed = SpawnServers.Write(home, sessionId, connector is null ? _servers : [connector, .. _servers]);
                 if (handed is not null) adapter.HandServers(info, handed);

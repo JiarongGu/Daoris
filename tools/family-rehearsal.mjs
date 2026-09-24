@@ -2788,6 +2788,54 @@ check(
   notARule.out,
 );
 
+// An agent's proposal to change them (PERM2, D74), answered from a terminal. A session proposes over
+// its connector, which writes one file per proposal under the home; the driver's tick applies a
+// narrowing and holds a widening. 🔴 A widening never applies without the person — so the file is
+// written here exactly as the connector writes it and the driver leaves it, and the person's yes is
+// the thing asserted. The tick's half is the driver's tests; the connector's is the service's.
+const proposalsDir = join(toolchainHome, 'proposals');
+mkdirSync(proposalsDir, { recursive: true });
+const proposalFile = (id, change) => {
+  const path = join(proposalsDir, `${id}.json`);
+  writeFileSync(path, `${JSON.stringify({
+    id,
+    proposed: '2026-09-24T10:00:00.0000000+00:00',
+    by: { session: 'r3h3a4r5', ask: null, folder: scratch },
+    change: { scope: 'repository', name: 'newcomer', list: null, rule: null, default: null, on: null, ...change },
+    why: 'The rehearsal needs it.',
+    state: 'waiting',
+    settled: { at: '2026-09-24T10:00:05.0000000+00:00', by: 'the driver', note: 'it widens what agents may do, so it waits for the person.' },
+  }, null, 2)}\n`);
+  return path;
+};
+const widening = proposalFile('9e1a7c20', { action: 'add', list: 'allow', rule: 'Bash(npm run test:*)' });
+const unwanted = proposalFile('9e1a7c21', { action: 'add', list: 'allow', rule: 'WebFetch' });
+const proposalsListed = cliRules('proposals');
+check(
+  '`daoris agent rules proposals` lists a widening an agent proposed, waiting, with who proposed it and why',
+  proposalsListed.code === 0 && /#9e1a7c20\s+waiting\s+allow `Bash\(npm run test:\*\)` for repository `newcomer`/.test(proposalsListed.out)
+    && /session r3h3a4r5/.test(proposalsListed.out) && /The rehearsal needs it\./.test(proposalsListed.out),
+  proposalsListed.out,
+);
+const accepted = cliRules('accept 9e1a7c20');
+const declined = cliRules('decline 9e1a7c21 --note "Not from a session."');
+const afterAnswers = JSON.parse(readFileSync(rulesFile, 'utf8'));
+check(
+  '…and the person’s yes applies it to the rules file, recorded as theirs, while a no changes nothing',
+  accepted.code === 0 && declined.code === 0
+    && afterAnswers.repositories?.newcomer?.allow?.includes('Bash(npm run test:*)')
+    && !afterAnswers.repositories?.newcomer?.allow?.includes('WebFetch')
+    && JSON.parse(readFileSync(widening, 'utf8')).settled?.by === 'the person'
+    && JSON.parse(readFileSync(unwanted, 'utf8')).settled?.note === 'Not from a session.',
+  `${accepted.out}\n${declined.out}`,
+);
+const answeredTwice = cliRules('accept 9e1a7c21');
+check(
+  '…and a settled proposal is history: answering it again is refused',
+  answeredTwice.code === 2 && /already declined/.test(answeredTwice.out),
+  answeredTwice.out,
+);
+
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
 const cliDriver = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });

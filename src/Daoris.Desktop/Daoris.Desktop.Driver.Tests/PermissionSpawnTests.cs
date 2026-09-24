@@ -129,6 +129,56 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
+    /// An agent's narrowing (PERM2) is settled at the START of a tick, so the session that tick spawns
+    /// is already handed the narrower rules — "applies at the next tick" means this one's spawns too.
+    /// </summary>
+    [Fact]
+    public async Task A_narrowing_proposed_before_a_tick_is_in_the_rules_its_session_is_handed()
+    {
+        Rules();
+        var proposals = Path.Combine(_home, RuleProposals.Folder);
+        Directory.CreateDirectory(proposals);
+        File.WriteAllText(Path.Combine(proposals, "p1a2b3c4.json"), """
+            {
+              "id": "p1a2b3c4",
+              "proposed": "2026-09-24T10:00:00.0000000+00:00",
+              "by": { "session": "s0f1r2s3", "ask": null, "folder": "C:/somewhere/engine" },
+              "change": { "action": "remove", "scope": "repository", "name": "engine", "list": null, "rule": "Bash(make:*)", "default": null, "on": null },
+              "why": "make rebuilt the whole tree when one target was asked for.",
+              "state": "proposed"
+            }
+            """);
+        await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
+        var adapter = new RecordingPipeAdapter();
+        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+
+        var report = await driver.TickAsync();
+
+        using var handed = JsonDocument.Parse(adapter.HandedText!);
+        Assert.DoesNotContain(
+            "Bash(make:*)",
+            handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
+        Assert.Contains(report.Events, line => line.Contains("applied #p1a2b3c4") && line.Contains("session s0f1r2s3"));
+    }
+
+    /// <summary>
+    /// The connector the driver offers names THIS session and the home its rules live in, so a proposal
+    /// says who made it and lands beside the rules it would change (PERM2) — an intake's ask rides too.
+    /// </summary>
+    [Fact]
+    public void The_connector_carries_the_session_and_the_rules_home_beside_an_intakes_scope()
+    {
+        var quest = Daoris.Driver.Driver.ConnectorScope("C:/somewhere/data", "s1a2b3c4", scope: null);
+        var intake = Daoris.Driver.Driver.ConnectorScope("C:/somewhere/data", "i9n8t7k6", IntakeRoom.Scope("a1b2c3", "i9n8t7k6"));
+
+        Assert.Equal("C:/somewhere/data", quest[KnowledgeConnector.RulesHomeVariable]);
+        Assert.Equal("s1a2b3c4", quest[IntakeRoom.SessionVariable]);
+        Assert.False(quest.ContainsKey(IntakeRoom.AskVariable));
+        Assert.Equal("a1b2c3", intake[IntakeRoom.AskVariable]);
+        Assert.Equal("i9n8t7k6", intake[IntakeRoom.SessionVariable]);
+    }
+
+    /// <summary>
     /// 🔴 On the protocol door the rules ride `session/new` — the stand-in agent writes down the `_meta`
     /// it was given, and the file it names is the one composed for this session.
     /// </summary>

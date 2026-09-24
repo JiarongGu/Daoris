@@ -630,6 +630,19 @@ export const useRuleAction = () => {
   });
 };
 
+/**
+ * The screen's half of `daoris agent rules accept|decline` (PERM2, D74): the person's answer to an
+ * agent's proposal, answered with the rules after it. 🔴 The only way a widening an agent proposed applies.
+ */
+export const useRuleProposal = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (answer: { id: string; accept: boolean; note?: string }) =>
+      call<AgentRulesState>('RULE_PROPOSAL', answer),
+    onSuccess: (state) => client.setQueryData(keys.rules, state),
+  });
+};
+
 /** The screen's half of `daoris plugin enable|disable|remove` (D50): a row, or the folder gone with the data named. */
 export const usePluginAction = () => {
   const client = useQueryClient();

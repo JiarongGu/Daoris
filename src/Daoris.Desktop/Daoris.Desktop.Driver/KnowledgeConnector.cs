@@ -22,6 +22,12 @@ public static class KnowledgeConnector
     /// <summary>What the agent calls it — its tools arrive as <c>mcp__daoris-knowledge__*</c>.</summary>
     public const string ServerName = "daoris-knowledge";
 
+    /// <summary>
+    /// The home this driver keeps its rules in (PERM2) — where a session's proposal to change them is
+    /// written. 🔴 The service's <c>RuleProposalBox.HomeVariable</c> reads the same name.
+    /// </summary>
+    public const string RulesHomeVariable = "DAORIS_RULES_HOME";
+
     public static string ExecutableName =>
         OperatingSystem.IsWindows() ? "daoris-knowledge.exe" : "daoris-knowledge";
 

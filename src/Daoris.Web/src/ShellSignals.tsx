@@ -65,6 +65,9 @@ export function ShellSignals({ notify, onAttend }: {
     // intake read as a bare session, because the band could not see the ask it belonged to.
     void client.invalidateQueries({ queryKey: keys.allAsks });
     void client.invalidateQueries({ queryKey: keys.driver });
+    // And the rules: a tick settles what agents proposed about them (PERM2), applying a narrowing and
+    // holding a widening for the person — which *What needs you* reads.
+    void client.invalidateQueries({ queryKey: keys.rules });
     // Every tick runs a pass for each wired circle, so where each stands may have moved (SYNC6b).
     void client.invalidateQueries({ queryKey: keys.allSync });
     // 🔴 And the index. Seen on the deployed application: the status bar read "555 entries · 7

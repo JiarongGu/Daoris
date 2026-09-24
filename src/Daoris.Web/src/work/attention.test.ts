@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Ask, Quest, Registration, Session } from '../api';
+import type { RuleProposal } from '../settings/AgentRules';
 import { needsAPerson } from './attention';
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -278,5 +279,41 @@ describe('a folder waiting on the person\'s trust', () => {
   it('adds nothing when nothing is held for trust, and a browser has no holds at all', () => {
     expect(needsAPerson([], [quest()], [registration('engine')], [], [])).toEqual([]);
     expect(needsAPerson([], [quest()], [registration('engine')], [])).toEqual([]);
+  });
+});
+
+/**
+ * An agent's proposal to widen what agents may do (PERM2, D74). 🔴 A widening never applies without
+ * the person, so one the driver is holding waits on them. A narrowing applied itself, and a settled
+ * proposal is history: neither is here.
+ */
+describe('a proposal to widen the rules', () => {
+  const proposal = (over: Partial<RuleProposal> = {}): RuleProposal => ({
+    id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
+    why: 'The docs it needs are on the web.', session: 'i9n8t7k6', ask: 'a1b2c3', proposed: '2026-09-24T11:00:00Z',
+    ...over,
+  });
+
+  it('is a row saying what it would change, who proposed it and why, since it was proposed', () => {
+    const [item] = needsAPerson([], [], [], [], [], [proposal()]);
+
+    expect(item.kind).toBe('rule');
+    expect(item.id).toBe('p0000002');
+    expect(item.title).toBe('allow WebFetch for every session on this machine');
+    expect(item.where).toBe('session i9n8t7k6 (ask #a1b2c3)');
+    expect(item.detail).toBe('The docs it needs are on the web.');
+    expect(item.since).toBe('2026-09-24T11:00:00Z');
+  });
+
+  it('leaves out what applied itself, what the driver has not judged yet, and what was settled', () => {
+    const settled = ['applied', 'proposed', 'accepted', 'declined', 'refused', 'unchanged'] as const;
+    expect(needsAPerson([], [], [], [], [], settled.map((state) => proposal({ id: state, state })))).toEqual([]);
+  });
+
+  it('sits after the asks and before the quests nobody can take', () => {
+    const waiting = needsAPerson(
+      [], [quest({ to: 'nobody' })], [registration('engine')], [ask()], [], [proposal()]);
+
+    expect(waiting.map((item) => item.kind)).toEqual(['proposal', 'rule', 'unanswerable']);
   });
 });

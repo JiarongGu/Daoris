@@ -184,6 +184,18 @@ public sealed partial class Driver(
             events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
         }
 
+        // What sessions proposed about the rules (PERM2, D74), settled BEFORE this tick spawns anything:
+        // a narrowing is applied at once, so this tick's sessions are already handed it, and a widening
+        // is held for the person — who alone may let an agent do more.
+        try
+        {
+            events.AddRange(RuleProposals.Settle(home, DateTimeOffset.UtcNow));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            events.Add($"rules  the proposals could not be settled this tick: {error.Message}");
+        }
+
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
@@ -809,7 +821,7 @@ public sealed partial class Driver(
             // The session's voice (ACP4). Located per run rather than once, because a machine can
             // gain the host between ticks — and a machine that has none still drives, without a
             // connector, exactly as it did before.
-            var connector = Connector(scope);
+            var connector = Connector(sessionId, scope);
             if (connector is null)
             {
                 Line(scope is null
@@ -860,14 +872,32 @@ public sealed partial class Driver(
 
     /// <summary>
     /// The knowledge server this session is offered (ACP4) — located per run, because a machine can
-    /// gain the host between ticks — carrying an intake's scope when it is one.
+    /// gain the host between ticks — carrying who the session is, where its rules live, and an intake's
+    /// ask when it is one.
     /// </summary>
-    private static AcpMcpServer? Connector(IReadOnlyDictionary<string, string>? scope) =>
+    private AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope) =>
         KnowledgeConnector.Offer(
             Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
             DaorisHome.Resolve(),
             AppContext.BaseDirectory,
-            scope: scope);
+            scope: ConnectorScope(home, sessionId, scope));
+
+    /// <summary>
+    /// What a connector carries beyond the store (PERM2): the session, so a rule proposal says who made
+    /// it, and this driver's home, so it lands beside the rules it would change — which is the folder
+    /// `driver.json` sits in and need not be the account's home. An intake's ask rides too (D65 §1b).
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> ConnectorScope(
+        string home, string sessionId, IReadOnlyDictionary<string, string>? scope)
+    {
+        var carried = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [KnowledgeConnector.RulesHomeVariable] = home,
+            [IntakeRoom.SessionVariable] = sessionId,
+        };
+        foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
+        return carried;
+    }
 
     /// <summary>A finished transcript's last lines — where a tool says why it gave up. Unreadable is none.</summary>
     private static IReadOnlyList<string> LastLines(string transcript)

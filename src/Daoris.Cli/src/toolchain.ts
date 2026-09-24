@@ -48,6 +48,7 @@ import { normalizeWorkspace } from './remotemap.ts';
 import { readPlugins, resolvable } from './plugins.ts';
 import { installFromChannel, refuseVersion } from './channels.ts';
 import { commandRules } from './permissions.ts';
+import { PROPOSAL_VERBS, commandProposals } from './ruleproposals.ts';
 import { grantTrust, TRUST_FILE } from './trust.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
@@ -886,8 +887,12 @@ export function commandHarness(
 
     // What an agent Daoris starts may do (PERM1, D72): Claude Code's own rules in Daoris's scopes,
     // one file under the home, handed over at spawn. It spawns nothing and opens nothing.
+    // An agent's proposals to change them (PERM2, D74) are answered here too: a widening never applies
+    // without the person.
     case 'rules':
-      return commandRules({ argv: argv.slice(1), write, root: '', packageRoot: '' });
+      return PROPOSAL_VERBS.includes(argv[1] ?? '')
+        ? commandProposals({ argv: argv.slice(1), write, root: '', packageRoot: '' })
+        : commandRules({ argv: argv.slice(1), write, root: '', packageRoot: '' });
 
     // The harness's trust in a folder (D73): the person's grant, asked and then written — the
     // terminal's door onto the screen's *trust this folder…*, and the one that names any folder.

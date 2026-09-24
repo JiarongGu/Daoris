@@ -110,6 +110,25 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.Contains("in workspace `default`", await tools.RegistryAsync());
     }
 
+    /// <summary>
+    /// The driver names the session on every connector it hands over (PERM2), so a rule proposal says
+    /// who made it. With no ask that changes nothing about a publish: only an intake publishes as its ask.
+    /// </summary>
+    [Fact]
+    public async Task A_session_named_without_an_ask_publishes_from_its_own_repository()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
+            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, "s1a2b3c4"));
+
+        var answer = await tools.PublishQuestAsync("Asker", "Owner", "Read the field names from config", "b");
+
+        Assert.Contains("Published quest", answer);
+        Assert.Equal("Asker", (await _quests.ListAsync(receiver: "Owner")).Single().From);
+    }
+
     [Fact]
     public async Task A_path_that_is_not_a_file_is_refused_and_nothing_is_published()
     {

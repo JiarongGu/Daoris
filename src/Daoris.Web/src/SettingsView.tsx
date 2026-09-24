@@ -4,10 +4,11 @@ import { sentence } from './format';
 import { useRegistry, useStatus } from './queries';
 import {
   useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
-  useRemotes, useRuleAction, useRules, useSetIntake, useSetNotify, useSetStrikes,
+  useRemotes, useRuleAction, useRuleProposal, useRules, useSetIntake, useSetNotify, useSetStrikes,
   useStarts, useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { AgentRules } from './settings/AgentRules';
+import { proposalChange } from './settings/proposals';
 import { StartWiringList } from './map/StartWiring';
 import { SessionConsole } from './SessionConsole';
 import { AiJobs, type SearchTier } from './settings/AiJobs';
@@ -476,6 +477,7 @@ function Rules({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const answer = useRules();
   const act = useRuleAction();
+  const settle = useRuleProposal();
   const registry = useRegistry();
   useErrorNotify(answer.error, notify);
 
@@ -496,7 +498,16 @@ function Rules({ notify }: { notify: Notify }) {
       rules={rules}
       circles={circles}
       repositories={repositories}
-      busy={act.isPending}
+      busy={act.isPending || settle.isPending}
+      onAnswer={(id, accept) => {
+        const proposal = rules.proposals?.find((one) => one.id === id);
+        settle.mutate({ id, accept }, {
+          onSuccess: () => notify(t(accept ? 'settings.rules.proposals.accepted' : 'settings.rules.proposals.declined', {
+            change: proposal ? proposalChange(proposal) : `#${id}`,
+          })),
+          onError: failed,
+        });
+      }}
       onSwitchDefault={(id, on) => act.mutate({ action: 'default', id, on }, {
         onSuccess: () => notify(t('settings.rules.switched', { id, state: t(on ? 'settings.rules.on' : 'settings.rules.off') })),
         onError: failed,
