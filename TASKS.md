@@ -241,7 +241,10 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: INT4g.** INT3 and MAP3d wait on the owner's call, INT4f and INT6 on the owner's presence.
+- **Actionable: INT4g, INT3, MAP3d.** 🔴 **The owner authorized real sessions on this machine's
+  Claude Code account, 2026-09-24**: ACP2's driven run, INT4f and the ACP measurement DEPLOY1 needs.
+  Not the AGT2c downloads. INT6 waits on the owner's presence; PLUG2, HELP3 and DEPLOY1's decision on
+  the owner's answer.
   **Four are the owner's** (ACP2 and DEPLOY1's second half each cost a login, AGT2c two downloads;
   PLUG2 is a decision). **Eight wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1
   on a repository naming what it wants; REH1 and TEST1 on a captured recurrence; HELP3 on where the
@@ -419,8 +422,8 @@ MAP3e are archived.
 - [ ] **AGT2c — one real vendor-channel pin of each, observed:** that Claude Code stays at its version
   under `DISABLE_UPDATES`, and that a pinned Codex outside its own layout takes no update action (the
   evidence says so; nothing measured it). Spends two real downloads — the owner's call.
-- [ ] ⛔ **MAP3d — the agent producer.** The owner's call first (design §3): canon skill, or the
-  session prompt (recommended).
+- [ ] **MAP3d — the agent producer.** The owner chose **the session prompt** over a canon skill,
+  2026-09-24 (design §3). In progress.
 
 ### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
 
@@ -432,9 +435,9 @@ engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT
 INT4d and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
-- [ ] ⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
+- [ ] **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
   requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
-  owner's yes first** — it amends the letter of D34/D46.
+  owner said yes, 2026-09-24** — it amends the letter of D34/D46, recorded as D70. In progress.
 - [ ] **INT4g — a parked intake's moves in Sessions answer nothing.** Sessions offers a parked
   intake the three parked-session moves (finish, decline, stop). Each ends the record without
   publishing or closing its ask, which falls back to a proposal. The answer is on the ask, so the
