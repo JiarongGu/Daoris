@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The web gate failed a different typing test each run, at the 5-second default (2026-09-24)
+
+**Symptom.** `npm run test:web` failed four full runs in a row, each on a different test (the asks
+composer, search, the workspace switcher, the intake select, the rules form). Each failed at 5.1–6s
+and passed alone. The first two runs had sibling builds competing for the CPU, but the next two did
+not.
+
+**Root cause.** No `testTimeout` was set, so every test had vitest's 5-second default. Tests that type
+through `userEvent` wait on a timer per keystroke, and across ~60 jsdom files in parallel workers the
+slowest crossed 5s on a machine also running other agent sessions. The suite had grown into its
+timeout; nothing was hung.
+
+**Fix.** `testTimeout: 20_000` in `vite.config.ts`, with the reason beside it: a timeout detects
+hangs, not slowness. An assertion that fails still fails at once. The trap: **a timeout that fails a
+different test each run is measuring the machine, not the code.** One data point would not justify
+raising it (TEST1's rule). Four runs, each failing a different test that passes alone, do.
+
+**Verify.** The next run: 810/810 and 21 Playwright.
+
 ## The first real ACP run died at its first tool call, reported as "the stream ended" (2026-09-24)
 
 **Symptom.** ACP2's real driven run, once PERM1 let it past the trust hold, started three real

@@ -26,5 +26,10 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.tsx'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // 🔴 A hang detector, not a speed budget. Tests that type through `userEvent` wait on a timer per
+    // keystroke, and across ~60 files in parallel workers they ran 1–5s alone and 5.1–6s on a loaded
+    // machine: four full runs on 2026-09-24 each timed out a DIFFERENT typing test at the 5s default,
+    // and every one passed alone. A real failure is an assertion, and it still fails at once.
+    testTimeout: 20_000,
   },
 });
