@@ -5322,3 +5322,19 @@ Bash(rm -rf:*)`) applied itself on the tick and showed under *Earlier proposals*
 recorded "the person" and put the rule in the machine's rules. **Not yet**: a real agent choosing to
 propose after a refusal, which is PERM2b. Service 454 → 468, driver 551 → 584, modules 116 → 118,
 CLI 433 → 443, web 810 → 820 + 21, family 268 → 271, deploy 39/39.
+
+## PERM2b — a real session proposes after a refusal (2026-09-24)
+
+- [x] ~~**PERM2b — a real session proposes after a refusal.** PERM2's door is proven with a seeded
+  proposal on the window: the tick held a widening, the person accepted it, and it landed. Whether a
+  real agent reaches for `permission_propose` after being refused is the model's behaviour, not the
+  door's. One real session answers it; its prompt may need to say the tool exists.~~
+✅ **done 2026-09-24** — `node tools/perm2-proof.mjs --drive`: **14/14**, on the owner's
+authorization for real sessions. The quest target had never named the tool, so it now does,
+conditionally, in one paragraph (D74 as amended; driver 584 → 586). A real Claude Code session over
+the protocol door took a quest asking for a commit and an annotated tag. It committed under the
+`commit` default and was refused the tag (D52). It then proposed `allow Bash(git tag:*)` scoped to
+**that one repository**, the narrowest scope, which it chose itself. Its reason was that the commit
+had landed and the tag stays local and reversible, since pushing is still refused. The tick held the
+proposal `waiting`, nothing reached the rules without the person, and the session declined honestly.
+The script was written in a parallel worktree. Family 271/271, deploy 39/39, verify green.

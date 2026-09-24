@@ -504,6 +504,10 @@ The first version: doctrine that installs, is checked, and flows back.
   one more settings scope, so the agent's own order decides and a repository's deny still wins. They
   reach a session even in a folder the agent has never trusted, where a repository's own allow-list
   does not. Set them with `daoris agent rules`, or on Settings → *What agents may do*.
+- **A session is told it may propose the rule it was refused** (PERM2b, D74). The quest target now
+  names `permission_propose`. A session refused a command its work needs proposes the narrowest rule
+  with its reason, then finishes or declines, since a widening waits for you. Proven on a real
+  session, which proposed a rule for its one repository only.
 - **An agent can propose a change to what agents may do** (PERM2, D74), through the connector's new
   `permission_propose` tool. A narrowing (a deny or ask added, an allow removed) applies at the
   driver's next tick. A widening waits for your yes, from `daoris agent rules proposals | accept <id>

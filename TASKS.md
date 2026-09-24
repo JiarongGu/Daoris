@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**443 CLI tests, 468 service, 584 driver, 118 desktop modules, 820 web unit, 21 Playwright**, 73
+**443 CLI tests, 468 service, 586 driver, 118 desktop modules, 820 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -241,9 +241,9 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: PERM2b** (one real session). 🔴 **The owner authorized real sessions on this
-  machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, INT4f one
-  (16/16) and INT4j one (17/17). **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
+- **Nothing is actionable without the owner.** 🔴 **The owner authorized real sessions on this
+  machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
+  (16/16), INT4j (17/17) and PERM2b (14/14) one each. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
   **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1 on a
   repository naming what it wants; REH1 and TEST1 on a captured recurrence; PLUG7 on a plugin asking
@@ -254,7 +254,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (468),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (584), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (820 vitest + 21 Playwright),
+  (586), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (820 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -268,9 +268,9 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Eleven items are open**, and every closed one is
+the archive; its decision is **D53, accepted**). **Ten items are open**, and every closed one is
 in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. One is actionable (PERM2b), three wait on the owner (TRUST2, AGT2c,
+ships. Three wait on the owner (TRUST2, AGT2c,
 INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
@@ -297,14 +297,9 @@ wire evidence.
 
 ### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 
-PERM1–PERM4 and DEPLOY1's second half are in the archive, with HELP3 and INT3b folded in.
+PERM1–PERM4, PERM2b and DEPLOY1's second half are in the archive, with HELP3 and INT3b folded in.
 Measured: rules and hooks Daoris hands over at spawn reach an untrusted session on both doors, and a
 repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidence.md`).
-
-- [ ] **PERM2b — a real session proposes after a refusal.** PERM2's door is proven with a seeded
-  proposal on the window: the tick held a widening, the person accepted it, and it landed. Whether a
-  real agent reaches for `permission_propose` after being refused is the model's behaviour, not the
-  door's. One real session answers it; its prompt may need to say the tool exists.
 - [ ] **TRUST2 — what D73 leaves unmeasured.** Whether Claude Code honours a trust key Daoris wrote
   as its own; whether a trusted parent covers a child, since the hold matches the exact folder; and
   whether the screen should offer a grant before any hold exists (INT6's onboarding). The first
