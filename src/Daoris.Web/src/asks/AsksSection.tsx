@@ -138,7 +138,14 @@ export function AsksSection({
       {(asks.data?.length ?? 0) > 0 && (
         <div>
           <SectionTitle>{t('asks.group', { count: asks.data!.length })}</SectionTitle>
-          {asks.data!.map((item) => <AskCard key={item.id} ask={item} onOpen={setHeld} />)}
+          {asks.data!.map((item) => (
+            <AskCard
+              key={item.id}
+              ask={item}
+              intake={item.intake ? sessions.data?.find((session) => session.id === item.intake)?.state ?? null : null}
+              onOpen={setHeld}
+            />
+          ))}
         </div>
       )}
 

@@ -288,7 +288,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
 
   // Closed asks leave the list, as closed quests do.
   await record.getByRole('button', { name: 'close', exact: true }).click();
-  await expect(page.getByText(/^Asks · /)).toHaveCount(0);
+  await expect(page.getByText(/^Asks \(/)).toHaveCount(0);
 });
 
 /**

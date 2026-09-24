@@ -250,7 +250,8 @@ describe('QuestsView', () => {
       ASKS = [PROPOSED];
       view();
 
-      expect(await screen.findByText('Asks · 1')).toBeInTheDocument();
+      // Counted as the quest groups beside it are, in one form on one page (POLISH4).
+      expect(await screen.findByText('Asks (1)')).toBeInTheDocument();
       await userEvent.click(screen.getByText('Cap the hydration per frame.'));
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
       await userEvent.click(within(record).getByRole('button', { name: 'publish to engine' }));

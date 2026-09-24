@@ -37,6 +37,33 @@ describe('AskCard', () => {
     expect(screen.getByText(/proposed engine, game/)).toBeInTheDocument();
   });
 
+  /**
+   * 🔴 Seen on the window (POLISH4): a bare `default` beside `game → engine` reads as one more
+   * repository — the band's own rule (INT4d), which the card had not followed.
+   */
+  it('names its place as a workspace, never as a bare name', () => {
+    render(<AskCard ask={PROPOSED} onOpen={() => {}} />);
+    expect(screen.getByText('workspace aurora')).toBeInTheDocument();
+  });
+
+  /**
+   * 🔴 Seen on the window (POLISH4): five cards read "proposed" alike while one had an intake reading
+   * it and one had its intake waiting on the person — which the band above said and the card did not.
+   */
+  it('says when an intake is reading it, and when its intake asked the person', () => {
+    const { rerender } = render(<AskCard ask={INTAKE_ASKED} intake="working" onOpen={() => {}} />);
+    expect(screen.getByText(/an intake is reading it/)).toBeInTheDocument();
+
+    rerender(<Tooltip.Provider><AskCard ask={INTAKE_ASKED} intake="awaiting-person" onOpen={() => {}} /></Tooltip.Provider>);
+    expect(screen.getByText('its intake asked you')).toBeInTheDocument();
+    expect(screen.queryByText(/an intake is reading it/)).toBeNull();
+
+    // An intake that ended without publishing leaves an ordinary proposal, and says nothing more.
+    rerender(<Tooltip.Provider><AskCard ask={INTAKE_ASKED} intake="completed" onOpen={() => {}} /></Tooltip.Provider>);
+    expect(screen.queryByText('its intake asked you')).toBeNull();
+    expect(screen.queryByText(/an intake is reading it/)).toBeNull();
+  });
+
   it('names the quests an ask became, and opens on a press or a key', () => {
     const onOpen = vi.fn();
     render(<AskCard ask={PUBLISHED} onOpen={onOpen} />);
@@ -52,7 +79,27 @@ describe('AskRecord', () => {
   it('says which tier answered, in the words for it, beside the ask\'s own words whole', () => {
     const { drawer } = record(PROPOSED);
     expect(within(drawer).getByText('by declarations only; no intake harness ran')).toBeInTheDocument();
-    expect(within(drawer).getByText(PROPOSED.sentence, { normalizer: (s) => s })).toBeInTheDocument();
+    // The first line is the title, and the rest follows it — each once (POLISH4).
+    expect(within(drawer).getAllByText(/The chunk streamer stalls on a cold cache/)).toHaveLength(1);
+    expect(within(drawer).getByText(/Seen on the test rig after a fresh install/)).toBeInTheDocument();
+  });
+
+  /** 🔴 Seen on the window (POLISH4): "answered by" above "by declarations…" read "answered by by". */
+  it('labels the tier so that no tier\'s words repeat the label', () => {
+    const { drawer } = record(PROPOSED);
+    expect(within(drawer).queryByText('answered by')).toBeNull();
+    expect(within(drawer).getByText('answered')).toBeInTheDocument();
+  });
+
+  /** 🔴 Seen on the window (POLISH4): a one-line ask was its drawer's title and then its body. */
+  it('does not repeat a one-line ask as its own body', () => {
+    const { drawer } = record(UNMATCHED);
+    expect(within(drawer).getAllByText('Tidy the release notes.')).toHaveLength(1);
+  });
+
+  it('names the workspace a receiver is chosen from as a workspace', () => {
+    const { drawer } = record(UNMATCHED);
+    expect(within(drawer).getByText('any repository in workspace aurora that can be asked')).toBeInTheDocument();
   });
 
   it('shows a tier it has no word for as the service wrote it', () => {

@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import type { Ask, AskState } from '../api';
+import type { Ask, AskState, Session } from '../api';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
-import { Card, Icon, Pill } from '../ui';
+import { Card, Dot, Icon, Pill } from '../ui';
 
 /**
  * An ask's state as a pill tone: waiting on a person while it is asked or proposed — a proposal is a
@@ -31,12 +31,26 @@ export function tierWords(
   return t(form === 'short' ? `asks.tierShort.${tier}` : `asks.tier.${tier}`, { defaultValue: tier });
 }
 
+/** The intake states in which an ask is its intake's to answer, not yet the person's (D65 §1b). */
+const INTAKE_READING: ReadonlySet<Session['state']> = new Set(['queued', 'starting', 'working']);
+
 /**
  * One ask, as a summary and a door (INT4c) — the Quests view's card shape, because an ask is where
- * quests come from: state beside the first line, then its circle, what answered it, and what became
- * of it. Props only (components §2).
+ * quests come from: state beside the first line, then its workspace, what answered it, and what
+ * became of it. Props only (components §2).
+ *
+ * @remarks
+ * **It says what it waits for, as the band does** (INT4d, POLISH4): an intake reading it, or an
+ * intake that parked asking the person. Without that, five cards read "proposed" alike while one was
+ * somebody else's to answer and one was waiting on the reader. Its place is named as a workspace,
+ * because a bare name beside `game → engine` reads as one more repository.
  */
-export function AskCard({ ask, onOpen }: { ask: Ask; onOpen: (ask: Ask) => void }) {
+export function AskCard({ ask, intake = null, onOpen }: {
+  ask: Ask;
+  /** Its intake session's state, when one served it and the page holds that record. */
+  intake?: Session['state'] | null;
+  onOpen: (ask: Ask) => void;
+}) {
   const { t } = useTranslation();
   const links = ask.links.length;
   const files = ask.attachments.length;
@@ -46,6 +60,9 @@ export function AskCard({ ask, onOpen }: { ask: Ask; onOpen: (ask: Ask) => void 
   ].filter(Boolean).join(' · ');
   const became = ask.quests.map((id) => `#${id.slice(0, 6)}`).join(', ');
   const proposed = ask.proposal.map((match) => match.repository).join(', ');
+  const live = ask.state === 'Open' || ask.state === 'Proposed';
+  const reading = live && intake !== null && INTAKE_READING.has(intake);
+  const askedYou = live && intake === 'awaiting-person';
 
   return (
     <Card className={cn(
@@ -70,13 +87,19 @@ export function AskCard({ ask, onOpen }: { ask: Ask; onOpen: (ask: Ask) => void 
           )}
         </header>
         <p className="mt-1 text-body text-accent">
-          {ask.workspace}
+          {t('asks.card.workspace', { workspace: ask.workspace })}
           <span className="font-mono text-meta text-ink-faint">
             {' '}· {tierWords(t, ask.tier, 'short')} · {t('asks.card.asked', { ago: ago(ask.asked) })}
             {became && <> · {t('asks.card.became', { quests: became })}</>}
             {!became && proposed && ask.state !== 'Closed' && <> · {t('asks.card.proposed', { repositories: proposed })}</>}
+            {reading && <> · {t('asks.card.intakeReading')}</>}
           </span>
         </p>
+        {askedYou && (
+          <p className="mt-1 mb-0">
+            <Dot tone="parked" label={t('work.attention.intake')} />
+          </p>
+        )}
       </div>
     </Card>
   );
