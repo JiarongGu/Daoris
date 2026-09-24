@@ -50,7 +50,10 @@ later earn their keep, moving files is mechanical; unpicking a hook out of twelv
 
 1. **A story first.** Storybook is where states are designed, reviewed and kept (D42 §5), and a story
    for a component that does not exist yet is the cheapest possible failing test. Every state the
-   design names gets one — including the ones real data rarely shows.
+   design names gets one — including the ones real data rarely shows. **An empty machine is one of
+   them, and the fixture never shows it:** the example family always holds a repository, so a
+   surface that reads the registry meets "none" in no story, test or rehearsal unless one is written
+   for it. POLISH2 found a blank Projects and two composers that could never send that way.
 2. **Vitest.** Props for a molecule; the mocked bridge for an organism. This is the inner loop that
    owns every shell-attached surface, because a browser structurally cannot reach them
    (`docs/2026-09-19-frontend-architecture.md` §4).

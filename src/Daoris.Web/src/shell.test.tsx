@@ -123,6 +123,24 @@ describe('the shell-attached platform', () => {
     });
   });
 
+  /**
+   * Seen on the installed window, 2026-09-24, on a machine whose registrations had all been retired:
+   * Projects was its header over a blank page. The fixture always has a repository, so no story or
+   * test had ever rendered this, and it is the first thing a new installation shows.
+   */
+  it('a machine with no repository says so, and offers the one act that changes it', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json([]) : respond(url);
+    }));
+    show(<ProjectsView notify={() => {}} />);
+
+    expect(await screen.findByText('No repository is registered yet')).toBeInTheDocument();
+    expect(screen.getByText(/daoris import/).tagName).toBe('CODE');
+    // The page header's and the empty state's: the second is where the eye already is.
+    expect(screen.getAllByRole('button', { name: 'add repository' })).toHaveLength(2);
+  });
+
   it('hold appears only once a repository is drivable — a hold on nothing is noise', async () => {
     show(<ProjectsView notify={() => {}} />);
 

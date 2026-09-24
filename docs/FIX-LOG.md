@@ -5,6 +5,73 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A new installation's Projects was a blank page, and both composers could never send (2026-09-24)
+
+**Symptom.** On the owner's install, with every registration retired, Projects showed its header
+over nothing. *Ask* opened a composer whose circle choice was empty, and *new quest* one whose *from*
+and *to* were empty. Each let a person write a whole request that could never be sent.
+
+**Root cause.** Nothing had ever rendered an empty registry. The example family always holds a
+repository, so every story, unit test and Playwright run had something to list. The composers read
+their choices from the registry and had no branch for none. **An empty machine is the first thing a
+new installation shows, and the fixture structurally cannot show it.**
+
+**Fix.** Projects has an empty state that says nothing is registered and offers *add repository* (or,
+in a browser, how a repository joins). Each composer, knowing nobody can be asked, says so and offers
+only *close*. The map's empty headline stopped saying "this circle" when scoped to every circle.
+
+**Verify.** Four vitest cases, one per surface, each with an empty registry. Looked at on the
+installed window in 中文 and English, light and dark.
+
+## Fourteen catalogue strings and the service's sentences printed their backticks (2026-09-24)
+
+**Symptom.** Settings read ``也可用 `daoris driver notify on|off`——``, with literal backticks, in
+both languages. So did the plugins card, the rules card, Convergence's advice (the service's own
+sentence), a harness's "`dsh` is not on this machine's PATH" (the driver's), and every toast naming a
+quest.
+
+**Root cause.** The catalogues and the service mark a command or a name the way a commit message does,
+and nothing on the page read that markup. Each string was written by someone who meant code and
+checked in a test that matched the raw text, so every check passed on the backticks themselves.
+
+**Fix.** `Inline` in `ui.tsx`. It sets each backticked pair as `<code>`, leaves a lone backtick as
+the character it is, and changes no word, so a service's sentence is still verbatim. `SettingRow`'s
+hint, `Tip`, the toast and `EmptyState` take it on their own. The other sites opt in. Seven
+Playwright assertions matched the backticks in toasts and now match the rendered sentence.
+
+**Verify.** Three `ui.test.tsx` cases (a pair, several pairs and a lone one, a setting hint). 21/21
+Playwright. Looked at on the window.
+
+## Four default rules ran together as one block, and a failed session wore success's green (2026-09-24)
+
+**Symptom.** On the rules card, `connector`, `commit`, `no-push` and `tree-guard` had no rule or space
+between them. In the Sessions rail, every failed or stopped session had a green dot beside the word
+失败.
+
+**Root cause.** Two unrelated ones. Each default's `SettingRow` was the only child of its own `<li>`,
+so its `first:border-t-0 first:pt-0` and `last:pb-0` all held at once. The row's separation assumes
+siblings, and the list gave it none. And `DOT_TONE.ended` was `bg-st-done`. Ended covers completed,
+failed, declined and stopped at once, so borrowing one outcome's hue painted the other three as it.
+
+**Fix.** The item carries the rule and the padding, since the item is what has siblings. `ended` is
+`bg-ink-faint`: nothing is happening, and the pill beside it names the outcome.
+
+**Verify.** `AgentRules.test.tsx` holds the item's rule and padding. `ui.test.tsx` holds that ended
+wears no `bg-st-` class. Looked at on the window.
+
+## Chinese set in italic was slanted by synthesis (2026-09-24)
+
+**Symptom.** Overview's footnote and every italic hint in 中文 were slanted ideographs.
+
+**Root cause.** The Chinese system face has no italic, so the browser makes an oblique by shearing
+it. That is a typesetting error, not emphasis.
+
+**Fix.** `font-synthesis-style: none` on the body. The Latin face's real italic stays, and a face
+without one stays upright.
+
+**Verify.** `tokens.test.ts` holds the declaration. Looked at on the window: the footnote is upright
+and the English timeline notes are still italic.
+
 ## The web gate failed a different typing test each run, at the 5-second default (2026-09-24)
 
 **Symptom.** `npm run test:web` failed four full runs in a row, each on a different test (the asks

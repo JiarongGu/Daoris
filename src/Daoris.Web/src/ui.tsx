@@ -215,7 +215,9 @@ export function Chip({ accent, children }: { accent?: boolean; children: ReactNo
 const DOT_TONE: Record<string, { mark: string; word: string }> = {
   live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent' },
   parked: { mark: 'bg-st-declined', word: 'text-st-declined' },
-  ended: { mark: 'bg-st-done', word: 'text-ink-soft' },
+  // Ended is completed, failed, declined and stopped at once, so it wears no outcome's hue: done's
+  // green put a success mark beside a failed session in the rail. The pill beside it names the outcome.
+  ended: { mark: 'bg-ink-faint', word: 'text-ink-soft' },
   idle: { mark: 'bg-line', word: 'text-ink-faint' },
 };
 
@@ -403,6 +405,31 @@ export function PageHeader({ title, description, action }: {
  */
 export function Prose({ className, children }: { className?: string; children: ReactNode }) {
   return <p className={cn('m-0 max-w-prose text-body text-ink-soft', className)}>{children}</p>;
+}
+
+/**
+ * A sentence whose backticked spans are code: the one markup the catalogues and the service share.
+ *
+ * @remarks
+ * **Nothing rendered it before this, and the installed window said so.** Fourteen catalogue strings
+ * and a good many of the service's and the driver's sentences mark a command or a name the way a
+ * commit message does, and every one reached the screen with its backticks, in both languages.
+ *
+ * **The words are unchanged**, so a service's sentence is still verbatim: only the pairs are read,
+ * a lone backtick stays the character it is, and nothing else is parsed. A setting's hint, a tip and
+ * a toast take this on their own, because each is always a sentence. Anywhere else a caller asks for
+ * it, since content is shown as it is.
+ */
+export function Inline({ text }: { text: string }) {
+  const parts = text.split(/`([^`\n]+)`/);
+  return (
+    <>
+      {parts.map((part, i) => (i % 2 === 1
+        // Mono at the sentence's own size and colour, so a command reads as one without shouting.
+        ? <code key={i} className="font-mono">{part}</code>
+        : part))}
+    </>
+  );
 }
 
 /**
@@ -673,7 +700,11 @@ export function SettingRow({ label, hint, why, control, children }: {
             </Tip>
           )}
         </div>
-        {hint && <div className="mt-0.5 max-w-prose text-small text-ink-faint">{hint}</div>}
+        {hint && (
+          <div className="mt-0.5 max-w-prose text-small text-ink-faint">
+            {typeof hint === 'string' ? <Inline text={hint} /> : hint}
+          </div>
+        )}
       </div>
       {control && <div className="flex min-w-0 shrink-0 items-center justify-end gap-2">{control}</div>}
       {children && <div className="col-span-2 min-w-0">{children}</div>}
@@ -748,7 +779,7 @@ export function Tip({ content, children, side = 'bottom' }: {
           // options list. The rule belongs here rather than at that one call site.
           className="pointer-events-none z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-small text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
         >
-          {content}
+          <Inline text={content} />
         </Tooltip.Content>
       </Tooltip.Portal>
     </Tooltip.Root>
@@ -787,7 +818,7 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
               and the subject, which is what a glance is for; the rest is there when the glance was
               not enough. Never truncated in the DOM, so a screen reader still hears all of it. */}
           <Tip content={toast.text}>
-            <Toast.Description className="line-clamp-2 flex-1">{toast.text}</Toast.Description>
+            <Toast.Description className="line-clamp-2 flex-1"><Inline text={toast.text} /></Toast.Description>
           </Tip>
           <Toast.Close asChild>
             <Button variant="ghost" aria-label={t('common.dismiss')}><Icon name="x" size={14} /></Button>
@@ -809,7 +840,7 @@ export function EmptyState({ icon, headline, body, action }: {
     <div className="grid justify-items-center gap-1.5 px-4 py-7 text-center text-ink-faint">
       <Icon name={icon} size={26} />
       <p className="mt-1 text-body font-semibold text-ink">{headline}</p>
-      <p className="max-w-[28rem] text-body text-ink-soft">{body}</p>
+      <p className="max-w-[28rem] text-body text-ink-soft"><Inline text={body} /></p>
       {action && <div className="mt-2.5">{action}</div>}
     </div>
   );

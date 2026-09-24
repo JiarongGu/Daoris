@@ -82,6 +82,9 @@ export const ComposeChoosingTheCircle: StoryObj = {
   render: () => <Composing fixed={null} circles={['aurora', 'tools', '工作区']} />,
 };
 
+/** A machine with no repository holds no circle: the composer says so rather than offering a form. */
+export const ComposeWithNowhereToAsk: StoryObj = { render: () => <Composing fixed={null} circles={[]} /> };
+
 export const ComposeCarrying: StoryObj = {
   render: () => (
     <Composing

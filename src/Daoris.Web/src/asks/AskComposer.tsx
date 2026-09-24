@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { type Carry, CarryFields, useCarry } from '../compose/carry';
-import { Button, Drawer, SelectField } from '../ui';
+import { Button, Drawer, EmptyState, SelectField } from '../ui';
 
 /** An ask being written: its circle, its words, a receiver if the person names one, and what it carries. */
 export type AskDraft = Carry & {
@@ -47,12 +47,28 @@ export function AskComposer({ draft, onChange, fixed, circles, receivers, busy =
   const carry = useCarry(draft, (next) => onChange({ ...draft, ...next }), true);
   const circle = fixed ?? draft.circle;
   const ready = !busy && Boolean(circle) && Boolean(draft.sentence.trim());
+  const meta = <span className="font-mono text-meta text-ink-faint">{t('asks.compose.meta')}</span>;
+
+  // 🔴 A machine with no repository holds no circle. The form offered an empty choice of one, and a
+  // sentence written in full could never be sent: seen on the installed window. So it says so instead.
+  if (!fixed && circles.length === 0) {
+    return (
+      <Drawer
+        title={t('asks.compose.title')}
+        onClose={onCancel}
+        meta={meta}
+        footer={<Button variant="ghost" onClick={onCancel}>{t('common.close')}</Button>}
+      >
+        <EmptyState icon="projects" headline={t('asks.compose.nowhere.headline')} body={t('asks.compose.nowhere.body')} />
+      </Drawer>
+    );
+  }
 
   return (
     <Drawer
       title={t('asks.compose.title')}
       onClose={onCancel}
-      meta={<span className="font-mono text-meta text-ink-faint">{t('asks.compose.meta')}</span>}
+      meta={meta}
       footer={
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="primary" disabled={!ready} onClick={onSubmit}>{t('asks.compose.submit')}</Button>

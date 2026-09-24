@@ -236,6 +236,19 @@ describe('AskComposer', () => {
     expect(within(drawer).getByRole('button', { name: 'ask' })).toBeEnabled();
   });
 
+  /**
+   * A machine with no repository holds no circle, and the composer offered an empty choice of one:
+   * a sentence could be written in full and never sent. Seen on the installed window, 2026-09-24.
+   */
+  it('says there is nowhere to ask yet, rather than a form that can never send', () => {
+    render(<Holder fixed={null} circles={[]} />);
+    const drawer = screen.getByRole('dialog');
+
+    expect(within(drawer).getByText('There is no circle to ask yet')).toBeInTheDocument();
+    expect(within(drawer).queryByLabelText('what is wanted, and why')).toBeNull();
+    expect(within(drawer).queryByRole('button', { name: 'ask' })).toBeNull();
+  });
+
   it('carries links and files like the quest composer, from the same fields', async () => {
     render(<Holder fixed="aurora" circles={['aurora']} />);
     const drawer = screen.getByRole('dialog');

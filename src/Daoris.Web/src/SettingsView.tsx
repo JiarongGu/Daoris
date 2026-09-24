@@ -15,7 +15,7 @@ import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { SignIn } from './SignIn';
 import { byTool, type ToolDoor } from './tools';
 import {
-  Button, Card, CheckField, Chip, Icon, type Notify, PageHeader, Pill, Prose, SectionTitle,
+  Button, Card, CheckField, Chip, Icon, Inline, type Notify, PageHeader, Pill, Prose, SectionTitle,
   Segmented, SelectField, SettingRow, Tip, useErrorNotify,
 } from './ui';
 import { useThemeChoice } from './theme';
@@ -594,14 +594,14 @@ function Plugins({ notify }: { notify: Notify }) {
     <Card className="mt-3.5">
       <SectionTitle>{t('plugin.title')}</SectionTitle>
       <SettingRow
-        label={t('plugin.title')}
+        label={t('plugin.folder')}
         hint={t('plugin.terminal')}
         why={t('plugin.body')}
         control={<span className="break-all font-mono text-small text-ink-faint">{catalog.data.folder}</span>}
       />
 
       {plugins.length === 0 ? (
-        <Prose className="mt-3 text-small">{t('plugin.none')}</Prose>
+        <Prose className="mt-3 text-small"><Inline text={t('plugin.none')} /></Prose>
       ) : plugins.map((plugin) => (
         <SettingRow
           key={plugin.id}
@@ -643,7 +643,7 @@ function Plugins({ notify }: { notify: Notify }) {
               conflict naming both sides, a manifest that would not parse. Content, not chrome. */}
           {plugin.problem && (
             <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-              {plugin.problem}
+              <Inline text={plugin.problem} />
             </p>
           )}
         </SettingRow>
@@ -1145,7 +1145,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               first one, and clamping keeps it first without parsing somebody else's wording. */}
           {harness.problem && (
             <Tip content={harness.problem}>
-              <p className="mt-1.5 line-clamp-2 text-small text-ink-soft">{harness.problem}</p>
+              <p className="mt-1.5 line-clamp-2 text-small text-ink-soft"><Inline text={harness.problem} /></p>
             </Tip>
           )}
 

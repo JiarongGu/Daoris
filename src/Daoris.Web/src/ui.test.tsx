@@ -5,8 +5,8 @@ import type { SessionState } from './api';
 import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, CountBadge, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, Segmented, SESSION_ACTIVE, SESSION_DOT,
-  SESSION_TONE, SettingRow, Tile, Tip,
+  Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, Pill, Segmented, SESSION_ACTIVE,
+  SESSION_DOT, SESSION_TONE, SettingRow, Tile, Tip,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -89,6 +89,42 @@ describe('the liveness dot', () => {
     };
     const hues = [hue('live'), hue('parked'), hue('ended'), hue('idle')];
     expect(new Set(hues).size).toBe(4);
+  });
+
+  /**
+   * Ended covers completed, failed, declined and stopped alike, so its mark says only that nothing
+   * is happening. Seen on the installed window: it wore done's green, and a failed session sat in the
+   * rail with a success mark beside the word 失败.
+   */
+  it('never borrows an outcome hue for ended, which is every outcome at once', () => {
+    const { container } = render(<Dot tone="ended" label="failed" />);
+    expect(container.querySelector('[aria-hidden="true"]')!.className).not.toMatch(/\bbg-st-/);
+  });
+});
+
+/**
+ * The catalogues and the service mark a command or a name with backticks, and nothing rendered them:
+ * the installed window printed `daoris driver notify on|off` with its backticks, in both languages.
+ */
+describe('a code span in a sentence', () => {
+  it('sets a backticked span as code and drops the backticks, the words unchanged', () => {
+    const { container } = render(<p><Inline text="Also `daoris agent rules`: the same file." /></p>);
+    const code = container.querySelector('code')!;
+    expect(code).toHaveTextContent('daoris agent rules');
+    expect(code.className).toContain('font-mono');
+    expect(container).toHaveTextContent('Also daoris agent rules: the same file.');
+    expect(container.textContent).not.toContain('`');
+  });
+
+  it('sets every pair, and leaves a lone backtick as the character it is', () => {
+    const { container } = render(<p><Inline text="`a` then `b` and ` alone" /></p>);
+    expect([...container.querySelectorAll('code')].map((c) => c.textContent)).toEqual(['a', 'b']);
+    expect(container).toHaveTextContent('a then b and ` alone');
+  });
+
+  it('is the setting row hint, because every hint is a sentence of the console', () => {
+    const { container } = render(<SettingRow label="notify" hint="Also `daoris driver notify on|off`." />);
+    expect(container.querySelector('code')).toHaveTextContent('daoris driver notify on|off');
   });
 });
 

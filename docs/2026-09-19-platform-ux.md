@@ -332,8 +332,8 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   door to the ask is a default button (*open ask #id*), and only a parked one's is primary
 >   (*answer ask #id*).
 
-> **Amended 2026-09-24, what agents may do (PERM1, D72).** Held by vitest, and **not yet looked at on
-> the real window**.
+> **Amended 2026-09-24, what agents may do (PERM1, D72).** Held by vitest, and looked at on the
+> installed window the same day (POLISH2, below), which found four defects on the card.
 >
 > - **A default has a switch and no remove; a person's rule has a remove.** A default is Daoris's,
 >   switched off by id and removed by nothing, so the two kinds of row look different.
@@ -346,8 +346,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **The machine's scope is not called "This machine".** That is the section the card sits under,
 >   so its scope reads *every session on this machine*.
 
-> **Amended 2026-09-24, a folder waiting on the person's trust (D73).** Held by vitest, and **not yet
-> looked at on the real window**.
+> **Amended 2026-09-24, a folder waiting on the person's trust (D73).** Held by vitest, and looked at
+> on the window in both themes at DEPLOY1's close (the archive has what it saw). *Trust this folder*
+> was not pressed, because it writes the account's own file.
 >
 > - **The grant is offered where the hold is read.** The quest's drawer carries *trust this folder…*
 >   under its sitting line, and *What needs you* carries a `trust` row. That row is the only place an
@@ -361,6 +362,42 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   where a person names any folder.
 > - **One row per folder.** Two quests held on one untrusted tree are one grant, since the oldest
 >   thing it holds.
+
+> **Amended 2026-09-24, the installed application on an empty machine (POLISH2).** The owner's
+> install, republished and read surface by surface in 中文 and English, in both themes. Every
+> registration had been retired, so it showed what a new installation shows, which the fixture never
+> can: the example family always holds a repository.
+>
+> - **An empty machine is a state, and it says what to do.** Projects was its header over a blank
+>   page. The ask and quest composers opened forms whose circle, *from* and *to* offered nobody, so a
+>   sentence written in full could never be sent. Projects now says nothing is registered and offers
+>   *add repository*. Each composer says nobody can be asked yet, sends the reader to Projects, and
+>   offers only *close*. The map, scoped to every circle, no longer says "this circle".
+> - **A sentence's backticks are code** (`Inline`). Fourteen catalogue strings and many of the
+>   service's and driver's sentences mark a command that way, and every one reached the window with
+>   its backticks. The words are unchanged, so a service's sentence is still verbatim. A setting's
+>   hint, a tip, a toast and an empty state take it on their own. Anywhere else a caller asks, since
+>   content is shown as it is.
+> - **A liveness mark never borrows an outcome's hue.** *Ended* is completed, failed, declined and
+>   stopped at once, and it wore done's green, so a failed session sat in the rail beside a success
+>   mark. It is neutral now, and the pill beside it names the outcome.
+> - **An ideograph is never slanted.** The Chinese system face has no italic, so an italic hint was
+>   slanted by synthesis. `font-synthesis-style: none` on the body keeps Chinese upright and the
+>   Latin face's true italic.
+> - **A card's heading is not its first row's label.** *What agents may do* and *Plugins* each said
+>   their title twice. The row names the file or folder the card keeps, as Wiring's names its map.
+> - **The rule between rows belongs to what has siblings.** Each default's `SettingRow` was alone in
+>   its list item, so its `first:` and `last:` both held and took the rule and the padding away. Four
+>   defaults ran together as one block. The item carries them now.
+> - **One word per thing, in each language.** In 中文 "agent" had become 代理 in the later cards
+>   and 智能体 everywhere else. "The driver" was sometimes 驱动器, which reads as a disk drive. And
+>   the brand was 道衍 in running text where the rest says Daoris. The wordmark keeps 道衍.
+> - **A default explains itself in the reader's language.** The English catalogue passes the driver's
+>   sentence through as `{{why}}`, its only English copy, and 中文 translates it. A default the page
+>   has not heard of keeps the driver's words.
+> - **A panel that keeps its height keeps it as a sentence.** An ended session's console, after the
+>   app restarted, was an empty bordered well, which reads as a field to type in. SURF8 had already
+>   given the console a quiet sentence for this, and the output panel never passed one.
 
 ## 5. The views, restated in this language
 

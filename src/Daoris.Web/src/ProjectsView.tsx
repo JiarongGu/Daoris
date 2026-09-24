@@ -5,10 +5,12 @@ import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
 import { DriverChoices } from './projects/DriverChoices';
 import { ago, sentence } from './format';
 import { useRegistry, useRepositories } from './queries';
+import { useScope } from './scope';
 import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees } from './shell';
 import { doorOf, type ToolDoor } from './tools';
 import {
-  Button, Card, Chip, type Notify, PageHeader, Prose, SkeletonRows, Tip, useErrorNotify,
+  Button, Card, Chip, EmptyState, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
+  useErrorNotify,
 } from './ui';
 
 /**
@@ -20,6 +22,7 @@ import {
 export function ProjectsView({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const registry = useRegistry();
+  const { workspace } = useScope();
   const repositories = useRepositories();
   const driver = useDriver();
   const roster = useHarnesses();
@@ -82,6 +85,24 @@ export function ProjectsView({ notify }: { notify: Notify }) {
 
       {registry.isPending && <SkeletonRows rows={4} />}
 
+      {/* 🔴 The first thing a new installation shows, and it was a header over a blank page: the
+          fixture always holds a repository, so nothing had ever rendered this. It names the circle
+          when the scope is one, because the machine may hold repositories in another. */}
+      {registry.data?.length === 0 && (
+        <EmptyState
+          icon="projects"
+          headline={workspace
+            ? t('projects.empty.headlineIn', { workspace })
+            : t('projects.empty.headline')}
+          body={t(attached ? 'projects.empty.body' : 'projects.empty.bodyBrowser')}
+          action={attached && (
+            <Button onClick={() => setAdding(true)}>
+              <Icon name="plus" size={14} />{t('projects.manage.add')}
+            </Button>
+          )}
+        />
+      )}
+
       <div className="grid items-start gap-3.5 lg:grid-cols-2">
         {adopted.map((project) => {
           const counts = indexed(project.repository);
@@ -116,7 +137,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                   /* Addressable regardless — adoption gates addressing, declaration does not (D34) —
                      but an asker deserves to know they would be guessing. */
                   <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-                    {t('projects.undeclared')}
+                    <Inline text={t('projects.undeclared')} />
                   </p>
                 )}
               {project.owns.length > 0 && (
@@ -218,7 +239,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
             })}
           </ul>
           <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-small">
-            {t('projects.outside.join')}
+            <Inline text={t('projects.outside.join')} />
           </p>
         </Card>
       )}

@@ -4,7 +4,7 @@ import { render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
-import { ActivityBar, AppStrip, StatusBar } from './frame';
+import { ActivityBar, AppStrip, OutputPanel, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
 const render = (node: ReactElement) => {
@@ -268,5 +268,23 @@ describe('StatusBar', () => {
 
     expect(screen.getByRole('button', { name: 'switch circle' })).toBeTruthy();
     expect(screen.queryByText('default')).toBeNull();
+  });
+});
+
+/**
+ * The output panel keeps the height the person gave it (D55), and it kept it as an empty bordered
+ * well: on the installed window an ended session's console was a blank white box, which reads as a
+ * field to type in. SURF8 had already given the console a sentence for this, and the panel never
+ * passed one.
+ */
+describe('the output panel', () => {
+  it('says why a session has nothing to show, instead of an empty well at the height it keeps', () => {
+    // No shell in a unit test, so the console holds nothing and is not live: an ended session after
+    // the app restarted, which is exactly the case the window showed.
+    const { container } = render(
+      <OutputPanel sessionId="s1a2b3c4" height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} />,
+    );
+    expect(screen.getByText(/keeps what a session prints while this app runs/)).toBeTruthy();
+    expect(container.querySelector('pre')).toBeNull();
   });
 });

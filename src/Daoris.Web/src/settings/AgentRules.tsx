@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, CheckField, Icon, Pill, Prose, SectionTitle, SelectField, SettingRow } from '../ui';
+import { Button, Card, CheckField, Icon, Inline, Pill, Prose, SectionTitle, SelectField, SettingRow } from '../ui';
 import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
 export type RuleListName = 'allow' | 'ask' | 'deny';
@@ -124,8 +124,10 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
   return (
     <Card className="mt-3.5">
       <SectionTitle>{t('settings.rules.title')}</SectionTitle>
+      {/* The row is the FILE, as Wiring's is the remotes map: the card's heading already says what
+          the card is, and saying it twice read as a heading and its echo on the window. */}
       <SettingRow
-        label={t('settings.rules.title')}
+        label={t('settings.rules.file')}
         hint={t('settings.rules.hint')}
         why={t('settings.rules.why')}
         control={<span className="break-all font-mono text-small text-ink-faint">{rules.path}</span>}
@@ -141,7 +143,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
       {proposals.length > 0 && (
         <div className="mb-3">
           <SectionTitle level={3}>{t('settings.rules.proposals.title')}</SectionTitle>
-          <Prose className="text-small">{t('settings.rules.proposals.hint')}</Prose>
+          <Prose className="text-small"><Inline text={t('settings.rules.proposals.hint')} /></Prose>
           {open.length > 0 && (
             <ul className="m-0 mt-2 list-none p-0">
               {open.map((proposal) => (
@@ -210,7 +212,9 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
       <SectionTitle level={3}>{t('settings.rules.defaults')}</SectionTitle>
       <ul className="m-0 list-none p-0">
         {rules.defaults.map((shipped) => (
-          <li key={shipped.id} aria-label={shipped.id}>
+          // 🔴 The rule and the padding are the ITEM's. A row alone in its item is both `first:` and
+          // `last:`, which took both away, and four defaults ran together as one block on the window.
+          <li key={shipped.id} aria-label={shipped.id} className="border-t border-line py-2.5 first:border-t-0 first:pt-0">
             <SettingRow
               label={(
                 <span className="flex flex-wrap items-center gap-2">
@@ -220,7 +224,11 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
               )}
               hint={(
                 <span className="flex flex-col gap-0.5">
-                  <span>{shipped.why}</span>
+                  {/* The driver's sentence, passed through the English catalogue as its only copy. A
+                      default this page does not know keeps the driver's words in every language. */}
+                  <span>
+                    <Inline text={t(`settings.rules.defaultWhy.${shipped.id}`, { why: shipped.why, defaultValue: shipped.why })} />
+                  </span>
                   <span className="flex flex-wrap gap-x-2 font-mono text-meta">
                     {shipped.hook
                       ? <span>{t('settings.rules.hook', { tools: shipped.hook })}</span>

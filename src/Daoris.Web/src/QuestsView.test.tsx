@@ -544,6 +544,21 @@ describe('QuestsView', () => {
     expect(await screen.findByRole('button', { name: 'publish quest' })).toBeDisabled();
   });
 
+  /** Seen on the installed window, 2026-09-24: with nothing registered, `from` and `to` offered nobody. */
+  it('says nobody can be asked yet, rather than a form whose from and to offer nobody', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json([]) : respond(url);
+    }));
+    view();
+    await userEvent.click(await screen.findByRole('button', { name: 'new quest' }));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(await within(dialog).findByText('Nobody can be asked yet')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'publish quest' })).toBeNull();
+    expect(within(dialog).queryByLabelText('from')).toBeNull();
+  });
+
   it('a quest a driver is working wears its session state on the card', async () => {
     view();
     expect(await screen.findByText('working')).toBeInTheDocument();

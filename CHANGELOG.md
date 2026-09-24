@@ -387,6 +387,12 @@ The first version: doctrine that installs, is checked, and flows back.
   Settings is appearance alone.
 - **The activity bar's counts are circles.** Measured on the window: 14 × 17.2px before, 16 × 16
   after. Waiting sessions wear the status hue, and outstanding quests the accent.
+- **A new installation says what to do first.** With nothing registered, Projects says so and offers
+  *add repository*. The ask and quest composers say nobody can be asked yet, instead of a form that
+  could never send. A command in a sentence reads as code rather than between backticks, in both
+  languages and in the service's own sentences. A failed session no longer wears a success-green
+  dot. Chinese is never slanted by a made-up italic. And the rules card explains its defaults in
+  中文, with one word for "agent" and one for "the driver" throughout.
 - **An account is made by signing in, and Remove removes it** (D66 §3). *Sign in to another
   account* runs the tool's own sign-in into a fresh account and keeps it only if the sign-in
   finished; the name box that came first is gone. Accounts are listed by who is signed in (the email

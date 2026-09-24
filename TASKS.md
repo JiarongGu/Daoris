@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**443 CLI tests, 468 service, 586 driver, 118 desktop modules, 820 web unit, 21 Playwright**, 73
+**443 CLI tests, 468 service, 586 driver, 118 desktop modules, 834 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -241,7 +241,8 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Nothing is actionable without the owner.** 🔴 **The owner authorized real sessions on this
+- **Only surface work is actionable without the owner** (POLISH3, and whatever the next look at the
+  install finds). 🔴 **The owner authorized real sessions on this
   machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
   (16/16), INT4j (17/17) and PERM2b (14/14) one each. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
@@ -254,7 +255,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (468),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (586), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (820 vitest + 21 Playwright),
+  (586), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (834 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -268,9 +269,9 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Ten items are open**, and every closed one is
+the archive; its decision is **D53, accepted**). **Eleven items are open**, and every closed one is
 in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Three wait on the owner (TRUST2, AGT2c,
+ships. One is surface work anyone can take (POLISH3), three wait on the owner (TRUST2, AGT2c,
 INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
@@ -417,6 +418,18 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
   plugin somebody writes asks for a point there. PLUG4–6 are in the archive.
 
 ### Open — the arc's leftovers, in the order they are worth doing
+
+- [ ] **POLISH3 — what POLISH2 saw and left.** Four things the installed window showed on
+  2026-09-24, each small and each worth a look before a fix (`docs/2026-09-19-platform-ux.md` §4,
+  POLISH2; the archive has the pass).
+  - **Two account rows with one name.** Claude Code's own configuration home and a Daoris profile,
+    both signed in as the same account, read as one fact stated twice. Only the line under each says
+    which is which.
+  - **The drawer's scrim cuts the status bar.** It starts at the activity bar's edge, so the bar's
+    first item stays bright and the rest go grey behind an open drawer.
+  - **Convergence waits about seven seconds on the real index** (1,052 entries, lexical only) behind
+    a bare "comparing…", where §3 says a first load shows static skeletons.
+  - **中文 spaces durations and ages differently**: `9 分钟` on a rail row, `1天前` beside it.
 
 ### Held — each waits on a trigger that has not arrived
 

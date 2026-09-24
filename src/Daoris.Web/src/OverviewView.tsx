@@ -5,7 +5,7 @@ import { ranked, widest } from './overview';
 import { useConsidered } from './shell';
 import { sittingBecause } from './signals';
 import {
-  Card, CardHeader, Button, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
+  Card, CardHeader, Button, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from './ui';
 import { AttentionBand, type AttentionDoors } from './work/AttentionBand';
@@ -132,7 +132,7 @@ export function OverviewView({ onNavigate, doors, notify }: {
                     {sitting && (
                       <Tip content={t('overview.outstanding.sittingTip')}>
                         <span className="basis-full truncate text-small text-ink-faint">
-                          {t('overview.outstanding.sitting', { reason: sitting.reason })}
+                          <Inline text={t('overview.outstanding.sitting', { reason: sitting.reason })} />
                         </span>
                       </Tip>
                     )}

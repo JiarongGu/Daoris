@@ -481,8 +481,10 @@ export function OutputPanel({ sessionId, height, collapsed, onResize, onToggle }
 
       {!collapsed && (
         <div className="flex min-h-0 flex-col px-4 pb-3" style={{ height }}>
+          {/* The panel keeps its height; a session with nothing held here keeps it as a sentence,
+              not as an empty bordered well, which read as a field on the installed window. */}
           {sessionId
-            ? <SessionConsole id={sessionId} fill />
+            ? <SessionConsole id={sessionId} fill quiet={t('work.panel.silent')} />
             : <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
         </div>
       )}

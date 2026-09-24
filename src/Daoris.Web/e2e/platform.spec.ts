@@ -56,7 +56,9 @@ test('a quest carries a link and files: kept here, opened here, never run as the
     { name: 'page.html', mimeType: 'text/html', buffer: Buffer.from('<script>parent.document.title = "owned"</script>') },
   ]);
   await page.getByRole('button', { name: 'publish quest' }).click();
-  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
+  // The service's sentence, as it reads: a toast sets its backticked names as code, so the words
+  // are the service's and the backticks are gone (`Inline`).
+  await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // The card counts what it carries; the drawer holds the things themselves.
   await expect(page.getByLabel('1 link · 2 files').first()).toBeVisible();
@@ -109,7 +111,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
   await dialog.getByRole('button', { name: 'done', exact: true }).click();
-  await expect(page.getByText(/Then: published `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
+  await expect(page.getByText(/Then: published #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // The step is an ordinary open quest, named with the id of the one it follows.
   const step = page.getByText(`Verify #${parent} in a playtest`).first();
@@ -187,7 +189,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
 
   // The toast carries the service's sentence verbatim — that text IS the contract. (.first(): Radix
   // renders each toast twice — the visible element and its aria-live announcer.)
-  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
+  await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // It sits in Open; its card is a door to the detail drawer, where the acting happens.
   await page.getByText('Expose a streaming budget on the chunk API').first().click();
@@ -251,7 +253,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await composer.getByRole('button', { name: 'ask', exact: true }).click();
 
   // The service's sentence, verbatim: which tier answered, what it proposed, and that nothing went out.
-  await expect(page.getByText(/Asked as `#[0-9a-f]{6}` in `default` — by declarations only; no intake harness ran — proposed, best first: `engine`/).first()).toBeVisible();
+  await expect(page.getByText(/Asked as #[0-9a-f]{6} in default — by declarations only; no intake harness ran — proposed, best first: engine/).first()).toBeVisible();
 
   // The record opens on the answer: the tier in words, the proposal as a verb, the file by name only.
   // (The quest it becomes takes the same words for its title, so each drawer is told apart by what it holds.)
@@ -262,7 +264,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(record).not.toContainText('_fixtures');
 
   await record.getByRole('button', { name: 'publish to engine' }).click();
-  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `engine`/).first()).toBeVisible();
+  await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // The quest it became is a door into the quest's own drawer — once the page holds it — asked BY the
   // ask, carrying its link and its file.
@@ -282,7 +284,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await record.getByRole('button', { name: 'close the ask' }).click();
   await record.getByLabel('why — what became of it').fill('It became the engine quest, now done.');
   await record.getByRole('button', { name: 'close with this reason' }).click();
-  await expect(page.getByText(/Ask `#[0-9a-f]{6}` is closed: It became the engine quest, now done\./).first()).toBeVisible();
+  await expect(page.getByText(/Ask #[0-9a-f]{6} is closed: It became the engine quest, now done\./).first()).toBeVisible();
 
   // Closed asks leave the list, as closed quests do.
   await record.getByRole('button', { name: 'close', exact: true }).click();
@@ -387,7 +389,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   await page.getByLabel('what is wanted, in one line').fill('A first quest for the newcomer');
   await page.getByLabel('why, and the evidence').fill('Joining means being askable — prove it.');
   await page.getByRole('button', { name: 'publish quest' }).click();
-  await expect(page.getByText(/Published quest `#[0-9a-f]{12}` to `newcomer`/).first()).toBeVisible();
+  await expect(page.getByText(/Published quest #[0-9a-f]{12} to newcomer/).first()).toBeVisible();
 });
 
 /**

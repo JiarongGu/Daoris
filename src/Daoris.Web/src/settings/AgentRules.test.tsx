@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
+import i18n from '../i18n';
 import { AgentRules, type AgentRulesState, type RuleProposal } from './AgentRules';
 
 // PERM1 (D72): what an agent Daoris starts may do — Claude Code's own rules in Daoris's scopes, the
@@ -64,6 +65,48 @@ describe('What agents may do', () => {
 
     const push = screen.getByRole('listitem', { name: 'no-push' });
     expect(within(push).getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+  });
+
+  // Three defects the installed window showed on this card, 2026-09-24, none of which a story could.
+
+  it('says its title once: the heading, not a first row that repeats it', () => {
+    show();
+    expect(screen.getAllByText('What agents may do')).toHaveLength(1);
+    expect(screen.getByText('The rules file')).toBeTruthy();
+  });
+
+  /**
+   * Each default's row was the only child of its own item, so the setting row's `first:` and `last:`
+   * both held and took its rule and its padding away: four defaults ran together as one block.
+   */
+  it('divides one default from the next, as every other list of settings is', () => {
+    show();
+    const items = ['connector', 'commit', 'no-push', 'tree-guard']
+      .map((id) => screen.getByRole('listitem', { name: id }));
+    // The item carries the rule and the padding, because it is the item that has siblings.
+    for (const item of items) expect(item.className).toMatch(/\bborder-t\b.*\bpy-/);
+  });
+
+  /**
+   * A default's reason is the driver's sentence, and the English catalogue passes it through as the
+   * only copy. 中文 says it in Chinese, and a default this page has never heard of keeps the driver's words.
+   */
+  it('explains a default in the reader\'s language, and in the driver\'s words when it does not know it', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      show({
+        rules: {
+          ...RULES,
+          defaults: [DEFAULTS[0], { id: 'later', list: 'deny', on: true, rules: ['Bash(x)'], why: 'Shipped after this page.' }],
+        },
+      });
+      const connector = screen.getByRole('listitem', { name: 'connector' });
+      expect(within(connector).queryByText(/closes its own quest/)).toBeNull();
+      expect(within(connector).getByText(/委托/)).toBeTruthy();
+      expect(within(screen.getByRole('listitem', { name: 'later' })).getByText('Shipped after this page.')).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** The tree guard adds no rule, so its row names the tools it judges instead of an empty rule line. */

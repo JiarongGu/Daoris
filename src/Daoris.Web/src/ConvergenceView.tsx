@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Convergence } from './api';
 import { useConvergence } from './queries';
-import { Card, type Notify, PageHeader, useErrorNotify } from './ui';
+import { Card, Inline, type Notify, PageHeader, useErrorNotify } from './ui';
 import { cn } from './lib/cn';
 import { useDebounced } from './lib/useDebounced';
 import { page } from './results';
@@ -94,7 +94,7 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
             {/* The service's sentence is the contract and already says what kind of finding this is;
                 the italic gloss beneath it said the same thing in the UI's words. Seen twice per
                 card on the deployed application, forty cards deep. One sentence — the service's. */}
-            <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 text-body">{group.suggestion}</p>
+            <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 text-body"><Inline text={group.suggestion} /></p>
           </Card>
         ))}
       </div>

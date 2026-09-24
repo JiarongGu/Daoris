@@ -5338,3 +5338,34 @@ the protocol door took a quest asking for a commit and an annotated tag. It comm
 had landed and the tag stays local and reversible, since pushing is still refused. The tick held the
 proposal `waiting`, nothing reached the rules without the person, and the session declined honestly.
 The script was written in a parallel worktree. Family 271/271, deploy 39/39, verify green.
+
+## POLISH2 — the installed application, read on an empty machine (2026-09-24)
+
+> **"we also need to keep polish the ui/ux you can use screenshot tool to confirm"** — owner,
+> 2026-09-22. The standing direction, taken up when every other open row waited on the owner.
+
+✅ done 2026-09-24. The owner's install was republished at `main` (61 commits behind) and read surface
+by surface, in 中文 as the owner runs it and in English, in both themes. It drives nothing, so no
+session started. Every registration had been retired on 2026-09-23, so the install showed what a new
+installation shows, and the example family cannot: it always holds a repository.
+
+Ten defects, each found by looking. `docs/2026-09-19-platform-ux.md` §4 (POLISH2) carries the rules
+and `docs/FIX-LOG.md` the root causes.
+
+- **An empty machine.** Projects was a blank page. The ask and quest composers offered empty choices,
+  so a request written in full could never be sent. The map said "this circle" when scoped to every
+  circle.
+- **Backticks printed raw**, in fourteen catalogue strings and many of the service's and driver's
+  sentences, in both languages. `Inline` sets them as code and changes no word.
+- **The rules card (PERM1), the first time it was looked at.** Its heading was repeated as its
+  first row, its four defaults ran together, and it explained them in English under 中文. The zh
+  catalogue had drifted to 代理 for "agent" (智能体 elsewhere), 驱动器 for "the driver" (a disk
+  drive), and 道衍 in running text. The plugins card repeated its heading too.
+- **A failed session wore success's green dot** in the rail.
+- **Chinese in italic was slanted by synthesis.**
+- **An ended session's console was an empty bordered well**, which reads as a field.
+
+Seen and not fixed, filed as POLISH3: two account rows with one name, the drawer scrim cutting the
+status bar, Convergence's seven-second load on the real index, and 中文 spacing durations and ages
+differently. Web unit 820 → 834, Playwright 21/21 (seven toast assertions matched raw backticks),
+verify green. The install was left in 中文 as found, and stopped.

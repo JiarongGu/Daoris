@@ -5,6 +5,7 @@ import { MapCanvas, type MapSelection } from './map/MapCanvas';
 import { MapDetail } from './map/MapDetail';
 import { buildTopology } from './map/topology';
 import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from './queries';
+import { useScope } from './scope';
 import {
   Button, Card, EmptyState, Icon, type Notify, PageHeader, SkeletonRows, useErrorNotify,
 } from './ui';
@@ -27,6 +28,7 @@ export function MapView({ notify, onOpenConvergence }: {
 }) {
   const { t } = useTranslation();
   const registry = useRegistry();
+  const { workspace } = useScope();
   const quests = useQuests(null, true);
   const shared = useConvergence(SHARED);
   const sessions = useSessions(null, false);
@@ -113,7 +115,12 @@ export function MapView({ notify, onOpenConvergence }: {
     return (
       <section>
         {header}
-        <EmptyState icon="map" headline={t('map.empty.headline')} body={t('map.empty.body')} />
+        {/* Scoped to every circle there is no "this circle" to speak of, which it did on the window. */}
+        <EmptyState
+          icon="map"
+          headline={t(workspace ? 'map.empty.headline' : 'map.empty.headlineAll')}
+          body={t('map.empty.body')}
+        />
       </section>
     );
   }

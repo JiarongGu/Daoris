@@ -4,7 +4,7 @@ import { sentence } from './format';
 import type { Registration } from './api';
 import { useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
-import { Button, Chip, Drawer, type Notify, SectionTitle, Tip } from './ui';
+import { Button, Chip, Drawer, Inline, type Notify, SectionTitle, Tip } from './ui';
 
 /**
  * Managing the machine's repositories (D48 §7) — the surfaces that exist only where a shell is
@@ -103,7 +103,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
                job — the collisions, the review, the budget — and a button here would do that work
                from outside, by whoever knows that codebase least. */
             <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-small">
-              {t('projects.manage.adoptHere')}
+              <Inline text={t('projects.manage.adoptHere')} />
             </p>
           )}
 

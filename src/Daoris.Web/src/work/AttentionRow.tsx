@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
 import type { TrustHold } from '../signals';
-import { Dot } from '../ui';
+import { Dot, Inline } from '../ui';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -74,7 +74,7 @@ export function AttentionRow({ item, onOpen }: {
         </span>
       </span>
       {item.detail && (
-        <span className="mt-0.5 line-clamp-2 block text-small text-ink-soft">{item.detail}</span>
+        <span className="mt-0.5 line-clamp-2 block text-small text-ink-soft"><Inline text={item.detail} /></span>
       )}
     </>
   );

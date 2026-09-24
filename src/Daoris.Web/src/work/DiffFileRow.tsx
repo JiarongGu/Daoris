@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { DiffFile } from './diff';
-import { Icon } from '../ui';
+import { Icon, Inline } from '../ui';
 import { cn } from '../lib/cn';
 
 // One file in a review (SURF6). A molecule: it is handed a file and told whether it is open and
@@ -109,7 +109,7 @@ export function DiffFileRow({ file, open, viewed, onToggle, onViewed }: {
           )
           : (
             <p className="m-0 border-t border-line px-3 py-2 text-small text-ink-faint">
-              {t('work.review.noPatch')}
+              <Inline text={t('work.review.noPatch')} />
             </p>
           )
       )}

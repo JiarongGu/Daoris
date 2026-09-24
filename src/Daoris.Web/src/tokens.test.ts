@@ -169,3 +169,16 @@ describe('the chosen themes', () => {
     expect(read['chosen-dark']).toEqual(read['system-dark']);
   });
 });
+
+/**
+ * An ideograph has no italic. The Chinese system face carries none, so the browser slants it by
+ * synthesis, and that is what the installed window showed under every italic hint in 中文. The
+ * Latin face has a true italic and keeps it: only the synthesis is refused.
+ */
+describe('the page body', () => {
+  it('never synthesises an oblique, so a Chinese sentence set italic stays upright', () => {
+    const body = /@layer base\s*\{\s*body\s*\{([^}]*)\}/.exec(tokensCss)?.[1] ?? '';
+    expect(body, 'the base body rule was not found').toContain('font-family');
+    expect(body).toMatch(/font-synthesis-style:\s*none/);
+  });
+});

@@ -33,12 +33,12 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-function show(onOpenConvergence = () => {}) {
+function show(onOpenConvergence = () => {}, scope: string | null = null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <WorkspaceScopeProvider initial={null}>
+        <WorkspaceScopeProvider initial={scope}>
           <MapView notify={() => {}} onOpenConvergence={onOpenConvergence} />
         </WorkspaceScopeProvider>
       </Tooltip.Provider>
@@ -114,9 +114,17 @@ describe('the workspace map', () => {
 
   it('says so when the circle holds no repository', async () => {
     REGISTRY = [];
-    show();
+    show(() => {}, 'aurora');
 
     expect(await screen.findByText('No repositories in this circle')).toBeTruthy();
+  });
+
+  /** Seen on the installed window, 2026-09-24: scoped to every circle, it spoke of "this circle". */
+  it('says no circle holds one when the page is scoped to every circle', async () => {
+    REGISTRY = [];
+    show();
+
+    expect(await screen.findByText('No repository in any circle yet')).toBeTruthy();
   });
 
   // ——— One level in: a repository's own code map (MAP3a).

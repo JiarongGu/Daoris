@@ -14,7 +14,7 @@ import { sittingBecause } from './signals';
 import { buildChain } from './map/chain';
 import { ChainStrip } from './map/ChainStrip';
 import {
-  Button, Card, CheckField, Drawer, EmptyState, Icon, type Notify, PageHeader, Pill, QUEST_TONE,
+  Button, Card, CheckField, Drawer, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
   SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
@@ -170,6 +170,8 @@ export function QuestsView({
   // judgement; this only keeps the form from lying.
   const adopters = (registry.data ?? []).filter(canBeAsked).map((r) => r.repository);
   const adopterOptions = adopters.map((name) => ({ value: name, label: name }));
+  // Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie.
+  const nobody = registry.data !== undefined && adopters.length === 0;
   const target = (registry.data ?? []).find((r) => r.repository === draft.to);
   const busy = publish.isPending || respond.isPending || reading;
 
@@ -455,7 +457,7 @@ export function QuestsView({
                 <>
                   <dt className="text-ink-faint">{t('quests.detail.sitting')}</dt>
                   <dd className="m-0">
-                    {sitting?.reason ?? t('work.attention.trustWhy')}
+                    <Inline text={sitting?.reason ?? t('work.attention.trustWhy')} />
                     {/* The one hold only the person can lift, offered where it is read (D73). */}
                     {held && trustingFor !== detail.id && (
                       <span className="mt-1.5 block">
@@ -657,7 +659,20 @@ export function QuestsView({
         </Drawer>
       )}
 
-      {composing && (
+      {/* 🔴 Nobody to ask: with nothing registered, `from` and `to` offered nobody and a quest
+          written in full could never be published. Seen on the installed window, 2026-09-24. */}
+      {composing && nobody && (
+        <Drawer
+          title={t('quests.compose.title')}
+          onClose={() => setComposing(false)}
+          meta={<span className="font-mono text-meta text-ink-faint">{t('quests.compose.meta')}</span>}
+          footer={<Button variant="ghost" onClick={() => setComposing(false)}>{t('common.close')}</Button>}
+        >
+          <EmptyState icon="projects" headline={t('quests.compose.nobody.headline')} body={t('quests.compose.nobody.body')} />
+        </Drawer>
+      )}
+
+      {composing && !nobody && (
         <Drawer
           title={t('quests.compose.title')}
           onClose={() => setComposing(false)}
@@ -722,7 +737,7 @@ export function QuestsView({
             {target && !target.registered && (
               /* The same caution the service gives an agent, before the person relies on it. */
               <p className="m-0 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-                {t('quests.compose.caution', { repository: target.repository })}
+                <Inline text={t('quests.compose.caution', { repository: target.repository })} />
               </p>
             )}
             <label className="grid gap-1 text-small text-ink-soft">
