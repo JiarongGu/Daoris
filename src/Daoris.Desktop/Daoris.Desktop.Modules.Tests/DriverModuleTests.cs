@@ -572,7 +572,8 @@ public sealed class DriverModuleTests : Bridge
         Assert.True(defaults[0].GetProperty("on").GetBoolean());
         Assert.False(defaults[2].GetProperty("on").GetBoolean());
         Assert.Equal("deny", defaults[2].GetProperty("list").GetString());
-        Assert.Contains("D37", defaults[2].GetProperty("why").GetString());
+        // The driver's own sentence travels: what the number meant, never the number (POLISH4a).
+        Assert.Contains("stays the person's call", defaults[2].GetProperty("why").GetString());
         // The tree guard (PERM3) is a hook: no rule, and the tools it judges named instead. The bridge
         // leaves a null out, so a rule default carries no `hook` the page could misread.
         Assert.Empty(defaults[3].GetProperty("rules").EnumerateArray());
