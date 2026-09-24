@@ -3,7 +3,7 @@ import type { ExitCode } from './errors.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown } from './fsx.ts';
-import { readCanon, resolveCanonRoot } from './canon.ts';
+import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.ts';
 import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
@@ -74,6 +74,12 @@ export function commandInit(
   write('  available packs:');
   for (const pack of [...canon.packs.values()].filter((entry) => entry.name !== 'core')) {
     write(`    ${pack.name.padEnd(20)} — ${pack.description}`);
+    // Said at the moment of choosing (D71): a pack that would take a core row out is a different
+    // choice from one that only adds, and nothing it offers goes off until the manifest confirms it.
+    const switches = Object.keys(pack.switchesOff);
+    if (switches.length) {
+      write(`    ${''.padEnd(20)}   switches off core ${switches.join(', ')} — only once you confirm it`);
+    }
   }
 
   const local = localDocs(root, DEFAULT_TARGET);
@@ -112,10 +118,32 @@ export function commandStatus(
   } | null = null;
   let notes: ReturnType<typeof notesBetween> = [];
 
+  // What is switched off, from the LOCK — what is actually true here — with each pack's reason when
+  // the canon can supply it; and what a selected pack offers that nobody confirmed (D71). The owner-
+  // facing half of "never silent": `check` names the rows, and this says why.
+  const canon = canonAvailable ? readCanon(canonRoot) : null;
+  // A summary reports a defect rather than dying of it: an unknown pack or a confirmation no pack
+  // offers is `sync`'s refusal to make, and `status` is where a person goes to find out why.
+  let selection: ReturnType<typeof resolveSelection> | null = null;
+  let selectionProblem: string | null = null;
+  if (canon) {
+    try {
+      selection = resolveSelection(canon, manifest.packs, manifest.switchedOff ?? {});
+    } catch (error) {
+      if (!(error instanceof DaorisError)) throw error;
+      selectionProblem = error.message;
+    }
+  }
+  const switchedOff = (lock?.switchedOff ?? []).map(({ target, by }) => ({
+    target,
+    by,
+    because: canon?.packs.get(by)?.switchesOff[target] ?? null,
+  }));
+  const offers = selection?.offers ?? [];
+
   // status may reach the canon; `check` deliberately may not (D8), which is why
   // "a newer canon exists" is reported here and never gates a build.
-  if (canonAvailable && lock) {
-    const canon = readCanon(canonRoot);
+  if (canon && lock && !selectionProblem) {
     if (canon.version !== lock.canonVersion) {
       // Naming what moved is the difference between a prompt to act and a
       // prompt to investigate. All of it comes from the lock, so it stays offline.
@@ -165,6 +193,9 @@ export function commandStatus(
       drifted: inspection?.drifted ?? [],
       missing: inspection?.missing ?? [],
       stalePacks: inspection?.stalePacks ?? [],
+      switchedOff,
+      offers,
+      selectionProblem,
       // The one disclosure control in the manifest (D47 §4) — "what is this repository sharing?" is
       // exactly the question status exists to answer, and silence means local.
       remote: manifest.remote ?? null,
@@ -201,6 +232,15 @@ export function commandStatus(
     if (inspection.drifted.length) write(`  drifted       ${inspection.drifted.join(', ')}`);
     if (inspection.missing.length) write(`  missing       ${inspection.missing.join(', ')}`);
     if (inspection.stalePacks.length) write(`  stale packs   ${inspection.stalePacks.join(', ')}`);
+  }
+
+  if (selectionProblem) write(`  selection     ${selectionProblem}`);
+  for (const row of switchedOff) {
+    write(`  switched off  ${row.target} — by pack '${row.by}'${row.because ? `: ${row.because}` : ''}`);
+  }
+  for (const offer of offers) {
+    write(`  offered       ${offer.target} — pack '${offer.by}' would switch it off: ${offer.because}`);
+    write(`                it stays on until daoris.json confirms it: "switchedOff": { "${offer.target}": "${offer.by}" }`);
   }
 
   if (local.length) write(`  local         ${local.join(', ')}`);

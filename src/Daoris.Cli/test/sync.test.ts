@@ -260,6 +260,9 @@ test('a lock entry cannot reach outside the target directory', () => {
     collisions: [],
     renames: [],
     editedRetirements: [],
+    switchedOff: [],
+    offers: [],
+    editedSwitchedOff: [],
   };
   const error = captureError(() =>
     applySync({

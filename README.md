@@ -167,7 +167,9 @@ without `join` is refused. `daoris status` reports the declaration.
 
 ## Three layers
 
-- **Core** — universal workflow rules and discovery skills. Every repository gets these; no opting out.
+- **Core** — universal workflow rules and discovery skills. Every repository gets these, unless a selected
+  pack offers to switch one off and the manifest confirms it under `switchedOff` (D71); `sync`, `check`
+  and `status` all say so.
 - **Packs** — stack-specific sets, named in the manifest.
 - **Local** — the repository's own documents. Never synced, never touched, and listed in the generated
   index marked `(local)`.
@@ -191,8 +193,7 @@ raise the number rather than read it.
 repository and sends the reader to the generated index for anything local — there is no substitution map
 in the manifest. Surveying twelve repositories showed why: copies of the same skill ranged over a 6.6×
 size spread, and the shared part was ~15 lines. The rest was each repository's own routing content, which
-no placeholder could have supplied. The index's skills table is what a hand-written "here are our skills"
-skill used to be, except that it is generated and therefore never stale.
+no placeholder could have supplied.
 
 **Every vendored file carries a one-line provenance header.** Not decoration: an agent that opens a rule
 needing a tweak will otherwise simply edit it, which is exactly how the copies diverged. The header says

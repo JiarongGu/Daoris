@@ -77,6 +77,19 @@ export function inspect(
   const syncedPacks = new Set((lock?.entries ?? []).map((entry) => entry.pack));
   const stalePacks = manifest.packs.filter((pack) => !syncedPacks.has(pack));
 
+  // The same kind of fact for a switched-off core row (D71): the manifest and the lock disagree about
+  // it — confirmed and never synced, or withdrawn and never synced. Named from the lock, so offline.
+  const switchedOff = lock?.switchedOff ?? [];
+  const confirmed = Object.entries(manifest.switchedOff ?? {});
+  const staleSwitches = [
+    ...confirmed
+      .filter(([target, by]) => !switchedOff.some((row) => row.target === target && row.by === by))
+      .map(([target, by]) => `${target} is switched off by '${by}' in the manifest and still on here`),
+    ...switchedOff
+      .filter((row) => !confirmed.some(([target, by]) => row.target === target && row.by === by))
+      .map((row) => `${row.target} was switched off by '${row.by}' here and is no longer confirmed`),
+  ];
+
   // The tier is the LOCATION, so the always-loaded footprint is still measurable — a region has a
   // byte count exactly as a directory did, which is the half of D7 that survives D59. Which tiers
   // those are is the harness's answer, not a constant here.
@@ -113,8 +126,8 @@ export function inspect(
   // build over a judgement gets its number raised rather than read — which is the failure D28
   // predicted in its own words about noise. The number stays and is stated on every run, because a
   // signal nobody can see is not a signal.
-  const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale;
-  return { drifted, missing, stalePacks, coreBytes, overBudget, indexStale, ok };
+  const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !staleSwitches.length;
+  return { drifted, missing, stalePacks, coreBytes, overBudget, indexStale, switchedOff, staleSwitches, ok };
 }
 
 export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'>): ExitCode {
@@ -126,6 +139,10 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   for (const pack of report.stalePacks) {
     write(`  stale     pack '${pack}' is in the manifest but not the lock`);
   }
+  for (const stale of report.staleSwitches) write(`  stale     ${stale} — run 'daoris sync'`);
+  // Every run, whatever else it finds (D71): a core row that is off is never a surprise, and it is not
+  // a failure either — it is a decision the manifest records.
+  for (const row of report.switchedOff) write(`  off       ${row.target} (switched off by pack '${row.by}')`);
   if (report.overBudget) {
     write(
       `  budget    ${manifest.target} always-loaded is ${report.coreBytes} of ` +

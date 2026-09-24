@@ -70,6 +70,21 @@ export function readManifest(root: string): Manifest {
     manifest.remote = { join, knowledge };
   }
 
+  // A confirmation is a map from a core row to the pack that switches it off (D71). Anything else —
+  // a list, a boolean, a row with no pack — says something this tool cannot honour, and a switch
+  // that silently did nothing would leave a core row on that the repository believes is off.
+  if ((parsed as Record<string, unknown>).switchedOff === null) delete manifest.switchedOff;
+  if (manifest.switchedOff !== undefined) {
+    const declared: unknown = manifest.switchedOff;
+    const valid = typeof declared === 'object' && declared !== null && !Array.isArray(declared)
+      && Object.values(declared).every((pack) => typeof pack === 'string' && pack.trim() !== '');
+    if (!valid) {
+      throw new DaorisError(
+        `${MANIFEST_FILE} declares switchedOff as ${JSON.stringify(declared)} — it is a map from a core `
+        + 'row to the pack that switches it off: { "rules/<name>.md": "<pack>" }');
+    }
+  }
+
   // Resolve here so an unknown name fails at the edge, naming what exists, rather than deeper down
   // where the message would be about a missing directory.
   manifest.harnessDescriptor = resolveHarness(manifest.harness);
@@ -96,6 +111,10 @@ export function writeLock(root: string, lock: Lock): void {
     canonVersion: lock.canonVersion,
     source: lock.source,
     entries: [...lock.entries].sort((a, b) => a.target.localeCompare(b.target)),
+    // Only when something is off (D71), so a lock that switches nothing is byte-for-byte what it was.
+    ...(lock.switchedOff?.length
+      ? { switchedOff: [...lock.switchedOff].sort((a, b) => a.target.localeCompare(b.target)) }
+      : {}),
   };
   writeTextAtomic(join(root, LOCK_FILE), `${JSON.stringify(sorted, null, 2)}\n`);
 }

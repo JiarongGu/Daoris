@@ -58,7 +58,8 @@ held together by junctions would reproduce that across every repo.
 
 **D4 — Three layers: core (automatic) · packs (opt-in) · local (untouched).** Core is the small universal set
 every repo gets without asking. Packs are stack-specific and named in the manifest. Local files are the
-repo's own, never synced, never modified.
+repo's own, never synced, never modified. *Amended by **D71**: a pack may offer to switch a core row off;
+the manifest confirms it, and every surface says so.*
 
 **D5 — Anything not in the lock is invisible to the tool.** Daoris only writes files it put there. This is
 what makes a local rule safe to keep in the same folder as a canonical one.
@@ -146,7 +147,7 @@ canon/
     desktop-winforms/         knowledge/
     web-webview/              knowledge/
     windows-machine/          rules/
-  packs/<name>/pack.json      name, description, and each file's target directory
+  packs/<name>/pack.json      name, description, switchesOff (D71), and each file's target directory
 ```
 
 Seeding is a judgment pass, not a copy. Where two siblings both have a rule and disagree, the canonical

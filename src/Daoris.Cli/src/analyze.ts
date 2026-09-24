@@ -1,5 +1,5 @@
 import type {
-  AnalysisReport, Canon, CommandArgs, Lock, LockEntry, PackSuggestion, Survey, Twin,
+  AnalysisReport, Canon, CanonFile, CommandArgs, Lock, LockEntry, PackSuggestion, Survey, Twin,
 } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync, statSync } from 'node:fs';
@@ -8,7 +8,7 @@ import { listFiles, listMarkdown, readText, sha256 } from './fsx.ts';
 import { parseFrontmatter, renderCanonFile } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
-import { readCanon, resolveCanonRoot, selectFiles } from './canon.ts';
+import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
 import { significantTokens, containment } from './twins.ts';
 import {
@@ -110,7 +110,7 @@ function suggestPacks(root: string, canon: Canon): PackSuggestion[] {
  * is not a collision — it has already adopted that text, whatever the reason.
  */
 function findCollisions(
-  root: string, target: string, canon: Canon, packs: readonly string[],
+  root: string, target: string, canon: Canon, selected: readonly CanonFile[],
   canonVersion: string, locked: Map<string, LockEntry>,
 ): { collisions: string[]; updates: string[] } {
   const collisions: string[] = [];
@@ -127,7 +127,7 @@ function findCollisions(
     }
     return regionRead;
   };
-  for (const file of selectFiles(canon, packs)) {
+  for (const file of selected) {
     const body = readText(join(canon.root, file.source));
 
     // The always-loaded tier is a span (D59), so "what is already here" is a question about the
@@ -167,9 +167,9 @@ function findCollisions(
  * in the tree. Compared within a tier, for the reason recorded in D17.
  */
 function findTwinsAgainstCanon(
-  root: string, target: string, canon: Canon, packs: readonly string[], threshold = 0.3,
+  root: string, target: string, canon: Canon, selected: readonly CanonFile[], threshold = 0.3,
 ): Twin[] {
-  const canonical = selectFiles(canon, packs)
+  const canonical = selected
     .filter((file) => file.target.endsWith('.md'))
     .map((file) => ({
       tier: file.target.split('/')[0],
@@ -203,14 +203,14 @@ function findTwinsAgainstCanon(
 
 /** Bytes of always-loaded context after adopting — the number that is paid every session. */
 function projectBudget(
-  root: string, target: string, canon: Canon, packs: readonly string[],
+  root: string, target: string, canon: Canon, selected: readonly CanonFile[],
   existing: Survey, collisions: readonly string[],
 ): { current: number; projected: number } {
   const current = existing.rules.reduce((sum, f) => sum + f.bytes, 0);
   const collided = new Set(collisions);
 
   let added = 0;
-  for (const file of selectFiles(canon, packs)) {
+  for (const file of selected) {
     if (!file.target.startsWith('rules/')) continue;
     const abs = join(root, target, file.target);
     // A collision replaces rather than adds; an existing identical file changes nothing.
@@ -223,12 +223,18 @@ function projectBudget(
 }
 
 export function analyze(
-  { root, canon, packs, target, budgetLimit, lock = null }:
-  { root: string; canon: Canon; packs: readonly string[]; target: string; budgetLimit: number; lock?: Lock | null },
+  { root, canon, packs, switchedOff = {}, target, budgetLimit, lock = null }:
+  {
+    root: string; canon: Canon; packs: readonly string[]; switchedOff?: Readonly<Record<string, string>>;
+    target: string; budgetLimit: number; lock?: Lock | null;
+  },
 ): AnalysisReport {
   const existing = survey(root, target);
   const locked = lockIndex(lock);
-  const { collisions, updates } = findCollisions(root, target, canon, packs, canon.version, locked);
+  // One selection for every projection below, with the repository's confirmations applied (D71): a
+  // core row a pack switches off is neither a collision, a twin, nor a byte this adoption would add.
+  const selection = resolveSelection(canon, packs, switchedOff);
+  const { collisions, updates } = findCollisions(root, target, canon, selection.files, canon.version, locked);
   return {
     target,
     harness: harnessVerdict(root),
@@ -237,8 +243,10 @@ export function analyze(
     suggested: suggestPacks(root, canon),
     collisions,
     updates,
-    twins: findTwinsAgainstCanon(root, target, canon, packs),
-    budget: { ...projectBudget(root, target, canon, packs, existing, collisions), limit: budgetLimit },
+    twins: findTwinsAgainstCanon(root, target, canon, selection.files),
+    budget: { ...projectBudget(root, target, canon, selection.files, existing, collisions), limit: budgetLimit },
+    offers: selection.offers,
+    switchedOff: selection.switchedOff,
   };
 }
 
@@ -261,8 +269,12 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   const budgetLimit = manifest?.coreBudgetBytes ?? DEFAULT_CORE_BUDGET_BYTES;
   const requested = argv.filter((arg) => !arg.startsWith('--'));
   const packs = requested.length ? requested : (manifest?.packs ?? []);
+  // Confirmations belong to the manifest's own pack list: packs named on the command line are a
+  // "what if", and a confirmation naming a pack the what-if left out would refuse a question it
+  // was never part of.
+  const switchedOff = requested.length ? {} : (manifest?.switchedOff ?? {});
 
-  const report = analyze({ root, canon, packs, target, budgetLimit, lock: readLock(root) });
+  const report = analyze({ root, canon, packs, switchedOff, target, budgetLimit, lock: readLock(root) });
 
   // For the agent driving an adoption: the exact facts, in a shape it can act on rather than parse
   // out of prose.
@@ -325,6 +337,20 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   if (report.updates.length) {
     write('');
     write(`  ${report.updates.length} file(s) daoris already owns would be updated — no conflict.`);
+  }
+
+  // A pack that would take a core row out is a different choice from one that only adds (D71), so it
+  // is said while the packs are being chosen — with the reason, and the fact that nothing goes off
+  // until the manifest confirms it.
+  if (report.offers.length || report.switchedOff.length) {
+    write('');
+    for (const row of report.switchedOff) {
+      write(`  switched off    ${row.target} — by '${row.by}': ${row.because}`);
+    }
+    for (const offer of report.offers) {
+      write(`  offered         ${offer.target} — '${offer.by}' would switch it off: ${offer.because}`);
+      write(`                  it stays on unless daoris.json confirms it under "switchedOff"`);
+    }
   }
 
   if (report.collisions.length) {

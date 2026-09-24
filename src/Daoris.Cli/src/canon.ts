@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown, readText } from './fsx.ts';
 import { DaorisError } from './errors.ts';
-import type { Canon, CanonFile, Pack } from './types.ts';
+import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from './types.ts';
 
 /**
  * The canon's own vocabulary for what a document IS: always-loaded, read-on-demand, or invoked by
@@ -90,14 +90,16 @@ export function readCanon(canonRoot: string): Canon {
   const version = JSON.parse(readText(join(canonRoot, 'canon.json'))).version;
   const packs = new Map<string, Pack>();
 
-  packs.set('core', {
+  const core: Pack = {
     name: 'core',
     description: 'Universal workflow rules and discovery skills every repo gets.',
     // Core is not a pack somebody wrote against a contract — it IS the contract, and ships with the
     // build that speaks it.
     api: PACK_API,
     files: tierFiles(canonRoot, 'core', 'core'),
-  });
+    switchesOff: {},
+  };
+  packs.set('core', core);
 
   const packsDir = join(canonRoot, 'packs');
   if (existsSync(packsDir)) {
@@ -129,23 +131,133 @@ export function readCanon(canonRoot: string): Canon {
         description: manifest.description,
         api: declared,
         files: tierFiles(canonRoot, entry.name, `packs/${entry.name}`),
+        switchesOff: readSwitches(entry.name, manifest.switchesOff, core),
       });
     }
   }
   return { version, root: canonRoot, packs };
 }
 
-/** Core is never opt-in. Sorted by target so plans and locks are stable. */
-export function selectFiles(canon: Canon, packNames: readonly string[]): CanonFile[] {
+/** Whether a switch's key covers a core file: a document by its target, a skill by its directory. */
+function covers(key: string, file: Pick<CanonFile, 'pack' | 'target'>): boolean {
+  return file.pack === 'core' && (file.target === key || file.target.startsWith(`${key}/`));
+}
+
+/** Whether any of these switched-off rows covers a file — a canon file, or a lock entry naming one. */
+export function isSwitchedOff(
+  rows: readonly { target: string }[], file: Pick<CanonFile, 'pack' | 'target'>,
+): boolean {
+  return rows.some((row) => covers(row.target, file));
+}
+
+/**
+ * A pack's offer to switch core rows off, checked when the canon is read (D71).
+ *
+ * @remarks
+ * Refused here rather than at `sync`, for PLUG1's reason: a pack that names a row core does not have
+ * is a defect in the PACK, and the place to say so is before anything is planned. Core only, because
+ * another pack's rows are opt-in already — a switch naming one is a mistake, not a feature. The
+ * reason is required: it is the sentence `status` prints to someone deciding whether to confirm.
+ */
+function readSwitches(pack: string, declared: unknown, core: Pack): Record<string, string> {
+  if (declared === undefined) return {};
+  if (declared === null || typeof declared !== 'object' || Array.isArray(declared)) {
+    throw new DaorisError(
+      `pack '${pack}' declares switchesOff as ${JSON.stringify(declared)} — it is a map from a core `
+      + 'row to the reason the pack replaces it: { "rules/<name>.md": "why" }');
+  }
+
+  const switches: Record<string, string> = {};
+  for (const [target, because] of Object.entries(declared)) {
+    if (!core.files.some((file) => covers(target, file))) {
+      throw new DaorisError(
+        `pack '${pack}' offers to switch off '${target}', which is not a core row. A pack may switch off `
+        + 'only core documents — rules/<name>.md, knowledge/<name>.md, or a skill as skills/<name>.');
+    }
+    if (typeof because !== 'string' || !because.trim()) {
+      throw new DaorisError(
+        `pack '${pack}' offers to switch off '${target}' without a reason. The reason is what a person `
+        + 'deciding whether to confirm it reads, so it is required.');
+    }
+    switches[target] = because.trim();
+  }
+  return switches;
+}
+
+/**
+ * What installs, once the repository's confirmations are applied (D71).
+ *
+ * A selected pack OFFERS to switch a core row off; only a row the manifest names, with that pack,
+ * goes off. An offer nobody confirmed leaves the row installed and comes back as an offer, so the
+ * caller can say so. A confirmation no selected pack offers is refused: a repository alone still
+ * cannot drop a core row (D4).
+ */
+export function resolveSelection(
+  canon: Canon, packNames: readonly string[], confirmed: Readonly<Record<string, string>> = {},
+): Selection {
   const selected = ['core', ...packNames.filter((name) => name !== 'core')];
-  const files: CanonFile[] = [];
+  const packs: Pack[] = [];
   for (const name of selected) {
     const pack = canon.packs.get(name);
     if (!pack) {
       const available = [...canon.packs.keys()].filter((key) => key !== 'core').sort().join(', ');
       throw new DaorisError(`unknown pack '${name}' — available: ${available || '(none)'}`);
     }
-    files.push(...pack.files);
+    packs.push(pack);
   }
-  return files.sort((a, b) => a.target.localeCompare(b.target));
+
+  // 🔴 One identity, one source. The lock, drift and `upstream` all key on the target, so two
+  // selected packs shipping one would install whichever came last and promote an edit into the
+  // wrong canon file. Unguarded until D71 made "replace a core row" a thing a pack might try.
+  const shippedBy = new Map<string, string>();
+  for (const pack of packs) {
+    for (const file of pack.files) {
+      const other = shippedBy.get(file.target);
+      if (other !== undefined && other !== pack.name) {
+        throw new DaorisError(
+          `packs '${other}' and '${pack.name}' both ship ${file.target} — one target has one source. A `
+          + 'pack that replaces another\'s document ships its own under its own name (D71).');
+      }
+      shippedBy.set(file.target, pack.name);
+    }
+  }
+
+  const switchedOff: CoreSwitch[] = [];
+  for (const [target, by] of Object.entries(confirmed)) {
+    const pack = packs.find((candidate) => candidate.name === by);
+    const because = pack?.switchesOff[target];
+    if (because === undefined) {
+      const offering = packs.filter((candidate) => candidate.switchesOff[target] !== undefined).map((p) => p.name);
+      throw new DaorisError(
+        `daoris.json switches off ${target} for pack '${by}', but ${
+          pack ? `'${by}' does not offer that` : `'${by}' is not a selected pack`}. `
+        + (offering.length
+          ? `It is offered by: ${offering.join(', ')}.`
+          : 'A repository cannot switch a core row off on its own — only a selected pack that offers it (D71).'));
+    }
+    switchedOff.push({ target, by, because });
+  }
+
+  const off = (file: CanonFile) => isSwitchedOff(switchedOff, file);
+  const offers: CoreSwitch[] = [];
+  for (const pack of packs) {
+    for (const [target, because] of Object.entries(pack.switchesOff)) {
+      if (switchedOff.some((row) => row.target === target)) continue;
+      offers.push({ target, by: pack.name, because });
+    }
+  }
+
+  const byTarget = (a: { target: string }, b: { target: string }) => a.target.localeCompare(b.target);
+  return {
+    files: packs.flatMap((pack) => pack.files).filter((file) => !off(file)).sort(byTarget),
+    switchedOff: switchedOff.sort(byTarget),
+    offers: offers.sort(byTarget),
+  };
+}
+
+/** Core is never opt-in. Sorted by target so plans and locks are stable. */
+export function selectFiles(
+  canon: Canon, packNames: readonly string[], confirmed: Readonly<Record<string, string>> = {},
+): CanonFile[] {
+  return resolveSelection(canon, packNames, confirmed).files;
 }

@@ -270,6 +270,57 @@ check(
 );
 check('`check` is clean afterwards', withV2('check').code === 0);
 
+// (e) A pack switches a core row off (D71): offered with a reason, confirmed by the repository,
+//     named on every surface, and withdrawn again — through the packed bin, not the source tree.
+setCanonVersion('0.0.6');
+mkdirSync(join(canonV2, 'packs/checkpointing/rules'), { recursive: true });
+writeFileSync(join(canonV2, 'packs/checkpointing/pack.json'), `${JSON.stringify({
+  name: 'checkpointing',
+  apiVersion: 1,
+  description: 'A rehearsal pack whose own rule replaces a core one.',
+  switchesOff: { 'rules/persist-working-state.md': 'its own checkpoints rule replaces it' },
+}, null, 2)}\n`);
+writeFileSync(
+  join(canonV2, 'packs/checkpointing/rules/checkpoints.md'),
+  '---\nname: checkpoints\napplies_when: w\nenforces: e\n---\n\n# Checkpoints\n\nWrite state down as you go.\n',
+);
+setChangelog('## 0.0.6\n\n- A rehearsal pack that switches a core row off.\n\n');
+const writeManifest = (change) => {
+  const current = JSON.parse(read('daoris.json'));
+  change(current);
+  writeFileSync(join(consumer, 'daoris.json'), `${JSON.stringify(current, null, 2)}\n`);
+};
+const coreRow = /core\/rules\/persist-working-state\.md @/;
+
+writeManifest((m) => { m.packs = [...m.packs, 'checkpointing']; });
+const offered = withV2('sync');
+check('a pack offering to switch a core row off installs, and the offer is named', offered.code === 0
+  && /offered\s+rules\/persist-working-state\.md/.test(offered.out), offered.out);
+check('...while the core row stays on until the repository confirms it', coreRow.test(read('AGENTS.md')));
+
+writeManifest((m) => { m.switchedOff = { 'rules/persist-working-state.md': 'checkpointing' }; });
+const switched = withV2('sync');
+check('a confirmed switch takes the core row out, and sync names it', switched.code === 0
+  && /off\s+rules\/persist-working-state\.md/.test(switched.out), switched.out);
+check('...the rule is gone from the region', !coreRow.test(read('AGENTS.md')));
+check(
+  '...and the roster says so, naming the pack',
+  /Switched off here[^\n]*`persist-working-state` \(by `checkpointing`\)/.test(read('AGENTS.md')),
+);
+check('...the lock records it', /"switchedOff"/.test(read('daoris.lock')));
+const offCheck = withV2('check');
+check('`check` stays clean and names the row it switched off', offCheck.code === 0
+  && /off\s+rules\/persist-working-state\.md/.test(offCheck.out), offCheck.out);
+const offStatus = withV2('status');
+check('`status` names it with its pack and reason',
+  /switched off\s+rules\/persist-working-state\.md.*checkpointing.*replaces it/.test(offStatus.out), offStatus.out);
+
+writeManifest((m) => { delete m.switchedOff; });
+const withdrawn = withV2('sync');
+check('withdrawing the confirmation brings the core row back', withdrawn.code === 0 && coreRow.test(read('AGENTS.md')),
+  withdrawn.out);
+check('`check` is clean after the withdrawal', withV2('check').code === 0);
+
 // ----------------------------------------------------------------- 6. report
 
 section('6. Result');
@@ -282,6 +333,6 @@ if (totals.failures) {
   process.exitCode = 1;
 } else {
   console.log('  The packaged tool installs into a clean repo and drives the full lifecycle:');
-  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, and check.\n');
+  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, switch off, and check.\n');
   rmSync(scratch, { recursive: true, force: true });
 }

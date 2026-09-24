@@ -24,6 +24,37 @@ export interface Pack {
   /** The canon contract this pack was written against (PLUG1). Absent in a manifest means 1. */
   api: number;
   files: CanonFile[];
+  /**
+   * The core rows this pack offers to switch off, each with the reason (D71). Keyed by a core
+   * document's target, or a core skill's directory. Empty for core, and for almost every pack.
+   */
+  switchesOff: Record<string, string>;
+}
+
+/** A core row a selected pack offers to switch off, or has switched off (D71). */
+export interface CoreSwitch {
+  /** A core document's target (`rules/x.md`), or a core skill's directory (`skills/x`). */
+  target: string;
+  /** The pack that offers the switch. */
+  by: string;
+  /** The pack's own reason — what `status` prints. */
+  because: string;
+}
+
+/**
+ * What installs, after the repository's confirmations are applied (D71).
+ *
+ * @remarks
+ * One answer computed in one place, because `sync`, `status`'s update report and `analyze`'s
+ * projection all ask it — and three copies of "which core rows are off" are three chances to
+ * disagree about the always-loaded doctrine.
+ */
+export interface Selection {
+  files: CanonFile[];
+  /** Confirmed in the manifest and offered by a selected pack: these rows do not install. */
+  switchedOff: CoreSwitch[];
+  /** Offered by a selected pack and not confirmed: the row stays installed, and this is reported. */
+  offers: CoreSwitch[];
 }
 
 /** The canon as read from disk. */
@@ -95,6 +126,10 @@ export interface DriftReport {
   coreBytes: number;
   overBudget: boolean;
   indexStale: boolean;
+  /** The core rows the lock says are off, and by which pack (D71) — named on every run. */
+  switchedOff: { target: string; by: string }[];
+  /** Rows the manifest and the lock disagree about: a fact, so it fails like a stale pack. */
+  staleSwitches: string[];
   ok: boolean;
 }
 
@@ -141,6 +176,12 @@ export interface Manifest {
   domain?: Domain;
   /** Absent until a repository opts into a remote deployment; silence means local (D47 §4). */
   remote?: RemoteDeclaration;
+  /**
+   * The core rows this repository confirms a selected pack may switch off: target → the pack
+   * (D71). A pack's offer does nothing until it is named here, and a row named here that no
+   * selected pack offers is refused — a repository alone still cannot drop core (D4).
+   */
+  switchedOff?: Record<string, string>;
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
 }
@@ -174,6 +215,11 @@ export interface Lock {
   canonVersion: string;
   source: string;
   entries: LockEntry[];
+  /**
+   * The core rows switched off here, and by which pack (D71) — recorded so the offline `check` can
+   * name them without reading any pack. Absent when nothing is off, so an ordinary lock is unchanged.
+   */
+  switchedOff?: { target: string; by: string }[];
 }
 
 /**
@@ -227,6 +273,15 @@ export interface SyncPlan {
   renames: Rename[];
   /** Retirements the repository has edited — the worst moment to lose work, so they refuse. */
   editedRetirements: string[];
+  /** Core rows a confirmed switch takes out (D71). Their files are in `deletes`; this names why. */
+  switchedOff: CoreSwitch[];
+  /** Offers nobody confirmed: the row stays, and `sync` says so. */
+  offers: CoreSwitch[];
+  /**
+   * Switched-off files this repository edited (D71). They refuse like drift rather than like an
+   * edited retirement: the canonical file still exists, so `upstream` can still save the edit.
+   */
+  editedSwitchedOff: string[];
 }
 
 /** One canon changelog section: which version, and what it said. */
@@ -275,6 +330,10 @@ export interface AnalysisReport {
   updates: string[];
   twins: Twin[];
   budget: { current: number; projected: number; limit: number };
+  /** Core rows a chosen pack would switch off, awaiting the manifest's confirmation (D71). */
+  offers: CoreSwitch[];
+  /** Core rows the manifest already confirms off — out of every projection above. */
+  switchedOff: CoreSwitch[];
 }
 
 /**

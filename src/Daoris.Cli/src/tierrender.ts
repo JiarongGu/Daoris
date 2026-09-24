@@ -36,6 +36,8 @@ export interface TierInput {
   version: string;
   /** Where the on-demand tiers live, for the rows that point at them. */
   target?: string;
+  /** The core rows this repository switched off, and the pack that offered each (D71). */
+  off?: readonly { target: string; by: string }[];
 }
 
 const RULE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
@@ -122,6 +124,16 @@ export function renderRoster(input: TierInput): string {
     lines.push(meta
       ? `| \`${nameOf(document.file)}\` | ${meta.applies_when} | ${meta.enforces} |`
       : `| \`${nameOf(document.file)}\` | ⚠ needs frontmatter | ⚠ needs frontmatter |`);
+  }
+
+  // 🔴 What is NOT here, said here (D71). A core row a pack switched off is absent from every table
+  // below, and a session that meets a doctrine with a hole in it cannot tell the hole from a canon
+  // that never had the rule. Under the rules table, because that half is `sync`'s alone: `check`
+  // rebuilds only the on-demand half offline, and this line needs the lock's knowledge of who did it.
+  if (input.off?.length) {
+    const rows = input.off.map((row) =>
+      `\`${row.target.replace(/^.*\//, '').replace(/\.md$/, '')}\` (by \`${row.by}\`)`);
+    lines.push('', `Switched off here, by a pack and confirmed in \`daoris.json\`: ${rows.join(', ')}.`);
   }
 
   lines.push('', '## Read on demand', '', KNOWLEDGE_HEAD);

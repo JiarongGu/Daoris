@@ -1,4 +1,4 @@
-import type { Canon, CommandArgs, Lock, Manifest, PlannedWrite, Rename, SyncPlan }
+import type { Canon, CommandArgs, CoreSwitch, Lock, Manifest, PlannedWrite, Rename, SyncPlan }
   from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync, rmSync } from 'node:fs';
@@ -6,7 +6,7 @@ import { join, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.ts';
 import { renderCanonFile, stripHeader } from './document.ts';
 import { significantTokens, containment } from './twins.ts';
-import { readCanon, resolveCanonRoot, selectFiles } from './canon.ts';
+import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
 import { readTier } from './indexgen.ts';
 import { renderRoster, renderRules, tierRuleBody } from './tierrender.ts';
@@ -38,7 +38,10 @@ export function planSync(
   { root: string; manifest: Manifest; canon: Canon; lock: Lock | null },
 ): SyncPlan {
   const locked = lockIndex(lock);
-  const selected = selectFiles(canon, manifest.packs);
+  // What installs, after the manifest's confirmations (D71): a confirmed switch takes a core row out
+  // of the selection, so from here on it is a row the canon no longer asks for — D19's new cells.
+  const selection = resolveSelection(canon, manifest.packs, manifest.switchedOff ?? {});
+  const selected = selection.files;
   const writes: PlannedWrite[] = [];
   const drifted: string[] = [];
   const collisions: string[] = [];
@@ -196,7 +199,7 @@ export function planSync(
   // file at `target`, so a check that only stats a path finds nothing, calls it an untouched
   // retirement, and deletes the edit without a word — which is precisely the fourth bug D19's last
   // row was written from, reintroduced by the tier moving.
-  const editedRetirements = deletes.filter((target) => {
+  const edited = (target: string): boolean => {
     const entry = locked.get(target)!;
     if (entry.in) {
       const was = previousAt(target);
@@ -205,10 +208,23 @@ export function planSync(
 
     const abs = join(root, manifest.target, target);
     return existsSync(abs) && sha256(readText(abs)) !== entry.sha256;
-  });
+  };
 
-  const renames = detectRenames({ writes, deletes, previous: previousAt });
-  return { writes, deletes, drifted, collisions, renames, editedRetirements };
+  // A row a confirmed switch takes out is deleted exactly like a retirement, and reported apart from
+  // one (D71): it is a decision the manifest names, and the canonical file still exists — so an edit
+  // to it refuses as drift would, with `upstream` still a real route, not as an edited retirement.
+  const switchedOffAt = (target: string) => isSwitchedOff(selection.switchedOff, locked.get(target)!);
+  const retiring = deletes.filter((target) => !switchedOffAt(target));
+  const editedRetirements = retiring.filter(edited);
+  const editedSwitchedOff = deletes.filter((target) => switchedOffAt(target) && edited(target));
+
+  // 🔴 Never paired as a rename: a pack's replacement reads like the core row it switches off, by
+  // design, and "renamed task-lifecycle -> ticket-lifecycle" would hide the decision behind a move.
+  const renames = detectRenames({ writes, deletes: retiring, previous: previousAt });
+  return {
+    writes, deletes, drifted, collisions, renames, editedRetirements,
+    switchedOff: selection.switchedOff, offers: selection.offers, editedSwitchedOff,
+  };
 }
 
 /**
@@ -274,7 +290,8 @@ export function planChanges(
   { root: string; manifest: Manifest; canon: Canon; lock: Lock | null },
 ): { added: string[]; changed: string[]; retired: string[] } {
   const locked = lockIndex(lock);
-  const selected = selectFiles(canon, manifest.packs);
+  const selection = resolveSelection(canon, manifest.packs, manifest.switchedOff ?? {});
+  const selected = selection.files;
   const added: string[] = [];
   const changed: string[] = [];
 
@@ -310,7 +327,13 @@ export function planChanges(
   }
 
   const wanted = new Set(selected.map((file) => file.target));
-  return { added, changed, retired: [...locked.keys()].filter((t) => !wanted.has(t)) };
+  // A row a confirmed switch takes out is not RETIRED — the canon still ships it (D71) — and `status`
+  // names it as switched off, with its pack and reason, rather than here.
+  return {
+    added,
+    changed,
+    retired: [...locked.keys()].filter((t) => !wanted.has(t) && !isSwitchedOff(selection.switchedOff, locked.get(t)!)),
+  };
 }
 
 /**
@@ -368,6 +391,20 @@ export function applySync(
       1,
     );
   }
+  if (plan.editedSwitchedOff?.length && !force) {
+    // Unlike an edited retirement, the canonical file still exists — so `upstream` is a real route,
+    // and the refusal says so first (D71).
+    const by = (target: string) =>
+      plan.switchedOff.find((row) => target === row.target || target.startsWith(`${row.target}/`))?.by;
+    throw new DaorisError(
+      `${plan.editedSwitchedOff.length} file(s) switched off by a pack, but edited here: ` +
+        `${plan.editedSwitchedOff.map((target) => `${target} (by '${by(target)}')`).join(', ')}\n` +
+        `  promote the edit with 'daoris upstream <file>' first — the canonical file still exists —\n` +
+        `  or copy it aside as this repo's own document, then 'daoris sync'; or withdraw the switch in\n` +
+        `  daoris.json; or discard the edit with 'daoris sync --force'`,
+      1,
+    );
+  }
 
   // Resolve every path BEFORE touching anything, so a bad entry anywhere aborts
   // the whole apply rather than half-applying it.
@@ -387,7 +424,7 @@ export function applySync(
     rmSync(abs, { force: true });
   }
 
-  const lock = {
+  const lock: Lock = {
     canonVersion,
     source: manifest.source,
     entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within }) => ({
@@ -398,12 +435,16 @@ export function applySync(
       sha256: digest,
       ...(within ? { in: within } : {}),
     })),
+    // What is off, and by whom, so `check` can say so offline (D71, D8).
+    ...(plan.switchedOff?.length
+      ? { switchedOff: plan.switchedOff.map(({ target, by }) => ({ target, by })) }
+      : {}),
   };
 
   // The region LAST, after the on-demand tiers are on disk: its roster lists what is actually there,
   // local documents included, and a roster written before the files it names would be a roster of the
   // previous sync.
-  writeSpans({ root, manifest, spans, canonVersion, lock });
+  writeSpans({ root, manifest, spans, canonVersion, lock, off: plan.switchedOff ?? [] });
   writeLock(root, lock);
   return lock;
 }
@@ -416,8 +457,8 @@ export function applySync(
  * rewrites of the same file would each re-read what the last one wrote.
  */
 function writeSpans(
-  { root, manifest, spans, canonVersion, lock }:
-  { root: string; manifest: Manifest; spans: PlannedWrite[]; canonVersion: string; lock: Lock },
+  { root, manifest, spans, canonVersion, lock, off }:
+  { root: string; manifest: Manifest; spans: PlannedWrite[]; canonVersion: string; lock: Lock; off: CoreSwitch[] },
 ): void {
   if (!spans.length) return;
   const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
@@ -449,6 +490,9 @@ function writeSpans(
         : [],
       version: canonVersion,
       target: manifest.target,
+      // The rows this repository switched off (D71): the session loading the region learns what is
+      // not there, and which pack said so, rather than meeting a doctrine with a silent hole in it.
+      off,
     };
 
     const abs = join(root, file);
@@ -492,6 +536,24 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
   const renamedFrom = new Set(plan.renames.map((rename) => rename.from));
   const renamedTo = new Set(plan.renames.map((rename) => rename.to));
 
+  // A switched-off row's files leave by the same delete a retirement uses, and are named apart from
+  // one (D71): what happened is a decision the manifest records, not the canon letting go of a file.
+  const lockEntries = lockIndex(readLock(root));
+  const offDeletes = new Set(plan.deletes.filter((target) => {
+    const entry = lockEntries.get(target);
+    return entry !== undefined && isSwitchedOff(plan.switchedOff, entry);
+  }));
+
+  // 🔴 Never silent (D71): every sync names what is off and every offer still waiting, so neither a
+  // missing core rule nor a pack's pending switch can be a surprise to the person reading the output.
+  const sayWhatIsOff = () => {
+    for (const row of plan.switchedOff) write(`  off       ${row.target} (switched off by pack '${row.by}')`);
+    for (const offer of plan.offers) {
+      write(`  offered   ${offer.target} — pack '${offer.by}' would switch it off: ${offer.because}`);
+      write(`            it stays on; to confirm, add to daoris.json: "switchedOff": { "${offer.target}": "${offer.by}" }`);
+    }
+  };
+
   if (argv.includes('--dry-run')) {
     for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
     for (const entry of plan.writes) {
@@ -500,13 +562,16 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
       }
     }
     for (const target of plan.deletes) {
-      if (!renamedFrom.has(target)) write(`  retire    ${target}`);
+      if (!renamedFrom.has(target) && !offDeletes.has(target)) write(`  retire    ${target}`);
     }
+    sayWhatIsOff();
     for (const target of plan.drifted) write(`  DRIFTED   ${target}`);
     for (const target of plan.collisions) write(`  COLLIDES  ${target} (this repo's own)`);
     for (const target of plan.editedRetirements) write(`  AT RISK   ${target} (retired, but edited here)`);
-    write(`daoris: ${plan.writes.length} file(s) selected, ${plan.deletes.length} to retire`);
-    return plan.drifted.length || plan.collisions.length || plan.editedRetirements.length ? 1 : 0;
+    for (const target of plan.editedSwitchedOff) write(`  AT RISK   ${target} (switched off, but edited here)`);
+    write(`daoris: ${plan.writes.length} file(s) selected, ${plan.deletes.length - offDeletes.size} to retire`);
+    return plan.drifted.length || plan.collisions.length || plan.editedRetirements.length
+      || plan.editedSwitchedOff.length ? 1 : 0;
   }
 
   const force = argv.includes('--force');
@@ -518,11 +583,13 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const target of plan.drifted) write(`  overwrote ${target} (local edit discarded)`);
     for (const target of plan.collisions) write(`  overwrote ${target} (this repo's own file)`);
     for (const target of plan.editedRetirements) write(`  discarded ${target} (retired, edited here)`);
+    for (const target of plan.editedSwitchedOff) write(`  discarded ${target} (switched off, edited here)`);
   }
 
   applySync({ root, manifest, plan, canonVersion: canon.version, force });
   for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
-  const retired = plan.deletes.length - plan.renames.length;
+  sayWhatIsOff();
+  const retired = plan.deletes.length - plan.renames.length - offDeletes.size;
   write(`daoris: synced ${plan.writes.length} file(s); retired ${retired}`);
   return 0;
 }

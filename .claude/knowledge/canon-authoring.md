@@ -110,7 +110,10 @@ description: <what it does, and when to use it — this is the trigger>
 2. Files under `rules/` and `knowledge/` inside the pack; the subdirectory is the target tier.
 3. **Write a pack when a repository is ready to adopt it**, and validate it by that adoption. A pack
    nobody installs is a draft that looks like doctrine.
-4. `npm run verify` — tests assert frontmatter, filename match, pack description, and the absence of
+4. **A pack whose own document replaces a core one may offer to switch it off** — `switchesOff` in
+   `pack.json`, the core row mapped to the reason (`docs/DECISIONS.md` D71). The replacement ships under
+   its own name, never at the core target, and the row goes off only where a repository confirms it.
+5. `npm run verify` — tests assert frontmatter, filename match, pack description, and the absence of
    machine paths.
 
 ### Changing an existing canon file
