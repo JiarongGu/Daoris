@@ -6,7 +6,8 @@ export type RuleListName = 'allow' | 'ask' | 'deny';
 export type RuleScopeName = 'machine' | 'workspace' | 'repository';
 
 /** A rule set Daoris ships, with the reason it exists — switched on or off by id, removable by nothing else. */
-export type RuleDefault = { id: string; list: RuleListName; rules: string[]; why: string; on: boolean };
+/** A default Daoris ships. `hook`, when present, is the tools a hook default judges (PERM3): it adds no rule. */
+export type RuleDefault = { id: string; list: RuleListName; rules: string[]; why: string; on: boolean; hook?: string };
 
 /**
  * One scope's rules. 🔴 The machine's carries no `name` on the wire: the bridge leaves a null out,
@@ -106,7 +107,9 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
                 <span className="flex flex-col gap-0.5">
                   <span>{shipped.why}</span>
                   <span className="flex flex-wrap gap-x-2 font-mono text-meta">
-                    {shipped.rules.map((one) => <span key={one}>{one}</span>)}
+                    {shipped.hook
+                      ? <span>{t('settings.rules.hook', { tools: shipped.hook })}</span>
+                      : shipped.rules.map((one) => <span key={one}>{one}</span>)}
                   </span>
                 </span>
               )}

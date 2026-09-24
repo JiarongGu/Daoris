@@ -42,6 +42,8 @@ export interface PermissionDefault {
   list: RuleList;
   rules: string[];
   why: string;
+  /** The tools a hook default judges (PERM3). A hook adds no rule, so its `rules` are empty. */
+  hook?: string;
 }
 
 export interface PermissionFile {
@@ -70,11 +72,30 @@ export const DEFAULTS: readonly PermissionDefault[] = [
     why: 'A session takes and closes its own quest, and publishes what it finds for others, through '
       + "Daoris's connector — and anything it would have to ask for is refused.",
   },
+  // 🔴 The owner's answer to PERM4 (2026-09-24): in a folder the agent never trusted, a real driven
+  // session made its edit and was refused the commit, because the repository's own allow-list does not
+  // apply there. `cd` because the agent prefixes its commit with one, and every part must be allowed.
+  {
+    id: 'commit',
+    list: 'allow',
+    rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'],
+    why: 'A session commits its own work in its own tree, which D37 makes automatic — the push is still '
+      + 'refused.',
+  },
   {
     id: 'no-push',
     list: 'deny',
     rules: ['Bash(git push)', 'Bash(git push:*)'],
     why: 'A push leaves this machine, and that stays the person\'s (D37).',
+  },
+  // PERM3: a hook the driver hands at spawn, not a rule — a rule cannot say "outside the tree".
+  {
+    id: 'tree-guard',
+    list: 'deny',
+    rules: [],
+    why: 'A session writes files only inside its own tree: an edit or a write anywhere else is refused, '
+      + 'through links as well (D51). A change needed elsewhere is a quest.',
+    hook: 'Edit|Write|MultiEdit|NotebookEdit',
   },
 ];
 
@@ -257,7 +278,8 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
     write('Defaults');
     for (const shipped of DEFAULTS) {
       const on = !file.defaultsOff.includes(shipped.id);
-      write(`  ${shipped.id.padEnd(10)} ${on ? 'on ' : 'off'}  ${shipped.list}  ${shipped.rules.join(', ')}`);
+      const what = shipped.hook ? `a hook on ${shipped.hook}` : shipped.rules.join(', ');
+      write(`  ${shipped.id.padEnd(10)} ${on ? 'on ' : 'off'}  ${shipped.list}  ${what}`);
     }
     show('This machine', file.machine);
     for (const [circle, held] of Object.entries(file.workspaces)) show(`circle \`${circle}\``, held);

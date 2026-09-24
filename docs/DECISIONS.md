@@ -2823,7 +2823,8 @@ the design.
 - **Three scopes, in one file under the home** (`permissions.json`, never in a repository, D32):
   **machine**, **workspace** and **repository**. Above them sit **Daoris's defaults**: `connector`
   allows the connector's own quest and knowledge tools (INT3b), and `no-push` denies `git push`
-  (D37, HELP3). The person can switch a default off by id, and nothing else can remove one.
+  (D37, HELP3); `commit` and `tree-guard` joined them (amended below). The person can switch a
+  default off by id, and nothing else can remove one.
 - **Precedence is the harness's.** Daoris unions defaults, machine, the session's workspace and its
   repository, and hands the union to the harness as its command-line tier: `--settings <file>` on the
   pipe door, and `session/new`'s `_meta.claudeCode.options.settings` on the protocol door (read from
@@ -2865,6 +2866,34 @@ this one.
   harness's, and it would disagree with it exactly when it mattered.
 - **An agent widening its own permissions unasked.** A better approval surface must not widen
   autonomy (D37, D52). Narrowing needs no one.
+
+**Amended 2026-09-24: a session may commit (PERM4), and the tree guard is a hook (PERM3).**
+
+- **`commit` is a default, on the owner's answer to PERM4.** It allows `Bash(cd:*)`, `Bash(git
+  add:*)` and `Bash(git commit:*)`. The reason was measured: in a folder the agent had never trusted,
+  ACP2's real session took its quest, made the edit, was refused `git commit` and declined, because
+  the repository's own allow-list does not apply untrusted. It committed only once a rule allowed it.
+  D37 already makes a local commit automatic and a push the person's, and `no-push` still refuses
+  the push, since deny beats allow. `cd` is in it because the agent prefixes its commit with one, and
+  every part of a compound command must be allowed. The person can switch it off by id, like the
+  others. **Rejected**: leaving the commit to a rule each machine writes. Then every real driven
+  session in an untrusted repository declines, and the default that was meant to let work land would
+  be a setup step.
+- **`tree-guard` is a default that is a hook, not a rule.** It is a PreToolUse hook Daoris ships in
+  the same settings file: exec form (`node`, the script and the session's tree as one argument each),
+  on `Edit|Write|MultiEdit|NotebookEdit`. It refuses a write whose path, resolved through links, is
+  outside the tree, with `permissionDecision: "deny"` on stdout and exit 0, and says nothing inside.
+  The script is carried in the driver's assembly and written under the home. It adds no rule, so its
+  row names the tools it judges instead. Switching it off by id hands no hook. **What it does not
+  cover**: a shell command's writes, which cannot be judged by reading the command. There the
+  harness's working-directory boundary stands, and a command runs only if a rule allowed it. A hook
+  that fails or times out does not block, so this stands beside that boundary and never replaces it.
+  **Rejected**: shell form, since a path does not survive Git Bash's or PowerShell's quoting reliably;
+  a `deny` pattern per outside path, which cannot be written for "everywhere but here"; the hook
+  answering `allow` inside, which would lift the harness's own asking; and a script shipped beside the
+  binaries, which ties the guard to one publish layout. **Unproven until a real session runs**: that
+  the harness honours a hook handed in the command-line tier (its documentation lists hook scopes and
+  does not name `--settings`), on each door.
 
 ## D73 — The agent's trust in a folder is asked, then written, and never silently (2026-09-24)
 

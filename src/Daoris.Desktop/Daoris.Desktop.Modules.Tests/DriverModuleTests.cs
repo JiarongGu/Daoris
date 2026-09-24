@@ -566,11 +566,18 @@ public sealed class DriverModuleTests : Bridge
 
         Assert.Equal(PermissionRules.PathOf(Home), answered.GetProperty("path").GetString());
         var defaults = answered.GetProperty("defaults").EnumerateArray().ToList();
-        Assert.Equal(["connector", "no-push"], defaults.Select(d => d.GetProperty("id").GetString()!).ToArray());
+        Assert.Equal(
+            ["connector", "commit", "no-push", "tree-guard"],
+            defaults.Select(d => d.GetProperty("id").GetString()!).ToArray());
         Assert.True(defaults[0].GetProperty("on").GetBoolean());
-        Assert.False(defaults[1].GetProperty("on").GetBoolean());
-        Assert.Equal("deny", defaults[1].GetProperty("list").GetString());
-        Assert.Contains("D37", defaults[1].GetProperty("why").GetString());
+        Assert.False(defaults[2].GetProperty("on").GetBoolean());
+        Assert.Equal("deny", defaults[2].GetProperty("list").GetString());
+        Assert.Contains("D37", defaults[2].GetProperty("why").GetString());
+        // The tree guard (PERM3) is a hook: no rule, and the tools it judges named instead. The bridge
+        // leaves a null out, so a rule default carries no `hook` the page could misread.
+        Assert.Empty(defaults[3].GetProperty("rules").EnumerateArray());
+        Assert.Equal(TreeGuard.Matcher, defaults[3].GetProperty("hook").GetString());
+        Assert.True(defaults[0].GetProperty("hook").ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
 
         var scopes = answered.GetProperty("scopes").EnumerateArray().ToList();
         var machine = scopes.Single(s => s.GetProperty("scope").GetString() == "machine");

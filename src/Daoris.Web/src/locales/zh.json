@@ -126,6 +126,7 @@
   "settings.rules.why": "道衍启动的会话凡是需要询问的操作都会被拒绝：没有人在场回答。所以它需要的要在启动前允许，它绝不能做的要拒绝。这些规则是你的设置和仓库设置之外的又一个作用域，由代理自己的顺序决定：拒绝优先于询问，询问优先于允许。所以仓库的拒绝仍然压过这里的任何允许。其他代理上的会话不会拿到这些规则。",
   "settings.rules.defaults": "道衍的默认规则",
   "settings.rules.defaultOn": "{{id}} 已开启",
+  "settings.rules.hook": "钩子，作用于 {{tools}}",
   "settings.rules.list.allow": "允许",
   "settings.rules.list.ask": "询问",
   "settings.rules.list.deny": "拒绝",

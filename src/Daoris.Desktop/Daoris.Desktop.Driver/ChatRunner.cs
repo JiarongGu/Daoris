@@ -153,8 +153,10 @@ public sealed class ChatRunner(
             // conversation no `session/new` of its own, so nothing there could carry it.
             if (resolved.TakesSettings && resolved.Wire == SessionWire.Pipe)
             {
+                var file = PermissionRules.Load(home);
                 rules = SpawnSettings.Write(
-                    home, sessionId, PermissionRules.Compose(PermissionRules.Load(home), known?.Workspace, repository));
+                    home, sessionId, PermissionRules.Compose(file, known?.Workspace, repository),
+                    PermissionRules.GuardsTree(file) ? TreeGuard.For(home, workTree) : null);
                 if (rules is not null) resolved.HandSettings(info, rules);
             }
 

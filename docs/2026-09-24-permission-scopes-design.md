@@ -4,7 +4,8 @@
 > and pre-approve its own connector's tools (INT3b) when it starts a session: *"so we should be able to
 > do just like how claude code scopes configured by rules in daoris (which daoris can also use llm to
 > update those too or modified by user)"*. The decision is **D72**. Phase 1 is built; phase 2 (an agent
-> updating the rules) is designed here and filed as **PERM2**.
+> updating the rules) is designed here and filed as **PERM2**. The `commit` default (the owner's
+> answer to PERM4) and the tree guard as a hook (PERM3) were built the same day, §3a and §3b.
 
 ## 1. The model it mirrors
 
@@ -58,23 +59,76 @@ unknown key written by a newer build is kept on every write.
 | Id | List | Rules | Why |
 |---|---|---|---|
 | `connector` | allow | the Daoris connector's own tools: `registry`, `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `quest_list`, `quest_respond`, `quest_publish` (each as `mcp__daoris-knowledge__<tool>`) | A driven session must be able to take and close its own quest and publish the requests it finds (INT3b). `knowledge_refresh` is not in it: rebuilding the index is the machine's job, not a session's. |
+| `commit` | allow | `Bash(cd:*)`, `Bash(git add:*)`, `Bash(git commit:*)` | A driven session commits its own work in its own tree (D37). **The owner's answer to PERM4**, from a measured failure: untrusted, a real session made its edit, was refused the commit and declined (§3a). |
 | `no-push` | deny | `Bash(git push)`, `Bash(git push:*)` | A push leaves the machine, and it stays the person's (D37). Held as a structural refusal, never as a script's exit code (HELP3's probe 4: PowerShell 5.1 collapses a native exit). |
+| `tree-guard` | deny, **a hook** | none — it judges `Edit\|Write\|MultiEdit\|NotebookEdit` | A session writes files only inside its own tree (D51). A rule cannot say "outside" (below), so this is a PreToolUse hook (§3b). |
 
 **What a rule cannot say, and who says it instead.** HELP3 also asked for *refuse a write outside
 the session's tree*. A rule cannot express "outside": there is no negation, and `deny` beats `allow`,
-so no pair of rules carves a tree out of everything else. That boundary is the **harness's own**:
-Claude Code's working directory is the session's tree (D51), an edit outside it asks, and an ask is a
-refusal here (§1). What that leaves open is a shell command that writes elsewhere, and only if a
-repository or the person allowed that command broadly. A structural hook that checks the path would
-close it. It is filed as **PERM3** rather than guessed at, because a hook is a program Daoris would
-ship and run inside every session.
+so no pair of rules carves a tree out of everything else. That boundary is first the **harness's
+own**: Claude Code's working directory is the session's tree (D51), an edit outside it asks, and an
+ask is a refusal here (§1). What that leaves open is an edit a person's own `Edit(…)` rule or extra
+directory allowed outside, a path whose string is inside while a link inside the tree leads out, and
+a shell command that writes elsewhere. The first two are what the `tree-guard` hook closes (§3b).
+
+### 3a. `commit` — a driven session may commit (PERM4, as built)
+
+ACP2's real run (2026-09-24) showed the gap. In a folder the agent had never trusted, the session took
+its quest over the connector, made the edit, and was refused `git add`/`git commit`, because the
+repository's own allow-list does not apply untrusted and Daoris's defaults allowed only the connector.
+It declined honestly. It committed once a rule allowed `cd`, `git add` and `git commit`. The agent
+prefixes its commit with `cd`, and every part of a compound command must be allowed. The owner said
+yes to shipping that as a default. The push stays refused by `no-push`, since deny beats allow in the
+harness, and the person can switch `commit` off by id like any default.
+
+### 3b. `tree-guard` — the tree as a hook (PERM3, as built)
+
+- **What it is.** A PreToolUse hook in the same settings file the rules ride:
+  `hooks.PreToolUse[{matcher: "Edit|Write|MultiEdit|NotebookEdit", hooks: [{type: "command",
+  command: "node", args: [<script>, <tree>], timeout: 30}]}]`. **Exec form**: with `args` present the
+  harness spawns `node` directly with each element as one argument (its hooks reference), so no shell
+  quotes a path. On Windows that shell would be Git Bash, or PowerShell where Git Bash is absent.
+- **The tree is the executor's.** The driver passes the session's own tree: a quest's working tree
+  (its repository, or its own worktree under D51), an intake's room, a conversation's folder. The
+  hook's input carries a `cwd`, but that is the working directory at the moment of the call, and it
+  moves when the agent changes directory. `CLAUDE_PROJECT_DIR` is the second answer, and a hook told
+  neither refuses every write rather than guess.
+- **What it judges.** Write, Edit and MultiEdit by `file_path` (and each edit's own, if the call
+  carries one), and NotebookEdit by `notebook_path`. A path is resolved against the call's `cwd` when
+  relative, then **through links** (the deepest existing ancestor's real path, the rest put back), and
+  compared with the tree's real path, case-folded on Windows. Another drive, a UNC share, a `..`
+  escape and a sibling that shares a prefix (`engine-old` beside `engine`) are all outside.
+- **What it answers.** Outside: `{"hookSpecificOutput": {"hookEventName": "PreToolUse",
+  "permissionDecision": "deny", "permissionDecisionReason": "Daoris's tree guard: … a change needed
+  elsewhere is a quest …"}}` on stdout, exit 0. Inside: **nothing**. An `allow` would lift the
+  harness's own asking. A call it cannot read is refused, because the harness only sends it writes.
+- **What it does not cover.** A shell command's writes. They cannot be judged by reading the command
+  (a redirection, a script, a tool's own output flag), so Bash is not its call. There the harness's
+  working-directory boundary stands, and a command runs only if a rule allowed it. A hook that fails
+  or times out does not block (the harness's reference), so the guard stands **beside** that
+  boundary, never instead of it.
+- **Where the script lives.** The script is carried inside the driver's assembly and written to
+  `<home>/hooks/tree-guard.mjs` on first use, then put back as shipped if changed. It is found the
+  same way in a scratch run, a test and an install, whatever the publish layout. It needs `node` on
+  the PATH the harness runs with, which is the PATH a machine running Daoris's CLI and ACP adapters
+  already has.
+- **Proven keylessly**: the judgement, as a pure function called through node (Windows and POSIX
+  paths); the hook as a real process reading the harness's JSON and answering in its shape; a junction
+  leading out of the tree; and the file a real tick hands a session, naming that session's tree.
+  **Unproven until a real session runs**: that the harness honours a hook handed in the command-line
+  tier. Its reference lists hook scopes and does not name `--settings`; the permission rules in the
+  same tier are honoured, measured. That is one prompt per door, asking the agent to write a file
+  outside its folder. Also unproven: that the hook's deny outranks an `allow` rule a person wrote for
+  that path. The reference says the permission flow runs when a hook makes no decision, but it does
+  not state the case where both do.
 
 ## 4. How the rules reach a session
 
 At each spawn the driver composes the union for that session's machine, workspace and repository, and
 writes it as a settings file under the home: `<home>/spawn/<session>.settings.json`, holding
-`{"permissions": {"allow": […], "deny": […], "ask": […]}}`. It sits beside the session's server file
-(`SpawnServers`) and goes when the session does.
+`{"permissions": {"allow": […], "deny": […], "ask": […]}}` and, while `tree-guard` is on, the hook
+(§3b) naming the session's tree. It sits beside the session's server file (`SpawnServers`) and goes
+when the session does.
 
 - **Pipe door** (`claude-code`): `--settings <file>`, the flag Claude Code documents as *"load
   additional settings from"* (`claude --help`, 2.1.280, HELP3's evidence). A conversation gets it too.

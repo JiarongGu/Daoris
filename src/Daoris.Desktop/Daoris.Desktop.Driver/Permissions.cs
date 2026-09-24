@@ -36,7 +36,12 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
 }
 
 /// <summary>A rule set Daoris ships, with the reason it exists — switchable off by id, removable by nothing else.</summary>
-public sealed record PermissionDefault(string Id, RuleList List, IReadOnlyList<string> Rules, string Why);
+/// <param name="Hook">
+/// The tools a hook default judges, when it is one (PERM3) — a hook adds no rule, so its
+/// <paramref name="Rules"/> are empty and this says what it covers instead.
+/// </param>
+public sealed record PermissionDefault(
+    string Id, RuleList List, IReadOnlyList<string> Rules, string Why, string? Hook = null);
 
 /// <summary>
 /// `permissions.json` as it stands: the machine's rules, each circle's, each repository's, and the
@@ -81,6 +86,9 @@ public static class PermissionRules
 {
     public const string FileName = "permissions.json";
 
+    /// <summary>The tree guard's id (PERM3) — a default that is a hook rather than a rule.</summary>
+    public const string TreeGuardId = "tree-guard";
+
     /// <summary>The connector's own name, as its tools arrive: `mcp__&lt;server&gt;__&lt;tool&gt;`.</summary>
     private const string ConnectorPrefix = $"mcp__{KnowledgeConnector.ServerName}__";
 
@@ -99,16 +107,34 @@ public static class PermissionRules
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's.
             "A session takes and closes its own quest, and publishes what it finds for others, through "
             + "Daoris's connector — and anything it would have to ask for is refused."),
+        // 🔴 The owner's answer to PERM4 (2026-09-24), from a measured failure: in a folder the agent had
+        // never trusted, a real driven session made its edit, was refused the commit — the repository's
+        // own allow-list does not apply there — and declined. `cd` because the agent prefixes its commit
+        // with one, and every part of a compound command must be allowed.
+        new(
+            "commit", RuleList.Allow,
+            ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"],
+            "A session commits its own work in its own tree, which D37 makes automatic — the push is "
+            + "still refused."),
         new(
             "no-push", RuleList.Deny,
             ["Bash(git push)", "Bash(git push:*)"],
             "A push leaves this machine, and that stays the person's (D37)."),
+        new(
+            TreeGuardId, RuleList.Deny,
+            [],
+            "A session writes files only inside its own tree: an edit or a write anywhere else is refused, "
+            + "through links as well (D51). A change needed elsewhere is a quest.",
+            Hook: TreeGuard.Matcher),
     ];
 
     /// <summary>A tool name, then an optional parenthesised specifier on the same line — the harness's own shape.</summary>
     private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?$", RegexOptions.CultureInvariant);
 
     public static string PathOf(string home) => Path.Combine(home, FileName);
+
+    /// <summary>Whether sessions are handed the tree guard (PERM3): on unless the person switched it off.</summary>
+    public static bool GuardsTree(PermissionFile file) => !file.DefaultsOff.Contains(TreeGuardId, StringComparer.Ordinal);
 
     /// <summary>
     /// Whether a session handed <paramref name="rules"/> may call the connector's <paramref name="tool"/>
@@ -338,9 +364,10 @@ public static class PermissionRules
 public static class SpawnSettings
 {
     /// <summary>Write the file for one session, or answer null when there is nothing to hand.</summary>
-    public static string? Write(string home, string sessionId, RuleLists rules)
+    /// <param name="guard">The tree guard for this session (PERM3), or null when it is switched off.</param>
+    public static string? Write(string home, string sessionId, RuleLists rules, TreeGuardHook? guard = null)
     {
-        if (rules.IsEmpty) return null;
+        if (rules.IsEmpty && guard is null) return null;
 
         var folder = Path.Combine(home, SpawnServers.Folder);
         Directory.CreateDirectory(folder);
@@ -355,6 +382,27 @@ public static class SpawnSettings
                 ["deny"] = new JsonArray([.. rules.Deny.Select(rule => (JsonNode)rule)]),
             },
         };
+
+        // 🔴 EXEC form — `args` present — so the harness spawns node directly with the script and the
+        // tree as one argument each. Shell form would run the line through Git Bash or PowerShell on
+        // Windows, and a path survives neither's quoting reliably.
+        if (guard is not null)
+        {
+            document["hooks"] = new JsonObject
+            {
+                ["PreToolUse"] = new JsonArray(new JsonObject
+                {
+                    ["matcher"] = TreeGuard.Matcher,
+                    ["hooks"] = new JsonArray(new JsonObject
+                    {
+                        ["type"] = "command",
+                        ["command"] = "node",
+                        ["args"] = new JsonArray(guard.Script, guard.Tree),
+                        ["timeout"] = 30,
+                    }),
+                }),
+            };
+        }
 
         var beside = path + ".tmp";
         File.WriteAllText(beside, document.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");

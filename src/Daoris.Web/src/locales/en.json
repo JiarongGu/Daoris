@@ -126,6 +126,7 @@
   "settings.rules.why": "Anything a session Daoris starts would have to ask for is refused: nobody is there to answer. So what it needs is allowed before it starts, and what it must never do is denied. These rules are one more scope beside yours and the repository's, and the agent's own order decides: deny beats ask beats allow. So a repository's deny still wins over anything allowed here. Sessions on other agents are handed none of these.",
   "settings.rules.defaults": "Daoris's defaults",
   "settings.rules.defaultOn": "{{id}} is on",
+  "settings.rules.hook": "a hook on {{tools}}",
   "settings.rules.list.allow": "allow",
   "settings.rules.list.ask": "ask",
   "settings.rules.list.deny": "deny",

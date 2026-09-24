@@ -41,6 +41,12 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__quest_publish",
     ];
 
+    /// <summary>What the `commit` default allows (PERM4).</summary>
+    private static readonly string[] Commit = ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"];
+
+    /// <summary>Everything the defaults allow, in the order they are handed.</summary>
+    private static readonly string[] Allowed = [.. Connector, .. Commit];
+
     // ——— The defaults.
 
     /// <summary>
@@ -74,7 +80,7 @@ public sealed class PermissionRulesTests : IDisposable
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
 
-        Assert.Equal(Connector, rules.Allow);
+        Assert.Equal(Allowed, rules.Allow);
         Assert.Equal(["Bash(git push)", "Bash(git push:*)"], rules.Deny);
         Assert.Empty(rules.Ask);
     }
@@ -100,7 +106,7 @@ public sealed class PermissionRulesTests : IDisposable
         var rules = PermissionRules.Compose(file, "default", "engine");
 
         Assert.Empty(rules.Deny);
-        Assert.Equal(Connector, rules.Allow);
+        Assert.Equal(Allowed, rules.Allow);
         Assert.Equal(["no-push"], file.DefaultsOff);
 
         var back = PermissionRules.Compose(PermissionRules.SwitchDefault(file, "no-push", on: true), "default", "engine");
@@ -115,7 +121,9 @@ public sealed class PermissionRulesTests : IDisposable
 
         Assert.Contains("no-rm", refused.Message);
         Assert.Contains("connector", refused.Message);
+        Assert.Contains("commit", refused.Message);
         Assert.Contains("no-push", refused.Message);
+        Assert.Contains(PermissionRules.TreeGuardId, refused.Message);
     }
 
     // ——— The scopes.
@@ -169,7 +177,7 @@ public sealed class PermissionRulesTests : IDisposable
 
         Assert.Single(rules.Allow, "Bash(make:*)");
         Assert.Single(rules.Allow, "mcp__daoris-knowledge__quest_list");
-        Assert.Equal(Connector.Length + 1, rules.Allow.Count);
+        Assert.Equal(Allowed.Length + 1, rules.Allow.Count);
     }
 
     /// <summary>One place per scope: a rule added to a list leaves the scope's other lists.</summary>
@@ -293,7 +301,9 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.DoesNotContain("\r", text);
         using var document = JsonDocument.Parse(text);
         var permissions = document.RootElement.GetProperty("permissions");
-        Assert.Equal(Connector, permissions.GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
+        Assert.Equal(
+            [.. Connector, "Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"],
+            permissions.GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
         Assert.Equal(["WebFetch"], permissions.GetProperty("ask").EnumerateArray().Select(e => e.GetString()));
         Assert.Contains("Bash(git push)", permissions.GetProperty("deny").EnumerateArray().Select(e => e.GetString()));
 
@@ -304,11 +314,91 @@ public sealed class PermissionRulesTests : IDisposable
     [Fact]
     public void Nothing_to_hand_writes_no_file()
     {
-        var file = PermissionRules.SwitchDefault(
-            PermissionRules.SwitchDefault(PermissionRules.Load(_home), "connector", on: false), "no-push", on: false);
+        var file = Off(PermissionRules.Load(_home), "connector", "commit", "no-push");
 
         Assert.Null(SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine")));
     }
+
+    // ——— PERM4: a driven session may commit.
+
+    /// <summary>
+    /// 🔴 The owner's answer to PERM4 (2026-09-24), from a measured failure: in a folder the agent had
+    /// never trusted, ACP2's real session took its quest, made the edit, was refused `git commit` —
+    /// the repository's own allow-list does not apply there — and declined. D37 makes a local commit
+    /// automatic and a push the person's, so Daoris ships the commit and `no-push` still refuses the push.
+    /// </summary>
+    [Fact]
+    public void Daoris_ships_a_commit_default_and_the_person_can_switch_it_off()
+    {
+        string[] commit = ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"];
+
+        var on = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
+        foreach (var rule in commit) Assert.Contains(rule, on.Allow);
+        Assert.Contains("Bash(git push:*)", on.Deny);
+
+        var off = PermissionRules.Compose(Off(PermissionRules.Load(_home), "commit"), "default", "engine");
+        foreach (var rule in commit) Assert.DoesNotContain(rule, off.Allow);
+        Assert.Contains("mcp__daoris-knowledge__quest_respond", off.Allow);
+    }
+
+    // ——— PERM3: the tree guard, a hook rather than a rule.
+
+    /// <summary>
+    /// A rule cannot say "outside" (design §3), so the guard is a hook Daoris ships. It is a default like
+    /// the others — on unless the person switches it off, by id, from either door — but it adds no rule.
+    /// </summary>
+    [Fact]
+    public void The_tree_guard_is_a_default_the_person_can_switch_off_and_it_adds_no_rule()
+    {
+        var shipped = Assert.Single(PermissionRules.Defaults, d => d.Id == PermissionRules.TreeGuardId);
+        Assert.Empty(shipped.Rules);
+        Assert.Equal(TreeGuard.Matcher, shipped.Hook);
+
+        Assert.True(PermissionRules.GuardsTree(PermissionRules.Load(_home)));
+        Assert.False(PermissionRules.GuardsTree(Off(PermissionRules.Load(_home), PermissionRules.TreeGuardId)));
+    }
+
+    /// <summary>
+    /// The harness's own hook shape, in the same file the rules ride — exec form, so the script and the
+    /// tree are one argument each with no shell to quote them through (Windows' is Git Bash or
+    /// PowerShell, and a path survives neither reliably).
+    /// </summary>
+    [Fact]
+    public void The_spawn_file_carries_the_guard_as_a_pre_tool_use_hook_with_the_sessions_tree()
+    {
+        var tree = Path.Combine(_home, "engine");
+        var guard = TreeGuard.For(_home, tree);
+
+        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine"), guard);
+
+        using var document = JsonDocument.Parse(File.ReadAllText(path!));
+        var entry = Assert.Single(document.RootElement.GetProperty("hooks").GetProperty("PreToolUse").EnumerateArray());
+        Assert.Equal("Edit|Write|MultiEdit|NotebookEdit", entry.GetProperty("matcher").GetString());
+        var hook = Assert.Single(entry.GetProperty("hooks").EnumerateArray());
+        Assert.Equal("command", hook.GetProperty("type").GetString());
+        Assert.Equal("node", hook.GetProperty("command").GetString());
+        Assert.Equal([guard.Script, tree], hook.GetProperty("args").EnumerateArray().Select(e => e.GetString()));
+        Assert.True(File.Exists(guard.Script));
+    }
+
+    [Fact]
+    public void No_guard_is_no_hooks_key_and_a_guard_alone_is_still_a_file()
+    {
+        var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
+        using (var plain = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, "s1", rules)!)))
+        {
+            Assert.False(plain.RootElement.TryGetProperty("hooks", out _));
+        }
+
+        var nothing = PermissionRules.Compose(Off(PermissionRules.Load(_home), "connector", "commit", "no-push"), "default", "engine");
+        var alone = SpawnSettings.Write(_home, "s2", nothing, TreeGuard.For(_home, _home));
+        Assert.NotNull(alone);
+        using var guarded = JsonDocument.Parse(File.ReadAllText(alone!));
+        Assert.True(guarded.RootElement.TryGetProperty("hooks", out _));
+    }
+
+    private static PermissionFile Off(PermissionFile file, params string[] ids) =>
+        ids.Aggregate(file, (held, id) => PermissionRules.SwitchDefault(held, id, on: false));
 
     // ——— The twin.
 
@@ -330,6 +420,8 @@ public sealed class PermissionRulesTests : IDisposable
                 var tool = rule.Replace("mcp__daoris-knowledge__", "", StringComparison.Ordinal);
                 Assert.Contains($"'{tool}'", source);
             }
+
+            if (shipped.Hook is { } hook) Assert.Contains($"hook: '{hook}'", source);
         }
     }
 

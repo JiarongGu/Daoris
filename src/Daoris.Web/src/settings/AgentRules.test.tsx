@@ -13,7 +13,17 @@ const DEFAULTS: AgentRulesState['defaults'] = [
     rules: ['mcp__daoris-knowledge__quest_respond'],
     why: "A session takes and closes its own quest through Daoris's connector.",
   },
+  {
+    id: 'commit', list: 'allow', on: true,
+    rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'],
+    why: 'A session commits its own work in its own tree.',
+  },
   { id: 'no-push', list: 'deny', on: false, rules: ['Bash(git push:*)'], why: "A push stays the person's (D37)." },
+  // A hook, not a rule (PERM3): no rules, and the tools it judges named instead.
+  {
+    id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit',
+    why: 'A session writes files only inside its own tree.',
+  },
 ];
 
 const RULES: AgentRulesState = {
@@ -54,6 +64,19 @@ describe('What agents may do', () => {
 
     const push = screen.getByRole('listitem', { name: 'no-push' });
     expect(within(push).getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+  });
+
+  /** The tree guard adds no rule, so its row names the tools it judges instead of an empty rule line. */
+  it('names what a hook default judges, and switches it by id like the others', async () => {
+    const props = show();
+    const guard = screen.getByRole('listitem', { name: 'tree-guard' });
+    expect(within(guard).getByText('a hook on Edit|Write|MultiEdit|NotebookEdit')).toBeTruthy();
+
+    await userEvent.click(within(guard).getByRole('checkbox'));
+    expect(props.onSwitchDefault).toHaveBeenCalledWith('tree-guard', false);
+
+    const commit = screen.getByRole('listitem', { name: 'commit' });
+    expect(within(commit).getByText('Bash(git commit:*)')).toBeTruthy();
   });
 
   it('lists each scope\'s rules under its name, and removes one from its scope', async () => {

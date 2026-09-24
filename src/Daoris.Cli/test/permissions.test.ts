@@ -50,11 +50,11 @@ function at(home: string): string {
 
 // ——— The defaults.
 
-test('nothing written hands the defaults alone: the connector allowed, a push denied', () => {
+test('nothing written hands the defaults alone: the connector and a commit allowed, a push denied', () => {
   const fx = makeFixture('permissions-defaults');
   try {
     const rules = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
-    assert.deepEqual(rules.allow, CONNECTOR);
+    assert.deepEqual(rules.allow, [...CONNECTOR, 'Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)']);
     assert.deepEqual(rules.deny, ['Bash(git push)', 'Bash(git push:*)']);
     assert.deepEqual(rules.ask, []);
     // Rebuilding the index is the machine's job, never a session's.
@@ -82,7 +82,45 @@ test('a default switched off is not handed, and switching one nobody shipped nam
 });
 
 test('the defaults table is the one the driver hands', () => {
-  assert.deepEqual(DEFAULTS.map((d) => [d.id, d.list]), [['connector', 'allow'], ['no-push', 'deny']]);
+  assert.deepEqual(DEFAULTS.map((d) => [d.id, d.list]), [
+    ['connector', 'allow'], ['commit', 'allow'], ['no-push', 'deny'], ['tree-guard', 'deny'],
+  ]);
+});
+
+// 🔴 The owner's answer to PERM4 (2026-09-24): a driven session in a folder the agent never trusted made
+// its edit and was refused the commit, so Daoris ships the commit — and `no-push` still refuses the push.
+test('a session may commit by default, and the person can switch that off', () => {
+  const fx = makeFixture('permissions-commit');
+  try {
+    const commit = ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'];
+    const on = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
+    for (const rule of commit) assert.ok(on.allow.includes(rule), rule);
+    assert.ok(on.deny.includes('Bash(git push:*)'));
+
+    const off = composeRules(switchDefault(readPermissions(at(fx.root)), 'commit', false), 'default', 'engine');
+    for (const rule of commit) assert.equal(off.allow.includes(rule), false, rule);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+// PERM3: the tree guard is a hook, not a rule — a default the person switches like the others, which
+// adds nothing to the lists and says instead which tools it judges.
+test('the tree guard is a default that adds no rule, switched by id from the terminal', () => {
+  const fx = makeFixture('permissions-tree-guard');
+  try {
+    const guard = DEFAULTS.find((d) => d.id === 'tree-guard');
+    assert.deepEqual(guard?.rules, []);
+    assert.equal(guard?.hook, 'Edit|Write|MultiEdit|NotebookEdit');
+
+    const listed = run(['list'], fx.root);
+    assert.match(listed.out, /tree-guard\s+on\s+deny\s+a hook on Edit\|Write\|MultiEdit\|NotebookEdit/);
+
+    assert.equal(run(['default', 'tree-guard', 'off'], fx.root).code, 0);
+    assert.deepEqual(JSON.parse(readFileSync(at(fx.root), 'utf8')).defaultsOff, ['tree-guard']);
+  } finally {
+    fx.cleanup();
+  }
 });
 
 // ——— The scopes.

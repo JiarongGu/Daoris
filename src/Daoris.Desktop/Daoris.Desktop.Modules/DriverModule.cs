@@ -963,6 +963,8 @@ public sealed class DriverModule : ModuleBase
             List = shipped.List.ToString().ToLowerInvariant(),
             shipped.Rules,
             shipped.Why,
+            // The tools a hook default judges (PERM3) — null for a rule default, which the bridge omits.
+            shipped.Hook,
             On = !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal),
         }).ToArray(),
         Scopes = new[] { (Scope: "machine", Name: (string?)null, Lists: file.Machine) }

@@ -481,7 +481,7 @@ public sealed partial class Driver(
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
-            var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To);
+            var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree);
 
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -669,15 +669,19 @@ public sealed partial class Driver(
     /// over the harness's own way: a flag on the pipe door, <c>session/new</c>'s <c>_meta</c> on the
     /// protocol door. Shared by a quest's session and an ask's intake, so neither forgets it.
     /// </summary>
+    /// <param name="tree">The tree the session works in — its own, which the tree guard holds it to (PERM3).</param>
     /// <returns>The file, which goes when the session does, and what the protocol door carries.</returns>
     private (string? File, object? Meta) HandRules(
-        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository)
+        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
+        string tree)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null);
 
+        var rules = PermissionRules.Load(home);
         var file = SpawnSettings.Write(
-            home, sessionId, PermissionRules.Compose(PermissionRules.Load(home), workspace, repository));
+            home, sessionId, PermissionRules.Compose(rules, workspace, repository),
+            PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree) : null);
         if (file is null) return (null, null);
 
         if (adapter.Wire == SessionWire.Pipe)

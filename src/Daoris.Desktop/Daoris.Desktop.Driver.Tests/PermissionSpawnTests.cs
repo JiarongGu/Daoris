@@ -70,6 +70,29 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
+    /// The tree guard (PERM3) rides the same file, naming the tree THIS session works in — the
+    /// executor's own, never re-derived by the hook — and the commit the session may make (PERM4).
+    /// </summary>
+    [Fact]
+    public async Task A_session_is_handed_the_tree_guard_on_its_own_tree_and_may_commit()
+    {
+        await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
+        var adapter = new RecordingPipeAdapter();
+        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+
+        await driver.TickAsync();
+
+        using var handed = JsonDocument.Parse(adapter.HandedText!);
+        var hook = handed.RootElement.GetProperty("hooks").GetProperty("PreToolUse")[0].GetProperty("hooks")[0];
+        var args = hook.GetProperty("args").EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.Equal(Path.GetFullPath(_repository), Path.GetFullPath(args[1]!));
+        Assert.True(File.Exists(args[0]), "the guard's script was not where the hook names it");
+        Assert.Contains(
+            "Bash(git commit:*)",
+            handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
+    }
+
+    /// <summary>
     /// 🔴 On the protocol door the rules ride `session/new` — the stand-in agent writes down the `_meta`
     /// it was given, and the file it names is the one composed for this session.
     /// </summary>

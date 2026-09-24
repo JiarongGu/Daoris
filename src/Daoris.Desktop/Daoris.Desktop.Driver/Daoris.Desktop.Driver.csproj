@@ -11,4 +11,11 @@
     <InternalsVisibleTo Include="Daoris.Desktop.Driver.Tests" />
   </ItemGroup>
 
+  <!-- The tree guard's hook (PERM3), carried inside the assembly and written under the Daoris home on
+       first use: it is found the same way in a scratch run, a test and an install, whatever the
+       publish layout. -->
+  <ItemGroup>
+    <EmbeddedResource Include="hooks\tree-guard.mjs" LogicalName="Daoris.Driver.tree-guard.mjs" />
+  </ItemGroup>
+
 </Project>

@@ -12,9 +12,19 @@ const DEFAULTS: AgentRulesState['defaults'] = [
     why: "A session takes and closes its own quest, and publishes what it finds for others, through Daoris's connector — and anything it would have to ask for is refused.",
   },
   {
+    id: 'commit', list: 'allow', on: true,
+    rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'],
+    why: 'A session commits its own work in its own tree, which D37 makes automatic — the push is still refused.',
+  },
+  {
     id: 'no-push', list: 'deny', on: true,
     rules: ['Bash(git push)', 'Bash(git push:*)'],
     why: "A push leaves this machine, and that stays the person's (D37).",
+  },
+  // A hook, not a rule (PERM3): the driver answers the tools it judges, and no rules.
+  {
+    id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit',
+    why: 'A session writes files only inside its own tree: an edit or a write anywhere else is refused, through links as well (D51). A change needed elsewhere is a quest.',
   },
 ];
 
