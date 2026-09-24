@@ -5297,3 +5297,28 @@ unasked. Built in a parallel worktree. Driver 547 → 551.
 **Proven on a real session at integration**: `tools/int4f-proof.mjs --drive` ran 17/17 with **zero
 refused requests**, where INT4f's run had two. The intake read the ask's kept file without being
 asked and published as the ask again.
+
+## PERM2 — an agent updates the rules (2026-09-24)
+
+- [x] ~~**PERM2 — an agent updates the rules.** A connector tool, `permission_propose`. Narrowing
+  applies at the next tick, widening waits for the person's yes, and every change is recorded with
+  who made it (design §6). 🔴 **The owner answered, 2026-09-24**: a widening never applies without
+  the person.~~
+✅ **done 2026-09-24** — **D74**. `permission_propose` is in the `connector` default and writes one
+file per proposal under `<home>/proposals/`, never the store, so a machine-local fact stays local
+(D47 §4). The driver names the session and its rules home on every connector it hands over. The tick
+applies a narrowing before it spawns, so that tick's sessions already carry it, and holds a widening
+as `waiting`. A change the rules already hold is `unchanged`, and one they cannot take is `refused`.
+The person answers from `daoris agent rules proposals|accept|decline` or from Settings' *Proposed by
+agents*. A waiting widening is also a `rule` row in *What needs you*, and settling records who and
+when. Rejected: a service-store row, the MCP host applying narrowings itself, classifying at the door,
+any widening without the person, and deleting settled proposals. Built in a parallel worktree and
+cherry-picked. One conflict, in a test file where INT4j and PERM2 added tests at the same spot, was
+resolved by keeping all four.
+
+**Looked at on the window** with seeded proposals. A widening (`allow Bash(dotnet test:*)`) became a
+band row naming the session and its reason, and opened Settings at its proposal. A narrowing (`deny
+Bash(rm -rf:*)`) applied itself on the tick and showed under *Earlier proposals*. Pressing *accept*
+recorded "the person" and put the rule in the machine's rules. **Not yet**: a real agent choosing to
+propose after a refusal, which is PERM2b. Service 454 → 468, driver 551 → 584, modules 116 → 118,
+CLI 433 → 443, web 810 → 820 + 21, family 268 → 271, deploy 39/39.

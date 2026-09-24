@@ -504,6 +504,12 @@ The first version: doctrine that installs, is checked, and flows back.
   one more settings scope, so the agent's own order decides and a repository's deny still wins. They
   reach a session even in a folder the agent has never trusted, where a repository's own allow-list
   does not. Set them with `daoris agent rules`, or on Settings → *What agents may do*.
+- **An agent can propose a change to what agents may do** (PERM2, D74), through the connector's new
+  `permission_propose` tool. A narrowing (a deny or ask added, an allow removed) applies at the
+  driver's next tick. A widening waits for your yes, from `daoris agent rules proposals | accept <id>
+  | decline <id>` or Settings → *What agents may do* → *Proposed by agents*, and it waits in *What
+  needs you* meanwhile. Every proposal records the session that made it, its reason, and who settled
+  it.
 - **A session can read the files its quest or ask carries** (INT4j, D72). The files are kept under
   the Daoris home, outside the session's folder, and reading them was refused. Every session Daoris
   starts on Claude Code is now handed a read of exactly its own quest's or ask's kept folder, and
