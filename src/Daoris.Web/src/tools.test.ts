@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byTool, toolOf, type ToolDoor } from './tools';
+import { byTool, doorOf, toolOf, type ToolDoor } from './tools';
 
 /**
  * The roster's grouping, after the owner read four adapter rows as four tools (2026-09-22).
@@ -159,5 +159,30 @@ describe('byTool', () => {
   it('treats a blank borrowed account as none at all', () => {
     expect(toolOf(door({ harness: 'dsh', accountOf: '  ' }))).toBe('dsh');
     expect(toolOf(door({ harness: 'codex-acp', accountOf: 'codex' }))).toBe('codex');
+  });
+});
+
+/**
+ * Which door this machine's starts ride (INT3c): the configured adapter's own `wire`, as the roster
+ * reports it. An unadopted repository is carried by the protocol door only (D70), so a surface that
+ * offers to drive one says so on a machine whose door is direct — and says nothing when it cannot
+ * tell, rather than guess.
+ */
+describe('doorOf', () => {
+  const roster = [
+    door({ harness: 'claude-code', present: true, wire: 'pipe' }),
+    door({ harness: 'claude-code-acp', accountOf: 'claude-code', wire: 'acp' }),
+  ];
+
+  it('answers the configured adapter\'s own door', () => {
+    expect(doorOf('claude-code', roster)).toBe('pipe');
+    expect(doorOf('claude-code-acp', roster)).toBe('acp');
+  });
+
+  it('answers nothing it cannot read: no adapter, one the roster lacks, or a door it does not name', () => {
+    expect(doorOf(undefined, roster)).toBeNull();
+    expect(doorOf('dsh', roster)).toBeNull();
+    expect(doorOf('claude-code', [door({ harness: 'claude-code' })])).toBeNull();
+    expect(doorOf('claude-code', [door({ harness: 'claude-code', wire: 'smoke-signal' })])).toBeNull();
   });
 });

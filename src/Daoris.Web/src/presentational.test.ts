@@ -52,7 +52,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `map/` since MAP2: the map's drawing and detail are molecules, and MapView above them is the view.
 // `asks/` and `compose/` since INT4c: the ask's molecules, and the carry fields both composers share.
 // `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries.
-const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx}}', {
+// `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver.
+const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

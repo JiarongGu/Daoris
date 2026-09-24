@@ -301,6 +301,22 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **The Projects view's unadopted group says who can answer**, in the door names a person sees
 >   elsewhere: a protocol agent answers, and a direct one holds it. Its title is *Registered, not
 >   adopted*, because *not addressable* stopped being true.
+> - **What the planner drives, the screen can opt in** (INT3c, held by vitest and **not yet looked at
+>   on the real window**). An unadopted repository with a root here gets the adopters' driving row
+>   (drive, hold, own tree per session), one molecule for both. The planner treats the two alike
+>   once past the door, and `daoris driver` already could (D50). One with no root gets nothing, since
+>   there is nowhere to start it. Adoption's own acts stay off the row: *manage* writes a declaration
+>   into the repository.
+> - **A choice that outlives the door is offered, with the door said beside it.** On a machine whose
+>   adapter rides the direct door, a quest there sits. The row says so under the control, in the
+>   planner's terms, instead of hiding it. A standing opt-in is kept when the machine changes adapter,
+>   and a control that appeared only on a protocol machine would leave the screen unable to set what
+>   the terminal can. The door is read from the roster (the adapter and its `wire`). When the roster
+>   cannot say, the row says nothing rather than guess.
+> - **The group's paragraph claims only what is proven.** A protocol-door session there is handed
+>   its connector. Whether a real agent can use it is not yet proven, because it asks before each use
+>   and every request is refused (D70's last paragraph, INT3b). So the paragraph says that, rather
+>   than "can answer it".
 
 > **Amended 2026-09-24, a running intake in Sessions (INT4h).** Held by vitest, and looked at on the
 > real window in both themes (Sessions is desktop-only, so Playwright does not reach it).

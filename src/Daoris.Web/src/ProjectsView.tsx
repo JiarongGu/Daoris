@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Registration } from './api';
+import { canBeAsked, type Registration } from './api';
 import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
+import { DriverChoices } from './projects/DriverChoices';
 import { ago, sentence } from './format';
 import { useRegistry, useRepositories } from './queries';
-import { useDriver, useSetDrivable, useSetHold, useSetTrees } from './shell';
+import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees } from './shell';
+import { doorOf, type ToolDoor } from './tools';
 import {
-  Button, Card, CheckField, Chip, type Notify, PageHeader, Prose, SkeletonRows, Tip, useErrorNotify,
+  Button, Card, Chip, type Notify, PageHeader, Prose, SkeletonRows, Tip, useErrorNotify,
 } from './ui';
 
 /**
@@ -20,6 +22,7 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   const registry = useRegistry();
   const repositories = useRepositories();
   const driver = useDriver();
+  const roster = useHarnesses();
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const setTrees = useSetTrees();
@@ -41,6 +44,26 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   const named = (names: string[], repository: string) =>
     names.some((name) => name.toLowerCase() === repository.toLowerCase());
   const onDriverError = (e: unknown) => notify(sentence(e), 'error');
+
+  // Which door this machine's starts ride (INT3c): an unadopted repository is carried by the protocol
+  // door only (D70), so on a direct one its row says a quest there will sit. Unknown says nothing.
+  const door = doorOf(
+    roster.data?.adapter,
+    Array.isArray(roster.data?.harnesses) ? (roster.data.harnesses as ToolDoor[]) : []);
+
+  /** This machine's driving row for one repository — the same row wherever it can be driven. */
+  const driving = (repository: string, extra: { note?: string; action?: ReactNode; className?: string }) =>
+    driver.data && (
+      <DriverChoices
+        drivable={named(driver.data.drivable, repository)}
+        held={named(driver.data.holds, repository)}
+        ownTree={named(driver.data.trees ?? [], repository)}
+        onDrive={(next) => setDrivable.mutate({ repository, drivable: next }, { onError: onDriverError })}
+        onHold={(next) => setHold.mutate({ repository, held: next }, { onError: onDriverError })}
+        onTrees={(next) => setTrees.mutate({ repository, ownTree: next }, { onError: onDriverError })}
+        {...extra}
+      />
+    );
 
   return (
     <section>
@@ -141,38 +164,16 @@ export function ProjectsView({ notify }: { notify: Notify }) {
                   <Tip content={t('projects.workspaceTip')}><Chip>{project.workspace}</Chip></Tip>
                 </p>
               )}
-              {driver.data && (
-                /* The person's standing choices for THIS machine's driver (D46 §6) — rendered only
-                   where a shell answers; a browser has no driver to control, and shows nothing. */
-                <p className="mt-2.5 flex flex-wrap items-center gap-4 border-t border-line pt-2.5">
-                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.driver.label')}</span>
-                  <CheckField
-                    checked={named(driver.data.drivable, project.repository)}
-                    onChange={(next) => setDrivable.mutate(
-                      { repository: project.repository, drivable: next }, { onError: onDriverError })}
-                    label={t('projects.driver.drive')}
-                  />
-                  {named(driver.data.drivable, project.repository) && (
-                    <CheckField
-                      checked={named(driver.data.holds, project.repository)}
-                      onChange={(next) => setHold.mutate(
-                        { repository: project.repository, held: next }, { onError: onDriverError })}
-                      label={t('projects.driver.hold')}
-                    />
-                  )}
-                  {/* Session trees (D51): this repository's sessions open their own worktree, so the
-                      person's uncommitted work in the checkout stops holding the driver. */}
-                  <CheckField
-                    checked={named(driver.data.trees ?? [], project.repository)}
-                    onChange={(next) => setTrees.mutate(
-                      { repository: project.repository, ownTree: next }, { onError: onDriverError })}
-                    label={t('projects.driver.trees')}
-                  />
-                  <Button variant="ghost" className="ml-auto" onClick={() => setManaging(project)}>
+              {/* The person's standing choices for THIS machine's driver (D46 §6) — rendered only
+                  where a shell answers; a browser has no driver to control, and shows nothing. */}
+              {driving(project.repository, {
+                className: 'mt-2.5 border-t border-line pt-2.5',
+                action: (
+                  <Button variant="ghost" onClick={() => setManaging(project)}>
                     {t('projects.manage.open')}
                   </Button>
-                </p>
-              )}
+                ),
+              })}
             </Card>
           );
         })}
@@ -191,16 +192,27 @@ export function ProjectsView({ notify }: { notify: Notify }) {
               return (
                 <li
                   key={project.repository}
-                  className="flex items-baseline justify-between gap-4 border-t border-line py-1.5 text-body first:border-t-0"
+                  aria-label={project.repository}
+                  className="border-t border-line py-1.5 text-body first:border-t-0"
                 >
-                  <span>{project.repository}</span>
-                  <span className="font-mono text-meta text-ink-faint">
-                    {counts && counts.total > 0
-                      ? t('projects.outside.readable', {
-                          count: counts.total, total: counts.total.toLocaleString(),
-                        })
-                      : t('projects.nothingIndexed')}
-                  </span>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span>{project.repository}</span>
+                    <span className="font-mono text-meta text-ink-faint">
+                      {counts && counts.total > 0
+                        ? t('projects.outside.readable', {
+                            count: counts.total, total: counts.total.toLocaleString(),
+                          })
+                        : t('projects.nothingIndexed')}
+                    </span>
+                  </div>
+                  {/* INT3c: one with a root here is drivable over the protocol door (D70), so it gets
+                      the adopters' driving row — and none of adoption's own acts, like managing its
+                      declaration, which writes into the repository. One with no root has nowhere to
+                      start, and gets nothing. */}
+                  {canBeAsked(project) && driving(project.repository, {
+                    className: 'mt-1.5',
+                    note: door === 'pipe' ? t('projects.outside.directDoor') : undefined,
+                  })}
                 </li>
               );
             })}

@@ -1443,3 +1443,76 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(onAttend).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * INT3c: an unadopted repository with a root here is drivable over the protocol door (D70), so the
+ * screen offers what `daoris driver` already can: the same driving row an adopter's card carries
+ * (D50). A row with no root here has nowhere to start, and is offered nothing. On a machine whose
+ * door is direct, the row says a quest there will sit — the planner's own answer, said before it.
+ */
+describe('an unadopted repository on this machine (INT3c)', () => {
+  const WITH_OUTSIDERS = [
+    ...REGISTRY,
+    { repository: 'newbie', adopted: false, addressable: true, registered: true, owns: [], accepts: [], packs: [], entries: 0 },
+    { repository: 'elsewhere', adopted: false, addressable: false, registered: true, owns: [], accepts: [], packs: [], entries: 0 },
+  ];
+  const roster = (adapter: string) => ({
+    settingsPath: 'C:/somewhere/data/harnesses.json',
+    adapter,
+    harnesses: [
+      { harness: 'claude-code', present: true, wire: 'pipe', version: '2.1.281', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true, profiles: [] },
+      { harness: 'claude-code-acp', present: true, wire: 'acp', accountOf: 'claude-code', version: '0.79.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true, profiles: [] },
+    ],
+  });
+  const machine = (adapter: string) => {
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return undefined;
+      if (type === 'HARNESSES') return roster(adapter);
+      return { ...DRIVER_STATE, adapter };
+    });
+  };
+  const DIRECT_NOTE = 'This machine drives on a direct agent, so a quest here sits, saying why, until it drives on a protocol one.';
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json(WITH_OUTSIDERS) : respond(url);
+    }));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('offers the driving row to one with a root here, landing on DAORIS.DRIVER', async () => {
+    machine('claude-code-acp');
+    show(<ProjectsView notify={() => {}} />);
+
+    const row = await screen.findByRole('listitem', { name: 'newbie' });
+    await userEvent.click(await within(row).findByLabelText('drive on this machine'));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_DRIVABLE', {
+      payload: { repository: 'newbie', drivable: true },
+    });
+    // A protocol-door machine can carry it, so nothing is added beside the choice.
+    expect(within(row).queryByText(DIRECT_NOTE)).toBeNull();
+  });
+
+  it('says a quest there will sit, on a machine whose door is direct', async () => {
+    machine('claude-code');
+    show(<ProjectsView notify={() => {}} />);
+
+    const row = await screen.findByRole('listitem', { name: 'newbie' });
+    expect(await within(row).findByText(DIRECT_NOTE)).toBeInTheDocument();
+    expect(within(row).getByLabelText('drive on this machine')).toBeInTheDocument();
+  });
+
+  it('offers nothing to drive for one with no root here — there is nowhere to start it', async () => {
+    machine('claude-code-acp');
+    show(<ProjectsView notify={() => {}} />);
+
+    const row = await screen.findByRole('listitem', { name: 'elsewhere' });
+    await screen.findAllByLabelText('drive on this machine');
+    expect(within(row).queryByLabelText('drive on this machine')).toBeNull();
+  });
+});

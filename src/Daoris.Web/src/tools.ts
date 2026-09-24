@@ -91,6 +91,16 @@ export interface Tool {
   workspaceDefaults: { workspace: string; profile: string }[];
 }
 
+/**
+ * Which door this machine's starts ride: the configured adapter's own `wire`, as the roster says it
+ * (INT3c). Null when it cannot be read — no adapter, one the roster does not carry, or a wire it does
+ * not name — and a surface then says nothing rather than guess.
+ */
+export function doorOf(adapter: string | undefined, doors: readonly ToolDoor[]): 'acp' | 'pipe' | null {
+  const wire = doors.find((door) => door.harness === adapter)?.wire;
+  return wire === 'acp' || wire === 'pipe' ? wire : null;
+}
+
 /** Which tool this door belongs to: the account it borrows, or itself. */
 export function toolOf(door: ToolDoor): string {
   return door.accountOf?.trim() || door.harness;
