@@ -1,6 +1,9 @@
 # DEPLOY1 — does the protocol door need the trust flag? Measured (2026-09-24)
 
-**Answer: yes, as far as an untrusted room can show.** Over the ACP door, Claude Code ignored an
+**Answer: for a repository's own allow-list, yes, on both doors. For the rules Daoris hands over at
+spawn (PERM1), no** — see the second measurement below.
+
+**The first measurement: yes, as far as an untrusted room can show.** Over the ACP door, Claude Code ignored an
 untrusted room's own `permissions.allow`, the same as the pipe door. The driver's hold (DEPLOY1's
 detection half) is therefore right for both doors. It was applied to the ACP door before anyone had
 measured it, and this measurement confirms it.
@@ -32,7 +35,24 @@ applied.
   commands on its own, so the control ran it unasked. A probe of an allow-list has to ask for a
   write.
 
-## What it means
+## The command-line tier is honoured untrusted, on both doors (measured the same day)
+
+PERM1 (D72) hands every Claude Code session Daoris's own rules as the harness's command-line
+settings tier. Measured in fresh, untrusted git rooms with the same one-commit prompt:
+
+| Door | How the rule arrived | Permission requested? | Commit made? |
+|---|---|---|---|
+| ACP | `_meta.claudeCode.options.settings` on `session/new` (the probe's third room) | no | **yes** |
+| pipe, control | nothing | (refused under `-p`) | no |
+| pipe | `--settings <file>` allowing `Bash(git commit:*)` | no | **yes** |
+
+**So the trust flag gates only a repository's OWN allow-list.** Rules Daoris hands over at spawn
+reach an untrusted session on either door. With PERM1's `connector` default carried, a session can
+take and close its quest without anyone trusting the folder. The driver's hold was written on the
+opposite assumption, so it is now stricter than the facts. DEPLOY1(b)'s trust command still decides
+whether a repository's own rules count, but it no longer has to gate driving.
+
+## What it meant before PERM1
 
 DEPLOY1's open question stands on both doors: should adoption **ask** and write the flag (b), or
 does the pipe door stay documented as needing a person's first visit (c)? The same hold stops ACP2's
