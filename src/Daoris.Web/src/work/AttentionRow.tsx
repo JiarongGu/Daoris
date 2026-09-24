@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
+import type { TrustHold } from '../signals';
 import { Dot } from '../ui';
 
 /**
@@ -12,16 +13,19 @@ import { Dot } from '../ui';
  * proposed, and only a person publishes (INT4a). An ask is `intake` when its intake session parked
  * asking the person (D65 §1b). That session is counted as the ask, never twice. An `unanswerable`
  * quest is addressed to a repository this deployment has no registration for. It will sit forever,
- * and nothing else says so.
+ * and nothing else says so. A `trust` row is a folder the agent has not been trusted in, where the
+ * driver is holding a start (D73): only the person can give that grant.
  *
  * A fifth kind belongs here by design §4 — **finished work nobody has looked at** — and is not
  * buildable yet: nothing records that anybody looked. It arrives with the *viewed* mark SURF6
  * introduces, and the band says as much rather than leaving a silent gap.
  */
 export type Attention = {
-  /** The session, ask or quest id — what the door opens. */
+  /** The session, ask or quest id — what the door opens; for a `trust` row, the folder. */
   id: string;
-  kind: 'parked' | 'proposal' | 'intake' | 'unanswerable';
+  kind: 'parked' | 'proposal' | 'intake' | 'unanswerable' | 'trust';
+  /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
+  trust?: TrustHold;
   /** What it is, derived: a session's identity, an ask's first line, or a quest's title. */
   title: string;
   /** Where it waits: the repository, or for an ask its circle, because an ask has no repository yet. */

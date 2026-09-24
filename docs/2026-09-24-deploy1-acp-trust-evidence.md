@@ -58,3 +58,7 @@ DEPLOY1's open question stands on both doors: should adoption **ask** and write 
 does the pipe door stay documented as needing a person's first visit (c)? The same hold stops ACP2's
 proof run (`tools/acp2-proof.mjs --drive` held on its scratch repository, 11/13, no login spent) and
 would stop a real intake in its room (INT4f), until the person grants trust to those directories.
+
+**Decided the same day: (b), recorded as D73.** Daoris asks per folder, then writes the flag: the
+terminal's `daoris agent trust … --yes`, and the screen's *trust this folder…* on a hold the driver
+is showing.

@@ -115,6 +115,11 @@ public sealed class DriverLoop(
     /// not leave the person watching a countdown.</summary>
     public void Nudge() => _watch?.Nudge();
 
+    /// <summary>
+    /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
+    /// </summary>
+    public TrustHolds Trust { get; } = new();
+
     /// <summary>The loop's syncs, once it is up — the ones its tick runs, and the ones *Sync now* runs.</summary>
     private RemoteSyncSet? _sync;
 
@@ -247,6 +252,10 @@ public sealed class DriverLoop(
                 var changed = considered != lastConsidered;
                 lastConsidered = considered;
 
+                // What this tick held for trust, kept for the screen's grant to be checked against
+                // (D73) — replaced whole, so a folder the driver stopped holding cannot be granted.
+                Trust.Record(report.Untrusted);
+
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,
                 // so a quiet tick never told the page and the band missed it until a reload. Read
@@ -270,6 +279,15 @@ public sealed class DriverLoop(
                             Repository = c.Quest.To,
                             Verdict = c.Verdict.ToString(),
                             c.Reason,
+                        }).ToArray(),
+                        // The trust holds as facts (D73): machine-local paths, so over this bridge only.
+                        // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge.
+                        Untrusted = report.Untrusted.Select(hold => new
+                        {
+                            hold.Folder,
+                            hold.TrustFile,
+                            hold.Quest,
+                            hold.Ask,
                         }).ToArray(),
                     }).ConfigureAwait(false);
                 }

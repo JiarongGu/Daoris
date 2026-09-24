@@ -34,9 +34,10 @@
 // person gives one (`agent key`, D67 §1). It manages directories and names; login runs the
 // harness's own flow INTO a profile directory, and whatever that obtains the harness stores itself.
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { requireHomeFile } from './home.ts';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { flagValue } from './args.ts';
 import { DaorisError } from './errors.ts';
@@ -47,6 +48,7 @@ import { normalizeWorkspace } from './remotemap.ts';
 import { readPlugins, resolvable } from './plugins.ts';
 import { installFromChannel, refuseVersion } from './channels.ts';
 import { commandRules } from './permissions.ts';
+import { grantTrust, TRUST_FILE } from './trust.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -148,6 +150,13 @@ export interface Toolchain {
    */
   pinnedEnv?: Record<string, string>;
   /**
+   * The tool's own file that records which folders a person has trusted it in (DEPLOY1), in the
+   * account's configuration home — declared where the tool ignores a folder's own permissions until
+   * then. `daoris agent trust` writes it, on the person's word (D73). The driver's `TrustFile` is the
+   * twin.
+   */
+  trustFile?: string;
+  /**
    * The tool's own variable for an API key (AGT3, D67 §1): what an account that is a key is handed
    * at spawn. Declared only where measured; absent means this agent takes no key from Daoris. The
    * driver's `KeyVariable` is the twin.
@@ -190,6 +199,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     pinnedEnv: { DISABLE_UPDATES: '1' },
     // Measured on 2.1.280 with an invalid key: `auth status` reads it, and `-p` takes it unprompted.
     keyVariable: 'ANTHROPIC_API_KEY',
+    // Its trust record: until a folder is accepted here, the folder's own allow-list is ignored.
+    trustFile: TRUST_FILE,
   },
   // The supported harness over the PROTOCOL door (ACP2/D53). A separate toolchain entry from
   // `claude-code` on purpose: the ACP adapter and `claude` are different packages at different
@@ -210,6 +221,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     package: '@agentclientprotocol/claude-agent-acp',
     // It has no login of its own: it runs `claude` and reads the home `claude` logged into.
     accountOf: 'claude-code',
+    // And the same trust record: measured, it ignores an untrusted folder's allow-list too (DEPLOY1).
+    trustFile: TRUST_FILE,
   },
   codex: {
     product: 'Codex',
@@ -876,6 +889,11 @@ export function commandHarness(
     case 'rules':
       return commandRules({ argv: argv.slice(1), write, root: '', packageRoot: '' });
 
+    // The harness's trust in a folder (D73): the person's grant, asked and then written — the
+    // terminal's door onto the screen's *trust this folder…*, and the one that names any folder.
+    case 'trust':
+      return trust();
+
     // An account that is an API key (AGT3, D67 §1). 🔴 Read from STDIN, never from an argument: an
     // argument is visible in the process list and saved in the shell's history.
     case 'key': {
@@ -1150,6 +1168,63 @@ export function commandHarness(
         throw new DaorisError(
           `unknown agent profile verb '${action}' — one of: list, add, remove, default`);
     }
+  }
+
+  /**
+   * `agent trust <agent> <folder> [--profile <name>] --yes` — the harness's trust in a folder (D73).
+   *
+   * @remarks
+   * 🔴 **Asked, then written.** A terminal command cannot prompt: a gate runs it with stdin closed. So
+   * the question IS the command without `--yes`. It names the folder, the account's file and what
+   * trusting means, grants nothing, and exits 1. `--yes` is the person's answer. Granting on the first
+   * keystroke would be the silent option with one more word in front of it.
+   *
+   * The account is the one a session there would run as: the profile named, else the machine's
+   * default, else the agent's OWN configuration home (twin rule 3). A door's account is its owner's.
+   */
+  function trust(): ExitCode {
+    const { name, toolchain } = required(argv, 'trust');
+    if (!toolchain.trustFile) {
+      throw new DaorisError(
+        `\`${name}\` has no trust question Daoris knows of, so there is nothing to grant: its own `
+        + 'permissions apply as they are.');
+    }
+
+    const folder = resolve(bare(argv, 2, 'trust', '<agent> <folder>'));
+    if (!existsSync(folder) || !statSync(folder).isDirectory()) {
+      throw new DaorisError(`no folder at \`${folder}\` — trust is granted to a folder a session would run in.`);
+    }
+
+    const owner = ownerOf(name);
+    if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
+    const profile = flagValue(argv, '--profile') ?? readHarnessSettings(path).defaults[owner] ?? null;
+    const file = join(profile ? profileHome(home, owner, profile) : homedir(), toolchain.trustFile);
+
+    write(`daoris: trusting \`${folder}\` for \`${owner}\`, `
+      + `${profile ? `as the account \`${profile}\`` : 'as its own account'} — in its own file:`);
+    write(`  ${file}`);
+    write('  This is what the agent asks the first time it runs in a folder. Once it is granted, the');
+    write('  folder\'s own settings and `permissions.allow` apply there, and the agent stops asking.');
+    write('  Daoris writes that one flag and nothing else in the file.');
+
+    if (argv.includes('--dry-run')) return 0;
+    if (!argv.includes('--yes')) {
+      write('  Not granted: this is the question. Run it again with --yes to grant it.');
+      return 1;
+    }
+
+    const grant = grantTrust(file, folder);
+    if (!grant.changed) {
+      write('  Already trusted, so nothing was written.');
+    } else if (grant.verified) {
+      write('  Granted.');
+    } else {
+      write('  Written, but reading the file back does not show it — a running Claude Code may have saved');
+      write('  over it. Run this again once it has exited.');
+      return 1;
+    }
+
+    return 0;
   }
 
   /**

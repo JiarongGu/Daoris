@@ -3,6 +3,7 @@ import { type Attention, AttentionRow } from './AttentionRow';
 import { AwaitingIntake } from './AwaitingIntake';
 import { RunningIntake } from './RunningIntake';
 import { AwaitingPerson } from './AwaitingPerson';
+import { TrustAsk } from './TrustAsk';
 
 // The two surfaces of attention (design §4): the row Overview's band is made of, and the parked
 // session's own answer. What is NOT here is a "resume" button — the ledger allows that move and a
@@ -29,6 +30,23 @@ const PROPOSAL: Attention = {
   detail: 'The declarations propose engine, game. Nothing is published until you choose.',
 };
 
+/** A start the driver holds for the agent's trust (D73) — neutral paths, as every fixture here. */
+const HOLD = {
+  folder: 'C:/somewhere/family/engine',
+  trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json',
+  quest: '7a82cc',
+};
+
+const TRUST_ROW: Attention = {
+  id: HOLD.folder,
+  kind: 'trust',
+  title: HOLD.folder,
+  where: 'engine',
+  since: at(95),
+  detail: 'The agent ignores this folder\'s own permissions.allow until you trust it there, so the driver is holding what would run in it.',
+  trust: { folder: HOLD.folder, trustFile: HOLD.trustFile },
+};
+
 const meta: Meta = { title: 'Work/Attention' };
 export default meta;
 
@@ -40,6 +58,8 @@ export const Rows: StoryObj = {
   render: () => (
     <ul className="m-0 max-w-2xl list-none border border-line bg-raised p-0">
       <AttentionRow item={PARKED} onOpen={() => {}} />
+      {/* A folder waiting on the person's trust (D73): the folder, what it holds, and why. */}
+      <AttentionRow item={TRUST_ROW} onOpen={() => {}} />
       <AttentionRow
         item={{
           ...PROPOSAL,
@@ -140,6 +160,32 @@ export const IntakeRunning: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
       <RunningIntake ask="0fda18" onOpen={() => {}} onStop={() => {}} />
+    </div>
+  ),
+};
+
+/**
+ * The agent's trust question, asked by Daoris for a folder the driver holds (D73): the folder, what
+ * trusting means, what it holds, and the one file written — granted only on the press.
+ */
+export const TrustAsking: StoryObj = {
+  render: () => (
+    <div className="max-w-xl">
+      <TrustAsk hold={HOLD} onGrant={() => {}} onCancel={() => {}} />
+    </div>
+  ),
+};
+
+/** An intake's room held for trust, with the grant being written: the press is held. */
+export const TrustGranting: StoryObj = {
+  render: () => (
+    <div className="max-w-xl">
+      <TrustAsk
+        hold={{ folder: 'C:/somewhere/data/intake/aurora', trustFile: HOLD.trustFile, ask: '0fda18' }}
+        busy
+        onGrant={() => {}}
+        onCancel={() => {}}
+      />
     </div>
   ),
 };

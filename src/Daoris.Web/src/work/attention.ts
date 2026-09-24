@@ -1,6 +1,7 @@
 import i18n from '../i18n';
 import type { Ask, Quest, Registration, Session } from '../api';
 import { firstLine } from '../asks/AskCard';
+import type { TrustHold } from '../signals';
 import { sessionTitle } from './identity';
 import type { Attention } from './AttentionRow';
 
@@ -32,6 +33,12 @@ const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting'
  * will pull it, and "who cannot be asked" is the same question as "who can" (the Projects view
  * already argues this for repositories).
  *
+ * **A folder waiting on the person's trust (D73) sits after the parked sessions.** The driver is
+ * holding a start there because the agent ignores that folder's own permissions until trusted, and
+ * the grant is the person's alone. It holds no tree, but nothing it holds can start until it is
+ * granted. One row per folder, since the oldest thing it holds. Only the shell's tick says so, so a
+ * browser has none.
+ *
  * **The design's middle category — finished work nobody has looked at — is deliberately absent.**
  * Nothing records that anybody looked, so any row here would be a guess. It arrives with the
  * *viewed* mark SURF6 brings, and the band says so rather than leaving the gap silent.
@@ -41,6 +48,7 @@ export function needsAPerson(
   quests: readonly Quest[],
   registry: readonly Registration[],
   asks: readonly Ask[],
+  untrusted: readonly TrustHold[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -92,6 +100,36 @@ export function needsAPerson(
       detail: i18n.t('work.attention.unanswerableWhy', { repository: quest.to }),
     }));
 
+  // One row per folder in one file: two quests held on one untrusted tree are one grant.
+  const folders = new Map<string, Attention>();
+  for (const hold of untrusted) {
+    const held = hold.quest ? quests.find((quest) => quest.id === hold.quest) : undefined;
+    const asked = hold.ask ? asks.find((one) => one.id === hold.ask) : undefined;
+    const where = held?.to
+      ?? (hold.ask ? i18n.t('work.attention.askWhere', { id: hold.ask }) : `#${hold.quest ?? ''}`);
+    const since = held?.filed ?? asked?.asked ?? new Date().toISOString();
+    const key = `${hold.trustFile}\n${hold.folder}`;
+    const seen = folders.get(key);
+    if (seen) {
+      if (since.localeCompare(seen.since) < 0) seen.since = since;
+      continue;
+    }
+    folders.set(key, {
+      id: hold.folder,
+      kind: 'trust',
+      title: hold.folder,
+      where,
+      since,
+      detail: i18n.t('work.attention.trustWhy'),
+      trust: { folder: hold.folder, trustFile: hold.trustFile },
+    });
+  }
+
   const oldestFirst = (a: Attention, b: Attention) => a.since.localeCompare(b.since);
-  return [...parked.sort(oldestFirst), ...waitingAsks.sort(oldestFirst), ...unanswerable.sort(oldestFirst)];
+  return [
+    ...parked.sort(oldestFirst),
+    ...[...folders.values()].sort(oldestFirst),
+    ...waitingAsks.sort(oldestFirst),
+    ...unanswerable.sort(oldestFirst),
+  ];
 }

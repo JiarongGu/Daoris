@@ -16,6 +16,8 @@ export const keys = {
   status: ['status'] as const,
   /** The driver's last verdict per open quest — written by the tick, never fetched (its own root, so no invalidation reaches it). */
   considered: ['considered'] as const,
+  /** The starts the last tick held for the agent's trust (D73) — written by the tick, like `considered`. */
+  untrusted: ['untrusted'] as const,
   allRepositories: ['repositories'] as const,
   repositories: (workspace: string | null) => ['repositories', workspace ?? '*'] as const,
   allRegistry: ['registry'] as const,

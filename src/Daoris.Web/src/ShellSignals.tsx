@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
-import { type Consideration, newsFrom } from './signals';
+import { type Consideration, type TrustHold, newsFrom } from './signals';
 import type { Notify } from './ui';
 
-type Tick = { events?: string[]; considered?: Consideration[] };
+type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[] };
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
@@ -50,6 +50,9 @@ export function ShellSignals({ notify, onAttend }: {
     // STANDING answer, so it lands where the views read it rather than in a toast that dismisses
     // itself. Replaced whole: a quest the driver no longer considers is no longer sitting.
     client.setQueryData(keys.considered, tick?.considered ?? []);
+    // And which of those holds are the agent's trust (D73), as facts the screen can offer the person
+    // to grant. Replaced whole for the same reason; a shell older than the grant sends none.
+    client.setQueryData(keys.untrusted, tick?.untrusted ?? []);
 
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
     // world — the two questions are different, and collapsing them would make a stale window the

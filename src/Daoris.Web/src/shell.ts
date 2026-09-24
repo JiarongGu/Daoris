@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
-import type { Consideration } from './signals';
+import type { Consideration, TrustHold } from './signals';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
@@ -78,6 +78,41 @@ export const useConsidered = () => useQuery({
   staleTime: Infinity,
   gcTime: Infinity,
 });
+
+/**
+ * The starts the driver held because the agent has not been trusted where they would run (D73), as
+ * of its last tick — written by the tick like `useConsidered`, and empty in a browser.
+ */
+export const useUntrusted = () => useQuery({
+  queryKey: keys.untrusted,
+  queryFn: () => [] as TrustHold[],
+  staleTime: Infinity,
+  gcTime: Infinity,
+});
+
+/** What a grant answered: the key it wrote, whether it wrote, whether a re-read says yes, and why. */
+export type TrustGranted = { folder: string; key: string; changed: boolean; verified: boolean; message: string };
+
+/**
+ * The person's grant of a folder the driver is holding (D73) — the screen's half of
+ * `daoris agent trust … --yes`. The shell writes it only for a hold its last tick produced, in the
+ * file that tick read, and the driver looks again at once.
+ */
+export const useTrustFolder = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (hold: Pick<TrustHold, 'folder' | 'trustFile'>) =>
+      call<TrustGranted>('TRUST_FOLDER', { folder: hold.folder, trustFile: hold.trustFile }),
+    onSuccess: (granted, hold) => {
+      // Off the list now, rather than a tick from now: the grant is what the person just did.
+      if (granted.verified) {
+        client.setQueryData<TrustHold[]>(keys.untrusted, (holds = []) =>
+          holds.filter((held) => held.folder !== hold.folder || held.trustFile !== hold.trustFile));
+      }
+      void client.invalidateQueries({ queryKey: keys.driver });
+    },
+  });
+};
 
 /** One mutation shape for the two toggles: edit the file, and the loop looks now, not at the poll. */
 function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {

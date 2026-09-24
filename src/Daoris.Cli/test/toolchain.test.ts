@@ -665,6 +665,12 @@ test('every declared harness is pinned by name, binary, seam, and what a person 
   // The protocol door borrows the pipe door's account, through the same seam (ACP2/ACP3).
   assert.equal(TOOLCHAINS['claude-code-acp']!.accountOf, 'claude-code');
   assert.equal(TOOLCHAINS['codex-acp']!.accountOf, 'codex');
+
+  // The trust record (DEPLOY1, D73) — the driver's `TrustFile` is its twin, on the same two entries,
+  // because both doors onto Claude Code ignore an untrusted folder's allow-list (measured).
+  const trusting = Object.entries(TOOLCHAINS).filter(([, toolchain]) => toolchain.trustFile).map(([name]) => name);
+  assert.deepEqual(trusting, ['claude-code', 'claude-code-acp']);
+  assert.equal(TOOLCHAINS['claude-code']!.trustFile, '.claude.json');
 });
 
 /**

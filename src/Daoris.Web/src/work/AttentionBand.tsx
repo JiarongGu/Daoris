@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useAsks, useQuests, useRegistry, useSessions } from '../queries';
+import { useUntrusted } from '../shell';
 import { Card, CardHeader, Tip } from '../ui';
 import { type Attention, AttentionRow } from './AttentionRow';
 import { needsAPerson } from './attention';
@@ -31,9 +32,11 @@ export function AttentionBand({ doors = {} }: { doors?: AttentionDoors }) {
   const registry = useRegistry();
   // The asks still waiting (INT4d) — the Quests view's own list, so one fetch serves both.
   const asks = useAsks(false);
+  // The folders the driver is holding for the agent's trust (D73) — the shell's tick, so a browser has none.
+  const untrusted = useUntrusted();
 
   const waiting = needsAPerson(
-    sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? []);
+    sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? []);
   if (waiting.length === 0) return null;
 
   return (

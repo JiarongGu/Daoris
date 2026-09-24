@@ -230,3 +230,53 @@ describe('an ask that waits on a person', () => {
     await i18n.changeLanguage('en');
   });
 });
+
+/**
+ * A folder the agent has not been trusted in (D73). The driver holds rather than spend a session that
+ * could not take its quest, and only the person can give the grant, so it waits on them. It is one
+ * row per folder, in the file the hold read.
+ */
+describe('a folder waiting on the person\'s trust', () => {
+  const hold = { folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json' };
+
+  it('is one row per folder, naming the folder and what it holds, since the oldest thing it holds', () => {
+    const waiting = needsAPerson(
+      [], [quest({ id: 'q1', filed: '2026-09-14T09:00:00Z' }), quest({ id: 'q2', filed: '2026-09-10T09:00:00Z' })],
+      [registration('engine')], [],
+      [{ ...hold, quest: 'q1' }, { ...hold, quest: 'q2' }],
+    );
+
+    expect(waiting).toHaveLength(1);
+    const [item] = waiting;
+    expect(item.kind).toBe('trust');
+    expect(item.title).toBe('C:/somewhere/engine');
+    expect(item.where).toBe('engine');
+    expect(item.since).toBe('2026-09-10T09:00:00Z');
+    expect(item.trust).toEqual(hold);
+    expect(item.detail).toContain('permissions.allow');
+  });
+
+  it('names an intake\'s room by its ask, since the ask was asked', () => {
+    const room = { folder: 'C:/somewhere/data/intake/aurora', trustFile: hold.trustFile, ask: '7c1e9a04b2d5' };
+
+    const [item] = needsAPerson([], [], [], [ask()], [room]).filter((row) => row.kind === 'trust');
+
+    expect(item.where).toBe('ask #7c1e9a04b2d5');
+    expect(item.since).toBe('2026-09-21T08:30:00Z');
+  });
+
+  it('sits after the parked sessions and ahead of the asks: nothing it holds can start until it is granted', () => {
+    const waiting = needsAPerson(
+      [session({ id: 'parked', state: 'awaiting-person', updated: '2026-09-21T09:00:00Z' })],
+      [quest({ id: 'q1' })], [registration('engine')], [ask()],
+      [{ ...hold, quest: 'q1' }],
+    );
+
+    expect(waiting.map((item) => item.kind)).toEqual(['parked', 'trust', 'proposal']);
+  });
+
+  it('adds nothing when nothing is held for trust, and a browser has no holds at all', () => {
+    expect(needsAPerson([], [quest()], [registration('engine')], [], [])).toEqual([]);
+    expect(needsAPerson([], [quest()], [registration('engine')], [])).toEqual([]);
+  });
+});

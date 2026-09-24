@@ -420,6 +420,55 @@ public sealed class IntakeTests : IDisposable
         Assert.False(report.Progressed);
     }
 
+    /// <summary>
+    /// An intake's room is Daoris's own folder, and the harness still has to have been told it may work
+    /// there (DEPLOY1). Held before anything opens, and reported as a fact the screen can offer the
+    /// person to grant (D73) — the room, the account's file, and the ask it held.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_in_a_room_the_harness_never_trusted_is_held_and_says_so_as_a_fact()
+    {
+        await using var service = StandInService.Start(Circle, Ask());
+        var profile = Path.Combine(_home, "harnesses", "claude-code", "work");
+        Directory.CreateDirectory(profile);
+        var trustFile = Path.Combine(profile, ClaudeTrust.FileName);
+        File.WriteAllText(trustFile, """{"projects":{}}""");
+        File.WriteAllText(Path.Combine(_home, "harnesses.json"), """{"defaults":{"claude-code":"work"}}""");
+        // The connector default off: handed Daoris's rules with it on, an intake could publish in an
+        // untrusted room, and there would be nothing to hold for (measured, D73).
+        File.WriteAllText(Path.Combine(_home, PermissionRules.FileName), """{"defaultsOff":["connector"]}""");
+        var claude = Path.Combine(_home, "claude.mjs");
+        File.WriteAllText(claude, """
+            const argv = process.argv.slice(2);
+            if (argv.includes('--version')) { console.log('2.1.0 (Claude Code)'); process.exit(0); }
+            if (argv[0] === 'auth' && argv[1] === 'status') { console.log('{"loggedIn": true}'); process.exit(0); }
+            process.exit(3);
+            """);
+        var config = (DriverConfig.Empty with
+        {
+            Adapter = "claude-code",
+            TimeoutMinutes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", claude] },
+        }).WithIntake("claude-code");
+
+        var report = await Driver(config, service).TickAsync();
+
+        Assert.Empty(service.Intakes);
+        var hold = Assert.Single(report.Untrusted);
+        Assert.Equal(IntakeRoom.PathOf(_home, "work"), hold.Folder);
+        Assert.Equal(trustFile, hold.TrustFile);
+        Assert.Equal("a1b2c3", hold.Ask);
+        Assert.Null(hold.Quest);
+
+        // With the connector default on, the rules handed over at spawn let it publish untrusted
+        // (measured, D73): nothing is held, and the intake opens.
+        File.Delete(Path.Combine(_home, PermissionRules.FileName));
+        var open = await Driver(config, service).TickAsync();
+
+        Assert.Empty(open.Untrusted);
+        Assert.Single(service.Intakes);
+    }
+
     private DriverConfig Config() => DriverConfig.Empty with
     {
         Adapter = "stub",

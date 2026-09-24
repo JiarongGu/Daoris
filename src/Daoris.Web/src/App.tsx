@@ -20,7 +20,9 @@ import { ProjectsView } from './ProjectsView';
 import { SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
-import { useDriver, useOpenWindow, useRemotes, useSyncNow } from './shell';
+import { useDriver, useOpenWindow, useRemotes, useSyncNow, useTrustFolder, useUntrusted } from './shell';
+import type { TrustHold } from './signals';
+import { TrustAsk } from './work/TrustAsk';
 import { SyncStatus } from './work/SyncStatus';
 import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
@@ -140,6 +142,11 @@ export function App() {
   const registry = useRegistry();
   // The asks still waiting (INT4d), from the cache Quests fills — the count below includes them.
   const asks = useAsks(false);
+  // The folders the driver is holding for the agent's trust (D73), from the tick, and the one being
+  // asked about. The band's row opens the question; only the person's press grants it.
+  const untrusted = useUntrusted();
+  const grantTrust = useTrustFolder();
+  const [trusting, setTrusting] = useState<TrustHold | null>(null);
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
@@ -191,7 +198,7 @@ export function App() {
   // The second of design §4's two counts, from the one derivation the band uses — two answers to
   // "how many need me" would disagree the first time either was edited.
   const waiting = needsAPerson(
-    running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? []).length;
+    running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? []).length;
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.
@@ -264,6 +271,8 @@ export function App() {
     proposal: (item) => openAsk(item.id),
     intake: (item) => openAsk(item.id),
     unanswerable: (item) => { setQuestFocus(item.id); setView('quests'); },
+    // A folder waiting on the person's trust (D73) opens the question itself. Only a shell has one.
+    ...(attached ? { trust: (item) => item.trust && setTrusting(item.trust) } : {}),
   };
 
   return (
@@ -565,6 +574,27 @@ export function App() {
       />
 
       {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}
+      {trusting && (
+        <Drawer title={t('trust.title')} onClose={() => setTrusting(null)}>
+          <TrustAsk
+            hold={{
+              ...trusting,
+              // What it holds, named: the band groups one folder's holds into one row.
+              ...(untrusted.data ?? []).find((hold) =>
+                hold.folder === trusting.folder && hold.trustFile === trusting.trustFile),
+            }}
+            busy={grantTrust.isPending}
+            onCancel={() => setTrusting(null)}
+            onGrant={() => grantTrust.mutate(trusting, {
+              onSuccess: (granted) => {
+                notify(granted.message, granted.verified ? 'ok' : 'error');
+                setTrusting(null);
+              },
+              onError: (error) => notify(sentence(error), 'error'),
+            })}
+          />
+        </Drawer>
+      )}
       <Toasts items={toasts} onClose={dismiss} />
       {/* A notification is a door (design §4): clicking the OS balloon lands on that session
           rather than on whatever was last open. */}

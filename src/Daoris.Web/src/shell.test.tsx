@@ -1577,3 +1577,91 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     expect(within(row).queryByLabelText('drive on this machine')).toBeNull();
   });
 });
+
+/**
+ * Trusting a folder the driver is holding (D73). The agent ignores a folder's own permissions until a
+ * person trusts it there, so the driver holds rather than spend a session that could not take its
+ * quest — and says so as a FACT beside its sentence: the folder, the agent's own file, what it held.
+ * The screen offers exactly that grant, where the hold is shown, and writes it only on the press.
+ */
+describe('trusting a folder the driver is holding (D73)', () => {
+  const HOLD = {
+    folder: 'C:/somewhere/engine',
+    trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json',
+    quest: 'abc123',
+  };
+  const GRANTED = {
+    folder: HOLD.folder, key: 'C:/somewhere/engine', changed: true, verified: true,
+    message: 'Trusted `C:/somewhere/engine` for this agent: its own `permissions.allow` applies there now, and the driver looks again.',
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/asks') ? Response.json([]) : respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'TRUST_FOLDER' ? GRANTED : DRIVER_STATE));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+  });
+
+  const holding = (holds: unknown[] = [HOLD]) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(keys.untrusted, holds);
+    return client;
+  };
+
+  it('a tick\'s holds land where the views read them, replaced whole', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    show(<ShellSignals notify={() => {}} />, client);
+
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [], untrusted: [HOLD] });
+    expect(client.getQueryData(keys.untrusted)).toEqual([HOLD]);
+
+    // A shell older than the grant sends no field at all: nothing is held, rather than a stale list.
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [] });
+    expect(client.getQueryData(keys.untrusted)).toEqual([]);
+  });
+
+  it('the quest the driver holds offers the grant in its drawer, and writes it only on the press', async () => {
+    const notify = vi.fn();
+    show(<QuestsView notify={notify} />, holding());
+
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'trust this folder…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', expect.anything());
+
+    expect(within(dialog).getByText(HOLD.trustFile)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'trust this folder' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', {
+      payload: { folder: HOLD.folder, trustFile: HOLD.trustFile },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(GRANTED.message, 'ok'));
+  });
+
+  it('a quest nothing holds for trust offers no grant', async () => {
+    show(<QuestsView notify={() => {}} />, holding([]));
+
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).queryByRole('button', { name: 'trust this folder…' })).toBeNull();
+  });
+
+  it('a held folder waits in *What needs you*, and its row opens the grant', async () => {
+    const trust = vi.fn();
+    show(<OverviewView onNavigate={() => {}} notify={() => {}} doors={{ trust }} />, holding());
+
+    const band = await screen.findByRole('region', { name: 'What needs you' });
+    await userEvent.click(await within(band).findByRole('button', { name: /C:\/somewhere\/engine/ }));
+
+    expect(trust).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'trust', trust: { folder: HOLD.folder, trustFile: HOLD.trustFile },
+    }));
+  });
+});

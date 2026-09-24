@@ -167,6 +167,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `AwaitingPerson` | a parked session's analysis and the person's three moves (SURF5) | parked · nothing said · a move in flight · declining |
 | `AwaitingIntake` | a parked intake's question, a door to its ask, and a stop that keeps the ask a proposal (INT4g) | asking · nothing can act |
 | `RunningIntake` | a running intake: why it takes no messages, a door to look at its ask, and the stop its composer used to carry (INT4h) | running · nothing can act |
+| `TrustAsk` | the agent's trust question for a folder the driver holds: the folder, what trusting means, what it holds, the one file written, and the grant on the press (D73) | asking · granting |
 | `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
 
 ### Organisms — `src/work/`

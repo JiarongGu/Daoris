@@ -4,7 +4,8 @@ import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api
 import {
   useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
 } from './queries';
-import { useConsidered, useDriver, useStopSession } from './shell';
+import { useConsidered, useDriver, useStopSession, useTrustFolder, useUntrusted } from './shell';
+import { TrustAsk } from './work/TrustAsk';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
 import { CarryFields, useCarry } from './compose/carry';
@@ -141,6 +142,11 @@ export function QuestsView({
   const driver = useDriver();
   const considered = useConsidered().data ?? [];
   const stop = useStopSession();
+  // A start the driver is holding for the agent's trust (D73), and the person's grant of it. The
+  // question opens inline, for the quest it was asked about, and only on the press.
+  const untrusted = useUntrusted().data ?? [];
+  const trust = useTrustFolder();
+  const [trustingFor, setTrustingFor] = useState<string | null>(null);
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
@@ -442,14 +448,44 @@ export function QuestsView({
               // Why this machine's driver is not starting it, in its own words (D46 §3) — the
               // whole sentence here, where there is room; the Overview row carries it truncated.
               const sitting = sittingBecause(considered, detail.id);
-              return sitting && (
+              const held = untrusted.find((hold) => hold.quest === detail.id);
+              // The trust hold stands on its own: it arrives in the same tick as the sentence, and the
+              // grant must not wait on a second list having arrived too.
+              return (sitting || held) && (
                 <>
                   <dt className="text-ink-faint">{t('quests.detail.sitting')}</dt>
-                  <dd className="m-0">{sitting.reason}</dd>
+                  <dd className="m-0">
+                    {sitting?.reason ?? t('work.attention.trustWhy')}
+                    {/* The one hold only the person can lift, offered where it is read (D73). */}
+                    {held && trustingFor !== detail.id && (
+                      <span className="mt-1.5 block">
+                        <Button onClick={() => setTrustingFor(detail.id)}>{t('trust.open')}</Button>
+                      </span>
+                    )}
+                  </dd>
                 </>
               );
             })()}
           </dl>
+          {(() => {
+            const held = untrusted.find((hold) => hold.quest === detail.id);
+            return held && trustingFor === detail.id && (
+              <div className="mb-4">
+                <TrustAsk
+                  hold={held}
+                  busy={trust.isPending}
+                  onCancel={() => setTrustingFor(null)}
+                  onGrant={() => trust.mutate(held, {
+                    onSuccess: (granted) => {
+                      notify(granted.message, granted.verified ? 'ok' : 'error');
+                      setTrustingFor(null);
+                    },
+                    onError: (e) => notify(sentence(e), 'error'),
+                  })}
+                />
+              </div>
+            );
+          })()}
           {(detail.conflicts?.length ?? 0) > 0 && (
             /* A move that reached the remote second (D68 §5): kept on the quest for a person and
                never merged, so it sits above the body — it is what this quest is waiting on. The

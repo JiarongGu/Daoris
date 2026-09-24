@@ -84,7 +84,7 @@ public sealed partial class Driver
     /// is what tells them (SURF5b), once, from the one place parks are seen.
     /// </returns>
     private async Task<(string Line, bool Opened, SessionEnded? Ended)> RunIntakeAsync(
-        AskView ask, CancellationToken ct)
+        AskView ask, List<TrustHold> untrusted, CancellationToken ct)
     {
         var adapterName = config.IntakeAdapter!;
         var named = $"ask #{ask.Id} in {ask.Workspace}";
@@ -121,13 +121,19 @@ public sealed partial class Driver
         }
 
         // The same trust question a driven spawn asks (DEPLOY1): in a room the harness has not been
-        // told to trust, the room's allow-list is inert and the intake cannot publish.
-        if (adapter.Toolchain is { TrustFile: { Length: > 0 } trustFile })
+        // told to trust, the room's allow-list is inert — so it is asked only where the rules handed
+        // over at spawn would not let the intake publish (D73), exactly as for a quest's session.
+        if (adapter.Toolchain is { TrustFile: { Length: > 0 } trustFile }
+            && !HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
         {
             var configHome = selection.ProfileHome ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            if (ClaudeTrust.Accepted(Path.Combine(configHome, trustFile), room) == false)
+            var trustPath = Path.Combine(configHome, trustFile);
+            if (ClaudeTrust.Accepted(trustPath, room) == false)
             {
-                return Hold(ClaudeTrust.Refusal(room));
+                // The room is Daoris's own folder under the home, and trusting it is still the person's
+                // grant: the fact goes to the screen beside the sentence, as a quest's does (D73).
+                lock (untrusted) untrusted.Add(new TrustHold(room, trustPath, Ask: ask.Id));
+                return Hold(ClaudeTrust.Refusal(room, selection.ProfileHome is null ? null : selection.Profile));
             }
         }
 

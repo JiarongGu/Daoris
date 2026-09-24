@@ -110,6 +110,18 @@ public static class PermissionRules
 
     public static string PathOf(string home) => Path.Combine(home, FileName);
 
+    /// <summary>
+    /// Whether a session handed <paramref name="rules"/> may call the connector's <paramref name="tool"/>
+    /// without being asked (D73): allowed by the tool's own rule, the server's, or its wildcard, and
+    /// named by no ask or deny rule, since an asked permission is refused over either door (D52).
+    /// </summary>
+    public static bool AllowsConnector(RuleLists rules, string tool)
+    {
+        string[] names = [ConnectorPrefix + tool, $"mcp__{KnowledgeConnector.ServerName}", ConnectorPrefix + "*"];
+        bool Named(IReadOnlyList<string> list) => list.Any(rule => names.Contains(rule, StringComparer.Ordinal));
+        return Named(rules.Allow) && !Named(rules.Ask) && !Named(rules.Deny);
+    }
+
     /// <summary>Why a rule is refused, or null when it is the harness's shape.</summary>
     public static string? Refusal(string rule) =>
         Shape.IsMatch(rule ?? "")

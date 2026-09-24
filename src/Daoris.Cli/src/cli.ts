@@ -70,6 +70,11 @@ const USAGE = `daoris <command> [options]
                                                    makers' own channels, verified
                          unpin <agent> [--workspace W]
                                                    back to whatever is on PATH
+                         trust <agent> <folder> [--profile P] --yes
+                                                   what the agent asks the first
+                                                   time it runs in a folder, granted
+                                                   in its own file; without --yes,
+                                                   the question and nothing written
   driver [verb]        what this machine drives ($DAORIS_HOME/driver.json):
                          list                      adapter, cap, what is opted in
                          drive|undrive <repo>      opt a repository in, or out

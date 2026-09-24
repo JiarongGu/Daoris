@@ -214,7 +214,8 @@ was diagnosed by.
   definite *no* refuses — no file, an unreadable one, or a harness with no notion of trust are all
   unknown and permissive, the same rule the login question follows.
 
-  What is still a decision, and the owner's: whether adoption should ever **ask** and write the flag,
+  *(Decided 2026-09-24: Daoris asks, then writes — D73.)*
+  What was still a decision, and the owner's: whether adoption should ever **ask** and write the flag,
   or whether the pipe door stays documented as needing a human's first visit. 🔴 Never silently: that
   flag *is* the grant, and a tool that gave it on someone's behalf would have removed the only step in
   the chain that was theirs.

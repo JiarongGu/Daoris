@@ -48,6 +48,27 @@ public sealed class PermissionRulesTests : IDisposable
     /// tools allowed (INT3b), because an ask is a refusal for anything Daoris starts, and a push denied
     /// (D37), structurally rather than by a script's exit code.
     /// </summary>
+    /// <summary>
+    /// Whether the connector reaches a session, which is what decides whether the driver holds for
+    /// trust (D73): allowed by the tool, the server or its wildcard, and asked or denied by none.
+    /// </summary>
+    [Fact]
+    public void The_connector_reaches_a_session_only_when_allowed_and_never_asked_or_denied()
+    {
+        const string respond = "mcp__daoris-knowledge__quest_respond";
+
+        Assert.True(PermissionRules.AllowsConnector(
+            PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine"), "quest_respond"));
+        Assert.True(PermissionRules.AllowsConnector(new RuleLists(["mcp__daoris-knowledge"], [], []), "quest_respond"));
+        Assert.True(PermissionRules.AllowsConnector(new RuleLists(["mcp__daoris-knowledge__*"], [], []), "quest_respond"));
+        Assert.False(PermissionRules.AllowsConnector(RuleLists.Empty, "quest_respond"));
+        Assert.False(PermissionRules.AllowsConnector(new RuleLists([respond], [respond], []), "quest_respond"));
+        Assert.False(PermissionRules.AllowsConnector(new RuleLists([respond], [], ["mcp__daoris-knowledge"]), "quest_respond"));
+        Assert.False(PermissionRules.AllowsConnector(
+            PermissionRules.Compose(PermissionRules.SwitchDefault(PermissionRules.Load(_home), "connector", on: false), "default", "engine"),
+            "quest_respond"));
+    }
+
     [Fact]
     public void Nothing_written_hands_the_defaults_alone()
     {

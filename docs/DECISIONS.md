@@ -2865,3 +2865,77 @@ this one.
   harness's, and it would disagree with it exactly when it mattered.
 - **An agent widening its own permissions unasked.** A better approval surface must not widen
   autonomy (D37, D52). Narrowing needs no one.
+
+## D73 — The agent's trust in a folder is asked, then written, and never silently (2026-09-24)
+
+**Decision.** DEPLOY1's second half, option (b), is the owner's answer (2026-09-24): Daoris asks per
+folder, then writes the flag, and for managed repositories *"we should follow what claude code
+does"*. The agent ignores a folder's own `permissions.allow` until someone accepts that folder in the
+account's `.claude.json`. That holds on both doors, measured
+(`docs/2026-09-24-deploy1-acp-trust-evidence.md`). Daoris now writes that flag, and only on a
+person's explicit act that names the folder.
+
+- **The terminal**: `daoris agent trust <agent> <folder> [--profile <name>] --yes`. Without `--yes`
+  it is the question. It names the folder, the account's file and what trusting means, grants
+  nothing, and exits 1. A terminal command cannot prompt, since a gate runs it with stdin closed, so
+  the flag is the answer. The account is the one a session there would run as: the profile named,
+  else the machine's default, else the agent's own configuration home. A door (`claude-code-acp`) is
+  granted in its owner's account.
+- **The screen**: where the driver shows a trust hold, *trust this folder…* opens the same question,
+  and the grant is written on the press. That is the quest's drawer, and a `trust` row in *What needs
+  you*, which is also where an intake's held room shows. The tick reports each trust hold as a fact
+  (`TickReport.Untrusted`: the folder, the account's file it read, the quest or ask it held). The
+  bridge's `TRUST_FOLDER` grants only a pair the last tick held, in the file that tick read. It is
+  desktop only, because a browser never learns a machine path.
+- **The write**: one flag moves (`hasTrustDialogAccepted`), in the harness's own file. An existing
+  entry is updated in place under the key the harness wrote; a new one takes forward slashes, the
+  form Claude Code writes today. It is written beside, renamed, then read back. A file this build
+  cannot read is refused and left as it was. The twins are `ClaudeTrust.Grant` in the driver and
+  `trust.ts` in the CLI, with the same cases asserted on both sides.
+- **Nothing else writes it**: not adoption, not sync, not a spawn.
+
+**Trust decides only whether a repository's OWN allow-list counts.** Measured the same day, on both
+doors: the rules Daoris hands a session at spawn (PERM1, D72) reach it in an untrusted folder. A
+session handed the `connector` default takes and closes its quest whoever trusted what. So the
+driver holds for trust only where that allowance would **not** reach the session: the harness takes
+no rules, or the `connector` default is off, or the person asked for or denied the tool the session
+must call (`quest_respond` for a quest, `quest_publish` for an intake). `PermissionRules.AllowsConnector`
+reads the same composition `HandRules` hands over. The grant is still how a repository's own rules
+come to apply, but it no longer gates driving.
+
+**Why.** The flag *is* the grant, and the owner chose to have Daoris ask for it rather than send the
+person into each folder with an interactive agent. Onboarding a workspace of 29 repositories (INT6)
+that way is exactly the friction the automation-first direction exists to remove. The question
+Daoris asks is the one the agent would ask, so the act stays the person's.
+
+**A concurrent rewrite.** Claude Code rewrites `.claude.json` whole whenever it saves its state. A
+Claude Code already running under the same account may save a copy it read before the grant, and so
+undo it. That is not silent. The driver re-reads the file before every start, so a lost grant shows
+as the same hold again, naming the same folder. `verified` is the re-read at the moment of writing:
+when it does not hold, the terminal exits 1 and the screen says so.
+
+**Not settled here.**
+- Whether Claude Code honours a trusted *parent* folder for a child. The driver's check matches the
+  exact folder, so if the harness walks up, a hold could name a folder that is in fact trusted
+  through its parent. That would be a wrong hold, never a wrong grant, and the trust probe can
+  measure it on a trusted parent.
+- Whether the harness honours a key Daoris wrote exactly as it honours one it wrote itself. The form
+  is the one it writes; only a real run under a granted folder proves it. ACP2's proof run is that
+  run, once its scratch folder is granted.
+- The screen offers no grant before a hold exists, for example from Projects when a repository is
+  opted in. The terminal names any folder.
+
+**Amends** `ClaudeTrust`'s "read, never written": the driver still only reads the flag, and it is
+written only on the person's word.
+
+**Rejected.**
+- **(c) A documented first visit**: the person runs the agent in each folder and accepts. It keeps
+  Daoris out of the harness's file, and makes onboarding a workspace a manual tour of every
+  repository. The owner chose against it.
+- **(d) Silently**, at adoption, sync or spawn. Never, because it removes the one step in the chain
+  that is the person's.
+- **A screen verb that names any folder.** The terminal already does that, where the person types the
+  path. A bridge verb taking any pair would let whatever reaches the bridge widen trust, so the
+  screen grants only what the driver is holding.
+- **Granting by default in the terminal**, with no `--yes`. Granting on the first keystroke is the
+  silent option with one more word in front of it.

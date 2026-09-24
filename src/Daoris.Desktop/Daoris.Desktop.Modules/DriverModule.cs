@@ -116,6 +116,36 @@ public sealed class DriverModule : ModuleBase
                 return State();
             }
 
+            // The person's grant of a folder the driver is holding for the harness's trust (D73) — the
+            // screen's half of `daoris agent trust`. Only a pair this machine's last tick held is
+            // granted, in the file that tick read; the terminal is the door that names any folder.
+            case "TRUST_FOLDER":
+            {
+                var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
+                var trustFile = PayloadHelper.GetRequiredValue<string>(request.Payload, "trustFile");
+                var hold = _loop.Trust.Holding(folder, trustFile)
+                    ?? throw new DriverException(
+                        $"the driver is not holding `{folder}` for this agent's trust, so there is nothing "
+                        + "here to confirm — only a folder it is holding can be trusted from this screen. "
+                        + "`daoris agent trust claude-code <folder> --yes` names any folder.");
+
+                var grant = ClaudeTrust.Grant(hold.TrustFile, hold.Folder);
+                _loop.Nudge();
+                return new
+                {
+                    hold.Folder,
+                    grant.Key,
+                    grant.Changed,
+                    grant.Verified,
+                    Message = grant.Verified
+                        ? $"Trusted `{hold.Folder}` for this agent: its own `permissions.allow` applies there "
+                          + "now, and the driver looks again."
+                        : $"Wrote the grant for `{hold.Folder}`, but reading `{hold.TrustFile}` back does not "
+                          + "show it — a running Claude Code may have saved over it. If so, the driver will "
+                          + "hold the same folder again.",
+                };
+            }
+
             case "RETRY_QUEST":
             {
                 var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest");

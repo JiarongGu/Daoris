@@ -98,8 +98,9 @@ has never been trusted in refuses **naming the action that fixes it**.
 no gate ever runs them. `remote`, `agent` and `driver` are management too; they edit files under
 **the Daoris home** (`DAORIS_HOME` — the installed application's own `data/`, set once for your
 account, never your profile; D63), refusing with none set. `agent` runs each agent's own installer,
-updater or login flow when asked, and `agent pin` fetches Claude Code or Codex from its maker's
-channel, verified. Every other command above is offline by construction. **The machine's registry
+updater or login flow, `agent pin` fetches from a maker's verified channel, and `agent trust --yes`
+sets one flag in the agent's own file. Every other
+command above is offline by construction. **The machine's registry
 is the authority** on who is in the family: being in a folder is not being a member, so a repository
 joins by connecting and leaves by retiring. `import` is the old folder scan, demoted to something a
 person runs, and safe to re-run: unstated wiring is preserved. A never-managed store imports its

@@ -47,6 +47,13 @@ public sealed record TickReport(
 
     /// <inheritdoc cref="Concluded"/>
     public IReadOnlyList<SessionEnded> Concluded { get; init; } = Concluded ?? [];
+
+    /// <summary>
+    /// The starts this tick held because the harness has not trusted where they would run (D73) — the
+    /// folder, the file that said so, and what was held. <see cref="Events"/> says it for a person;
+    /// this says it for a screen, which offers the person the grant and nothing wider.
+    /// </summary>
+    public IReadOnlyList<TrustHold> Untrusted { get; init; } = [];
 }
 
 /// <summary>
@@ -189,6 +196,9 @@ public sealed partial class Driver(
         // machine actually hits, not only the ones the planner can see.
         var heldAt = new Dictionary<string, string>(StringComparer.Ordinal);
 
+        // The holds that are the harness's trust (D73), as facts: the screen offers exactly these.
+        var untrusted = new List<TrustHold>();
+
         var starts = plan.Where(c => c.Verdict == StartVerdict.Start).ToList();
 
         // The plugins' say, BEFORE a start costs anything (D64 §4): the first hold in catalogue order
@@ -226,7 +236,7 @@ public sealed partial class Driver(
 
         var runs = starts.Select(async start =>
         {
-            var (line, opened, ended, held) = await RunAsync(start, ct).ConfigureAwait(false);
+            var (line, opened, ended, held) = await RunAsync(start, untrusted, ct).ConfigureAwait(false);
             lock (events)
             {
                 events.Add(line);
@@ -237,7 +247,7 @@ public sealed partial class Driver(
         });
         var intakeRuns = intakes.Select(async ask =>
         {
-            var (line, opened, ended) = await RunIntakeAsync(ask, ct).ConfigureAwait(false);
+            var (line, opened, ended) = await RunIntakeAsync(ask, untrusted, ct).ConfigureAwait(false);
             lock (events)
             {
                 events.Add(line);
@@ -274,7 +284,10 @@ public sealed partial class Driver(
         // (sync design §8). Nothing concluded, nothing new to carry.
         if (concluded.Count > 0) await SyncAsync().ConfigureAwait(false);
 
-        return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded);
+        return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded)
+        {
+            Untrusted = untrusted,
+        };
     }
 
     /// <summary>
@@ -328,7 +341,7 @@ public sealed partial class Driver(
     /// hold either: somebody else got there first, and the quest is theirs rather than sitting.
     /// </returns>
     private async Task<(string Line, bool Opened, SessionEnded? Ended, string? Held)> RunAsync(
-        Consideration start, CancellationToken ct)
+        Consideration start, List<TrustHold> untrusted, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -390,16 +403,25 @@ public sealed partial class Driver(
         // Held rather than failed: nothing is wrong with the quest, and one command fixes it.
         // Resolved defensively: an unknown adapter name is its own error with its own sentence,
         // reported where it already was, so this check simply does not run for one.
-        HarnessToolchain? preflight = null;
-        try { preflight = _adapters.Resolve(config.Adapter).Toolchain; } catch (DriverException) { }
+        //
+        // 🔴 Only where the connector's allowance would NOT reach the session (D73). The rules Daoris
+        // hands over at spawn are honoured in an untrusted folder on both doors (measured, PERM1), so
+        // a session handed the `connector` default takes and closes its quest whoever trusted what,
+        // and trust then decides only whether the repository's OWN allow-list counts.
+        ISessionAdapter? preflight = null;
+        try { preflight = _adapters.Resolve(config.Adapter); } catch (DriverException) { }
 
-        if (preflight is { TrustFile: { Length: > 0 } trustFile })
+        if (preflight is { Toolchain.TrustFile: { Length: > 0 } trustFile }
+            && !HandedConnector(preflight, start.Workspace, quest.To, "quest_respond"))
         {
             var configHome = selection.ProfileHome
                 ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            if (ClaudeTrust.Accepted(Path.Combine(configHome, trustFile), workTree) == false)
+            var trustPath = Path.Combine(configHome, trustFile);
+            if (ClaudeTrust.Accepted(trustPath, workTree) == false)
             {
-                return Hold(ClaudeTrust.Refusal(workTree));
+                // Said twice, on purpose: the sentence for a person, the fact for a screen (D73).
+                lock (untrusted) untrusted.Add(new TrustHold(workTree, trustPath, Quest: quest.Id));
+                return Hold(ClaudeTrust.Refusal(workTree, selection.ProfileHome is null ? null : selection.Profile));
             }
         }
 
@@ -631,6 +653,16 @@ public sealed partial class Driver(
 
         return (info, harnessNotice);
     }
+
+    /// <summary>
+    /// Whether the rules this session would be handed let it call the connector's <paramref name="tool"/>
+    /// unasked (D73) — the same composition <see cref="HandRules"/> hands over. False for a harness that
+    /// takes no rules at all, which then depends on the repository's own list and so on its trust.
+    /// </summary>
+    private bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
+        adapter.TakesSettings
+        && PermissionRules.AllowsConnector(
+            PermissionRules.Compose(PermissionRules.Load(home), workspace, repository), tool);
 
     /// <summary>
     /// The rules one session may run under (PERM1, D72), composed from this machine's file and handed

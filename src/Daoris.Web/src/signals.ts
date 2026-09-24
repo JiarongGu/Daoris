@@ -41,6 +41,21 @@ export interface Consideration {
 }
 
 /**
+ * A start the driver held because the agent has not been trusted where it would run (D73) — the
+ * folder, the agent's own file that said so, and what it held. Shape of the tick's `untrusted`.
+ *
+ * @remarks
+ * Machine-local paths, so they arrive over the shell's bridge only; a browser never has one. The
+ * pair is what a person's grant writes, and the shell grants nothing it is not holding.
+ */
+export interface TrustHold {
+  folder: string;
+  trustFile: string;
+  quest?: string;
+  ask?: string;
+}
+
+/**
  * Why a quest is sitting, in the driver's words — or null when the driver is starting it, or has
  * said nothing about it.
  *

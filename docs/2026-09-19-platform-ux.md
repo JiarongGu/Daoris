@@ -346,6 +346,22 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **The machine's scope is not called "This machine".** That is the section the card sits under,
 >   so its scope reads *every session on this machine*.
 
+> **Amended 2026-09-24, a folder waiting on the person's trust (D73).** Held by vitest, and **not yet
+> looked at on the real window**.
+>
+> - **The grant is offered where the hold is read.** The quest's drawer carries *trust this folder…*
+>   under its sitting line, and *What needs you* carries a `trust` row. That row is the only place an
+>   intake's held room shows, because an intake has no drawer.
+> - **The question is the agent's own, asked in the open.** It names the folder, what trusting means
+>   in the agent's terms, what the driver is holding, and the one file written. It grants on the
+>   press and on nothing else. Inline in the drawer that is already open; in a drawer of its own from
+>   the band.
+> - **Never wider than the hold.** The screen offers a pair the driver produced and the shell
+>   refuses any other, so a screen can never trust a folder the driver is not holding. The terminal is
+>   where a person names any folder.
+> - **One row per folder.** Two quests held on one untrusted tree are one grant, since the oldest
+>   thing it holds.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

@@ -214,6 +214,55 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// The screen's half of trusting a folder (D73): the person confirms a hold the driver is showing,
+    /// and exactly that grant is written — the folder the driver held, in the file it read.
+    /// </summary>
+    [Fact]
+    public async Task Trusting_a_folder_the_driver_is_holding_writes_the_grant_it_read()
+    {
+        var loop = Loop();
+        var file = Path.Combine(Home, "profile", ".claude.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, """{"numStartups":7,"projects":{}}""");
+        var folder = Path.Combine(Home, "engine");
+        loop.Trust.Record([new TrustHold(folder, file, Quest: "q1")]);
+
+        var answer = await AnswerAsync(new DriverModule(Bus, loop), "TRUST_FOLDER", new { folder, trustFile = file });
+
+        Assert.True(answer.GetProperty("changed").GetBoolean());
+        Assert.True(answer.GetProperty("verified").GetBoolean());
+        Assert.Contains(folder, answer.GetProperty("message").GetString());
+        Assert.True(ClaudeTrust.Accepted(file, folder));
+        Assert.Contains("\"numStartups\": 7", File.ReadAllText(file));
+    }
+
+    /// <summary>
+    /// 🔴 <b>Never wider than the hold.</b> The screen can only confirm what the driver is holding: a
+    /// folder it is not holding — or the right folder in some other file — is refused in the driver's
+    /// own words, and nothing is written. The terminal is the door that names any folder.
+    /// </summary>
+    [Fact]
+    public async Task Trusting_a_folder_the_driver_is_not_holding_is_refused_and_writes_nothing()
+    {
+        var loop = Loop();
+        var file = Path.Combine(Home, "profile", ".claude.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, """{"projects":{}}""");
+        var held = Path.Combine(Home, "engine");
+        loop.Trust.Record([new TrustHold(held, file, Quest: "q1")]);
+        var module = new DriverModule(Bus, loop);
+
+        var elsewhere = await RefusalAsync(module, "TRUST_FOLDER", new { folder = Path.Combine(Home, "other"), trustFile = file });
+        var otherFile = await RefusalAsync(module, "TRUST_FOLDER", new { folder = held, trustFile = Path.Combine(Home, "x.json") });
+
+        Assert.Contains(Refusals.DriverRefused, elsewhere);
+        Assert.Contains("daoris agent trust", elsewhere);
+        Assert.Contains(Refusals.DriverRefused, otherFile);
+        Assert.Equal("""{"projects":{}}""", File.ReadAllText(file));
+        Assert.False(File.Exists(Path.Combine(Home, "x.json")));
+    }
+
+    /// <summary>
     /// What sessions consumed (TOOL3/D57 §4), over the bridge and nowhere else. A machine that has
     /// measured nothing answers empty lists — <b>never a zero</b>, because "nothing was measured" and
     /// "it used nothing" are different claims and only one of them is true.

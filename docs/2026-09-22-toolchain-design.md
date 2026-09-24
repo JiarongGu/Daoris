@@ -198,6 +198,27 @@ it.
 - Musl detection and Windows arm64 are mapped but never run.
 - The first real pin of each is AGT2c's to observe.
 
+## 3b. The agent's trust in a folder, as built (D73, 2026-09-24)
+
+An agent that keeps a trust record declares it: `trustFile` in the CLI's table and `TrustFile` in the
+driver's, the same two entries on both sides (`claude-code` and `claude-code-acp`, whose account is
+`claude-code`'s), with a twin test on each. The driver only reads the flag, before every start, and
+holds on a definite no, but only where the rules it hands over (PERM1) would not let the session
+call its connector. Those rules are honoured untrusted, so the flag otherwise decides only whether
+the repository's own allow-list counts. It reports each hold as a fact as well as a sentence.
+
+- **Terminal:** `daoris agent trust <agent> <folder> [--profile <name>] --yes`. Without `--yes` it is
+  the question, and it exits 1 having written nothing. `--dry-run` prints the same and exits 0. The
+  account is the profile named, else the machine's default, else the agent's own home (twin rule 3).
+- **Desktop:** the bridge's `TRUST_FOLDER`, for a hold the loop's last tick produced, in the file
+  that tick read.
+- **The write** is one flag in the agent's own file: `trust.ts` and `ClaudeTrust.Grant`, twins held
+  by the same cases. It is the only file outside the Daoris home a command writes, and only because
+  a person named the folder.
+
+**What the gates do not cover:** whether a key Daoris writes is honoured by the harness exactly as one
+it wrote, and whether a trusted parent covers a child. Both are measurable in one real run (D73).
+
 ## 4. Measurement
 
 - **The source is ACP's `usage_update`**, parsed structurally instead of rendered to a line. It is
