@@ -302,15 +302,15 @@ PERM1 (phase 1) and DEPLOY1's second half are in the archive, with HELP3 and INT
 Measured: rules Daoris hands over at spawn reach an untrusted session on both doors, and a
 repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidence.md`).
 
-- [ ] ⛔ **PERM4 — should a driven session be allowed to commit by default?** ACP2's real run showed
+- [ ] **PERM4 — should a driven session be allowed to commit by default?** ACP2's real run showed
   a session in an untrusted repository taking its quest, making the edit and being refused `git
-  add`/`git commit`, so it declined honestly. The repository's own allow-list does not apply there,
-  and Daoris's defaults allow only the connector. D37 already makes local commits automatic and
-  pushes the person's. A `commit` default (`cd`, `git add`, `git commit`, still with no push) would
-  let driven work land untrusted. It widens what an agent may do, so it is the owner's call.
-- [ ] ⛔ **PERM2 — an agent updates the rules.** A connector tool, `permission_propose`. Narrowing
+  add`/`git commit`, so it declined honestly. 🔴 **The owner said yes, 2026-09-24**: a `commit`
+  default (`cd`, `git add`, `git commit`; push stays denied), switchable off by id. Being built with
+  PERM3.
+- [ ] **PERM2 — an agent updates the rules.** A connector tool, `permission_propose`. Narrowing
   applies at the next tick, widening waits for the person's yes, and every change is recorded with
-  who made it (design §6). The owner's question first: may a widening ever apply without the person?
+  who made it (design §6). 🔴 **The owner answered, 2026-09-24**: a widening never applies without
+  the person.
 - [ ] **PERM3 — the tree guard as a hook.** Refuse a write outside the session's tree structurally,
   with a PreToolUse hook Daoris ships (`permissionDecision: deny`, never an exit code). A rule cannot
   say "outside" (design §3).

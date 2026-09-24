@@ -2771,8 +2771,8 @@ rule costs its bytes, and the roster's line naming what is off costs its own. `c
 total as before.
 
 **Why the repository confirms.** The owner's sentence settles that a pack MAY switch core off. It
-does not settle whether the repository has a say, so the safer default was taken, and it is the
-owner's to reverse. A pack installs into repositories its author has never seen, which is why D4 was
+does not settle whether the repository has a say, so the safer default was taken. **The owner
+confirmed it the same day** (2026-09-24): the repository confirms. A pack installs into repositories its author has never seen, which is why D4 was
 strict. A core rule vanishing because a pack was added reads, to the next session, as if the rule
 never existed. With the confirmation, the removal is a reviewable line in a tracked file that names
 the pack. Without it, adding a pack would change the always-loaded doctrine in a way the manifest's
