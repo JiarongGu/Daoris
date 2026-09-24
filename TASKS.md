@@ -409,9 +409,10 @@ both are the owner's.**
   rather than spending nine minutes and a real login on a session that could never close its quest.
   What is left is the owner's: whether adoption should *ask* and write the flag (option b), or
   whether the pipe door stays documented as needing a human's first visit (option c). 🔴 **Never
-  (d), silently** — that flag *is* the grant. And **measure the ACP door first**: it runs the Agent
-  SDK rather than the CLI's trust flow, so it may not have the problem at all, and one driven run
-  answers it.
+  (d), silently** — that flag *is* the grant. **The ACP door was measured, 2026-09-24**
+  (`docs/2026-09-24-deploy1-acp-trust-evidence.md`, `tools/acp-trust-probe.mjs`): it ignored an
+  untrusted room's allow-list too, so the question stands on both doors. It holds ACP2's proof run
+  and INT4f's intake room until the person grants trust.
 
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
