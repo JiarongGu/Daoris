@@ -430,6 +430,19 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
 from options (D75), and FRAME1–FRAME5 are in the archive. Nothing here is open; a new menu or
 Settings domain is built against that design, not against this heading.
 
+### The reference gap (owner, 2026-09-24)
+
+> *"lets keep push the ui/ux design and I still think this does not meet the reference projects
+> capbility"*
+
+`docs/2026-09-24-reference-gap-study.md` measured it: the attended session's centre is a record, not
+a conversation, because ACP's structure is flattened to text lines before the bridge, a chat does not
+use a structured wire at all, and nothing is kept for the page across a restart. A chrome pass cannot
+close that.
+- [ ] **REF1 — the owner's choice.** A (a conversation model end to end, recommended), B (parse the
+  lines, the scraping design §3 rejected) or C (chrome only); then the order of CONV1–5, FRAME6,
+  RAIL1 and REVIEW2 (study §4). The answer becomes D76.
+
 ### Open — the arc's leftovers, in the order they are worth doing
 
 
