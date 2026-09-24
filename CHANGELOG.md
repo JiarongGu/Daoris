@@ -409,8 +409,14 @@ The first version: doctrine that installs, is checked, and flows back.
   work folded under its answer. It is read back after a restart, a page at a time, and follows the
   newest words until you scroll up. The console stays, as the raw view. Sessions on the protocol door
   have it, and so do Claude Code's driven sessions, intakes and chats: the adapter reads the tool's
-  own structured output, and a chat records each message you send. A chat on the protocol door
-  follows. A tool card names a file inside the session's tree relative to it. The context a session
+  own structured output, and a chat records each message you send.
+- **A chat on the protocol door works.** A conversation with `claude-code-acp`, `codex-acp` or a
+  plugin's harness used to open and never answer: the person's words went into the protocol's
+  stream as raw text. Now it is one session, each message a turn on it, in the order sent. It has
+  the same servers and rules a driven session gets, and *finish* closes the session before the
+  harness exits. A fresh chat says nothing has been said yet, instead of claiming its door carries
+  only text. And a conversation no longer loses a word when the page reads it while the agent is
+  talking. A tool card names a file inside the session's tree relative to it. The context a session
   used is recorded for the native door too.
 - **A chat you start stays open in front of you**, where it used to fall back to *Nothing attended*
   until you picked it from the list. A long code line scrolls inside its block, not widening the

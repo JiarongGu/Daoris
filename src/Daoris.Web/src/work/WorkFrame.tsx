@@ -292,7 +292,14 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
               record came without its transcript, which stays on their machine (D47 §4). */}
           {attended && here && (
             <div className="mt-4 min-w-0">
-              <SessionConversation session={attended.id} tree={attended.tree} live={live} scroller={centre} />
+              <SessionConversation
+                session={attended.id}
+                adapter={attended.adapter}
+                chat={attended.kind === 'chat'}
+                tree={attended.tree}
+                live={live}
+                scroller={centre}
+              />
             </div>
           )}
         </div>

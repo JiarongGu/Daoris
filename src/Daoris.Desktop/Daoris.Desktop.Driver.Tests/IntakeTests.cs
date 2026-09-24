@@ -297,7 +297,13 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal(Path.Combine(_home, IntakeRoom.Folder, "work"), opened["room"]!.GetValue<string>());
         Assert.Equal("stub", opened["adapter"]!.GetValue<string>());
 
-        var published = Assert.Single(service.Published);
+        // What the agent said, when it published nothing: this failed once in a loaded full run
+        // (2026-09-25) and the transcript went with the test's home, so the next failure says why.
+        var said = File.Exists(Path.Combine(_home, "sessions", "i1.log"))
+            ? File.ReadAllText(Path.Combine(_home, "sessions", "i1.log"))
+            : "(no transcript)";
+        Assert.True(service.Published.Count == 1, $"published {service.Published.Count}; the session said:\n{said}\n{string.Join("\n", report.Events)}");
+        var published = service.Published[0];
         Assert.Equal("media-api", published["to"]!.GetValue<string>());
         Assert.Equal("i1", published["session"]!.GetValue<string>());
         Assert.Equal("storefront", published["then"]![0]!["to"]!.GetValue<string>());

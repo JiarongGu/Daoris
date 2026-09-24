@@ -24,6 +24,44 @@ public sealed class SessionEventsTests : IDisposable
 
     private static SessionEvent Message(string text) => new() { Kind = SessionEventKind.Message, Text = text };
 
+    /// <summary>
+    /// 🔴 A page reading the record never costs the record an event (CONV3b, 2026-09-25). The reader
+    /// opened the file denying writers, so an append that landed mid-read failed with a sharing
+    /// violation, and its caller — rightly unwilling to fail a session over its record — dropped the
+    /// event. Seen as an agent's answer missing from a conversation whose turn had ended.
+    /// </summary>
+    [Fact]
+    public async Task Every_append_lands_while_the_record_is_being_read()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("s1", Message("first"));
+
+        // Bounded on both sides: an unbounded read loop opened the file thousands of times a second,
+        // and a machine's real-time scanner made the whole suite three times slower for it.
+        var reading = Task.Run(() =>
+        {
+            for (var i = 0; i < 150; i++) _ = events.Page("s1");
+        });
+
+        var failures = 0;
+        for (var i = 0; i < 150; i++)
+        {
+            try
+            {
+                events.Append("s1", Message($"m{i}"));
+            }
+            catch (IOException)
+            {
+                failures++;
+            }
+        }
+
+        await reading;
+
+        Assert.Equal(0, failures);
+        Assert.Equal(151, events.Page("s1", limit: 1000).Events.Count);
+    }
+
     [Fact]
     public void Each_event_is_numbered_in_order_and_written_as_one_line_beside_the_transcript()
     {

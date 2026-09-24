@@ -257,7 +257,9 @@ public sealed class DriverModule : ModuleBase
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
-                return new { Ended = _loop.Processes.CloseInput(id) };
+                // Through the conversation, which knows its door: on the protocol door, the turns asked
+                // for, then `session/close`, then the end of input (CONV3b).
+                return new { Ended = _loop.Chat?.Finish(id) ?? _loop.Processes.CloseInput(id) };
             }
 
             case "STOP_SESSION":
@@ -350,6 +352,9 @@ public sealed class DriverModule : ModuleBase
                         _loop.Harnesses.Toolchain(report.Adapter)?.Product,
                         _loop.Harnesses.Toolchain(report.Adapter)?.Maker,
                         Wire = _loop.Harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
+                        // Whether a session on this door keeps a conversation (D76 §1) — what the page
+                        // reads an empty record by, rather than guessing from the emptiness (CONV3b).
+                        Structured = _loop.Harnesses.Structured(report.Adapter),
                         // The plugin this harness came from (D64), or null for one this build carries
                         // — shown beside it, so a person knows which folder to look in.
                         Plugin = _loop.Harnesses.Adapters.DeclaredBy(report.Adapter),

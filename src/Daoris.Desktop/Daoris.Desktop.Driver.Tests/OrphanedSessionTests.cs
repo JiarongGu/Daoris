@@ -208,7 +208,7 @@ public sealed class OrphanedSessionTests : IDisposable
     /// The service's session doors, on a loopback port: records seeded or opened as chats, listed as
     /// the ledger lists them (active only, unless asked for all), and moved.
     /// </summary>
-    private sealed class StandInService : IAsyncDisposable
+    internal sealed class StandInService : IAsyncDisposable
     {
         private readonly HttpListener _listener;
         private readonly Task _serving;

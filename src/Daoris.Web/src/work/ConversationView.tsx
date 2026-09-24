@@ -21,8 +21,17 @@ import { ToolCard } from './ToolCard';
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */
-export function ConversationView({ turns, tree, live = false, loaded = true, earlier = false, onLoadEarlier }: {
+export function ConversationView({
+  turns, tree, structured, chat = false, live = false, loaded = true, earlier = false, onLoadEarlier,
+}: {
   turns: Turn[];
+  /**
+   * Whether this session's door keeps a conversation's structure, as its harness declares (D76 §1) —
+   * or undefined where that is not known. It is what an empty record is read by.
+   */
+  structured?: boolean;
+  /** Whether this session is a conversation with a person, which opens with nothing said. */
+  chat?: boolean;
   /** The session's tree, so a tool's path inside it reads relative to it. */
   tree?: string | null;
   /** Whether the session is still working — a running turn shows it is. */
@@ -37,11 +46,16 @@ export function ConversationView({ turns, tree, live = false, loaded = true, ear
 
   if (!loaded) return null;
 
-  // 🔴 A structured door writes the composed target the moment a session starts, so a record with
-  // nothing in it is a door that carries only text, or a session from before conversations were kept — never a
-  // conversation that has not begun. "Nothing said yet" under a parked pipe chat was untrue (CONV2's look).
+  // 🔴 What an empty record means is the DOOR's to say, never a guess from the emptiness. A driven
+  // session's record opens with its target, so empty there is a door that carries only text or a record
+  // from before conversations were kept. A chat opens with nothing said — and on a structured door that
+  // is exactly what empty means: told otherwise, a fresh chat read that its door carries only text
+  // (CONV3b), as a parked pipe chat once read "Nothing said yet" (CONV2's look).
   if (turns.length === 0) {
-    return <p className="m-0 mt-2 max-w-prose text-small text-ink-faint">{t('work.conversation.textOnly')}</p>;
+    const sentence = structured && chat
+      ? t(live ? 'work.conversation.nothingYet' : 'work.conversation.nothingSaid')
+      : t('work.conversation.textOnly');
+    return <p className="m-0 mt-2 max-w-prose text-small text-ink-faint">{sentence}</p>;
   }
 
   return (

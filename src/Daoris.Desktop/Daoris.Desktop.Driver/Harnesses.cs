@@ -1232,6 +1232,21 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public SessionWire Wire(string adapter) => adapters.Resolve(adapter).Wire;
 
     /// <summary>
+    /// Whether this harness's door carries a conversation's STRUCTURE (D76 §1): the protocol door, or a
+    /// native door whose adapter reads the harness's own structured output (CONV3a).
+    /// </summary>
+    /// <remarks>
+    /// The page reads it to know what an empty record means — nothing said yet on a structured door, a
+    /// conversation that lives in the console on a text one — rather than guessing from the emptiness,
+    /// which told a fresh chat on a structured door that its door carries only text (CONV3b).
+    /// </remarks>
+    public bool Structured(string adapter) => Structured(adapters.Resolve(adapter));
+
+    /// <inheritdoc cref="Structured(string)"/>
+    public static bool Structured(ISessionAdapter adapter) =>
+        adapter.Wire == SessionWire.Acp || adapter.StructuredOutput() is not null;
+
+    /// <summary>
     /// One harness as this machine has it. Cached after the first look; <paramref name="refresh"/>
     /// asks again, which is what the roster surface's refresh and every refusal do.
     /// </summary>

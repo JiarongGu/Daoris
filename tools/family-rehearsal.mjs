@@ -3093,6 +3093,16 @@ const handle = async (line) => {
       break;
     }
     case 'session/prompt': {
+      // A conversation serves no quest (CONV3b): each prompt is a person's message, answered with
+      // what was heard — and the session is the SAME one for every message, which the gate reads back.
+      if (!id) {
+        const said = frame.params?.prompt?.[0]?.text ?? '';
+        update(frame.params?.sessionId ?? session, {
+          sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'acp heard: ' + said + ' (in ' + frame.params?.sessionId + ')' },
+        });
+        send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+        break;
+      }
       // A turn that fails is ANSWERED as a failure, the way a real agent's would be: an unanswered
       // prompt is a driver waiting on its timeout, which is a hang dressed as a session.
       try {
@@ -3204,6 +3214,50 @@ check(
   'the commit the ACP session made is really in the newcomer’s history',
   new RegExp(`acp: answer quest ${acpQuestId}`).test(acpLanded.out),
   acpLanded.out,
+);
+
+// 🔴 A CONVERSATION over the same door (CONV3b, D76 §4). A chat on an ACP harness used to be spawned
+// as a pipe: no handshake, no session, and the person's words written into the JSON-RPC stream as raw
+// text — which this stub reports as "not a frame". Now: one session for the whole conversation, a turn
+// per message, the person's words in the record, and end of input finishing it through `session/close`.
+const acpChatInput = join(scratch, 'acp-chat-input.txt');
+writeFileSync(acpChatInput, 'first over the protocol\nsecond over the protocol\n');
+const acpChat = run(
+  `dotnet "${driverDll}" chat --repository newcomer --adapter acp-stub < "${acpChatInput}"`,
+  scratch,
+  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_HARNESS },
+  DRIVE_TIMEOUT,
+);
+check(
+  'a conversation runs over the ACP door from a terminal, each message a turn on ONE session',
+  acpChat.code === 0
+    && /acp heard: first over the protocol \(in acp-session-1\)/.test(acpChat.out)
+    && /acp heard: second over the protocol \(in acp-session-1\)/.test(acpChat.out),
+  acpChat.out,
+);
+
+const acpChatRecords = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true');
+const acpChatRecord = (acpChatRecords.json ?? []).find((s) => s.kind === 'chat' && s.adapter === 'acp-stub');
+const acpChatTranscript = existsSync(acpChatRecord?.transcript ?? '')
+  ? readFileSync(acpChatRecord.transcript, 'utf8')
+  : '';
+check(
+  '…finished by end of input, not cut off, and never a raw line on the wire',
+  acpChatRecord?.state === 'completed' && !acpChatTranscript.includes('not a frame'),
+  `${JSON.stringify(acpChatRecord)}\n${acpChatTranscript.slice(0, 600)}`,
+);
+
+// The record is the driver's home's (D76 §2): this run's config names the scratch folder as its home.
+const acpChatEvents = join(scratch, 'sessions', `${acpChatRecord?.id}.events.jsonl`);
+const acpSaid = existsSync(acpChatEvents)
+  ? readFileSync(acpChatEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
+    .filter((e) => e.kind === 'user' || e.kind === 'turn').map((e) => (e.kind === 'user' ? `${e.origin}: ${e.text}` : 'turn'))
+  : [];
+check(
+  '…and the person’s words are in its record, each before the turn that answered it',
+  JSON.stringify(acpSaid) === JSON.stringify(
+    ['person: first over the protocol', 'turn', 'person: second over the protocol', 'turn']),
+  JSON.stringify(acpSaid),
 );
 
 // -------------------------------------------------- 17b. registered is drivable over the protocol door

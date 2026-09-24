@@ -599,6 +599,12 @@ export type HarnessReport = {
    * worse than none, which is the same rule the palette and the parked session's moves follow.
    */
   pinnable: boolean;
+  /**
+   * Whether a session on this harness's door keeps a conversation's structure (D76 §1) — the protocol
+   * door, or a native door whose adapter reads the harness's own structured output. What an empty
+   * record is read by (CONV3b).
+   */
+  structured?: boolean;
   profiles: HarnessProfile[];
 };
 export type HarnessRoster = {

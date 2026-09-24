@@ -127,9 +127,13 @@ public sealed class AcpSession(
     private AcpUsage? _usage;
     private string? _sessionId;
 
+    /// <summary>The reader, which lives as long as the conversation does, and what ends it.</summary>
+    private readonly CancellationTokenSource _pumpStop = new();
+    private Task? _pump;
+
     /// <summary>
     /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
-    /// update rendered as it arrives.
+    /// update rendered as it arrives — a driven session's whole life on this wire.
     /// </summary>
     /// <param name="cwd">The working tree this session runs in — the registered root, or a session tree (D51).</param>
     /// <param name="prompt">The composed target, exactly as the pipe door delivers it.</param>
@@ -141,113 +145,172 @@ public sealed class AcpSession(
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
     {
-        using var pumpStopped = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var pump = PumpAsync(pumpStopped.Token);
-
         try
         {
-            await RequestAsync(
-                "initialize",
-                new
-                {
-                    protocolVersion = ProtocolVersion,
-                    // Declared honestly: this client offers the agent no filesystem and no terminal of
-                    // its own. The session works in `cwd` with the harness's own tools, under the
-                    // repository's own checked-in configuration — the adapter obligation D46 §5 states.
-                    clientCapabilities = new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false },
-                    clientInfo = new { name = "daoris-driver", version = "0" },
-                },
-                ct).ConfigureAwait(false);
-
-            // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
-            // close its quest over its own connector, and the pipe door only manages that because the
-            // repository's own `.mcp.json` wires it — which an adopted repository may not have, and
-            // which the driver may never reach in and write. The protocol carries the wiring instead,
-            // so this hands the session what it needs with nothing written anywhere.
-            //
-            // An empty list rather than an absent field when there is nothing to offer: a machine
-            // with no host found still drives, and an agent reading `mcpServers.length` must not meet
-            // `undefined`.
-            // Named in lower case explicitly: this serialiser writes property names as they are
-            // spelled, so `server.Name` would go on the wire as `Name` and the agent would read nothing.
-            var offered = (servers ?? []).Select(server => new
-            {
-                name = server.Name,
-                command = server.Command,
-                args = server.Arguments,
-                // An ARRAY of {name,value}, not an object — read from the adapter's own source, which
-                // does `Object.fromEntries(env.map(e => [e.name, e.value]))`.
-                env = server.Environment
-                    .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                    .Select(pair => new { name = pair.Key, value = pair.Value })
-                    .ToArray(),
-            }).ToArray();
-
-            // The rules composed for this session ride here when the adapter takes them (PERM1) —
-            // and a session given none sends exactly what it sent before they existed.
-            var created = await RequestAsync(
-                "session/new",
-                meta is null
-                    ? new { cwd, mcpServers = offered }
-                    : (object)new { cwd, mcpServers = offered, _meta = meta },
-                ct).ConfigureAwait(false);
-            _sessionId = created.TryGetProperty("sessionId", out var id) ? id.GetString() : null;
-            if (string.IsNullOrEmpty(_sessionId))
-            {
-                throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
-            }
-
-            await SetPostureAsync(created, ct).ConfigureAwait(false);
-
-            JsonElement result;
-            try
-            {
-                result = await RequestAsync(
-                    "session/prompt",
-                    new { sessionId = _sessionId, prompt = new[] { new { type = "text", text = prompt } } },
-                    ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                // The person's stop is a VERB on this wire (D49's two endings): cancel the turn in
-                // flight rather than killing the process, so the agent winds up its own work. Sent
-                // here rather than from a cancellation callback, because a callback fires on whatever
-                // thread cancelled — including, in the worst case, one already inside the write lock.
-                await NotifyAsync("session/cancel", new { sessionId = _sessionId }).ConfigureAwait(false);
-                throw;
-            }
-
-            var stopReason = result.TryGetProperty("stopReason", out var reason)
-                ? reason.GetString() ?? "unknown"
-                : "unknown";
-            Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = stopReason });
-
-            // Closed politely so the agent can flush and persist; its exit is still what the driver
-            // observes, and a close that fails changes nothing about the run that already happened.
-            // BOUNDED, because "best effort" without a bound is an unbounded wait: an agent that
-            // stops answering after the prompt would otherwise hang a run that is already finished.
-            using var closing = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            closing.CancelAfter(_closeTimeout);
-            try
-            {
-                await RequestAsync("session/close", new { sessionId = _sessionId }, closing.Token)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is DriverException or OperationCanceledException)
-            {
-                // Best-effort by construction: the turn is over either way.
-            }
-
+            await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
+            var stopReason = await PromptAsync(prompt, ct).ConfigureAwait(false);
+            await CloseAsync(ct).ConfigureAwait(false);
             lock (_measured) return new AcpOutcome(stopReason, _sessionId!, _updates, _usage);
         }
         finally
         {
-            pumpStopped.Cancel();
-            // Observed rather than awaited: a cancelled run's agent may never send another byte, and
-            // waiting on its reader would turn the person's stop into a hang.
-            _ = pump.ContinueWith(static t => t.Exception, TaskScheduler.Default);
+            Release();
         }
     }
+
+    /// <summary>
+    /// Open the session a conversation lives in (CONV3b): the reader started, the handshake, a session
+    /// on the tree, and the posture — everything before the first prompt, done once.
+    /// </summary>
+    /// <remarks>
+    /// The reader runs until the agent's stream ends or <see cref="Release"/> — NOT until
+    /// <paramref name="ct"/>, which bounds only the opening: a conversation outlives the request that
+    /// started it, and the updates of every later turn arrive on this same reader.
+    /// </remarks>
+    public async Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
+    {
+        if (_pump is not null) throw new DriverException("this ACP session is already open.");
+        _pump = PumpAsync(_pumpStop.Token);
+
+        await RequestAsync(
+            "initialize",
+            new
+            {
+                protocolVersion = ProtocolVersion,
+                // Declared honestly: this client offers the agent no filesystem and no terminal of
+                // its own. The session works in `cwd` with the harness's own tools, under the
+                // repository's own checked-in configuration — the adapter obligation D46 §5 states.
+                clientCapabilities = new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false },
+                clientInfo = new { name = "daoris-driver", version = "0" },
+            },
+            ct).ConfigureAwait(false);
+
+        // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
+        // close its quest over its own connector, and the pipe door only manages that because the
+        // repository's own `.mcp.json` wires it — which an adopted repository may not have, and
+        // which the driver may never reach in and write. The protocol carries the wiring instead,
+        // so this hands the session what it needs with nothing written anywhere.
+        //
+        // An empty list rather than an absent field when there is nothing to offer: a machine
+        // with no host found still drives, and an agent reading `mcpServers.length` must not meet
+        // `undefined`.
+        // Named in lower case explicitly: this serialiser writes property names as they are
+        // spelled, so `server.Name` would go on the wire as `Name` and the agent would read nothing.
+        var offered = (servers ?? []).Select(server => new
+        {
+            name = server.Name,
+            command = server.Command,
+            args = server.Arguments,
+            // An ARRAY of {name,value}, not an object — read from the adapter's own source, which
+            // does `Object.fromEntries(env.map(e => [e.name, e.value]))`.
+            env = server.Environment
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                .Select(pair => new { name = pair.Key, value = pair.Value })
+                .ToArray(),
+        }).ToArray();
+
+        // The rules composed for this session ride here when the adapter takes them (PERM1) —
+        // and a session given none sends exactly what it sent before they existed.
+        var created = await RequestAsync(
+            "session/new",
+            meta is null
+                ? new { cwd, mcpServers = offered }
+                : (object)new { cwd, mcpServers = offered, _meta = meta },
+            ct).ConfigureAwait(false);
+        _sessionId = created.TryGetProperty("sessionId", out var id) ? id.GetString() : null;
+        if (string.IsNullOrEmpty(_sessionId))
+        {
+            throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
+        }
+
+        await SetPostureAsync(created, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// One turn: the text as a prompt on the open session, answered by the agent's stop reason — which
+    /// is also what the record's turn event carries, as the wire's word and nothing more.
+    /// </summary>
+    /// <remarks>
+    /// One at a time: ACP takes a session's prompts in turn, so the caller queues a person's messages
+    /// rather than sending one into a turn still running.
+    /// </remarks>
+    public async Task<string> PromptAsync(string text, CancellationToken ct)
+    {
+        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
+
+        JsonElement result;
+        try
+        {
+            result = await RequestAsync(
+                "session/prompt",
+                new { sessionId = _sessionId, prompt = new[] { new { type = "text", text } } },
+                ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The person's stop is a VERB on this wire (D49's two endings): cancel the turn in
+            // flight rather than killing the process, so the agent winds up its own work. Sent
+            // here rather than from a cancellation callback, because a callback fires on whatever
+            // thread cancelled — including, in the worst case, one already inside the write lock.
+            await CancelTurnAsync().ConfigureAwait(false);
+            throw;
+        }
+
+        var stopReason = result.TryGetProperty("stopReason", out var reason)
+            ? reason.GetString() ?? "unknown"
+            : "unknown";
+        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = stopReason });
+        return stopReason;
+    }
+
+    /// <summary>
+    /// Stop the turn in flight and keep the session (D49's interrupt; CONV4's "stop the turn"): the agent
+    /// winds its work up and answers the prompt with its own stop reason. A notification, so there is
+    /// nothing to wait for here.
+    /// </summary>
+    public Task CancelTurnAsync() =>
+        _sessionId is null ? Task.CompletedTask : NotifyAsync("session/cancel", new { sessionId = _sessionId });
+
+    /// <summary>
+    /// Close the session politely so the agent can flush and persist; its exit is still what the driver
+    /// observes, and a close that fails changes nothing about what already happened.
+    /// </summary>
+    /// <remarks>
+    /// BOUNDED, because "best effort" without a bound is an unbounded wait: an agent that stops
+    /// answering after its last turn would otherwise hang a run that is already finished.
+    /// </remarks>
+    public async Task CloseAsync(CancellationToken ct)
+    {
+        if (_sessionId is null) return;
+
+        using var closing = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        closing.CancelAfter(_closeTimeout);
+        try
+        {
+            await RequestAsync("session/close", new { sessionId = _sessionId }, closing.Token)
+                .ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or OperationCanceledException)
+        {
+            // Best-effort by construction: the conversation is over either way.
+        }
+    }
+
+    /// <summary>
+    /// Stop reading. Observed rather than awaited: an agent may never send another byte, and waiting on
+    /// its reader would turn a stop into a hang.
+    /// </summary>
+    public void Release()
+    {
+        _pumpStop.Cancel();
+        _ = _pump?.ContinueWith(static t => t.Exception, TaskScheduler.Default);
+    }
+
+    /// <summary>
+    /// Completes when the agent's stream has ended and every line it sent has been handled — what a
+    /// conversation's transcript waits on before it closes.
+    /// </summary>
+    public Task Ended => _pump ?? Task.CompletedTask;
 
     /// <summary>
     /// Read frames until the stream ends, dispatching each: a response completes its request, a
@@ -596,6 +659,11 @@ public sealed class AcpSession(
             {
                 Kind = SessionEventKind.Usage, Used = Number(update, "used"), Size = Number(update, "size"),
             },
+            // Known, and deliberately not the conversation: the session's own settings — the commands it
+            // offers, its mode, its config options (the model catalogue among them, which D24 keeps Daoris
+            // out of). The console shows them; in the record they were rows over a chat nobody had spoken
+            // in yet (CONV3b), as the native door's `system` frames would have been (CONV3a).
+            "available_commands_update" or "current_mode_update" or "config_option_update" or "session_info_update" => null,
             _ => new SessionEvent { Kind = SessionEventKind.Raw, Title = kind ?? "update", Raw = Compact(update) },
         };
     }

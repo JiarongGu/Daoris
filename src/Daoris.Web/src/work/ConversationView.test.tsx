@@ -128,6 +128,28 @@ describe('ConversationView', () => {
     expect(asked).toBe(1);
   });
 
+  /**
+   * 🔴 What an empty record means is the DOOR's to say, never a guess from the emptiness (CONV3b). A
+   * fresh chat on a structured door was told its door carries only text.
+   */
+  it('tells a fresh chat on a structured door that nothing has been said yet', () => {
+    view([], { structured: true, chat: true, live: true });
+
+    expect(screen.getByText(/Nothing said yet/)).toBeTruthy();
+    expect(screen.queryByText(/carries only text/)).toBeNull();
+  });
+
+  it('says a finished chat on a structured door had nothing said in it', () => {
+    view([], { structured: true, chat: true, live: false });
+
+    expect(screen.getByText('Nothing was said in this conversation.')).toBeTruthy();
+  });
+
+  it('keeps the console sentence for a text door, and wherever the door is not known', () => {
+    view([], { structured: false, chat: true, live: true });
+    expect(screen.getByText(/carries only text/)).toBeTruthy();
+  });
+
   it('names a tool\'s paths relative to the session\'s tree', async () => {
     view([
       ev({ kind: 'tool', id: 'c5', title: 'Edit /srv/engine/src/chunk.rs', toolKind: 'edit', status: 'completed',

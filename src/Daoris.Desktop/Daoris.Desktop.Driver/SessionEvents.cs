@@ -176,7 +176,16 @@ public sealed class SessionEvents(string directory)
             };
 
             Directory.CreateDirectory(directory);
-            File.AppendAllText(path, JsonSerializer.Serialize(stamped, Json) + "\n", Utf8);
+            // 🔴 Shared both ways, reads and writes: a page reads this record while a session appends to
+            // it, and a writer or reader that denied the other failed with a sharing violation — which
+            // the caller, rightly unwilling to fail a session over its record, turned into a lost event
+            // (CONV3b: an agent's answer missing from a turn that had ended).
+            using (var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+            using (var writer = new StreamWriter(stream, Utf8))
+            {
+                writer.Write(JsonSerializer.Serialize(stamped, Json) + "\n");
+            }
+
             _latest[sessionId] = stamped.Seq;
         }
 
@@ -236,7 +245,11 @@ public sealed class SessionEvents(string directory)
         if (!File.Exists(path)) return [];
 
         var events = new List<SessionEvent>();
-        foreach (var line in File.ReadLines(path, Utf8))
+        // Read beside a writer, never against it (see Append): a line still being written is torn, and a
+        // torn line costs itself below.
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream, Utf8);
+        while (reader.ReadLine() is { } line)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
             try

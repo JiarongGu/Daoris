@@ -93,7 +93,8 @@ internal static class ChatConsole
             }
         }
 
-        processes.CloseInput(start.SessionId);
+        // Finished through the conversation, which knows its door (CONV3b).
+        runner.Finish(start.SessionId);
 
         var state = await ended.Task.ConfigureAwait(false);
         Console.Error.WriteLine($"chat: session {start.SessionId} is {state}.");

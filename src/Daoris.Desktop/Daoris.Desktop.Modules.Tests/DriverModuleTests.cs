@@ -773,6 +773,24 @@ public sealed class DriverModuleTests : Bridge
         Assert.Equal(JsonValueKind.Null, rows.Single(h => h.GetProperty("harness").GetString() == "claude-code").GetProperty("plugin").ValueKind);
     }
 
+    /// <summary>
+    /// Whether a door carries a conversation's STRUCTURE (D76 §1) is the adapter's to say, and the page's
+    /// to read: an empty record on a structured door is nothing said yet, and on a text door it is a
+    /// conversation that lives in the console. Guessed from emptiness, the page told a fresh chat on a
+    /// structured door that its door carries only text (CONV3b).
+    /// </summary>
+    [Fact]
+    public async Task The_roster_says_which_doors_carry_a_conversations_structure()
+    {
+        var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
+            .ToDictionary(h => h.GetProperty("harness").GetString()!, h => h.GetProperty("structured").GetBoolean());
+
+        Assert.True(rows["claude-code"]);      // stream-json, read by its adapter (CONV3a)
+        Assert.True(rows["claude-code-acp"]);  // the protocol door
+        // A text door answers false — the stub is one, held where it chats (ProtocolChatTests); the
+        // roster leaves the test doubles out, and every harness it lists carries structure today.
+    }
+
     [Fact]
     public async Task The_harness_roster_answers_this_machine_s_toolchains()
     {

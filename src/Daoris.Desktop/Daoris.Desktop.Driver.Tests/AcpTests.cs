@@ -365,7 +365,7 @@ public sealed class AcpTests
                 case "initialize": return Ok(frame, """{"protocolVersion":1}""");
                 case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
                 case "session/prompt":
-                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"available_commands_update","availableCommands":[{"name":"compact"}]}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"weather_update","forecast":[{"name":"compact"}]}}}""");
                     return Ok(frame, """{"stopReason":"end_turn"}""");
                 default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
             }
@@ -375,8 +375,42 @@ public sealed class AcpTests
             .RunAsync("D:/fam/Game", "hello", CancellationToken.None);
 
         var raw = Assert.Single(events, e => e.Kind == SessionEventKind.Raw);
-        Assert.Equal("available_commands_update", raw.Title);
+        Assert.Equal("weather_update", raw.Title);
         Assert.Contains("compact", raw.Raw);
+    }
+
+    /// <summary>
+    /// The session's own settings — the commands it offers, its mode, its config options (the model
+    /// catalogue among them, which D24 keeps Daoris out of) — are known updates and not the conversation:
+    /// shown on the console, kept out of the record. On the window they read as two "an update this
+    /// version does not know" rows over a chat nobody had spoken in yet, under a false "working…" (CONV3b).
+    /// </summary>
+    [Fact]
+    public async Task The_sessions_own_settings_reach_the_console_and_not_the_conversation()
+    {
+        var events = new List<SessionEvent>();
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new":
+                    foreach (var kind in new[] { "available_commands_update", "current_mode_update", "config_option_update", "session_info_update" })
+                    {
+                        self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"KIND"}}}""".Replace("KIND", kind));
+                    }
+
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, """{"stopReason":"end_turn"}""") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, onEvent: events.Add)
+            .RunAsync("D:/fam/Game", "hello", CancellationToken.None);
+
+        Assert.DoesNotContain(events, e => e.Kind == SessionEventKind.Raw);
+        Assert.Contains(lines, line => line.Contains("available_commands_update"));
     }
 
     /// <summary>
@@ -496,6 +530,96 @@ public sealed class AcpTests
             () => session.RunAsync("D:/fam/Game", "a long task", cts.Token));
 
         Assert.Contains(agent.Sent, line => line.Contains("session/cancel") && line.Contains("s-9"));
+    }
+
+    /// <summary>
+    /// A conversation (CONV3b, D76 §4): one handshake and one session, then a turn per prompt on it —
+    /// not a session per message, which would forget everything said before.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_is_one_session_with_a_turn_per_prompt()
+    {
+        var events = new List<SessionEvent>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-7"}""");
+                case "session/prompt":
+                    var said = frame.GetProperty("params").GetProperty("prompt")[0].GetProperty("text").GetString();
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-7","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"heard: SAID"}}}}""".Replace("SAID", said));
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        Assert.Equal("end_turn", await session.PromptAsync("first", CancellationToken.None));
+        Assert.Equal("end_turn", await session.PromptAsync("second", CancellationToken.None));
+        await session.CloseAsync(CancellationToken.None);
+        session.Release();
+
+        Assert.Equal(
+            ["initialize", "session/new", "session/prompt", "session/prompt", "session/close"],
+            Enumerable.Range(0, agent.Sent.Count).Select(agent.Method));
+        Assert.All([agent.Frame(2), agent.Frame(3)],
+            prompt => Assert.Equal("s-7", prompt.GetProperty("params").GetProperty("sessionId").GetString()));
+        Assert.Equal(["heard: first", "heard: second"],
+            events.Where(e => e.Kind == SessionEventKind.Message).Select(e => e.Text));
+        Assert.Equal(2, events.Count(e => e.Kind == SessionEventKind.Turn));
+    }
+
+    /// <summary>
+    /// Stopping a TURN is not ending the conversation: `session/cancel` for the turn in flight, its
+    /// ending as the agent reports it, and the session still there for the next message.
+    /// </summary>
+    [Fact]
+    public async Task A_cancelled_turn_ends_on_the_agents_word_and_the_conversation_goes_on()
+    {
+        string? held = null;
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-7"}""");
+                case "session/prompt" when held is null:
+                    held = frame.GetProperty("id").GetRawText();   // a long turn: answered only when cancelled
+                    return null;
+                case "session/prompt":
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                case "session/cancel":
+                    return $$$"""{"jsonrpc":"2.0","id":{{{held}}},"result":{"stopReason":"cancelled"}}""";
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        var first = session.PromptAsync("a long task", CancellationToken.None);
+        while (held is null) await Task.Delay(10);
+
+        await session.CancelTurnAsync();
+
+        Assert.Equal("cancelled", await first);
+        Assert.Contains(agent.Sent, line => line.Contains("session/cancel") && line.Contains("s-7"));
+        Assert.Equal("end_turn", await session.PromptAsync("and then this", CancellationToken.None));
+        session.Release();
+    }
+
+    /// <summary>A prompt with no session to carry it is refused in a sentence, never sent with a null id.</summary>
+    [Fact]
+    public async Task Nothing_is_prompted_before_the_session_is_open()
+    {
+        var agent = new FakeAgent((_, _) => null);
+
+        var error = await Assert.ThrowsAsync<DriverException>(
+            () => new AcpSession(agent.Incoming, agent.Outgoing, _ => { }).PromptAsync("hello", CancellationToken.None));
+
+        Assert.Contains("not open", error.Message);
+        Assert.Empty(agent.Sent);
     }
 
     /// <summary>

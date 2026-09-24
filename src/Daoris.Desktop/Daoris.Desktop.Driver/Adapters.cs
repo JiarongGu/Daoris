@@ -521,16 +521,24 @@ public sealed class AcpStubAdapter : ISessionAdapter
 
     public SessionWire Wire => SessionWire.Acp;
 
-    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
-    {
-        var resolved = command is { Count: > 0 }
+    /// <summary>
+    /// Interactive, so a conversation on this door can be gated with no model in it (CONV3b) — the
+    /// argument that made <see cref="StubAdapter"/> interactive, one door over.
+    /// </summary>
+    public bool Interactive => true;
+
+    public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+        Spawning.InRoot(target, Resolve(command)[0], Resolve(command).Skip(1), redirectInput: true);
+
+    public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+        Spawning.ChatInRoot(target, Resolve(command)[0], Resolve(command).Skip(1));
+
+    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 }
             ? command
             : throw new DriverException(
                 "the acp-stub adapter needs a command — name one in driver.json: "
                 + """{ "commands": { "acp-stub": ["node", "path/to/acp-agent.mjs"] } }""");
-
-        return Spawning.InRoot(target, resolved[0], resolved.Skip(1), redirectInput: true);
-    }
 }
 
 /// <summary>

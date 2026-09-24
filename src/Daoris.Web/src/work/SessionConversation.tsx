@@ -1,6 +1,6 @@
 import { type RefObject, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSessionEvents } from '../shell';
+import { useHarnesses, useSessionEvents } from '../shell';
 import { Icon } from '../ui';
 import { toTurns } from './conversation';
 import { ConversationView } from './ConversationView';
@@ -17,8 +17,12 @@ import { useFollowTail } from './followTail';
  *
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
-export function SessionConversation({ session, tree, live, scroller }: {
+export function SessionConversation({ session, adapter, chat = false, tree, live, scroller }: {
   session: string;
+  /** The harness it runs on — whose declaration says whether its door keeps a conversation (D76 §1). */
+  adapter?: string;
+  /** Whether it is a conversation with a person. */
+  chat?: boolean;
   /** The session's tree, so a tool's path inside it reads relative to it. */
   tree?: string | null;
   live: boolean;
@@ -27,6 +31,10 @@ export function SessionConversation({ session, tree, live, scroller }: {
 }) {
   const { t } = useTranslation();
   const { events, earlier, loaded, loadEarlier } = useSessionEvents(session);
+  // The door's own word on what an empty record means — undefined until the roster answers, which reads
+  // as the console sentence: it claims least.
+  const harnesses = useHarnesses();
+  const structured = harnesses.data?.harnesses?.find((row) => row.harness === adapter)?.structured;
   const { turns } = useMemo(() => toTurns(events), [events]);
 
   // What changes when the conversation grows: the last event, and its text as chunks join it.
@@ -38,6 +46,8 @@ export function SessionConversation({ session, tree, live, scroller }: {
       <ConversationView
         turns={turns}
         tree={tree}
+        structured={structured}
+        chat={chat}
         live={live}
         loaded={loaded}
         earlier={earlier}

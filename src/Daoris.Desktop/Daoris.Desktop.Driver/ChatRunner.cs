@@ -52,6 +52,10 @@ public sealed class ChatRunner(
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _watching =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // The protocol door's conversations (CONV3b), by session: each one's ACP session and its turns.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProtocolChat> _protocol =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
     public const string ClosedNote =
         "the application closed while this conversation ran; its process was ended with it.";
@@ -153,6 +157,7 @@ public sealed class ChatRunner(
 
         Process process;
         string? rules = null;
+        object? meta = null;
         try
         {
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
@@ -168,15 +173,16 @@ public sealed class ChatRunner(
             }
 
             // What the conversation's agent may do (PERM1, D72) — the same union a driven session in
-            // this repository is handed. The pipe door only: over the protocol door Daoris sends a
-            // conversation no `session/new` of its own, so nothing there could carry it.
-            if (resolved.TakesSettings && resolved.Wire == SessionWire.Pipe)
+            // this repository is handed, by each door's own way: a flag on the pipe, `session/new`'s
+            // `_meta` on the protocol door, now that a conversation there opens a session (CONV3b).
+            if (resolved.TakesSettings)
             {
                 var file = PermissionRules.Load(home);
                 rules = SpawnSettings.Write(
                     home, sessionId, PermissionRules.Compose(file, known?.Workspace, repository),
                     PermissionRules.GuardsTree(file) ? TreeGuard.For(home, workTree) : null);
-                if (rules is not null) resolved.HandSettings(info, rules);
+                if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
+                else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
             }
 
             process = Process.Start(info)
@@ -195,7 +201,19 @@ public sealed class ChatRunner(
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
         _talking[sessionId] = resolved;
-        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, resolved.StructuredOutput());
+
+        // 🔴 On the protocol door a conversation is ONE session held over the wire (CONV3b): opened
+        // once, each message a turn on it. It used to be spawned as a pipe, and a person's words went
+        // into the JSON-RPC stream as raw text — the harness declared itself interactive and could not
+        // hold a conversation at all.
+        ProtocolChat? chat = null;
+        if (resolved.Wire == SessionWire.Acp)
+        {
+            chat = new ProtocolChat(resolved.AcpPosture, meta, workTree, Servers(sessionId));
+            _protocol[sessionId] = chat;
+        }
+
+        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, resolved.StructuredOutput(), chat);
         _watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -233,15 +251,39 @@ public sealed class ChatRunner(
     /// </summary>
     public void Dispose() => StopAll(TimeSpan.FromSeconds(10));
 
+    /// <summary>
+    /// End a conversation the way a person finishing does: the harness winds up and exits on its own,
+    /// which is a `completed` record. False when nothing here is holding it.
+    /// </summary>
+    /// <remarks>
+    /// On the protocol door that is the turns already asked for, then `session/close`, then the end of
+    /// input — never a cut stdin under a turn still running, which the agent would read as the wire
+    /// breaking rather than the person finishing.
+    /// </remarks>
+    public bool Finish(string sessionId)
+    {
+        if (!_protocol.TryGetValue(sessionId, out var chat)) return processes.CloseInput(sessionId);
+
+        _ = chat.FinishAsync(() => processes.CloseInput(sessionId));
+        return true;
+    }
+
     /// <summary>Send a person's message to a live chat. False when there is nothing listening.</summary>
     /// <remarks>
-    /// Framed for the conversation's harness (CONV3) — a `stream-json` line where it reads one — and, once
-    /// it is sent, part of the record: the person's words were never in it before (D76 §4).
+    /// Framed for the conversation's harness (CONV3) — a `stream-json` line where it reads one, a turn on
+    /// its session on the protocol door (CONV3b) — and, once it is sent, part of the record: the person's
+    /// words were never in it before (D76 §4).
     /// </remarks>
     public bool Say(string sessionId, string message)
     {
+        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Say(message);
+
         var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message) : message;
         if (!processes.Send(sessionId, framed)) return false;
+
+        // A text-only door keeps the person's words where it keeps the agent's — the console. In the
+        // record they would be half a conversation: questions with no answers beside them.
+        if (adapter is null || !HarnessRoster.Structured(adapter)) return true;
 
         try
         {
@@ -257,21 +299,28 @@ public sealed class ChatRunner(
 
     /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
     /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
+    /// <param name="chat">The conversation's session on the protocol door (CONV3b), or null on the pipe.</param>
     private async Task WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
-        string? rules = null, IStreamMapper? mapper = null)
+        string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null)
     {
         using var tracked = processes.Track(sessionId, process);
-        using var talking = new Disposer(() => _talking.TryRemove(sessionId, out _));
+        using var talking = new Disposer(() =>
+        {
+            _talking.TryRemove(sessionId, out _);
+            _protocol.TryRemove(sessionId, out _);
+        });
         try
         {
             // The conversation's messages are recorded as the person sends them (`Say`), so the
             // capture opens with no composed prompt of its own.
-            var capture = mapper is not null
-                ? Driver.CaptureStructuredAsync(
-                    process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
-                    prompt: null, CancellationToken.None)
-                : Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None);
+            var capture = chat is not null
+                ? CaptureProtocolAsync(sessionId, process, transcript, chat)
+                : mapper is not null
+                    ? Driver.CaptureStructuredAsync(
+                        process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
+                        prompt: null, CancellationToken.None)
+                    : Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None);
             await service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
             await process.WaitForExitAsync().ConfigureAwait(false);
@@ -299,6 +348,187 @@ public sealed class ChatRunner(
         {
             output?.Close(sessionId);
             SpawnSettings.Remove(rules);
+        }
+    }
+
+    /// <summary>
+    /// What a conversation on the protocol door is handed on <c>session/new</c> — what a driven session on
+    /// that door is handed (ACP4, D65 §1f): the machine's knowledge connector, carrying who the session
+    /// is, and every server the plugins declare. Located per conversation, because a machine can gain
+    /// either between two.
+    /// </summary>
+    private IReadOnlyList<AcpMcpServer> Servers(string sessionId)
+    {
+        var offered = new List<AcpMcpServer>();
+        if (KnowledgeConnector.Offer(
+                Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
+                AppContext.BaseDirectory, scope: Driver.ConnectorScope(home, sessionId, null)) is { } connector)
+        {
+            offered.Add(connector);
+        }
+
+        offered.AddRange(PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers);
+        return offered;
+    }
+
+    /// <summary>
+    /// A conversation's capture on the protocol door (CONV3b): its session opened on the wire, what each
+    /// turn renders reaching the transcript and the console, what it means reaching the record — the
+    /// driven path's split (<c>Driver.CaptureAcpAsync</c>), held open for as many turns as the person takes.
+    /// </summary>
+    /// <remarks>
+    /// A session that cannot be opened is one nothing can be said to: its process is ended, and the
+    /// failure is what the record concludes with — the driver saw it, and it is not the person's.
+    /// </remarks>
+    private async Task CaptureProtocolAsync(string sessionId, Process process, string transcript, ProtocolChat chat)
+    {
+        await using var file = new StreamWriter(transcript, append: false);
+        var closed = false;
+
+        void Line(string text)
+        {
+            lock (file)
+            {
+                // A late frame after the transcript closed is dropped from the file, never a throw
+                // inside the reader.
+                if (closed) return;
+                file.WriteLine(text);
+            }
+
+            output?.Append(sessionId, text);
+        }
+
+        void Record(SessionEvent e)
+        {
+            try
+            {
+                _events.Append(sessionId, e);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+            {
+                Line($"[the conversation record could not keep an event: {error.Message}]");
+            }
+        }
+
+        var errors = Driver.PumpAsync(process.StandardError, file, sessionId, output, CancellationToken.None);
+        var session = new AcpSession(
+            process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record);
+
+        DriverException? failed = null;
+        try
+        {
+            await session.OpenAsync(chat.Cwd, CancellationToken.None, chat.Servers).ConfigureAwait(false);
+            chat.Opened(session, Line, Record);
+        }
+        catch (DriverException error)
+        {
+            failed = error;
+            chat.Opened(null, Line, Record);
+            Line($"— the ACP session could not open: {error.Message}");
+            Record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the ACP session could not open: {error.Message}" });
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch (InvalidOperationException)
+            {
+                // Already gone, which is usually why it could not open.
+            }
+        }
+
+        await Task.WhenAll(errors, session.Ended).ConfigureAwait(false);
+        lock (file) closed = true;
+        session.Release();
+
+        if (failed is not null) throw new DriverException($"the ACP session could not open: {failed.Message}");
+    }
+
+    /// <summary>
+    /// One conversation on the protocol door (CONV3b): its session once opened, and its turns one at a
+    /// time, in the order the person sent them.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>A message is recorded as it is SENT, not as it is typed.</b> One sent while a turn runs
+    /// waits for that turn to end; recorded at once, it would sit in the middle of the turn before it,
+    /// and the conversation would read as though the agent answered a question it had not been asked.</para>
+    ///
+    /// <para><b>A turn that could not be sent is said</b>, on the transcript and in the record, and the
+    /// conversation goes on: the process is still there, and so is the person.</para>
+    /// </remarks>
+    private sealed class ProtocolChat(string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers)
+    {
+        private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly object _gate = new();
+        private Task _turns = Task.CompletedTask;
+        private bool _finishing;
+        private Action<string> _line = _ => { };
+        private Action<SessionEvent> _record = _ => { };
+
+        public string? Posture => posture;
+
+        public object? Meta => meta;
+
+        public string Cwd => cwd;
+
+        public IReadOnlyList<AcpMcpServer> Servers => servers;
+
+        /// <summary>The session is open — or could not be, and then every turn asked for is dropped, said once.</summary>
+        public void Opened(AcpSession? session, Action<string> line, Action<SessionEvent> record)
+        {
+            _line = line;
+            _record = record;
+            _open.TrySetResult(session);
+        }
+
+        /// <summary>Queue a turn. False once the conversation is finishing: nothing more will be heard.</summary>
+        public bool Say(string text)
+        {
+            lock (_gate)
+            {
+                if (_finishing) return false;
+                _turns = TurnAsync(_turns, text);
+                return true;
+            }
+        }
+
+        private async Task TurnAsync(Task previous, string text)
+        {
+            await previous.ConfigureAwait(false);
+            if (await _open.Task.ConfigureAwait(false) is not { } session) return;
+
+            _record(new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = text });
+            try
+            {
+                await session.PromptAsync(text, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException
+                                              or InvalidOperationException)
+            {
+                _line($"— the turn could not be taken: {error.Message}");
+                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the turn could not be taken: {error.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// The turns already asked for, then <c>session/close</c>, then the end of input — after which the
+        /// agent exits on its own, and that exit is what the record concludes from.
+        /// </summary>
+        public async Task FinishAsync(Action endInput)
+        {
+            Task turns;
+            lock (_gate)
+            {
+                _finishing = true;
+                turns = _turns;
+            }
+
+            await turns.ConfigureAwait(false);
+            if (await _open.Task.ConfigureAwait(false) is { } session)
+            {
+                await session.CloseAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+
+            endInput();
         }
     }
 

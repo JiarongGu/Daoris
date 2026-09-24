@@ -5,6 +5,61 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A page reading a conversation could make it lose a word (2026-09-25)
+
+**Symptom.** CONV3b's protocol-chat test passed alone and failed about one full driver run in
+three. The record held both of the person's messages and both turn endings, but not the agent's
+answer to the second: a turn had ended with its words missing.
+
+**Root cause.** `SessionEvents.Read` used `File.ReadLines`, which opens the file denying writers,
+and `Append` used `File.AppendAllText`, which does the same to readers. Reads take no lock: a page
+reads history over `SESSION_HISTORY` whenever it opens a session or closes a gap, while the session
+is appending. An append that met a read failed with a sharing violation, and its caller dropped the
+event with one console line. The caller was right not to fail a session over its record (D76), but
+the event was gone for good. The test polled the record every 50 ms, which is how it found this;
+in the shell it would have been the page's own reads.
+
+**Fix.** Both sides open the file sharing read and write, and a line torn by a concurrent write
+costs itself (the reader already skipped one).
+
+**Verify.** `Every_append_lands_while_the_record_is_being_read`: 150 appends against 150 concurrent
+reads, all kept. It fails 3 runs of 3 with the reader put back to deny writers. It was first written
+as an unbounded read loop, but opening the file thousands of times a second fed this machine's
+real-time scanner, so it is bounded. Four full runs of the driver suite passed with the protocol
+chat test in them.
+
+## A chat on the protocol door could never hold a conversation (2026-09-25)
+
+**Symptom.** Found by reading the code for CONV3b, before anyone had tried it on the window.
+`claude-code-acp`, `codex-acp` and every plugin-declared ACP harness declare `Interactive`, and the
+start drawer offers them for a chat. The chat would open, and nothing a person sent could ever be
+answered.
+
+**Root cause.** `ChatRunner` knew one door. It spawned every chat as a pipe: stdin open, no
+`initialize`, no `session/new`, and `Say` wrote the person's line to stdin as raw text. On the
+protocol door stdin is the JSON-RPC stream, so the agent received a line that was not a frame,
+before any handshake. The driven path had spoken the protocol since ACP1, through `AcpSession`, but
+only as one turn end to end (`RunAsync`), with nothing a conversation could hold open. Nothing
+gated it: the family rehearsal's chat ran on the pipe stub, and the ACP stub was not interactive.
+
+**Fix.** `AcpSession` gained a conversation surface (`OpenAsync`, `PromptAsync`, `CancelTurnAsync`,
+`CloseAsync`), with `RunAsync` their composition. `ChatRunner` holds a `ProtocolChat` per protocol
+conversation:
+- one session, opened with the connector, the plugins' servers and the composed rules;
+- a turn per message, one at a time, each recorded when it is sent;
+- *finish* as the queued turns, then `session/close`, then the end of input.
+
+The ACP stub became interactive, and the family rehearsal holds a conversation over the door.
+
+**Verify.** Driver tests: a conversation is one session with a turn per prompt, a cancelled turn
+keeps the session, and nothing is prompted before it opens. A protocol chat end to end against a
+node agent that writes down any raw line: one handshake, two ordered turns (the second sent
+mid-turn), `session/close`, then input ended, with the record in order. The family rehearsal adds
+three checks (274/274). On the window, the ACP adapter held a real two-turn conversation on this
+machine's Claude Code account. The look also found the session's own settings updates shown as
+"an update this version does not know" rows, and the empty-state sentence guessed from emptiness.
+Both are fixed (CONV3b in the archive).
+
 ## A chat open when the shell closed stayed `working` forever, and stop could not end it (2026-09-25)
 
 **Symptom.** A chat was running on the scratch machine when the shell was closed to rebuild it. On

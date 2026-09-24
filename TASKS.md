@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 622 driver, 120 desktop modules, 914 web unit, 21 Playwright**, 73
-devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
+**446 CLI tests, 473 service, 629 driver, 121 desktop modules, 917 web unit, 21 Playwright**, 73
+devkit, 66/66 release rehearsal, **274/274 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -442,12 +442,15 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24).
-- [ ] **CONV3b — a chat on the protocol door, on the structured wire.** A chat there is still a
-  pipe: it is given no `session/new` of its own, so it has no turns to record. Each message becomes
-  an `AcpSession` prompt, and the person's message goes into the record as it does on the native door
-  (CONV3a).
 - [ ] **CONV4 — the composer.** Attachments (the `carry` molecule), `@` a file in the session's
   tree, a draft per session, stop the turn beside end the session.
+  - **Stopping a turn is a verb on the protocol door already.** `AcpSession.CancelTurnAsync`
+    sends `session/cancel`, and the turn ends on the agent's own word. It needs a `ChatRunner`
+    entry and a control.
+  - **A message sent while a turn runs is queued on the protocol door**, and it joins the record
+    when its turn begins (CONV3b). The native door writes it to Claude Code's stdin at once, and
+    the record takes it mid-turn. The composer should show a queued message as queued, and the
+    native door's record should match the protocol door's.
 - [ ] **CONV5 — meters.** A context ring under the composer and per-turn usage, from the usage the
   wire reports; absent is never zero.
 - [ ] **FRAME6 — the frame.** A resizable, collapsible rail (264–420px, 56px strip) and a resizable
@@ -460,11 +463,21 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   there:** a session waiting on the person wears declined's red (`Dot tone="parked"`) in the rail,
   the band and the ask card, while the map uses the warn tone for the same fact; one hue for
   "waiting on you" everywhere. The monitor's tiles are console-only and say *Nothing said yet* for a
-  session whose conversation is kept.
+  session whose conversation is kept. The protocol door's console writes each streamed chunk of a message as its own line
+  (`…document` / `, named in the README.`), so the raw view breaks words across lines, driven
+  sessions included. The native door renders a whole message once, and this one should too.
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 
 ### Open — the arc's leftovers, in the order they are worth doing
+
+- [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
+  `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the
+  intake opened, and its stub agent published nothing onto the ask (2026-09-25, under a loaded full
+  run). It passed 10 runs in a row after. Its assertion now carries the session's transcript and the
+  tick's events, so the next failure says why: a `fetch` to the stand-in that failed, an exit, or
+  something else. A gate that fails one run in twenty is a gate people learn to re-run, which is how
+  a real failure gets waved through.
 
 - [ ] **DEPLOY3 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
   when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect

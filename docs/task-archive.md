@@ -5680,3 +5680,66 @@ the root cause.
 
 The artefact gate cannot yet hold a chat at close; that is **DEPLOY3**. Driver 616 → 622, web unit
 911 → 914.
+
+
+## CONV3b — a chat on the protocol door, on the structured wire (2026-09-25)
+
+- [x] ~~**CONV3b — a chat on the protocol door, on the structured wire.** A chat there is still a
+  pipe: it is given no `session/new` of its own, so it has no turns to record. Each message becomes
+  an `AcpSession` prompt, and the person's message goes into the record as it does on the native door
+  (CONV3a). 🔴 **Reading the code (2026-09-25) showed the door is broken, not just unrecorded.**
+  `ChatRunner` spawns an ACP chat as a pipe, with no `initialize` and no `session/new`, and `Say`
+  writes the person's raw text into the JSON-RPC stream. So `claude-code-acp` and `codex-acp`
+  declare `Interactive` and cannot hold a conversation. The plan:
+  - `AcpSession` gains `OpenAsync`, `PromptAsync`, `CancelTurnAsync` and `CloseAsync`, with
+    `RunAsync` composed of them;
+  - the chat opens with the connector, the plugins' servers and its rules as `_meta`;
+  - one turn runs at a time;
+  - *finish* sends `session/close` after the queue drains, not a cut stdin;
+  - the ACP stub becomes interactive, so the family rehearsal holds the door.~~
+✅ **done 2026-09-25.** A conversation on any ACP harness (`claude-code-acp`, `codex-acp`, a plugin's)
+is one session held over the wire, each message a turn on it, and the person's words are in the
+record.
+
+- **`AcpSession` has a conversation surface**: `OpenAsync` (handshake, `session/new`, posture),
+  `PromptAsync` (one turn, answered by the agent's stop reason), `CancelTurnAsync`
+  (`session/cancel`, which keeps the session), `CloseAsync` (bounded) and `Ended`. `RunAsync` is
+  their composition, so the driven path is unchanged.
+- **`ChatRunner` holds a `ProtocolChat` per conversation.**
+  - It opens with the knowledge connector and the plugins' servers (ACP4), and with the composed
+    rules as `_meta` (PERM1), which a protocol-door chat never had.
+  - Turns run one at a time, in order.
+  - A message is recorded when it is sent, not when it is typed, so one sent mid-turn does not sit
+    inside the turn before it.
+  - *Finish* runs the queued turns, then `session/close`, then the end of input, and both the
+    page's door and the terminal's go through it.
+  - A session that cannot open ends its process, and the record concludes `failed` with the reason.
+- **The ACP stub is interactive**, and the family rehearsal holds the door with a conversation from
+  a terminal (274/274): two messages on one session, finished and never cut, no raw line on the
+  wire, and the person's words each before the turn that answered them.
+- **What an empty record means is the door's to say.** The roster says `structured` per harness,
+  and the page reads a fresh chat on a structured door as *nothing said yet*, where it used to say
+  its door carries only text. A text-only pipe chat stops recording the person's side, which was
+  half a conversation beside replies that live in the console.
+- **The session's own settings are not the conversation.** `available_commands_update`,
+  `current_mode_update`, `config_option_update` and `session_info_update` reach the console and not
+  the record.
+- **Looked at** with the ACP adapter the dsh probe had installed (0.79.0), on this machine's own
+  Claude Code account. The window found two defects, both fixed: two "update this version does not
+  know" rows over a chat nobody had spoken in yet, under a false *working…*; and the empty-state
+  sentence. Then on the window:
+  - two messages, the second sent mid-turn, each came back a turn in order on one session, and the
+    second answer leaned on the first;
+  - the tool call folded under its answer;
+  - *finish* ended it `completed`.
+
+- **The gate found a lost word.** The protocol chat's test failed about one full run in three:
+  the agent's second answer was missing from a turn that had ended. The event store's reads and
+  appends denied each other, and a dropped append is a lost event. Both sides now share, held by a
+  test that fails 3 runs of 3 against the old reader (FIX-LOG). An intake test failed once in about
+  20 full runs as well. That path is untouched here, and it passed 10 runs in a row after, so it is
+  open as FLAKE1, with its message now carrying the transcript.
+
+Left for later: stopping a turn from the page, and a queued message's look (CONV4); the console's
+chunk-per-line transcript (UX1). Driver 622 → 629, modules 120 → 121, web unit 914 → 917, family
+271 → 274.
