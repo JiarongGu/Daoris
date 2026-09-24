@@ -314,8 +314,9 @@ describe('the attention band', () => {
     expect(await screen.findByText('What needs you')).toBeInTheDocument();
     expect(screen.getByText('parked at a checkpoint')).toBeInTheDocument();
     expect(screen.getByText('nobody here can take this')).toBeInTheDocument();
-    // The category the design names third is not invented: it needs SURF6's viewed mark.
-    expect(screen.getByText(/once review exists/)).toBeInTheDocument();
+    // The category the design names third is not invented: SURF6's viewed mark is not kept, so
+    // nothing records looking — and the band says that, not that it waits on review (POLISH4).
+    expect(screen.getByText(/nothing yet keeps a record of what you have looked at/)).toBeInTheDocument();
   });
 
   /**

@@ -14,17 +14,17 @@ const DEFAULTS: AgentRulesState['defaults'] = [
   {
     id: 'commit', list: 'allow', on: true,
     rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'],
-    why: 'A session commits its own work in its own tree, which D37 makes automatic — the push is still refused.',
+    why: 'A session commits its own work in its own tree, because committing is part of finishing a task — the push is still refused.',
   },
   {
     id: 'no-push', list: 'deny', on: true,
     rules: ['Bash(git push)', 'Bash(git push:*)'],
-    why: "A push leaves this machine, and that stays the person's (D37).",
+    why: "A push leaves this machine, and that stays the person's call.",
   },
   // A hook, not a rule (PERM3): the driver answers the tools it judges, and no rules.
   {
     id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit',
-    why: 'A session writes files only inside its own tree: an edit or a write anywhere else is refused, through links as well (D51). A change needed elsewhere is a quest.',
+    why: 'A session writes files only inside its own tree: an edit or a write anywhere else is refused, through links as well. A change needed elsewhere is a quest.',
   },
 ];
 

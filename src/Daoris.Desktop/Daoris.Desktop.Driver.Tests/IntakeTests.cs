@@ -71,6 +71,7 @@ public sealed class IntakeTests : IDisposable
         new("storefront", Adopted: true, Registered: true, "The storefront.", ["product pages"], ["a UI bug"], Root: null),
         new("importer", Adopted: true, Registered: false, null, [], [], Root: null),
         new("legacy", Adopted: false, Registered: false, null, [], [], Root: null),
+        new("newcomer", Adopted: false, Registered: true, null, [], [], Root: "/work/newcomer"),
     ];
 
     private static AskView Ask(string sentence = "use the media config instead of hard coding the video field name") =>
@@ -99,6 +100,11 @@ public sealed class IntakeTests : IDisposable
         Assert.Contains("declared nothing", agents);
         Assert.Contains("`legacy`", agents);
         Assert.Contains("not adopted", agents);
+        // Registered with a root is addressable (D70): it declares nothing, so only the person names it,
+        // and the room must not tell the intake that nothing there can see a quest (POLISH4).
+        Assert.DoesNotContain("nothing there can see a quest", agents);
+        Assert.Contains("- `newcomer` — not adopted, so it declares nothing", agents);
+        Assert.Contains("- `legacy` — not adopted, and no root is known for it on this machine", agents);
         // One harness reads AGENTS.md, another CLAUDE.md (D59) — the room carries both, the canon's shape.
         Assert.Equal("@AGENTS.md\n", File.ReadAllText(Path.Combine(room, "CLAUDE.md")));
         Assert.DoesNotContain("\r", agents);

@@ -88,6 +88,11 @@ test('the defaults table is the one the driver hands', () => {
   ]);
 });
 
+// POLISH4: `rules list` prints these to a person with no decisions record to look a number up in.
+test("a default's reason names no decision number", () => {
+  for (const shipped of DEFAULTS) assert.doesNotMatch(shipped.why, /\bD\d+\b/, shipped.id);
+});
+
 // 🔴 The owner's answer to PERM4 (2026-09-24): a driven session in a folder the agent never trusted made
 // its edit and was refused the commit, so Daoris ships the commit — and `no-push` still refuses the push.
 test('a session may commit by default, and the person can switch that off', () => {

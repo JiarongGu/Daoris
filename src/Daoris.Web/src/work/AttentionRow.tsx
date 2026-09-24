@@ -18,8 +18,9 @@ import { Dot, Inline } from '../ui';
  * proposal to widen what agents may do (PERM2, D74), which never applies without the person.
  *
  * A fifth kind belongs here by design §4 — **finished work nobody has looked at** — and is not
- * buildable yet: nothing records that anybody looked. It arrives with the *viewed* mark SURF6
- * introduces, and the band says as much rather than leaving a silent gap.
+ * buildable yet: nothing records that anybody looked. SURF6's *viewed* mark is the person's own and
+ * is not kept, so the row arrives when looking is recorded, and the band says as much rather than
+ * leaving a silent gap.
  */
 export type Attention = {
   /** The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal. */

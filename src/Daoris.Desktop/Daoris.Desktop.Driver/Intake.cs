@@ -164,12 +164,18 @@ public static class IntakeRoom
             text.Append('\n');
         }
 
+        // Registered with a root is addressable (D70): a quest there is answered by a protocol-door
+        // session. It still declares nothing, so the intake never chooses it; the person may name it.
         if (outside.Count > 0)
         {
-            text.Append("## Not addressable\n\n");
+            text.Append("## Not adopted\n\n");
             foreach (var repository in outside)
             {
-                text.Append($"- `{repository.Repository}` — not adopted: nothing there can see a quest.\n");
+                text.Append(repository.Root is { Length: > 0 }
+                    ? $"- `{repository.Repository}` — not adopted, so it declares nothing and no declaration can make\n"
+                      + "  it the owner. A quest can still be published to it when the person names it.\n"
+                    : $"- `{repository.Repository}` — not adopted, and no root is known for it on this machine, so it\n"
+                      + "  cannot be asked a quest.\n");
             }
 
             text.Append('\n');

@@ -48,8 +48,9 @@ const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting'
  * reads the rules, so a browser has none.
  *
  * **The design's middle category — finished work nobody has looked at — is deliberately absent.**
- * Nothing records that anybody looked, so any row here would be a guess. It arrives with the
- * *viewed* mark SURF6 brings, and the band says so rather than leaving the gap silent.
+ * Nothing records that anybody looked, so any row here would be a guess. SURF6's *viewed* mark is
+ * not kept, so it arrives when looking is recorded, and the band says so rather than leaving the gap
+ * silent.
  */
 export function needsAPerson(
   sessions: readonly Session[],

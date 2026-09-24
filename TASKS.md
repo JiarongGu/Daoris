@@ -429,6 +429,26 @@ Settings domain is built against that design, not against this heading.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
+- [ ] **POLISH4 — the surfaces an empty install cannot show, read with data in them** (2026-09-24).
+  The scratch shell over the example family, which holds a parked session, a running and a parked
+  intake, five asks and an unadopted repository. Read surface by surface in English and 中文, both
+  themes. Nineteen findings, in three landings:
+  - **a — what the words claim.** Overview's repositories note says the index *scans the family's
+    folder* and only an adopter is addressable (false since WSP2 and D70). The band promises
+    finished work *once review exists* (review exists; nothing records looking). Projects' header
+    says *who cannot be asked yet*, and its unadopted paragraph says a real agent's use of the
+    connector is *not yet proven* (PERM1 measured it). The intake room lists an unadopted repository
+    under *Not addressable: nothing there can see a quest*. The default rules explain themselves with
+    decision numbers (*(D37)*, *(D51)*) a person cannot look up.
+  - **b — the asks.** A card names its place as a bare `default` beside `game → engine`; a card
+    never says an intake is reading it or has asked the person, though the band does; *Asks · 5*
+    beside *Open … (5)*; the record reads *answered by by declarations*, repeats a one-line ask as
+    its body, and offers *any repository in default*.
+  - **c — layout.** A wrapped chip in a project card falls under its label; the join steps are all
+    monospace prose; the map's node number is in no legend, and a parked session rings its
+    repository *working now*; Convergence's tier note runs the column (~180 characters), and an
+    empty result is a bare line; a search snippet opens with the entry's raw frontmatter.
+
 
 ### Held — each waits on a trigger that has not arrived
 

@@ -83,14 +83,14 @@ export const DEFAULTS: readonly PermissionDefault[] = [
     id: 'commit',
     list: 'allow',
     rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'],
-    why: 'A session commits its own work in its own tree, which D37 makes automatic — the push is still '
-      + 'refused.',
+    why: 'A session commits its own work in its own tree, because committing is part of finishing a task '
+      + '— the push is still refused.',
   },
   {
     id: 'no-push',
     list: 'deny',
     rules: ['Bash(git push)', 'Bash(git push:*)'],
-    why: 'A push leaves this machine, and that stays the person\'s (D37).',
+    why: 'A push leaves this machine, and that stays the person\'s call.',
   },
   // PERM3: a hook the driver hands at spawn, not a rule — a rule cannot say "outside the tree".
   {
@@ -98,7 +98,7 @@ export const DEFAULTS: readonly PermissionDefault[] = [
     list: 'deny',
     rules: [],
     why: 'A session writes files only inside its own tree: an edit or a write anywhere else is refused, '
-      + 'through links as well (D51). A change needed elsewhere is a quest.',
+      + 'through links as well. A change needed elsewhere is a quest.',
     hook: 'Edit|Write|MultiEdit|NotebookEdit',
   },
 ];

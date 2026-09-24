@@ -15,7 +15,7 @@ import {
 
 /**
  * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
- * as chips a person can scan — and, just as deliberately, who cannot be asked yet. Membership is a
+ * as chips a person can scan — and, just as deliberately, who has not adopted yet. Membership is a
  * repository's own act (D32): Daoris never writes into a sibling, so nothing joins by being seen; the
  * join steps are proposed as text, never a button (D31's shape).
  */

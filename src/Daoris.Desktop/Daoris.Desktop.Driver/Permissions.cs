@@ -116,17 +116,17 @@ public static class PermissionRules
         new(
             "commit", RuleList.Allow,
             ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"],
-            "A session commits its own work in its own tree, which D37 makes automatic — the push is "
-            + "still refused."),
+            "A session commits its own work in its own tree, because committing is part of finishing a task "
+            + "— the push is still refused."),
         new(
             "no-push", RuleList.Deny,
             ["Bash(git push)", "Bash(git push:*)"],
-            "A push leaves this machine, and that stays the person's (D37)."),
+            "A push leaves this machine, and that stays the person's call."),
         new(
             TreeGuardId, RuleList.Deny,
             [],
             "A session writes files only inside its own tree: an edit or a write anywhere else is refused, "
-            + "through links as well (D51). A change needed elsewhere is a quest.",
+            + "through links as well. A change needed elsewhere is a quest.",
             Hook: TreeGuard.Matcher),
     ];
 

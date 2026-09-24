@@ -417,6 +417,19 @@ public sealed class PermissionRulesTests : IDisposable
     private static PermissionFile Off(PermissionFile file, params string[] ids) =>
         ids.Aggregate(file, (held, id) => PermissionRules.SwitchDefault(held, id, on: false));
 
+    /// <summary>
+    /// A default's reason is read by a person on the rules card and in `daoris agent rules list`, who
+    /// has no decisions record to look a number up in (POLISH4). The reason says what the number meant.
+    /// </summary>
+    [Fact]
+    public void A_defaults_reason_names_no_decision_number()
+    {
+        foreach (var shipped in PermissionRules.Defaults)
+        {
+            Assert.DoesNotMatch(@"\bD\d+\b", shipped.Why);
+        }
+    }
+
     // ——— The twin.
 
     /// <summary>
