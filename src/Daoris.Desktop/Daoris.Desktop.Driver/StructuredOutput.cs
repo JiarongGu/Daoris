@@ -72,6 +72,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             "assistant" => Assistant(frame),
             "user" => User(frame),
             "result" => Result(frame),
+            "control_response" => Control(frame),
             // Known and deliberately not the conversation: the session's setup, its status, its limits.
             "system" or "rate_limit_event" => StreamMapped.Nothing,
             var kind => new([], [new SessionEvent
@@ -173,6 +174,9 @@ public sealed class ClaudeStreamJson : IStreamMapper
     {
         var failed = frame.TryGetProperty("is_error", out var error) && error.ValueKind == JsonValueKind.True;
         var subtype = Str(frame, "subtype") ?? "unknown";
+        // 🔴 A turn the person stopped is `error_during_execution` on this wire, and only its terminal
+        // reason says it was stopped rather than broken — the two the probe measured (CONV4a).
+        var stopped = Str(frame, "terminal_reason") is "aborted_streaming" or "aborted_tools";
         var lines = new List<string>();
         var events = new List<SessionEvent>();
 
@@ -184,17 +188,36 @@ public sealed class ClaudeStreamJson : IStreamMapper
         }
 
         // A failure's words reach the transcript: the refusal detector reads its last lines (D49 §4).
-        lines.Add(failed && Str(frame, "result") is { Length: > 0 } why
-            ? $"— the turn failed ({subtype}): {why}"
-            : $"— the turn ended: {subtype}");
+        lines.Add(stopped
+            ? "— the turn was stopped"
+            : failed && Str(frame, "result") is { Length: > 0 } why
+                ? $"— the turn failed ({subtype}): {why}"
+                : $"— the turn ended: {subtype}");
         events.Add(new SessionEvent
         {
             Kind = SessionEventKind.Turn,
-            // The protocol door's word for an ordinary ending, so one ending reads as one thing.
-            StopReason = !failed && subtype == "success" ? "end_turn" : subtype,
+            // The protocol door's words for an ordinary ending and a stopped one, so each reads as one
+            // thing whichever door it happened on.
+            StopReason = stopped ? "cancelled" : !failed && subtype == "success" ? "end_turn" : subtype,
         });
 
         return new(lines, events);
+    }
+
+    /// <summary>
+    /// The harness's answer to one of the driver's control requests — the driver's business, not the
+    /// conversation's. A refusal is said on the console; an acceptance says nothing, because what it
+    /// did arrives as the turn's own ending.
+    /// </summary>
+    private static StreamMapped Control(JsonElement frame)
+    {
+        if (!frame.TryGetProperty("response", out var response) || response.ValueKind != JsonValueKind.Object
+            || Str(response, "subtype") != "error")
+        {
+            return StreamMapped.Nothing;
+        }
+
+        return new([$"— the harness refused a control request: {Str(response, "error") ?? "it gave no reason"}"], []);
     }
 
     /// <summary>The last assistant message's context: its input, cache-creation and cache-read tokens.</summary>

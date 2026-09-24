@@ -418,6 +418,12 @@ The first version: doctrine that installs, is checked, and flows back.
   only text. And a conversation no longer loses a word when the page reads it while the agent is
   talking. A tool card names a file inside the session's tree relative to it. The context a session
   used is recorded for the native door too.
+- **A turn can be stopped without ending the conversation.** Ctrl+C during a turn in
+  `daoris-driver chat` stops it and keeps the session, on the protocol door and on Claude Code's own.
+  A script sends a line holding only ETX to do the same. The turn ends *cancelled* in the record,
+  never as a failure. A message you send while a turn runs waits for it on both doors: Claude Code
+  used to be handed it mid-turn, and the record put it inside the turn before. A stop hands back what
+  was still waiting, unsent, so nothing you queued fires after you said stop.
 - **A chat you start stays open in front of you**, where it used to fall back to *Nothing attended*
   until you picked it from the list. A long code line scrolls inside its block, not widening the
   conversation.

@@ -262,6 +262,26 @@ public sealed class DriverModule : ModuleBase
                 return new { Ended = _loop.Chat?.Finish(id) ?? _loop.Processes.CloseInput(id) };
             }
 
+            // Stopping the turn and keeping the conversation (CONV4a) — the third verb, beside finishing
+            // and stopping the session. What was waiting comes back, so the page can hand it to the
+            // person rather than lose it. Refused for a session that takes no input, as a message is,
+            // and for a door that carries only text, in the driver's words: it has no turn to stop.
+            case "CANCEL_TURN":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
+                var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id).ConfigureAwait(false) : TurnStop.Nothing;
+                return new { stop.Cancelled, stop.Withdrawn };
+            }
+
+            // What a conversation has waiting (CONV4a): a page that just opened it asks once, and takes
+            // every change after that as `SESSION_QUEUED`.
+            case "SESSION_QUEUE":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                return new { Session = id, Queued = _loop.Chat?.Queued(id) ?? [] };
+            }
+
             case "STOP_SESSION":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

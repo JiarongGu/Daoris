@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 629 driver, 121 desktop modules, 917 web unit, 21 Playwright**, 73
-devkit, 66/66 release rehearsal, **274/274 family rehearsal** (it names its own phases when you run
+**446 CLI tests, 473 service, 640 driver, 124 desktop modules, 917 web unit, 21 Playwright**, 73
+devkit, 66/66 release rehearsal, **277/277 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -83,10 +83,11 @@ and a release is still blocked on REH1.
 
 🔴 **The live arc is D76, the conversation** (owner, 2026-09-25), taken in the order under *The
 reference gap* below.
-- **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`) and CONV3b
-  (chats on the protocol door), with the fixes the looks found. All are in the archive under
-  2026-09-25.
-- **Next:** **CONV4, the composer.** `AcpSession.CancelTurnAsync` already exists for *stop the turn*.
+- **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
+  (chats on the protocol door) and CONV4a (stopping a turn, one queue on both doors), with the fixes
+  the looks found. All are in the archive under 2026-09-25.
+- **Next:** **CONV4b, the composer on the page**, over CONV4a's bridge verbs. Then CONV4c
+  (attachments and `@`), which is measured before it is built.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
@@ -155,15 +156,10 @@ the published application with a debug port so `shot`, `eval` and `click` reach 
 app opens none by itself). The scratch loop has one circle, one account and two example
 repositories, so every UI judgement made against it is a judgement about a machine nobody has.
 
-**The looking pass is complete** (2026-09-22/23): every surface read once on the real machine —
-20 registered repositories, 965 entries across 14, two workspaces, no named accounts. Overview,
-Machine, Quests, Projects, Search, Convergence and Work each produced what the fixture structurally
-could not show, and `docs/FIX-LOG.md` holds every one with its mechanism. 🔴 **The last of them is
-the widest: 中文 search never worked in the SQLite index** — the tokeniser's two-character floor
-dropped every Chinese term, and beneath it FTS5's `unicode61` keeps a run of ideographs as one token,
-so even a kept term matched nothing. Every Chinese query had been returning the whole corpus. The
-index is cut into bigrams now (schema 3, rebuilt on open). The next pass is the same pass after the
-next change; what remains in this file is decisions and held rows.
+**The looking pass is complete** (2026-09-22/23): every surface read once on the real machine, each
+finding what the fixture could not show, every one in `docs/FIX-LOG.md` (the widest: 中文 search had
+never worked in the SQLite index, now cut into bigrams). The next pass is the same pass after the
+next change.
 
 🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
 (four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface
@@ -178,10 +174,7 @@ asserted on neither side.
 carries a measured third answer beside the two that were refused: Claude Code takes `--settings` at
 spawn, so the guard can be wiring Daoris carries rather than a file anyone writes (ACP4's shape).
 The owner decides; only a **structured deny** blocks under a 5.1 executor, never exit 2 (probe 4).
-🔴 A *layout-toggles* item was carried in this paragraph for a while and **never existed in the
-backlog** — it was prose pretending to be work, which is exactly what the backlog is for; a surface
-item is written against `docs/2026-09-21-working-surface-design.md` when somebody wants one, and the
-panel and dock state would need hoisting out of `WorkFrame` first. **Three are decisions, not work**:
+**Three are decisions, not work**:
 ACP2 and DEPLOY1's second half both cost a real login to settle, and PLUG2 reopens D4's *"core
 installs with no opt-out"*. DEPLOY4 was decided the other way from its recommendation (**D63**, the
 application folder is the home, nothing under the profile) and is in the archive. Four **held** items
@@ -273,7 +266,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (473),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (604), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (120), `npm run rehearse:family` (271/271), `npm run test:web` (902 vitest + 21 Playwright),
+  (640), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (124), `npm run rehearse:family` (277/277), `npm run test:web` (917 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -456,15 +449,14 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24).
-- [ ] **CONV4 — the composer.** Attachments (the `carry` molecule), `@` a file in the session's
-  tree, a draft per session, stop the turn beside end the session.
-  - **Stopping a turn is a verb on the protocol door already.** `AcpSession.CancelTurnAsync`
-    sends `session/cancel`, and the turn ends on the agent's own word. It needs a `ChatRunner`
-    entry and a control.
-  - **A message sent while a turn runs is queued on the protocol door**, and it joins the record
-    when its turn begins (CONV3b). The native door writes it to Claude Code's stdin at once, and
-    the record takes it mid-turn. The composer should show a queued message as queued, and the
-    native door's record should match the protocol door's.
+**CONV4 was split in three (2026-09-25)**; CONV4a, the driver's turn verbs, is in the archive.
+- [ ] **CONV4b — the composer on the page.** Stop the turn beside end the session; queued messages
+  shown as queued, and a stop's withdrawn ones back in the draft; a draft per session that survives
+  a reload; a stopped turn reads as stopped, never failed. Over CONV4a's `CANCEL_TURN`,
+  `SESSION_QUEUE` and `SESSION_QUEUED`. The archive's CONV4a entry has two findings for this item.
+- [ ] **CONV4c — what a message carries.** Attachments (the `carry` molecule) and `@` a file in
+  the session's tree. Measure each wire first: ACP's content blocks against `promptCapabilities`,
+  `stream-json`'s against the binary.
 - [ ] **CONV5 — meters.** A context ring under the composer and per-turn usage, from the usage the
   wire reports; absent is never zero.
 - [ ] **FRAME6 — the frame.** A resizable, collapsible rail (264–420px, 56px strip) and a resizable

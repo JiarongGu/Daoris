@@ -3177,3 +3177,22 @@ view.
 
 **What does not move.** D24's no model named. D37 and D52: the person is at the target and the
 outcome. D47 §4's disclosure boundary. D23's adapter per harness. D55: no editor.
+
+**Amended 2026-09-25 (CONV4a): one turn at a time on both doors, and a stop hands back what was
+waiting.** Three choices, each with the one it beat.
+- **A message sent while a turn runs waits for it**, on the native door as on the protocol door.
+  It joins the record when it is sent. Rejected: writing it to Claude Code at once and letting the
+  harness decide. Its SDK says it may fold such a line into the running turn (bundle evidence, not
+  measured), and then the record cannot say which turn answered it. Holding it makes the question
+  moot on every harness.
+- **Stopping a turn keeps the session** and is a third verb, beside finishing and stopping the
+  session. On the protocol door it is `session/cancel`. On the native door it is the harness's
+  interrupt control request, measured first (`docs/2026-09-25-stream-json-evidence.md`). The turn ends
+  `cancelled` on both. A door that carries only text refuses in words: it cannot see where a turn
+  ends. Rejected: killing the process for a native stop, which is the session's stop under another
+  name.
+- **A stop withdraws what was waiting and hands it back**, before the turn in flight is stopped.
+  Rejected: letting the queue run on, because the next message would start the moment the stopped
+  turn ended, and the person's stop would stop nothing they could see. Also rejected: dropping the
+  queue silently, which loses what they wrote. Finishing is different: the turns already asked for
+  run first, because finishing is not withdrawing.

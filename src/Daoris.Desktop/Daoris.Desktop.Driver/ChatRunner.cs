@@ -56,6 +56,16 @@ public sealed class ChatRunner(
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProtocolChat> _protocol =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // The native door's conversations on a structured wire (CONV4a), by session: each one's turns.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, NativeChat> _native =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// What a conversation has waiting — sent by the person, not yet at the harness — each time it
+    /// changes (CONV4a). The page shows these as queued: they are in no record until they are sent.
+    /// </summary>
+    public event Action<string, IReadOnlyList<string>>? QueueChanged;
+
     /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
     public const string ClosedNote =
         "the application closed while this conversation ran; its process was ended with it.";
@@ -207,13 +217,23 @@ public sealed class ChatRunner(
         // into the JSON-RPC stream as raw text — the harness declared itself interactive and could not
         // hold a conversation at all.
         ProtocolChat? chat = null;
+        NativeChat? native = null;
+        var mapper = resolved.StructuredOutput();
+        void Changed(IReadOnlyList<string> queued) => QueueChanged?.Invoke(sessionId, queued);
         if (resolved.Wire == SessionWire.Acp)
         {
-            chat = new ProtocolChat(resolved.AcpPosture, meta, workTree, Servers(sessionId));
+            chat = new ProtocolChat(resolved.AcpPosture, meta, workTree, Servers(sessionId), Changed);
             _protocol[sessionId] = chat;
         }
+        else if (mapper is not null)
+        {
+            // 🔴 Turns are only visible where the wire says where one ends (CONV4a). A text-only pipe
+            // takes each line at once, as it always did.
+            native = new NativeChat(sessionId, resolved, processes, e => Record(sessionId, e), Changed);
+            _native[sessionId] = native;
+        }
 
-        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, resolved.StructuredOutput(), chat);
+        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, mapper, chat, native);
         _watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -262,53 +282,101 @@ public sealed class ChatRunner(
     /// </remarks>
     public bool Finish(string sessionId)
     {
-        if (!_protocol.TryGetValue(sessionId, out var chat)) return processes.CloseInput(sessionId);
+        if (_protocol.TryGetValue(sessionId, out var chat))
+        {
+            _ = chat.FinishAsync(() => processes.CloseInput(sessionId));
+            return true;
+        }
 
-        _ = chat.FinishAsync(() => processes.CloseInput(sessionId));
-        return true;
+        // The native door's turns already asked for run first too: finishing is not withdrawing (CONV4a).
+        if (_native.TryGetValue(sessionId, out var native))
+        {
+            _ = native.FinishAsync(() => processes.CloseInput(sessionId));
+            return true;
+        }
+
+        return processes.CloseInput(sessionId);
     }
 
     /// <summary>Send a person's message to a live chat. False when there is nothing listening.</summary>
     /// <remarks>
     /// Framed for the conversation's harness (CONV3) — a `stream-json` line where it reads one, a turn on
     /// its session on the protocol door (CONV3b) — and, once it is sent, part of the record: the person's
-    /// words were never in it before (D76 §4).
+    /// words were never in it before (D76 §4). On either structured door a message sent mid-turn waits
+    /// for its own (CONV4a).
     /// </remarks>
     public bool Say(string sessionId, string message)
     {
-        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Say(message);
-
-        var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message) : message;
-        if (!processes.Send(sessionId, framed)) return false;
+        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Turns.Say(message);
+        if (_native.TryGetValue(sessionId, out var native)) return native.Turns.Say(message);
 
         // A text-only door keeps the person's words where it keeps the agent's — the console. In the
         // record they would be half a conversation: questions with no answers beside them.
-        if (adapter is null || !HarnessRoster.Structured(adapter)) return true;
+        var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message) : message;
+        return processes.Send(sessionId, framed);
+    }
 
+    /// <summary>Whether a conversation's turn is on its way to the harness or running there — false on a text-only door.</summary>
+    public bool Taking(string sessionId) =>
+        _protocol.TryGetValue(sessionId, out var chat) ? chat.Turns.Running
+        : _native.TryGetValue(sessionId, out var native) && native.Turns.Running;
+
+    /// <summary>What a conversation has waiting — sent, not yet at the harness — in the order sent.</summary>
+    public IReadOnlyList<string> Queued(string sessionId) =>
+        _protocol.TryGetValue(sessionId, out var chat) ? chat.Turns.Waiting
+        : _native.TryGetValue(sessionId, out var native) ? native.Turns.Waiting
+        : [];
+
+    /// <summary>
+    /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
+    /// withdrawn and handed back, and the turn in flight ends on the harness's own word.
+    /// </summary>
+    /// <returns><see cref="TurnStop.Nothing"/> when nothing here holds the conversation, or nothing ran.</returns>
+    /// <exception cref="DriverException">The conversation's door carries only text, so it has no turn to stop.</exception>
+    public Task<TurnStop> CancelTurnAsync(string sessionId)
+    {
+        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Turns.StopAsync();
+        if (_native.TryGetValue(sessionId, out var native)) return native.Turns.StopAsync();
+        if (_talking.TryGetValue(sessionId, out var adapter))
+        {
+            throw new DriverException(
+                $"the `{adapter.Name}` harness carries only text, so the driver cannot tell where one turn ends "
+                + "and the next begins — there is no turn to stop. Finish the conversation, or stop it.");
+        }
+
+        return Task.FromResult(TurnStop.Nothing);
+    }
+
+    /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
+    private void Record(string sessionId, SessionEvent e)
+    {
         try
         {
-            _events.Append(sessionId, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = message });
+            _events.Append(sessionId, e);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
-            // Sent is what the person asked for; the record's failure is its own.
+            // The conversation goes on; the console still has its lines.
         }
-
-        return true;
     }
 
     /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
     /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
     /// <param name="chat">The conversation's session on the protocol door (CONV3b), or null on the pipe.</param>
+    /// <param name="native">The conversation's turns on the native door's structured wire (CONV4a), or null.</param>
     private async Task WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
-        string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null)
+        string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null, NativeChat? native = null)
     {
         using var tracked = processes.Track(sessionId, process);
         using var talking = new Disposer(() =>
         {
             _talking.TryRemove(sessionId, out _);
             _protocol.TryRemove(sessionId, out _);
+            _native.TryRemove(sessionId, out _);
+            // Nothing waiting will be sent now, and the page is told its queue emptied.
+            chat?.Turns.Gone();
+            native?.Gone();
         });
         try
         {
@@ -319,7 +387,12 @@ public sealed class ChatRunner(
                 : mapper is not null
                     ? Driver.CaptureStructuredAsync(
                         process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
-                        prompt: null, CancellationToken.None)
+                        prompt: null, CancellationToken.None,
+                        // The turn's end, once the record holds it, lets the next message go (CONV4a).
+                        observed: e =>
+                        {
+                            if (e.Kind == SessionEventKind.Turn) native?.TurnEnded();
+                        })
                     : Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None);
             await service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
@@ -445,34 +518,50 @@ public sealed class ChatRunner(
 
     /// <summary>
     /// One conversation on the protocol door (CONV3b): its session once opened, and its turns one at a
-    /// time, in the order the person sent them.
+    /// time, in the order the person sent them (<see cref="ChatTurns"/>).
     /// </summary>
     /// <remarks>
-    /// <para><b>A message is recorded as it is SENT, not as it is typed.</b> One sent while a turn runs
-    /// waits for that turn to end; recorded at once, it would sit in the middle of the turn before it,
-    /// and the conversation would read as though the agent answered a question it had not been asked.</para>
+    /// <para><b>A message is recorded as it is SENT, not as it is typed</b> — the queue's rule, and the
+    /// reason it exists.</para>
+    ///
+    /// <para><b>A stop is <c>session/cancel</c></b>, which keeps the session: the agent winds its turn up
+    /// and answers the prompt <c>cancelled</c>, and that answer is the turn's end in the record.</para>
     ///
     /// <para><b>A turn that could not be sent is said</b>, on the transcript and in the record, and the
     /// conversation goes on: the process is still there, and so is the person.</para>
     /// </remarks>
-    private sealed class ProtocolChat(string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers)
+    private sealed class ProtocolChat
     {
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly object _gate = new();
-        private Task _turns = Task.CompletedTask;
-        private bool _finishing;
         private Action<string> _line = _ => { };
         private Action<SessionEvent> _record = _ => { };
 
-        public string? Posture => posture;
+        public ProtocolChat(
+            string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
+            Action<IReadOnlyList<string>> changed)
+        {
+            Posture = posture;
+            Meta = meta;
+            Cwd = cwd;
+            Servers = servers;
+            Turns = new ChatTurns(
+                ready: async () => await _open.Task.ConfigureAwait(false) is not null,
+                take: TurnAsync,
+                interrupt: CancelAsync,
+                changed);
+        }
 
-        public object? Meta => meta;
+        public string? Posture { get; }
 
-        public string Cwd => cwd;
+        public object? Meta { get; }
 
-        public IReadOnlyList<AcpMcpServer> Servers => servers;
+        public string Cwd { get; }
 
-        /// <summary>The session is open — or could not be, and then every turn asked for is dropped, said once.</summary>
+        public IReadOnlyList<AcpMcpServer> Servers { get; }
+
+        public ChatTurns Turns { get; }
+
+        /// <summary>The session is open — or could not be, and then every turn asked for is dropped.</summary>
         public void Opened(AcpSession? session, Action<string> line, Action<SessionEvent> record)
         {
             _line = line;
@@ -480,26 +569,14 @@ public sealed class ChatRunner(
             _open.TrySetResult(session);
         }
 
-        /// <summary>Queue a turn. False once the conversation is finishing: nothing more will be heard.</summary>
-        public bool Say(string text)
+        private async Task TurnAsync(string text, Action sent)
         {
-            lock (_gate)
-            {
-                if (_finishing) return false;
-                _turns = TurnAsync(_turns, text);
-                return true;
-            }
-        }
-
-        private async Task TurnAsync(Task previous, string text)
-        {
-            await previous.ConfigureAwait(false);
             if (await _open.Task.ConfigureAwait(false) is not { } session) return;
 
             _record(new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = text });
             try
             {
-                await session.PromptAsync(text, CancellationToken.None).ConfigureAwait(false);
+                await session.PromptAsync(text, CancellationToken.None, sent).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException
                                               or InvalidOperationException)
@@ -509,25 +586,109 @@ public sealed class ChatRunner(
             }
         }
 
+        private async Task CancelAsync()
+        {
+            if (!_open.Task.IsCompletedSuccessfully || _open.Task.Result is not { } session) return;
+            try
+            {
+                await session.CancelTurnAsync().ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is IOException or ObjectDisposedException or InvalidOperationException)
+            {
+                // The agent is gone, and its turn with it.
+                _line($"— the stop could not reach the agent: {error.Message}");
+            }
+        }
+
         /// <summary>
         /// The turns already asked for, then <c>session/close</c>, then the end of input — after which the
         /// agent exits on its own, and that exit is what the record concludes from.
         /// </summary>
         public async Task FinishAsync(Action endInput)
         {
-            Task turns;
-            lock (_gate)
-            {
-                _finishing = true;
-                turns = _turns;
-            }
-
-            await turns.ConfigureAwait(false);
+            await Turns.FinishAsync().ConfigureAwait(false);
             if (await _open.Task.ConfigureAwait(false) is { } session)
             {
                 await session.CloseAsync(CancellationToken.None).ConfigureAwait(false);
             }
 
+            endInput();
+        }
+    }
+
+    /// <summary>
+    /// One conversation on the native door's structured wire (CONV4a): its turns one at a time, each a
+    /// line on the harness's stdin, each ended by the <c>result</c> the capture reads.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>A mid-turn message used to be written at once</b>, where Claude Code may fold it into
+    /// the turn still running and the record took it in the middle of that turn. It waits now, as the
+    /// protocol door's always did.</para>
+    ///
+    /// <para><b>The person's words are recorded, then sent</b>: the harness can answer before a record
+    /// written afterwards lands, and the answer would sit above the question.</para>
+    /// </remarks>
+    private sealed class NativeChat
+    {
+        private readonly object _gate = new();
+        private TaskCompletionSource? _turn;
+
+        public NativeChat(
+            string sessionId, ISessionAdapter adapter, SessionProcesses processes, Action<SessionEvent> record,
+            Action<IReadOnlyList<string>> changed)
+        {
+            Turns = new ChatTurns(
+                ready: () => Task.FromResult(true),
+                take: (text, sent) =>
+                {
+                    var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    lock (_gate) _turn = ended;
+                    record(new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = text });
+                    if (!processes.Send(sessionId, adapter.FrameMessage(text)))
+                    {
+                        // Nothing is listening: the process is going, and its watch concludes the record.
+                        record(new SessionEvent { Kind = SessionEventKind.Note, Text = "the message could not be sent: the harness had gone." });
+                        Gone();
+                        return Task.CompletedTask;
+                    }
+
+                    sent();
+                    return ended.Task;
+                },
+                interrupt: () =>
+                {
+                    if (adapter.FrameInterrupt() is { } stop) processes.Send(sessionId, stop);
+                    return Task.CompletedTask;
+                },
+                changed);
+        }
+
+        public ChatTurns Turns { get; }
+
+        /// <summary>The turn's end is in the record: the next message may go.</summary>
+        public void TurnEnded()
+        {
+            TaskCompletionSource? turn;
+            lock (_gate)
+            {
+                turn = _turn;
+                _turn = null;
+            }
+
+            turn?.TrySetResult();
+        }
+
+        /// <summary>The harness has gone: nothing waiting is sent, and a turn waiting on its end stops waiting.</summary>
+        public void Gone()
+        {
+            Turns.Gone();
+            TurnEnded();
+        }
+
+        /// <summary>The turns already asked for, then the end of input: the harness winds up and exits on its own.</summary>
+        public async Task FinishAsync(Action endInput)
+        {
+            await Turns.FinishAsync().ConfigureAwait(false);
             endInput();
         }
     }

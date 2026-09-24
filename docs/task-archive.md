@@ -5743,3 +5743,59 @@ record.
 Left for later: stopping a turn from the page, and a queued message's look (CONV4); the console's
 chunk-per-line transcript (UX1). Driver 622 → 629, modules 120 → 121, web unit 914 → 917, family
 271 → 274.
+
+## CONV4a — stopping a turn, and the queue, in the driver (2026-09-25)
+
+- [x] ~~**CONV4a — stopping a turn, and the queue, in the driver.** One turn queue for both doors
+  (`ChatTurns`): a message sent mid-turn waits and joins the record when its turn begins. The native
+  door stops writing it to Claude Code's stdin at once, because the binary folds a mid-turn message
+  into the running turn. Stop the turn: `session/cancel` on the protocol door and Claude Code's
+  `interrupt` control request on the native one, measured first (the stream-json evidence, §
+  *Stopping a turn*). A stop withdraws what was waiting, so nothing the person queued fires after
+  they said stop. Both doors: `CANCEL_TURN` and `SESSION_QUEUE` over the bridge, and on the
+  terminal an ETX line (Ctrl+C) during a turn. The family rehearsal holds it over the ACP stub.~~
+✅ **done 2026-09-25**, the first third of CONV4, which was split in three the same day (CONV4b the
+page, CONV4c attachments and `@`).
+
+- **Measured first** (`docs/2026-09-25-stream-json-evidence.md`, § *Stopping a turn*). Two real
+  sessions established the following.
+  - Claude Code 2.1.281 takes `{"type":"control_request","request":{"subtype":"interrupt"}}` on
+    stdin with no `initialize`, and answers it with a `control_response`.
+  - The turn ends `error_during_execution`, with `terminal_reason` `aborted_streaming` (cut while
+    writing) or `aborted_tools` (cut while a tool ran).
+  - The process takes the next turn normally.
+  - That a mid-turn line may be folded into the running turn is the SDK's declaration, labelled as
+    bundle evidence.
+- **`ChatTurns`, one queue for both doors.** It takes one turn at a time, in order. A message waits,
+  is recorded when sent, and is told as waiting (`QueueChanged`) while it waits. A message the door
+  takes at once is never announced. A stop withdraws what was waiting first, then stops the turn in
+  flight. A stop that lands between *taken* and *on the wire* is held until the send, because
+  `PromptAsync` now reports the moment its request is written. Otherwise the cancel could overtake
+  the prompt and stop nothing.
+- **The native door** (`NativeChat`) records a message, then writes it. It waits for the turn's
+  `result`, which the capture reports only after the record holds the turn's ending (`observed`), so
+  the next message always lands behind that ending. *Finish* runs the queued turns first, then ends
+  input. `ClaudeStreamJson` maps an aborted turn to `cancelled`, the protocol door's word, and keeps
+  a `control_response` out of the record; a refused one is a console line.
+- **The protocol door** (`ProtocolChat`) moved onto the same queue. `session/cancel` is its stop,
+  and the turn ends on the agent's own `cancelled`.
+- **Both doors (D50).** On the bridge, `CANCEL_TURN` answers `{cancelled, withdrawn}` and is refused
+  for a session that takes no input. `SESSION_QUEUE` answers what is waiting, and changes arrive live
+  as `SESSION_QUEUED`. On a terminal, Ctrl+C during a turn stops it, and a line holding only ETX
+  does the same from a script; with no turn running Ctrl+C does what it always did. A text-only door
+  refuses a stop in words, because it cannot see a turn end.
+- **The gates.** Seven driver tests with stand-in harnesses on both doors that write down each line
+  as it arrives. The ordering test was checked against the old immediate write, and fails there
+  (`second` heard before `first`'s result). The mapper and adapter tests are built from the probe's
+  own frames. Three module tests. Three family-rehearsal checks: a stop from a live terminal over
+  the ACP stub, the withdrawn line never heard, and the record reading `person, cancelled, person,
+  end_turn`.
+- **Looked at** with the real binary, over the terminal door against the scratch shell's host. A
+  turn was stopped ten seconds in, the queued line came back unsent, the next message was answered
+  on the same session, and it finished `completed`. The record reads the same. The first attempt
+  taught two things, both carried into CONV4b:
+  - the native door's console prints a message only once it is whole, so a stop keyed to its words
+    arrived after them and the turn ended `end_turn`;
+  - a stop during thinking leaves a turn with no words.
+
+Driver 629 → 640, modules 121 → 124, family 274 → 277. The FIX-LOG has the mid-turn ordering defect.

@@ -230,6 +230,10 @@ public sealed class DriverLoop(
         // what guarantees the client is still there. Stopped after the client, a chat open at close was
         // recorded nowhere and read `working` forever (2026-09-25).
         using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events);
+        // What a conversation has waiting, as it moves (CONV4a): the page shows it as queued, and it is in
+        // no record until it is sent. Each change is the whole list, so a missed one costs nothing.
+        chat.QueueChanged += (session, queued) =>
+            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new { Session = session, Queued = queued });
         Chat = chat;
         Service = service;
 

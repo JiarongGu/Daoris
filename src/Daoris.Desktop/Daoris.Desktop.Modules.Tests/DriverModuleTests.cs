@@ -425,6 +425,7 @@ public sealed class DriverModuleTests : Bridge
     [Theory]
     [InlineData("SESSION_INPUT")]
     [InlineData("END_CHAT")]
+    [InlineData("CANCEL_TURN")]
     public async Task A_session_that_takes_no_input_is_refused_in_the_drivers_words(string type)
     {
         var loop = Loop();
@@ -458,6 +459,32 @@ public sealed class DriverModuleTests : Bridge
         var state = await AnswerAsync(Module(), "SESSION_INPUT", new { id = "nothing-here", text = "hello" });
 
         Assert.False(state.GetProperty("sent").GetBoolean());
+    }
+
+    /// <summary>
+    /// CONV4a: stopping a turn nothing here holds stops nothing and withdraws nothing — an answer, as
+    /// the page asking a moment late deserves, never an error.
+    /// </summary>
+    [Fact]
+    public async Task Stopping_a_turn_nothing_here_holds_answers_that_nothing_ran()
+    {
+        var stop = await AnswerAsync(Module(), "CANCEL_TURN", new { id = "nothing-here" });
+
+        Assert.False(stop.GetProperty("cancelled").GetBoolean());
+        Assert.Empty(stop.GetProperty("withdrawn").EnumerateArray());
+    }
+
+    /// <summary>
+    /// CONV4a: what a conversation has waiting is asked for by a page that just opened it, and takes
+    /// every change after that live — nothing waiting is an empty list.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_with_nothing_waiting_answers_an_empty_queue()
+    {
+        var queue = await AnswerAsync(Module(), "SESSION_QUEUE", new { id = "nothing-here" });
+
+        Assert.Equal("nothing-here", queue.GetProperty("session").GetString());
+        Assert.Empty(queue.GetProperty("queued").EnumerateArray());
     }
 
     /// <summary>

@@ -998,10 +998,15 @@ public sealed partial class Driver(
     /// </remarks>
     /// <param name="prompt">What was asked, for the record's opening line — the composed target of a
     /// driven session. Null for a conversation, whose messages are recorded as the person sends them.</param>
+    /// <param name="observed">
+    /// Told each event once the record holds it — how a conversation learns its turn ended (CONV4a).
+    /// After the record, never before: its next message must land behind the ending it waited for.
+    /// </param>
     /// <returns>The context high-water mark the harness reported, or null when it reported none.</returns>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
-        SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null)
+        SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
+        Action<SessionEvent>? observed = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -1031,7 +1036,11 @@ public sealed partial class Driver(
         {
             var mapped = mapper.Read(line);
             foreach (var text in mapped.Lines) Line(text);
-            foreach (var e in mapped.Events) Event(e);
+            foreach (var e in mapped.Events)
+            {
+                Event(e);
+                observed?.Invoke(e);
+            }
         }
 
         await errors.ConfigureAwait(false);

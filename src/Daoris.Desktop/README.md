@@ -71,7 +71,10 @@ searches UPWARD and would otherwise answer for the repository above it);
 since D76 **the conversation** — `SESSION_HISTORY` reads a session's record a page at a time
 (newest, `before`, or `after` for a gap) and batched `SESSION_EVENTS` carry what it does next, both
 from the typed events the driver keeps as `sessions/<id>.events.jsonl` beside each transcript, mapped
-from the door's own wire (ACP's `session/update` today) and never parsed from a console line;
+from the door's own wire (ACP's `session/update`, Claude Code's `stream-json`) and never parsed from a
+console line; since CONV4a **the turn** — `CANCEL_TURN` stops a conversation's turn and keeps the
+session, answering what it withdrew, and `SESSION_QUEUE` with live `SESSION_QUEUED` events says what
+the person sent that has not reached the harness yet (on a terminal, Ctrl+C during a turn);
 and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine has and `HARNESS_ACTION`
 for the person's install, update or login, each spawning that harness's own mechanism and relaying it
 through the console under `<harness>:<action>`, never a session id, because it is not a session),

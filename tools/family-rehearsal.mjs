@@ -3060,6 +3060,7 @@ async function work(sessionId) {
 
 const lines = createInterface({ input: process.stdin });
 let session = null;
+let holding = null;
 
 // Frames are handled WITHOUT awaiting inside the reader, and that is not a style choice: the prompt's
 // work asks the client for a permission decision and must keep reading while it waits for the answer.
@@ -3100,6 +3101,9 @@ const handle = async (line) => {
         update(frame.params?.sessionId ?? session, {
           sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'acp heard: ' + said + ' (in ' + frame.params?.sessionId + ')' },
         });
+        // A turn that runs until it is stopped (CONV4a): answered only by session/cancel, the way a
+        // real agent answers a cancelled prompt — with its own stop reason.
+        if (said === 'hold this turn') { holding = frame.id; break; }
         send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
         break;
       }
@@ -3116,6 +3120,13 @@ const handle = async (line) => {
     }
     case 'session/close':
       send({ jsonrpc: '2.0', id: frame.id, result: {} });
+      break;
+    case 'session/cancel':
+      say('turn cancelled');
+      if (holding !== null) {
+        send({ jsonrpc: '2.0', id: holding, result: { stopReason: 'cancelled' } });
+        holding = null;
+      }
       break;
     default:
       if (frame.id !== undefined) {
@@ -3258,6 +3269,68 @@ check(
   JSON.stringify(acpSaid) === JSON.stringify(
     ['person: first over the protocol', 'turn', 'person: second over the protocol', 'turn']),
   JSON.stringify(acpSaid),
+);
+
+// 🔴 STOPPING A TURN from a terminal (CONV4a, D50): the conversation's third verb, beside finishing it
+// and stopping it. Typed by a person it is Ctrl+C; from a script it is a line holding only ETX, the
+// character Ctrl+C is. Driven live rather than from a file, because the stop has to land while the turn
+// is running at the agent — a file's lines all arrive before the session has even opened.
+const stopChat = await new Promise((resolve) => {
+  const child = spawn('dotnet', [driverDll, 'chat', '--repository', 'newcomer', '--adapter', 'acp-stub'], {
+    cwd: scratch,
+    env: { ...process.env, DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_REMOTE, ...NO_HARNESS },
+  });
+  children.push(child);
+  let out = '';
+  const steps = [
+    // Held by the agent until it is cancelled; the second waits behind it.
+    { when: /chat: /, send: ['hold this turn', 'queued behind it'] },
+    { when: /acp heard: hold this turn/, send: ['\u0003'] },
+    { when: /the turn was asked to stop/, send: ['after the stop'] },
+    { when: /acp heard: after the stop/, end: true },
+  ];
+  const advance = () => {
+    while (steps.length > 0 && steps[0].when.test(out)) {
+      const step = steps.shift();
+      for (const line of step.send ?? []) child.stdin.write(`${line}\n`);
+      if (step.end) child.stdin.end();
+    }
+  };
+  child.stdout.on('data', (chunk) => { out += chunk; advance(); });
+  child.stderr.on('data', (chunk) => { out += chunk; advance(); });
+  const timer = setTimeout(() => child.kill('SIGKILL'), DRIVE_TIMEOUT);
+  child.on('close', (code) => {
+    clearTimeout(timer);
+    resolve({ code: code ?? -1, out });
+  });
+});
+check(
+  'a person stops a turn from a terminal, and what was waiting behind it is handed back unsent',
+  stopChat.code === 0
+    && /the turn was asked to stop; the conversation goes on/.test(stopChat.out)
+    && /chat: not sent: queued behind it/.test(stopChat.out)
+    && !/acp heard: queued behind it/.test(stopChat.out),
+  stopChat.out,
+);
+check(
+  '…and the conversation goes on, on the SAME session, to a finish rather than a cut',
+  /acp heard: after the stop \(in acp-session-1\)/.test(stopChat.out) && /is completed/.test(stopChat.out),
+  stopChat.out,
+);
+
+const stopRecords = (await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [];
+const stopRecord = stopRecords
+  .find((s) => s.kind === 'chat' && s.adapter === 'acp-stub' && s.id !== acpChatRecord?.id);
+const stopEvents = join(scratch, 'sessions', `${stopRecord?.id}.events.jsonl`);
+const stopSaid = existsSync(stopEvents)
+  ? readFileSync(stopEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
+    .filter((e) => e.kind === 'user' || e.kind === 'turn').map((e) => (e.kind === 'user' ? `${e.origin}: ${e.text}` : `turn ${e.stopReason}`))
+  : [];
+check(
+  '…and its record says the turn was stopped — cancelled, on the agent’s own word — and never holds the withdrawn line',
+  JSON.stringify(stopSaid) === JSON.stringify(
+    ['person: hold this turn', 'turn cancelled', 'person: after the stop', 'turn end_turn']),
+  JSON.stringify(stopSaid),
 );
 
 // -------------------------------------------------- 17b. registered is drivable over the protocol door

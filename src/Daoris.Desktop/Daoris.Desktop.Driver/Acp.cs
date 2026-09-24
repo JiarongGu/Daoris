@@ -234,7 +234,11 @@ public sealed class AcpSession(
     /// One at a time: ACP takes a session's prompts in turn, so the caller queues a person's messages
     /// rather than sending one into a turn still running.
     /// </remarks>
-    public async Task<string> PromptAsync(string text, CancellationToken ct)
+    /// <param name="sent">
+    /// Told once the prompt is on the wire (CONV4a): a stop asked before that moment must wait for it,
+    /// or its <c>session/cancel</c> overtakes the prompt it meant to stop and stops nothing.
+    /// </param>
+    public async Task<string> PromptAsync(string text, CancellationToken ct, Action? sent = null)
     {
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
 
@@ -244,7 +248,7 @@ public sealed class AcpSession(
             result = await RequestAsync(
                 "session/prompt",
                 new { sessionId = _sessionId, prompt = new[] { new { type = "text", text } } },
-                ct).ConfigureAwait(false);
+                ct, sent).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -775,7 +779,8 @@ public sealed class AcpSession(
         return raw.Length <= 400 ? raw : $"{raw[..400]}… ({raw.Length} chars)";
     }
 
-    private async Task<JsonElement> RequestAsync(string method, object parameters, CancellationToken ct)
+    /// <param name="sent">Told once the request is on the wire, before its answer is awaited.</param>
+    private async Task<JsonElement> RequestAsync(string method, object parameters, CancellationToken ct, Action? sent = null)
     {
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -788,6 +793,7 @@ public sealed class AcpSession(
             ["method"] = method,
             ["params"] = JsonSerializer.SerializeToNode(parameters),
         }).ConfigureAwait(false);
+        sent?.Invoke();
 
         return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
     }

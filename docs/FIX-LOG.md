@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A message sent mid-turn on Claude Code's door sat inside the turn before it (2026-09-25)
+
+**Symptom.** Found by reading CONV3b's code, never seen on the window. On the native door, a
+message the person sent while Claude Code was still answering was written into the conversation's
+record at once. So it sat between the running turn's words and that turn's ending, and the
+conversation read as though the agent had been answering a question it had not yet been asked. The
+protocol door already queued, so the two doors disagreed about the same conversation.
+
+**Root cause.** `ChatRunner.Say` wrote a native message to the harness's stdin and appended it to the
+record in one step, whatever the harness was doing. Claude Code takes such a line while a turn runs
+and may fold it into that turn. The SDK declares this (`user_message_uuid`, `still_queued`); it is
+bundle evidence and was not measured. Neither the stdin write nor the record waited for the turn's
+`result`.
+
+**Fix.** One turn queue for both doors (`ChatTurns`). A message waits until the turn's end is in the
+record, then is recorded and sent. The capture tells the queue about the turn's end after appending
+it, never before, so the next message cannot land ahead of that ending. The same queue carries the
+new stop (CONV4a) and hands back what was waiting.
+
+**Verify.** `A_message_sent_mid_turn_on_the_native_door_waits_for_the_turn_to_end`: a stand-in Claude
+Code that writes down each line as it arrives hears `first`, its result, then `second`. With the old
+immediate write it would hear `second` before `first`'s result. The record reads person, agent,
+turn, twice. A real Claude Code chat on the scratch machine was then stopped mid-turn from the
+terminal: the queued line came back unsent, and the next message was answered in the same session.
+
 ## A page reading a conversation could make it lose a word (2026-09-25)
 
 **Symptom.** CONV3b's protocol-chat test passed alone and failed about one full driver run in

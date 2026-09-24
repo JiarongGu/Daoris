@@ -29,6 +29,9 @@ internal static class ChatConsole
             Console.Error.WriteLine(
                 "usage: daoris-driver chat --repository <name> [--adapter <name>] [--profile <name>] [--own-tree]\n"
                 + "  Messages are read from stdin, one per line; the session's output goes to stdout.\n"
+                + "  A message sent while a turn runs waits for it. Ctrl+C during a turn stops the turn and\n"
+                + "  keeps the conversation, handing back what was waiting; from a script, a line holding only\n"
+                + "  ETX (U+0003, the character Ctrl+C is) does the same.\n"
                 + "  End of input ends the conversation, and the record says how it finished.\n"
                 + "  --profile picks which account to run as; omitted takes the workspace's\n"
                 + "  default, then the machine's (`daoris agent profile ...`).\n"
@@ -81,16 +84,43 @@ internal static class ChatConsole
 
         Console.Error.WriteLine($"chat: {start.Message}");
 
+        // Stopping the turn is the terminal's third verb (CONV4a, D50): Ctrl+C while a turn runs, as a
+        // person at a prompt expects of any program that is busy. With no turn running it does what it
+        // always did, because a person pressing it then means to leave.
+        var id = start.SessionId;
+        ConsoleCancelEventHandler interrupt = (_, pressed) =>
+        {
+            if (!runner.Taking(id)) return;
+            pressed.Cancel = true;
+            _ = StopTurnAsync(runner, id);
+        };
+        Console.CancelKeyPress += interrupt;
+
         // Stdin is the person. A closed stdin is them finishing, which ENDS the conversation rather
         // than killing it: the harness gets end-of-input, says whatever it was going to say, and exits
         // on its own — a `completed` record, not a `stopped` one.
-        while (await Console.In.ReadLineAsync().ConfigureAwait(false) is { } line)
+        try
         {
-            if (!runner.Say(start.SessionId, line))
+            while (await Console.In.ReadLineAsync().ConfigureAwait(false) is { } line)
             {
-                Console.Error.WriteLine("chat: the session is no longer listening.");
-                break;
+                // A script has no Ctrl+C to press: a line that is only the character it stands for is the
+                // same stop, which is also how the family rehearsal holds this door.
+                if (line == "\u0003")
+                {
+                    await StopTurnAsync(runner, id).ConfigureAwait(false);
+                    continue;
+                }
+
+                if (!runner.Say(id, line))
+                {
+                    Console.Error.WriteLine("chat: the session is no longer listening.");
+                    break;
+                }
             }
+        }
+        finally
+        {
+            Console.CancelKeyPress -= interrupt;
         }
 
         // Finished through the conversation, which knows its door (CONV3b).
@@ -99,6 +129,27 @@ internal static class ChatConsole
         var state = await ended.Task.ConfigureAwait(false);
         Console.Error.WriteLine($"chat: session {start.SessionId} is {state}.");
         return 0;
+    }
+
+    /// <summary>
+    /// Stop the turn and say what the stop did — including what it handed back, since a terminal has no
+    /// draft to put it in and the person should see each line they will not have sent.
+    /// </summary>
+    private static async Task StopTurnAsync(ChatRunner runner, string sessionId)
+    {
+        try
+        {
+            var stop = await runner.CancelTurnAsync(sessionId).ConfigureAwait(false);
+            Console.Error.WriteLine(
+                stop.Cancelled ? "chat: the turn was asked to stop; the conversation goes on."
+                : stop.Withdrawn.Count > 0 ? "chat: nothing had reached the agent yet; the conversation goes on."
+                : "chat: no turn was running.");
+            foreach (var withdrawn in stop.Withdrawn) Console.Error.WriteLine($"chat: not sent: {withdrawn}");
+        }
+        catch (DriverException refused)
+        {
+            Console.Error.WriteLine($"chat: {refused.Message}");
+        }
     }
 
     private static string? Flag(string[] args, string name)

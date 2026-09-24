@@ -153,6 +153,57 @@ public sealed class ClaudeStreamJsonTests
         Assert.Equal("error_during_execution", Assert.Single(events, e => e.Kind == SessionEventKind.Turn).StopReason);
     }
 
+    /// <summary>
+    /// A turn the person stopped ends as the protocol door calls it, <c>cancelled</c>, whichever part
+    /// the interrupt cut — the model writing or a tool running — and never as a failure. The shapes
+    /// are the probe's (stream-json evidence, § Stopping a turn).
+    /// </summary>
+    [Theory]
+    [InlineData("aborted_streaming")]
+    [InlineData("aborted_tools")]
+    public void An_interrupted_turn_ends_cancelled_whichever_part_it_cut(string terminal)
+    {
+        var interrupted = """{"type":"user","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user]"}]},"session_id":"c1"}""";
+        var result = $$"""{"type":"result","subtype":"error_during_execution","is_error":true,"stop_reason":null,"terminal_reason":"{{terminal}}","errors":["[ede_diagnostic] result_type=user"]}""";
+
+        var (lines, events, _) = Map(interrupted, result);
+
+        Assert.Equal("cancelled", Assert.Single(events, e => e.Kind == SessionEventKind.Turn).StopReason);
+        Assert.Contains("— the turn was stopped", lines);
+        // The harness's own marker is the wire's bookkeeping, not something anybody said.
+        Assert.DoesNotContain(events, e => e.Kind is SessionEventKind.User or SessionEventKind.Message);
+    }
+
+    /// <summary>
+    /// The harness's answer to a control request is the driver's business: it is neither the
+    /// conversation nor an update this build does not know.
+    /// </summary>
+    [Fact]
+    public void A_control_response_is_the_drivers_answer_and_stays_out_of_the_record()
+    {
+        var answered = """{"type":"control_response","response":{"subtype":"success","request_id":"r1","response":{"still_queued":[]}}}""";
+        var refused = """{"type":"control_response","response":{"subtype":"error","request_id":"r2","error":"no turn to interrupt"}}""";
+
+        var (lines, events, _) = Map(answered, refused);
+
+        Assert.Empty(events);
+        Assert.Equal(["— the harness refused a control request: no turn to interrupt"], lines);
+    }
+
+    /// <summary>The native door's stop, as the one line the binary answered in the probe.</summary>
+    [Fact]
+    public void The_adapter_frames_an_interrupt_as_the_control_request_the_harness_answers()
+    {
+        var framed = new ClaudeCodeAdapter().FrameInterrupt();
+
+        Assert.NotNull(framed);
+        using var json = System.Text.Json.JsonDocument.Parse(framed!);
+        Assert.Equal("control_request", json.RootElement.GetProperty("type").GetString());
+        Assert.False(string.IsNullOrEmpty(json.RootElement.GetProperty("request_id").GetString()));
+        Assert.Equal("interrupt", json.RootElement.GetProperty("request").GetProperty("subtype").GetString());
+        Assert.DoesNotContain('\n', framed);
+    }
+
     /// <summary>What is not a frame is shown as itself, and a type this build does not know is kept raw.</summary>
     [Fact]
     public void A_line_that_is_not_a_frame_is_shown_and_an_unknown_type_is_kept_raw()

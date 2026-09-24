@@ -352,6 +352,12 @@ public interface ISessionAdapter
     /// the harness takes structured input.
     /// </summary>
     string FrameMessage(string text) => text;
+
+    /// <summary>
+    /// The line that stops a conversation's turn on this harness's stdin and keeps its session (CONV4a) —
+    /// null where the harness has none, and a turn there cannot be stopped short of ending the session.
+    /// </summary>
+    string? FrameInterrupt() => null;
 }
 
 /// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
@@ -873,6 +879,18 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         type = "user",
         message = new { role = "user", content = new[] { new { type = "text", text } } },
+    });
+
+    /// <summary>
+    /// The turn's stop as a <c>control_request</c> of subtype <c>interrupt</c> — answered by the binary in
+    /// the probe with a <c>control_response</c>, the turn ending <c>aborted_streaming</c> or
+    /// <c>aborted_tools</c>, and the session taking the next turn (stream-json evidence, § Stopping a turn).
+    /// </summary>
+    public string FrameInterrupt() => JsonSerializer.Serialize(new
+    {
+        type = "control_request",
+        request_id = $"daoris-{Guid.NewGuid():N}",
+        request = new { subtype = "interrupt" },
     });
 
     /// <summary>

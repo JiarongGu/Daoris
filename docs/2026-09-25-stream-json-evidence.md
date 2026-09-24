@@ -51,3 +51,42 @@ with each line `{"type":"user","message":{"role":"user","content":[{"type":"text
   claimed; a list price is not what a person pays). Both are on the wire and neither is recorded.
 - **Unknown lines** stay in the raw view, and an event of a type this build does not know is kept
   raw in the record rather than dropped.
+
+## Stopping a turn (CONV4a)
+
+**Probed 2026-09-25**, same binary (2.1.281), two real sessions of two turns each. Each probe sent a
+turn, then an interrupt, then a one-word turn. Process launched as above; one probe used
+`bypassPermissions` in a scratch folder so a shell command could run long enough to be interrupted.
+
+The stop is a **control request** on stdin, beside the user lines:
+
+```
+{"type":"control_request","request_id":"<id>","request":{"subtype":"interrupt"}}
+```
+
+- **No `initialize` is needed first.** The interrupt was answered on a session that had sent none.
+- **It is answered** with
+  `{"type":"control_response","response":{"subtype":"success","request_id":"<id>","response":{"still_queued":[]}}}`,
+  in about half a second. `system/init` advertises it as `capabilities: ["interrupt_receipt_v1", …]`.
+- **The turn ends with a `result`** of `subtype: "error_during_execution"`, `is_error: true`, and a
+  `terminal_reason` that says what was cut:
+  - `aborted_streaming` when the interrupt landed while the model was writing;
+  - `aborted_tools` when it landed while a tool ran. The tool's card is answered by a `tool_result`
+    with `is_error: true` and the harness's own sentence (*"The user doesn't want to proceed with
+    this tool use…"*).
+- **A synthetic `user` line** follows, `[Request interrupted by user]` or `[Request interrupted by
+  user for tool use]`, as plain text rather than a tool result. The partial `assistant` message
+  carries `aborted: true` at its top level.
+- **The process keeps the session.** The next user line was an ordinary turn, answered, `success`.
+
+**What Daoris takes from it.** A turn whose `terminal_reason` is `aborted_streaming` or
+`aborted_tools` ends as **`cancelled`**, which is what the protocol door calls the same ending (ACP's
+stop reason). So the person's stop reads the same on both doors and never as a failure. A
+`control_response` is the driver's answer, not the conversation's, and stays out of the record.
+
+**Why a message sent mid-turn is held by Daoris, not written at once.** The SDK's own declarations say
+a user line that arrives while a turn runs may be *folded into* that turn rather than answered after
+it (`user_message_uuid`, `still_queued`). That is **bundle evidence** (`@anthropic-ai/claude-agent-sdk`
+0.3.274, its `sdk.d.ts`). It was not measured. Daoris does not rely on it either way: the chat door
+holds a mid-turn message until the turn's `result`, then writes it. Both doors then take one turn at a
+time, and the record says when each message was sent.
