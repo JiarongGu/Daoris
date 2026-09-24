@@ -68,6 +68,44 @@ const WORKSPACE = 'default';
 const drive = process.argv.includes('--drive');
 const carry = !process.argv.includes('--no-carry');
 
+// 🔴 Declared HERE, above every statement that can reach them, for acp2-proof's reason: a `const`
+// further down the file sits in its temporal dead zone when the top-level run reaches it, and fails
+// as "Cannot access 'CIRCLE' before initialization" — which is how this script's first drive ended.
+
+/**
+ * The circle's two repositories, each declaring a domain the other plainly does not own — so a reader
+ * of the declarations can decide, which is what an intake is for. Scratch, and said to be scratch.
+ */
+const CIRCLE = [
+  {
+    name: 'proof-atlas',
+    readme: 'The maps: a scratch repository born for INT4f\'s proof run. Not real work.',
+    domain: {
+      summary: 'The world\'s maps and level layouts, for a scratch game born for a proof run.',
+      owns: ['the world map and its regions', 'level layout files'],
+      accepts: ['a map or layout correction, with the region named'],
+    },
+  },
+  {
+    name: 'proof-ledger',
+    readme: 'The ledger: a scratch repository born for INT4f\'s proof run. Not real work.',
+    domain: {
+      summary: 'Prices, currency and the shop, for a scratch game born for a proof run.',
+      owns: ['item prices and the currency table', 'the shop\'s catalogue'],
+      accepts: ['a price or catalogue change, with the item named'],
+    },
+  },
+];
+
+/**
+ * The ask: plainly the ledger's, and complete in its own words — so if a refused read of its link or
+ * file (outside an untrusted room) costs the intake anything, the sentence still settles it.
+ */
+const SENTENCE = 'The iron sword costs 40 gold in the shop, but the design says it should cost 25. '
+  + 'Change its price to 25 gold.';
+const LINK = 'https://tickets.example/T-41';
+const FILE = { name: 'design-note.txt', text: 'Design note: the iron sword costs 25 gold.\n' };
+
 /** The scratch host — declared above every statement that can reach it (ACP2's temporal-dead-zone lesson). */
 let host = null;
 
@@ -212,40 +250,6 @@ function born(name, summary) {
   git(['commit', '-qm', 'the starting point']);
   return where;
 }
-
-/**
- * The circle's two repositories, each declaring a domain the other plainly does not own — so a reader
- * of the declarations can decide, which is what an intake is for. Scratch, and said to be scratch.
- */
-const CIRCLE = [
-  {
-    name: 'proof-atlas',
-    readme: 'The maps: a scratch repository born for INT4f\'s proof run. Not real work.',
-    domain: {
-      summary: 'The world\'s maps and level layouts, for a scratch game born for a proof run.',
-      owns: ['the world map and its regions', 'level layout files'],
-      accepts: ['a map or layout correction, with the region named'],
-    },
-  },
-  {
-    name: 'proof-ledger',
-    readme: 'The ledger: a scratch repository born for INT4f\'s proof run. Not real work.',
-    domain: {
-      summary: 'Prices, currency and the shop, for a scratch game born for a proof run.',
-      owns: ['item prices and the currency table', 'the shop\'s catalogue'],
-      accepts: ['a price or catalogue change, with the item named'],
-    },
-  },
-];
-
-/**
- * The ask: plainly the ledger's, and complete in its own words — so if a refused read of its link or
- * file (outside an untrusted room) costs the intake anything, the sentence still settles it.
- */
-const SENTENCE = 'The iron sword costs 40 gold in the shop, but the design says it should cost 25. '
-  + 'Change its price to 25 gold.';
-const LINK = 'https://tickets.example/T-41';
-const FILE = { name: 'design-note.txt', text: 'Design note: the iron sword costs 25 gold.\n' };
 
 function declare(where, domain) {
   const manifest = join(where, 'daoris.json');

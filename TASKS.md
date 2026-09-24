@@ -241,10 +241,9 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: INT4f (its proof script, then a real run) and PERM3.** 🔴 **The owner authorized real
-  sessions on this machine's Claude Code account, 2026-09-24**; ACP2 used seven of them to reach
-  17/17. **The owner's to decide**: PERM4 (a `commit` default) and PERM2 (may a widening apply
-  unasked). **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
+- **Actionable: PERM3 with PERM4 (being built), then PERM2 and INT4j.** 🔴 **The owner authorized
+  real sessions on this machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach
+  17/17, and INT4f one to reach 16/16. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
   **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1 on a
   repository naming what it wants; REH1 and TEST1 on a captured recurrence; PLUG7 on a plugin asking
@@ -271,7 +270,7 @@ the traps that are not in any contract, because they were found rather than desi
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
 the archive; its decision is **D53, accepted**). **Fourteen items are open**, and every closed one is
 in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Two are actionable (INT4f, PERM3), five wait on the owner (PERM4, PERM2, TRUST2, AGT2c,
+ships. Four are actionable (PERM3, PERM4, PERM2, INT4j), three wait on the owner (TRUST2, AGT2c,
 INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
@@ -408,14 +407,14 @@ workspace; an **intake session** (the harness carries the model, D24) reads the 
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
 engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT3, INT4a, INT4b,
-INT4c, INT4d, INT4g, INT4h and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
+INT4c, INT4d, INT4f, INT4g, INT4h and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
-- [ ] **INT4f — a real ask through a real intake harness.** INT4b is proven by a stub. What is
-  unseen: the MCP host publishing as the ask under a real harness's environment. The login is
-  authorized (2026-09-24). The room's trust no longer blocks it: PERM1's `connector` default carries
-  `quest_publish` untrusted, and the hold lifts where it does (D73). What it needs is a proof script
-  in ACP2's shape.
+- [ ] **INT4j — a real intake cannot read its ask's files.** INT4f's real run was refused `Read` twice
+  on the ask's kept file, because it lives under the Daoris home, outside the intake's room, and D52
+  refuses every request. The sentence settled it there. An ask whose substance is in its file would
+  be decided blind. A read-only allowance for that ask's own files, carried at spawn like PERM1's
+  rules, is the likely answer. Found by INT4f.
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 

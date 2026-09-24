@@ -5224,3 +5224,23 @@ trusted. It took seven sessions to get there, and each stop taught something:
 **What it leaves for the owner: PERM4.** Without a rule allowing it, a real driven session in an
 untrusted repository cannot commit, so it declines. Whether Daoris should ship that as a default is
 the owner's call. Driver 530 → 532.
+
+## INT4f — a real ask through a real intake harness (2026-09-24)
+
+- [x] ~~**INT4f — a real ask through a real intake harness.** INT4b is proven by a stub. What is
+  unseen: the MCP host publishing as the ask under a real harness's environment.~~
+✅ **done 2026-09-24** — `node tools/int4f-proof.mjs --drive`: **16/16**, on the owner's
+authorization for real sessions. A real Claude Code intake over the protocol door read a
+two-repository circle's declarations in its room, a folder nobody had trusted. It chose
+`proof-ledger` for "the iron sword costs 40 gold… should cost 25", which the declarations name, and
+published through the MCP host's `quest_publish` as the ask. The ask reached Published with tier
+`intake`, and its quest `#0283fd2f220b` was asked by `ask #158421` and carried the ask's link and
+file. The session ended completed, observed from the ask rather than its own account. Nothing was
+written into either repository (D32). Daoris's `connector` default carried `quest_publish` into the
+untrusted room (D72), and the hold stayed lifted where it does (D73).
+
+The script was written in a parallel worktree. Its first drive died before any session, on the
+temporal-dead-zone trap `acp2-proof.mjs` already warns about (a `const` declared below the run that
+reads it), and it was fixed here. **Two refused requests on the way**, both `Read` of the ask's kept
+file, which lives under the home and outside the room. The sentence settled this ask. One whose
+substance is in its file would be decided blind, which is INT4j.
