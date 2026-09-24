@@ -331,6 +331,11 @@ wire evidence.
   session under a profile proves the hook fires — the owner's login. Whatever is written blocks
   **structurally** (`permissionDecision: deny`), never by exit 2 — PowerShell 5.1 collapses a native
   exit code (probe 4, run 2).
+  🔴 **The owner's answer, 2026-09-24**: wider than the proposal. *"just like how claude code scopes
+  configured by rules in daoris (which daoris can also use llm to update those too or modified by
+  user)"*. Daoris holds permission rules in scopes (as Claude Code does) and applies them at spawn.
+  The person edits them, and an agent may update them. The guard is default rules in that model.
+  Being designed and built as **PERM1 (D72)**, with INT3b.
 
 ### The working surface — the build order (D51/D52/D55/D56)
 
@@ -412,7 +417,10 @@ both are the owner's.**
   (d), silently** — that flag *is* the grant. **The ACP door was measured, 2026-09-24**
   (`docs/2026-09-24-deploy1-acp-trust-evidence.md`, `tools/acp-trust-probe.mjs`): it ignored an
   untrusted room's allow-list too, so the question stands on both doors. It holds ACP2's proof run
-  and INT4f's intake room until the person grants trust.
+  and INT4f's intake room until the person grants trust. 🔴 **The owner chose (b), 2026-09-24**:
+  Daoris asks per folder, then writes the flag. For managed repositories *"we should follow what
+  claude code does"*. For Daoris's own development folders, the owner granted trust outright. In
+  progress.
 
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
@@ -438,8 +446,8 @@ screen.
   unadopted repository has no allow-list for the connector's tools, so a real Claude Code agent asks
   before each call, and D52 refuses. DEPLOY1's measurement adds that the door ignores an untrusted
   room's allow-list anyway. Proven only with the stub (D70's last paragraph). The likely answer is to
-  allow the connector's own tools at session creation, a posture D52 permits there. That is the
-  owner's call, beside HELP3's `--settings`, which could carry both.
+  allow the connector's own tools at session creation, a posture D52 permits there. 🔴 **The owner
+  answered, 2026-09-24**: it is part of PERM1 (D72, under HELP3).
 - [ ] **INT3c — Projects offers an unadopted repository no *drive on this machine* control.** D70
   makes one drivable over the protocol door once opted in, but only the adopters' cards carry the
   control. The terminal's `daoris driver` can opt it in; the screen cannot (D50). Found at INT3's
@@ -472,9 +480,9 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
 
 - [ ] **PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
   ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest
-  `packs: []` is a flat set with no precedence. ⛔ **Decide before building**: this reopens **D4's
-  "core installs with no opt-out"**, which was a deliberate choice about doctrine rather than a
-  limitation. The owner's call, and the study says so rather than assuming it.
+  `packs: []` is a flat set with no precedence. It reopens **D4's "core installs with no opt-out"**.
+  🔴 **The owner reopened it, 2026-09-24**: a pack may switch core rows off. Designed first, then
+  built, as D71. In progress.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
