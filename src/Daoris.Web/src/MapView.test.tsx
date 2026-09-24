@@ -112,19 +112,19 @@ describe('the workspace map', () => {
     expect(node.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('says so when the circle holds no repository', async () => {
+  it('says so when the workspace holds no repository', async () => {
     REGISTRY = [];
     show(() => {}, 'aurora');
 
-    expect(await screen.findByText('No repositories in this circle')).toBeTruthy();
+    expect(await screen.findByText('No repositories in this workspace')).toBeTruthy();
   });
 
-  /** Seen on the installed window, 2026-09-24: scoped to every circle, it spoke of "this circle". */
-  it('says no circle holds one when the page is scoped to every circle', async () => {
+  /** Seen on the installed window, 2026-09-24: scoped to every workspace, it spoke of "this one". */
+  it('says no workspace holds one when the page is scoped to every workspace', async () => {
     REGISTRY = [];
     show();
 
-    expect(await screen.findByText('No repository in any circle yet')).toBeTruthy();
+    expect(await screen.findByText('No repository in any workspace yet')).toBeTruthy();
   });
 
   // ——— One level in: a repository's own code map (MAP3a).

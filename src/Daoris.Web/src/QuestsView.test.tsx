@@ -214,7 +214,7 @@ describe('QuestsView', () => {
     });
     afterEach(() => { ASKS = []; });
 
-    it('the Ask button opens the composer in the one circle there is, and the ask is sent whole', async () => {
+    it('the Ask button opens the composer in the one workspace there is, and the ask is sent whole', async () => {
       const notify = vi.fn();
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       render(
@@ -224,7 +224,7 @@ describe('QuestsView', () => {
       );
 
       await userEvent.click(await screen.findByRole('button', { name: 'ask' }));
-      const composer = await screen.findByRole('dialog', { name: 'Ask the circle' });
+      const composer = await screen.findByRole('dialog', { name: 'Ask the workspace' });
       expect(within(composer).getByText('Asked in default')).toBeInTheDocument();
       await userEvent.type(within(composer).getByLabelText('what is wanted, and why'), 'Cap the hydration per frame.');
       fireEvent.change(within(composer).getByLabelText(/links — a ticket/), { target: { value: 'https://tickets.example/T-42' } });
@@ -294,7 +294,7 @@ describe('QuestsView', () => {
         </QueryClientProvider>,
       );
 
-      expect(await screen.findByRole('dialog', { name: 'Ask the circle' })).toBeInTheDocument();
+      expect(await screen.findByRole('dialog', { name: 'Ask the workspace' })).toBeInTheDocument();
       expect(onAsked).toHaveBeenCalledTimes(1);
     });
 

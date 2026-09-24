@@ -67,7 +67,7 @@ describe("Daoris's own AI", () => {
     show({ search: LEXICAL, intake: intake() });
 
     expect(screen.getByRole('combobox', { name: 'the intake agent' })).toHaveTextContent('Off — declarations only');
-    expect(screen.getByText(/answered from the circle's declarations/)).toBeInTheDocument();
+    expect(screen.getByText(/answered from the workspace's declarations/)).toBeInTheDocument();
     expect(screen.getByText(/daoris driver intake <agent>\|off/)).toBeInTheDocument();
   });
 

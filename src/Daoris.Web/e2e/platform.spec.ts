@@ -225,7 +225,7 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
 
 /**
  * **An ask, from the screen** (INT4c) — the twin of `daoris-driver ask` (D50), over the real host.
- * Opened from the palette, made in the family's one circle without being asked which, answered by the
+ * Opened from the palette, made in the family's one workspace without being asked which, answered by the
  * declarations tier in the service's own words; a proposal accepted is a quest asked BY the ask,
  * carrying its link and its file; and the person closes it with the reason. The kept file is named
  * and never located (D47 §4, D65 §2).
@@ -236,15 +236,15 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await page.goto('/');
   // A browser on this machine has this door: an ask is this host's HTTP, not the shell's bridge.
   await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
-  await page.getByRole('dialog').getByRole('option', { name: /Ask the circle/ }).click();
+  await page.getByRole('dialog').getByRole('option', { name: /Ask the workspace/ }).click();
 
   // Every drawer is addressed by its title: one closes as the next opens, and "the dialog" is ambiguous
   // for that moment.
-  const composer = page.getByRole('dialog', { name: 'Ask the circle' });
+  const composer = page.getByRole('dialog', { name: 'Ask the workspace' });
   await expect(composer).toBeVisible();
-  // One circle held, so it is the circle — said, and not asked.
+  // One workspace held, so it is the workspace — said, and not asked.
   await expect(composer.getByText('Asked in default')).toBeVisible();
-  await expect(composer.getByRole('combobox', { name: 'circle' })).toHaveCount(0);
+  await expect(composer.getByRole('combobox', { name: 'workspace' })).toHaveCount(0);
   await composer.getByLabel('what is wanted, and why').fill(sentence);
   await composer.getByLabel(/^links/).fill('https://tickets.example/T-8');
   await composer.getByLabel('choose files…').setInputFiles([
@@ -310,7 +310,7 @@ test('an ask waiting on a person is in What needs you, and its record names its 
   const band = page.getByRole('region', { name: 'What needs you' });
   const proposed = band.getByRole('button', { name: new RegExp(sentence) });
   await expect(proposed).toContainText('proposed, not yet published');
-  await expect(proposed).toContainText('circle default');
+  await expect(proposed).toContainText('workspace default');
   await proposed.click();
   await expect(page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'Where it belongs' })).toBeVisible();
 

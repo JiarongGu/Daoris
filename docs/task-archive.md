@@ -5394,3 +5394,15 @@ verify green. The install was left in 中文 as found, and stopped.
   126 placeholders spaced against 14 tight.
 
 Service 468 → 469, web unit 834 → 838.
+
+## FRAME1 — one word in the interface (2026-09-24)
+
+- [x] ~~**FRAME1 — one word in the interface.** *workspace* / 工作区 in both catalogues, where the
+  interface said *circle* 26 times and 圈子 24. The tests that read the old words move with them.~~
+✅ **done 2026-09-24** (D75 §4). 24 English and 24 Chinese strings changed, by a scripted sweep over
+values only. It asserted its counts, and the first run stopped itself on a count that was wrong,
+before writing anything. A key or a placeholder named `circle` stays, because nobody reads it.
+`i18n.test.ts` now holds that no catalogue value says *circle* or 圈子, and it was seen failing
+against the old catalogue. Eight vitest and four Playwright assertions moved with the words. Looked
+at on the install: the top bar, the status bar and the ask composer all say 工作区. The sentences the
+other doors print are FRAME5. Web unit 838 → 839.

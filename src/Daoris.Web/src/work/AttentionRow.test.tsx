@@ -47,12 +47,12 @@ describe('a row in what needs you', () => {
     expect(screen.getByText('nobody here can take this')).toBeInTheDocument();
   });
 
-  /** A bare circle name among repository names reads as one more repository. */
-  it('names an ask by what it waits for, and its place as a circle', () => {
+  /** A bare workspace name among repository names reads as one more repository. */
+  it('names an ask by what it waits for, and its place as a workspace', () => {
     render(<AttentionRow item={PROPOSAL} />);
 
     expect(screen.getByText('proposed, not yet published')).toBeInTheDocument();
-    expect(screen.getByText('circle aurora')).toBeInTheDocument();
+    expect(screen.getByText('workspace aurora')).toBeInTheDocument();
     expect(screen.getByText(/propose engine, game/)).toBeInTheDocument();
   });
 

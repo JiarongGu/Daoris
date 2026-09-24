@@ -211,7 +211,7 @@ describe('AskComposer', () => {
     const drawer = screen.getByRole('dialog');
 
     expect(within(drawer).getByText('Asked in aurora')).toBeInTheDocument();
-    expect(within(drawer).queryByRole('combobox', { name: 'circle' })).toBeNull();
+    expect(within(drawer).queryByRole('combobox', { name: 'workspace' })).toBeNull();
     const send = within(drawer).getByRole('button', { name: 'ask' });
     expect(send).toBeDisabled();
 
@@ -221,7 +221,7 @@ describe('AskComposer', () => {
   });
 
   /** "Every circle" with several held has no single circle: the person says which, and it is not assumed. */
-  it('asks which circle when the page is scoped to none of several', async () => {
+  it('asks which workspace when the page is scoped to none of several', async () => {
     render(<Holder fixed={null} circles={['aurora', 'tools']} />);
     const drawer = screen.getByRole('dialog');
 
@@ -229,7 +229,7 @@ describe('AskComposer', () => {
     expect(within(drawer).getByRole('button', { name: 'ask' })).toBeDisabled();
 
     const user = userEvent.setup();
-    within(drawer).getByRole('combobox', { name: 'circle' }).focus();
+    within(drawer).getByRole('combobox', { name: 'workspace' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('option', { name: 'tools' }));
 
@@ -244,7 +244,7 @@ describe('AskComposer', () => {
     render(<Holder fixed={null} circles={[]} />);
     const drawer = screen.getByRole('dialog');
 
-    expect(within(drawer).getByText('There is no circle to ask yet')).toBeInTheDocument();
+    expect(within(drawer).getByText('There is no workspace to ask yet')).toBeInTheDocument();
     expect(within(drawer).queryByLabelText('what is wanted, and why')).toBeNull();
     expect(within(drawer).queryByRole('button', { name: 'ask' })).toBeNull();
   });
