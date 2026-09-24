@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 604 driver, 120 desktop modules, 874 web unit, 21 Playwright**, 73
+**446 CLI tests, 473 service, 604 driver, 120 desktop modules, 902 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -259,7 +259,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (473),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (604), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (120), `npm run rehearse:family` (271/271), `npm run test:web` (874 vitest + 21 Playwright),
+  (604), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (120), `npm run rehearse:family` (271/271), `npm run test:web` (902 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -442,10 +442,6 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24).
-- [ ] **CONV2 — the conversation view.** The centre renders the events: the person's and the agent's
-  messages, Markdown, code with copy, thinking folded, tool calls as cards (generic, then read, edit,
-  shell, search), a turn's work folded, follow-the-tail with *back to bottom*, history a page at a
-  time. The console becomes its raw view. Adds the renderer and highlighter (D76 §5).
 - [ ] **CONV3 — conversations and native sessions on the structured wire.** Claude Code's
   `stream-json` for driven sessions and chats on the native door (the adapter's own mapping, checked
   against the binary), ACP turns for a chat on the protocol door, the person's message in the
@@ -460,7 +456,11 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
 - [ ] **REVIEW2 — review.** Highlighted diffs, split or unified.
 - [ ] **UX1 — screen by screen.** Every surface, every state (empty, loading, error, long, 中文,
   dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),
-  against the reference and D41. Written down as it is found, and fixed.
+  against the reference and D41. Written down as it is found, and fixed. **Already found, to settle
+  there:** a session waiting on the person wears declined's red (`Dot tone="parked"`) in the rail,
+  the band and the ask card, while the map uses the warn tone for the same fact; one hue for
+  "waiting on you" everywhere. The monitor's tiles are console-only and say *Nothing said yet* for a
+  session whose conversation is kept.
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 

@@ -444,6 +444,8 @@ export function useSessionEvents(sessionId: string | null) {
   const { isAvailable } = useShenora();
   const [events, setEvents] = useState<SessionEvent[]>([]);
   const [earlier, setEarlier] = useState(false);
+  // Whether the history has answered, so an empty record reads as "nothing said" only once it is one.
+  const [loaded, setLoaded] = useState(false);
   // The newest sequence held, and which session it belongs to — read inside the event handler, which
   // must not re-subscribe every time an event arrives.
   const latest = useRef(0);
@@ -466,6 +468,7 @@ export function useSessionEvents(sessionId: string | null) {
     latest.current = 0;
     setEvents([]);
     setEarlier(false);
+    setLoaded(false);
     if (!isAvailable || !sessionId) return;
 
     let current = true;
@@ -476,7 +479,8 @@ export function useSessionEvents(sessionId: string | null) {
         setEarlier(Boolean(page.earlier));
       })
       // A record that failed to load is a quiet absence: the session's head above it is already there.
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (current) setLoaded(true); });
 
     return () => { current = false; };
   }, [isAvailable, sessionId, history, hold]);
@@ -512,7 +516,7 @@ export function useSessionEvents(sessionId: string | null) {
     }
   }, [events, history]);
 
-  return { events, earlier, loadEarlier };
+  return { events, earlier, loaded, loadEarlier };
 }
 
 /**

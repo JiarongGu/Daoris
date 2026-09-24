@@ -5562,3 +5562,41 @@ web unit 866 → 867, Playwright 21/21, family 271/271.
 On the way, the modules suite showed POLISH4a had left one assertion looking for "D37"; fixed in its
 own commit (`75ae868`). Driver 587 → 604, modules 118 → 120, web unit 867 → 874, family 271/271,
 deploy 39/39.
+
+## CONV2 — the conversation view (2026-09-25)
+
+- [x] ~~**CONV2 — the conversation view.** The centre renders the events: the person's and the agent's
+  messages, Markdown, code with copy, thinking folded, tool calls as cards (generic, then read, edit,
+  shell, search), a turn's work folded, follow-the-tail with *back to bottom*, history a page at a
+  time. The console becomes its raw view. Adds the renderer and highlighter (D76 §5).~~
+✅ **done 2026-09-25**, the second landing of D76, and the first a person sees.
+
+- **The fold** (`work/conversation.ts` `toTurns`, pure): an ask opens a turn and the wire's turn end
+  closes it; chunks join; a tool call is one card carrying the latest of every field its updates set;
+  a plan is its latest entries; usage is a meter (the latest reading and the high-water mark), never
+  a block.
+- **The view** (`ConversationView`, a molecule): the ask (the person's as written, the driver's
+  composed target folded to two lines and named as the driver's), the agent's words as Markdown, a
+  thought folded to its first line, a tool call as a row (`ToolCard`: kind glyph, title, place,
+  an edit's `+n −m` from a line diff, status; closed unless it failed, and an edit's diff open), a
+  plan, the driver's note, an unknown update kept raw. A finished turn folds its work into one
+  counted row and keeps its last message open; a running one says *working…*.
+- **Code** (`CodeBlock`): highlight.js, coloured from D41's tokens in `work/code.css`, the language
+  named, a copy button; never guessed when no language is named. **Markdown** (`Markdown`):
+  react-markdown with GFM, no raw HTML, links opening outside the window. The stack addition is in
+  the frontend architecture's table, with why not Shiki.
+- **The organism** (`SessionConversation`) holds the record (`useSessionEvents`, now saying when it
+  has loaded) and the scroll (`useFollowTail`: follow until the person scrolls up, *back to
+  bottom*, a new session opening at its tail). The main window's centre and the detached window both
+  scroll the head and the conversation together; the console stays below as the raw view.
+- **Looked at** on the scratch window with a session driven over the protocol door by a scripted
+  agent (thinking, a plan, reads, an edit with a diff, a test run, a Markdown answer with code and a
+  table), in English and 中文, light and dark. Three defects only the window showed, all fixed: a
+  plan's done steps were struck through and read as cancelled; a parked pipe chat said *Nothing said
+  yet*, which is never true of an empty record; and the detached window's console said *Nothing
+  said yet* under the conversation. On the way, the scratch family's checkouts turned out not to be
+  repositories, so git answered for Daoris's own tree and the driver rightly refused twice.
+
+UX1 gained two findings to settle there: one hue for *waiting on you* (the rail and the band wear
+declined's red, the map the warn tone), and the monitor's console-only tiles. Web unit 874 → 902,
+Playwright 21/21.

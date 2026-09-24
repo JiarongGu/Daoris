@@ -37,6 +37,9 @@ const ORGANISMS = new Set<string>([
   // The asks' organism (INT4c): it holds the queries so the card, the record and the composer do not.
   './asks/AsksSection.tsx',
   './work/AttentionBand.tsx',
+  // The conversation's organism (D76, CONV2): it holds the record and the scroll, so the view,
+  // the tool card and the Markdown below it hold neither.
+  './work/SessionConversation.tsx',
   './work/DetachedSession.tsx',
   './work/DiffPane.tsx',
   './work/MonitorWindow.tsx',

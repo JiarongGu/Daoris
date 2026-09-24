@@ -403,6 +403,12 @@ The first version: doctrine that installs, is checked, and flows back.
   Convergence's empty answer offers a lower similarity. Sentences that stopped being true (the
   index scanning a folder, only adopters being askable) are rewritten, the default rules explain
   themselves without decision numbers, and 中文 calls a quest 委托 throughout.
+- **A session is a conversation** (D76). An attended session shows what was asked and what the agent
+  said and did: its words as Markdown, code highlighted with a copy button, thinking folded, each tool
+  call as a row with its file, its status and an edit's line diff, the plan, and a finished turn's
+  work folded under its answer. It is read back after a restart, a page at a time, and follows the
+  newest words until you scroll up. The console stays, as the raw view. Sessions on the protocol door
+  have it now; the native door and chats follow.
 - **Retiring the last repository empties the index.** A machine whose every repository was retired
   went on charting, searching and comparing their knowledge; a refresh now leaves it empty, while a
   registered repository whose checkout cannot be read still keeps what it had.

@@ -448,6 +448,30 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **One word per thing, again**: 中文 said 任务 for a quest in nineteen strings the map, the chain
 >   strip, the monitor and the strikes setting grew after the glossary set 委托. A test holds it now.
 
+> **Amended 2026-09-25, the conversation (D76, CONV2).** Held by vitest and stories, and looked at on
+> the scratch window with a session driven over the protocol door, in English and 中文, light and dark.
+>
+> - **The centre is the record, then the conversation**, one scroll: the head read once, and the
+>   agent's words what the region follows. It follows the tail until the person scrolls up, then
+>   offers *back to bottom*; a history longer than a page offers *load earlier*.
+> - **A finished turn folds its work.** Tool calls, thoughts and earlier messages collapse into one
+>   row that counts them (*3 tool calls · 1 message · thought*); the last message stays open, because
+>   the conclusion is what a reader came back for. A running turn is all open and says *working…*.
+> - **The composed target is folded to two lines** and named as the driver's, never as the person's.
+> - **A tool call is a row that says what it did**: its kind's glyph, its title, the file it
+>   touched, an edit's `+n −m`, and its status. Closed by default, open when it failed. Open, an edit
+>   shows its line diff in done's green and declined's red.
+> - **Code is the paper's inks**: a keyword in the accent, a string and a number in the two cool
+>   status hues, a comment faint, all from the tokens (`work/code.css`), with the language named and a
+>   copy button. The agent's HTML is text, never markup, and a link opens outside the window.
+> - **A plan's done step is a check, never a strike-through**: struck text reads as cancelled. Seen
+>   on the window.
+> - **An empty record says why**: the door carries only text, or the session ran before
+>   conversations were kept. *Nothing said yet* under a parked pipe chat was untrue; a structured door
+>   records the target the moment it starts. Seen on the window.
+> - **The console is the raw view**, and its own empty sentence points at the conversation above
+>   rather than saying *nothing said* beneath what was said. Seen in the detached window.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

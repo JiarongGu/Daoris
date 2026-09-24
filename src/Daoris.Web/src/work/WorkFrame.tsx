@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
@@ -8,6 +8,7 @@ import {
 } from '../shell';
 import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession } from './AttendedSession';
+import { SessionConversation } from './SessionConversation';
 import { isIntake, sessionOrigin } from './identity';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -57,10 +58,10 @@ function remember(key: string, value: string): void {
  * tree path are machine-local (D47 §4), and a frame whose centre is a stream has nothing honest to
  * show a browser. `App` gates on the same "is a shell here" answer every control uses.
  *
- * **The right dock is not here yet.** The reference frame's third column holds the timeline and
- * the diff (components plan §3a); the diff arrives with SURF6, and until then a dock would be a
- * pane with extra chrome — so the timeline stays in the attended column and moves when it has
- * company.
+ * **The centre is the record, then the conversation** (D76): the head and the session's
+ * conversation scroll together, and the conversation follows its tail. The right dock holds the
+ * timeline and the review (components plan §3a); the console is the panel below, the
+ * conversation's raw view.
  */
 export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken }: {
   /**
@@ -92,6 +93,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const { t } = useTranslation();
   const [refusal, setRefusal] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  // The centre scrolls the head and the conversation together; the conversation follows its tail.
+  const centre = useRef<HTMLDivElement>(null);
   // Which dock surface is up. Not remembered across launches: unlike the mode and the attended
   // session, this one is answered by what the person is doing in the next ten seconds.
   const [dock, setDock] = useState<DockTab>('timeline');
@@ -267,7 +270,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        <div ref={centre} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
           <AttendedSession
             session={attended}
             quest={quest}
@@ -279,6 +282,14 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             onSession={(session) => attend(session.id)}
           />
+          {/* The conversation (D76): below the record, in the same scroll, so the head is read once
+              and the words are what the region follows. Only where the session ran: a teammate's
+              record came without its transcript, which stays on their machine (D47 §4). */}
+          {attended && here && (
+            <div className="mt-4">
+              <SessionConversation session={attended.id} live={live} scroller={centre} />
+            </div>
+          )}
         </div>
 
         {conversation && here && attended && !intake && (

@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { useSessionEvents } from '../shell';
-import { mergeEvents, type SessionEvent } from './conversation';
+import { mergeEvents, type SessionEvent, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
 
@@ -32,6 +32,81 @@ const texts = (events: SessionEvent[]) => events.map((e) => e.text);
 afterEach(() => {
   invoke.mockReset();
   eventHandlers.clear();
+});
+
+const e = (seq: number, over: Partial<SessionEvent>): SessionEvent => ({ seq, at: `2026-09-25T00:00:0${seq % 10}Z`, kind: 'message', ...over });
+
+describe('toTurns', () => {
+  it('opens a turn at what was asked, joins chunks into one message, and closes it at the turn\'s end', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', text: 'cap the hydration' }),
+      e(2, { kind: 'thought', text: 'the cap belongs ' }),
+      e(3, { kind: 'thought', text: 'in the streamer' }),
+      e(4, { kind: 'message', text: 'Capped at ' }),
+      e(5, { kind: 'message', text: '4 per frame.' }),
+      e(6, { kind: 'turn', stopReason: 'end_turn' }),
+    ]);
+
+    expect(turns).toHaveLength(1);
+    expect(turns[0]!.ask).toMatchObject({ text: 'cap the hydration', origin: 'person' });
+    expect(turns[0]!.items.map((b) => [b.kind, b.text])).toEqual([
+      ['thought', 'the cap belongs in the streamer'],
+      ['message', 'Capped at 4 per frame.'],
+    ]);
+    expect(turns[0]!.ended).toBe('end_turn');
+  });
+
+  /** A tool call and its updates are one card, where it first appeared, carrying its latest state. */
+  it('merges a tool call\'s updates into the one card, in the place it began', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'tool', id: 'c1', title: 'Edit src/chunk.rs', toolKind: 'edit', status: 'pending', locations: ['src/chunk.rs'] }),
+      e(2, { kind: 'message', text: 'editing' }),
+      e(3, { kind: 'tool', id: 'c1', status: 'completed', content: [{ type: 'diff', path: 'src/chunk.rs', oldText: 'a', newText: 'b' }] }),
+    ]);
+
+    const [tool, message] = turns[0]!.items;
+    expect(tool).toMatchObject({
+      kind: 'tool', id: 'c1', title: 'Edit src/chunk.rs', toolKind: 'edit', status: 'completed', locations: ['src/chunk.rs'],
+    });
+    expect(tool!.content).toEqual([{ type: 'diff', path: 'src/chunk.rs', oldText: 'a', newText: 'b' }]);
+    expect(message).toMatchObject({ kind: 'message', text: 'editing' });
+  });
+
+  it('starts a new turn at each ask, and keeps a plan as its latest entries', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),
+      e(2, { kind: 'plan', entries: [{ content: 'read', status: 'in_progress' }] }),
+      e(3, { kind: 'plan', entries: [{ content: 'read', status: 'completed' }, { content: 'edit', status: 'pending' }] }),
+      e(4, { kind: 'turn', stopReason: 'end_turn' }),
+      e(5, { kind: 'user', origin: 'person', text: 'and test it' }),
+      e(6, { kind: 'message', text: 'tested' }),
+    ]);
+
+    expect(turns).toHaveLength(2);
+    expect(turns[0]!.items).toHaveLength(1);
+    expect(turns[0]!.items[0]!.entries).toEqual([{ content: 'read', status: 'completed' }, { content: 'edit', status: 'pending' }]);
+    expect(turns[1]!.ask?.text).toBe('and test it');
+    expect(turns[1]!.ended).toBeUndefined();
+  });
+
+  /** Usage is a meter, not a block: the latest reading and the highest are what CONV5 draws. */
+  it('keeps usage out of the conversation, as the latest reading and the high-water mark', () => {
+    const { turns, usage } = toTurns([
+      e(1, { kind: 'usage', used: 900, size: 1000 }),
+      e(2, { kind: 'usage', used: 300, size: 1000 }),
+    ]);
+
+    expect(turns.flatMap((t) => t.items)).toEqual([]);
+    expect(usage).toEqual({ used: 300, size: 1000, most: 900 });
+  });
+
+  it('keeps what happened before any ask in a turn of its own', () => {
+    const { turns } = toTurns([e(1, { kind: 'note', text: 'no connector here' })]);
+
+    expect(turns).toHaveLength(1);
+    expect(turns[0]!.ask).toBeUndefined();
+    expect(turns[0]!.items[0]).toMatchObject({ kind: 'note', text: 'no connector here' });
+  });
 });
 
 describe('mergeEvents', () => {

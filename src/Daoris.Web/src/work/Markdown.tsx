@@ -1,0 +1,68 @@
+import type { ComponentProps } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { CodeBlock } from './CodeBlock';
+
+/**
+ * An agent's words as a reader reads them (D76, CONV2): GitHub-flavoured Markdown — headings, lists,
+ * tables, task lists, links, inline code — with fenced code as a {@link CodeBlock}.
+ *
+ * @remarks
+ * **Safe by default** (D76 §5). Raw HTML in the text is shown as text, never parsed: the renderer is
+ * not given the plugin that would, so an agent cannot put markup into the page.
+ *
+ * **A link leaves the application.** In the desktop's webview a plain link would navigate the whole
+ * window away, which is the drop-a-file failure in another form (platform language §4), so every
+ * link opens outside, as the ask record's links already do.
+ *
+ * **Content, not chrome** (translation-parity): the text is the agent's own, in whatever language it
+ * wrote, and nothing here translates it.
+ */
+export function Markdown({ text }: { text: string }) {
+  return (
+    <div className="markdown text-body leading-relaxed text-ink [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+type Components = ComponentProps<typeof ReactMarkdown>['components'];
+
+const COMPONENTS: Components = {
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
+      {children}
+    </a>
+  ),
+  // Fenced code is a block with a language class; inline code is neither.
+  code: ({ className, children }) => {
+    const language = /language-([\w+-]+)/.exec(className ?? '')?.[1];
+    const text = String(children ?? '');
+    if (language || text.includes('\n')) {
+      return <CodeBlock code={text.replace(/\n$/, '')} language={language} />;
+    }
+    return <code className="rounded-[4px] bg-accent-soft px-1 py-px font-mono text-small">{children}</code>;
+  },
+  // The block already draws its own frame; the renderer's <pre> would draw a second.
+  pre: ({ children }) => <>{children}</>,
+  p: ({ children }) => <p className="my-2">{children}</p>,
+  ul: ({ children }) => <ul className="my-2 list-disc pl-5">{children}</ul>,
+  ol: ({ children }) => <ol className="my-2 list-decimal pl-5">{children}</ol>,
+  li: ({ children }) => <li className="my-0.5">{children}</li>,
+  h1: ({ children }) => <h3 className="mb-1.5 mt-3 text-title font-semibold">{children}</h3>,
+  h2: ({ children }) => <h4 className="mb-1.5 mt-3 text-body font-semibold">{children}</h4>,
+  h3: ({ children }) => <h5 className="mb-1 mt-2.5 text-body font-semibold">{children}</h5>,
+  blockquote: ({ children }) => (
+    <blockquote className="my-2 border-l-2 border-line-strong pl-3 text-ink-soft">{children}</blockquote>
+  ),
+  table: ({ children }) => (
+    <div className="my-2 overflow-x-auto">
+      <table className="border-collapse text-small">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => <th className="border border-line px-2 py-1 text-left font-semibold">{children}</th>,
+  td: ({ children }) => <td className="border border-line px-2 py-1 align-top">{children}</td>,
+  hr: () => <hr className="my-3 border-0 border-t border-line" />,
+};

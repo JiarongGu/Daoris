@@ -6,10 +6,11 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowDown, ArrowLeftRight, ArrowUp, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy,
-  FileDiff, Gauge, GitMerge, Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link,
-  LogIn, Monitor, Network, Paperclip, Plug, Plus, RotateCw, Search, Settings, Shield,
-  SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert, X,
+  ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, Cloud,
+  CloudOff, Copy, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
+  LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Monitor, Network, Paperclip, Plug, Plus,
+  RotateCw, Search, Settings, Shield, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
+  Wrench, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -75,6 +76,17 @@ const ICONS = {
   shield: Shield,
   plug: Plug,
   gauge: Gauge,
+  // The conversation (D76): a tool call wears its ACP kind — reading, editing, running a command
+  // (the terminal the Work frame already wears), searching, the web, thinking, anything else — and
+  // the plan, and the way back to the tail.
+  read: FileText,
+  edit: FilePen,
+  execute: SquareTerminal,
+  fetch: Globe,
+  think: Brain,
+  tool: Wrench,
+  plan: ListTodo,
+  toBottom: ArrowDownToLine,
 } as const;
 
 export type IconName = keyof typeof ICONS;

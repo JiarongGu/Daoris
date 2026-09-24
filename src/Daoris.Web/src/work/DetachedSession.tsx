@@ -1,9 +1,11 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../queries';
-import { EmptyState, type Notify, SkeletonRows, useErrorNotify } from '../ui';
+import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from '../SessionConsole';
 import { AttendedSession } from './AttendedSession';
 import { sessionOrigin } from './identity';
+import { SessionConversation } from './SessionConversation';
 
 /**
  * One session in a window of its own (D55 §b, SURF8).
@@ -26,6 +28,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const { t } = useTranslation();
   const sessions = useSessions(null, true);
   const quests = useQuests(null, true);
+  const scroller = useRef<HTMLDivElement>(null);
 
   useErrorNotify(sessions.error, notify);
 
@@ -55,15 +58,23 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <div className="min-h-0 shrink-0 overflow-y-auto px-4 py-3">
+      {/* The record and the conversation scroll together, as in the main window (D76); the
+          conversation follows its tail there too. */}
+      <div ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
         <AttendedSession session={session} quest={quest} />
+        {here && (
+          <div className="mt-4">
+            <SessionConversation session={session.id} live={SESSION_ACTIVE.has(session.state)} scroller={scroller} />
+          </div>
+        )}
       </div>
 
       {here && (
-        <div className="flex min-h-0 flex-1 flex-col border-t border-line px-4 py-2">
-          {/* A sentence rather than an empty well, for the reason the monitor's tiles have one:
-              a bordered empty box in a read-only window reads as a field to type in. */}
-          <SessionConsole id={session.id} fill quiet={t('work.monitor.silent')} />
+        <div className="flex h-56 shrink-0 flex-col border-t border-line px-4 py-2">
+          {/* The raw view, beside the conversation it is the text of. A sentence rather than an
+              empty well, for the reason the monitor's tiles have one: a bordered empty box in a
+              read-only window reads as a field to type in. */}
+          <SessionConsole id={session.id} fill quiet={t('work.panel.silent')} />
         </div>
       )}
 

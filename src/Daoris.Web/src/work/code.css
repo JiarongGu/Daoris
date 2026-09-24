@@ -1,0 +1,45 @@
+/* Code in a conversation (D76, CONV2), in D41's own inks rather than an imported theme: the classes
+   are the highlighter's, the colours are the design tokens, so both themes follow with nothing to
+   keep in step. Deliberately few — a keyword, a string, a number, a comment, a name — because a
+   rainbow on paper is noise, and the reader is here for the agent's words. */
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-built_in {
+  color: var(--accent);
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-symbol,
+.hljs-addition {
+  color: var(--st-done);
+}
+
+.hljs-number,
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable {
+  color: var(--st-taken);
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-type {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.hljs-deletion {
+  color: var(--st-declined);
+}
