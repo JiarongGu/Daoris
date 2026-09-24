@@ -2707,3 +2707,12 @@ manifest to declare a join with, so its quests never leave the machine that can 
   it.
 - **The planner guessing a door per repository.** The adapter is the machine's (`config.Adapter`), and
   a planner that guessed would start what the spawn then cannot serve.
+
+**Proven with the stub agent only (2026-09-24, at integration).** The family rehearsal drives an
+unadopted repository to done over the ACP stub, which never asks a permission. A real Claude Code
+agent over the same door would ask before calling the connector's tools, because an unadopted
+repository carries no allow-list for them, and D52 refuses every request. DEPLOY1's measurement
+(`docs/2026-09-24-deploy1-acp-trust-evidence.md`) adds that over this door a room's allow-list is
+ignored until the person trusts the folder, and the driver holds an untrusted one. So a real agent
+answering a quest in an unadopted repository is unproven, and likely blocked, until the connector's
+own tools are allowed at session creation. D52 permits a posture set there. That is INT3b.

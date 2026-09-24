@@ -482,6 +482,17 @@ The first version: doctrine that installs, is checked, and flows back.
   the next tick, without a reload. The record names who answered: the `intake` tier in words, and
   the intake session, which is a door into Sessions on the desktop. A band row with nowhere to go (a
   parked session, in a browser) is no longer a button.
+- **A repository registered without adopting can be asked, and driven over the protocol door**
+  (INT3, D70). Registered is addressable; adopted is disciplined. A repository registered on this
+  machine with a root takes quests, and a session the driver starts in it on a protocol agent is
+  handed its connector with nothing written into the tree. A direct agent holds the quest and says
+  which door could carry it, and the publish tells the asker so. Every place that offers a receiver
+  offers exactly who can be asked. Adding a folder with no manifest from Projects now registers it as
+  not adopted.
+- **A running intake takes no messages** (INT4h). Sessions gave it a message box, and a typed line
+  either went nowhere or, on the protocol door, landed in the middle of the driver's own JSON-RPC
+  stream. It has no box now: its head says why, opens the ask it serves, and carries its stop. The
+  driver refuses a line or a finish for an intake in its own words rather than answering "it ended".
 - **A parked intake in Sessions leads to its ask** (INT4g). It offers *answer ask #id*, which opens
   the ask's record where it is published or closed, and a stop that says the ask then stays a
   proposal, instead of a parked session's finish, decline and stop, none of which answered the ask.

@@ -290,8 +290,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   *intake*, and its head says *ask* and *room* rather than *repository* and *tree*. A parked
 >   intake holds no room, so its rail group claims nothing busy.
 
-> **Amended 2026-09-24, registered is addressable (INT3, D70).** Held by vitest, and **not yet looked
-> at on the real window**.
+> **Amended 2026-09-24, registered is addressable (INT3, D70).** Held by vitest, and looked at on the
+> real window: the group lists an unadopted repository under its new title. It offers that repository
+> no *drive on this machine* control, which is INT3c.
 >
 > - **Who can be asked is the host's answer.** Every receiver list reads `addressable` from
 >   `/api/registry` rather than re-deriving it from `adopted`. The lists are the quest composer's
@@ -301,8 +302,8 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   elsewhere: a protocol agent answers, and a direct one holds it. Its title is *Registered, not
 >   adopted*, because *not addressable* stopped being true.
 
-> **Amended 2026-09-24, a running intake in Sessions (INT4h).** Held by vitest, and **not yet
-> looked at on the real window** (Sessions is desktop-only, so Playwright does not reach it).
+> **Amended 2026-09-24, a running intake in Sessions (INT4h).** Held by vitest, and looked at on the
+> real window in both themes (Sessions is desktop-only, so Playwright does not reach it).
 >
 > - **No box where nothing listens, running or parked.** A running intake is one turn too. On the
 >   pipe door a typed line went nowhere, and the page read the driver's `false` as *it ended*. On the

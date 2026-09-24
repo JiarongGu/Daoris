@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A line typed to a running intake landed in the protocol's own stream (2026-09-24)
+
+**Symptom.** INT4g noticed that a running intake still offered a message box. Checked in the driver,
+a line typed there was not merely lost. On the protocol door it was written into the stdin the driver
+uses for the session's JSON-RPC frames, and the page was told `sent: true`.
+
+**Root cause.** `SessionProcesses.Send` refused only a process with no input stream. That was the
+whole guard while every driven session was pipe-door. ACP1 opened stdin for the protocol's frames,
+so "no stream" stopped covering the case, and an intake (one turn) is tracked in the same registry as
+conversations.
+
+**Fix.** A session is tracked with whether it takes a person's line. An intake does not, so `Send`
+and `CloseInput` refuse it before anything is written, and the bridge answers with the driver's
+sentence. The screen gives a running intake no box. The trap: **an open stdin is not an
+invitation.** On the protocol door it belongs to the protocol. A driven quest session on that door
+has the same exposure (INT4i).
+
+**Verify.** `A_session_that_takes_no_input_is_never_written_into_even_with_its_stdin_open` (a real
+process with stdin open hears nothing), `A_running_intake_takes_no_messages_and_says_where_the_answer_goes`
+(a real tick), and the bridge's refusal for both verbs, each seen failing first.
+
 ## The intake control was missing while the intake was off: the bridge leaves a null out (2026-09-24)
 
 **Symptom.** Looking at AGT6's Settings card on the real window, the search row was there and the

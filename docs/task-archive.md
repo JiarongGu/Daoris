@@ -5033,3 +5033,50 @@ no D-number, following the precedent that the owner's map answers live in the de
 
 Built in a parallel worktree and cherry-picked. Driver 464 → 470. The family rehearsal reads the
 stub's own transcript both ways, and its two new checks passed on their first run here (256 → 258).
+
+## INT3 — registered is drivable over the protocol door (2026-09-24)
+
+- [x] ~~⛔ **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
+  requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
+  owner's yes first** — it amends the letter of D34/D46.~~
+✅ **done 2026-09-24** — the owner said yes, and **D70** records it: registered is addressable,
+adopted is disciplined. `Registration.Addressable` (adopted, or a root on this machine) is the one
+judgement. The exchange and its chain steps read it, and so do the MCP registry,
+`/api/registry`'s new `addressable` field and every receiver list on the page. The planner is told
+the machine's door. Over the protocol door, an unadopted repository with a root plans like an
+adopter. Over the pipe door it sits, naming the door that could carry it. The publish tells the
+asker that only a protocol-door session can answer. Found on the way: the register door stored every
+row as adopted, so the desktop's add of a folder with no manifest would have been driven over the
+pipe door with no connector. It now sends what the shell found. A shared deployment still takes
+quests only for adopters. D70 says what such a session is given (the quest and its boundary, the
+connector, the repository's own configuration, the D52 refusal) and what it is not (the canon).
+
+Built in a parallel worktree and cherry-picked. The family rehearsal's §17b drives one to done over
+the ACP stub door with nothing written into its tree, and holds it over the pipe door. It passed on
+its first run here (265/265, with MAP3d's two). Service 454, driver 477 with INT4h, web 766.
+**Looked at on the window**: Projects lists an unadopted repository under *Registered, not adopted*,
+and offers it no *drive on this machine* control (**INT3c**). **Unproven with a real agent**: the
+stub never asks permission, while a real Claude Code agent would ask before each connector call in a
+repository with no allow-list, and D52 refuses. DEPLOY1's measurement adds that the door ignores an
+untrusted room's allow-list. D70's last paragraph says so, and **INT3b** carries it.
+
+## INT4h — a running intake takes no messages, on either door (2026-09-24)
+
+- [x] ~~**INT4h — a running intake offers a message box whose words go nowhere.** An intake is one
+  turn, framed as one prompt, so a message typed into its composer reaches a process that never
+  reads it. Say so or offer no box, as INT4g did for a parked one. Found by INT4g.~~
+✅ **done 2026-09-24**. It was verified in the driver first, and on one door it was worse than
+*nowhere*. `SESSION_INPUT` wrote the line into the process's stdin. On the pipe door an intake has
+none, so the page was told `sent: false`, which it read as *it ended*. On the protocol door its stdin
+carries the driver's own JSON-RPC frames, so the line landed mid-stream, the page was told `sent:
+true`, and *finish* closed that stream. A session is now tracked with whether it takes a person's
+line. An intake does not, so `Send` and `CloseInput` refuse before anything is written, and the
+bridge answers `SESSION_INPUT` and `END_CHAT` with the driver's sentence (`DRIVER_REFUSED`) saying
+where the answer goes. The screen gives a running intake no composer. Its head (`RunningIntake`)
+says why, opens the ask to look at, and carries the stop the composer used to (`STOP_SESSION`). Intake
+design §1h and platform-ux §4 (FIX-LOG).
+
+Built in a parallel worktree and cherry-picked. Driver +3, modules 109 → 111, web +12. **Looked at on
+the window** in both themes: no composer, *open ask #id* as a plain button (a running intake has
+asked nothing yet), *stop it* with its line, and the running intake's room shown busy. **Filed:
+INT4i**, a driven quest session on the protocol door is still tracked as taking a person's line.

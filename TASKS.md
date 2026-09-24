@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**383 CLI tests, 451 service, 470 driver, 109 desktop modules, 751 web unit, 21 Playwright**, 73
-devkit, 56/56 release rehearsal, **258/258 family rehearsal** (it names its own phases when you run
+**383 CLI tests, 454 service, 477 driver, 111 desktop modules, 766 web unit, 21 Playwright**, 73
+devkit, 56/56 release rehearsal, **265/265 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: INT3, INT4h.** 🔴 **The owner authorized real sessions on this machine's
+- **Actionable: INT3c, INT4i.** 🔴 **The owner authorized real sessions on this machine's
   Claude Code account, 2026-09-24**: ACP2's driven run, INT4f and the ACP measurement DEPLOY1 needs.
   Not the AGT2c downloads. INT6 waits on the owner's presence; PLUG2, HELP3 and DEPLOY1's decision on
   the owner's answer.
@@ -254,9 +254,9 @@ the traps that are not in any contract, because they were found rather than desi
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 383 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (451),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (454),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (470), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (109), `npm run rehearse:family` (258/258), `npm run test:web` (751 vitest + 21 Playwright),
+  (477), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (111), `npm run rehearse:family` (265/265), `npm run test:web` (766 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -270,7 +270,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Sixteen items are open** — one of them D67's —
+the archive; its decision is **D53, accepted**). **Seventeen items are open** — one of them D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Four are **the owner's** to make or spend rather than work anyone can pick up (ACP2,
@@ -282,7 +282,7 @@ design's §5 is realised and what waits is a tool somebody names. The other five
 task's (D65, below) and PLUG7, held.
 
 🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **D67's buildable items,
-INT4d, INT4g and MAP3d are closed too; next are INT3 and INT4h.** Each is one session-sized landing, TDD, gates green, moved to the archive.
+INT3, INT4d, INT4g, INT4h and MAP3d are closed too; next are INT3c and INT4i.** Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -430,16 +430,24 @@ MAP3d and MAP3e are archived.
 workspace; an **intake session** (the harness carries the model, D24) reads the ticket, decides
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
-engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT4a, INT4b, INT4c,
-INT4d, INT4g and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
+engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT3, INT4a, INT4b,
+INT4c, INT4d, INT4g, INT4h and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
-- [ ] **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
-  requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
-  owner said yes, 2026-09-24** — it amends the letter of D34/D46, recorded as D70. In progress.
-- [ ] **INT4h — a running intake offers a message box whose words go nowhere.** An intake is one
-  turn, framed as one prompt, so a message typed into its composer reaches a process that never
-  reads it. Say so or offer no box, as INT4g did for a parked one. Found by INT4g.
+- [ ] ⛔ **INT3b — a real protocol agent in an unadopted repository cannot use its connector.** An
+  unadopted repository has no allow-list for the connector's tools, so a real Claude Code agent asks
+  before each call, and D52 refuses. DEPLOY1's measurement adds that the door ignores an untrusted
+  room's allow-list anyway. Proven only with the stub (D70's last paragraph). The likely answer is to
+  allow the connector's own tools at session creation, a posture D52 permits there. That is the
+  owner's call, beside HELP3's `--settings`, which could carry both.
+- [ ] **INT3c — Projects offers an unadopted repository no *drive on this machine* control.** D70
+  makes one drivable over the protocol door once opted in, but only the adopters' cards carry the
+  control. The terminal's `daoris driver` can opt it in; the screen cannot (D50). Found at INT3's
+  integration.
+- [ ] **INT4i — a driven protocol-door session still takes a person's line.** Its stdin carries the
+  driver's JSON-RPC frames, and it is tracked as taking input (`Driver.cs`, where a quest session is
+  tracked), so a `SESSION_INPUT` for it would write into the protocol stream. The page offers it no
+  box. INT4h fixed the intake half. Found by INT4h.
 - [ ] **INT4f — a real ask through a real intake harness.** INT4b is proven by a stub. What is
   unseen: the MCP host publishing as the ask under a real harness's environment, and the room's
   trust hold for an intake. It spends a login, so it is the owner's.

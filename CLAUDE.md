@@ -38,8 +38,8 @@ about a neighbour could only either ignore it or trespass.
 ## Current state
 
 **Built and proven; nothing published.** Fifteen commands, 383 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 451, `Daoris.Devkit` 73, and the
-driver 470. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 454, `Daoris.Devkit` 73, and the
+driver 477. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -52,7 +52,7 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
 quest lock hardened into code, and the desktop's sync feeding up and rebasing quests (D68). **The family
-rehearsal gates all of it with no model, no account and no credential** (258/258) — it names its own
+rehearsal gates all of it with no model, no account and no credential** (265/265) — it names its own
 phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
 **The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
@@ -94,7 +94,7 @@ risk, **authorship** was.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D69) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D70) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
@@ -157,7 +157,7 @@ risk, **authorship** was.
   `docs/2026-09-23-intake-design.md`): an ask with files and links enters at the workspace, an
   **intake session** decides the owning repository and publishes quests, a plugin-declared
   **browser server** puts testing in the session's hands, and `then` chains quests. **The driver's
-  brain is a session, not a model** (D24); INT3 waits on the owner's yes.
+  brain is a session, not a model** (D24); INT3 landed as D70.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 
@@ -212,7 +212,7 @@ Run every command from the **workspace root**, not from a package directory.
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), and since D46–D48 the
-  driver's, the remote's and the boundary's. 258 checks over the example family, from both examples current and clean
+  driver's, the remote's and the boundary's. 265 checks over the example family, from both examples current and clean
   through a quest's whole life, the workspace boundary refused naming both sides, two simulated
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to
