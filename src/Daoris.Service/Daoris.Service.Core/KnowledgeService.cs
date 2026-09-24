@@ -135,7 +135,11 @@ public sealed class KnowledgeService(
     Registry? registry = null,
     // Where pushed registrations persist. Optional for the same reason as the registry; without it a
     // registration lives only as long as the process, which is fine for a test and wrong for a service.
-    RegistrationStore? registrations = null)
+    RegistrationStore? registrations = null,
+    // Whether the source reads the registered roots and nothing else fills the index — a local host,
+    // fed by nobody (D47 §4). Then the registry decides what is a ghost, even when a refresh can read
+    // nothing (POLISH5). A fed host's empty source says nothing about what it holds.
+    bool readsRegisteredRoots = false)
 {
     private readonly KnowledgeIndex _index = new(store, disclosure);
 
@@ -720,6 +724,7 @@ public sealed class KnowledgeService(
                 repository => wiring.TryGetValue(repository, out var workspace)
                     ? workspace
                     : Workspaces.Default,
+                readsRegisteredRoots && registry is not null ? wiring.ContainsKey : null,
                 ct).ConfigureAwait(false);
 
             report = report with { Absent = AbsentCheckouts() };

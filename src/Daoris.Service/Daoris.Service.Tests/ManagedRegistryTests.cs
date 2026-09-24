@@ -245,6 +245,17 @@ public sealed class FirstRunImportTests : IDisposable
 
     private ServiceOptions Options() => new(Family(), Path.Combine(_root, "knowledge.db"));
 
+    /// <summary>One knowledge document in each named repository, so the index has something to hold.</summary>
+    private static void Know(ServiceOptions options, params string[] repositories)
+    {
+        foreach (var name in repositories)
+        {
+            var folder = Path.Combine(options.RepositoryRoot, name, ".claude", "knowledge");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, "note.md"), $"# {name}'s note\n\nWhat {name} learned.\n");
+        }
+    }
+
     [Fact]
     public async Task A_store_that_has_never_been_managed_imports_its_root_once()
     {
@@ -336,6 +347,48 @@ public sealed class FirstRunImportTests : IDisposable
         var indexed = (await service.Service.SummarizeAsync()).Select(r => r.Repository).ToList();
         Assert.DoesNotContain("stranger", indexed);
         Assert.DoesNotContain("game", indexed);
+    }
+
+    /// <summary>
+    /// 🔴 Seen on the owner's install (POLISH5): every registration retired, and 1,052 entries from 17
+    /// repositories still charted, searched and compared. The ghost rule prunes only when the scan saw
+    /// something — right for a folder, where nothing means a mis-set path — and with the last
+    /// registration gone the scan sees nothing by construction. A local host is fed by nobody, so a
+    /// repository it holds and no longer registers is a ghost whatever the scan saw.
+    /// </summary>
+    [Fact]
+    public async Task Retiring_the_last_repository_leaves_nothing_indexed()
+    {
+        var options = Options();
+        Know(options, "engine", "game");
+        await using var service = await ServiceFactory.CreateAsync(options);
+        await service.Service.RefreshAsync();
+        Assert.Equal(2, (await service.Service.SummarizeAsync()).Count);
+
+        await service.Service.RetireAsync("engine");
+        await service.Service.RetireAsync("game");
+        await service.Service.RefreshAsync();
+
+        Assert.Empty(await service.Service.SummarizeAsync());
+    }
+
+    /// <summary>
+    /// The half the guard is still for: when nothing can be read, a REGISTERED repository keeps what
+    /// it had, because a wrong path must not wipe the index — and a retired one still leaves.
+    /// </summary>
+    [Fact]
+    public async Task When_nothing_can_be_read_a_registered_repository_keeps_its_entries_and_a_retired_one_leaves()
+    {
+        var options = Options();
+        Know(options, "engine", "game");
+        await using var service = await ServiceFactory.CreateAsync(options);
+        await service.Service.RefreshAsync();
+        await service.Service.RetireAsync("game");
+
+        Directory.Move(Path.Combine(options.RepositoryRoot, "engine"), Path.Combine(_root, "engine-moved"));
+        await service.Service.RefreshAsync();
+
+        Assert.Equal(["engine"], (await service.Service.SummarizeAsync()).Select(r => r.Repository));
     }
 
     /// <summary>

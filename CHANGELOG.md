@@ -403,6 +403,9 @@ The first version: doctrine that installs, is checked, and flows back.
   Convergence's empty answer offers a lower similarity. Sentences that stopped being true (the
   index scanning a folder, only adopters being askable) are rewritten, the default rules explain
   themselves without decision numbers, and 中文 calls a quest 委托 throughout.
+- **Retiring the last repository empties the index.** A machine whose every repository was retired
+  went on charting, searching and comparing their knowledge; a refresh now leaves it empty, while a
+  registered repository whose checkout cannot be read still keeps what it had.
 - **The menus are the setup domains** (D75). The title bar carries *Daoris · Workspace · Agents ·
   View*, and each setup item opens its own domain. Settings is one page with its domains in a
   list, one shown at a time, as an IDE's settings are. The Workspace menu lists every workspace with

@@ -158,6 +158,15 @@ export function OverviewView({ onNavigate, doors, notify }: {
             }
           />
           {repositories.isPending && <SkeletonRows />}
+          {/* An empty index is a state (§4, POLISH2's rule): once retiring emptied it (POLISH5) this
+              card was its heading over a footnote about dots with nothing to mark. */}
+          {repositories.data?.length === 0 && (
+            <EmptyState
+              icon="projects"
+              headline={t('overview.repositories.emptyHeadline')}
+              body={t('overview.repositories.emptyBody')}
+            />
+          )}
           <ul className="m-0 list-none p-0">
             {shown.map((repository) => {
               const declared = (registry.data ?? []).find((r) => r.repository === repository.name);
@@ -195,7 +204,9 @@ export function OverviewView({ onNavigate, doors, notify }: {
               {t('overview.repositories.more', { count: hidden })}
             </p>
           )}
-          <p className="mt-2 text-small italic text-ink-faint">{t('overview.repositories.hint')}</p>
+          {shown.length > 0 && (
+            <p className="mt-2 text-small italic text-ink-faint">{t('overview.repositories.hint')}</p>
+          )}
         </Card>
       </div>
     </section>

@@ -5512,3 +5512,21 @@ nothing else. What POLISH2 and the FRAME items could not look at was everything 
 with one trap: `max-w-prose` on a flex item caps its `basis-full`. CLI 445 → 446, driver 586 → 587,
 service 469 → 470, web unit 853 → 866, Playwright 21/21, family 271/271, verify green. The card's
 two new states have a story (`CardsWithTheirIntake`).
+
+## POLISH5 — retiring the last repository left every retired one indexed (2026-09-24)
+
+- [x] ~~**POLISH5 — retiring the last repository leaves every retired one indexed.** Found
+  republishing the install after POLISH4: no registration, and 1,052 entries from 17 repositories
+  still charted, searched and compared. The workspace design §7 says a retired repository "stops
+  being addressable **and indexed** here".~~
+✅ **done 2026-09-24.** The ghost rule pruned only when a refresh's scan saw something, a guard
+written when the source was a folder (seeing nothing meant a mis-set path). Since WSP2 a local host
+reads the registered roots, so the last retire leaves a scan that sees nothing by construction. The
+guard could not simply go, because a shared host reads an empty source for the opposite reason: it is
+fed. So the local host, and only it, lets the registry decide what is a ghost, whatever the scan saw;
+the guard still keeps a registered repository whose checkout cannot be read. Overview's note now
+claims only that the others have not adopted. Three service tests, one for each case, including the
+fed host the guard exists for. On the republished install, *rebuild index* took it from 17
+repositories to none. The empty index then showed Overview's repositories card as a heading over a
+footnote, so it has an empty state too. `docs/FIX-LOG.md` has the mechanism. Service 470 → 473,
+web unit 866 → 867, Playwright 21/21, family 271/271.

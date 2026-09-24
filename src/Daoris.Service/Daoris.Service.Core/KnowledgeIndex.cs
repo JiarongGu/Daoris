@@ -18,8 +18,16 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
     /// machine configuration inside a filesystem walk. Absent, everything lands in the default, which
     /// is what a machine that never named a workspace should see.
     /// </param>
+    /// <param name="stillRegistered">
+    /// Whether a repository is still registered, when the source reads the registered roots and
+    /// nothing else fills this store (a local host, POLISH5). Then a held repository the registry no
+    /// longer names is a ghost whatever the scan saw — retiring the LAST repository leaves a scan that
+    /// sees nothing, and the guard below would keep every retired repository indexed forever. Absent
+    /// for a fed store, whose empty source says nothing about what it was fed.
+    /// </param>
     public async Task<IndexReport> RefreshAsync(
-        IKnowledgeSource source, Func<string, string>? workspaceOf = null, CancellationToken ct = default)
+        IKnowledgeSource source, Func<string, string>? workspaceOf = null,
+        Func<string, bool>? stillRegistered = null, CancellationToken ct = default)
     {
         var read = await source.ReadAsync(ct).ConfigureAwait(false);
         var permitted = read
@@ -39,13 +47,16 @@ public sealed class KnowledgeIndex(IKnowledgeStore store, IDisclosurePolicy? dis
         // live project. Guarded on the scan having seen ANYTHING, because a scan that found nothing
         // is a mis-set root far more often than a family that emptied, and "refresh wiped the index"
         // is the wrong answer to a wrong path.
-        if (byRepository.Count > 0)
+        // The guard is about a PATH, so it keeps a registered repository whose checkout could not be
+        // read; it never keeps one the registry stopped naming.
+        var seen = new HashSet<string>(byRepository.Select(g => g.Key), StringComparer.Ordinal);
+        if (byRepository.Count > 0 || stillRegistered is not null)
         {
-            var seen = new HashSet<string>(byRepository.Select(g => g.Key), StringComparer.Ordinal);
             var held = (await store.AllAsync(ct).ConfigureAwait(false))
                 .Select(e => e.Repository)
                 .Distinct(StringComparer.Ordinal);
-            foreach (var ghost in held.Where(repository => !seen.Contains(repository)))
+            foreach (var ghost in held.Where(repository => !seen.Contains(repository)
+                && (byRepository.Count > 0 || !stillRegistered!(repository))))
             {
                 await store.ReplaceRepositoryAsync(ghost, [], ct).ConfigureAwait(false);
             }

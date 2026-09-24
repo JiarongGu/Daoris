@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 470 service, 587 driver, 118 desktop modules, 866 web unit, 21 Playwright**, 73
+**446 CLI tests, 473 service, 587 driver, 118 desktop modules, 867 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -257,9 +257,9 @@ the traps that are not in any contract, because they were found rather than desi
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 446 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (470),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (473),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (587), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (866 vitest + 21 Playwright),
+  (587), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (867 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so

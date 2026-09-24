@@ -116,6 +116,19 @@ describe('the shell in a browser, over two workspaces', () => {
     expect(screen.queryByRole('combobox', { name: 'workspace' })).toBeNull();
   });
 
+  /**
+   * 🔴 Seen on the install once retiring emptied the index (POLISH5): the repositories card was its
+   * heading over a footnote about adopted dots, with nothing for the dots to mark.
+   */
+  it('says the index holds nothing, rather than a footnote under an empty chart', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) =>
+      String(input).startsWith('/api/repositories') ? Response.json([]) : respond(String(input)));
+    shell();
+
+    expect(await screen.findByText('The index holds nothing yet')).toBeInTheDocument();
+    expect(screen.queryByText(/adopted — it carries its own declaration/)).toBeNull();
+  });
+
   it('names the one workspace there is, with no switcher to choose it', async () => {
     withRegistry([REGISTRY[1]]);
     shell();

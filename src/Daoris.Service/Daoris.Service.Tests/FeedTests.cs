@@ -259,6 +259,22 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// A fed host reads nothing from disk, so a refresh there must keep what it was fed — the case the
+    /// ghost rule's guard exists for, and the one POLISH5's registry rule must never reach: only a host
+    /// that reads its registered roots lets the registry decide what is a ghost.
+    /// </summary>
+    [Fact]
+    public async Task A_refresh_on_a_fed_host_keeps_what_it_was_fed()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedAsync("Open", [Entry()], From("newnewnew", at: "2026-09-20T12:00:00Z"));
+
+        await _service.RefreshAsync();
+
+        Assert.Contains("Open", (await _service.SummarizeAsync()).Select(r => r.Repository));
+    }
+
+    /// <summary>
     /// The declared line survives an ordinary re-registration. `daoris connect` says nothing about
     /// branches and runs on every tick; a null that overwrote would quietly reopen every branch.
     /// </summary>

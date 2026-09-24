@@ -190,7 +190,7 @@ public static class ServiceFactory
 
         var service = new KnowledgeService(
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
-            registry, registrations);
+            registry, registrations, readsRegisteredRoots: readsLocalCheckouts);
 
         // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come

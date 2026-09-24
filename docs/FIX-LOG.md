@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Retiring the last repository left every retired one indexed (2026-09-24)
+
+**Symptom.** The owner's install, every registration retired the day before, still served 1,052
+entries from 17 repositories: charted on Overview, found by search, compared by convergence. Found
+republishing the install after POLISH4, whose new Overview note ("the others are registered…") was
+false there for the same reason.
+
+**Root cause.** `KnowledgeIndex.RefreshAsync` removes a held repository the scan did not see only
+when the scan saw SOMETHING — a guard written when the source was a folder, where seeing nothing
+meant a mis-set path. Since WSP2 a local host reads the registered roots, so retiring the last
+repository leaves a scan that sees nothing by construction, and the guard kept every retired
+repository forever. `RetireAsync`'s own comment ("its entries leave on the next refresh by the
+ghost rule") was true for every retire but the last. The guard could not simply go: a shared host
+reads an empty source because it is FED, and there an empty scan says nothing about what it holds.
+
+**Fix.** A local host (the one whose source is the registered roots, fed by nobody) passes the
+registry to the refresh, and a held repository the registry no longer names leaves whatever the
+scan saw. The guard still keeps a registered repository whose checkout cannot be read. A fed host
+passes nothing and behaves as before.
+
+**Verify.** Three service tests: the last retire empties the index; with nothing readable, a
+registered repository keeps its entries and a retired one leaves; a fed host's refresh keeps what it
+was fed. Service 470 → 473. On the republished install, pressing *rebuild index* took it from 17
+repositories and 1,052 entries to none, and search to no answer. That empty index then showed
+Overview's repositories card as a heading over a footnote about adopted dots; it has an empty state
+now (web 867).
+
 ## Sentences that stopped being true, and four marks the window read wrongly (2026-09-24)
 
 **Symptom.** Read with data in it (POLISH4: the scratch shell over the example family, which holds a
