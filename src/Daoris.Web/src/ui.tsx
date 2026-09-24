@@ -109,12 +109,19 @@ const BUTTON: Record<string, string> = {
     'border border-st-declined bg-transparent text-st-declined hover:enabled:bg-st-declined/10',
 };
 
+/**
+ * 🔴 **A button, unless it says it submits.** HTML makes an untyped button inside a form its submit,
+ * so a click runs its own handler AND the form's: the composer's send sent every message twice, and
+ * a key form's cancel saved the key the person was cancelling (2026-09-25). A form's submit says
+ * `type="submit"`.
+ */
 export function Button({
-  variant = 'default', className, ...props
+  variant = 'default', type = 'button', className, ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof BUTTON }) {
   return (
     <button
       {...props}
+      type={type}
       className={cn(
         'inline-flex min-h-[1.9rem] items-center gap-1.5 rounded-control px-3 py-1.5 text-body',
         'transition-colors duration-(--speed)',

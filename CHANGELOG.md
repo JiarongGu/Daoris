@@ -415,6 +415,9 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A chat you start stays open in front of you**, where it used to fall back to *Nothing attended*
   until you picked it from the list. A long code line scrolls inside its block, not widening the
   conversation.
+- **A message is sent once.** Pressing *send* in a conversation sent every message twice. And
+  cancelling an API key you had typed saved it anyway. Both came from a button that submitted its
+  form as well as doing its own job, and a button now submits only when it is meant to.
 - **Retiring the last repository empties the index.** A machine whose every repository was retired
   went on charting, searching and comparing their knowledge; a refresh now leaves it empty, while a
   registered repository whose checkout cannot be read still keeps what it had.

@@ -73,7 +73,8 @@ export function Composer({ live, sending = false, refusal, endings = true, onSen
       </label>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" disabled={!live || !draft.trim() || sending} onClick={say}>
+        {/* The form's submit, and nothing else: its submit handler is the one path a press takes. */}
+        <Button type="submit" variant="primary" disabled={!live || !draft.trim() || sending}>
           {t('work.composer.send')}
         </Button>
         {live && endings && (

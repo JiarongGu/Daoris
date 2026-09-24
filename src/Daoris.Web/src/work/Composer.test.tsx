@@ -21,6 +21,9 @@ describe('the composer', () => {
     await userEvent.type(box(), 'cap hydration per frame');
     await userEvent.click(screen.getByRole('button', { name: 'send' }));
 
+    // Once: the button is the form's submit, and a click that also called `say` sent every message
+    // twice — seen as two "you" blocks once the record kept what was sent (CONV3).
+    expect(send).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledWith('cap hydration per frame');
     expect(box()).toHaveValue('');
   });

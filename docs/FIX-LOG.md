@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Every message was sent twice, and cancelling an API key saved it (2026-09-25)
+
+**Symptom.** The first chat whose record kept what the person sent (CONV3a) showed each message
+twice: two *you* blocks, recorded 4 ms apart. A sweep for the same shape then found the harness
+roster's key form. Typing a key and pressing *never mind* closed the field **and saved the key**,
+and a credential account appeared that the person had just declined.
+
+**Root cause.** HTML makes an untyped `<button>` inside a `<form>` that form's submit, and `Button`
+passed no type. The composer's send had `onClick={say}` and was also the form's submit. A click ran
+`say`, then the form's submit ran `say` again with the same `draft`, because the update that clears
+it had not rendered between the two. The key form's cancel was an untyped button beside a typed
+save: pressing it submitted the form, and `addKey` ran with the typed key. Neither test could see
+it. The composer's test asserted *called with*, never *called once*, and the key test pressed save
+only. Nothing on the page showed the second send until the record kept what was sent.
+
+**Fix.** `Button` defaults to `type="button"`, and a form's submit says `type="submit"`. The
+composer's send is the form's submit with no click handler of its own, so a press takes one path. A
+sweep of every form, reading multi-line tags, found no other untyped button, of either kind.
+
+**Verify.** Three tests: an untyped `Button` in a form is a button, the composer sends once per
+press, and cancelling a typed key sends no `key-add`. Each was red first, the composer's with *called
+2 times*. Web unit 909 → 911. On the window, a chat sent one message by clicking send: one *you*,
+one user event in the record, one turn.
+
 ## A chat just started showed "Nothing attended", and a code block widened the conversation (2026-09-25)
 
 **Symptom.** Found on the first real Claude Code chat on the structured wire (CONV3a). Starting a

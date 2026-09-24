@@ -36,6 +36,17 @@ describe('the primitives', () => {
     expect(screen.getByRole('button', { name: 'ask for something' })).toBeInTheDocument();
   });
 
+  /**
+   * 🔴 A button submits only when it says so. HTML's default inside a form is `submit`, and two
+   * untyped buttons were: the composer's send, which sent each message twice, and a key form's
+   * cancel, which saved the key (2026-09-25).
+   */
+  it('a button is a button unless it says it submits', () => {
+    render(<form><Button>cancel</Button><Button type="submit">save</Button></form>);
+    expect(screen.getByRole('button', { name: 'cancel' })).toHaveAttribute('type', 'button');
+    expect(screen.getByRole('button', { name: 'save' })).toHaveAttribute('type', 'submit');
+  });
+
   it('a disabled primary stays announced as disabled', () => {
     render(<Button variant="primary" disabled>publish quest</Button>);
     expect(screen.getByRole('button', { name: 'publish quest' })).toBeDisabled();
