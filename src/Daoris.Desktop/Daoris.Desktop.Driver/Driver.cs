@@ -107,6 +107,23 @@ public sealed partial class Driver(
     // The worktree half of D51, beside the transcripts under the same home.
     private readonly SessionTrees _trees = new(home);
 
+    /// <summary>
+    /// The door this machine's starts ride — the configured adapter's wire, read against this tick's
+    /// adapters so a plugin's harness counts. An adapter nobody knows is the pipe: the stricter door
+    /// plans nothing more than it should, and the spawn names the unknown adapter itself.
+    /// </summary>
+    private SessionWire Door()
+    {
+        try
+        {
+            return _adapters.Resolve(config.Adapter).Wire;
+        }
+        catch (DriverException)
+        {
+            return SessionWire.Pipe;
+        }
+    }
+
     /// <summary>One decision-and-execution round. Returns what happened, for whoever is watching.</summary>
     public async Task<TickReport> TickAsync(CancellationToken ct = default)
     {
@@ -152,7 +169,7 @@ public sealed partial class Driver(
         }
 
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
-        var plan = Planner.Plan(snapshot, config);
+        var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
 
         // What this tick ended, structurally — the half of the report a watcher can act on (SURF5b).

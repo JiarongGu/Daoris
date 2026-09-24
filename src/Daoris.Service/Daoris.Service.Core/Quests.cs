@@ -20,7 +20,7 @@ public enum QuestStatus
 
 /// <param name="Id">Short, stable handle — quotable in a commit message.</param>
 /// <param name="From">The repository that asked.</param>
-/// <param name="To">The repository being asked. Must have adopted, or there is nobody to answer.</param>
+/// <param name="To">The repository being asked. Must be addressable (D70), or there is nobody to answer.</param>
 /// <param name="Title">One line: what is wanted.</param>
 /// <param name="Body">Why, and the evidence — never the prescribed change.</param>
 /// <param name="Status">Where it is.</param>
@@ -108,9 +108,11 @@ public sealed record QuestDismissal(Quest? Quest, int Dismissed);
 /// materializing it into its backlog, which is then that repository editing itself. Nobody reaches
 /// across.</para>
 ///
-/// <para><b>Only an adopted repository can be addressed.</b> A quest for a repository with no manifest
-/// has nobody to answer it and no client to see it, so it would sit in a queue nobody reads. Refusing
-/// at publish time says that immediately, rather than letting it look delivered.</para>
+/// <para><b>Only a repository something can answer for is addressed.</b> That is an adopter, whose own
+/// connector sees the quest, or a repository registered with a root on this machine, whose driven
+/// session is handed a connector over the protocol door (D70). A quest nothing could answer would sit
+/// in a queue nobody reads, so refusing at publish time says that immediately, rather than letting it
+/// look delivered.</para>
 ///
 /// <para><b>A quest is its history</b> (D68, SYNC1). Every verb appends an operation to
 /// <c>quest_log</c>, stamped with this store's machine and that machine's next sequence number, and

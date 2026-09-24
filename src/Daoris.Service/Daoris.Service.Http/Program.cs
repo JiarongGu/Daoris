@@ -682,9 +682,13 @@ app.MapPost("/api/registry", async (ComposedService s, HttpContext http, Registe
         return Results.Conflict(new ErrorResponse(foreign));
     }
 
+    // Registered is addressable; adopted is disciplined (D70) — so the difference is recorded as it is.
+    // Only a door that looked says false: the desktop's *add* of a folder with no manifest. Silence is
+    // `connect`, which is adoption; a shared deployment holds no roots and so no unadopted row.
+    var adopted = mode == ServiceMode.Shared || (body.Adopted ?? true);
     var declared = new Registration(
         body.Repository,
-        Adopted: true,
+        Adopted: adopted,
         body.Domain?.Summary,
         body.Domain?.Owns ?? [],
         body.Domain?.Accepts ?? [],
@@ -693,10 +697,11 @@ app.MapPost("/api/registry", async (ComposedService s, HttpContext http, Registe
         // A shared deployment never stores a machine path, even one a buggy client sent: the feed has
         // no field for it by design (D47 §4), and what must not be served is best not kept.
         Root: mode == ServiceMode.Shared || string.IsNullOrWhiteSpace(body.Root) ? null : body.Root,
-        Joined: body.Join ?? false,
+        // A join is a manifest's declaration (D47 §4), so a repository without one joins nothing.
+        Joined: adopted && (body.Join ?? false),
         // Knowledge feeds only from a joined repository (D47 §4) — narrowed here as well as in the
         // CLI, because this door also answers clients the CLI never saw.
-        SharesKnowledge: (body.Join ?? false) && (body.ShareKnowledge ?? false),
+        SharesKnowledge: adopted && (body.Join ?? false) && (body.ShareKnowledge ?? false),
         // A SHARED host puts every row in its own circle — it is that workspace's deployment, and the
         // receiving deployment's wiring is what decides where fed material lands (D48 §2/§5). On a
         // LOCAL host silence PRESERVES the row: an ordinary re-registration runs on every sync tick
@@ -813,7 +818,7 @@ app.MapGet("/api/registry", async (
         // Machine-local by design (D46): a filesystem path is answered only to a caller on this
         // machine, so a remote deployment never serves anyone's disk layout to the network.
         Root: MachineLocal(http) ? r.Root : null,
-        r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch)));
+        r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch, r.Addressable)));
 
 // A repository's code map (MAP3a): its modules and how they depend on each other, read from its own
 // committed file — never written to (D32). A repository with a checkout here is read from it on each

@@ -204,8 +204,31 @@ describe('the shell-attached registry management', () => {
     const posted = vi.mocked(fetch).mock.calls
       .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
     expect(JSON.parse(String(posted![1]!.body))).toMatchObject({
-      repository: 'borealis', root: 'D:/repos/borealis',
+      repository: 'borealis', root: 'D:/repos/borealis', adopted: true,
     });
+  });
+
+  /**
+   * Registered is addressable; adopted is disciplined (D70) — so a folder with no manifest is added as
+   * what it is. The register door used to store every row adopted, which would have driven one over
+   * the pipe door with no connector and no sentence saying why.
+   */
+  it('adding a folder that has not adopted registers it as not adopted, and declares nothing', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      type === 'PICK_FOLDER'
+        ? { ...PICKED, adopted: false, summary: undefined, owns: [], accepts: [] }
+        : DRIVER_STATE);
+    show(<ProjectsView notify={() => {}} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'add repository' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'choose a folder…' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'register it' }));
+
+    const posted = vi.mocked(fetch).mock.calls
+      .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
+    const body = JSON.parse(String(posted![1]!.body));
+    expect(body).toMatchObject({ repository: 'borealis', root: 'D:/repos/borealis', adopted: false });
+    expect(body.domain).toBeUndefined();
   });
 
   /**

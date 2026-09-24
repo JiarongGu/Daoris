@@ -3130,6 +3130,106 @@ check(
   acpLanded.out,
 );
 
+// -------------------------------------------------- 17b. registered is drivable over the protocol door
+
+section('17b. Registered is drivable over the protocol door, and the pipe door still holds it (D70/INT3)');
+
+// A repository that registered here WITHOUT adopting: a git tree with no manifest, no lock, no
+// AGENTS.md and no .mcp.json — added the way the desktop's *add* does, saying it has not adopted.
+// Outside the family folder, and retired at the end, so no later phase meets it.
+const unadopted = join(scratch, 'unadopted');
+mkdirSync(unadopted, { recursive: true });
+writeFileSync(join(unadopted, 'README.md'), '# unadopted\n\nRegistered here, never adopted.\n');
+run('git init -q', unadopted);
+run(`git ${GIT_ID} add -A`, unadopted);
+run(`git ${GIT_ID} commit -q -m "unadopted is born"`, unadopted);
+
+const unadoptedAdded = await api('POST', '/api/registry', {
+  body: { repository: 'unadopted', root: unadopted, adopted: false },
+});
+const unadoptedRow = ((await api('GET', '/api/registry')).json ?? []).find((r) => r.repository === 'unadopted');
+check(
+  'a folder added without a manifest is registered as NOT adopted, and the host says it can be asked',
+  unadoptedAdded.status === 200 && unadoptedRow?.adopted === false && unadoptedRow?.addressable === true,
+  JSON.stringify(unadoptedRow ?? null) + ' ' + unadoptedAdded.text,
+);
+
+const unadoptedAsk = await api('POST', '/api/quests', {
+  body: {
+    from: 'game',
+    to: 'unadopted',
+    title: 'Answer from a tree that never adopted',
+    body: 'Registered is addressable (D70): prove it end to end.',
+  },
+});
+const unadoptedQuestId = unadoptedAsk.json?.quest?.id ?? '';
+check(
+  'a quest to it is published, and the asker is told only the protocol door can answer it',
+  Boolean(unadoptedQuestId)
+    && /has not adopted/.test(unadoptedAsk.json?.message ?? '')
+    && /protocol door/.test(unadoptedAsk.json?.message ?? ''),
+  unadoptedAsk.text,
+);
+
+// The pipe door keeps its own requirement: its session reaches the knowledge tools only through the
+// repository's own `.mcp.json`, which the driver may never write for it (D32). So it sits, saying why.
+const unadoptedPipe = join(scratch, 'driver-unadopted-pipe.json');
+writeFileSync(unadoptedPipe, `${JSON.stringify({
+  drivable: ['unadopted'], adapter: 'stub', cap: 1, timeoutMinutes: 2,
+  commands: { stub: ['node', stubAgent] },
+}, null, 2)}\n`);
+const pipeHeld = driver({ serviceUrl: BASE, config: unadoptedPipe });
+const unadoptedStillOpen = ((await api('GET', '/api/quests?repository=unadopted')).json ?? [])
+  .some((q) => q.id === unadoptedQuestId && q.status === 'Open');
+check(
+  'over the pipe door it sits, and the sentence names the door that could carry it',
+  pipeHeld.code === 0 && unadoptedStillOpen
+    && new RegExp(`sitting\\s+#${unadoptedQuestId} → unadopted — .*only the protocol door hands it one`).test(pipeHeld.out),
+  pipeHeld.out,
+);
+
+// The protocol door hands the session its connector on the wire (ACP4), so the same quest is driven
+// to done — with nothing of Daoris's written into the tree to make it possible.
+const unadoptedAcp = join(scratch, 'driver-unadopted-acp.json');
+writeFileSync(unadoptedAcp, `${JSON.stringify({
+  drivable: ['unadopted'], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2,
+  commands: { 'acp-stub': ['node', acpAgent] },
+}, null, 2)}\n`);
+const acpDrove = driver({ serviceUrl: BASE, config: unadoptedAcp, mode: '--until-idle' });
+const unadoptedQuests = await api('GET', '/api/quests?repository=unadopted&includeClosed=true');
+const unadoptedRecord = ((await api('GET', '/api/sessions?repository=unadopted&includeClosed=true')).json ?? [])
+  .find((s) => s.quest === unadoptedQuestId);
+check(
+  'over the protocol door the same quest is driven to done by a session in the unadopted tree',
+  acpDrove.code === 0
+    && (unadoptedQuests.json ?? []).some((q) => q.id === unadoptedQuestId && q.status === 'Done')
+    && unadoptedRecord?.state === 'completed' && unadoptedRecord?.adapter === 'acp-stub',
+  acpDrove.out + '\n' + JSON.stringify(unadoptedRecord ?? null),
+);
+
+const unadoptedTranscript = existsSync(unadoptedRecord?.transcript ?? '')
+  ? readFileSync(unadoptedRecord.transcript, 'utf8')
+  : '';
+check(
+  'the session was handed its connector on the wire — the voice a tree with no .mcp.json has',
+  /mcp servers offered: daoris-knowledge/.test(unadoptedTranscript),
+  unadoptedTranscript.slice(0, 600),
+);
+
+// D32, read off the tree itself: the only change is the session's own commit.
+const unadoptedStatus = run('git status --porcelain', unadopted);
+const unadoptedLog = run('git log --oneline', unadopted);
+check(
+  'nothing of Daoris\'s was written into it — no manifest, no lock, no doctrine, no connector, a clean tree',
+  ['daoris.json', 'daoris.lock', 'AGENTS.md', 'CLAUDE.md', '.mcp.json', '.claude'].every((name) => !existsSync(join(unadopted, name)))
+    && unadoptedStatus.out.trim() === ''
+    && new RegExp(`acp: answer quest ${unadoptedQuestId}`).test(unadoptedLog.out),
+  unadoptedStatus.out + '\n' + unadoptedLog.out,
+);
+
+const unadoptedRetired = await api('DELETE', '/api/registry/unadopted');
+check('it is retired again, so no later phase meets it', unadoptedRetired.status === 200, unadoptedRetired.text);
+
 // -------------------------------------------------- 18. a plugin that declares, and speaks
 
 section('18. Three plugins: one declares a harness, one hands a server, one holds a quest with a sentence (D64, D65)');

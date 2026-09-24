@@ -8,7 +8,10 @@ public enum QuestPublishRefusal
     /// <summary>Addressed to the repository doing the asking. Its own backlog is the place for that.</summary>
     SelfAddressed,
 
-    /// <summary>The target has not adopted, so it has no client to see the quest (D32, D34).</summary>
+    /// <summary>
+    /// Nothing could answer it: the target is not registered, or it has neither adopted nor a root on
+    /// this machine (D34 as amended by D70).
+    /// </summary>
     NotAddressable,
 
     /// <summary>
@@ -153,8 +156,8 @@ public sealed class QuestExchange(
         PublishAsync(new QuestAsk(from, to, title, body), now, ct);
 
     /// <summary>
-    /// Publish a quest to another repository. Refuses a self-addressed quest and a target that has not
-    /// adopted; warns when the target has declared nothing about itself (D34). It is published HERE,
+    /// Publish a quest to another repository. Refuses a self-addressed quest and a target nothing could
+    /// answer; warns when the target has not adopted, or has declared nothing about itself (D34, D70). It is published HERE,
     /// whoever the receiver is (D68), and a joined receiver's quest reaches the remote on the next sync.
     /// What it carries is judged before anything is written anywhere, and its files are kept HERE —
     /// under this machine's home — wherever the record travels (D65 §2).
@@ -184,20 +187,23 @@ public sealed class QuestExchange(
         // Who can be asked is who shares the asker's circle. A refusal that listed the whole machine
         // would be offering repositories this one may not address.
         var addressable = registered
-            .Where(r => r.Adopted && Workspaces.Same(r.InWorkspace, home))
+            .Where(r => r.Addressable && Workspaces.Same(r.InWorkspace, home))
             .Select(r => r.Repository)
             .ToList();
         var target = registered.FirstOrDefault(r =>
             string.Equals(r.Repository, to, StringComparison.OrdinalIgnoreCase));
 
-        if (target is null || !target.Adopted)
+        if (target is null || !target.Addressable)
         {
-            // A quest for a repository with no client has nobody to read it, so it would sit in a queue
-            // that is never opened. Saying so now beats letting it look delivered.
+            // A quest nothing could answer would sit in a queue that is never opened. Saying so now
+            // beats letting it look delivered.
             return new(
                 QuestPublishRefusal.NotAddressable,
-                $"`{to}` has not adopted Daoris, so it has no way to see a quest. Addressable: "
-                + $"{string.Join(", ", addressable)}.",
+                (target is null
+                    ? $"`{to}` is not registered here, so nothing could see a quest to it."
+                    : $"`{to}` has not adopted Daoris and has no root on this machine, so it has no client "
+                      + "to see a quest and no tree a session could be started in.")
+                + $" Addressable: {string.Join(", ", addressable)}.",
                 Quest: null, addressable);
         }
 
@@ -236,10 +242,17 @@ public sealed class QuestExchange(
         var quest = await quests.PublishAsync(
             from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct).ConfigureAwait(false);
 
-        var caution = target.Registered
-            ? ""
-            : $"\n\n⚠ `{target.Repository}` has not declared what it owns or accepts, so this may not be "
-              + "its problem. Worth checking before you rely on it.";
+        var caution = !target.Adopted
+            // Registered is addressable; adopted is disciplined (D70). Said at publish, because it is
+            // the one fact that decides whether the quest is ever answered: a person working there by
+            // hand has no connector, and a machine driving over the pipe door holds it.
+            ? $"\n\n⚠ `{target.Repository}` has not adopted Daoris, so only a session the driver starts "
+              + "in it over the protocol door can answer this — it is handed a connector there, while "
+              + "a person working in it by hand has none to see the quest."
+            : target.Registered
+                ? ""
+                : $"\n\n⚠ `{target.Repository}` has not declared what it owns or accepts, so this may not be "
+                  + "its problem. Worth checking before you rely on it.";
 
         return new(
             QuestPublishRefusal.None,
@@ -287,7 +300,7 @@ public sealed class QuestExchange(
 
             var receiver = registered.FirstOrDefault(r =>
                 string.Equals(r.Repository, step.To, StringComparison.OrdinalIgnoreCase));
-            if (receiver is null || !receiver.Adopted || !Workspaces.Same(receiver.InWorkspace, home))
+            if (receiver is null || !receiver.Addressable || !Workspaces.Same(receiver.InWorkspace, home))
             {
                 return $"Step {index} asks `{step.To}`, which cannot be asked from `{ask.From}` — nothing would see it "
                        + $"when its turn came. Addressable: {string.Join(", ", addressable)}.";
@@ -365,6 +378,9 @@ public sealed class QuestExchange(
     /// </remarks>
     public string? JudgeReceived(Quest asked, IReadOnlyList<Registration> registered)
     {
+        // Adopted, not merely addressable (D70): a deployment holds no roots, and a repository that
+        // has not adopted has no manifest to declare a join with, so its quests never leave the
+        // machine that can drive it. A pushed quest to one is a quest nobody here could answer.
         if (!registered.Any(r => r.Adopted && string.Equals(r.Repository, asked.To, StringComparison.OrdinalIgnoreCase)))
         {
             return $"`{asked.To}` is not registered at this deployment, so nobody here could answer quest "

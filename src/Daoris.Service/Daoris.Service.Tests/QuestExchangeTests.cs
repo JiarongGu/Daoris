@@ -79,19 +79,56 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A quest for a repository with no client has nobody to read it — and the refusal must name who
-    /// CAN be asked, because "no" with no alternative leaves the asker exactly where they started.
+    /// Registered is addressable; adopted is disciplined (D70). A repository registered here with a
+    /// root and no manifest can be asked, because over the protocol door the driver hands its session a
+    /// connector on the wire. The asker is told who can answer it: only such a session, since a person
+    /// working there by hand has no connector to see it.
     /// </summary>
     [Fact]
-    public async Task Publishing_to_a_non_adopter_is_refused_and_names_the_addressable()
+    public async Task Publishing_to_a_registered_non_adopter_succeeds_and_says_who_can_answer_it()
     {
         var outcome = await Publish("Stranger");
+
+        Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);
+        Assert.Contains("Stranger", outcome.Addressable);
+        Assert.Contains("has not adopted", outcome.Message);
+        Assert.Contains("protocol door", outcome.Message);
+        // One caution, the one that matters: an unadopted repository has no declaration by definition.
+        Assert.DoesNotContain("has not declared", outcome.Message);
+    }
+
+    /// <summary>
+    /// A quest for a name nobody registered has nobody to read it — and the refusal must name who CAN
+    /// be asked, because "no" with no alternative leaves the asker exactly where they started.
+    /// </summary>
+    [Fact]
+    public async Task Publishing_to_a_name_nobody_registered_is_refused_and_names_the_addressable()
+    {
+        var outcome = await Publish("Nobody");
 
         Assert.Equal(QuestPublishRefusal.NotAddressable, outcome.Refusal);
         Assert.Contains("Declared", outcome.Addressable);
         Assert.Contains("Quiet", outcome.Addressable);
-        Assert.DoesNotContain("Stranger", outcome.Addressable);
+        Assert.Contains("Stranger", outcome.Addressable);
+        Assert.Contains("is not registered", outcome.Message);
+        Assert.Null(outcome.Quest);
+    }
+
+    /// <summary>
+    /// An unadopted row with no root on this machine has neither a client nor a tree to drive, so
+    /// nothing here could answer a quest (D70).
+    /// </summary>
+    [Fact]
+    public async Task An_unadopted_repository_with_no_root_here_is_not_addressable()
+    {
+        await _service.RegisterAsync(new Registration("Rootless", false, null, [], [], [], Entries: 0), Now);
+
+        var outcome = await Publish("Rootless");
+
+        Assert.Equal(QuestPublishRefusal.NotAddressable, outcome.Refusal);
+        Assert.DoesNotContain("Rootless", outcome.Addressable);
         Assert.Contains("has not adopted", outcome.Message);
+        Assert.Contains("no root", outcome.Message);
     }
 
     /// <summary>Adoption gates addressing; declaration does not — but the asker is warned (D34).</summary>
@@ -256,12 +293,21 @@ public sealed class QuestExchangeTests : IAsyncLifetime
     [Fact]
     public async Task A_step_to_a_repository_that_cannot_be_asked_is_refused_when_composed()
     {
-        var outcome = await Chain(new QuestStep("Stranger", "Verify", "b"));
+        var outcome = await Chain(new QuestStep("Nobody", "Verify", "b"));
 
         Assert.Equal(QuestPublishRefusal.BadChain, outcome.Refusal);
-        Assert.Contains("Stranger", outcome.Message);
+        Assert.Contains("Nobody", outcome.Message);
         Assert.Contains("Declared", outcome.Message);
         Assert.Empty(await _quests.ListAsync());
+    }
+
+    /// <summary>A step may ask a registered repository that has not adopted, as a quest may (D70).</summary>
+    [Fact]
+    public async Task A_step_to_a_registered_non_adopter_is_accepted_when_composed()
+    {
+        var outcome = await Chain(new QuestStep("Stranger", "Verify", "b"));
+
+        Assert.Equal(QuestPublishRefusal.None, outcome.Refusal);
     }
 
     /// <summary>Every step is asked on behalf of the chain's asker, so a step to the asker is a self-ask.</summary>

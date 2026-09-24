@@ -262,12 +262,23 @@ public sealed class KnowledgeTools(
             text.AppendLine();
         }
 
-        var others = registered.Where(r => !r.Adopted).Select(r => r.Repository).ToList();
+        // Registered is addressable; adopted is disciplined (D70). One that registered here without a
+        // manifest can be asked, and only a session the driver starts over the protocol door answers.
+        var undisciplined = registered.Where(r => !r.Adopted && r.Addressable).Select(r => r.Repository).ToList();
+        if (undisciplined.Count > 0)
+        {
+            text.AppendLine(
+                $"_Registered here but not adopted — addressable, and answered only by a session the driver "
+                + $"starts over the protocol door, since none of them has a connector of its own: "
+                + $"{string.Join(", ", undisciplined)}._");
+        }
+
+        var others = registered.Where(r => !r.Addressable).Select(r => r.Repository).ToList();
         if (others.Count > 0)
         {
             // Listed rather than hidden: "who cannot be asked yet" is the same question, and silence
             // reads as the repository not existing.
-            text.AppendLine($"_Not adopted, so not addressable: {string.Join(", ", others)}._");
+            text.AppendLine($"_Not adopted and no root here, so not addressable: {string.Join(", ", others)}._");
         }
 
         return text.ToString();
@@ -282,7 +293,7 @@ public sealed class KnowledgeTools(
     public async Task<string> PublishQuestAsync(
         [Description("The repository asking — the one you are working in. An intake publishes as its ask, whatever this says.")]
         string from,
-        [Description("The repository being asked. It must have adopted Daoris, or nobody there can see it.")]
+        [Description("The repository being asked. It must be in the registry as addressable, or nobody there can see it.")]
         string to,
         [Description("One line: what is wanted.")] string title,
         [Description("Why, and the evidence. Whoever works there may see a better answer than you did.")]

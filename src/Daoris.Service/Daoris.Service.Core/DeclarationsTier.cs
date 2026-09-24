@@ -20,8 +20,10 @@ public sealed record DeclarationMatch(string Repository, int Score, IReadOnlyLis
 /// still do its useful part with no model at all, and report which tier answered — the ask's record
 /// says <i>by declarations only</i> whenever this is what ran.</para>
 ///
-/// <para>Only what can be ASKED is a candidate: an adopted repository in the ask's own circle. Anything
-/// else would be a proposal the exchange then refuses (D48 §4).</para>
+/// <para>Only a DECLARATION is a candidate: an adopted repository in the ask's own circle. Another
+/// circle would be a proposal the exchange refuses (D48 §4). A repository registered here without a
+/// manifest can be asked since D70, and a person may name it, but it has declared nothing to rank.
+/// A declaration is the manifest's (D34).</para>
 /// </remarks>
 public static class DeclarationsTier
 {

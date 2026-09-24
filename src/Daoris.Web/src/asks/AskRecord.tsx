@@ -31,7 +31,7 @@ export function AskRecord({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onOpenQuest, onDismiss,
 }: {
   ask: Ask;
-  /** Whom the ask can be published to: the adopted repositories in its circle. */
+  /** Whom the ask can be published to: the repositories the host says can be asked, in its circle (D70). */
   receivers: string[];
   /** Titles of the quests this page holds, by id — one it has not loaded is named by its id, and not opened. */
   questTitles: Record<string, string>;

@@ -137,7 +137,17 @@ export type Registration = {
   root?: string;
   joined?: boolean;
   sharesKnowledge?: boolean;
+  /**
+   * Whether a quest can be addressed to it — the exchange's own judgement, answered by the host so no
+   * page re-derives it (D70): an adopter, or a repository registered on that machine with a root, which
+   * a browser is never told. Absent from a host older than D70, where only an adopter could be asked.
+   */
+  addressable?: boolean;
 };
+
+/** Whether a repository can be asked — the host's answer, or adoption where an older host gives none. */
+export const canBeAsked = (registration: Registration): boolean =>
+  registration.addressable ?? registration.adopted;
 export type SessionState =
   | 'queued' | 'starting' | 'working' | 'awaiting-person'
   | 'completed' | 'declined' | 'stood-down' | 'failed' | 'stopped';
@@ -268,7 +278,8 @@ export const api = {
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine
   // is touched, and adding a repository still needs the shell — a page may not name a machine path.
   registerRepository: (body: {
-    repository: string; root?: string; workspace?: string;
+    // Whether the shell found a manifest there (D70): registered is addressable, adopted is disciplined.
+    repository: string; root?: string; workspace?: string; adopted?: boolean;
     domain?: { summary?: string; owns: string[]; accepts: string[] };
     packs?: string[]; join?: boolean; shareKnowledge?: boolean;
   }) => post<{ repository: string; workspace: string }>('/api/registry', body),

@@ -207,10 +207,18 @@ Today the exchange refuses a quest to a repository without a manifest (`Adopted`
 sits it (*"has not adopted, so there is no agent to be"*). That rule predates ACP4: the connector
 travelled only in a repository's own `.mcp.json`, so an unadopted repository had no voice. Over the
 protocol door the session is handed its connector on `session/new` with nothing written anywhere.
-**Proposed amendment**: a repository that is *registered with a root* is drivable over the ACP
-door; adopted doctrine is what the session reads if present, and the pipe door keeps its own
-requirements (a repository's `.mcp.json` and trust, DEPLOY1). The distinction becomes the honest
-one: **registered is addressable; adopted is disciplined.**
+**Decided as D70** (INT3, the owner's yes, 2026-09-24): a repository that is *registered with a
+root* is drivable over the ACP door. Adopted doctrine is what the session reads if present. The pipe
+door keeps its own requirements: a repository's `.mcp.json`, and trust (DEPLOY1). The distinction
+becomes the honest one: **registered is addressable; adopted is disciplined.**
+
+> **As built (INT3).** One judgement, `Registration.Addressable` (adopted, or a root here), is read
+> by the exchange, its chain steps, the MCP `registry`, `/api/registry`'s new `addressable` field and
+> every receiver list on the page. The planner is told the machine's door. Over the pipe door an
+> unadopted target sits, and its sentence names the protocol door. The desktop's *add* now registers
+> a folder with no manifest as not adopted, where the register door had stored every row as adopted.
+> The publish tells the asker that only a protocol-door session can answer. The family rehearsal's
+> §17b drives one to done with nothing written into its tree.
 
 ### 1f. Verify — a browser in the session's hands, declared by a plugin
 
@@ -318,7 +326,7 @@ you*, and its record says who answered it.
 |---|---|---|
 | **INT1** | Plugins declare `servers`; the driver hands them over ACP beside the knowledge host and over the pipe door by `--mcp-config` from a file under the home; the example plugin declares the Playwright MCP | the family rehearsal's stub reports every server offered; a driver test holds the pipe door's file |
 | **INT2** | `links` and `attachments` on a quest — store, HTTP and MCP surfaces, the compose drawer, `DAORIS_QUEST_ATTACHMENTS` and the composed target | service and driver tests; the rehearsal drives a quest with a file and a link |
-| **INT3** | Registered is drivable over the ACP door (the exchange and the planner amended; the pipe door unchanged) — **the owner's yes first** | the rehearsal drives a registered, unadopted newcomer over ACP |
+| **INT3** | Registered is drivable over the ACP door (the exchange and the planner amended; the pipe door unchanged) — **built, D70** | the rehearsal drives a registered, unadopted newcomer over ACP, and the pipe door holds it saying why (§17b) |
 | **INT4** | The intake: the ask record, the room under the home seeded from the registry, `daoris-driver ask`, the desktop composer at workspace scope, the declarations-only tier reporting itself | a rehearsal ask with no model resolves by declarations and says so; a real ask on the named workspace is the owner's proof |
 | **INT5** | `then` on a quest, published at close | the rehearsal chains develop → verify over the stubs |
 | **INT6** | Onboarding the named workspace: `import`, declarations per repository, the first real ask — owner present | the report it produces |

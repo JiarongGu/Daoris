@@ -261,6 +261,25 @@ describe('QuestsView', () => {
       expect(await screen.findByRole('dialog', { name: 'Expose a streaming budget' })).toBeInTheDocument();
     });
 
+    /** An ask may be published to any repository its circle can ask — adopted or not (D70). */
+    it('offers a registered repository that has not adopted as a receiver of the ask', async () => {
+      ASKS = [PROPOSED];
+      const before = globalThis.fetch;
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
+        String(input).startsWith('/api/registry')
+          ? Response.json([
+            ...REGISTRY.map((row) => ({ ...row, addressable: true })),
+            { repository: 'legacy', adopted: false, addressable: true, registered: false, owns: [], accepts: [], packs: [], entries: 0 },
+          ])
+          : before(input, init)));
+      view();
+
+      await userEvent.click(await screen.findByText('Cap the hydration per frame.'));
+      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
+      await userEvent.click(within(record).getByLabelText('publish to another'));
+      expect(await screen.findByRole('option', { name: 'legacy' })).toBeInTheDocument();
+    });
+
     /** The palette's "Ask the circle…" is an event, consumed by identity and cleared by its holder (frontend §4b). */
     it('a palette request opens the composer, once', async () => {
       const onAsked = vi.fn();
@@ -378,6 +397,31 @@ describe('QuestsView', () => {
 
     await vi.waitFor(() => expect(published).not.toBeNull());
     expect(published!.then).toEqual([{ to: 'engine', title: 'Verify {parent}', body: 'Open the app.' }]);
+  });
+
+  /**
+   * Registered is addressable; adopted is disciplined (D70). The host answers which repositories can
+   * be asked — its exchange's own judgement — so the form offers exactly those: one registered here
+   * without a manifest, and never one nothing could answer.
+   */
+  it('offers every repository the host says can be asked, adopted or not, and nothing else', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) {
+        return Response.json([
+          ...REGISTRY.map((row) => ({ ...row, addressable: true })),
+          { repository: 'legacy', adopted: false, addressable: true, registered: false, owns: [], accepts: [], packs: [], entries: 0 },
+          { repository: 'rootless', adopted: false, addressable: false, registered: false, owns: [], accepts: [], packs: [], entries: 0 },
+        ]);
+      }
+      return respond(url);
+    }));
+    view({ from: 'game' });
+    const dialog = await screen.findByRole('dialog');
+
+    await userEvent.click(within(dialog).getByLabelText('to'));
+    expect(await screen.findByRole('option', { name: 'legacy' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'rootless' })).toBeNull();
   });
 
   it('a next step started and left empty holds the publish back, and can be taken off', async () => {

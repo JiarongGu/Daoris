@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Quest, type QuestStep, type Session } from './api';
+import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api';
 import {
   useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
 } from './queries';
@@ -159,9 +159,10 @@ export function QuestsView({
     if (!held || session.updated >= held.updated) sessionFor.set(session.quest, session);
   }
 
-  // Only an adopter can be addressed — offering anything else would invite an ask the service
-  // refuses. The service still holds the judgement; this only keeps the form from lying.
-  const adopters = (registry.data ?? []).filter((r) => r.adopted).map((r) => r.repository);
+  // Only what the host says can be asked is offered (D70: an adopter, or a repository registered with
+  // a root) — anything else would invite an ask the service refuses. The service still holds the
+  // judgement; this only keeps the form from lying.
+  const adopters = (registry.data ?? []).filter(canBeAsked).map((r) => r.repository);
   const adopterOptions = adopters.map((name) => ({ value: name, label: name }));
   const target = (registry.data ?? []).find((r) => r.repository === draft.to);
   const busy = publish.isPending || respond.isPending || reading;

@@ -87,8 +87,9 @@ public sealed class PlannerTests
         DriverConfig.Empty with { Drivable = drivable ?? ["Game"], Holds = holds ?? [], Cap = cap };
 
     private static IReadOnlyList<Consideration> Plan(
-        QuestView[] quests, RepoView[]? repos = null, SessionView[]? active = null, DriverConfig? config = null) =>
-        Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config());
+        QuestView[] quests, RepoView[]? repos = null, SessionView[]? active = null, DriverConfig? config = null,
+        SessionWire door = SessionWire.Pipe) =>
+        Planner.Plan(new Snapshot(quests, repos ?? [Repo()], active ?? []), config ?? Config(), door);
 
     /// <summary>
     /// 🔴 Two active sessions in ONE repository is a state D51 allows — a conversation in the checkout
@@ -143,12 +144,69 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Held, Assert.Single(plan).Verdict);
     }
 
+    /// <summary>
+    /// The pipe door keeps its own requirement (D70): its session reaches the knowledge tools only
+    /// through the repository's own `.mcp.json`, which adoption writes and the driver may never write
+    /// for it (D32). So an unadopted receiver sits there, saying which door would carry it.
+    /// </summary>
     [Fact]
-    public void A_receiver_that_has_not_adopted_cannot_be_driven()
+    public void Over_the_pipe_door_a_receiver_that_has_not_adopted_sits_saying_why()
     {
         var plan = Plan([Quest()], repos: [Repo(adopted: false)]);
 
-        Assert.Equal(StartVerdict.NotAdopted, Assert.Single(plan).Verdict);
+        var only = Assert.Single(plan);
+        Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
+        Assert.Contains("connector", only.Reason);
+        Assert.Contains("protocol door", only.Reason);
+    }
+
+    /// <summary>
+    /// Registered is drivable over the protocol door (D70): the session is handed its connector on the
+    /// wire, so a repository registered with a root starts like an adopter — opted in and not held.
+    /// </summary>
+    [Fact]
+    public void Over_the_protocol_door_a_registered_receiver_that_has_not_adopted_starts()
+    {
+        var plan = Plan([Quest()], repos: [Repo(adopted: false)], door: SessionWire.Acp);
+
+        var only = Assert.Single(plan);
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal("D:/fam/Game", only.Root);
+    }
+
+    /// <summary>Opting in and holding are the person's, whatever the door: registered is not consent.</summary>
+    [Fact]
+    public void Over_the_protocol_door_an_unadopted_receiver_still_needs_opting_in()
+    {
+        var plan = Plan([Quest()], repos: [Repo(adopted: false)], config: Config(drivable: []), door: SessionWire.Acp);
+
+        Assert.Equal(StartVerdict.NotDrivable, Assert.Single(plan).Verdict);
+    }
+
+    /// <summary>
+    /// With neither a manifest nor a root there is nothing to start and nothing to see the quest, and
+    /// `connect` is not the fix for a repository that has not adopted — so the reason does not say it.
+    /// </summary>
+    [Fact]
+    public void An_unadopted_receiver_with_no_root_here_is_not_told_to_connect()
+    {
+        var plan = Plan([Quest()], repos: [Repo(adopted: false, root: null)], door: SessionWire.Acp);
+
+        var only = Assert.Single(plan);
+        Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
+        Assert.Contains("no root", only.Reason);
+        Assert.DoesNotContain("connect", only.Reason);
+    }
+
+    /// <summary>A quest to a repository this machine's registry does not hold says exactly that.</summary>
+    [Fact]
+    public void A_receiver_the_registry_does_not_hold_says_so()
+    {
+        var plan = Plan([Quest(to: "Elsewhere")], door: SessionWire.Acp);
+
+        var only = Assert.Single(plan);
+        Assert.Equal(StartVerdict.NotAdopted, only.Verdict);
+        Assert.Contains("not registered", only.Reason);
     }
 
     /// <summary>No root, no working tree to spawn in — the reason names `connect` as the fix.</summary>

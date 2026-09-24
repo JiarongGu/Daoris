@@ -1002,6 +1002,12 @@ and a silent omission reads as the repository not existing.
 documents: it knows who exists, what each owns, what each will take on, and what is outstanding between
 them.
 
+**Amended 2026-09-24 (D70): registered is addressable; adopted is disciplined.** A repository
+registered on this machine with a root can be asked without having adopted. A session the driver
+starts there over the protocol door is handed its connector on the wire, so the quest has somebody to
+answer it. Adoption still gates the declaration, the doctrine and the repository's own connector. The
+pipe door, and a shared deployment, still address adopters only.
+
 ## D35 — `connect` is the one online command, and D8 was over-broadened
 
 **Decided 2026-08-05.** `daoris init` scaffolds the `domain` declaration; `daoris connect` sends it to a
@@ -1373,6 +1379,12 @@ loop (D37), not to the driver.
 **Rejected: the driver takes the quest before spawning.** It would attribute the claim to a component
 that is not a party to the work, need a repair path for claimed-but-never-started quests, and make
 driven work distinguishable from outside work at exactly the layer where symmetry is the guarantee.
+
+**Amended 2026-09-24 (D70): over the protocol door, the connector is the wire's.** A repository
+registered with a root and never adopted is drivable over the protocol door. Its session is handed the
+knowledge server on `session/new`, not through the repository's own files. It is given no canon,
+because the canon is what adoption installs. For such a repository the driven session is the only one
+that can answer, and the surfaces say so. The pipe door keeps its own requirements.
 
 ## D47 — The remote is the same host fed by the desktop; transitions write through, records sync (2026-09-20)
 
@@ -2354,7 +2366,7 @@ as a workflow, and *"the local desktop will have its own driver llm"*.
 5. **Registered is addressable; adopted is disciplined** — proposed: a repository registered with
    a root is drivable over the ACP door, since the connector travels on the wire and not in the
    repository's files. 🔴 This amends the letter of D34/D46 and is **the owner's yes first**
-   (INT3); until then the exchange keeps refusing an unadopted target.
+   (INT3). **Decided yes as D70** (2026-09-24).
 
 **Why a session and not a model.** Every path that puts a model inside Daoris reopens D1 and D24
 at once: a provider to choose, a credential to hold (D49 §4 refuses), a price to know (D57 refuses).
@@ -2622,3 +2634,76 @@ still close the quest over the winner's take, because the table allows done from
 - **Claim, then stop the loser**: sessions take as before, and the driver pushes each take as soon
   as it sees one and stops a session whose take lost. It keeps the sync in the driver, but a real
   race online would still run a duplicate session for a few seconds. D68 promised none.
+
+## D70 — Registered is addressable; adopted is disciplined (2026-09-24)
+
+**Decision.** The owner said yes to INT3, which D65 §5 and the intake design §1e proposed. A
+repository **registered on this machine with a root** can be asked a quest, and the driver drives it
+**over the protocol door**, whether or not it has adopted. Adoption stops being what makes a
+repository addressable. It becomes what makes one disciplined: its manifest, its declaration, its
+doctrine and its own connector.
+
+- **One judgement, `Registration.Addressable`**: adopted, or registered with a root. The exchange's
+  publish and its chain steps read it, and so do the MCP `registry` tool, `/api/registry` (a new
+  `addressable` field) and every receiver list on the page. No surface offers a receiver the exchange
+  refuses (D50).
+- **The planner is told the door** the machine's starts ride, which is the configured adapter's wire.
+  Over the protocol door, an unadopted repository with a root plans like an adopter. It must still be
+  opted in (`drivable`), and holds, strikes and one session per tree still apply. Over the pipe door
+  it sits, and the reason names the door that could carry it.
+- **A registration records adoption as it is.** The desktop's *add* sends what the shell found there,
+  `adopted: false` for a folder with no manifest. `connect` sends nothing, which means adopted,
+  because it runs in an adopter. A shared deployment takes no false. Before this the HTTP door stored
+  every row as adopted. An added folder with no manifest would then have been driven over the pipe
+  door with no connector, and no sentence would have said why.
+
+**Why.** D34's letter was that a repository without a manifest *"has no client and cannot see a
+quest"*. That was true while the connector travelled only in a repository's own `.mcp.json`. Since
+ACP4, the protocol door hands every driven session the knowledge server on `session/new`, with
+nothing written anywhere. The quest tools take their quest and repository as arguments rather than
+reading a manifest. So a quest to a registered repository now has somebody to answer it. The regular
+task (D65) routes work into a workspace of real repositories, and most of them will not have adopted
+on the first day. Requiring each to adopt before it could be asked would put adoption on the path of
+every first ask, and adoption is the repository's own act, reviewed by its owner.
+
+**The pipe door keeps its own requirements.** A pipe-door session reaches the knowledge tools only
+through the repository's own `.mcp.json`. Adoption writes that file, and the driver may never write it
+for the repository (D32). The pipe door also needs the harness's trust for the folder (DEPLOY1). An
+unadopted repository driven over the pipe door would get a session that cannot take its quest. This
+was measured before ACP4: a real session called `take`, found no such tool, and ended having touched
+nothing.
+
+**What such a session is given, and what it is not.** It is given four things:
+
+- the quest, whose composed target itself carries the boundary: never write outside the repository,
+  never push or publish;
+- the knowledge connector, on the wire;
+- the repository's own instructions and permission configuration, exactly as a person working there
+  would have them;
+- the refusal of every permission request, by construction (D52).
+
+It is **not** given the canon: no `AGENTS.md` region, no rules and no discovery skills. Those are what
+adoption installs, and nothing here writes them in adoption's place (D32). A person working there by
+hand has no connector and does not see the quest. The publish tells the asker so, the registry marks
+the repository, and the Projects view says it.
+
+**Amends** D34's *"adoption gates addressing"*, and D46's claim that a session takes its quest *"over
+its own connector"*: over the protocol door, the connector is the wire's. D46's symmetry between
+driven and outside work holds for adopters. For an unadopted repository the driven session is the only
+one that can answer, and the surfaces say so rather than hide it. A shared deployment still takes
+quests only for adopters (`JudgeReceived`). It holds no roots, and an unadopted repository has no
+manifest to declare a join with, so its quests never leave the machine that can drive it.
+
+**Rejected.**
+- **Adoption first**, the letter of D34. It keeps one rule simple at the cost of putting adoption on
+  the path of every first ask to a real workspace. Adoption is exactly the step the doctrine keeps for
+  the repository's own agent and its owner's review.
+- **Addressable by registration alone, root or not.** A row with no root here has no client and no tree
+  a session could start in. A quest to it would sit unread, which is the failure D34 exists to prevent.
+- **The pipe door handed the connector too**, by `--mcp-config` from a file under the home, the way
+  D65 §1f hands plugin servers. It is possible for Claude Code, but it would be a second decision. The
+  pipe door's other requirement, the harness's trust flag, is the owner's open call (DEPLOY1), and
+  INT3 was asked for the protocol door. Worth reopening when a harness that has only a pipe door needs
+  it.
+- **The planner guessing a door per repository.** The adapter is the machine's (`config.Adapter`), and
+  a planner that guessed would start what the spawn then cannot serve.

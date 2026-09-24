@@ -37,7 +37,7 @@ export function AskComposer({ draft, onChange, fixed, circles, receivers, busy =
   fixed: string | null;
   /** Every circle this machine holds — what the person chooses among when nothing is fixed. */
   circles: string[];
-  /** Who can be named: the adopted repositories in the ask's circle. */
+  /** Who can be named: the repositories the host says can be asked, in the ask's circle (D70). */
   receivers: string[];
   busy?: boolean;
   onSubmit: () => void;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Ask } from '../api';
+import { type Ask, canBeAsked } from '../api';
 import { linksOf, toUpload } from '../attachments';
 import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
@@ -85,7 +85,7 @@ export function AsksSection({
   const circles = [...new Set((family.data ?? []).map((row) => row.workspace ?? 'default'))].sort();
   const fixed = scope.workspace ?? (circles.length === 1 ? circles[0] : null);
   const receiversIn = (circle: string) => (family.data ?? [])
-    .filter((row) => row.adopted && (row.workspace ?? 'default') === circle)
+    .filter((row) => canBeAsked(row) && (row.workspace ?? 'default') === circle)
     .map((row) => row.repository)
     .sort();
   const questTitles = Object.fromEntries((everything.data ?? []).map((quest) => [quest.id, quest.title]));

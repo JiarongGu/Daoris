@@ -44,6 +44,9 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
     register.mutate({
       repository: found.name,
       root: found.path,
+      // What the shell found there, stated (D70): registered is addressable, adopted is disciplined —
+      // and a row that said adopted without a manifest would be driven with no connector.
+      adopted: found.adopted,
       ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
       ...(found.adopted
         ? {

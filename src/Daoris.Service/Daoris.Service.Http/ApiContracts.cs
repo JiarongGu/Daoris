@@ -87,10 +87,15 @@ public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns,
 // about it — so null preserves what was declared rather than erasing it. The commit and its base are a
 // checkout's, read by the same rules as a feed's (SYNC5b): a shared deployment orders declarations by
 // them, and a local host, where the registration is this machine's own, reads none of them.
+// `Adopted` is false only from a door that looked and found no manifest — the desktop's *add* of a
+// folder that has not adopted (D70). Silence is the connector's `connect`, which runs in an adopter
+// and is adoption, so it stays true; a shared deployment takes no false at all (it holds no roots, and
+// an unadopted repository is never joined).
 public sealed record RegisterRequest(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch,
-    string? Commit = null, DateTimeOffset? CommittedAt = null, string? Branch = null, string? Base = null);
+    string? Commit = null, DateTimeOffset? CommittedAt = null, string? Branch = null, string? Base = null,
+    bool? Adopted = null);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At, string Workspace);
 public sealed record RetiredResponse(string Repository, bool Retired, string Message);
 // The repositories this machine's checkouts took out of a circle, not yet told to its deployment (SYNC5b).
@@ -98,10 +103,13 @@ public sealed record RetiredPendingResponse(string Workspace, IReadOnlyList<stri
 public sealed record WireRequest(string? Workspace);
 public sealed record ImportRequest(string? Folder);
 public sealed record ImportedResponse(string Folder, int Imported, IReadOnlyList<string> Repositories, string Message);
+// `Addressable` is the exchange's own judgement (D70), answered so no page re-derives it from
+// `Adopted`: a repository registered here with a root can be asked without having adopted, and a
+// browser that is never told the root must still offer it as a receiver.
 public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
-    string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch);
+    string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch, bool Addressable);
 // `Quest` is null for a chat (D49 §3) and `Kind` says which way in it was — the same record either
 // way, which is the point: a conversation is a session, not a second kind of thing.
 // `HarnessVersion` and `Profile` say which tool and which account produced this (D49 §4), and `Tree`

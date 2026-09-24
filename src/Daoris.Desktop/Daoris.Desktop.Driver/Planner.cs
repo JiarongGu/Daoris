@@ -85,7 +85,11 @@ public enum StartVerdict
     /// <summary>The person paused this repository.</summary>
     Held,
 
-    /// <summary>The receiver has not adopted, so there is no agent to be.</summary>
+    /// <summary>
+    /// Nothing here could answer it: the receiver is not registered on this machine, or it has not
+    /// adopted and either has no root or would be carried by the pipe door, which has no connector to
+    /// hand it (D70). The name predates D70, and the reason says which.
+    /// </summary>
     NotAdopted,
 
     /// <summary>No filesystem root is known — nowhere to spawn. `connect` from the repository fixes it.</summary>
@@ -166,7 +170,13 @@ public static class Considerations
 /// </remarks>
 public static class Planner
 {
-    public static IReadOnlyList<Consideration> Plan(Snapshot snapshot, DriverConfig config)
+    /// <param name="door">
+    /// Which door this machine's starts ride (D53): the configured adapter's wire. It decides whether a
+    /// repository that registered without adopting can be driven (D70). Defaults to the pipe, the door
+    /// with the stricter requirement, so a caller that does not know cannot start more than it should.
+    /// </param>
+    public static IReadOnlyList<Consideration> Plan(
+        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe)
     {
         var considerations = new List<Consideration>();
         // 🔴 Grouped, never keyed straight off the list: two active sessions in one repository is a
@@ -193,10 +203,31 @@ public static class Planner
             var repo = snapshot.Repositories.FirstOrDefault(r =>
                 string.Equals(r.Repository, quest.To, StringComparison.OrdinalIgnoreCase));
 
-            if (repo is null || !repo.Adopted)
+            if (repo is null)
             {
                 return new(quest, StartVerdict.NotAdopted,
-                    $"`{quest.To}` has not adopted, so there is no agent to be.");
+                    $"`{quest.To}` is not registered on this machine, so there is nowhere to start it.");
+            }
+
+            // Registered is drivable over the protocol door; adopted is disciplined (D70). The pipe
+            // door's session reaches the knowledge tools only through the repository's own `.mcp.json`,
+            // which adoption writes and the driver may never write for it (D32) — so there it sits.
+            if (!repo.Adopted)
+            {
+                if (repo.Root is null)
+                {
+                    return new(quest, StartVerdict.NotAdopted,
+                        $"`{quest.To}` has not adopted Daoris and no root is known for it on this machine, "
+                        + "so there is nothing to start and nothing there to see the quest.");
+                }
+
+                if (door != SessionWire.Acp)
+                {
+                    return new(quest, StartVerdict.NotAdopted,
+                        $"`{quest.To}` has not adopted Daoris, so a session there would have no connector to "
+                        + "take the quest with — only the protocol door hands it one. Drive with an ACP "
+                        + "agent, or adopt it.");
+                }
             }
 
             if (!config.Drivable.Contains(quest.To, StringComparer.OrdinalIgnoreCase))

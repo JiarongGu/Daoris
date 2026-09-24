@@ -26,10 +26,13 @@ Declared in the manifest rather than configured here, so it sits next to the thi
 reviewed by the people it describes. A central list would drift the moment a repository changed and
 nobody remembered to update the server.
 
-Adoption gates addressing; declaring does not. A repository that has adopted but said nothing is still
-reachable — the asker is simply warned it may not be that repository's problem. Repositories that have
-not adopted are **listed and marked**, because "who cannot be asked yet" is the same question as "who
-can", and a silent omission reads as the repository not existing.
+**Registered is addressable; adopted is disciplined** (D70). A repository that has adopted can be asked,
+and one registered on this machine with a root can be asked too. The second has no connector in its
+files, so only a session the driver starts in it over the protocol door answers, handed a connector on
+the wire. Declaring gates nothing: a repository that has adopted but said nothing is still reachable, and
+the asker is simply warned it may not be that repository's problem. Repositories that have not adopted
+are **listed and marked** with who can answer them, because "who cannot be asked yet" is the same
+question as "who can", and a silent omission reads as the repository not existing.
 
 | Tool | What it answers |
 |---|---|
@@ -48,7 +51,7 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 
 | Tool | What it does |
 |---|---|
-| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them, and `then`, the steps to ask next once it is done. Refuses a repository that has not adopted |
+| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them, and `then`, the steps to ask next once it is done. Refuses a repository nothing here could answer: unregistered, or unadopted with no root (D70) |
 | `quest_list` | What has been asked of whom, and what is still outstanding: links, file names, what each follows and what follows it |
 | `quest_respond` | `take`, `done` or `decline` — declining needs a reason |
 

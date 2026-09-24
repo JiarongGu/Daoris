@@ -4,7 +4,11 @@ namespace Daoris.Knowledge;
 /// What a repository declared itself to be.
 /// </summary>
 /// <param name="Repository">Its name — the directory, which is also how quests address it.</param>
-/// <param name="Adopted">Whether it carries a manifest at all. Only an adopter can be addressed.</param>
+/// <param name="Adopted">
+/// Whether it carries a manifest at all — its doctrine, its declaration and its own connector. Since
+/// D70 this is what makes a repository DISCIPLINED, not what makes it addressable: see
+/// <see cref="Registration.Addressable"/>.
+/// </param>
 /// <param name="Summary">One line, for someone who has never opened it.</param>
 /// <param name="Owns">Areas it owns: a change in one of these belongs there rather than anywhere else.</param>
 /// <param name="Accepts">Kinds of quest it welcomes. Guidance for the asker, not a contract.</param>
@@ -56,6 +60,20 @@ public sealed record Registration(
 
     /// <summary>Whether this repository has said anything useful about what it can be asked for.</summary>
     public bool Registered => Adopted && (!string.IsNullOrWhiteSpace(Summary) || Owns.Count > 0 || Accepts.Count > 0);
+
+    /// <summary>
+    /// Whether a quest can be addressed to it: it adopted, or it is registered with a root on this
+    /// machine (D70). <b>Registered is addressable; adopted is disciplined.</b>
+    /// </summary>
+    /// <remarks>
+    /// An adopter carries its own connector, so any session there can see a quest. A repository
+    /// registered here with a root and no manifest has none in its files, but a session the driver
+    /// starts in it over the protocol door is handed one on the wire (ACP4) — nothing written into the
+    /// repository — so a quest there has somebody to answer it. Without a root nothing here could start
+    /// one, and without a manifest nothing there could see it. One judgement, read by every door, so
+    /// no surface offers a receiver the exchange refuses.
+    /// </remarks>
+    public bool Addressable => Adopted || !string.IsNullOrWhiteSpace(Root);
 }
 
 /// <summary>

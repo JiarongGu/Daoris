@@ -59,7 +59,8 @@ the lesson `reaching-in` was written from — so the driver holds that repositor
 rather than entangling a session with work it cannot see the shape of.
 
 **"The driver should have started this," precisely.** A quest qualifies when all of these hold: it is
-`Open`; its receiver is registered and adopted; the receiver is drivable on this machine; no session is
+`Open`; its receiver is registered and adopted — or, since D70, registered with a root and started
+over the protocol door, which hands the session its connector on the wire; the receiver is drivable on this machine; no session is
 active there; the person has not held the repository; the tree is clean. The Overview's "is anything
 sitting" splits in two: sitting because nobody *can* take it (not adopted, not drivable — the person's
 setup work) versus sitting because the driver has not started it (the driver's state to explain, visible
