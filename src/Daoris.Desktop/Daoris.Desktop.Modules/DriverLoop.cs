@@ -26,7 +26,12 @@ public sealed class DriverLoop(
     public Task<bool> HostReady => _hostReady.Task;
 
     /// <summary>The live processes, shared across ticks — how "stop that session" reaches its target.</summary>
-    public SessionProcesses Processes { get; } = new();
+    /// <remarks>
+    /// Marked under the home's <c>sessions/</c>, so a terminal's driver sharing the home can tell this
+    /// loop's live sessions from orphans, and this loop can tell its (2026-09-25).
+    /// </remarks>
+    public SessionProcesses Processes { get; } = new(Path.Combine(
+        Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!, "sessions"));
 
     /// <summary>
     /// What sessions are saying, as they say it (D49 §2) — shared across ticks for the same reason the
@@ -220,7 +225,12 @@ public sealed class DriverLoop(
         // (so one lock and one "stop" reach both kinds), the same console buffer.
         // …and the same harness roster, so one probe serves both doors and a login the person just
         // did is seen by whichever of them asks next.
-        Chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events);
+        // 🔴 Declared AFTER the client, so it is disposed BEFORE it: disposing the runner ends each
+        // conversation and writes its record through this client, and the language's reverse order is
+        // what guarantees the client is still there. Stopped after the client, a chat open at close was
+        // recorded nowhere and read `working` forever (2026-09-25).
+        using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events);
+        Chat = chat;
         Service = service;
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
@@ -323,7 +333,10 @@ public sealed class DriverLoop(
         }
     }
 
-    /// <summary>Stop, bounded: an in-flight session is ended and recorded `stopped` by the driver itself.</summary>
+    /// <summary>
+    /// Stop, bounded: an in-flight session is ended and recorded `stopped` by the driver itself, and so is
+    /// a conversation — the loop's run ends by disposing its chat runner, inside its client's scope.
+    /// </summary>
     public void Stop()
     {
         _stopping.Cancel();

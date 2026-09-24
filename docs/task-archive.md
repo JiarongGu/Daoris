@@ -5645,3 +5645,38 @@ need a `session/new` of its own. That half is **CONV3b**, open in the backlog.
     it. Open as a FIX in the backlog.
 
 Driver 604 → 616, web unit 902 → 909.
+
+## FIX — a chat open when the shell closes is left `working` (2026-09-25)
+
+- [x] ~~**FIX — a chat open when the shell closes is left `working`.** `DriverLoop.Stop()` waits for
+  the driven loop only. A chat runs in `ChatRunner`, outside it, and its best-effort `Conclude` loses
+  the race with `HostSupervisor.Stop()`, so its record reads *working, running 12m* with no process
+  behind it (seen on the window, 2026-09-25). This shape predates CONV3. End the chats and await
+  their records before the host goes. **And the person cannot repair it by hand:** `STOP_SESSION`
+  answers `false` for a process this driver does not hold, on the assumption that "the record says
+  how it ended". An orphan's record says `working`, so pressing stop changes nothing and says
+  nothing. A stop on this machine's session with no process behind it should record the ending. A
+  crash that no shutdown order can reach, which leaves both kinds of session active, is a separate
+  question for a startup sweep: it must not claim another machine's session, nor another driver's.~~
+✅ **done 2026-09-25.** All three ways a session outlives its process are closed. The FIX-LOG has
+the root cause.
+
+- **A marker** under the home's `sessions/` for every tracked process, holding its id and start
+  time, removed when released. It is how any driver sharing the home, the terminal's included,
+  tells a live session from an orphan (`SessionProcesses.AliveOnThisMachine`).
+- **Closing** ends the chats and records each first. `ChatRunner` is disposable, and both the loop
+  and the terminal door declare it after the client it concludes through, so the language disposes
+  it first.
+- **Stop** on an orphan ends it (`Orphans.EndAsync`, `starting` or `working`), and the notice says
+  which of three things the stop did.
+- **The loop's first look** ends `working` orphans, in both hosts, and says so in that tick's
+  report. It never touches a teammate's record, a parked one, or one another driver here holds.
+- **Looked at**, and the window found the two defects the unit tests could not: the loop disposed
+  the chats' client before stopping them, and both stop doors claimed the person's ending for
+  whatever the stop did. Both fixed. Then on the window:
+  - the first look ended two real leftovers;
+  - a chat open at close came back with the close's note;
+  - stop ended an orphan made after the sweep.
+
+The artefact gate cannot yet hold a chat at close; that is **DEPLOY3**. Driver 616 → 622, web unit
+911 → 914.

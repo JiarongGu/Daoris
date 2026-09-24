@@ -8,7 +8,18 @@ namespace Daoris.Driver;
 /// registry is what makes "stop that session" reachable from a control surface, across the per-tick
 /// driver instances that actually own the spawning.
 /// </summary>
-public sealed class SessionProcesses
+/// <remarks>
+/// 🔴 <b>"Not held here" is not "dead".</b> A terminal's driver or chat shares the home and holds its
+/// own processes, so given a <c>markers</c> directory every tracked process leaves a marker there —
+/// its id and start time — and any driver on this machine can ask whether a session's process is
+/// alive (<see cref="AliveOnThisMachine"/>). A record claiming a process that no marker proves is an
+/// orphan (<see cref="Orphans"/>); one this registry merely does not hold is not (2026-09-25).
+/// </remarks>
+/// <param name="markers">
+/// Where the machine's process markers live — the home's <c>sessions/</c>, beside the transcripts.
+/// Null keeps no marker, which is a test's registry, never a driver's.
+/// </param>
+public sealed class SessionProcesses(string? markers = null)
 {
     private sealed class Entry
     {
@@ -37,7 +48,8 @@ public sealed class SessionProcesses
     /// <summary>
     /// End a session's process, marking the end as the person's — or, with a <paramref name="reason"/>,
     /// as the driver's own, for that reason. True when there was one to stop; false is an answer too —
-    /// the session already finished, and its record says how.
+    /// the session already finished and its record says how, or another driver on this machine holds
+    /// it, or nothing does and its record is an orphan (<see cref="Orphans"/>).
     /// </summary>
     public bool Stop(string sessionId, string? reason = null)
     {
@@ -157,7 +169,97 @@ public sealed class SessionProcesses
     public IDisposable Track(string sessionId, Process process, string? refusesInput = null)
     {
         lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput };
+        Mark(sessionId, process);
         return new Untrack(this, sessionId);
+    }
+
+    /// <summary>
+    /// Whether a process for this session is alive on this machine: held here, or marked by any driver
+    /// that shares the home and still running as the process it marked.
+    /// </summary>
+    /// <remarks>
+    /// The start time is what tells a live marker from a crash's leftover whose pid the machine has
+    /// since handed to something else. A process whose start time cannot be read is taken as alive:
+    /// "cannot tell" must never become "claim it".
+    /// </remarks>
+    public bool AliveOnThisMachine(string sessionId)
+    {
+        lock (_gate)
+        {
+            if (_running.ContainsKey(sessionId)) return true;
+        }
+
+        if (MarkerOf(sessionId) is not { } marker || !File.Exists(marker)) return false;
+
+        string[] fields;
+        try
+        {
+            fields = File.ReadAllText(marker).Trim().Split(' ');
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return true;
+        }
+
+        if (fields.Length != 2 || !int.TryParse(fields[0], out var pid) || !long.TryParse(fields[1], out var started))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var process = Process.GetProcessById(pid);
+            return Math.Abs(process.StartTime.ToUniversalTime().Ticks - started) < TimeSpan.TicksPerSecond;
+        }
+        catch (ArgumentException)
+        {
+            // No process has that id now.
+            return false;
+        }
+        catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            // Exited as we looked, or its start time is not ours to read: not a claim either way.
+            return error is System.ComponentModel.Win32Exception;
+        }
+    }
+
+    /// <summary>The marker's path, or null where this registry keeps none or the id could not be a file name.</summary>
+    private string? MarkerOf(string sessionId) =>
+        markers is null || sessionId.Length == 0 || sessionId.IndexOfAny(['/', '\\', ':']) >= 0 || sessionId.Contains("..")
+            ? null
+            : Path.Combine(markers, sessionId + ".pid");
+
+    /// <summary>Written beside, then renamed (atomic); best-effort, since the process runs either way.</summary>
+    private void Mark(string sessionId, Process process)
+    {
+        if (MarkerOf(sessionId) is not { } marker) return;
+        try
+        {
+            var line = $"{process.Id} {process.StartTime.ToUniversalTime().Ticks}";
+            Directory.CreateDirectory(markers!);
+            var beside = marker + ".tmp";
+            File.WriteAllText(beside, line);
+            File.Move(beside, marker, overwrite: true);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
+                                          or System.ComponentModel.Win32Exception)
+        {
+            // Unmarked, this process is invisible to another driver's sweep — never to this one's own
+            // registry, which is what stops and conversations use.
+        }
+    }
+
+    private void Unmark(string sessionId)
+    {
+        if (MarkerOf(sessionId) is not { } marker) return;
+        try
+        {
+            File.Delete(marker);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A marker left behind names a dead process, which the start time already tells apart.
+        }
     }
 
     private sealed class Untrack(SessionProcesses owner, string sessionId) : IDisposable
@@ -165,6 +267,7 @@ public sealed class SessionProcesses
         public void Dispose()
         {
             lock (owner._gate) owner._running.Remove(sessionId);
+            owner.Unmark(sessionId);
         }
     }
 }

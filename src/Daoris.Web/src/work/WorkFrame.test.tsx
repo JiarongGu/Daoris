@@ -95,13 +95,13 @@ function respond(url: string): Response {
 }
 
 /** The frame with the application's selection held for it, as `App` holds it. */
-function show(selected: string | null = null) {
+function show(selected: string | null = null, notify: (text: string) => void = () => {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onSelect = vi.fn();
   const view = render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <WorkFrame selected={selected} onSelect={onSelect} notify={() => {}} />
+        <WorkFrame selected={selected} onSelect={onSelect} notify={notify} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
@@ -429,6 +429,26 @@ describe('starting and holding a conversation', () => {
    * Finishing and stopping are different verbs and mean different things: end-of-input lets the
    * harness wind up, a stop cuts it off and the record says the person did.
    */
+  /**
+   * 🔴 What a stop says is what the driver answered (2026-09-25). A stop that found nothing running
+   * here ended an orphan's record, and the notice still said the person had ended it; a stop on a
+   * session that had already finished said it was "being stopped".
+   */
+  it.each([
+    [{ stopped: true }, 'session c0ffee11 is being stopped — the record will say the person ended it.'],
+    [{ stopped: true, orphan: true }, 'session c0ffee11 had nothing running it on this machine — its record now says so.'],
+    [{ stopped: false }, 'session c0ffee11 was not running here — its record says how it ended.'],
+  ])('says what the stop did when the driver answers %j', async (answer, sentence) => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'STOP_SESSION' ? answer : DRIVER_STATE));
+    const notify = vi.fn();
+
+    show('c0ffee11', notify);
+    await userEvent.click(await screen.findByRole('button', { name: 'stop' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(sentence));
+  });
+
   it('offers finishing and stopping separately', async () => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (_module: string, type: string) => {

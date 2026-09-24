@@ -876,10 +876,25 @@ export const useEndChat = () => {
   });
 };
 
+/**
+ * What the driver answered a stop: whether it ended anything, and whether what it ended was an
+ * orphan — a record that said it ran when nothing on this machine ran it (2026-09-25).
+ */
+export type StopAnswer = { stopped: boolean; orphan?: boolean };
+
+/**
+ * The notice for a stop, from the driver's answer — never the person's words for an ending that was
+ * not theirs. Both doors to a stop (the frame's, the quest record's) say it the same way.
+ */
+export const stopNotice = (answer: StopAnswer) =>
+  answer.orphan ? 'quests.session.orphanEnded'
+    : answer.stopped ? 'quests.session.stopped'
+      : 'quests.session.notRunning';
+
 export const useStopSession = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call<{ stopped: boolean }>('STOP_SESSION', { id }),
+    mutationFn: (id: string) => call<StopAnswer>('STOP_SESSION', { id }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.driver });

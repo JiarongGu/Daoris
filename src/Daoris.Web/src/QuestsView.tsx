@@ -4,7 +4,7 @@ import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api
 import {
   useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
 } from './queries';
-import { useConsidered, useDriver, useStopSession, useTrustFolder, useUntrusted } from './shell';
+import { stopNotice, useConsidered, useDriver, useStopSession, useTrustFolder, useUntrusted } from './shell';
 import { TrustAsk } from './work/TrustAsk';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
@@ -630,7 +630,7 @@ export function QuestsView({
                       variant="danger"
                       disabled={stop.isPending}
                       onClick={() => stop.mutate(session.id, {
-                        onSuccess: () => notify(t('quests.session.stopped', { id: session.id })),
+                        onSuccess: (answer) => notify(t(stopNotice(answer), { id: session.id })),
                         onError: (e) => notify(sentence(e), 'error'),
                       })}
                     >

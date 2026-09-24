@@ -43,7 +43,8 @@ internal static class ChatConsole
         var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
 
         using var service = ServiceClient.FromEnvironment();
-        var processes = new SessionProcesses();
+        // Marked under the home, so the desktop sharing it never takes this conversation for an orphan.
+        var processes = new SessionProcesses(Path.Combine(home, "sessions"));
 
         // The console IS the point here, so the buffer exists — and every line goes straight out. No
         // ring-buffer replay: a terminal already keeps what scrolled past.
@@ -55,7 +56,9 @@ internal static class ChatConsole
         // declared is one a conversation from a terminal can run on, the same as from the desktop.
         var built = AdapterSet.Built();
         var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
-        var runner = new ChatRunner(service, adapters, home, processes, output);
+        // After the client, so disposed before it: a conversation still open when this door leaves —
+        // an exception, say — is ended and recorded through a client that is still there.
+        using var runner = new ChatRunner(service, adapters, home, processes, output);
 
         var start = await runner.StartAsync(
             repository, adapter, config,

@@ -59,14 +59,33 @@ public sealed class DriverWatch(
         Func<Exception, Task>? onError,
         CancellationToken ct)
     {
+        // Once, before the first tick: what the last run left `working` with nothing behind it — a
+        // crash, a kill, a power cut — ended before this tick counts it against the cap and its
+        // repository's lock (2026-09-25). Retried each tick until the service has answered it once.
+        var swept = false;
+        IReadOnlyList<string> sweep = [];
+
         while (!ct.IsCancellationRequested)
         {
             var config = DriverConfig.Load(configPath);
             try
             {
+                if (!swept)
+                {
+                    sweep = [.. (await Orphans.EndAsync(service, processes, ct: ct).ConfigureAwait(false))
+                        .Select(ended => $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}")];
+                    swept = true;
+                }
+
                 var report = await new Driver(
                     service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events)
                     .TickAsync(ct).ConfigureAwait(false);
+                if (sweep.Count > 0)
+                {
+                    report = report with { Events = [.. sweep, .. report.Events] };
+                    sweep = [];
+                }
+
                 await onReport(report, config).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)

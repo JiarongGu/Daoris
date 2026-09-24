@@ -34,7 +34,7 @@ public sealed class ChatRunner(
     HarnessRoster? harnesses = null,
     // Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each
     // message live; the home's own where nobody passes one, which is the headless chat door's case.
-    SessionEvents? events = null)
+    SessionEvents? events = null) : IDisposable
 {
     // Shared with the driver where a shell has both, so a probe is paid for once; its own where it
     // does not, which is the headless chat door's case.
@@ -46,6 +46,15 @@ public sealed class ChatRunner(
     // (CONV3). An entry lives exactly as long as the conversation's process.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ISessionAdapter> _talking =
         new(StringComparer.OrdinalIgnoreCase);
+
+    // Each live conversation's watch, which ends by writing its record — what closing the driver waits
+    // on, because the host goes next and a record written after it is never written (2026-09-25).
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _watching =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
+    public const string ClosedNote =
+        "the application closed while this conversation ran; its process was ended with it.";
 
     /// <summary>
     /// Open a chat and put a harness behind it. The record is the service's; the process is this
@@ -186,10 +195,43 @@ public sealed class ChatRunner(
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
         _talking[sessionId] = resolved;
-        _ = WatchAsync(sessionId, process, transcript, onEnded, rules, resolved.StructuredOutput());
+        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, resolved.StructuredOutput());
+        _watching[sessionId] = watch;
+        _ = watch.ContinueWith(
+            _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
 
         return new(sessionId, message);
     }
+
+    /// <summary>
+    /// End every conversation this runner holds, as the driver's own act, and return once each record
+    /// says so — or once <paramref name="bound"/> has passed, since a shutdown must not hang on one.
+    /// </summary>
+    /// <remarks>
+    /// Stopped, not finished: a harness given end-of-input finishes what it was saying first, which
+    /// can take minutes, and the person is closing the application now.
+    /// </remarks>
+    public void StopAll(TimeSpan bound)
+    {
+        var watches = _watching.ToArray();
+        foreach (var (id, _) in watches) processes.Stop(id, ClosedNote);
+
+        try
+        {
+            Task.WaitAll([.. watches.Select(entry => entry.Value)], bound);
+        }
+        catch (AggregateException)
+        {
+            // A watch that failed has written its own record, or could not; either way it has ended.
+        }
+    }
+
+    /// <summary>
+    /// Ends every conversation and waits for each record (<see cref="StopAll"/>). 🔴 Dispose it inside the
+    /// scope of the <see cref="ServiceClient"/> it was given: its conclusions go through that client, and
+    /// a runner stopped after the client was disposed writes nothing (2026-09-25).
+    /// </summary>
+    public void Dispose() => StopAll(TimeSpan.FromSeconds(10));
 
     /// <summary>Send a person's message to a live chat. False when there is nothing listening.</summary>
     /// <remarks>
@@ -243,9 +285,10 @@ public sealed class ChatRunner(
             await Conclude(
                 sessionId,
                 stopped ? "stopped" : "completed",
-                stopped
+                // The driver's own reason when it was the driver — closing, say — and the person's otherwise.
+                processes.StopReason(sessionId) ?? (stopped
                     ? "the person ended the conversation."
-                    : "the conversation ended; its commits are its record.",
+                    : "the conversation ended; its commits are its record."),
                 onEnded).ConfigureAwait(false);
         }
         catch (Exception error)
@@ -266,10 +309,10 @@ public sealed class ChatRunner(
         {
             await service.AdvanceAsync(sessionId, state, note: note).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is DriverException or HttpRequestException)
+        catch (Exception error) when (error is DriverException or HttpRequestException or ObjectDisposedException)
         {
-            // Best-effort by construction: the host may already be gone on the same shutdown, and the
-            // first failure is the report.
+            // Best-effort by construction: the host — or the client that reaches it — may already be gone
+            // on the same shutdown, and the first failure is the report.
         }
 
         if (onEnded is not null)

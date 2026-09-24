@@ -363,6 +363,8 @@ public sealed class DriverModuleTests : Bridge
         var state = await AnswerAsync(Module(), "STOP_SESSION", new { id = "nothing-here" });
 
         Assert.False(state.GetProperty("stopped").GetBoolean());
+        // Nor an orphan: with no service up there is no record to have ended.
+        Assert.False(state.GetProperty("orphan").GetBoolean());
     }
 
     /// <summary>

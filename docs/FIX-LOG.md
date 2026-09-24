@@ -5,6 +5,77 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A chat open when the shell closed stayed `working` forever, and stop could not end it (2026-09-25)
+
+**Symptom.** A chat was running on the scratch machine when the shell was closed to rebuild it. On
+the next start its record said *working, running 12m*, but no process was behind it, and the
+composer offered to send into nothing. The repository stayed *busy*, so a new chat there was
+refused. Pressing *stop* changed nothing and said nothing.
+
+**Root cause.** Three gaps, one per way a session can outlive its process.
+- **The shutdown order.** `DriverLoop.Stop()` waited for the driven loop, where an in-flight driven
+  session is recorded `stopped`. A chat runs in `ChatRunner`, beside the loop, not in it. The
+  shutdown killed its process, and its best-effort `Conclude` lost the race with
+  `HostSupervisor.Stop()`, which came right after. This shape predates CONV3.
+- **The person's stop.** `STOP_SESSION` asked only this driver's registry, and read `false` as "it
+  already finished, and its record says how". An orphan's record says it is running.
+- **A crash**, a kill or a power cut, which no shutdown order reaches, and which nothing ever
+  looked for.
+
+The catch: *not held here* is not *dead*. A terminal's `daoris-driver` or chat door shares the home
+and holds its own processes, so no driver could tell an orphan from someone else's live session.
+
+**Fix.**
+- **A marker.** Every tracked process leaves one under the home's `sessions/` (`<id>.pid`: its id
+  and start time), removed when released. `AliveOnThisMachine` asks the registry, then the marker.
+  The start time tells a crash's leftover from a reused pid, and a start time it cannot read counts
+  as alive.
+- **The shutdown.** `ChatRunner.StopAll` ends the chats it holds, as the driver's own act with the
+  note *the application closed while this conversation ran*. It returns once each record is
+  written (bounded at 10 s). The loop disposes the runner inside the scope of the client the chats
+  conclude through (below).
+- **The person's stop.** `STOP_SESSION` falls through to `Orphans.EndAsync(only: id)`, which ends
+  this machine's `starting` or `working` record that nothing here runs.
+- **The sweep.** `DriverWatch` runs `Orphans.EndAsync` once before its first tick, in both hosts,
+  for `working` records only: a `starting` one may be mid-spawn in another driver. It says so in
+  that tick's report.
+
+A teammate's record (`origin/id`), a parked one, and one another driver here holds are never touched.
+
+**The window found two more.** Each was invisible to the unit tests.
+- **The shutdown still wrote nothing.** A chat open at close came back ended by the *sweep's* note,
+  not the close's. The loop's `ServiceClient` is scoped to `RunAsync` (`using var service`), and
+  `Stop()` cancelled the loop before stopping the chats. The client the chats conclude through was
+  disposed first, and `Conclude` did not catch `ObjectDisposedException`. The order is now the
+  language's own: `ChatRunner` is `IDisposable` (disposing it is `StopAll`) and `RunAsync` declares
+  it with `using` *after* the client, so it is disposed *before* it. The terminal chat door does the
+  same, and `Conclude` also catches a disposed client.
+- **The notice was untrue.** Both stop doors ignored the answer and said *"the record will say the
+  person ended it"*: for an orphan, whose record says nothing ran it, and for a session that had
+  already finished. `STOP_SESSION` answers `{ stopped, orphan }`, and one `stopNotice` picks the
+  sentence for both doors.
+
+**Verify.** Six driver tests:
+- a held process is alive to a second registry sharing the home until released;
+- a dead process's marker is not life;
+- the sweep ends only the right record;
+- the person's stop ends one `starting` orphan;
+- a runner disposed inside its client's scope ends its chat and records it;
+- the loop's first tick ends a leftover and reports it.
+
+The shutdown test failed with the wait removed, once the stand-in's record writes took 400 ms as a
+host's do; before that it passed without the wait, because the stand-in answered faster than the
+assertion ran. Three web tests cover the stop notice, one per answer (two were red first), and the
+module test holds `orphan: false` with no service.
+
+On the window:
+- the rebuilt shell's first look ended the orphaned chat and a stub intake left `working` for 14
+  hours;
+- a chat open at close came back `stopped` with the close's note, its marker gone;
+- stop on an orphan made after the sweep ended it with the orphan's note and freed its repository.
+
+Driver 616 → 622, web unit 911 → 914.
+
 ## Every message was sent twice, and cancelling an API key saved it (2026-09-25)
 
 **Symptom.** The first chat whose record kept what the person sent (CONV3a) showed each message

@@ -264,9 +264,18 @@ public sealed class DriverModule : ModuleBase
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 // False is an answer, not an error: the session already finished, and its record says how.
+                // 🔴 Unless the record says it still runs and nothing on this machine runs it — a chat
+                // left behind by an application that closed, or a crash. Then the person's stop is how
+                // it ends: pressing it used to change nothing and say nothing (2026-09-25).
+                // Which of the three it was is part of the answer: the page says it, and an orphan's
+                // ending is not the person's — its record says nothing ran it.
                 var stopped = _loop.Processes.Stop(id);
+                var orphan = !stopped
+                    && _loop.Service is { } service
+                    && (await Orphans.EndAsync(service, _loop.Processes, only: id, ct: cancellationToken)
+                        .ConfigureAwait(false)).Count > 0;
                 _loop.Nudge();
-                return new { Stopped = stopped };
+                return new { Stopped = stopped || orphan, Orphan = orphan };
             }
 
             // The person's answer to a session parked at a checkpoint (D52 §4). It goes through the

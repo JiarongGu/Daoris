@@ -60,6 +60,10 @@ public sealed class ServiceClient : IDisposable
         return new Snapshot(quests, repositories, active, strikes);
     }
 
+    /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
+    public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
+        ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+
     /// <summary>One quest's current status, closed ones included — how a session's end is observed.</summary>
     public async Task<string?> QuestStatusAsync(string id, CancellationToken ct = default)
     {

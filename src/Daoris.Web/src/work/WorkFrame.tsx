@@ -4,7 +4,7 @@ import { sentence } from '../format';
 import { buildChain } from '../map/chain';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
-  useEndChat, useHarnesses, useResolveSession, useSendMessage, useStartChat, useStopSession,
+  stopNotice, useEndChat, useHarnesses, useResolveSession, useSendMessage, useStartChat, useStopSession,
 } from '../shell';
 import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession } from './AttendedSession';
@@ -197,7 +197,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const onStop = () => {
     if (!attended) return;
     stop.mutate(attended.id, {
-      onSuccess: () => notify(t('quests.session.stopped', { id: attended.id })),
+      onSuccess: (answer) => notify(t(stopNotice(answer), { id: attended.id })),
       onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };

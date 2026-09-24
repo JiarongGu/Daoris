@@ -415,6 +415,12 @@ The first version: doctrine that installs, is checked, and flows back.
 - **A chat you start stays open in front of you**, where it used to fall back to *Nothing attended*
   until you picked it from the list. A long code line scrolls inside its block, not widening the
   conversation.
+- **A session never outlives its process on paper.** Closing the application while a chat ran left
+  its record *working* forever, holding its repository, and *stop* could not end it. Now closing ends
+  each chat and records it first. *Stop* ends a session nothing on this machine is running any more.
+  And the driver's first look after a crash ends what was left behind and says so. A session a
+  terminal's driver holds on the same machine is never taken for one of these, and neither is a
+  teammate's.
 - **A message is sent once.** Pressing *send* in a conversation sent every message twice. And
   cancelling an API key you had typed saved it anyway. Both came from a button that submitted its
   form as well as doing its own job, and a button now submits only when it is meant to.
