@@ -93,6 +93,42 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
+    /// A session may READ the folder its quest's files are kept in (INT4j), and nothing else under the
+    /// home: they live outside its tree, and a read there would otherwise be asked, and refused (D52).
+    /// </summary>
+    [Fact]
+    public async Task A_session_may_read_its_quests_kept_files_and_nothing_else_of_the_home()
+    {
+        await using var service = DrivenSessionInputTests.StandInService.Start(
+            _repository, kept: "C:/somewhere/data/quests/q1/attachments/ab12-before.png");
+        var adapter = new RecordingPipeAdapter();
+        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+
+        await driver.TickAsync();
+
+        using var handed = JsonDocument.Parse(adapter.HandedText!);
+        var reads = handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray()
+            .Select(e => e.GetString()!).Where(rule => rule.StartsWith("Read(", StringComparison.Ordinal)).ToList();
+        Assert.Equal(["Read(//c/somewhere/data/quests/q1/attachments/**)"], reads);
+    }
+
+    /// <summary>A quest with nothing kept on this machine is handed no read of any folder.</summary>
+    [Fact]
+    public async Task A_session_whose_quest_keeps_nothing_is_handed_no_read()
+    {
+        await using var service = DrivenSessionInputTests.StandInService.Start(_repository);
+        var adapter = new RecordingPipeAdapter();
+        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+
+        await driver.TickAsync();
+
+        using var handed = JsonDocument.Parse(adapter.HandedText!);
+        Assert.DoesNotContain(
+            handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(e => e.GetString()!),
+            rule => rule.StartsWith("Read(", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// 🔴 On the protocol door the rules ride `session/new` — the stand-in agent writes down the `_meta`
     /// it was given, and the file it names is the one composed for this session.
     /// </summary>

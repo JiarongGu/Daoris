@@ -171,18 +171,21 @@ public sealed class DrivenSessionInputTests : IDisposable
         private readonly Task _serving;
         private readonly string _root;
         private readonly List<JsonObject> _sessions = [];
+        private readonly string? _kept;
 
         public string Url { get; }
 
-        private StandInService(HttpListener listener, string url, string root)
+        private StandInService(HttpListener listener, string url, string root, string? kept)
         {
             _listener = listener;
             Url = url.TrimEnd('/');
             _root = root;
+            _kept = kept;
             _serving = ServeAsync();
         }
 
-        public static StandInService Start(string root)
+        /// <param name="kept">Where this machine keeps a file the quest carries, or null for a quest with none (INT4j).</param>
+        public static StandInService Start(string root, string? kept = null)
         {
             var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
             probe.Start();
@@ -193,7 +196,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             var listener = new HttpListener();
             listener.Prefixes.Add(url);
             listener.Start();
-            return new StandInService(listener, url, root);
+            return new StandInService(listener, url, root, kept);
         }
 
         public JsonObject Session(string id)
@@ -237,6 +240,12 @@ public sealed class DrivenSessionInputTests : IDisposable
                         {
                             ["id"] = "q1", ["from"] = "game", ["to"] = "engine", ["title"] = "Expose a budget",
                             ["body"] = "The game needs one.", ["status"] = "Open",
+                            ["attachments"] = _kept is null
+                                ? new JsonArray()
+                                : new JsonArray(new JsonObject
+                                {
+                                    ["name"] = Path.GetFileName(_kept), ["sha256"] = "ab12", ["bytes"] = 2048, ["path"] = _kept,
+                                }),
                         }).ToJsonString());
 
                     case ("GET", "/api/registry"):

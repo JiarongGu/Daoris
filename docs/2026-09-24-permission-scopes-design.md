@@ -139,6 +139,11 @@ when the session does.
   `cwd` (l. 6003–6010), and an absolute path resolves to itself. It is the SDK's programmatic tier, the
   same tier `--settings` fills on the command line. The adapter also forwards `allowedTools` and
   `disallowedTools` (l. 6087), which were not chosen: one file on both doors is one thing to check.
+- **A read of the session's own kept files (INT4j, as built).** When the quest or ask a session
+  serves keeps files on this machine, the one folder they are kept in joins that session's `allow`
+  as `Read(//<path>/**)`: Claude Code's absolute form, a Windows drive lower-cased into POSIX form
+  (`C:\x` → `/c/x`), read from its bundle (D72 as amended). It is per session, composed at spawn,
+  and never written into any scope. A person's rules never carry it.
 - **Every other harness is handed nothing.** Codex and dsh have permission models of their own
   (Codex's approval and sandbox policy, dsh's `DSH_PERMISSION_MODE`), and a Claude Code rule means
   nothing to either. Translating one into the other is a claim about somebody else's program, made

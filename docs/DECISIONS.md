@@ -2894,6 +2894,20 @@ this one.
   binaries, which ties the guard to one publish layout. **Unproven until a real session runs**: that
   the harness honours a hook handed in the command-line tier (its documentation lists hook scopes and
   does not name `--settings`), on each door.
+- **A session may read the folder its own quest's or ask's files are kept in (INT4j).** INT4f's real
+  intake was refused `Read` twice on its ask's kept file: the file lives under the home, outside the
+  room, and D52 refuses every request. The executor now adds exactly one rule for that folder to the
+  session's composed file, `Read(//<path>/**)`, and nothing broader: not the home, and not another
+  ask's or quest's folder. A driven quest session gets the same for its quest's kept files, because
+  they are kept the same way (D65 §2) and its prompt names them too. The form is Claude Code's own,
+  read from its 2.1.281 bundle rather than guessed. A pattern starting with `//` is an absolute path
+  from the filesystem root. On Windows a Read's target is normalised to POSIX form (`C:\x` →
+  `/c/x`, the drive lower-cased) before it is compared, and an allow is compared case-sensitively, so
+  nothing else is re-cased. The tree guard is unaffected: it judges writes only, and a read it never
+  sees. **Rejected**: `additionalDirectories`, the harness's other way to reach a folder outside the
+  tree. It makes the folder a working directory, which under `acceptEdits` also lets an edit there
+  through without asking. That is more than a read, and only the tree guard would still stand in its
+  way.
 
 ## D73 — The agent's trust in a folder is asked, then written, and never silently (2026-09-24)
 

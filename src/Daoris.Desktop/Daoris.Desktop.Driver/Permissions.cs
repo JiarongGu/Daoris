@@ -148,6 +148,31 @@ public static class PermissionRules
         return Named(rules.Allow) && !Named(rules.Ask) && !Named(rules.Deny);
     }
 
+    /// <summary>
+    /// A read of everything under <paramref name="directory"/>, in the harness's own absolute form
+    /// (INT4j): the folder a session's own quest or ask keeps its files in, which lies outside its tree.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The form is Claude Code's, read from its bundle (2.1.281), not guessed.</b> A pattern
+    /// that starts with <c>//</c> is an absolute path from the filesystem root (its rule resolver strips
+    /// one slash), and on Windows a Read's target is normalised to POSIX form before it is compared —
+    /// <c>C:\x</c> becomes <c>/c/x</c>, the drive lower-cased — so the rule is written the same way.</para>
+    ///
+    /// <para>🔴 <b>Nothing else is re-cased.</b> An allow is compared case-sensitively there (only an ask or
+    /// a deny is case-folded on Windows), so the path keeps exactly the case the service answered it in,
+    /// which is the case the session's prompt shows it.</para>
+    /// </remarks>
+    public static string ReadRule(string directory)
+    {
+        var posix = directory.Replace('\\', '/').TrimEnd('/');
+        if (posix.Length >= 2 && char.IsAsciiLetter(posix[0]) && posix[1] == ':')
+        {
+            posix = "/" + char.ToLowerInvariant(posix[0]) + posix[2..];
+        }
+
+        return $"Read(/{posix}/**)";
+    }
+
     /// <summary>Why a rule is refused, or null when it is the harness's shape.</summary>
     public static string? Refusal(string rule) =>
         Shape.IsMatch(rule ?? "")

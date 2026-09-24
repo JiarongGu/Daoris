@@ -181,7 +181,8 @@ public sealed partial class Driver
 
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
             // ask, and belongs to no repository. Its tree is its room, which the guard holds it to.
-            var rules = HandRules(adapter, info, sessionId, ask.Workspace, repository: null, tree: room);
+            var rules = HandRules(
+                adapter, info, sessionId, ask.Workspace, repository: null, tree: room, kept: target.AttachmentsDirectory);
 
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");

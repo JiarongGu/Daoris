@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -469,6 +470,48 @@ public sealed class IntakeTests : IDisposable
         Assert.Single(service.Intakes);
     }
 
+    /// <summary>
+    /// 🔴 A real intake was refused `Read` on its own ask's kept file (INT4f's run): it lives under the
+    /// home, outside the room, and D52 refuses every request. The intake is handed a READ of exactly
+    /// that ask's folder — not the home, not another ask's — in the harness's own absolute form (INT4j).
+    /// </summary>
+    [Fact]
+    public async Task An_intake_may_read_its_own_asks_files_and_nothing_else_of_the_home()
+    {
+        await using var service = StandInService.Start(Circle, Ask());
+        var recording = new RecordingIntakeAdapter();
+        var config = (Config() with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
+        }).WithIntake(recording.Name);
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), config, adapters, _home,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        await driver.TickAsync();
+
+        Assert.NotNull(recording.HandedText);
+        using var handed = JsonDocument.Parse(recording.HandedText!);
+        var reads = handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray()
+            .Select(e => e.GetString()!).Where(rule => rule.StartsWith("Read(", StringComparison.Ordinal)).ToList();
+        Assert.Equal(["Read(//c/somewhere/data/asks/a1b2c3/**)"], reads);
+    }
+
+    /// <summary>A pipe-door harness that takes a settings file, remembering what the intake was handed.</summary>
+    private sealed class RecordingIntakeAdapter : ISessionAdapter
+    {
+        public string Name => "recording-intake";
+        public bool TakesSettings => true;
+        public string? HandedText { get; private set; }
+
+        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+            new StubAdapter().Prepare(target, command);
+
+        public void HandSettings(ProcessStartInfo info, string settingsFile) =>
+            HandedText = File.ReadAllText(settingsFile);
+    }
+
     private DriverConfig Config() => DriverConfig.Empty with
     {
         Adapter = "stub",
@@ -564,7 +607,12 @@ public sealed class IntakeTests : IDisposable
                 {
                     ["id"] = ask.Id, ["workspace"] = ask.Workspace, ["sentence"] = ask.Sentence,
                     ["state"] = ask.State, ["tier"] = ask.Tier, ["links"] = new JsonArray([.. ask.Links.Select(l => (JsonNode)l)]),
-                    ["attachments"] = new JsonArray(), ["proposal"] = new JsonArray(), ["quests"] = new JsonArray(),
+                    // Answered as the service answers them: each with where THIS machine keeps it (INT4j).
+                    ["attachments"] = new JsonArray([.. ask.Attachments.Select(file => (JsonNode)new JsonObject
+                    {
+                        ["name"] = file.Name, ["sha256"] = file.Sha256, ["bytes"] = file.Bytes, ["path"] = file.Path,
+                    })]),
+                    ["proposal"] = new JsonArray(), ["quests"] = new JsonArray(),
                     ["intake"] = null,
                 }),
             ];

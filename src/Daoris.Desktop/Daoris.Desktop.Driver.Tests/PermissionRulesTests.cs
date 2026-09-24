@@ -75,6 +75,22 @@ public sealed class PermissionRulesTests : IDisposable
             "quest_respond"));
     }
 
+    /// <summary>
+    /// A session may read the folder its own quest's or ask's files are kept in (INT4j), and the rule
+    /// is written in the harness's own absolute form: `//` then the path in POSIX form, a Windows drive
+    /// lower-cased (`C:\x` → `/c/x`), because that is what Claude Code compares a Read's target against
+    /// on Windows — and an allow is compared case-sensitively there, so nothing else is re-cased.
+    /// </summary>
+    [Fact]
+    public void A_kept_folder_reads_as_the_harness_own_absolute_rule()
+    {
+        Assert.Equal("Read(//c/somewhere/data/asks/a1b2c3/**)", PermissionRules.ReadRule(@"C:\somewhere\data\asks\a1b2c3"));
+        Assert.Equal("Read(//c/somewhere/data/asks/a1b2c3/**)", PermissionRules.ReadRule("C:/somewhere/data/asks/a1b2c3/"));
+        Assert.Equal("Read(//d/Games/Daoris/data/quests/q1/attachments/**)",
+            PermissionRules.ReadRule(@"D:\Games\Daoris\data\quests\q1\attachments"));
+        Assert.Equal("Read(//srv/daoris/asks/a1/**)", PermissionRules.ReadRule("/srv/daoris/asks/a1"));
+    }
+
     [Fact]
     public void Nothing_written_hands_the_defaults_alone()
     {

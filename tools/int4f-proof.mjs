@@ -384,6 +384,14 @@ async function intakeRun() {
   console.log(`        permission requests refused: ${refused.length}`);
   for (const line of refused.slice(0, 6)) console.log(`          ${line.trim().slice(0, 200)}`);
 
+  // 🔴 INT4j: the intake is handed a read of exactly its own ask's kept folder, so a Read of the file
+  // it carries is never asked, and never refused. The first real run was refused it twice.
+  if (carry) {
+    const keptReads = refused.filter((line) => line.includes('"Read"') && line.includes(askId));
+    check('…and it could read the file the ask carries, without being asked (INT4j)', keptReads.length === 0,
+      keptReads.map((line) => line.trim().slice(0, 200)).join('\n'));
+  }
+
   const after = await ask(`/api/asks/${askId}`);
   const quests = ((await ask('/api/quests?includeClosed=true')) ?? []).filter((q) => q.from === `ask #${askId}`);
 
