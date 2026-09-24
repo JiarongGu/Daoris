@@ -81,6 +81,20 @@ configurations), D57 (the toolchain), CANON8/D59 (the instruction file), ARCH1 (
 study), and D68/D69 (the remote as a git remote, SYNC0d–SYNC6c). Nothing is pushed or published,
 and a release is still blocked on REH1.
 
+🔴 **The live arc is D76, the conversation** (owner, 2026-09-25), taken in the order under *The
+reference gap* below.
+- **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`) and CONV3b
+  (chats on the protocol door), with the fixes the looks found. All are in the archive under
+  2026-09-25.
+- **Next:** **CONV4, the composer.** `AcpSession.CancelTurnAsync` already exists for *stop the turn*.
+- **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
+  Real sessions on this machine's Claude Code account are authorised (2026-09-24).
+- **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
+  probe installed under `_fixtures/dsh/npm` (0.79.0), which is how a protocol-door chat is looked
+  at without installing anything.
+- **Open beside it:** FLAKE1 (an intake test, about 1 run in 20) and DEPLOY3 (the artefact gate
+  holding a chat at close).
+
 🔴 **Daoris is DEPLOYED and running as an installed application** (2026-09-22), which is new and
 changes what "works" means. `npm run publish:desktop -- --to <folder> --service` installs it: one
 `daoris-desktop.exe` at the root, binaries under `app/`, and **the Daoris home in `data/`** (D63,
