@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**383 CLI tests, 454 service, 479 driver, 111 desktop modules, 781 web unit, 21 Playwright**, 73
-devkit, 56/56 release rehearsal, **265/265 family rehearsal** (it names its own phases when you run
+**403 CLI tests, 454 service, 479 driver, 111 desktop modules, 781 web unit, 21 Playwright**, 73
+devkit, 66/66 release rehearsal, **265/265 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -241,8 +241,8 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Being built, as parallel worktrees: PLUG2 (D71), DEPLOY1's second half (D73), and PERM1 (D72),
-  which absorbs HELP3 and INT3b.** 🔴 **The owner authorized real sessions on this machine's Claude
+- **Being built, as parallel worktrees: DEPLOY1's second half (D73), and PERM1 (D72), which absorbs
+  HELP3 and INT3b.** 🔴 **The owner authorized real sessions on this machine's Claude
   Code account, 2026-09-24.** ACP2's driven run and INT4f wait only on trust for their scratch
   folders. The permission check refused an agent's write to the account's `.claude.json`, so the
   grant is the owner's. **The owner's**: AGT2c (two downloads, not authorized) and INT6 (presence).
@@ -251,7 +251,7 @@ the traps that are not in any contract, because they were found rather than desi
   for a service-side point. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 383 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 403 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (454),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
@@ -269,10 +269,9 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Fifteen items are open**, and every closed one is
+the archive; its decision is **D53, accepted**). **Fourteen items are open**, and every closed one is
 in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Four are being built (PLUG2, DEPLOY1's second half, and PERM1 with HELP3 and INT3b folded
-in). Four wait on the owner (ACP2's and INT4f's trust, AGT2c, INT6), and seven on a trigger (see
+ships. Three are being built (DEPLOY1's second half, and PERM1 with HELP3 and INT3b folded in). Four wait on the owner (ACP2's and INT4f's trust, AGT2c, INT6), and seven on a trigger (see
 *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
@@ -467,12 +466,6 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
 
 - [ ] ⏸ **PLUG7 — service-side points** (held): the same wire reaches the knowledge service when a
   plugin somebody writes asks for a point there. PLUG4–6 are in the archive.
-
-- [ ] **PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
-  ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest
-  `packs: []` is a flat set with no precedence. It reopens **D4's "core installs with no opt-out"**.
-  🔴 **The owner reopened it, 2026-09-24**: a pack may switch core rows off. Designed first, then
-  built, as D71. In progress.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

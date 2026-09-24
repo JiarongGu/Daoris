@@ -5113,3 +5113,27 @@ sentence for `SESSION_INPUT` and `END_CHAT`. Conversations are untouched, and on
 with a person. The test INT4h named as missing now exists: a driven quest through a real tick on both
 doors (`DrivenSessionInputTests`). Driver design §4. Built in a parallel worktree. Driver 477 → 479;
 with INT3c: modules 111, web 781 + 21, family 265/265, deploy 39/39, verify green.
+
+## PLUG2 — a pack may switch a core row off (2026-09-24)
+
+- [x] ~~**PLUG2 — a pack cannot disable or override what core installs.** dsh composes profiles as
+  ordered layers where a layer may switch a row off (`- id: x` / `disabled: true`); Daoris's manifest
+  `packs: []` is a flat set with no precedence. It reopens **D4's "core installs with no opt-out"**.
+  🔴 **The owner reopened it, 2026-09-24**: a pack may switch core rows off. Designed first, then
+  built, as D71.~~
+✅ **done 2026-09-24** — **D71**. A pack offers (`switchesOff` in `pack.json`: core row → reason,
+checked when the canon is read), and the repository confirms (`switchedOff` in `daoris.json`: row →
+pack). Only a confirmed row goes off. An unconfirmed offer leaves it on and is reported. A
+confirmation that no selected pack offers is a tool error, so a repository alone still cannot drop
+core. The lock records `switchedOff` so the offline `check` can name it. It is never silent: `sync`,
+`check` (every run; it fails only on a manifest/lock mismatch), `status` (pack and reason), the
+region's roster, `init` and `analyze` all say what is off or offered. D19 gains the cells. An edited
+row being switched off refuses like drift, because `upstream` still reaches the canon file, and a
+switch is never reported as a rename. Two selected packs shipping one target are now refused. There
+is no `apiVersion` bump, because an older CLI keeps core on.
+
+**The confirmation is the fork's default, not the owner's words.** The owner said a pack *may*
+switch a row off, and did not say whether the repository gets a say. D71 takes the safer reading and
+names it as the owner's to reverse (one check in `resolveSelection`). Built in a parallel worktree and
+cherry-picked. CLI 383 → 403, and the release rehearsal's switch-off phase 5(e) passed on its first
+run here (56 → 66/66). Service 454, family 265/265, verify green.

@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 383 CLI tests, a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Fifteen commands, 403 CLI tests, a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 454, `Daoris.Devkit` 73, and the
 driver 479. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
@@ -88,9 +88,8 @@ writes is committed, so it survives the tool's absence; the test is *file or ser
 vocabulary (`.claude/knowledge/canon-authoring.md`).
 
 **Never edit the version by hand, and never stamp a changelog heading.** Both belong to the release
-workflow (`tools/release-prep.mjs`); the desktop sibling burned a version outright on exactly this. A
-hand-bump leaves every file perfectly consistent and still wrong — consistency was never the property at
-risk, **authorship** was.
+workflow (`tools/release-prep.mjs`); the desktop sibling burned a version on exactly this. A
+hand-bump leaves every file consistent and still wrong: **authorship** was at risk, not consistency.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
@@ -163,7 +162,7 @@ risk, **authorship** was.
 
 ## The model, in three sentences
 
-**Core** installs into every repository with no opt-out; **packs** are named in the manifest; **local**
+**Core** installs into every repository, bar a row a pack offers off and the manifest confirms (D71); **packs** are named in the manifest; **local**
 documents are the repository's own and are never synced or touched. `daoris.lock` is the authority —
 anything absent from it is invisible to the tool, which is what makes a repository's own files safe.
 **The tier is the location** (D7 as amended by **D59**): always-loaded is a **region in `AGENTS.md`**

@@ -27,6 +27,13 @@ The first version: doctrine that installs, is checked, and flows back.
   what this machine drives; and `plugin` lists, adds, removes and switches the machine's plugins,
   loading no code from any of them. `harness` **spawns**; the rest of the class only edits files
   under the Daoris home.
+- **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
+  offers `switchesOff`: a core rule, knowledge document or skill, with the reason its own document
+  replaces it. The row goes off only when `daoris.json` names it under `switchedOff`. Until then it
+  stays on, and `sync` says so, with the line that would confirm it. `sync`, `check`, `status`, the
+  doctrine region's roster, `init` and `analyze` all name what is switched off and by which pack. An
+  edited core row being switched off refuses and points at `upstream`, since the canonical file still
+  exists. Two selected packs shipping the same document are now refused.
 - **`doctor` covers the one gap the lock cannot.** A repository's own rule duplicating a canonical one is
   local, and local is invisible by design — it surfaced on the first adoption only because someone read
   the generated index end to end. Advisory by construction: word overlap is crude, and a false positive
@@ -37,7 +44,8 @@ The first version: doctrine that installs, is checked, and flows back.
 - **The canon ships inside the package**, so the pinned reference *is* the version pin. No command
   fetches anything, which is what makes `check` offline by construction rather than by discipline —
   asserted by a test that deletes the canon and requires a clean exit.
-- **Three layers.** Core installs everywhere with no opt-out; packs are named in the manifest; the
+- **Three layers.** Core installs everywhere, except a row a pack offers off and the repository
+  confirms (D71); packs are named in the manifest; the
   repository's own documents are never synced and never touched. Anything absent from the lock is
   invisible to the tool.
 - **Two refusals, distinguished by provenance.** A file in the lock that changed on disk is *drift* — the
