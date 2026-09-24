@@ -2810,3 +2810,58 @@ lost in either direction.
 
 **Amends** D4's *"core installs everywhere with no opt-out"*: core still installs everywhere unless a
 selected pack offers to switch a row off and the repository confirms it.
+
+## D72 — What an agent may do is Daoris's rules in scopes, handed to the harness at spawn (2026-09-24)
+
+**Decision.** The owner answered HELP3 and INT3b together, and wider than either asked: *"so we should
+be able to do just like how claude code scopes configured by rules in daoris (which daoris can also
+use llm to update those too or modified by user)"*. `docs/2026-09-24-permission-scopes-design.md` is
+the design.
+
+- **The rule is the harness's own.** A Claude Code permission rule (`Bash(npm run test:*)`,
+  `mcp__<server>__<tool>`), in an `allow`, `ask` or `deny` list. Daoris invents no rule language.
+- **Three scopes, in one file under the home** (`permissions.json`, never in a repository, D32):
+  **machine**, **workspace** and **repository**. Above them sit **Daoris's defaults**: `connector`
+  allows the connector's own quest and knowledge tools (INT3b), and `no-push` denies `git push`
+  (D37, HELP3). The person can switch a default off by id, and nothing else can remove one.
+- **Precedence is the harness's.** Daoris unions defaults, machine, the session's workspace and its
+  repository, and hands the union to the harness as its command-line tier: `--settings <file>` on the
+  pipe door, and `session/new`'s `_meta.claudeCode.options.settings` on the protocol door (read from
+  the adapter's source). The harness merges it with the person's and the repository's own settings,
+  with `deny` beating `ask` beating `allow`. So Daoris can add a refusal nobody lifts, and cannot lift
+  one a repository made.
+- **Two doors to edit them** (D50): `daoris agent rules …`, and Settings → *What agents may do* on
+  the desktop.
+- **Claude Code only, at first.** Codex and dsh have permission models of their own, and a rule is not
+  translated until someone asks and it is measured (the TOOL5 bar).
+- **An agent may update them in phase 2 (PERM2): narrowing at once, widening on the person's yes.**
+  Every change is recorded with who made it. Whether a widening may ever apply without the person is
+  put to the owner rather than assumed.
+
+**Why.** Everything Daoris starts refuses what it would have to ask (D52 on the protocol door; `-p`
+on the pipe). So a session can only use what is allowed before it starts. The one scope that allows
+things today, the repository's own settings, is ignored until the person trusts the folder (DEPLOY1's
+measurement), and an unadopted repository has none (INT3b). A scope Daoris owns, handed over at
+spawn, is where the connector's allowance and the guard can live without writing into anyone's tree.
+
+**What a rule cannot say.** *Refuse a write outside the session's tree* has no rule form: there is no
+negation, and `deny` beats `allow`. The harness's own working-directory boundary holds it for edits,
+and a refused ask holds it for the rest, unless a shell command that writes elsewhere was allowed
+broadly. A path-checking hook would close that. It is filed as PERM3, not guessed.
+
+**Proven, and not.** Keylessly: the composed file, the pipe door's flag, the protocol door's `_meta`.
+Unproven until a real session runs: that the harness honours this tier, and whether it does so in an
+untrusted folder. The repository's tier is not honoured there, and `tools/acp-trust-probe.mjs` measures
+this one.
+
+**Rejected.**
+- **The repository's `.claude/settings.json`.** It is the repository's (D32), it is ignored until
+  trusted, and a shared file with no comment markers is D59's region problem.
+- **The credential profile's own `settings.json`** (HELP3's second proposal). An account is not a scope
+  a person thinks in, and a rule's reach would depend on which account a session ran as.
+- **`allowedTools`/`disallowedTools` on the protocol door.** A second shape for the same rules, on one
+  door only.
+- **Daoris ranking its own scopes** against each other. It would be a second precedence beside the
+  harness's, and it would disagree with it exactly when it mattered.
+- **An agent widening its own permissions unasked.** A better approval surface must not widen
+  autonomy (D37, D52). Narrowing needs no one.
