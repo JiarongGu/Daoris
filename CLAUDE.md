@@ -93,7 +93,7 @@ hand-bump leaves every file consistent and still wrong: **authorship** was at ri
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D74) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D76) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
@@ -152,11 +152,10 @@ hand-bump leaves every file consistent and still wrong: **authorship** was at ri
 - **A plugin is a folder that declares, and may speak** (**D64**, `docs/2026-09-23-plugin-design.md`):
   a manifest under `plugins/`: harnesses on the ACP door, servers every session is handed,
   behaviour spoken over a wire — **never code loaded into a host**, no registry.
-- 🔴 **The current direction is the regular task** (owner, 2026-09-23 → **D65**,
-  `docs/2026-09-23-intake-design.md`): an ask with files and links enters at the workspace, an
-  **intake session** decides the owning repository and publishes quests, a plugin-declared
-  **browser server** puts testing in the session's hands, and `then` chains quests. **The driver's
-  brain is a session, not a model** (D24); INT3 landed as D70.
+- 🔴 **The current direction is the conversation** (owner, 2026-09-25 → **D76**,
+  `docs/2026-09-24-reference-gap-study.md`): a session's structured updates are kept as typed events
+  on the machine, and the page renders a conversation from them; the console becomes its raw view.
+  The regular task (D65: an ask becomes quests through an **intake session**) is built.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
 

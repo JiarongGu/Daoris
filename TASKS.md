@@ -438,10 +438,35 @@ Settings domain is built against that design, not against this heading.
 `docs/2026-09-24-reference-gap-study.md` measured it: the attended session's centre is a record, not
 a conversation, because ACP's structure is flattened to text lines before the bridge, a chat does not
 use a structured wire at all, and nothing is kept for the page across a restart. A chrome pass cannot
-close that.
-- [ ] **REF1 — the owner's choice.** A (a conversation model end to end, recommended), B (parse the
-  lines, the scraping design §3 rejected) or C (chrome only); then the order of CONV1–5, FRAME6,
-  RAIL1 and REVIEW2 (study §4). The answer becomes D76.
+close that. **The owner chose the conversation model and every extra → D76** (2026-09-25), with
+*"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
+TDD, looked at on the window, and the ones that touch a real session use one (authorised
+2026-09-24).
+- [ ] **CONV1 — the event record.** Daoris's event vocabulary (D76 §1); the ACP door maps
+  `session/update` into it where `Acp.cs` flattens it today; events appended to
+  `sessions/<id>.events.jsonl`; a live bridge event and a paged history read; the console keeps its
+  lines. No new rendering yet: a test reads a session back after a restart.
+- [ ] **CONV2 — the conversation view.** The centre renders the events: the person's and the agent's
+  messages, Markdown, code with copy, thinking folded, tool calls as cards (generic, then read, edit,
+  shell, search), a turn's work folded, follow-the-tail with *back to bottom*, history a page at a
+  time. The console becomes its raw view. Adds the renderer and highlighter (D76 §5).
+- [ ] **CONV3 — conversations and native sessions on the structured wire.** Claude Code's
+  `stream-json` for driven sessions and chats on the native door (the adapter's own mapping, checked
+  against the binary), ACP turns for a chat on the protocol door, the person's message in the
+  record.
+- [ ] **CONV4 — the composer.** Attachments (the `carry` molecule), `@` a file in the session's
+  tree, a draft per session, stop the turn beside end the session.
+- [ ] **CONV5 — meters.** A context ring under the composer and per-turn usage, from the usage the
+  wire reports; absent is never zero.
+- [ ] **FRAME6 — the frame.** A resizable, collapsible rail (264–420px, 56px strip) and a resizable
+  dock (45% default, 70% cap) with tabs per session, deterministic close (components §3a).
+- [ ] **RAIL1 — the list.** Search sessions by name and by content, and a row menu.
+- [ ] **REVIEW2 — review.** Highlighted diffs, split or unified.
+- [ ] **UX1 — screen by screen.** Every surface, every state (empty, loading, error, long, 中文,
+  dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),
+  against the reference and D41. Written down as it is found, and fixed.
+- [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
+  card wants to open a file); a terminal (design §6's trigger).
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

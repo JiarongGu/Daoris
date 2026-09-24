@@ -1,6 +1,7 @@
 # The reference gap — what the working surface cannot do yet
 
-**Date:** 2026-09-24 · **Status:** evidence, awaiting the owner's choice · **Prompted by:** the owner,
+**Date:** 2026-09-24 · **Status:** evidence; **decided as D76** (2026-09-25): option A, every extra,
+the dock's file tools after the conversation · **Prompted by:** the owner,
 after POLISH4/5 — *"lets keep push the ui/ux design and I still think this does not meet the
 reference projects capbility"*.
 

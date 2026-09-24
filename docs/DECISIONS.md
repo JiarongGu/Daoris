@@ -3124,3 +3124,56 @@ the fact too.
 
 **What does not move.** D66's one navigation: the menus open setup and never views. D47 §4: a
 browser's menus hold only what a browser may know. D50's two doors. WSP5's scoping itself.
+
+## D76 — A session is a conversation: structured events end to end, kept on the machine (2026-09-25)
+
+**Decision.** The owner: *"lets keep push the ui/ux design and I still think this does not meet the
+reference projects capbility"*. `docs/2026-09-24-reference-gap-study.md` measured why, from source on
+both sides: the attended session's centre is a record, not a conversation. ACP's updates are flattened
+to text lines before the bridge, a chat pipes raw text, and nothing is kept for the page across a
+restart. The owner chose option A from that study, with every extra it offered, the dock's file tools
+after the conversation, and *"you should check screen by screen and all ui ux logic"*.
+
+1. **The driver keeps a session's structure as typed events**, in Daoris's own small vocabulary: the
+   person's message, the agent's message, a thought, a tool call and its updates, a plan, usage, a
+   turn's end, the driver's own note, and anything else kept raw. Each door maps its own documented
+   wire into it: ACP's `session/update` on the protocol door, and Claude Code's `stream-json` on the
+   native door, in that adapter's own code (D23). A harness that offers only text stays text, and
+   the page says so rather than guessing structure.
+2. **The events are a transcript, kept on the machine** (D47 §4): `sessions/<id>.events.jsonl` under
+   the home, beside the verbatim `<id>.log`. They never cross HTTP and never sync. The bridge carries
+   them live and reads them back a page at a time, so a conversation outlives a restart.
+3. **The page renders a conversation from them**: the person's and the agent's messages, Markdown,
+   code with its language and a copy button, thinking folded, tool calls as cards, a turn's work
+   folded, meters. The verbatim console stays, as the conversation's raw view.
+4. **A chat rides the same structured wire**: ACP's turns on the protocol door, `stream-json` turns
+   on the native door. The person's message is part of the record, which it never was.
+5. **The platform's stack gains a Markdown renderer and a highlighter** (D42): headless, safe by
+   default (no raw HTML), and neither brings a design language. D41 stays the only one.
+6. **The round also holds** the composer (attachments, `@` a file in the session's tree, a draft per
+   session, stopping a turn without ending the session), the meters, the frame (a resizable,
+   collapsible rail and a resizable dock with tabs per session, at the geometry the components plan
+   §3a adopted), session search and a row menu, and highlighted review. It ends with **a
+   screen-by-screen audit of every surface's UI/UX logic**. A file tree and a document preview come
+   after the conversation. The terminal keeps design §6's trigger.
+
+**Why.** Every conversation capability the reference has is rendered from structure, and Daoris threw
+the structure away one layer below the page. A chrome pass cannot close that.
+
+**Amends** working surface design §3. Its rejection of *parsing the stream into steps* stands for a
+pipe's text, and the structured wires are not parsing, as the IDE study already said of ACP. It also
+amends D52's *stream promoted*: the stream becomes the conversation, and the console becomes its raw
+view.
+
+**Rejected.**
+- **Parsing the console lines on the page** (study option B). That is the scraping design §3
+  rejected, one layer up, and any rewording in `Acp.cs` would break it silently.
+- **Chrome only** (option C). It leaves every row of the study's §2a missing.
+- **Keeping the events in the service.** They are transcript-class: what a session said and did is
+  machine-local, like the transcript and the diff.
+- **A model picker, mid-run approval, like/dislike feedback.** The reference has all three.
+  D24 puts the model with the harness. D37 and D52 refuse a permission request by construction.
+  Feedback has no receiver when no provider is named.
+
+**What does not move.** D24's no model named. D37 and D52: the person is at the target and the
+outcome. D47 §4's disclosure boundary. D23's adapter per harness. D55: no editor.
