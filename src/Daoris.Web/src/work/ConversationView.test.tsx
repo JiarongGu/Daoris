@@ -163,8 +163,44 @@ describe('ConversationView', () => {
   });
 
   it('marks a turn that ended for a reason other than finishing', () => {
-    view([ev({ kind: 'message', text: 'stopping' }), ev({ kind: 'turn', stopReason: 'cancelled' })]);
+    view([ev({ kind: 'message', text: 'out of room' }), ev({ kind: 'turn', stopReason: 'max_tokens' })]);
 
-    expect(screen.getByText('the turn ended: cancelled')).toBeTruthy();
+    expect(screen.getByText('the turn ended: max_tokens')).toBeTruthy();
+  });
+
+  /**
+   * CONV4b: a stopped turn reads as stopped — in the passive, because a driven session's timeout
+   * cancels a turn too, and the page cannot know it was the person — never as the wire's word, and
+   * never as a failure.
+   */
+  it('says a cancelled turn was stopped, even one stopped before it said anything', () => {
+    view([ev({ kind: 'user', origin: 'person', text: 'count to a thousand' }), ev({ kind: 'turn', stopReason: 'cancelled' })]);
+
+    expect(screen.getByText('count to a thousand')).toBeTruthy();
+    expect(screen.getByText('the turn was stopped here')).toBeTruthy();
+    expect(screen.queryByText(/cancelled/)).toBeNull();
+  });
+
+  /**
+   * CONV4b: the call a stop cut is drawn as stopped, in the quiet tone, and stays closed — Claude Code
+   * answers it as failed, and the alarm's colour with its sentence open would read as something that
+   * went wrong. What the harness said is still there when the person opens it.
+   */
+  it('draws the call a stop cut as stopped, closed, and still holding what the harness said', async () => {
+    view([
+      ev({ kind: 'user', origin: 'person', text: 'run the tests' }),
+      ev({ kind: 'tool', id: 'c1', title: 'Run the tests', toolKind: 'execute', status: 'failed',
+        content: [{ type: 'text', text: "The user doesn't want to proceed with this tool use." }] }),
+      ev({ kind: 'turn', stopReason: 'cancelled' }),
+    ]);
+
+    await userEvent.click(screen.getByRole('button', { name: /1 tool call/ }));
+    const card = screen.getByRole('button', { name: /Run the tests/ });
+    expect(within(card).getByText('stopped')).toBeTruthy();
+    expect(within(card).queryByText('failed')).toBeNull();
+    expect(screen.queryByText(/doesn't want to proceed/)).toBeNull();
+
+    await userEvent.click(card);
+    expect(screen.getByText(/doesn't want to proceed/)).toBeTruthy();
   });
 });

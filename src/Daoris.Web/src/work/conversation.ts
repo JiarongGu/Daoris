@@ -80,6 +80,11 @@ export type Block = {
   output?: string | null;
   entries?: PlanEntry[] | null;
   raw?: string | null;
+  /**
+   * A tool call the stop cut (CONV4b): still open when its turn ended cancelled. Beside the wire's
+   * own status, never instead of it — the card opens to what the harness said about it.
+   */
+  stopped?: boolean;
 };
 
 /** What was asked — by the person, or the target the driver composed. */
@@ -107,6 +112,10 @@ export type Usage = { used: number; size: number; most: number };
  *   updates set; an update's content replaces what came before, as the protocol says it does.
  * - **A plan is its latest entries**, in the place it first appeared in the turn.
  * - **Usage is a meter, never a block.**
+ * - **A cancelled turn's last open calls are the ones its stop cut** (CONV4b): the tool calls at its
+ *   end that never completed. Claude Code answers the cut call as failed and another agent leaves it
+ *   running; either way the person stopped it, and a failure shown in the alarm's colour would say
+ *   otherwise. A call that failed and was followed by more work failed on its own.
  */
 export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage?: Usage } {
   const turns: Turn[] = [];
@@ -130,6 +139,14 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
       case 'turn': {
         const turn = here(key);
         turn.ended = event.stopReason ?? 'unknown';
+        if (turn.ended === 'cancelled') {
+          for (let at = turn.items.length - 1; at >= 0; at -= 1) {
+            const item = turn.items[at]!;
+            // The calls at the turn's end, run side by side: a finished one among them hides nothing.
+            if (item.kind !== 'tool') break;
+            if (item.status !== 'completed') item.stopped = true;
+          }
+        }
         current = null;
         break;
       }

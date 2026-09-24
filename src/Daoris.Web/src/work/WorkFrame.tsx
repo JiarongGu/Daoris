@@ -4,7 +4,8 @@ import { sentence } from '../format';
 import { buildChain } from '../map/chain';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
-  stopNotice, useEndChat, useHarnesses, useResolveSession, useSendMessage, useStartChat, useStopSession,
+  stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
+  useSessionTurns, useStartChat, useStopSession,
 } from '../shell';
 import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession } from './AttendedSession';
@@ -13,6 +14,7 @@ import { isIntake, sessionOrigin } from './identity';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
+import { useDraft } from './drafts';
 import { type DockTab, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
@@ -117,6 +119,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const send = useSendMessage();
   const end = useEndChat();
   const stop = useStopSession();
+  const cancelTurn = useCancelTurn();
 
   useErrorNotify(sessions.error, notify);
 
@@ -139,6 +142,13 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
   // refuses such a line too; the frame offers no box, and the head carries the stop.
   const intake = attended ? isIntake(attended) : false;
+  const talking = Boolean(attended && conversation && here && !intake);
+
+  // What the person was typing to this conversation, kept per session and across a reload (CONV4b).
+  const [draft, setDraft] = useDraft(talking ? attended!.id : null);
+  // Where its turns stand, as the driver holds them: the stop and the queue follow this, not the
+  // record, which learns a turn began only when its first event lands (CONV4a).
+  const turns = useSessionTurns(talking ? attended!.id : null);
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that. 🔴 And only a record this
@@ -188,6 +198,26 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
       // False is an answer: the session ended while they were typing. It lands on the composer
       // rather than in a toast, because that is where the person is looking.
       onSuccess: (result) => setRefusal(result.sent ? null : t('work.composer.notListening')),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
+    });
+  };
+
+  // Stopping the turn and keeping the conversation (CONV4a). What was waiting comes back into the box,
+  // ahead of whatever is being typed now, since it was written first; and the notice claims only the
+  // asking — a stop that lands after the words and before the turn's end leaves it ending normally.
+  const onStopTurn = () => {
+    if (!attended) return;
+    cancelTurn.mutate(attended.id, {
+      onSuccess: ({ cancelled, withdrawn }: TurnStop) => {
+        if (withdrawn.length > 0) setDraft((was) => [...withdrawn, was.trim()].filter(Boolean).join('\n\n'));
+        const stopping = cancelled ? t('work.composer.turnStopping') : null;
+        const back = withdrawn.length > 0 ? t('work.composer.withdrawn', { count: withdrawn.length }) : null;
+        // Two sentences are joined the catalogue's way: English puts a space after a full stop, and
+        // Chinese does not (seen on the window, CONV4b).
+        notify(stopping && back
+          ? t('work.composer.twoSentences', { first: stopping, second: back })
+          : stopping ?? back ?? t('work.composer.noTurn'));
+      },
       onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };
@@ -304,7 +334,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
           )}
         </div>
 
-        {conversation && here && attended && !intake && (
+        {talking && attended && (
           <Composer
             live={live}
             sending={send.isPending}
@@ -312,6 +342,14 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             // One owner for the moves at a time (D56): while the session is parked the attention
             // band above holds finish, decline and stop, and this form keeps `send` alone.
             endings={attended.state !== 'awaiting-person'}
+            draft={draft}
+            onDraft={setDraft}
+            queued={turns.queued}
+            taking={turns.taking}
+            // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
+            stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
+            stopping={cancelTurn.isPending}
+            onStopTurn={onStopTurn}
             onSend={onSend}
             onFinish={() => end.mutate(attended.id, {
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),

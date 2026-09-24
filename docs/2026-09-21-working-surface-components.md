@@ -165,7 +165,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `SessionHead` | the attended session's record: state, repo, tree, quest, tool + account, age | driven, chat, parked-with-analysis, ended, `--real` tree vs session tree |
 | `TimelineEntry` | one observed event: state change, quest transition, commit landed | each kind · a long commit subject · an entry with no note |
 | `SessionTimeline` | the observed layer over `sessionTimeline()` — props-only (SURF4c) | just queued · parked · whole · nothing landed |
-| `Composer` | the chat input with its two endings | idle, sending, session ended mid-typing, refused |
+| `Composer` | the chat input with its two endings, and the turn's own stop (CONV4b) | idle, sending, session ended mid-typing, refused, turn running (queued messages, stop turn), stopping the turn, turn running on a text door |
 | `AttentionRow` | one row of Overview's *what needs you* band | parked · quest nobody can take · a proposed ask · an ask whose intake asked · no door · no detail · long + CJK. ~~finished-unreviewed~~ — **not buildable before SURF6**: nothing records that anybody looked |
 | `AwaitingPerson` | a parked session's analysis and the person's three moves (SURF5) | parked · nothing said · a move in flight · declining |
 | `AwaitingIntake` | a parked intake's question, a door to its ask, and a stop that keeps the ask a proposal (INT4g) | asking · nothing can act |

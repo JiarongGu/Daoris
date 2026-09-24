@@ -519,6 +519,82 @@ export function useSessionEvents(sessionId: string | null) {
   return { events, earlier, loaded, loadEarlier };
 }
 
+/** Where a conversation's turns stand, as the driver holds them (CONV4a). */
+export type SessionTurns = {
+  /** What the person sent that has not reached the harness yet, in the order sent. */
+  queued: string[];
+  /** A turn is on its way to the harness or running there — what stopping the turn acts on. */
+  taking: boolean;
+};
+
+const NO_TURNS: SessionTurns = { queued: [], taking: false };
+
+/** The driver's answer, read defensively: anything that is not a queue is nothing waiting and nothing running. */
+const turnsOf = (answer: unknown): SessionTurns => {
+  const held = answer as Partial<SessionTurns> | null | undefined;
+  return {
+    queued: Array.isArray(held?.queued) ? held.queued.filter((text): text is string => typeof text === 'string') : [],
+    taking: held?.taking === true,
+  };
+};
+
+/**
+ * Where the attended conversation's turns stand (CONV4b): whether one is in flight, and what is
+ * waiting behind it — asked for once on open, then followed as `SESSION_QUEUED`.
+ *
+ * @remarks
+ * **The driver is the authority**, not the record: the record learns a turn began when its first
+ * event lands, and a waiting message is in no record at all. So the composer's stop and its queue
+ * follow this, and the conversation's *working…* follows the record, each saying what it knows.
+ *
+ * Each live answer is the whole state, so a missed one costs nothing. Desktop-only: a conversation
+ * is a process on this machine.
+ */
+export function useSessionTurns(sessionId: string | null): SessionTurns {
+  const { isAvailable } = useShenora();
+  const [turns, setTurns] = useState<SessionTurns>(NO_TURNS);
+  const attended = useRef<string | null>(null);
+
+  useEffect(() => {
+    attended.current = sessionId;
+    setTurns(NO_TURNS);
+    if (!isAvailable || !sessionId) return;
+
+    let current = true;
+    void getBridge().invoke<unknown>('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: sessionId } })
+      .then((answer) => { if (current) setTurns(turnsOf(answer)); })
+      // Nothing known is nothing to stop: the composer offers what it can prove.
+      .catch(() => {});
+    return () => { current = false; };
+  }, [isAvailable, sessionId]);
+
+  useShenoraEvent('DAORIS', 'SESSION_QUEUED', (payload) => {
+    const state = payload as { session?: string } | undefined;
+    if (!attended.current || state?.session !== attended.current) return;
+    setTurns(turnsOf(state));
+  });
+
+  return turns;
+}
+
+/** What stopping a turn did (CONV4a): whether a turn was asked to stop, and what came back unsent. */
+export type TurnStop = { cancelled: boolean; withdrawn: string[] };
+
+/**
+ * Stop the conversation's turn and keep the conversation (CONV4a) — the third verb, beside finishing
+ * it and stopping it. What was waiting comes back, for the composer to hand to the person.
+ */
+export const useCancelTurn = () =>
+  useMutation({
+    mutationFn: async (id: string): Promise<TurnStop> => {
+      const answer = await call<Partial<TurnStop>>('CANCEL_TURN', { id });
+      return {
+        cancelled: answer?.cancelled === true,
+        withdrawn: Array.isArray(answer?.withdrawn) ? answer.withdrawn.filter((text) => typeof text === 'string') : [],
+      };
+    },
+  });
+
 /**
  * A conversation with an agent in one repository (D49 §3).
  *

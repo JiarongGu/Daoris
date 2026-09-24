@@ -45,6 +45,21 @@ const FAILED: SessionEvent[] = [
   ev({ kind: 'turn', stopReason: 'cancelled' }),
 ];
 
+/**
+ * Two turns the person stopped (CONV4b): one cut while a tool ran — Claude Code answers that call as
+ * failed, and it draws as stopped — and one stopped while the model was still thinking, with no words.
+ */
+const STOPPED: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'person', text: 'Run the whole test suite.' }),
+  ev({ kind: 'message', text: 'Running every test.' }),
+  ev({ kind: 'tool', id: 'c20', title: 'cargo test', toolKind: 'execute', status: 'in_progress' }),
+  ev({ kind: 'tool', id: 'c20', status: 'failed',
+    content: [{ type: 'text', text: "The user doesn't want to proceed with this tool use. The tool use was rejected." }] }),
+  ev({ kind: 'turn', stopReason: 'cancelled' }),
+  ev({ kind: 'user', origin: 'person', text: 'Write the numbers from 1 to 1000 as words.' }),
+  ev({ kind: 'turn', stopReason: 'cancelled' }),
+];
+
 const CHINESE: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: '把每帧的加载上限做成可配置的。' }),
   ev({ kind: 'message', text: '已在 `level.rs` 中加入 `streaming_budget` 字段，默认值为 **4**。' }),
@@ -63,6 +78,7 @@ type Story = StoryObj<typeof ConversationView>;
 export const DrivenAndFinished: Story = { args: { turns: toTurns(DRIVEN).turns } };
 export const Running: Story = { args: { turns: toTurns(RUNNING).turns, live: true } };
 export const FailedAndCancelled: Story = { args: { turns: toTurns(FAILED).turns } };
+export const Stopped: Story = { args: { turns: toTurns(STOPPED).turns } };
 export const WithEarlierTurns: Story = { args: { turns: toTurns(DRIVEN).turns, earlier: true, onLoadEarlier: () => {} } };
 export const Chinese: Story = { args: { turns: toTurns(CHINESE).turns } };
 export const TextOnlyDoor: Story = { args: { turns: [] } };

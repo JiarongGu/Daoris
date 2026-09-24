@@ -5799,3 +5799,46 @@ page, CONV4c attachments and `@`).
   - a stop during thinking leaves a turn with no words.
 
 Driver 629 → 640, modules 121 → 124, family 274 → 277. The FIX-LOG has the mid-turn ordering defect.
+
+## CONV4b — the composer on the page (2026-09-25)
+
+- [x] ~~**CONV4b — the composer on the page.** Stop the turn beside end the session; queued messages
+  shown as queued, and a stop's withdrawn ones back in the draft; a draft per session that survives
+  a reload; a stopped turn reads as stopped, never failed. Over CONV4a's `CANCEL_TURN`,
+  `SESSION_QUEUE` and `SESSION_QUEUED`. The archive's CONV4a entry has two findings for this item.~~
+✅ **done 2026-09-25**, the second third of CONV4.
+
+- **The driver says whether a turn is in flight** (`ChatQueue`), beside what is waiting, on
+  `SESSION_QUEUE` and every `SESSION_QUEUED`. The composer's stop follows it rather than the record,
+  which learns a turn began only when its first event lands.
+- **The composer** (a molecule, props only):
+  - while a turn runs, *send* reads *queue*, and what waits behind it is listed above the box in
+    the order sent;
+  - *stop turn* stands beside *finish* and *stop*, neutral, only while a turn runs and only on a
+    door the roster calls `structured`;
+  - the draft may be held above it.
+- **The frame** holds a draft per session (`work/drafts.ts`: a map in `localStorage`, the newest 50
+  kept, storage refused costs only the reload) and `useSessionTurns`. It sends a stop through
+  `useCancelTurn`. What was withdrawn goes back into the box, ahead of what is being typed. The
+  notice claims only the asking (CONV4a's first finding).
+- **A stopped turn** reads *the turn was stopped here*, in the passive, since a driven session's
+  timeout cancels a turn too. The fold marks the tool calls still open at a cancelled turn's end as
+  `stopped`, beside the wire's status. The card draws them in the quiet tone, closed, with the
+  harness's words one click away. A turn stopped while thinking is the ask, then *stopped* (CONV4a's
+  second finding).
+- **Looked at** on the scratch window with real Claude Code chats, in English and 中文, light and
+  dark:
+  - a message queued behind a long turn;
+  - stopped mid-stream, and it came back into the box;
+  - sent again, and answered in the same session;
+  - a queued 中文 message run as the next turn once the turn ran out.
+
+  The window found one defect, fixed: the stop's two sentences were joined by a space, which is
+  wrong after a Chinese full stop, so the separator is the catalogue's. It found one for UX1 as
+  well: a one-item-per-line answer renders as a paragraph, because Markdown makes a single newline a
+  space.
+- **TEST1's trigger arrived during the gate.** The Playwright worker aborted with `0xC0000409` at
+  test 4. The re-run passed 21/21, and TEST1 is open in the backlog with what this capture could
+  and could not hold.
+
+Web unit 917 → 940, Playwright 21/21, driver 640, modules 124.

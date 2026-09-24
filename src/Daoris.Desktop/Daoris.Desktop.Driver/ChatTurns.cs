@@ -15,6 +15,15 @@ public sealed record TurnStop(bool Cancelled, IReadOnlyList<string> Withdrawn)
     public static readonly TurnStop Nothing = new(false, []);
 }
 
+/// <summary>Where a conversation's turns stand, as the page is told it (CONV4a, CONV4b).</summary>
+/// <param name="Taking">A turn is on its way to the harness or running there — what a stop would act on.</param>
+/// <param name="Queued">What the person sent that has not reached the harness, in the order sent.</param>
+public sealed record ChatQueue(bool Taking, IReadOnlyList<string> Queued)
+{
+    /// <summary>Nothing running and nothing waiting — a conversation between turns, or none at all.</summary>
+    public static readonly ChatQueue Idle = new(false, []);
+}
+
 /// <summary>
 /// One conversation's turns: one at a time, in the order the person sent them — the same on both doors
 /// (CONV3b, CONV4a).
@@ -26,9 +35,10 @@ public sealed record TurnStop(bool Cancelled, IReadOnlyList<string> Withdrawn)
 /// write it to the harness at once, where Claude Code may fold it into the running turn — so both doors
 /// hold it here instead, and neither depends on what a harness does with a line mid-turn.</para>
 ///
-/// <para><b>What is waiting is told as it moves</b> (<paramref name="changed"/>): the page shows those
-/// messages as queued, because nothing else shows them — they are not in the record yet. The one the
-/// door is still opening for counts as waiting; one the door takes at once is never announced.</para>
+/// <para><b>Where the turns stand is told as it moves</b> (<paramref name="changed"/>): whether a turn is
+/// in flight, which the page's stop follows — the record lags it — and what is waiting, which the page
+/// shows as queued because nothing else shows it. The one the door is still opening for counts as
+/// waiting; one the door takes at once is never announced.</para>
 ///
 /// <para><b>A stop withdraws what was waiting and stops the turn in flight</b>, in that order: stopped
 /// the other way round, the next message would start the moment the stopped turn ended. A stop that
@@ -44,12 +54,12 @@ public sealed record TurnStop(bool Cancelled, IReadOnlyList<string> Withdrawn)
 /// wire; a turn it could not send completes without calling it.
 /// </param>
 /// <param name="interrupt">The door's own way of stopping the turn in flight.</param>
-/// <param name="changed">What is waiting, each time that changes.</param>
+/// <param name="changed">Where the turns stand, each time that changes.</param>
 internal sealed class ChatTurns(
     Func<Task<bool>> ready,
     Func<string, Action, Task> take,
     Func<Task> interrupt,
-    Action<IReadOnlyList<string>> changed)
+    Action<ChatQueue> changed)
 {
     private readonly object _gate = new();
     private readonly List<string> _waiting = [];
@@ -60,7 +70,7 @@ internal sealed class ChatTurns(
     private bool _stopPending;
     private bool _finishing;
     private bool _gone;
-    private IReadOnlyList<string> _published = [];
+    private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
 
     /// <summary>What the person has sent that has not reached the harness, in order.</summary>
@@ -69,6 +79,15 @@ internal sealed class ChatTurns(
         get
         {
             lock (_gate) return Snapshot();
+        }
+    }
+
+    /// <summary>Where the turns stand now — what a page that just opened the conversation is told.</summary>
+    public ChatQueue State
+    {
+        get
+        {
+            lock (_gate) return new ChatQueue(_pumping, Snapshot());
         }
     }
 
@@ -258,11 +277,11 @@ internal sealed class ChatTurns(
         return now;
     }
 
-    /// <summary>Tell what is waiting when it differs from what was last told. Called under the gate, so told in order.</summary>
+    /// <summary>Tell where the turns stand when it differs from what was last told. Called under the gate, so told in order.</summary>
     private void Publish()
     {
-        var now = Snapshot();
-        if (now.SequenceEqual(_published)) return;
+        var now = new ChatQueue(_pumping, Snapshot());
+        if (now.Taking == _published.Taking && now.Queued.SequenceEqual(_published.Queued)) return;
         _published = now;
         try
         {

@@ -57,8 +57,10 @@ public sealed class TurnStopTests : IDisposable
             Said(session));
         Assert.Empty(session.Runner.Queued(session.Id));
         // The queue was told as it moved, which is what the page shows as queued.
-        Assert.Contains(session.Queues, queued => queued.SequenceEqual(["second"]));
-        Assert.Empty(session.Queues[^1]);
+        // …and whether a turn was in flight, which is what the page's stop-the-turn control follows.
+        Assert.Contains(session.Queues, queue => queue.Taking && queue.Queued.SequenceEqual(["second"]));
+        Assert.False(session.Queues[^1].Taking);
+        Assert.Empty(session.Queues[^1].Queued);
     }
 
     /// <summary>
@@ -91,7 +93,8 @@ public sealed class TurnStopTests : IDisposable
 
         Assert.Equal(["user: hold", "interrupt", "result: hold (interrupted)", "user: again", "result: again"], HeardLines());
         Assert.DoesNotContain("person: after", Said(session));
-        Assert.Empty(session.Queues[^1]);
+        Assert.False(session.Queues[^1].Taking);
+        Assert.Empty(session.Queues[^1].Queued);
     }
 
     /// <summary>The same stop on the protocol door: <c>session/cancel</c>, and the turn ends on the agent's own word.</summary>
@@ -189,7 +192,7 @@ public sealed class TurnStopTests : IDisposable
 
     private sealed record Session(
         string Id, ChatRunner Runner, StandInService Service, SessionEvents Events, ServiceClient Client,
-        List<IReadOnlyList<string>> Queues, Func<string> Seen) : IAsyncDisposable
+        List<ChatQueue> Queues, Func<string> Seen) : IAsyncDisposable
     {
         public async ValueTask DisposeAsync()
         {
@@ -218,8 +221,8 @@ public sealed class TurnStopTests : IDisposable
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
-        var queues = new List<IReadOnlyList<string>>();
-        runner.QueueChanged += (_, queued) => { lock (queues) queues.Add(queued); };
+        var queues = new List<ChatQueue>();
+        runner.QueueChanged += (_, queue) => { lock (queues) queues.Add(queue); };
 
         var start = await runner.StartAsync("engine", adapter, config);
         var id = start.SessionId ?? throw new InvalidOperationException(start.Message);

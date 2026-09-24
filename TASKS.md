@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 640 driver, 124 desktop modules, 917 web unit, 21 Playwright**, 73
+**446 CLI tests, 473 service, 640 driver, 124 desktop modules, 940 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **277/277 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -84,17 +84,17 @@ and a release is still blocked on REH1.
 🔴 **The live arc is D76, the conversation** (owner, 2026-09-25), taken in the order under *The
 reference gap* below.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
-  (chats on the protocol door) and CONV4a (stopping a turn, one queue on both doors), with the fixes
-  the looks found. All are in the archive under 2026-09-25.
-- **Next:** **CONV4b, the composer on the page**, over CONV4a's bridge verbs. Then CONV4c
-  (attachments and `@`), which is measured before it is built.
+  (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors) and CONV4b (the
+  composer's turn, queue and drafts), with the fixes the looks found. All are in the archive under
+  2026-09-25.
+- **Next:** **CONV4c, attachments and `@`**, which is measured on both wires before it is built.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
   probe installed under `_fixtures/dsh/npm` (0.79.0), which is how a protocol-door chat is looked
   at without installing anything.
-- **Open beside it:** FLAKE1 (an intake test, about 1 run in 20) and DEPLOY3 (the artefact gate
-  holding a chat at close).
+- **Open beside it:** FLAKE1 (an intake test, about 1 run in 20), DEPLOY3 (the artefact gate
+  holding a chat at close) and TEST1 (the Playwright worker's `0xC0000409`, seen a second time).
 
 🔴 **Daoris is DEPLOYED and running as an installed application** (2026-09-22), which is new and
 changes what "works" means. `npm run publish:desktop -- --to <folder> --service` installs it: one
@@ -257,16 +257,16 @@ the traps that are not in any contract, because they were found rather than desi
   machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
   (16/16), INT4j (17/17) and PERM2b (14/14) one each. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
-  **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1 on a
-  repository naming what it wants; REH1 and TEST1 on a captured recurrence; PLUG7 on a plugin asking
-  for a service-side point. **A new direction from the owner outranks all of them.**
+  **Six wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1 on a
+  repository naming what it wants; REH1 on a captured recurrence; PLUG7 on a plugin asking for a
+  service-side point. TEST1's second sighting arrived (2026-09-25), so it is open. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
 - **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 446 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (473),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (640), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (124), `npm run rehearse:family` (277/277), `npm run test:web` (917 vitest + 21 Playwright),
+  (640), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (124), `npm run rehearse:family` (277/277), `npm run test:web` (940 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -280,10 +280,10 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Ten items are open**, and every closed one
-is in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. The owner's menus-by-domain direction (D75) is closed; three wait on the
-owner (TRUST2, AGT2c, INT6), and seven on a trigger (see *Handover*).
+the archive; its decision is **D53, accepted**). **Nineteen rows are open**: D76's six and its
+held file tools, three leftovers (FLAKE1, DEPLOY3, TEST1), three on the owner (TRUST2, AGT2c,
+INT6) and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this
+file holds no ticked rows, by the `task-lifecycle` rule it also ships.
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
 (2026-09-24, in the archive). Each landing is one session-sized item, TDD, gates green, moved to the
@@ -449,11 +449,7 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24).
-**CONV4 was split in three (2026-09-25)**; CONV4a, the driver's turn verbs, is in the archive.
-- [ ] **CONV4b — the composer on the page.** Stop the turn beside end the session; queued messages
-  shown as queued, and a stop's withdrawn ones back in the draft; a draft per session that survives
-  a reload; a stopped turn reads as stopped, never failed. Over CONV4a's `CANCEL_TURN`,
-  `SESSION_QUEUE` and `SESSION_QUEUED`. The archive's CONV4a entry has two findings for this item.
+**CONV4 was split in three (2026-09-25)**; CONV4a and CONV4b are in the archive.
 - [ ] **CONV4c — what a message carries.** Attachments (the `carry` molecule) and `@` a file in
   the session's tree. Measure each wire first: ACP's content blocks against `promptCapabilities`,
   `stream-json`'s against the binary.
@@ -471,7 +467,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   "waiting on you" everywhere. The monitor's tiles are console-only and say *Nothing said yet* for a
   session whose conversation is kept. The protocol door's console writes each streamed chunk of a message as its own line
   (`…document` / `, named in the README.`), so the raw view breaks words across lines, driven
-  sessions included. The native door renders a whole message once, and this one should too.
+  sessions included. The native door renders a whole message once, and this one should too. An
+  agent's one-item-per-line answer renders as one paragraph, because Markdown makes a single
+  newline a space (seen on the window, CONV4b).
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 
@@ -493,6 +491,20 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   `run --install` loop already does), open a stub chat, close the shell, and read the record for
   the close's note, never the sweep's.
 
+- [ ] **TEST1 — the Playwright suite aborts a worker with `0xC0000409`: seen twice now.** The
+  second sighting was its trigger. Both runs died with `worker process exited unexpectedly
+  (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.
+  - 2026-09-21, during SURF2, mid-suite. The identical run passed after.
+  - 2026-09-25, during CONV4b's gate, at test 4 (*a chain moves on when its quest closes done*),
+    0 ms in, after three passed; the other 17 did not run. CONV4b changed no e2e path or host code.
+
+  **A family sibling documents the same abort** at about 1.5% of e2e runs, with a standing
+  reproducer (spawn a server, poll it, kill it: about 1 in 300 rounds, 4-way concurrent). The row
+  used to say *capture the Playwright HTML report*, but the config runs the list reporter, so no
+  such report exists. The next step is a capture that can exist: an HTML or JSON reporter in
+  `playwright.config.ts`, then the comparison with the sibling's notes. Do not tune timeouts on two
+  data points either.
+
 ### Held — each waits on a trigger that has not arrived
 
 - [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
@@ -506,18 +518,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   is open. **Not this**: on 2026-09-21 the rehearsal failed at `npm pack` before any check ran — a
   deterministic broken publish build, fixed and gated (FIX-LOG). REH1 is 45/52 with the canon-upgrade
   phase's 7 checks failing; a run that never reaches a check is a different animal.
-
-- [ ] **TEST1 — the Playwright suite aborted a worker once with `0xC0000409`.** Seen once
-  (2026-09-21, during SURF2): the run died mid-suite with `worker process exited unexpectedly
-  (code=3221226505)` — Windows `__fastfail`, which produces no output, no stack and no WER entry — and
-  the identical run passed 9/9 immediately after. The test it died on touches session records, which
-  is why it was not dismissed on sight; the assertion it would have made passed on the re-run and the
-  change it was suspected of is covered by 258 service tests and 156 rehearsal checks. **A family
-  sibling has the same abort documented at ~1.5% of e2e runs with a standing reproducer** (spawn a
-  server, poll it, kill it — it fires about 1 in 300 rounds, 4-way concurrent), so the shape is known
-  and is not this repository's to diagnose from one occurrence. **Its trigger is a second sighting**:
-  if it recurs, capture the Playwright HTML report and compare against the sibling's notes before
-  changing anything. Do not tune timeouts on one data point.
 
 - [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until

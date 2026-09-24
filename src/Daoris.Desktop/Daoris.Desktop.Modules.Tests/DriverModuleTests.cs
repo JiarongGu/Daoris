@@ -485,6 +485,7 @@ public sealed class DriverModuleTests : Bridge
 
         Assert.Equal("nothing-here", queue.GetProperty("session").GetString());
         Assert.Empty(queue.GetProperty("queued").EnumerateArray());
+        Assert.False(queue.GetProperty("taking").GetBoolean());
     }
 
     /// <summary>

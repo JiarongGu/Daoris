@@ -61,10 +61,11 @@ public sealed class ChatRunner(
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// What a conversation has waiting — sent by the person, not yet at the harness — each time it
-    /// changes (CONV4a). The page shows these as queued: they are in no record until they are sent.
+    /// Where a conversation's turns stand — whether one is in flight, and what the person sent that is
+    /// not at the harness yet — each time that changes (CONV4a). The page shows the waiting messages as
+    /// queued, since they are in no record until they are sent, and offers a stop while a turn runs.
     /// </summary>
-    public event Action<string, IReadOnlyList<string>>? QueueChanged;
+    public event Action<string, ChatQueue>? QueueChanged;
 
     /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
     public const string ClosedNote =
@@ -219,7 +220,7 @@ public sealed class ChatRunner(
         ProtocolChat? chat = null;
         NativeChat? native = null;
         var mapper = resolved.StructuredOutput();
-        void Changed(IReadOnlyList<string> queued) => QueueChanged?.Invoke(sessionId, queued);
+        void Changed(ChatQueue queue) => QueueChanged?.Invoke(sessionId, queue);
         if (resolved.Wire == SessionWire.Acp)
         {
             chat = new ProtocolChat(resolved.AcpPosture, meta, workTree, Servers(sessionId), Changed);
@@ -322,10 +323,13 @@ public sealed class ChatRunner(
         : _native.TryGetValue(sessionId, out var native) && native.Turns.Running;
 
     /// <summary>What a conversation has waiting — sent, not yet at the harness — in the order sent.</summary>
-    public IReadOnlyList<string> Queued(string sessionId) =>
-        _protocol.TryGetValue(sessionId, out var chat) ? chat.Turns.Waiting
-        : _native.TryGetValue(sessionId, out var native) ? native.Turns.Waiting
-        : [];
+    public IReadOnlyList<string> Queued(string sessionId) => Queue(sessionId).Queued;
+
+    /// <summary>Where a conversation's turns stand; <see cref="ChatQueue.Idle"/> for one nothing here holds.</summary>
+    public ChatQueue Queue(string sessionId) =>
+        _protocol.TryGetValue(sessionId, out var chat) ? chat.Turns.State
+        : _native.TryGetValue(sessionId, out var native) ? native.Turns.State
+        : ChatQueue.Idle;
 
     /// <summary>
     /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
@@ -538,7 +542,7 @@ public sealed class ChatRunner(
 
         public ProtocolChat(
             string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
-            Action<IReadOnlyList<string>> changed)
+            Action<ChatQueue> changed)
         {
             Posture = posture;
             Meta = meta;
@@ -635,7 +639,7 @@ public sealed class ChatRunner(
 
         public NativeChat(
             string sessionId, ISessionAdapter adapter, SessionProcesses processes, Action<SessionEvent> record,
-            Action<IReadOnlyList<string>> changed)
+            Action<ChatQueue> changed)
         {
             Turns = new ChatTurns(
                 ready: () => Task.FromResult(true),

@@ -424,6 +424,11 @@ The first version: doctrine that installs, is checked, and flows back.
   never as a failure. A message you send while a turn runs waits for it on both doors: Claude Code
   used to be handed it mid-turn, and the record put it inside the turn before. A stop hands back what
   was still waiting, unsent, so nothing you queued fires after you said stop.
+- **The composer stops a turn too.** While a turn runs, *send* becomes *queue*, what you sent
+  behind it waits above the box, and *stop turn* stands beside *finish* and *stop*. A stop puts
+  what was waiting back in the box. A stopped turn reads *the turn was stopped here*, and the tool
+  call it cut reads *stopped* rather than failed. What you were typing to each session is kept per
+  session, across a switch and a reload.
 - **A chat you start stays open in front of you**, where it used to fall back to *Nothing attended*
   until you picked it from the list. A long code line scrolls inside its block, not widening the
   conversation.

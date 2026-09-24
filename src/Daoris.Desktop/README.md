@@ -73,8 +73,9 @@ since D76 **the conversation** — `SESSION_HISTORY` reads a session's record a 
 from the typed events the driver keeps as `sessions/<id>.events.jsonl` beside each transcript, mapped
 from the door's own wire (ACP's `session/update`, Claude Code's `stream-json`) and never parsed from a
 console line; since CONV4a **the turn** — `CANCEL_TURN` stops a conversation's turn and keeps the
-session, answering what it withdrew, and `SESSION_QUEUE` with live `SESSION_QUEUED` events says what
-the person sent that has not reached the harness yet (on a terminal, Ctrl+C during a turn);
+session, answering what it withdrew, and `SESSION_QUEUE` with live `SESSION_QUEUED` events says
+whether a turn is in flight and what the person sent that has not reached the harness yet (on a
+terminal, Ctrl+C during a turn);
 and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine has and `HARNESS_ACTION`
 for the person's install, update or login, each spawning that harness's own mechanism and relaying it
 through the console under `<harness>:<action>`, never a session id, because it is not a session),

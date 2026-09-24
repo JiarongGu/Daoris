@@ -274,12 +274,13 @@ public sealed class DriverModule : ModuleBase
                 return new { stop.Cancelled, stop.Withdrawn };
             }
 
-            // What a conversation has waiting (CONV4a): a page that just opened it asks once, and takes
-            // every change after that as `SESSION_QUEUED`.
+            // Where a conversation's turns stand (CONV4a): whether one is in flight, and what is waiting.
+            // A page that just opened it asks once, and takes every change after that as `SESSION_QUEUED`.
             case "SESSION_QUEUE":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-                return new { Session = id, Queued = _loop.Chat?.Queued(id) ?? [] };
+                var queue = _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
+                return new { Session = id, queue.Queued, queue.Taking };
             }
 
             case "STOP_SESSION":

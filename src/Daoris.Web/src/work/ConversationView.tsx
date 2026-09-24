@@ -101,7 +101,10 @@ function TurnView({ turn, tree, running }: { turn: Turn; tree?: string | null; r
       )}
       {answer && <BlockView block={answer} />}
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
-      {turn.ended && turn.ended !== 'end_turn' && (
+      {/* Stopped, in the passive (CONV4b): a driven session's timeout cancels a turn too, and the
+          page cannot know whose stop it was. Never the wire's word, and never a failure's tone. */}
+      {turn.ended === 'cancelled' && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.stopped')}</p>}
+      {turn.ended && turn.ended !== 'end_turn' && turn.ended !== 'cancelled' && (
         <p className="m-0 text-meta text-ink-faint">{t('work.conversation.ended', { reason: turn.ended })}</p>
       )}
     </div>

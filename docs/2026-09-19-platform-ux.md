@@ -472,6 +472,25 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **The console is the raw view**, and its own empty sentence points at the conversation above
 >   rather than saying *nothing said* beneath what was said. Seen in the detached window.
 
+> **Amended 2026-09-25, the composer's turn (CONV4b).** Held by vitest and stories, and looked at on
+> the scratch window with real Claude Code chats, in English and 中文, light and dark.
+>
+> - **While a turn runs, the composer says so**: *send* reads *queue*, and what waits behind the turn
+>   sits above the box in dashed pills under *waiting for this turn to end*. A waiting message is in
+>   no record yet, so nothing else on the screen shows it.
+> - **Stop turn stands beside the two endings**, neutral in tone, because it ends nothing. It
+>   appears only while the driver says a turn is in flight, and only on a door that can see a turn
+>   end.
+> - **A stop hands back what was waiting** into the box, ahead of what is being typed, since it was
+>   written first. The notice claims only the asking: a stop that lands after the words may still
+>   end the turn normally.
+> - **A stopped turn says *the turn was stopped here***, faint, in the passive, because a timeout
+>   stops a turn too. The calls it cut draw as *stopped* in the quiet tone and stay closed, whatever
+>   the harness called them.
+> - **A draft is kept per session**, across a switch and a reload.
+> - **Two sentences join the catalogue's way**: English puts a space after a full stop and Chinese
+>   does not. Seen on the window.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

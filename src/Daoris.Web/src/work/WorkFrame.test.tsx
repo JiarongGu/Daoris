@@ -25,6 +25,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import i18n from '../i18n';
 import { WorkFrame } from './WorkFrame';
 
 const DRIVER_STATE = { drivable: ['engine'], holds: [], trees: [], running: ['s1a2b3c4'] };
@@ -46,6 +47,12 @@ const ROSTER = {
       problem: '`codex` is not on this machine\'s PATH', machineDefault: null, profiles: [],
     },
   ],
+};
+
+/** A roster whose chat harness reads a structured wire — a door where a turn can be stopped (CONV4). */
+const STRUCTURED_ROSTER = {
+  ...ROSTER,
+  harnesses: [{ harness: 'stub', present: true, version: 'stub 1.0.0', problem: null, machineDefault: null, profiles: [], structured: true }],
 };
 
 const REGISTRY = [{
@@ -118,6 +125,8 @@ describe('the Work frame', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
+    // A draft outlives its test the way it outlives a reload (CONV4b).
+    window.localStorage.removeItem('daoris.drafts');
   });
 
   it('is the rail and the attended session, bound by one selection', async () => {
@@ -267,6 +276,8 @@ describe('starting and holding a conversation', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
+    // A draft outlives its test the way it outlives a reload (CONV4b).
+    window.localStorage.removeItem('daoris.drafts');
   });
 
   /**
@@ -464,6 +475,102 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * CONV4b: stopping the turn over the driver. What was waiting comes back into the box — the person
+   * wrote it, and a stop that threw it away would lose it — and the notice claims only the asking:
+   * the record says whether the turn ended stopped.
+   */
+  it('stops the turn over the driver, and hands what was waiting back to the box', async () => {
+    SESSIONS = [CHAT];
+    const notify = vi.fn();
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: ['and then test it'], taking: true };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: ['and then test it'] };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11', notify);
+    const waiting = await screen.findByRole('list', { name: 'waiting for this turn to end' });
+    expect(waiting.textContent).toBe('and then test it');
+    await userEvent.type(screen.getByLabelText('message'), 'and push nothing');
+    await userEvent.click(await screen.findByRole('button', { name: 'stop turn' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 'c0ffee11' } });
+    await waitFor(() => expect(screen.getByLabelText('message')).toHaveValue('and then test it\n\nand push nothing'));
+    expect(notify).toHaveBeenCalledWith(
+      'Asked the agent to stop this turn; the conversation stays open. 1 waiting message came back to the box, unsent.');
+  });
+
+  /** Seen on the window (CONV4b): two sentences joined by a space read wrong after a Chinese full stop. */
+  it('joins the stop\'s two sentences the way the language does', async () => {
+    SESSIONS = [CHAT];
+    const notify = vi.fn();
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: ['然后测试'], taking: true };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: ['然后测试'] };
+      return DRIVER_STATE;
+    });
+    await i18n.changeLanguage('zh');
+    try {
+      show('c0ffee11', notify);
+      await userEvent.click(await screen.findByRole('button', { name: '停止本轮' }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(
+        '已请智能体停止这一轮；对话仍然开着。1 条等待中的消息已退回输入框，未发送。'));
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /** CONV4b: the stop is there while the driver says a turn is in flight, and the send button says *queue*. */
+  it('follows the driver live: a stop while a turn runs, and none between turns', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: false };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    expect(await screen.findByRole('button', { name: 'send' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'stop turn' })).not.toBeInTheDocument();
+
+    await waitFor(() => expect(eventHandlers.has('DAORIS.SESSION_QUEUED')).toBe(true));
+    act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));
+    expect(await screen.findByRole('button', { name: 'stop turn' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'queue' })).toBeInTheDocument();
+
+    act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: false }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'stop turn' })).not.toBeInTheDocument());
+  });
+
+  /** CONV4b: each conversation keeps its own draft as the person moves between them. */
+  it('keeps each conversation its own draft', async () => {
+    const OTHER = { ...CHAT, id: 'decaf222', repository: 'game' };
+    SESSIONS = [CHAT, OTHER];
+    const view = show('c0ffee11');
+    await userEvent.type(await screen.findByLabelText('message'), 'half a thought for the engine');
+
+    view.rerender(
+      <QueryClientProvider client={view.client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="decaf222" onSelect={view.onSelect} notify={() => {}} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByLabelText('message')).toHaveValue(''));
+
+    view.rerender(
+      <QueryClientProvider client={view.client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="c0ffee11" onSelect={view.onSelect} notify={() => {}} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByLabelText('message')).toHaveValue('half a thought for the engine'));
+  });
+
+  /**
    * A driven session holds a tree but was given its whole target at once — there is no channel to
    * speak into, so it gets no composer. An input box nothing is listening to is worse than none.
    */
@@ -491,6 +598,8 @@ describe('clearing a parked session', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
+    // A draft outlives its test the way it outlives a reload (CONV4b).
+    window.localStorage.removeItem('daoris.drafts');
   });
 
   it('shows the analysis and the three moves on the attended session', async () => {
@@ -705,6 +814,8 @@ describe('reviewing what a session landed', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
+    // A draft outlives its test the way it outlives a reload (CONV4b).
+    window.localStorage.removeItem('daoris.drafts');
   });
 
   /** The dock opens on the timeline: a running session is watched far more often than reviewed. */
@@ -800,6 +911,8 @@ describe('acting on what a session landed', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
+    // A draft outlives its test the way it outlives a reload (CONV4b).
+    window.localStorage.removeItem('daoris.drafts');
   });
 
   const review = async () => {

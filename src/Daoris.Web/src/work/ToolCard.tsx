@@ -30,6 +30,9 @@ const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'parked'> = {
  * failed one is the line they came for. An edit shows its `+n −m` closed, because that is the size of
  * the change and it costs one glance.
  *
+ * **A call the stop cut reads as stopped** (CONV4b), in the quiet tone and closed, whatever status the
+ * harness gave it: the person asked for it. What the harness said is one click away, unchanged.
+ *
  * A molecule: the call arrives as props, and the one state it owns is whether it is open.
  */
 export function ToolCard({ call, tree }: {
@@ -38,7 +41,8 @@ export function ToolCard({ call, tree }: {
   tree?: string | null;
 }) {
   const { t } = useTranslation();
-  const failed = call.status === 'failed';
+  const stopped = Boolean(call.stopped);
+  const failed = call.status === 'failed' && !stopped;
   const [open, setOpen] = useState(failed);
 
   const diffs = (call.content ?? []).filter((item) => item.type === 'diff');
@@ -72,7 +76,11 @@ export function ToolCard({ call, tree }: {
             <span className="text-st-declined">−{counts.removed}</span>
           </span>
         )}
-        <Dot className="ml-auto shrink-0" tone={STATUS_TONE[status] ?? 'idle'} label={t(`work.tool.status.${status}`, { defaultValue: status })} />
+        <Dot
+          className="ml-auto shrink-0"
+          tone={stopped ? 'idle' : STATUS_TONE[status] ?? 'idle'}
+          label={stopped ? t('work.tool.status.stopped') : t(`work.tool.status.${status}`, { defaultValue: status })}
+        />
       </button>
 
       {open && hasBody && (

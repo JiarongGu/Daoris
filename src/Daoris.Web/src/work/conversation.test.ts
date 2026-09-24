@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { useSessionEvents } from '../shell';
+import { useSessionEvents, useSessionTurns } from '../shell';
 import { mergeEvents, type SessionEvent, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
@@ -98,6 +98,44 @@ describe('toTurns', () => {
 
     expect(turns.flatMap((t) => t.items)).toEqual([]);
     expect(usage).toEqual({ used: 300, size: 1000, most: 900 });
+  });
+
+  /**
+   * CONV4b: the calls a stop cut are the ones still open when the turn ended cancelled — whatever the
+   * harness called them. Claude Code answers the cut call as failed, another agent leaves it running,
+   * and either way the person stopped it. A call that failed earlier and was followed by more work
+   * failed on its own, and stays failed.
+   */
+  it('marks the calls a stop cut as stopped, and nothing else', () => {
+    const cut = toTurns([
+      e(1, { kind: 'user', origin: 'person', text: 'run the tests' }),
+      e(2, { kind: 'tool', id: 'c1', title: 'Read a.rs', status: 'completed' }),
+      e(3, { kind: 'tool', id: 'c2', title: 'Run the build', status: 'failed' }),
+      e(4, { kind: 'message', text: 'the build failed; running the tests anyway' }),
+      e(5, { kind: 'tool', id: 'c3', title: 'Run the tests', status: 'in_progress' }),
+      e(6, { kind: 'tool', id: 'c3', status: 'failed', content: [{ type: 'text', text: "The user doesn't want to proceed" }] }),
+      e(7, { kind: 'turn', stopReason: 'cancelled' }),
+    ]).turns[0]!;
+
+    expect(cut.items.filter((b) => b.kind === 'tool').map((b) => [b.id, b.status, Boolean(b.stopped)])).toEqual([
+      ['c1', 'completed', false],
+      ['c2', 'failed', false],
+      ['c3', 'failed', true],
+    ]);
+
+    // Calls run side by side at the end: a finished one among them does not hide an open one.
+    const side = toTurns([
+      e(1, { kind: 'tool', id: 'c1', status: 'in_progress' }),
+      e(2, { kind: 'tool', id: 'c2', status: 'completed' }),
+      e(3, { kind: 'turn', stopReason: 'cancelled' }),
+    ]).turns[0]!;
+    expect(side.items.map((b) => Boolean(b.stopped))).toEqual([true, false]);
+
+    const ended = toTurns([
+      e(1, { kind: 'tool', id: 'c1', status: 'in_progress' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+    ]).turns[0]!;
+    expect(ended.items[0]!.stopped).toBeFalsy();
   });
 
   it('keeps what happened before any ask in a turn of its own', () => {
@@ -183,6 +221,43 @@ describe('useSessionEvents', () => {
     const { result } = renderHook(() => useSessionEvents(null));
 
     expect(result.current.events).toEqual([]);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * CONV4b: where a conversation's turns stand — whether one is in flight, and what the person sent that
+ * has not reached the harness — asked once and then followed live. The driver is the authority: the
+ * record lags it, and a message that is only waiting is in no record at all.
+ */
+describe('useSessionTurns', () => {
+  const queued = (session: string, state: { queued: string[]; taking: boolean }) =>
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session, ...state }); });
+
+  it('asks once on open, then follows the driver live, for its own session only', async () => {
+    invoke.mockResolvedValue({ session: 's1', queued: ['second'], taking: true });
+    const { result } = renderHook(() => useSessionTurns('s1'));
+
+    await waitFor(() => expect(result.current).toEqual({ queued: ['second'], taking: true }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1' } });
+
+    queued('s2', { queued: ['not mine'], taking: true });
+    queued('s1', { queued: [], taking: false });
+    expect(result.current).toEqual({ queued: [], taking: false });
+  });
+
+  it('reads an answer that is not a queue as nothing waiting and nothing running', async () => {
+    invoke.mockResolvedValue({ drivable: [] });
+    const { result } = renderHook(() => useSessionTurns('s1'));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalled());
+    expect(result.current).toEqual({ queued: [], taking: false });
+  });
+
+  it('holds nothing with no session attended', () => {
+    const { result } = renderHook(() => useSessionTurns(null));
+
+    expect(result.current).toEqual({ queued: [], taking: false });
     expect(invoke).not.toHaveBeenCalled();
   });
 });
