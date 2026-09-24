@@ -110,6 +110,11 @@ public static class TargetPrompt
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
         taken or closed, stand down and finish without changing anything.
         {Mapped(target)}
+        If a command the work genuinely needs is refused, and your connector offers `permission_propose`,
+        propose the narrowest rule that would allow it, with the reason. A rule that lets agents do more
+        waits for the person, so do not wait on it: finish what you can, or decline and say what was
+        refused.
+
         Never write outside this repository. Work another repository needs is a quest published to it,
         never an edit — that is the rule the whole arrangement rests on. Anything that cannot be taken
         back or that leaves the repository — a push, a publish, a release — is not yours to do; surface

@@ -3064,3 +3064,14 @@ applies the difference.
   decoration.
 - **Deleting a proposal once settled.** The record of who changed what, and who declined what, is the
   point.
+
+**Amended 2026-09-24 (PERM2b): the target says the tool is there.** The composed quest target named
+every connector verb it relies on (take, close, publish) and not this one, so a session refused a
+command its work needed had nothing to reach for but a decline. The target now carries one paragraph
+after the claim and close: if a needed command is refused and the connector offers
+`permission_propose`, propose the narrowest rule that would allow it, with the reason; a rule that lets
+agents do more waits for the person, so finish what can be finished or decline naming the refusal. It
+is conditional on the connector offering the tool, because the same words reach every door and every
+agent. An intake's own prompt is untouched. `tools/perm2-proof.mjs` is the real-session proof.
+Rejected: saying it only when rules are handed. The target is composed before the door is known, and a
+sentence that names its own condition is honest on every door.
