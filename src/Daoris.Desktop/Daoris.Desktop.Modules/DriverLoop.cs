@@ -220,7 +220,7 @@ public sealed class DriverLoop(
         // (so one lock and one "stop" reach both kinds), the same console buffer.
         // …and the same harness roster, so one probe serves both doors and a login the person just
         // did is seen by whichever of them asks next.
-        Chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses);
+        Chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events);
         Service = service;
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer

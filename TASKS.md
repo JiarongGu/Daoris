@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 604 driver, 120 desktop modules, 902 web unit, 21 Playwright**, 73
+**446 CLI tests, 473 service, 616 driver, 120 desktop modules, 909 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -442,10 +442,20 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24).
-- [ ] **CONV3 — conversations and native sessions on the structured wire.** Claude Code's
-  `stream-json` for driven sessions and chats on the native door (the adapter's own mapping, checked
-  against the binary), ACP turns for a chat on the protocol door, the person's message in the
-  record.
+- [ ] **CONV3b — a chat on the protocol door, on the structured wire.** A chat there is still a
+  pipe: it is given no `session/new` of its own, so it has no turns to record. Each message becomes
+  an `AcpSession` prompt, and the person's message goes into the record as it does on the native door
+  (CONV3a).
+- [ ] **FIX — a chat open when the shell closes is left `working`.** `DriverLoop.Stop()` waits for
+  the driven loop only. A chat runs in `ChatRunner`, outside it, and its best-effort `Conclude` loses
+  the race with `HostSupervisor.Stop()`, so its record reads *working, running 12m* with no process
+  behind it (seen on the window, 2026-09-25). This shape predates CONV3. End the chats and await
+  their records before the host goes. **And the person cannot repair it by hand:** `STOP_SESSION`
+  answers `false` for a process this driver does not hold, on the assumption that "the record says
+  how it ended". An orphan's record says `working`, so pressing stop changes nothing and says
+  nothing. A stop on this machine's session with no process behind it should record the ending. A crash that no shutdown order can reach, which leaves both
+  kinds of session active, is a separate question for a startup sweep: it must not claim another
+  machine's session, nor another driver's.
 - [ ] **CONV4 — the composer.** Attachments (the `carry` molecule), `@` a file in the session's
   tree, a draft per session, stop the turn beside end the session.
 - [ ] **CONV5 — meters.** A context ring under the composer and per-turn usage, from the usage the

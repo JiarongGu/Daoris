@@ -141,9 +141,14 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const intake = attended ? isIntake(attended) : false;
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
-  // attended, because the person is very likely reading exactly that.
+  // attended, because the person is very likely reading exactly that. 🔴 And only a record this
+  // frame has SEEN can be gone: a session just started is attended before the list has caught up
+  // with it, and clearing on that first answer left "Nothing attended" beside a running chat (CONV3).
+  const seen = useRef(new Set<string>());
   useEffect(() => {
-    if (selected && sessions.data && !sessions.data.some((session) => session.id === selected)) {
+    if (!sessions.data) return;
+    for (const session of sessions.data) seen.current.add(session.id);
+    if (selected && seen.current.has(selected) && !sessions.data.some((session) => session.id === selected)) {
       onSelect(null);
     }
   }, [selected, sessions.data, onSelect]);
@@ -286,8 +291,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
               and the words are what the region follows. Only where the session ran: a teammate's
               record came without its transcript, which stays on their machine (D47 §4). */}
           {attended && here && (
-            <div className="mt-4">
-              <SessionConversation session={attended.id} live={live} scroller={centre} />
+            <div className="mt-4 min-w-0">
+              <SessionConversation session={attended.id} tree={attended.tree} live={live} scroller={centre} />
             </div>
           )}
         </div>

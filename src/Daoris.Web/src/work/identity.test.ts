@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Quest, Session } from '../api';
-import { ownTree, sessionOrigin, sessionTitle, treeName } from './identity';
+import { inTree, ownTree, sessionOrigin, sessionTitle, treeName } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1',
@@ -147,5 +147,32 @@ describe('a tree the session opened for itself', () => {
 
   it('claims nothing when the record carries no tree at all', () => {
     expect(ownTree(session(), root)).toBeNull();
+  });
+});
+
+/**
+ * A harness names what it touched by absolute path, so a card read `Edit D:/…/trees/…/src/chunk.rs`
+ * and truncated before the part that mattered (CONV3's look). Shown relative to the session's tree;
+ * the record keeps what the wire said.
+ */
+describe('a path inside the session\'s tree', () => {
+  const tree = 'D:\\daoris\\trees\\default\\engine\\streaming';
+
+  it('reads relative to the tree, wherever it appears in a line', () => {
+    expect(inTree('Edit D:\\daoris\\trees\\default\\engine\\streaming\\src\\chunk.rs', tree)).toBe('Edit src\\chunk.rs');
+  });
+
+  it('ignores separators and case, because one path can be spelled several ways', () => {
+    expect(inTree('d:/daoris/trees/default/Engine/streaming/src/chunk.rs', tree)).toBe('src/chunk.rs');
+  });
+
+  it('leaves a path outside the tree, and a sibling that only shares its prefix, as they were', () => {
+    expect(inTree('Read D:/daoris/notes.md', tree)).toBe('Read D:/daoris/notes.md');
+    expect(inTree('D:/daoris/trees/default/engine/streaming-old/a.rs', tree)).toBe('D:/daoris/trees/default/engine/streaming-old/a.rs');
+  });
+
+  it('reads a POSIX tree the same way, and changes nothing with no tree in hand', () => {
+    expect(inTree('Read /srv/engine/src/lib.rs', '/srv/engine/')).toBe('Read src/lib.rs');
+    expect(inTree('Read /srv/engine/src/lib.rs', null)).toBe('Read /srv/engine/src/lib.rs');
   });
 });

@@ -77,6 +77,26 @@ const samePath = (a: string, b: string) =>
   a.replace(/[\\/]+$/, '').replace(/\\/g, '/').toLowerCase()
   === b.replace(/[\\/]+$/, '').replace(/\\/g, '/').toLowerCase();
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * A line naming paths — a tool's title, where it acted — with every path inside the session's tree
+ * shown relative to it, or the line as it was with no tree in hand.
+ *
+ * @remarks
+ * A harness names what it touched by absolute path, and a card truncated `Edit D:/…/trees/…` before
+ * the part a reader wanted (CONV3's look). **Display only**: the record keeps what the wire said
+ * (D52), and a message's own words are content, never rewritten. Separators and case are ignored as
+ * {@link ownTree} ignores them, and the tree must end at a separator — a sibling that only shares its
+ * prefix is somewhere else.
+ */
+export function inTree(line: string, tree: string | null | undefined): string {
+  const root = (tree ?? '').replace(/[\\/]+$/, '');
+  if (!root || !line) return line;
+  const pattern = root.split(/[\\/]+/).map(escapeRegExp).join('[\\\\/]+');
+  return line.replace(new RegExp(`${pattern}[\\\\/]+`, 'gi'), '');
+}
+
 /**
  * The name of a tree this session opened **for itself**, or null when it is working in the
  * repository's registered checkout.

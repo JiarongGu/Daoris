@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Dot, Icon, type IconName } from '../ui';
 import type { Block, ToolContent } from './conversation';
+import { inTree } from './identity';
 import { diffCounts, lineDiff } from './lineDiff';
 
 /** A tool call's ACP kind, as the glyph it wears. Anything else is a generic tool. */
@@ -22,7 +23,8 @@ const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'parked'> = {
  *
  * @remarks
  * **Everything here is the wire's own field** (D52): the kind, title, status, places and content an
- * ACP tool call reports. Nothing is inferred from a title or parsed out of the output.
+ * ACP tool call reports. Nothing is inferred from a title or parsed out of the output. The one
+ * change on the way to the screen is a path inside the session's tree, shown relative to it.
  *
  * **Closed by default, open when it failed**: a finished call is a line a reader scans past, and a
  * failed one is the line they came for. An edit shows its `+n −m` closed, because that is the size of
@@ -30,7 +32,11 @@ const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'parked'> = {
  *
  * A molecule: the call arrives as props, and the one state it owns is whether it is open.
  */
-export function ToolCard({ call }: { call: Block }) {
+export function ToolCard({ call, tree }: {
+  call: Block;
+  /** The session's tree, so a path inside it reads relative to it. */
+  tree?: string | null;
+}) {
   const { t } = useTranslation();
   const failed = call.status === 'failed';
   const [open, setOpen] = useState(failed);
@@ -40,8 +46,8 @@ export function ToolCard({ call }: { call: Block }) {
     ? diffs.map((item) => diffCounts(lineDiff(item.oldText, item.newText)))
       .reduce((sum, c) => ({ added: sum.added + c.added, removed: sum.removed + c.removed }), { added: 0, removed: 0 })
     : null;
-  const where = call.locations?.[0];
-  const title = call.title || call.id || t('work.tool.untitled');
+  const where = call.locations?.[0] ? inTree(call.locations[0], tree) : undefined;
+  const title = inTree(call.title || call.id || t('work.tool.untitled'), tree);
   const status = call.status ?? 'pending';
   const hasBody = Boolean(call.content?.length || call.input || call.output);
 
@@ -71,7 +77,7 @@ export function ToolCard({ call }: { call: Block }) {
 
       {open && hasBody && (
         <div className="grid gap-2 border-t border-line px-2.5 py-2">
-          {(call.content ?? []).map((item, index) => <Content key={index} item={item} />)}
+          {(call.content ?? []).map((item, index) => <Content key={index} item={item} tree={tree} />)}
           {call.input && <Raw label={t('work.tool.input')} text={call.input} />}
           {call.output && <Raw label={t('work.tool.output')} text={call.output} />}
         </div>
@@ -80,13 +86,13 @@ export function ToolCard({ call }: { call: Block }) {
   );
 }
 
-function Content({ item }: { item: ToolContent }) {
+function Content({ item, tree }: { item: ToolContent; tree?: string | null }) {
   const { t } = useTranslation();
   if (item.type === 'diff') {
     return (
       <figure className="m-0 overflow-hidden rounded-control border border-line">
         {item.path && (
-          <figcaption className="border-b border-line bg-page px-2.5 py-1 font-mono text-meta text-ink-soft">{item.path}</figcaption>
+          <figcaption className="border-b border-line bg-page px-2.5 py-1 font-mono text-meta text-ink-soft">{inTree(item.path, tree)}</figcaption>
         )}
         <pre className="m-0 max-h-96 overflow-auto py-1 font-mono text-small leading-relaxed">
           {lineDiff(item.oldText, item.newText).map((line, index) => (

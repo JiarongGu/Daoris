@@ -5600,3 +5600,48 @@ deploy 39/39.
 UX1 gained two findings to settle there: one hue for *waiting on you* (the rail and the band wear
 declined's red, the map the warn tone), and the monitor's console-only tiles. Web unit 874 → 902,
 Playwright 21/21.
+
+## CONV3a — the native door on the structured wire (2026-09-25)
+
+- [x] ~~**CONV3 — conversations and native sessions on the structured wire.** Claude Code's
+  `stream-json` for driven sessions and chats on the native door (the adapter's own mapping, checked
+  against the binary), ACP turns for a chat on the protocol door, the person's message in the
+  record.~~
+✅ **the native half done 2026-09-25.** It was split when a chat on the protocol door turned out to
+need a `session/new` of its own. That half is **CONV3b**, open in the backlog.
+
+- **Read off the binary first** (`docs/2026-09-25-stream-json-evidence.md`). Claude Code 2.1.281 was
+  probed with `-p --input-format stream-json --output-format stream-json --verbose
+  --include-partial-messages`. A turn is `system/init`, `system/status`, the `stream_event` deltas,
+  the whole `assistant` message (so the words arrive twice), `user` lines carrying `tool_result`, and
+  `result` with usage and the context window. Several stdin lines make several turns in one process.
+- **The adapter's own mapping** (`StructuredOutput.cs`): `IStreamMapper`, one per session, and
+  `ClaudeStreamJson`.
+  - Deltas are the live words, and the whole message's text is kept only when nothing streamed.
+  - A `tool_use` becomes a card. Its title comes from the tool's own input, its kind uses ACP's
+    vocabulary so both doors wear the same glyphs, an edit or write becomes a diff, and the to-do
+    list becomes the plan.
+  - A `tool_result` completes or fails the card.
+  - `result` ends the turn and reports context against the window the harness names; the model's
+    name and the cost stay on the wire (D24, TOOL3).
+  - Every field is shape-checked, and an unknown frame is kept raw.
+- **The capture** (`Driver.CaptureStructuredAsync`) keeps the transcript as text a person reads,
+  never the JSON, and the record beside it. A failed turn's words reach the transcript, where the
+  refusal detector reads them. Driven sessions, intakes and chats all use it, and the native door
+  now records its context usage as the protocol door already did.
+- **A chat** frames each message as a `stream-json` user line (`FrameMessage`), and once it is sent
+  it goes into the record as the person's.
+- **Looked at** with real Claude Code chats on the scratch machine (owner's authorisation,
+  2026-09-24). The window showed three defects, all fixed, in the FIX-LOG under this date:
+  - a chat just started fell back to *Nothing attended*;
+  - a long code line widened the conversation;
+  - tool cards named absolute paths, and now read relative to the session's tree.
+
+  It also found, outside this item:
+  - **every message a person typed was sent twice.** The composer's send was an untyped button
+    inside its form. The same class made a key form's cancel save the key. Fixed in their own
+    commit.
+  - **a chat open when the shell closes is left `working`** with no process, and stop cannot end
+    it. Open as a FIX in the backlog.
+
+Driver 604 → 616, web unit 902 → 909.

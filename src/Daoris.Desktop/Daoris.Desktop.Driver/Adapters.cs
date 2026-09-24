@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 
 namespace Daoris.Driver;
 
@@ -334,6 +335,23 @@ public interface ISessionAdapter
     /// every field here is a claim about somebody else's tool, and a guessed one is worse than none.
     /// </remarks>
     HarnessToolchain? Toolchain => null;
+
+    /// <summary>
+    /// A reader of this harness's own structured stdout on the pipe door (D76 §1), new per session — or
+    /// null when the door carries text, which is every adapter until its harness's wire is checked.
+    /// </summary>
+    /// <remarks>
+    /// The protocol door reads its structure in <see cref="AcpSession"/>; this is the native door's twin,
+    /// and it is the ADAPTER's, because a wire belongs to a harness (D23). Nothing here is parsed out of
+    /// prose: a mapper reads a documented format, checked against the binary before it was written.
+    /// </remarks>
+    IStreamMapper? StructuredOutput() => null;
+
+    /// <summary>
+    /// A person's message as this harness reads it on a conversation's stdin — the text as it is, unless
+    /// the harness takes structured input.
+    /// </summary>
+    string FrameMessage(string text) => text;
 }
 
 /// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
@@ -823,10 +841,31 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         var resolved = Resolve(command);
         var arguments = resolved.Skip(1)
-            .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", "acceptEdits"]);
+            .Concat(["-p", TargetPrompt.Compose(target), "--permission-mode", "acceptEdits"])
+            .Concat(StreamJsonOut);
 
         return Spawning.InRoot(target, resolved[0], arguments);
     }
+
+    /// <summary>
+    /// The harness's own structured output (D76, CONV3), checked against the binary before it was
+    /// written (docs/2026-09-25-stream-json-evidence.md): `stream-json` needs `--verbose` beside it, and
+    /// partial messages are what let the words stream as they are written.
+    /// </summary>
+    private static readonly string[] StreamJsonOut =
+        ["--output-format", "stream-json", "--verbose", "--include-partial-messages"];
+
+    public IStreamMapper StructuredOutput() => new ClaudeStreamJson();
+
+    /// <summary>
+    /// A person's message as one `stream-json` user line — the shape the binary took on stdin, one turn
+    /// per line, in the probe the evidence records.
+    /// </summary>
+    public string FrameMessage(string text) => JsonSerializer.Serialize(new
+    {
+        type = "user",
+        message = new { role = "user", content = new[] { new { type = "text", text } } },
+    });
 
     /// <summary>
     /// A conversation: no target prompt, because the person supplies the first message.
@@ -843,8 +882,13 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command)
     {
         var resolved = Resolve(command);
+        // A conversation on the harness's structured wire (CONV3): each message a `stream-json` line on
+        // stdin, one turn each, until input ends — the same two endings the chat door keeps.
         return Spawning.ChatInRoot(
-            target, resolved[0], resolved.Skip(1).Concat(["--permission-mode", "acceptEdits"]));
+            target, resolved[0],
+            resolved.Skip(1)
+                .Concat(["-p", "--input-format", "stream-json", "--permission-mode", "acceptEdits"])
+                .Concat(StreamJsonOut));
     }
 
     /// <summary>

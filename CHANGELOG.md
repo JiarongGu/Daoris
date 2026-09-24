@@ -408,7 +408,13 @@ The first version: doctrine that installs, is checked, and flows back.
   call as a row with its file, its status and an edit's line diff, the plan, and a finished turn's
   work folded under its answer. It is read back after a restart, a page at a time, and follows the
   newest words until you scroll up. The console stays, as the raw view. Sessions on the protocol door
-  have it now; the native door and chats follow.
+  have it, and so do Claude Code's driven sessions, intakes and chats: the adapter reads the tool's
+  own structured output, and a chat records each message you send. A chat on the protocol door
+  follows. A tool card names a file inside the session's tree relative to it. The context a session
+  used is recorded for the native door too.
+- **A chat you start stays open in front of you**, where it used to fall back to *Nothing attended*
+  until you picked it from the list. A long code line scrolls inside its block, not widening the
+  conversation.
 - **Retiring the last repository empties the index.** A machine whose every repository was retired
   went on charting, searching and comparing their knowledge; a refresh now leaves it empty, while a
   registered repository whose checkout cannot be read still keeps what it had.

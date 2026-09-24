@@ -128,6 +128,18 @@ describe('ConversationView', () => {
     expect(asked).toBe(1);
   });
 
+  it('names a tool\'s paths relative to the session\'s tree', async () => {
+    view([
+      ev({ kind: 'tool', id: 'c5', title: 'Edit /srv/engine/src/chunk.rs', toolKind: 'edit', status: 'completed',
+        locations: ['/srv/engine/src/chunk.rs'],
+        content: [{ type: 'diff', path: '/srv/engine/src/chunk.rs', oldText: 'a', newText: 'b' }] }),
+    ], { tree: '/srv/engine' });
+
+    await userEvent.click(screen.getByRole('button', { name: /Edit src\/chunk\.rs/ }));
+    expect(screen.queryByText(/\/srv\/engine/)).toBeNull();
+    expect(screen.getByText('src/chunk.rs')).toBeTruthy();
+  });
+
   it('marks a turn that ended for a reason other than finishing', () => {
     view([ev({ kind: 'message', text: 'stopping' }), ev({ kind: 'turn', stopReason: 'cancelled' })]);
 

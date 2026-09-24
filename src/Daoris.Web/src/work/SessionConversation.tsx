@@ -17,8 +17,10 @@ import { useFollowTail } from './followTail';
  *
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
-export function SessionConversation({ session, live, scroller }: {
+export function SessionConversation({ session, tree, live, scroller }: {
   session: string;
+  /** The session's tree, so a tool's path inside it reads relative to it. */
+  tree?: string | null;
   live: boolean;
   /** The region the conversation scrolls in. */
   scroller: RefObject<HTMLElement | null>;
@@ -35,6 +37,7 @@ export function SessionConversation({ session, live, scroller }: {
     <>
       <ConversationView
         turns={turns}
+        tree={tree}
         live={live}
         loaded={loaded}
         earlier={earlier}

@@ -105,7 +105,7 @@ function show(selected: string | null = null) {
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
-  return { ...view, onSelect };
+  return { ...view, onSelect, client };
 }
 
 describe('the Work frame', () => {
@@ -132,6 +132,28 @@ describe('the Work frame', () => {
   it('lands on a designed nothing, not on a session it chose for the person', async () => {
     show(null);
     expect(await screen.findByText('Nothing attended')).toBeInTheDocument();
+  });
+
+  /**
+   * 🔴 Seen on the window (CONV3's look): a session just started is attended before the list has
+   * fetched it, and the frame cleared the selection as a record that was gone, leaving "Nothing
+   * attended" beside a running chat. Only a record the frame has seen can be gone.
+   */
+  it('keeps a just-started session attended until the list catches up with it', async () => {
+    const { onSelect } = show('c0ffee11');
+
+    await screen.findByText(/Expose a streaming budget/);
+    expect(onSelect).not.toHaveBeenCalledWith(null);
+  });
+
+  it('lets go of a session whose record it saw and that is gone', async () => {
+    const { onSelect, client } = show(DRIVEN.id);
+    await screen.findAllByText(/Expose a streaming budget/);
+
+    SESSIONS = [];
+    await act(() => client.invalidateQueries());
+
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
   });
 
   /**

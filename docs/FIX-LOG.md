@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A chat just started showed "Nothing attended", and a code block widened the conversation (2026-09-25)
+
+**Symptom.** Found on the first real Claude Code chat on the structured wire (CONV3a). Starting a
+chat from the drawer showed *Nothing attended* beside it; the session was running, and pressing its
+rail row brought it back. With the chat open, a fenced block with long lines pushed the whole
+conversation wider than its measure. The block did not scroll inside its own box. And every tool
+card read `Read D:\…\family\game\README.md`, truncated before the part a reader wanted.
+
+**Root cause.** The frame clears a selection whose record is gone, and "gone" meant "absent from
+the list's current answer". A session just started is attended *before* the list has caught up with
+it. The first answer after the start still lacked it, so the frame cleared a selection it had only
+just made. The width: the conversation is a grid, and a grid track's default minimum is its
+content's width, so a `<pre>` with a long line set the track's minimum, not the scroll box.
+The paths: Claude Code names what it touched by absolute path, and the adapter composes the title
+from that path.
+
+**Fix.** Only a record the frame has seen can be gone: a `seen` set of every id the list has
+answered with, and a selection is cleared only when it was seen and is now absent. The
+conversation and each turn are `grid-cols-[minmax(0,1fr)]` with `min-w-0`, so the track can shrink
+and the block scrolls in place. A tool card's title, place and diff caption show a path inside the
+session's tree relative to it (`inTree`, display only; the record keeps what the wire said).
+
+**Verify.** Two frame tests: a just-started session stays attended while the list lacks it, and a
+session the frame saw and that has gone is let go. Four `inTree` tests (separators and case, a
+sibling that only shares the prefix, POSIX) and a view test. On the window: a chat started from the
+drawer stayed attended; the fenced block scrolled inside its box; the card read `Read README.md`.
+
 ## Retiring the last repository left every retired one indexed (2026-09-24)
 
 **Symptom.** The owner's install, every registration retired the day before, still served 1,052

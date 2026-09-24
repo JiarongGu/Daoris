@@ -21,8 +21,10 @@ import { ToolCard } from './ToolCard';
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */
-export function ConversationView({ turns, live = false, loaded = true, earlier = false, onLoadEarlier }: {
+export function ConversationView({ turns, tree, live = false, loaded = true, earlier = false, onLoadEarlier }: {
   turns: Turn[];
+  /** The session's tree, so a tool's path inside it reads relative to it. */
+  tree?: string | null;
   /** Whether the session is still working — a running turn shows it is. */
   live?: boolean;
   /** Whether the record has answered; before it has, nothing is claimed about it. */
@@ -43,20 +45,22 @@ export function ConversationView({ turns, live = false, loaded = true, earlier =
   }
 
   return (
-    <section aria-label={t('work.conversation.label')} className="grid w-full max-w-3xl gap-3">
+    // `minmax(0,1fr)`: a code block's long line scrolls inside its own box, and never widens the
+    // conversation past its measure (seen on the window with a real session, CONV3).
+    <section aria-label={t('work.conversation.label')} className="grid w-full max-w-3xl grid-cols-[minmax(0,1fr)] gap-3">
       {earlier && onLoadEarlier && (
         <Button variant="ghost" onClick={onLoadEarlier} className="justify-self-center text-small">
           {t('work.conversation.earlier')}
         </Button>
       )}
       {turns.map((turn, index) => (
-        <TurnView key={turn.key} turn={turn} running={live && index === turns.length - 1 && !turn.ended} />
+        <TurnView key={turn.key} turn={turn} tree={tree} running={live && index === turns.length - 1 && !turn.ended} />
       ))}
     </section>
   );
 }
 
-function TurnView({ turn, running }: { turn: Turn; running: boolean }) {
+function TurnView({ turn, tree, running }: { turn: Turn; tree?: string | null; running: boolean }) {
   const { t } = useTranslation();
   const [unfolded, setUnfolded] = useState(false);
 
@@ -67,11 +71,11 @@ function TurnView({ turn, running }: { turn: Turn; running: boolean }) {
   const folds = Boolean(turn.ended) && work.length > 0 && !unfolded;
 
   return (
-    <div className="grid gap-1.5">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
       {turn.ask && <AskView ask={turn.ask} />}
       {folds
         ? <FoldRow items={work} onOpen={() => setUnfolded(true)} />
-        : work.map((item) => <BlockView key={item.key} block={item} />)}
+        : work.map((item) => <BlockView key={item.key} block={item} tree={tree} />)}
       {turn.ended && unfolded && work.length > 0 && (
         <button
           type="button"
@@ -118,14 +122,14 @@ function AskView({ ask }: { ask: Ask }) {
   );
 }
 
-function BlockView({ block }: { block: Block }) {
+function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
   switch (block.kind) {
     case 'message':
       return <Markdown text={block.text ?? ''} />;
     case 'thought':
       return <ThoughtRow text={block.text ?? ''} />;
     case 'tool':
-      return <ToolCard call={block} />;
+      return <ToolCard call={block} tree={tree} />;
     case 'plan':
       return <PlanView entries={block.entries ?? []} />;
     case 'note':

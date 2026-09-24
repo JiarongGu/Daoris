@@ -292,8 +292,31 @@ public sealed class AdapterTests
 
         Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ID"));
         Assert.False(info.Environment.ContainsKey("DAORIS_TARGET"));
-        // And no one-shot prompt: the person supplies the first message.
-        Assert.DoesNotContain("-p", info.ArgumentList);
+        // And no one-shot prompt: the person supplies every message, as `stream-json` lines on stdin
+        // (CONV3). `-p` is the harness's print mode here, followed by a flag and never by a prompt.
+        var arguments = info.ArgumentList.ToList();
+        var print = arguments.IndexOf("-p");
+        Assert.True(print >= 0 && arguments[print + 1].StartsWith("--", StringComparison.Ordinal), string.Join(' ', arguments));
+        Assert.Equal("stream-json", arguments[arguments.IndexOf("--input-format") + 1]);
+        Assert.Equal("stream-json", arguments[arguments.IndexOf("--output-format") + 1]);
+    }
+
+    /// <summary>
+    /// A driven session speaks the harness's structured output too (CONV3), and keeps its composed
+    /// target as the one prompt — checked against the binary (docs/2026-09-25-stream-json-evidence.md).
+    /// </summary>
+    [Fact]
+    public void A_driven_session_asks_for_the_harnesss_structured_output()
+    {
+        var adapter = AdapterSet.Built().Resolve("claude-code");
+        var arguments = adapter.Prepare(Target(), null).ArgumentList.ToList();
+
+        Assert.Equal("stream-json", arguments[arguments.IndexOf("--output-format") + 1]);
+        Assert.Contains("--verbose", arguments);
+        Assert.Contains("--include-partial-messages", arguments);
+        Assert.NotNull(adapter.StructuredOutput());
+        // A harness whose wire is not checked stays text.
+        Assert.Null(AdapterSet.Built().Resolve("stub").StructuredOutput());
     }
 
     /// <summary>The permission posture does not soften because a person is watching (D46 §5).</summary>

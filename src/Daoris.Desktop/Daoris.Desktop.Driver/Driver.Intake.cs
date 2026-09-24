@@ -199,14 +199,18 @@ public sealed partial class Driver
                     process, transcript, sessionId, room, TargetPrompt.Compose(target), adapter.AcpPosture,
                     harnessNotice, ct, scope, rules.Meta)
                 : null;
-            Task capture = acp ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
+            // The native door's structure too (CONV3): an intake on the pipe is drawn like any session.
+            var structured = acp is null
+                ? Structured(adapter, process, transcript, sessionId, TargetPrompt.Compose(target), ct, preamble)
+                : null;
+            Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
             await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
 
             var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
             await capture.ConfigureAwait(false);
 
-            if (acp is not null && (await acp.ConfigureAwait(false))?.Usage is { } used)
+            if ((acp is not null ? (await acp.ConfigureAwait(false))?.Usage : structured is not null ? await structured.ConfigureAwait(false) : null) is { } used)
             {
                 usage?.Record(new UsageEntry(
                     sessionId, $"ask #{ask.Id}", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));

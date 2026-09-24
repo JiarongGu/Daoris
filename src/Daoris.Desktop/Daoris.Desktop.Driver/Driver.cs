@@ -527,16 +527,18 @@ public sealed partial class Driver(
                     process, transcript, sessionId, workTree, TargetPrompt.Compose(target),
                     adapter.AcpPosture, harnessNotice, ct, meta: rules.Meta)
                 : null;
-            Task capture = acp ?? CaptureAsync(process, transcript, sessionId, ct);
+            // The native door's structure, where the harness's own wire carries one (D76, CONV3).
+            var structured = acp is null ? Structured(adapter, process, transcript, sessionId, TargetPrompt.Compose(target), ct) : null;
+            Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct);
 
             await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
 
             var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
             await capture.ConfigureAwait(false);
 
-            // What it consumed, where the door reported it (TOOL3/D57 §4). The pipe door reports
-            // nothing and records nothing — a surface then says "not measured" rather than zero.
-            if (acp is not null && (await acp.ConfigureAwait(false))?.Usage is { } used)
+            // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text
+            // reports nothing and records nothing — a surface then says "not measured" rather than zero.
+            if ((acp is not null ? (await acp.ConfigureAwait(false))?.Usage : structured is not null ? await structured.ConfigureAwait(false) : null) is { } used)
             {
                 usage?.Record(new UsageEntry(
                     sessionId, quest.To, adapter.Name, selection.Profile,
@@ -782,6 +784,19 @@ public sealed partial class Driver(
         CaptureAsync(process, transcript, sessionId, output, ct, preamble);
 
     /// <summary>
+    /// The structured capture for a pipe-door harness whose adapter reads its stdout (CONV3), or null
+    /// when the adapter has no reader and the door stays text.
+    /// </summary>
+    private Task<AcpUsage?>? Structured(
+        ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
+        CancellationToken ct, string? preamble = null) =>
+        adapter.StructuredOutput() is { } mapper
+            ? CaptureStructuredAsync(
+                process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
+                prompt, ct, preamble)
+            : null;
+
+    /// <summary>
     /// The protocol door's capture (D53): an ACP session held over this process's stdio, with the
     /// RENDERED updates reaching the transcript and the console rather than the wire itself.
     /// </summary>
@@ -966,6 +981,61 @@ public sealed partial class Driver(
         var stdout = PumpAsync(process.StandardOutput, file, sessionId, output, ct);
         var stderr = PumpAsync(process.StandardError, file, sessionId, output, ct);
         await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The native door's capture when its harness speaks a structured stdout (D76, CONV3): each line
+    /// read by the adapter's own mapper, what it renders reaching the transcript and the console, what
+    /// it means reaching the record — the protocol door's split, on the pipe.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The transcript stays text a person reads</b>, exactly as the protocol door's does: the
+    /// rendered lines, never the JSON — and a failure's words among them, because the refusal detector
+    /// reads its last lines (D49 §4).</para>
+    ///
+    /// <para><b>A record that cannot be written costs a console line, never the session</b>: the
+    /// conversation enriches the run, it does not run it.</para>
+    /// </remarks>
+    /// <param name="prompt">What was asked, for the record's opening line — the composed target of a
+    /// driven session. Null for a conversation, whose messages are recorded as the person sends them.</param>
+    /// <returns>The context high-water mark the harness reported, or null when it reported none.</returns>
+    internal static async Task<AcpUsage?> CaptureStructuredAsync(
+        TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
+        SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null)
+    {
+        await using var file = new StreamWriter(transcript, append: false);
+
+        void Line(string text)
+        {
+            lock (file) file.WriteLine(text);
+            output?.Append(sessionId, text);
+        }
+
+        void Event(SessionEvent e)
+        {
+            try
+            {
+                events?.Append(sessionId, e);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+            {
+                Line($"[the conversation record could not keep an event: {error.Message}]");
+            }
+        }
+
+        if (preamble is { Length: > 0 }) Line(preamble);
+        if (prompt is not null) Event(new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt });
+
+        var errors = PumpAsync(stderr, file, sessionId, output, ct);
+        while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
+        {
+            var mapped = mapper.Read(line);
+            foreach (var text in mapped.Lines) Line(text);
+            foreach (var e in mapped.Events) Event(e);
+        }
+
+        await errors.ConfigureAwait(false);
+        return mapper.Usage;
     }
 
     /// <summary>

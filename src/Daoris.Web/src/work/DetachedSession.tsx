@@ -63,8 +63,8 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
       <div ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
         <AttendedSession session={session} quest={quest} />
         {here && (
-          <div className="mt-4">
-            <SessionConversation session={session.id} live={SESSION_ACTIVE.has(session.state)} scroller={scroller} />
+          <div className="mt-4 min-w-0">
+            <SessionConversation session={session.id} tree={session.tree} live={SESSION_ACTIVE.has(session.state)} scroller={scroller} />
           </div>
         )}
       </div>

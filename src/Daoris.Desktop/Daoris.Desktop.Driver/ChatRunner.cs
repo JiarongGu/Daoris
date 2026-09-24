@@ -31,11 +31,21 @@ public sealed class ChatRunner(
     string home,
     SessionProcesses processes,
     SessionOutput? output = null,
-    HarnessRoster? harnesses = null)
+    HarnessRoster? harnesses = null,
+    // Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each
+    // message live; the home's own where nobody passes one, which is the headless chat door's case.
+    SessionEvents? events = null)
 {
     // Shared with the driver where a shell has both, so a probe is paid for once; its own where it
     // does not, which is the headless chat door's case.
     private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
+
+    private readonly SessionEvents _events = events ?? new SessionEvents(Path.Combine(home, "sessions"));
+
+    // Which adapter each live conversation runs on — how a person's message is framed for its harness
+    // (CONV3). An entry lives exactly as long as the conversation's process.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ISessionAdapter> _talking =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Open a chat and put a harness behind it. The record is the service's; the process is this
@@ -175,23 +185,51 @@ public sealed class ChatRunner(
         // The conversation outlives this call: the person types, the harness answers, and the record
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
-        _ = WatchAsync(sessionId, process, transcript, onEnded, rules);
+        _talking[sessionId] = resolved;
+        _ = WatchAsync(sessionId, process, transcript, onEnded, rules, resolved.StructuredOutput());
 
         return new(sessionId, message);
     }
 
     /// <summary>Send a person's message to a live chat. False when there is nothing listening.</summary>
-    public bool Say(string sessionId, string message) => processes.Send(sessionId, message);
-
-    /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
-    private async Task WatchAsync(
-        string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
-        string? rules = null)
+    /// <remarks>
+    /// Framed for the conversation's harness (CONV3) — a `stream-json` line where it reads one — and, once
+    /// it is sent, part of the record: the person's words were never in it before (D76 §4).
+    /// </remarks>
+    public bool Say(string sessionId, string message)
     {
-        using var tracked = processes.Track(sessionId, process);
+        var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message) : message;
+        if (!processes.Send(sessionId, framed)) return false;
+
         try
         {
-            var capture = Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None);
+            _events.Append(sessionId, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = message });
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // Sent is what the person asked for; the record's failure is its own.
+        }
+
+        return true;
+    }
+
+    /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
+    /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
+    private async Task WatchAsync(
+        string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
+        string? rules = null, IStreamMapper? mapper = null)
+    {
+        using var tracked = processes.Track(sessionId, process);
+        using var talking = new Disposer(() => _talking.TryRemove(sessionId, out _));
+        try
+        {
+            // The conversation's messages are recorded as the person sends them (`Say`), so the
+            // capture opens with no composed prompt of its own.
+            var capture = mapper is not null
+                ? Driver.CaptureStructuredAsync(
+                    process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
+                    prompt: null, CancellationToken.None)
+                : Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None);
             await service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
             await process.WaitForExitAsync().ConfigureAwait(false);
