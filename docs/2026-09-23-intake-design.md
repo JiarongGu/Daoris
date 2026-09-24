@@ -327,6 +327,7 @@ you*, and its record says who answered it.
   where an answer goes if it asks: it parks, and the answer is on the ask. It carries the stop the
   composer used to, over `STOP_SESSION`, with the same line saying the ask then stays a proposal, and
   a door that opens the ask to look at. *Finish* is gone, since an intake ends itself.
+- **A driven quest session is held to the same rule** (INT4i): driver design §4.
 
 ## 2. What is deliberately not built
 

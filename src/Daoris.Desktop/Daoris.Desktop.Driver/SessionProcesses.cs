@@ -90,7 +90,9 @@ public sealed class SessionProcesses
     /// a POLICY, held before anything is written, because the structural one stopped being enough at
     /// ACP1: a pipe-door driven session is spawned with no input stream, but a protocol-door session's
     /// stdin is open — the driver writes the protocol's frames into it (D53) — and a person's line
-    /// written there lands in the middle of the JSON-RPC stream. An intake is such a session (INT4h).
+    /// written there lands in the middle of the JSON-RPC stream. Everything the driver starts is such
+    /// a session: an intake (INT4h) and a driven quest session (INT4i), each one turn. Only a
+    /// conversation takes turns with a person.
     /// </remarks>
     public bool Send(string sessionId, string message)
     {

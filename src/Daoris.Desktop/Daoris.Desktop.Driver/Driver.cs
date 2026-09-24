@@ -80,6 +80,15 @@ public sealed partial class Driver(
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
         + "session's take is a conflict on the quest and its work would double someone else's.";
 
+    /// <summary>
+    /// Why a person's line is refused for a driven session (INT4i), and where its work goes instead —
+    /// the sentence the bridge carries verbatim, so a caller is told the truth rather than "it ended".
+    /// </summary>
+    internal static string TakesNoMessages(QuestView quest) =>
+        $"the session driven for quest #{quest.Id} takes no messages: it was handed its whole quest at once "
+        + "and works it in one turn. What it does lands on the quest — its take, its close and its "
+        + "commits — and stopping it is the one move that reaches it.";
+
     // How often the sync runs BESIDE sessions still working (D68 §6): the watch loop's own cadence, so
     // a session no longer holds the sync back for its whole run, and one choice sets both.
     private readonly TimeSpan _syncBeside = TimeSpan.FromSeconds(Math.Max(1, config.PollSeconds));
@@ -450,7 +459,10 @@ public sealed partial class Driver(
 
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
-            using var tracked = _processes.Track(sessionId, process);
+            // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for an
+            // intake, for the same reason: it was handed its whole quest at once, the pipe door gives
+            // it no stdin, and the protocol door's stdin carries the driver's own frames.
+            using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(quest));
             using var _ = new Disposer(() => SpawnServers.Remove(handed));
             _live[quest.Id] = sessionId;
             using var live = new Disposer(() => _live.TryRemove(quest.Id, out var _));

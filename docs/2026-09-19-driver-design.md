@@ -99,6 +99,17 @@ evidence.** The session works under its own repository's loop — commit per tas
 (D37 as amended) — so the record carries the evidence bundle the person reviews: gate results, landed
 commits, and the quest's closing note.
 
+**A driven session takes no person's line** (INT4i, 2026-09-24, as built). It was handed its whole
+quest at once and works it in one turn. On the pipe door it has no stdin; on the protocol door its stdin
+carries the driver's own frames (D53), so a line written there would land in the middle of the JSON-RPC
+stream. Measured before the rule: a `Send` for a protocol-door driven session answered `true`, which
+means the line was written into that stdin. The process registry tracks the session with the driver's
+sentence, so `Send` and `CloseInput` refuse before anything is written, and the bridge answers
+`SESSION_INPUT` and `END_CHAT` with that sentence (`DRIVER_REFUSED`) rather than a `false` that reads as
+*it ended*. The same rule as an intake's (INT4h, intake design §1h). **Only a conversation takes turns
+with a person**, and its tracking is unchanged. The page never offered a driven session a box; this
+closes the door a caller naming its id could still use.
+
 **Session records live in the service, beside the quests.** A `sessions` table in the same store
 (`~/.daoris/knowledge.db`), for the same reason quests do: every client benefits — the platform renders
 them, the record survives a driver restart, and part 3 later syncs records where it could never sync
