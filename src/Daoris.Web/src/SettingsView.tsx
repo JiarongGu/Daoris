@@ -4,9 +4,10 @@ import { sentence } from './format';
 import { useRegistry, useStatus } from './queries';
 import {
   useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
-  useRemotes, useSetIntake, useSetNotify, useSetStrikes,
+  useRemotes, useRuleAction, useRules, useSetIntake, useSetNotify, useSetStrikes,
   useStarts, useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
+import { AgentRules } from './settings/AgentRules';
 import { StartWiringList } from './map/StartWiring';
 import { SessionConsole } from './SessionConsole';
 import { AiJobs, type SearchTier } from './settings/AiJobs';
@@ -458,8 +459,57 @@ function MachineSettings({ notify }: { notify: Notify }) {
 
       <HarnessRoster notify={notify} />
       <Starts notify={notify} />
+      <Rules notify={notify} />
       <Plugins notify={notify} />
     </section>
+  );
+}
+
+/**
+ * What an agent Daoris starts may do (PERM1, D72) — the machine's `permissions.json`, the file the
+ * driver composes each spawn's rules from and `daoris agent rules` edits (D50).
+ *
+ * **The scopes a rule can reach are the registry's**: its circles and its repositories, by the names
+ * the driver composes against. A refusal is the driver's sentence, verbatim.
+ */
+function Rules({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const answer = useRules();
+  const act = useRuleAction();
+  const registry = useRegistry();
+  useErrorNotify(answer.error, notify);
+
+  // An older shell has never heard of the question: the card is absent rather than the page blank.
+  const rules = answer.data && Array.isArray(answer.data.defaults) && Array.isArray(answer.data.scopes) ? answer.data : null;
+  if (!rules) return null;
+
+  const rows = registry.data ?? [];
+  const circles = [...new Set(rows.map((row) => row.workspace ?? 'default'))].sort();
+  const repositories = rows.map((row) => row.repository).sort();
+  const where = (scope: string, name: string | undefined) => scope === 'machine'
+    ? t('settings.rules.scopeMachine')
+    : t(scope === 'workspace' ? 'settings.rules.scopeWorkspace' : 'settings.rules.scopeRepository', { name: name ?? '' });
+  const failed = (error: unknown) => notify(sentence(error), 'error');
+
+  return (
+    <AgentRules
+      rules={rules}
+      circles={circles}
+      repositories={repositories}
+      busy={act.isPending}
+      onSwitchDefault={(id, on) => act.mutate({ action: 'default', id, on }, {
+        onSuccess: () => notify(t('settings.rules.switched', { id, state: t(on ? 'settings.rules.on' : 'settings.rules.off') })),
+        onError: failed,
+      })}
+      onRemove={({ scope, name, rule }) => act.mutate({ action: 'remove', rule, scope, name }, {
+        onSuccess: () => notify(t('settings.rules.removed', { rule, where: where(scope, name) })),
+        onError: failed,
+      })}
+      onAdd={({ list, rule, scope, name }) => act.mutate({ action: 'add', list, rule, scope, name }, {
+        onSuccess: () => notify(t('settings.rules.added', { rule, list: t(`settings.rules.list.${list}`), where: where(scope, name) })),
+        onError: failed,
+      })}
+    />
   );
 }
 

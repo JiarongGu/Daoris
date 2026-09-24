@@ -7,6 +7,7 @@ import type { Consideration } from './signals';
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
 import type { WiringAnswer } from './map/wiring';
+import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 
 export type { DiffFile, SessionDiff } from './work/diff';
 
@@ -565,6 +566,32 @@ export const usePlugins = () => {
     queryKey: keys.plugins,
     queryFn: () => call<PluginCatalog>('PLUGINS'),
     enabled: isAvailable,
+  });
+};
+
+/**
+ * What an agent Daoris starts may do (PERM1, D72): Claude Code's own rules in Daoris's scopes, from the
+ * one file under the home the driver composes each spawn from. Desktop only — the file is machine-local.
+ */
+export const useRules = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.rules,
+    queryFn: () => call<AgentRulesState>('RULES'),
+    enabled: isAvailable,
+  });
+};
+
+/** The screen's half of `daoris agent rules` (D50): an edit to the same file, answered with the state after it. */
+export const useRuleAction = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (action:
+      | { action: 'add'; list: RuleListName; rule: string; scope: RuleScopeName; name?: string }
+      | { action: 'remove'; rule: string; scope: RuleScopeName; name?: string }
+      | { action: 'default'; id: string; on: boolean }) =>
+      call<AgentRulesState>('RULE_ACTION', action),
+    onSuccess: (state) => client.setQueryData(keys.rules, state),
   });
 };
 

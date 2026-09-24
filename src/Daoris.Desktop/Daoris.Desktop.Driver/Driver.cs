@@ -457,6 +457,10 @@ public sealed partial class Driver(
                 if (handed is not null) adapter.HandServers(info, handed);
             }
 
+            // What this session may do (PERM1, D72): the rules composed for its circle and repository,
+            // handed over as the harness's own settings tier.
+            var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To);
+
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for an
@@ -464,6 +468,7 @@ public sealed partial class Driver(
             // it no stdin, and the protocol door's stdin carries the driver's own frames.
             using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(quest));
             using var _ = new Disposer(() => SpawnServers.Remove(handed));
+            using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
             _live[quest.Id] = sessionId;
             using var live = new Disposer(() => _live.TryRemove(quest.Id, out var _));
 
@@ -479,7 +484,7 @@ public sealed partial class Driver(
                 // on the wire at all.
                 ? CaptureAcpAsync(
                     process, transcript, sessionId, workTree, TargetPrompt.Compose(target),
-                    adapter.AcpPosture, harnessNotice, ct)
+                    adapter.AcpPosture, harnessNotice, ct, meta: rules.Meta)
                 : null;
             Task capture = acp ?? CaptureAsync(process, transcript, sessionId, ct);
 
@@ -628,6 +633,31 @@ public sealed partial class Driver(
     }
 
     /// <summary>
+    /// The rules one session may run under (PERM1, D72), composed from this machine's file and handed
+    /// over the harness's own way: a flag on the pipe door, <c>session/new</c>'s <c>_meta</c> on the
+    /// protocol door. Shared by a quest's session and an ask's intake, so neither forgets it.
+    /// </summary>
+    /// <returns>The file, which goes when the session does, and what the protocol door carries.</returns>
+    private (string? File, object? Meta) HandRules(
+        ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository)
+    {
+        // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
+        if (!adapter.TakesSettings) return (null, null);
+
+        var file = SpawnSettings.Write(
+            home, sessionId, PermissionRules.Compose(PermissionRules.Load(home), workspace, repository));
+        if (file is null) return (null, null);
+
+        if (adapter.Wire == SessionWire.Pipe)
+        {
+            adapter.HandSettings(info, file);
+            return (file, null);
+        }
+
+        return (file, adapter.AcpSessionMeta(file));
+    }
+
+    /// <summary>
     /// 🔴 A credential its provider refused is read from the tool's own last words (AGT3b), and the
     /// account is held so no further session sits through the same minutes of retries.
     /// </summary>
@@ -705,10 +735,11 @@ public sealed partial class Driver(
     /// What this session's connector carries beyond the store — an intake's ask and session (D65 §1b).
     /// Null for a quest's session.
     /// </param>
+    /// <param name="meta">What <c>session/new</c> carries for the rules composed for this session (PERM1).</param>
     private async Task<AcpOutcome?> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
-        IReadOnlyDictionary<string, string>? scope = null)
+        IReadOnlyDictionary<string, string>? scope = null, object? meta = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -748,7 +779,7 @@ public sealed partial class Driver(
             offered.AddRange(_servers);
 
             var outcome = await new AcpSession(
-                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture)
+                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta)
                 .RunAsync(cwd, prompt, ct, offered).ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "

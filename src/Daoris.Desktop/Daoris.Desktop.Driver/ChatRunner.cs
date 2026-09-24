@@ -133,6 +133,7 @@ public sealed class ChatRunner(
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
         Process process;
+        string? rules = null;
         try
         {
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
@@ -147,6 +148,16 @@ public sealed class ChatRunner(
                     selection.Environment);
             }
 
+            // What the conversation's agent may do (PERM1, D72) — the same union a driven session in
+            // this repository is handed. The pipe door only: over the protocol door Daoris sends a
+            // conversation no `session/new` of its own, so nothing there could carry it.
+            if (resolved.TakesSettings && resolved.Wire == SessionWire.Pipe)
+            {
+                rules = SpawnSettings.Write(
+                    home, sessionId, PermissionRules.Compose(PermissionRules.Load(home), known?.Workspace, repository));
+                if (rules is not null) resolved.HandSettings(info, rules);
+            }
+
             process = Process.Start(info)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
@@ -154,6 +165,7 @@ public sealed class ChatRunner(
         {
             // The record exists and must say what happened, or it sits at `starting` forever holding
             // the repository — the same rule the driven path follows.
+            SpawnSettings.Remove(rules);
             await Conclude(sessionId, "failed", error.Message, onEnded).ConfigureAwait(false);
             return new(null, error.Message);
         }
@@ -161,7 +173,7 @@ public sealed class ChatRunner(
         // The conversation outlives this call: the person types, the harness answers, and the record
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
-        _ = WatchAsync(sessionId, process, transcript, onEnded);
+        _ = WatchAsync(sessionId, process, transcript, onEnded, rules);
 
         return new(sessionId, message);
     }
@@ -169,8 +181,10 @@ public sealed class ChatRunner(
     /// <summary>Send a person's message to a live chat. False when there is nothing listening.</summary>
     public bool Say(string sessionId, string message) => processes.Send(sessionId, message);
 
+    /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
     private async Task WatchAsync(
-        string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded)
+        string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
+        string? rules = null)
     {
         using var tracked = processes.Track(sessionId, process);
         try
@@ -201,6 +215,7 @@ public sealed class ChatRunner(
         finally
         {
             output?.Close(sessionId);
+            SpawnSettings.Remove(rules);
         }
     }
 

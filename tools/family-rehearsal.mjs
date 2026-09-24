@@ -2760,6 +2760,34 @@ check(
   keyed.out,
 );
 
+// What an agent may do (PERM1, D72), from a terminal: Claude Code's own permission rules in Daoris's
+// scopes, one file under the home the driver composes each spawn from. The stub agent is handed none
+// of them (a Claude Code rule means nothing to another program), so the FILE is what is asserted here;
+// the spawn's half is the driver's tests, and a rule firing is a real session's.
+const cliRules = (args) => run(`node "${cliBin}" agent rules ${args}`, scratch, { DAORIS_HOME: toolchainHome });
+const rulesFile = join(toolchainHome, 'permissions.json');
+const ruled = cliRules('deny "Bash(rm -rf:*)" --repository newcomer');
+check(
+  '`daoris agent rules deny --repository` writes that repository’s scope in the home’s permissions.json',
+  ruled.code === 0
+    && JSON.parse(readFileSync(rulesFile, 'utf8')).repositories?.newcomer?.deny?.[0] === 'Bash(rm -rf:*)',
+  ruled.out,
+);
+const listedRules = cliRules('list');
+check(
+  '…and `daoris agent rules` lists Daoris’s defaults beside it, saying the rules are Claude Code’s own',
+  listedRules.code === 0 && /connector/.test(listedRules.out) && /no-push/.test(listedRules.out)
+    && /Bash\(rm -rf:\*\)/.test(listedRules.out) && /Claude Code/.test(listedRules.out),
+  listedRules.out,
+);
+const notARule = cliRules('allow "rm -rf /"');
+check(
+  'a rule that is not the harness’s own shape is refused, naming the shape, and nothing is written',
+  notARule.code === 2 && /not a permission rule/.test(notARule.out)
+    && !JSON.parse(readFileSync(rulesFile, 'utf8')).machine,
+  notARule.out,
+);
+
 // And the driving choices themselves, from a terminal (D50): the same `driver.json` the desktop's
 // checkboxes edit and the loop re-reads every tick.
 const cliDriver = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });

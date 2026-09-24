@@ -36,6 +36,7 @@ export const keys = {
   usage: ['usage'] as const,
   /** This machine's plugins — shell-only, since a plugin's folder is a machine path (D64). */
   plugins: ['plugins'] as const,
+  rules: ['rules'] as const,
   /** One session's landed work, read off the checkout — shell-only for the console's reason (SURF6). */
   diff: (session: string) => ['diff', session] as const,
   entry: (id: string) => ['entry', id] as const,

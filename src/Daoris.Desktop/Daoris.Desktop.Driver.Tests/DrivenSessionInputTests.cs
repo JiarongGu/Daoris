@@ -165,7 +165,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     /// the executor's client can only reach a real address. One open quest to `engine`, which is
     /// adopted with a root here; the session records it opens and moves.
     /// </summary>
-    private sealed class StandInService : IAsyncDisposable
+    internal sealed class StandInService : IAsyncDisposable
     {
         private readonly HttpListener _listener;
         private readonly Task _serving;

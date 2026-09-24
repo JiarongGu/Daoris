@@ -87,7 +87,8 @@ prefix.
 makes accounts **named profiles**: isolated configuration directories whose *location* Daoris owns
 (`harnesses/<agent>/<profile>/` under the home), selected at spawn through the variable that agent
 already has. Logging in runs the agent's own flow inside one, so **Daoris never
-sees, stores or copies a sign-in**; `agent key` keeps an API key. Pick one per machine, per
+sees, stores or copies a sign-in**; `agent key` keeps an API key, and `agent rules` what a
+session may do (D72). Pick one per machine, per
 workspace, or for a single conversation; the session record then names the account and tool version
 it ran as. A spawn onto a missing agent, a profile nobody signed into, or a workspace the agent
 has never been trusted in refuses **naming the action that fixes it**.
@@ -101,9 +102,8 @@ updater or login flow when asked, and `agent pin` fetches Claude Code or Codex f
 channel, verified. Every other command above is offline by construction. **The machine's registry
 is the authority** on who is in the family: being in a folder is not being a member, so a repository
 joins by connecting and leaves by retiring. `import` is the old folder scan, demoted to something a
-person runs, and safe to re-run because it states no workspace and unstated wiring is preserved. A
-store that has never been
-managed imports its configured root **once**, and says so. A registered checkout that is no longer
+person runs, and safe to re-run: unstated wiring is preserved. A never-managed store imports its
+configured root **once**, and says so. A registered checkout that is no longer
 where the registry says it is gets **named** by the next refresh rather than silently skipped.
 
 **`--force` is the only way to lose work here**, so it names every file it overwrites or discards.

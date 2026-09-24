@@ -22,7 +22,13 @@
  * - The measurement asks    → the room's allow-list was ignored: the ACP door has the trust problem.
  * - The measurement doesn't → the allow-list was honoured untrusted: the ACP door does not need it.
  *
- * 🔴 It spends two small prompts on the machine's own signed-in account. It writes nothing under the
+ * A third room measures PERM1's carrier (D72): no allow-list of its own, and the same `git commit`
+ * allowed in a settings file handed on `session/new` as `_meta.claudeCode.options.settings`, the
+ * harness's command-line tier and the way the driver hands every session its rules. If it runs
+ * unasked in an untrusted room, Daoris's rules reach a session without anybody's trust grant. If it
+ * asks, the carrier needs the grant as the repository's own list does.
+ *
+ * 🔴 It spends three small prompts on the machine's own signed-in account. It writes nothing under the
  * account's configuration — the trust flag is the person's grant, and this measures its absence.
  * Run with the `CLAUDE*` environment of any enclosing agent session stripped, as DRV4 notes.
  */
@@ -75,7 +81,7 @@ function room(name, allow) {
  * then the prompt. Every permission request is recorded and refused; the tool calls the agent reports
  * are recorded with their final status.
  */
-async function probe(cwd) {
+async function probe(cwd, meta = null) {
   const seen = { permissions: [], tools: new Map(), text: '', stop: null, problem: null };
   const child = spawn(adapter, [], {
     cwd, stdio: ['pipe', 'pipe', 'pipe'], env: process.env, shell: process.platform === 'win32',
@@ -136,7 +142,8 @@ async function probe(cwd) {
     });
     if (init.error) { seen.problem = `initialize: ${init.error.message}`; return seen; }
 
-    const created = await request('session/new', { cwd, mcpServers: [] });
+    // PERM1's carrier, exactly as the driver sends it (`ClaudeAcpAdapter.AcpSessionMeta`).
+    const created = await request('session/new', meta ? { cwd, mcpServers: [], _meta: meta } : { cwd, mcpServers: [] });
     if (created.error) { seen.problem = `session/new: ${created.error.message}`; return seen; }
     const sessionId = created.result.sessionId;
 
@@ -175,17 +182,24 @@ function report(label, where, seen) {
 console.log(`DEPLOY1's measurement over the protocol door — ${adapter}`);
 const control = room('control', null);
 const measured = room('allowed', ['Bash(git commit:*)']);
-for (const where of [control, measured]) {
+const flagged = room('flagged', null);
+for (const where of [control, measured, flagged]) {
   if (trusted(where)) {
     console.log(`\nRefusing: ${where} is already trusted, so it cannot measure trust's absence.`);
     process.exit(2);
   }
 }
 
+// The rules file PERM1 hands a session, outside the room — the driver keeps it under the home.
+const flagFile = join(scratch, 'flag-settings.json');
+writeFileSync(flagFile, `${JSON.stringify({ permissions: { allow: ['Bash(git commit:*)'], ask: [], deny: [] } }, null, 2)}\n`);
+
 const controlSeen = await probe(control);
 report('CONTROL — no allow-list', control, controlSeen);
 const measuredSeen = await probe(measured);
 report('MEASUREMENT — the room allows `git commit`', measured, measuredSeen);
+const flaggedSeen = await probe(flagged, { claudeCode: { options: { settings: flagFile } } });
+report('PERM1 — `git commit` allowed only in the settings handed on session/new', flagged, flaggedSeen);
 
 console.log('\nVerdict:');
 if (controlSeen.problem || measuredSeen.problem) {
@@ -196,4 +210,13 @@ if (controlSeen.problem || measuredSeen.problem) {
   console.log('  the ACP door IGNORES an untrusted room\'s allow-list: it has the trust problem too.');
 } else {
   console.log('  the ACP door HONOURS an untrusted room\'s allow-list: it does not need the trust flag.');
+}
+
+// PERM1's carrier (D72), read against the same control.
+if (flaggedSeen.problem || controlSeen.permissions.length === 0) {
+  console.log('  PERM1: inconclusive — see above.');
+} else if (flaggedSeen.permissions.length > 0) {
+  console.log('  PERM1: the settings handed on session/new were NOT honoured untrusted — Daoris\'s rules need the trust grant too.');
+} else {
+  console.log('  PERM1: the settings handed on session/new WERE honoured untrusted — Daoris\'s rules reach a session with no trust grant.');
 }

@@ -612,6 +612,46 @@ public sealed class DriverModule : ModuleBase
                 };
             }
 
+            // What an agent Daoris starts may do (PERM1, D72): the defaults with their reasons, and
+            // every scope the machine's file holds — the file `daoris agent rules` edits. A path
+            // under the home rides this bridge like every path here.
+            case "RULES":
+            {
+                await Task.CompletedTask;
+                return Rules(PermissionRules.Load(_loop.Home));
+            }
+
+            // The screen's half of `daoris agent rules allow|ask|deny|remove|default` (D50): an edit to
+            // the same file, answered with the state after it. A refusal is the driver's own sentence.
+            case "RULE_ACTION":
+            {
+                await Task.CompletedTask;
+                var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
+                var file = PermissionRules.Load(_loop.Home);
+                file = action switch
+                {
+                    "add" => PermissionRules.Add(
+                        file, ScopeOf(request), Optional(request, "name"),
+                        Optional(request, "list") switch
+                        {
+                            "allow" => RuleList.Allow,
+                            "ask" => RuleList.Ask,
+                            "deny" => RuleList.Deny,
+                            var other => throw new DriverException($"a rule goes in `allow`, `ask` or `deny`, not `{other}`."),
+                        },
+                        PayloadHelper.GetRequiredValue<string>(request.Payload, "rule")),
+                    "remove" => PermissionRules.Remove(
+                        file, ScopeOf(request), Optional(request, "name"),
+                        PayloadHelper.GetRequiredValue<string>(request.Payload, "rule")),
+                    "default" => PermissionRules.SwitchDefault(
+                        file, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"),
+                        PayloadHelper.GetRequiredValue<bool>(request.Payload, "on")),
+                    _ => throw new DriverException($"unknown rule action '{action}' — one of: add, remove, default."),
+                };
+                PermissionRules.Save(_loop.Home, file);
+                return Rules(file);
+            }
+
             // What sessions consumed (TOOL3/D57 §4) — measured before it is managed.
             //
             // 🔴 Over this bridge and nowhere else. Per-account usage names a credential profile, and
@@ -876,6 +916,38 @@ public sealed class DriverModule : ModuleBase
         "completed" => "The person finished this at a checkpoint.",
         "stopped" => "The person stopped this at a checkpoint.",
         _ => "The person moved this at a checkpoint.",
+    };
+
+    /// <summary>
+    /// The rules as the page reads them (PERM1). 🔴 No null on the wire where the page tells anything
+    /// by it: the bridge leaves a null out, so the machine's scope simply carries no <c>name</c>, and
+    /// a file read cleanly carries no <c>problem</c>.
+    /// </summary>
+    private object Rules(PermissionFile file) => new
+    {
+        Path = PermissionRules.PathOf(_loop.Home),
+        file.Problem,
+        Defaults = PermissionRules.Defaults.Select(shipped => new
+        {
+            shipped.Id,
+            List = shipped.List.ToString().ToLowerInvariant(),
+            shipped.Rules,
+            shipped.Why,
+            On = !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal),
+        }).ToArray(),
+        Scopes = new[] { (Scope: "machine", Name: (string?)null, Lists: file.Machine) }
+            .Concat(file.Workspaces.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (Scope: "workspace", Name: (string?)p.Key, Lists: p.Value)))
+            .Concat(file.Repositories.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (Scope: "repository", Name: (string?)p.Key, Lists: p.Value)))
+            .Select(held => new { held.Scope, held.Name, held.Lists.Allow, held.Lists.Ask, held.Lists.Deny })
+            .ToArray(),
+    };
+
+    private static RuleScope ScopeOf(IpcRequest request) => Optional(request, "scope") switch
+    {
+        null or "machine" => RuleScope.Machine,
+        "workspace" => RuleScope.Workspace,
+        "repository" => RuleScope.Repository,
+        var other => throw new DriverException($"a rule reaches the `machine`, a `workspace` or a `repository`, not `{other}`."),
     };
 
     private static string? Optional(IpcRequest request, string name) =>

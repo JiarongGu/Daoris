@@ -173,6 +173,10 @@ public sealed partial class Driver
                 if (handed is not null) adapter.HandServers(info, handed);
             }
 
+            // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
+            // ask, and belongs to no repository.
+            var rules = HandRules(adapter, info, sessionId, ask.Workspace, repository: null);
+
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             // 🔴 One turn takes no messages (INT4h), on either door: the pipe door gives it no stdin,
@@ -180,12 +184,13 @@ public sealed partial class Driver
             // there would land in the middle of the JSON-RPC stream.
             using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(ask.Id));
             using var _ = new Disposer(() => SpawnServers.Remove(handed));
+            using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
 
             // Held as its own type for the same reason a quest's is: the usage lives in the outcome.
             var acp = adapter.Wire == SessionWire.Acp
                 ? CaptureAcpAsync(
                     process, transcript, sessionId, room, TargetPrompt.Compose(target), adapter.AcpPosture,
-                    harnessNotice, ct, scope)
+                    harnessNotice, ct, scope, rules.Meta)
                 : null;
             Task capture = acp ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 

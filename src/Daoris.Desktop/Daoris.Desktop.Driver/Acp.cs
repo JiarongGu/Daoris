@@ -95,12 +95,17 @@ public sealed record AcpOutcome(
 /// silently. Null asks for nothing, which leaves the agent at its own default — the safe direction,
 /// since every default observed is equal to or stricter than what Daoris would set.
 /// </remarks>
+/// <param name="meta">
+/// What <c>session/new</c> carries in <c>_meta</c> — the adapter's own vocabulary for the rules Daoris
+/// composed (PERM1, D72) — or null, and then no <c>_meta</c> is sent at all.
+/// </param>
 public sealed class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
     Action<string> onLine,
     TimeSpan? closeTimeout = null,
-    string? posture = null)
+    string? posture = null,
+    object? meta = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -158,27 +163,28 @@ public sealed class AcpSession(
             // An empty list rather than an absent field when there is nothing to offer: a machine
             // with no host found still drives, and an agent reading `mcpServers.length` must not meet
             // `undefined`.
+            // Named in lower case explicitly: this serialiser writes property names as they are
+            // spelled, so `server.Name` would go on the wire as `Name` and the agent would read nothing.
+            var offered = (servers ?? []).Select(server => new
+            {
+                name = server.Name,
+                command = server.Command,
+                args = server.Arguments,
+                // An ARRAY of {name,value}, not an object — read from the adapter's own source, which
+                // does `Object.fromEntries(env.map(e => [e.name, e.value]))`.
+                env = server.Environment
+                    .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                    .Select(pair => new { name = pair.Key, value = pair.Value })
+                    .ToArray(),
+            }).ToArray();
+
+            // The rules composed for this session ride here when the adapter takes them (PERM1) —
+            // and a session given none sends exactly what it sent before they existed.
             var created = await RequestAsync(
                 "session/new",
-                new
-                {
-                    cwd,
-                    // Named in lower case explicitly: this serialiser writes property names as they
-                    // are spelled, so `server.Name` would go on the wire as `Name` and the agent
-                    // would read nothing at all.
-                    mcpServers = (servers ?? []).Select(server => new
-                    {
-                        name = server.Name,
-                        command = server.Command,
-                        args = server.Arguments,
-                        // An ARRAY of {name,value}, not an object — read from the adapter's own
-                        // source, which does `Object.fromEntries(env.map(e => [e.name, e.value]))`.
-                        env = server.Environment
-                            .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                            .Select(pair => new { name = pair.Key, value = pair.Value })
-                            .ToArray(),
-                    }).ToArray(),
-                },
+                meta is null
+                    ? new { cwd, mcpServers = offered }
+                    : (object)new { cwd, mcpServers = offered, _meta = meta },
                 ct).ConfigureAwait(false);
             _sessionId = created.TryGetProperty("sessionId", out var id) ? id.GetString() : null;
             if (string.IsNullOrEmpty(_sessionId))

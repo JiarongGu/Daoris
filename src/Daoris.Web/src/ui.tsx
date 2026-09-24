@@ -533,13 +533,14 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
  * it off the screen — for a setting row, where the label already stands at the left and a second
  * copy beside the box would say everything twice.
  */
-export function CheckField({ checked, onChange, label, hideLabel }: {
-  checked: boolean; onChange: (checked: boolean) => void; label: string; hideLabel?: boolean;
+export function CheckField({ checked, onChange, label, hideLabel, disabled }: {
+  checked: boolean; onChange: (checked: boolean) => void; label: string; hideLabel?: boolean; disabled?: boolean;
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-body text-ink-soft">
       <Checkbox.Root
         checked={checked}
+        disabled={disabled}
         onCheckedChange={(state) => onChange(state === true)}
         className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line-strong bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink"
       >

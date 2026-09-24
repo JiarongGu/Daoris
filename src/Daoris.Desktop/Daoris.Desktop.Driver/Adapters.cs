@@ -290,6 +290,27 @@ public interface ISessionAdapter
     /// </remarks>
     void HandServers(ProcessStartInfo info, string configFile) { }
 
+    /// <summary>
+    /// Whether this harness takes the permission rules Daoris composes for a session (PERM1, D72) — a
+    /// settings file under the home, in the harness's own rule language.
+    /// </summary>
+    /// <remarks>
+    /// Default false, and then nothing is composed or handed: a Claude Code rule means nothing to
+    /// Codex's approval policy or dsh's permission mode, and translating one is a claim about somebody
+    /// else's program, made when asked for and measured when made. Silence preserves how the adapter
+    /// spawned before the rules existed.
+    /// </remarks>
+    bool TakesSettings => false;
+
+    /// <summary>Hand a pipe-door spawn its rules file, as the harness's own flag. Default: nothing.</summary>
+    void HandSettings(ProcessStartInfo info, string settingsFile) { }
+
+    /// <summary>
+    /// What a protocol-door session carries on <c>session/new</c> to take its rules file, in the adapter's
+    /// own <c>_meta</c> vocabulary — or null for none, and then no <c>_meta</c> is sent at all.
+    /// </summary>
+    object? AcpSessionMeta(string settingsFile) => null;
+
     /// <summary>The process that would be a CHAT: the same spawn, with stdin open.</summary>
     ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
         throw new DriverException(
@@ -544,6 +565,18 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         var resolved = Resolve(command);
         return Spawning.ChatInRoot(target, resolved[0], resolved.Skip(1));
     }
+
+    /// <summary>The rules Daoris composed (PERM1, D72), taken on the wire rather than as an argument.</summary>
+    public bool TakesSettings => true;
+
+    /// <summary>
+    /// 🔴 Read from the adapter's own source at 0.79.0 (`dist/acp-agent.js`): <c>session/new</c>'s
+    /// <c>_meta.claudeCode.options</c> is spread into the Agent SDK's options (l. 5934–6045), and a
+    /// <c>settings</c> string is a file read against the session's cwd (l. 6003–6010) — an absolute path
+    /// resolving to itself. The SDK's programmatic tier: the one <c>--settings</c> fills on the pipe door.
+    /// </summary>
+    public object? AcpSessionMeta(string settingsFile) =>
+        new { claudeCode = new { options = new { settings = settingsFile } } };
 
     /// <summary>
     /// The adapter's own mechanisms. Pinned EXACT by default (D53's note on a harness that moved
@@ -820,6 +853,20 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         info.ArgumentList.Add("--mcp-config");
         info.ArgumentList.Add(configFile);
+    }
+
+    /// <summary>The rules Daoris composed (PERM1, D72), as this harness's settings flag.</summary>
+    public bool TakesSettings => true;
+
+    /// <summary>
+    /// `--settings &lt;file&gt;` — *"load additional settings from"* (`claude --help`, 2.1.280, HELP3's
+    /// evidence): the command-line tier, which the harness merges with the person's own settings and the
+    /// repository's, `deny` beating `allow`. The posture stays `acceptEdits`: rules are a scope, not a mode.
+    /// </summary>
+    public void HandSettings(ProcessStartInfo info, string settingsFile)
+    {
+        info.ArgumentList.Add("--settings");
+        info.ArgumentList.Add(settingsFile);
     }
 
     /// <summary>

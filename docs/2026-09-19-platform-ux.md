@@ -332,6 +332,20 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   door to the ask is a default button (*open ask #id*), and only a parked one's is primary
 >   (*answer ask #id*).
 
+> **Amended 2026-09-24, what agents may do (PERM1, D72).** Held by vitest, and **not yet looked at on
+> the real window**.
+>
+> - **A default has a switch and no remove; a person's rule has a remove.** A default is Daoris's,
+>   switched off by id and removed by nothing, so the two kinds of row look different.
+> - **Nothing on the card ranks one scope over another.** Precedence is the harness's (`deny` beats
+>   `ask` beats `allow` across every scope), so each scope is listed as what it adds, and the one
+>   sentence that says so sits on the info glyph.
+> - **A list's word is a pill in the status palette**: allow in done's green, ask in open's amber,
+>   deny in declined's red. They are read as outcomes, and the text label always rides with the
+>   colour.
+> - **The machine's scope is not called "This machine".** That is the section the card sits under,
+>   so its scope reads *every session on this machine*.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

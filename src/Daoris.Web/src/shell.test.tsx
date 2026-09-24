@@ -561,6 +561,67 @@ describe('the plugins card', () => {
 });
 
 /**
+ * What agents may do (PERM1, D72): the machine's `permissions.json` over the bridge, and every change
+ * the screen's half of `daoris agent rules` (D50). Shaped as the wire carries it — the machine's scope
+ * with no `name` and a clean file with no `problem`, because the bridge leaves a null out.
+ */
+describe('the rules card', () => {
+  const RULES = {
+    path: 'C:/somewhere/data/permissions.json',
+    defaults: [
+      { id: 'connector', list: 'allow', rules: ['mcp__daoris-knowledge__quest_respond'], why: 'The connector.', on: true },
+      { id: 'no-push', list: 'deny', rules: ['Bash(git push:*)'], why: "A push stays the person's (D37).", on: true },
+    ],
+    scopes: [
+      { scope: 'machine', allow: [], ask: [], deny: [] },
+      { scope: 'repository', name: 'engine', allow: ['Bash(make:*)'], ask: [], deny: [] },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'RULES' || type === 'RULE_ACTION' ? RULES : WIRING));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('shows the defaults and each scope from the machine\'s own file, asking no service', async () => {
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByText('C:/somewhere/data/permissions.json')).toBeTruthy();
+    expect(screen.getByRole('listitem', { name: 'no-push' })).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: 'repository engine' })).getByText('Bash(make:*)')).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULES', {});
+  });
+
+  it('a default switched and a rule removed land on the bridge as the actions a terminal has', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} />);
+
+    const push = await screen.findByRole('listitem', { name: 'no-push' });
+    await userEvent.click(within(push).getByRole('checkbox'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', { payload: { action: 'default', id: 'no-push', on: false } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('The default no-push is off on this machine.'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'remove Bash(make:*)' }));
+    expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'RULE_ACTION', { payload: { action: 'remove', rule: 'Bash(make:*)', scope: 'repository', name: 'engine' } });
+  });
+
+  /** A shell older than the rules answers something else to a question it never heard: no card, no blank page. */
+  it('an older shell gets no card', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'RULES' ? undefined : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    expect(await screen.findByRole('heading', { name: 'This machine' })).toBeTruthy();
+    expect(screen.queryByText('What agents may do')).toBeNull();
+  });
+});
+
+/**
  * Daoris's own AI (AGT6): the jobs it may use a model for, the tier answering each, and how to change
  * it. The search tier is the service's answer, over HTTP like every browser's; the intake is this
  * machine's `driver.json`, and its control is the screen's half of `daoris driver intake` (D50).

@@ -46,6 +46,7 @@ import { normalizeWorkspace } from './remotemap.ts';
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
 import { readPlugins, resolvable } from './plugins.ts';
 import { installFromChannel, refuseVersion } from './channels.ts';
+import { commandRules } from './permissions.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -870,6 +871,11 @@ export function commandHarness(
     case 'profile':
       return profileVerb();
 
+    // What an agent Daoris starts may do (PERM1, D72): Claude Code's own rules in Daoris's scopes,
+    // one file under the home, handed over at spawn. It spawns nothing and opens nothing.
+    case 'rules':
+      return commandRules({ argv: argv.slice(1), write, root: '', packageRoot: '' });
+
     // An account that is an API key (AGT3, D67 §1). 🔴 Read from STDIN, never from an argument: an
     // argument is visible in the process list and saved in the shell's history.
     case 'key': {
@@ -893,7 +899,7 @@ export function commandHarness(
 
     default:
       throw new DaorisError(
-        `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile`);
+        `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile, rules`);
   }
 
   /**

@@ -115,6 +115,40 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// The rules Daoris composed ride `session/new` as the adapter names them (PERM1, D72) — and a
+    /// session given none sends no `_meta` at all, exactly as before the rules existed.
+    /// </summary>
+    [Fact]
+    public async Task Session_new_carries_the_adapters_meta_and_none_when_there_is_none()
+    {
+        FakeAgent Agent() => new((frame, self) =>
+        {
+            var method = frame.GetProperty("method").GetString();
+            return method switch
+            {
+                "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}"""),
+                "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+
+        var with = Agent();
+        await new AcpSession(with.Incoming, with.Outgoing, _ => { },
+                meta: new { claudeCode = new { options = new { settings = "C:/somewhere/data/spawn/s1.settings.json" } } })
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+        Assert.Equal(
+            "C:/somewhere/data/spawn/s1.settings.json",
+            with.Frame(1).GetProperty("params").GetProperty("_meta").GetProperty("claudeCode")
+                .GetProperty("options").GetProperty("settings").GetString());
+
+        var without = Agent();
+        await new AcpSession(without.Incoming, without.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+        Assert.False(without.Frame(1).GetProperty("params").TryGetProperty("_meta", out _));
+    }
+
+    /// <summary>
     /// A permission request is answered by REJECTING, always (D52: a better approval surface must not
     /// widen autonomy). A request reaching the driver at all means the repository's own checked-in
     /// posture did not already cover the action — and the driver is not the party that may widen it.
