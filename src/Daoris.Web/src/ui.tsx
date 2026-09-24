@@ -7,9 +7,9 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowDown, ArrowLeftRight, ArrowUp, Check, ChevronDown, ChevronRight, Cloud, CloudOff, Copy,
-  FileDiff, GitMerge, Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link,
-  LogIn, Monitor, Network, Paperclip, Plus, RotateCw, Search, Settings, SquareArrowOutUpRight,
-  SquareTerminal, Trash2, TriangleAlert, X,
+  FileDiff, Gauge, GitMerge, Inbox, Info, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link,
+  LogIn, Monitor, Network, Paperclip, Plug, Plus, RotateCw, Search, Settings, Shield,
+  SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -70,6 +70,11 @@ const ICONS = {
   // What a quest carries (D65 §2): an address, and a file.
   link: Link,
   attach: Paperclip,
+  // The menus by domain (D75). A check beside a menu's check column read as "this one is ticked",
+  // so what agents may do wears a shield, plugins a plug and usage a gauge.
+  shield: Shield,
+  plug: Plug,
+  gauge: Gauge,
 } as const;
 
 export type IconName = keyof typeof ICONS;

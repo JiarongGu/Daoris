@@ -12,6 +12,10 @@ export interface MenuItem {
   badge?: number;
   /** Separated from what came before — the shape VS Code uses for "and also". */
   separated?: boolean;
+  /** Ticked whatever is on screen: the workspace the window is scoped to (D75). */
+  checked?: boolean;
+  /** Said, and not choosable: "no workspace yet" is a fact in a menu, not an act. */
+  disabled?: boolean;
 }
 
 /**
@@ -85,17 +89,19 @@ export function AppMenu({
             <div key={item.id}>
               {item.separated && <Menu.Separator className="my-1 h-px bg-line" />}
               <Menu.Item
+                disabled={item.disabled}
                 onSelect={() => onChoose(trigger, item.id)}
                 className={cn(
                   'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small outline-none',
                   'data-[highlighted]:bg-raised data-[highlighted]:text-ink',
-                  active && current === item.id ? 'text-ink' : 'text-ink-soft',
+                  'data-[disabled]:cursor-default data-[disabled]:text-ink-faint',
+                  (active && current === item.id) || item.checked ? 'text-ink' : 'text-ink-soft',
                 )}
               >
                 {/* The check column is always reserved, so labels line up whether or not anything
                     is current — a list that shifts by 16px when you change view reads as two lists. */}
                 <span className="flex w-3.5 shrink-0 justify-center">
-                  {active && current === item.id && <Icon name="check" size={12} aria-hidden />}
+                  {((active && current === item.id) || item.checked) && <Icon name="check" size={12} aria-hidden />}
                 </span>
                 {item.icon && <Icon name={item.icon} size={13} className="shrink-0 opacity-70" aria-hidden />}
                 <span className="truncate">{item.label}</span>

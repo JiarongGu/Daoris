@@ -60,7 +60,11 @@ describe('the shell in a browser, over two workspaces', () => {
     fetchMock = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
     vi.stubGlobal('fetch', fetchMock);
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    // A menu opens Settings at a domain, and the domain is remembered per viewer (D75).
+    window.localStorage.removeItem('daoris.settings');
+  });
 
   it('offers the scope in the app strip, stating that it spans every workspace', async () => {
     shell();
@@ -83,6 +87,43 @@ describe('the shell in a browser, over two workspaces', () => {
       expect(urls.some((url) => url.startsWith('/api/registry') && url.includes('workspace=aurora'))).toBe(true);
     });
     expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora');
+  });
+
+  /**
+   * D75: the Workspace menu is the scope's second door. It lists every workspace with what it holds,
+   * ticks the scope, and choosing one scopes the window as the switcher does.
+   */
+  /** A menu opens from the keyboard in jsdom, the path D41 §6 requires anyway (see `AppMenu.test`). */
+  const openMenu = async (name: string) => {
+    const user = userEvent.setup();
+    (await screen.findByRole('button', { name })).focus();
+    await user.keyboard('{Enter}');
+    return user;
+  };
+
+  it('the Workspace menu lists each workspace, ticks the scope, and choosing one scopes the window', async () => {
+    shell();
+    await screen.findByRole('combobox', { name: 'workspace' });
+    const user = await openMenu('Workspace');
+    const every = await screen.findByRole('menuitem', { name: /every workspace · 2/ });
+    expect(every.querySelector('svg')).not.toBeNull();
+    // A browser is offered the list, and none of the machine's acts.
+    expect(screen.queryByRole('menuitem', { name: /Add repository/ })).toBeNull();
+
+    await user.click(screen.getByRole('menuitem', { name: /aurora/ }));
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora'));
+  });
+
+  /** D75: a menu item opens its own domain of Settings; a browser's Agents menu holds only what it may know. */
+  it('the Agents menu opens Settings at the domain it names', async () => {
+    shell();
+    const user = await openMenu('Agents');
+    await screen.findByRole('menuitem', { name: "Daoris's own AI" });
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(["Daoris's own AI"]);
+
+    await user.click(screen.getByRole('menuitem', { name: "Daoris's own AI" }));
+    const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
+    expect(within(domains).getByRole('button', { name: "Daoris's own AI" })).toHaveAttribute('aria-current', 'page');
   });
 
   /**

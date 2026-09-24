@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import {
-  useAsks, useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions, useStatus,
-  useSyncStanding, useWorkspaces,
+  useAsks, useEntry, useImportFolder, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
+  useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
 } from './queries';
 import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -20,7 +20,10 @@ import { ProjectsView } from './ProjectsView';
 import { type SettingsSection, SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
-import { useDriver, useOpenWindow, useRemotes, useSyncNow, useTrustFolder, useUntrusted } from './shell';
+import {
+  useDriver, useOpenWindow, usePickFolder, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
+} from './shell';
+import { appMenus, menuAction } from './work/appMenus';
 import type { TrustHold } from './signals';
 import { TrustAsk } from './work/TrustAsk';
 import { SyncStatus } from './work/SyncStatus';
@@ -113,6 +116,8 @@ export function App() {
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
+  // The Workspace menu's *Add repository…* (D75), an event Projects consumes, like the draft above.
+  const [addRequested, setAddRequested] = useState(false);
   // A quest a door asked Quests to open in its drawer — the sync item's conflict list (SYNC6b). An
   // event like the opening draft: Quests consumes it and says so.
   const [questFocus, setQuestFocus] = useState<string | null>(null);
@@ -169,6 +174,7 @@ export function App() {
   // every query to a circle nobody is in any more.
   const scope = useScope();
   const workspaces = useWorkspaces();
+  const holdings = useWorkspaceHoldings();
   useEffect(() => {
     if (workspaces.data && scope.workspace && !workspaces.data.includes(scope.workspace)) {
       scope.setWorkspace(null);
@@ -255,6 +261,41 @@ export function App() {
     setView('settings');
   };
 
+  // The menus by domain (D75), as data. The count waiting is the rules' own, where they are answered.
+  const rules = useRules();
+  const menus = appMenus({
+    attached,
+    workspaces: holdings.data ?? [],
+    scope: scope.workspace,
+    waiting: (Array.isArray(rules.data?.proposals) ? rules.data.proposals : [])
+      .filter((proposal) => proposal.state === 'waiting').length,
+  });
+  const pickFolder = usePickFolder();
+  const importFolder = useImportFolder();
+  const onMenu = (_menu: string, item: string) => {
+    const action = menuAction(item);
+    switch (action.kind) {
+      case 'settings': openSettings(action.section); return;
+      case 'scope': scope.setWorkspace(action.workspace); return;
+      case 'add': setAddRequested(true); setView('projects'); return;
+      // `daoris import <folder>`'s screen door: choose the folder, and the service's sentence says
+      // what it registered.
+      case 'import':
+        pickFolder.mutate(undefined, {
+          onSuccess: (folder) => folder && importFolder.mutate(folder.path, {
+            onSuccess: (result) => notify(result.message),
+            onError: (e) => notify(sentence(e), 'error'),
+          }),
+          onError: (e) => notify(sentence(e), 'error'),
+        });
+        return;
+      case 'refresh': onRefresh(); return;
+      case 'language': void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh'); return;
+      case 'about': setAbout(true); return;
+      default:
+    }
+  };
+
   // Ctrl/Cmd+K, the one this class of application has agreed on. Captured on the window so it works
   // wherever focus is — except inside a text field, where a person typing is typing.
   useEffect(() => {
@@ -314,41 +355,15 @@ export function App() {
         onDragStart={chrome.present ? chrome.onDragStart : undefined}
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
-        // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE: settings, this
-        // machine's wiring, the accounts sessions run as, help. Navigating is NOT here — that is the
-        // rail's, and since D66 the rail is the only navigation there is.
+        // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE, and since D75 they
+        // are the setup domains: Daoris, Workspace, Agents, then View. Each setup item opens its own
+        // domain of Settings. Navigating is NOT here: that is the rail's, and since D66 the rail is
+        // the only navigation there is. The items are `appMenus`'s, built as data.
         menus={(
           <AppMenuBar>
-            <AppMenu
-              label={t('menu.app')}
-              trigger="app"
-              active={false}
-              items={[
-                { id: 'settings', label: t('menu.settings'), icon: 'settings' },
-                // The machine's own pages are absent where there is no machine to have them — in
-                // a browser they would open Settings on appearance, which is not what they name.
-                ...(attached
-                  ? [
-                    { id: 'harnesses', label: t('menu.harnesses'), icon: 'inbox' as const },
-                    { id: 'remotes', label: t('menu.remotes'), icon: 'convergence' as const },
-                  ]
-                  : []),
-                { id: 'refresh', label: t('menu.refresh'), icon: 'refresh', separated: true },
-                { id: 'language', label: t('menu.language'), icon: 'languages' },
-                { id: 'about', label: t('menu.about'), icon: 'check', separated: true },
-              ]}
-              onChoose={(_, item) => {
-                if (item === 'about') { setAbout(true); return; }
-                if (item === 'refresh') { onRefresh(); return; }
-                if (item === 'language') {
-                  void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh');
-                  return;
-                }
-                // Each item opens its own domain (D75): the menu is how you reach a setting by name
-                // instead of by remembering which icon it is. FRAME3 gives each domain a menu.
-                openSettings(item === 'harnesses' ? 'agents' : item === 'remotes' ? 'workspace' : 'appearance');
-              }}
-            />
+            <AppMenu label={t('menu.app')} trigger="app" active={false} items={menus.daoris} onChoose={onMenu} />
+            <AppMenu label={t('menu.workspace')} trigger="workspace" active={false} items={menus.workspace} onChoose={onMenu} />
+            <AppMenu label={t('menu.agents')} trigger="agents" active={false} items={menus.agents} onChoose={onMenu} />
             <AppMenu
               label={t('menu.view')}
               trigger="view"
@@ -465,7 +480,13 @@ export function App() {
                     onAskFocused={() => setAskFocus(null)}
                   />
                 )}
-                {view === 'projects' && <ProjectsView notify={notify} />}
+                {view === 'projects' && (
+                  <ProjectsView
+                    notify={notify}
+                    addRequested={addRequested}
+                    onAddOpened={() => setAddRequested(false)}
+                  />
+                )}
                 {view === 'map' && <MapView notify={notify} onOpenConvergence={() => setView('convergence')} />}
                 {view === 'convergence' && (
                   <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />

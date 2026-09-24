@@ -5423,3 +5423,25 @@ more repetition: a card alone in its domain carried the domain's name as its tit
 about; the one that read the intake's account "in both places it is drawn" reads it in both
 domains; and a browser has its own test. Looked at on the install in 中文, light and dark. Web unit
 839 → 842.
+
+## FRAME3 — the menus by domain (2026-09-24)
+
+- [x] ~~**FRAME3 — the menus by domain.** *Daoris · Workspace · Agents · View*, each setup item
+  opening its domain, *Workspace* choosing the scope, and a browser's menus holding only what it may
+  know (design §2).~~
+✅ **done 2026-09-24** (D75 §1). `work/appMenus.ts` builds the three setup menus as data, and an
+item's id is the act it names (`menuAction`), so a desktop's menus and a browser's are asserted
+without mounting the application over a mocked bridge. *Daoris* holds Settings, Driver, Plugins,
+refresh, language and About. *Workspace* lists every workspace with its repository count and ticks
+the scope. It offers *every workspace* among several, names the one there is, and says *No
+workspace yet* with none. It also holds *Add repository…*, which opens Projects' drawer as an event,
+*Import a folder…*, *Wire to a remote…* and the workspace's settings. *Agents* holds tools and
+accounts, what agents may do, proposals with the count waiting, usage, and Daoris's own AI.
+**Import gained a screen door** (D50): the folder picker, then the same `POST
+/api/registry/import` the CLI uses, with the service's sentence as the toast. 🔴 **Not pressed on the
+window**: pressing it registers repositories into the owner's install, and the owner connects the
+real workspace themselves. The route is the CLI's; the page's path to it is not exercised
+end-to-end. Two things were found while building it. The zh catalogue said 账户 15 times and 账号
+11, and is now 账户 throughout, held by a test. And a `check` icon beside the menu's check column
+read as "ticked", so what agents may do wears a shield. Looked at on the install in 中文, light and
+dark. Web unit 842 → 850.

@@ -288,6 +288,11 @@ export const api = {
       `/api/registry/${encodeURIComponent(repository)}/workspace`, { workspace }),
   retireRepository: (repository: string) =>
     post<Retired>(`/api/registry/${encodeURIComponent(repository)}`, undefined, 'DELETE'),
+  // `daoris import <folder>`'s screen door (D50, D75): a folder's subdirectories registered at once.
+  // The answer's `message` is the service's sentence, and it is shown as said.
+  importFolder: (folder: string) =>
+    post<{ folder: string; count: number; repositories: string[]; message: string }>(
+      '/api/registry/import', { folder }),
   // Files travel WHOLE to the local host, which keeps them under this machine's home (D65 §2); a
   // shared deployment refuses content outright, and the platform is only ever served by a local one.
   publishQuest: (quest: {

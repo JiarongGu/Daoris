@@ -107,6 +107,24 @@ export const useWorkspaces = () =>
     select: (rows) => [...new Set(rows.map((row) => row.workspace ?? 'default'))].sort(),
   });
 
+/**
+ * Every workspace with how many repositories it holds, for the Workspace menu (D75). The same
+ * unscoped registry answer `useWorkspaces` reads, so the two can never disagree about which exist.
+ */
+export const useWorkspaceHoldings = () =>
+  useQuery({
+    queryKey: keys.registry(null),
+    queryFn: ({ signal }) => api.registry(null, signal),
+    select: (rows) => {
+      const counts = new Map<string, number>();
+      for (const row of rows) {
+        const name = row.workspace ?? 'default';
+        counts.set(name, (counts.get(name) ?? 0) + 1);
+      }
+      return [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([name, repositories]) => ({ name, repositories }));
+    },
+  });
+
 /** Asks (D65 §1a), scoped like every other cross-repository read — an ask is made in a circle. */
 export const useAsks = (includeClosed: boolean) => {
   const { workspace } = useScope();
@@ -242,6 +260,15 @@ function useInvalidateRegistry() {
     void client.invalidateQueries({ queryKey: keys.allRepositories });
   };
 }
+
+/** Import a folder's repositories (D75's *Import a folder…*), then re-read what the registry holds. */
+export const useImportFolder = () => {
+  const invalidate = useInvalidateRegistry();
+  return useMutation({
+    mutationFn: (folder: string) => api.importFolder(folder),
+    onSuccess: invalidate,
+  });
+};
 
 export const useRegisterRepository = () => {
   const invalidate = useInvalidateRegistry();

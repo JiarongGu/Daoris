@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from './api';
 import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
@@ -19,7 +19,15 @@ import {
  * repository's own act (D32): Daoris never writes into a sibling, so nothing joins by being seen; the
  * join steps are proposed as text, never a button (D31's shape).
  */
-export function ProjectsView({ notify }: { notify: Notify }) {
+export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
+  notify: Notify;
+  /**
+   * The Workspace menu's *Add repository…* (D75), an EVENT like Quests' opening draft: consumed once,
+   * and cleared by its holder through `onAddOpened`, or the drawer would reopen on every render.
+   */
+  addRequested?: boolean;
+  onAddOpened?: () => void;
+}) {
   const { t } = useTranslation();
   const registry = useRegistry();
   const { workspace } = useScope();
@@ -36,6 +44,11 @@ export function ProjectsView({ notify }: { notify: Notify }) {
   // for the same reason: managing repositories means touching machine paths, and a browser has none.
   const attached = driver.data !== undefined;
   const [adding, setAdding] = useState(false);
+  useEffect(() => {
+    if (!addRequested || !attached) return;
+    setAdding(true);
+    onAddOpened?.();
+  }, [addRequested, attached, onAddOpened]);
   const [managing, setManaging] = useState<Registration | null>(null);
 
   // Starting and holding a CONVERSATION moved to the Work frame (design §3, D55): one home for the

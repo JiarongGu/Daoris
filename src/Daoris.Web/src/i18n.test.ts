@@ -20,6 +20,11 @@ describe('the catalogs', () => {
     expect(Object.entries(zh).filter(([, value]) => said(value).includes('圈子')).map(([key]) => key)).toEqual([]);
   });
 
+  /** The same drift for an account: 账户 15 times and 账号 11, found building the menus (FRAME3). */
+  it('call an account 账户 in 中文, one word as for the workspace', () => {
+    expect(Object.entries(zh).filter(([, value]) => value.includes('账号')).map(([key]) => key)).toEqual([]);
+  });
+
   it('serve flat dotted keys in both languages, placeholders intact', async () => {
     await i18n.changeLanguage('en');
     expect(i18n.t('nav.quests')).toBe('Quests');
