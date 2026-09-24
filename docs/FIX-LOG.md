@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Convergence took about seven seconds on the first real index (2026-09-24)
+
+**Symptom.** On the owner's install (1,052 entries, lexical only) the Convergence view showed a bare
+"comparing…" for 4.5–10.4 seconds a call. Search on the same host answered in 0.07s, so the store
+was not the cost.
+
+**Root cause.** The restatement pass compared every ORDERED pair of local entries, so each unordered
+pair twice, although containment is symmetric: an earlier entry has already either claimed this one
+or scored below the threshold. And it counted shared tokens by walking the first set, which could be
+a tome's vocabulary while the second was a paragraph's. A fixture of three documents cannot show
+either.
+
+**Fix.** Walk each pair once (`j > i`) and the smaller set. A test pins the grouping a chain of
+restatements makes (alpha≈beta, beta≈gamma, alpha≉gamma), which is where the order of comparison
+could have mattered.
+
+**Verify.** 2.1–2.5s a call on the same install. The answers at thresholds 0.5, 0.75 and 0.9 were
+saved before the change and are byte-identical after it. Service 469/469.
+
 ## A new installation's Projects was a blank page, and both composers could never send (2026-09-24)
 
 **Symptom.** On the owner's install, with every registration retired, Projects showed its header

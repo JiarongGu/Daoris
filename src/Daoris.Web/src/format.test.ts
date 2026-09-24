@@ -34,10 +34,19 @@ describe('ago and sittingDays', () => {
     expect(ago('2026-09-16T12:00:00Z')).toBe('3d ago');
   });
 
-  it('speaks the active catalog', async () => {
+  /**
+   * An age and a span sit side by side in a rail row, and in 中文 they were set two ways: `9 分钟`
+   * beside `1天前`. The catalogue sets a number apart from Chinese almost everywhere, so both do.
+   */
+  it('speaks the active catalog, setting a number apart from its unit as a span does', async () => {
     await i18n.changeLanguage('zh');
-    expect(ago('2026-09-16T12:00:00Z')).toBe('3天前');
-    await i18n.changeLanguage('en');
+    try {
+      expect(ago('2026-09-16T12:00:00Z')).toBe('3 天前');
+      expect(ago('2026-09-19T11:15:00Z')).toBe('45 分钟前');
+      expect(elapsed('2026-09-19T11:15:00Z')).toBe('45 分钟');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('counts whole sitting days — the number the Overview leads with', () => {

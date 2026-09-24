@@ -5369,3 +5369,28 @@ Seen and not fixed, filed as POLISH3: two account rows with one name, the drawer
 status bar, Convergence's seven-second load on the real index, and 中文 spacing durations and ages
 differently. Web unit 820 → 834, Playwright 21/21 (seven toast assertions matched raw backticks),
 verify green. The install was left in 中文 as found, and stopped.
+
+## POLISH3 — what POLISH2 saw and left (2026-09-24)
+
+- [x] ~~**POLISH3 — what POLISH2 saw and left.** Two account rows with one name; the drawer's scrim
+  cutting the status bar; Convergence waiting about seven seconds on the real index behind a bare
+  "comparing…"; 中文 spacing durations and ages differently.~~
+✅ **done 2026-09-24**, each fixed and looked at on the republished install.
+
+- **Convergence is three times faster, with byte-identical answers.** The lexical pass compared every
+  ordered pair of local entries, so each unordered pair twice, and counted shared tokens by walking
+  the first set whether or not it was the larger. It now walks each pair once and the smaller set.
+  Measured on the install: 4.5–10.4s a call (median about 7) before, 2.1–2.5s after. The answers at
+  0.5, 0.75 and 0.9 were saved before the change and compared as bytes after it. A new test pins the
+  grouping a chain of restatements makes, so comparing once cannot change it. The page also shows
+  skeleton rows while it compares, with "comparing…" on the line the count takes.
+- **The frame is three bars, and an overlay sits between them.** The drawer, its scrim and the
+  palette's scrim stop above the status bar, as they already left the strip and the activity bar
+  alone. `tokens.test.ts` holds it for every overlay, beside the two rules it joins.
+- **A name that repeats says which it is.** When the tool's own home and an account made in Daoris
+  are signed in as the same person, the own row says *this machine's own* beside the name.
+- **中文 sets a number apart from its unit** in an age as it already did in a span (`1 天前`, not
+  `1天前`), and a template holding an age sets it apart too. That is the catalogue's own convention:
+  126 placeholders spaced against 14 tight.
+
+Service 468 → 469, web unit 834 → 838.

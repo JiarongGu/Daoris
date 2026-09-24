@@ -872,6 +872,11 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                   <Icon name="account" size={13} className="text-ink-faint" />
                   {/* Who, when the tool says (D66 §3) — a person knows an account by who it is. */}
                   <span className="text-body font-medium text-ink">{tool.ownAccount ?? t('harness.own')}</span>
+                  {/* A name that repeats says which it is: signed in as the same person here and
+                      in an account made in Daoris, the two rows read as one fact stated twice. */}
+                  {tool.ownAccount && tool.accounts.some((profile) => named(profile) === tool.ownAccount) && (
+                    <span className="text-meta text-ink-faint">{t('harness.own')}</span>
+                  )}
                   {tool.present && tool.ownLogin !== 'unknown' && (
                     <Pill tone={tool.ownLogin === 'in' ? 'done' : 'neutral'}>
                       {t(`harness.login.${tool.ownLogin}`)}

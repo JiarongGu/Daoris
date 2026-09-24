@@ -1055,6 +1055,33 @@ describe('the harness roster', () => {
     // The directory's name is still there, inside its path, for a terminal.
     expect(within(row).getByText(/account-1$/)).toBeTruthy();
     expect(screen.getByText('owner@example.invalid')).toBeTruthy();
+    // Two different people: neither name repeats, so neither says which it is.
+    expect(screen.queryByText("this machine's own")).toBeNull();
+  });
+
+  /**
+   * Seen on the installed window (POLISH3): the tool's own home and an account made in Daoris, both
+   * signed in as the same person, were two rows with one bold name, which read as one fact stated
+   * twice. The name that repeats says which it is.
+   */
+  it('says which is the tool\'s own home when an account there is also one made here', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{
+          ...ROSTER.harnesses[0],
+          ownAccount: 'owner@example.invalid',
+          profiles: [
+            { name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/claude-code/account-1', login: 'in', account: 'owner@example.invalid' },
+          ],
+        }],
+      }
+      : WIRING));
+    show(<SettingsView notify={() => {}} />);
+
+    const [own, made] = (await screen.findAllByText('owner@example.invalid')).map((name) => name.closest('li')!);
+    expect(within(own!).getByText("this machine's own")).toBeTruthy();
+    expect(within(made!).queryByText("this machine's own")).toBeNull();
   });
 
   /**

@@ -465,8 +465,10 @@ export function Drawer({ title, meta, onClose, footer, children }: {
         {/* 🔴 Below the app strip, never over it. The strip reserves slots the WINDOW paints its
             caption buttons into (SURF7), and a page scrim cannot dim what the page does not draw —
             so a full-bleed one dimmed the title bar and left three bright buttons punched through
-            it. Held by `tokens.test.ts`, because it is a rule about every overlay. */}
-        <Dialog.Overlay className="fixed inset-y-0 bottom-0 left-12 right-0 top-9 z-10 bg-scrim" />
+            it. Held by `tokens.test.ts`, because it is a rule about every overlay. And above the
+            status bar, for the same reason the activity bar is left alone: the frame is three bars,
+            and an overlay belongs to the content between them (POLISH3). */}
+        <Dialog.Overlay className="fixed bottom-6 left-12 right-0 top-9 z-10 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
           // D41 §6 says a drawer is `role="dialog"` WITH `aria-modal`, and Radix sets the role and
@@ -479,7 +481,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           // started at the top put its own header, close button included, under them: on the
           // deployed application the drawer's × sat exactly beneath the window's ✕, neither
           // dimmed nor reachable. Held by `tokens.test.ts` for every panel, as the scrim is.
-          className="fixed bottom-0 right-0 top-9 z-10 flex w-[min(32rem,100%)] flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]"
+          className="fixed bottom-6 right-0 top-9 z-10 flex w-[min(32rem,100%)] flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]"
         >
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">
             <div>

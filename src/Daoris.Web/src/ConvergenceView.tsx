@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Convergence } from './api';
 import { useConvergence } from './queries';
-import { Card, Inline, type Notify, PageHeader, useErrorNotify } from './ui';
+import { Card, Inline, type Notify, PageHeader, SkeletonRows, useErrorNotify } from './ui';
 import { cn } from './lib/cn';
 import { useDebounced } from './lib/useDebounced';
 import { page } from './results';
@@ -47,7 +47,15 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
         </p>
       </div>
 
-      {groups.isPending && <p className="text-body text-ink-soft">{t('convergence.comparing')}</p>}
+      {/* A first load is skeleton rows (D41 §4), with the words in the line the count takes, so
+          nothing moves when the answer lands. On the first real index this was seconds of a bare
+          "comparing…" on an otherwise empty page (POLISH3). */}
+      {groups.isPending && (
+        <>
+          <p className="mb-2 text-small text-ink-faint">{t('convergence.comparing')}</p>
+          <SkeletonRows rows={4} />
+        </>
+      )}
       {groups.data?.length === 0 && (
         <p className="text-body text-ink-soft">
           {t('convergence.empty', { value: threshold.toFixed(2) })}

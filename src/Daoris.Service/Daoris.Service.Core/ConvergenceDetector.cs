@@ -142,25 +142,30 @@ public sealed class ConvergenceDetector(
     private static IEnumerable<ConvergenceCandidate> FindRestatements(
         IReadOnlyList<KnowledgeEntry> entries, HashSet<string> claimed, double threshold)
     {
-        var tokens = entries.ToDictionary(
-            e => e.Id,
-            e => new HashSet<string>(Text.Tokenize($"{e.Title} {e.Body}"), StringComparer.Ordinal),
-            StringComparer.Ordinal);
+        var tokens = entries
+            .Select(e => new HashSet<string>(Text.Tokenize($"{e.Title} {e.Body}"), StringComparer.Ordinal))
+            .ToArray();
 
         var found = new List<ConvergenceCandidate>();
-        foreach (var seed in entries)
+        for (var i = 0; i < entries.Count; i++)
         {
+            var seed = entries[i];
             if (claimed.Contains(seed.Id)) continue;
 
             var group = new List<KnowledgeEntry> { seed };
             var best = 0.0;
-            foreach (var other in entries)
+            // 🔴 Only the entries AFTER the seed (POLISH3). Containment is symmetric, so an earlier
+            // entry has already been compared with this one: it either claimed it or scored below the
+            // threshold. Looking back repeated half the work and found nothing new. That was about
+            // seven seconds a call on the first real index (1,052 entries).
+            for (var j = i + 1; j < entries.Count; j++)
             {
-                if (other.Id == seed.Id || claimed.Contains(other.Id)) continue;
+                var other = entries[j];
+                if (claimed.Contains(other.Id)) continue;
                 if (string.Equals(other.Repository, seed.Repository, StringComparison.Ordinal)) continue;
 
-                if (!Comparable(tokens[seed.Id], tokens[other.Id])) continue;
-                var score = Containment(tokens[seed.Id], tokens[other.Id]);
+                if (!Comparable(tokens[i], tokens[j])) continue;
+                var score = Containment(tokens[i], tokens[j]);
                 if (score < threshold) continue;
 
                 group.Add(other);
@@ -288,7 +293,15 @@ public sealed class ConvergenceDetector(
     private static double Containment(HashSet<string> a, HashSet<string> b)
     {
         if (a.Count == 0 || b.Count == 0) return 0;
-        return (double)a.Count(b.Contains) / Math.Min(a.Count, b.Count);
+        // Walk the smaller set: the count of shared tokens is the same either way, and the larger
+        // one can be a tome's vocabulary.
+        var (small, large) = a.Count <= b.Count ? (a, b) : (b, a);
+        var shared = 0;
+        foreach (var token in small)
+        {
+            if (large.Contains(token)) shared++;
+        }
+        return (double)shared / small.Count;
     }
 
     /// <summary>Whitespace-insensitive, so re-wrapping the same text is still the same text.</summary>

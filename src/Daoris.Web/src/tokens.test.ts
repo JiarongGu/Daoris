@@ -60,6 +60,20 @@ export function panelsOverTheStrip(files: [path: string, source: string][]): str
     (source.match(FULL_HEIGHT_PANEL) ?? []).map((hit) => `${path} raises a panel over the app strip: ${hit}`));
 }
 
+/**
+ * 🔴 **Nor does either reach the status bar.** The frame is three bars, the strip, the activity bar
+ * and the status bar, and an overlay belongs to the content between them. The scrim left the first
+ * two alone and ran to `bottom-0`, so behind an open drawer the status bar's first 48px stayed
+ * bright and the rest went grey, cut at the activity bar's edge. Seen on the installed window
+ * (POLISH3). The rule is the position again: an overlay ends at `bottom-6`, the bar's own height.
+ */
+const OVER_THE_STATUS_BAR = /fixed[^"'`]*\bbottom-0\b[^"'`]*bg-(?:scrim|overlay)|bg-(?:scrim|overlay)[^"'`]*fixed[^"'`]*\bbottom-0\b/g;
+
+export function overlaysOverTheStatusBar(files: [path: string, source: string][]): string[] {
+  return files.flatMap(([path, source]) =>
+    (source.match(OVER_THE_STATUS_BAR) ?? []).map((hit) => `${path} covers the status bar: ${hit}`));
+}
+
 const sources = import.meta.glob('./**/*.tsx', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
@@ -122,6 +136,22 @@ describe('the scrim', () => {
 
   it('holds: no panel puts its own header under the caption buttons', () => {
     expect(panelsOverTheStrip(components)).toEqual([]);
+  });
+
+  it('catches a scrim or a panel that runs over the status bar, in the shape both had', () => {
+    expect(overlaysOverTheStatusBar([['./ui.tsx',
+      '<Dialog.Overlay className="fixed inset-y-0 bottom-0 left-12 right-0 top-9 z-10 bg-scrim" />']]))
+      .toHaveLength(1);
+    expect(overlaysOverTheStatusBar([['./ui.tsx',
+      'className="fixed bottom-0 right-0 top-9 z-10 flex w-[min(32rem,100%)] flex-col bg-overlay"']]))
+      .toHaveLength(1);
+    // And what must keep passing: both ending above the bar.
+    expect(overlaysOverTheStatusBar([['./ui.tsx', 'className="fixed bottom-6 left-12 right-0 top-9 z-10 bg-scrim"']]))
+      .toEqual([]);
+  });
+
+  it('holds: no overlay covers the status bar', () => {
+    expect(overlaysOverTheStatusBar(components)).toEqual([]);
   });
 });
 

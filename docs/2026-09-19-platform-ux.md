@@ -398,6 +398,18 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **A panel that keeps its height keeps it as a sentence.** An ended session's console, after the
 >   app restarted, was an empty bordered well, which reads as a field to type in. SURF8 had already
 >   given the console a quiet sentence for this, and the output panel never passed one.
+>
+> **And what it left, closed as POLISH3 the same day:**
+>
+> - **The frame is three bars, and an overlay sits between them.** The scrim left the strip and the
+>   activity bar alone and ran over the status bar, so behind a drawer the bar was bright for 48px
+>   and grey after. Every scrim and panel now ends at `bottom-6`, held by `tokens.test.ts`.
+> - **A name that repeats says which it is.** Two accounts signed in as one person read as one fact
+>   stated twice, so the tool's own home says *this machine's own* beside the name, only then.
+> - **中文 sets a number apart from Chinese**, in an age as in a span: `1 天前` beside `9 分钟`. A
+>   Chinese word inside a Chinese sentence stays tight.
+> - **A slow first answer is skeleton rows**, as §4 always said, with its words on the line the
+>   count will take.
 
 ## 5. The views, restated in this language
 

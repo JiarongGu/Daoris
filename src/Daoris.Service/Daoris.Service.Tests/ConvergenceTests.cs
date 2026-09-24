@@ -194,6 +194,30 @@ public class ConvergenceTests
         Assert.Equal(ConvergenceMethod.Restatement, found.Method);
     }
 
+    /// <summary>
+    /// A chain: alpha is a restatement of beta and beta of gamma, but alpha is not one of gamma. The
+    /// first seed claims its group and the chain's far end stays out. This pins the grouping the
+    /// lexical pass makes, so comparing each pair once instead of twice (POLISH3) changes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_of_restatements_groups_from_the_first_seed_and_stops_there()
+    {
+        // Two-letter titles tokenise to nothing, so each vocabulary is exactly its body's ten words.
+        // alpha·beta share 8 of 10, beta·gamma 8 of 10, alpha·gamma 6 of 10.
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "aa",
+            "amber basil cedar delta ember fjord grove heron iris juniper")]);
+        await store.ReplaceRepositoryAsync("beta", [Entry("beta", "bb",
+            "amber basil cedar delta ember fjord grove heron kelp lotus")]);
+        await store.ReplaceRepositoryAsync("gamma", [Entry("gamma", "cc",
+            "cedar delta ember fjord grove heron kelp lotus maple nectar")]);
+
+        var found = Assert.Single(await new ConvergenceDetector(store).FindAsync(
+            new ConvergenceOptions(MinimumSimilarity: 0.75)));
+        Assert.Equal(["alpha", "beta"], found.Repositories);
+        Assert.Equal(0.8, found.Similarity, 3);
+    }
+
     [Fact]
     public async Task A_pair_below_the_threshold_is_not_reported()
     {
