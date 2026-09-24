@@ -1,0 +1,66 @@
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
+import { RunningIntake } from './RunningIntake';
+
+// A RUNNING intake (INT4h): one turn, framed as one prompt, so it takes no messages — the pipe door
+// gives it no stdin, and on the protocol door its stdin is the driver's own frames. What a person
+// can do while it runs is stop it, or look at the ask it serves.
+
+const show = (props: Partial<Parameters<typeof RunningIntake>[0]> = {}) =>
+  render(<RunningIntake ask="0fda18" onOpen={() => {}} onStop={() => {}} {...props} />);
+
+describe('a running intake', () => {
+  it('names the ask it is reading', () => {
+    show();
+    expect(screen.getByText('This intake is reading ask #0fda18')).toBeInTheDocument();
+  });
+
+  /** The one line that replaces a message box: why there is none, and where an answer goes. */
+  it('says it takes no messages, and where the answer goes if it asks', () => {
+    show();
+    expect(screen.getByText(/takes no messages/)).toBeInTheDocument();
+    expect(screen.getByText(/the answer is on the ask/)).toBeInTheDocument();
+  });
+
+  it('opens the ask it serves', async () => {
+    const onOpen = vi.fn();
+    show({ onOpen });
+
+    await userEvent.click(screen.getByRole('button', { name: 'open ask #0fda18' }));
+    expect(onOpen).toHaveBeenCalledWith('0fda18');
+  });
+
+  it('can be stopped, and says the ask then stays a proposal', async () => {
+    const onStop = vi.fn();
+    show({ onStop });
+
+    expect(screen.getByText(/the ask stays a proposal/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'stop it' }));
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds the stop while it is in flight, and never the door', () => {
+    show({ pending: true });
+
+    expect(screen.getByRole('button', { name: 'stop it' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'open ask #0fda18' })).toBeEnabled();
+  });
+
+  /** Where nothing can act (a story, a record mirrored from another machine), it still says why. */
+  it('offers no door and no stop where nothing can act, and still says it takes no messages', () => {
+    render(<RunningIntake ask="0fda18" />);
+
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByText(/takes no messages/)).toBeInTheDocument();
+    expect(screen.queryByText(/the ask stays a proposal/)).toBeNull();
+  });
+
+  it('speaks the active catalog', async () => {
+    await i18n.changeLanguage('zh');
+    show();
+    expect(screen.getByRole('button', { name: '打开请求 #0fda18' })).toBeInTheDocument();
+    await i18n.changeLanguage('en');
+  });
+});

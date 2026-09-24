@@ -5,6 +5,7 @@ import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE } from '../ui';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
+import { RunningIntake } from './RunningIntake';
 
 /**
  * The attended session's record (design §3): what it is, where it runs, what it ran as, and — when
@@ -31,18 +32,27 @@ import { isIntake, sessionOrigin, sessionTitle } from './identity';
  * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
  * can be passed unconditionally.
  */
-export function SessionHead({ session, quest, resolving = false, onResolve, onAnswerAsk }: {
+export function SessionHead({
+  session, quest, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
+}: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
   resolving?: boolean;
+  /** A running intake's stop is in flight. */
+  stopping?: boolean;
   /** How a parked session is cleared. Absent where nothing can act — a browser, or a story. */
   onResolve?: (state: Resolution, note: string | null) => void;
   /**
-   * Open the ask a parked intake is waiting on (INT4g) — its answer is there, not on the session.
+   * Open the ask an intake serves (INT4g) — a parked one's answer is there, not on the session.
    * Absent where nothing can open it.
    */
   onAnswerAsk?: (ask: string) => void;
+  /**
+   * Cut a RUNNING intake off (INT4h). It has no composer to carry the stop, because it takes no
+   * messages. Absent where nothing can reach the process's machine.
+   */
+  onStop?: () => void;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
@@ -51,6 +61,10 @@ export function SessionHead({ session, quest, resolving = false, onResolve, onAn
 
   return (
     <header className="grid gap-2.5">
+      {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
+      {running && !parked && intake && (
+        <RunningIntake ask={session.ask!} pending={stopping} onOpen={onAnswerAsk} onStop={onStop} />
+      )}
       {parked && intake && (onResolve || onAnswerAsk) && (
         <AwaitingIntake
           ask={session.ask!}

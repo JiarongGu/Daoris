@@ -27,6 +27,15 @@ public sealed partial class Driver
         + "--install` lands one.";
 
     /// <summary>
+    /// Why a person's line is refused for a running intake, and where their answer goes instead — the
+    /// sentence the bridge carries verbatim, so a stale page is told the truth rather than "it ended".
+    /// </summary>
+    internal static string TakesNoMessages(string ask) =>
+        $"the intake for ask #{ask} takes no messages: an intake is one turn, and where the "
+        + "declarations do not settle it, it asks you by parking. The answer is on the ask — publish it "
+        + "to a repository, or close it.";
+
+    /// <summary>
     /// The asks due an intake this tick: none unless a harness is named for it; otherwise the oldest
     /// unserved ask in each circle, as many as the slots allow.
     /// </summary>
@@ -166,7 +175,10 @@ public sealed partial class Driver
 
             using var process = Process.Start(info)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
-            using var tracked = _processes.Track(sessionId, process);
+            // 🔴 One turn takes no messages (INT4h), on either door: the pipe door gives it no stdin,
+            // and the protocol door's stdin is the driver's own frames — a person's line written
+            // there would land in the middle of the JSON-RPC stream.
+            using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(ask.Id));
             using var _ = new Disposer(() => SpawnServers.Remove(handed));
 
             // Held as its own type for the same reason a quest's is: the usage lives in the outcome.

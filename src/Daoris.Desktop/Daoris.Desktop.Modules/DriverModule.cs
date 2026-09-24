@@ -191,19 +191,23 @@ public sealed class DriverModule : ModuleBase
             }
 
             // The person's half of the turn-taking. False is an answer — the session ended while they
-            // were typing — and never an error.
+            // were typing — and never an error. 🔴 A session that takes no input is REFUSED instead, in
+            // the driver's words (INT4h): false would tell a stale page it ended when it is running.
             case "SESSION_INPUT":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
+                if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
                 return new { Sent = _loop.Chat?.Say(id, text) ?? false };
             }
 
             // Finishing a conversation rather than cutting it off: the harness gets end-of-input, says
-            // what it was going to say, and exits on its own. `STOP_SESSION` is the other verb.
+            // what it was going to say, and exits on its own. `STOP_SESSION` is the other verb. Refused
+            // for a session that takes no input, for the same reason as a message.
             case "END_CHAT":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
                 return new { Ended = _loop.Processes.CloseInput(id) };
             }
 

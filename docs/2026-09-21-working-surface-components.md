@@ -166,6 +166,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `AttentionRow` | one row of Overview's *what needs you* band | parked · quest nobody can take · a proposed ask · an ask whose intake asked · no door · no detail · long + CJK. ~~finished-unreviewed~~ — **not buildable before SURF6**: nothing records that anybody looked |
 | `AwaitingPerson` | a parked session's analysis and the person's three moves (SURF5) | parked · nothing said · a move in flight · declining |
 | `AwaitingIntake` | a parked intake's question, a door to its ask, and a stop that keeps the ask a proposal (INT4g) | asking · nothing can act |
+| `RunningIntake` | a running intake: why it takes no messages, a door to look at its ask, and the stop its composer used to carry (INT4h) | running · nothing can act |
 | `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
 
 ### Organisms — `src/work/`

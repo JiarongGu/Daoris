@@ -17,6 +17,9 @@ public sealed class SessionProcesses
 
         /// <summary>Why the driver ended it, when the driver did — null when the person did.</summary>
         public string? Reason;
+
+        /// <summary>Why a person's line is refused here, in the driver's words — null for a conversation.</summary>
+        public string? RefusesInput;
     }
 
     private readonly object _gate = new();
@@ -71,19 +74,30 @@ public sealed class SessionProcesses
     }
 
     /// <summary>
+    /// Why a person's line is refused for this session, in the driver's own words — null when it takes
+    /// input, or is not running here at all.
+    /// </summary>
+    public string? RefusesInput(string sessionId)
+    {
+        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.RefusesInput : null;
+    }
+
+    /// <summary>
     /// Send a person's message to a chat session (D49 §3) — one line into the harness's stdin.
     /// </summary>
     /// <remarks>
-    /// False for a session that has ended, and for a DRIVEN one: a driven session's process is spawned
-    /// without an input stream at all, because it was given its whole target at once and has nobody to
-    /// take turns with. That is a structural answer, not a policy — there is no stream to write to.
+    /// False for a session that has ended, and for one that takes no input. 🔴 That second answer is
+    /// a POLICY, held before anything is written, because the structural one stopped being enough at
+    /// ACP1: a pipe-door driven session is spawned with no input stream, but a protocol-door session's
+    /// stdin is open — the driver writes the protocol's frames into it (D53) — and a person's line
+    /// written there lands in the middle of the JSON-RPC stream. An intake is such a session (INT4h).
     /// </remarks>
     public bool Send(string sessionId, string message)
     {
         Entry? entry;
         lock (_gate)
         {
-            if (!_running.TryGetValue(sessionId, out entry)) return false;
+            if (!_running.TryGetValue(sessionId, out entry) || entry.RefusesInput is not null) return false;
         }
 
         try
@@ -111,14 +125,15 @@ public sealed class SessionProcesses
     /// <remarks>
     /// Ending the conversation rather than killing it: a harness given end-of-input finishes what it
     /// was saying and exits on its own, which is a `completed` record. `Stop` is the other verb, and
-    /// it means something different — the person cut it off.
+    /// it means something different — the person cut it off. Refused for a session that takes no
+    /// input: on the protocol door, closing that stream would end the protocol's turn, not a chat.
     /// </remarks>
     public bool CloseInput(string sessionId)
     {
         Entry? entry;
         lock (_gate)
         {
-            if (!_running.TryGetValue(sessionId, out entry)) return false;
+            if (!_running.TryGetValue(sessionId, out entry) || entry.RefusesInput is not null) return false;
         }
 
         try
@@ -133,9 +148,13 @@ public sealed class SessionProcesses
     }
 
     /// <summary>Register a live process. Dispose the handle when the session concludes.</summary>
-    public IDisposable Track(string sessionId, Process process)
+    /// <param name="refusesInput">
+    /// Why this session takes no person's line, in the driver's words — null for a conversation, the
+    /// one kind that takes turns with a person.
+    /// </param>
+    public IDisposable Track(string sessionId, Process process, string? refusesInput = null)
     {
-        lock (_gate) _running[sessionId] = new Entry { Process = process };
+        lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput };
         return new Untrack(this, sessionId);
     }
 

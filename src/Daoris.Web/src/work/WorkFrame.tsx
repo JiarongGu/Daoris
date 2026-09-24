@@ -130,9 +130,12 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // A teammate's record came down with the sync (SYNC4) and its process is on THEIR machine: it is
   // read here, and nothing this window sends could reach it — so it gets no moves and no composer.
   const here = attended ? sessionOrigin(attended) === null : false;
-  // A parked intake has asked and ended (INT4b): an intake is one turn, and there is no process
-  // left to hear a message. Its answer is on the ask (INT4g), so it gets no composer at all.
-  const askingIntake = attended ? isIntake(attended) && attended.state === 'awaiting-person' : false;
+  // An intake takes no messages at all (INT4b, INT4g, INT4h): it is one turn, framed as one prompt.
+  // Parked, there is no process left to hear one, and its answer is on the ask. Running, the pipe
+  // door gave it no stdin and on the protocol door its stdin is the driver's own frames — so a box
+  // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
+  // refuses such a line too; the frame offers no box, and the head carries the stop.
+  const intake = attended ? isIntake(attended) : false;
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that.
@@ -177,6 +180,16 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
       // False is an answer: the session ended while they were typing. It lands on the composer
       // rather than in a toast, because that is where the person is looking.
       onSuccess: (result) => setRefusal(result.sent ? null : t('work.composer.notListening')),
+      onError: (error: unknown) => notify(sentence(error), 'error'),
+    });
+  };
+
+  // Cutting a live session off — a conversation's, from its composer, or a running intake's, from
+  // the head, since an intake has no composer to carry it (INT4h).
+  const onStop = () => {
+    if (!attended) return;
+    stop.mutate(attended.id, {
+      onSuccess: () => notify(t('quests.session.stopped', { id: attended.id })),
       onError: (error: unknown) => notify(sentence(error), 'error'),
     });
   };
@@ -259,14 +272,16 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             session={attended}
             quest={quest}
             resolving={resolve.isPending}
+            stopping={stop.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerAsk={here ? onAnswerAsk : undefined}
+            onStop={here && intake ? onStop : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             onSession={(session) => attend(session.id)}
           />
         </div>
 
-        {conversation && here && attended && !askingIntake && (
+        {conversation && here && attended && !intake && (
           <Composer
             live={live}
             sending={send.isPending}
@@ -279,10 +294,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),
               onError: (error: unknown) => notify(sentence(error), 'error'),
             })}
-            onStop={() => stop.mutate(attended.id, {
-              onSuccess: () => notify(t('quests.session.stopped', { id: attended.id })),
-              onError: (error: unknown) => notify(sentence(error), 'error'),
-            })}
+            onStop={onStop}
           />
         )}
 

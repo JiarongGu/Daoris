@@ -82,6 +82,9 @@ const PARKED_INTAKE = {
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:05:00Z',
 };
 
+/** An intake still at work on its ask (INT4h) — one turn, with no message box. */
+const RUNNING_INTAKE = { ...PARKED_INTAKE, id: 'r7n8t7k6', state: 'working', note: undefined };
+
 let SESSIONS: unknown[] = [DRIVEN];
 
 function respond(url: string): Response {
@@ -575,6 +578,51 @@ describe('clearing a parked session', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
       payload: { id: 'i9n8t7k6', state: 'stopped' },
     });
+  });
+
+  /**
+   * INT4h: a RUNNING intake takes no messages either. It is one turn, framed as one prompt, and on
+   * the protocol door its stdin is the driver's own frames — so a composer there sent a person's
+   * words into nothing, or into the middle of the JSON-RPC stream. No composer: its stop and its
+   * ask's door live in the head, with the line that says where an answer goes.
+   */
+  it('offers a running intake no composer, only its stop and its ask', async () => {
+    SESSIONS = [RUNNING_INTAKE];
+    const onAnswerAsk = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="r7n8t7k6" onSelect={vi.fn()} notify={() => {}} onAnswerAsk={onAnswerAsk} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText(/takes no messages/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'finish' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'open ask #0fda18' }));
+    expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
+  });
+
+  /** The stop the composer used to carry: the process is cut off, over the driver. */
+  it('stops a running intake over the driver', async () => {
+    SESSIONS = [RUNNING_INTAKE];
+    show('r7n8t7k6');
+    await userEvent.click(await screen.findByRole('button', { name: 'stop it' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 'r7n8t7k6' } });
+  });
+
+  /** A conversation keeps its composer: it is the one kind of session that takes turns. */
+  it('keeps the composer for a conversation', async () => {
+    SESSIONS = [{ ...RUNNING_INTAKE, id: 'c0nv0000', ask: undefined, repository: 'engine' }];
+    show('c0nv0000');
+
+    expect(await screen.findByLabelText('message')).toBeInTheDocument();
+    expect(screen.queryByText(/takes no messages/)).toBeNull();
   });
 
   /** A driven session that is not parked gets no moves: there is nothing waiting on anybody. */

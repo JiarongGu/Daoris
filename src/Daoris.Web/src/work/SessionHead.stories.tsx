@@ -96,6 +96,29 @@ export const IntakeAsking: Story = {
   },
 };
 
+/** A RUNNING intake (INT4h): no box to type in, its stop and its ask's door in the head. */
+export const IntakeRunning: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      id: 'r7n8t7k6',
+      quest: null,
+      kind: 'chat',
+      repository: 'ask #0fda18',
+      ask: '0fda18',
+      adapter: 'claude-code-acp',
+      state: 'working',
+      tree: 'C:/somewhere/data/intake/default',
+      created: at(3),
+      updated: at(1),
+      note: undefined,
+    },
+    quest: null,
+    onAnswerAsk: () => {},
+    onStop: () => {},
+  },
+};
+
 /** Ended, so the clock reads as a lifetime rather than an age. */
 export const Finished: Story = {
   args: {

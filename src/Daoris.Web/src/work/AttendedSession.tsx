@@ -26,15 +26,20 @@ import { SessionTimeline } from './SessionTimeline';
  * The composer sits beneath this region rather than inside it, for the same reason the panel does:
  * the record scrolls and the things you act with do not.
  */
-export function AttendedSession({ session, quest, resolving, onResolve, onAnswerAsk, chain = [], onSession }: {
+export function AttendedSession({
+  session, quest, resolving, stopping, onResolve, onAnswerAsk, onStop, chain = [], onSession,
+}: {
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
   quest?: Quest | null;
   resolving?: boolean;
+  stopping?: boolean;
   /** Passed straight through to the head, where a parked session's three moves live (design §4). */
   onResolve?: (state: Resolution, note: string | null) => void;
-  /** Passed straight through too: where a parked intake's answer is, its ask (INT4g). */
+  /** Passed straight through too: where an intake's answer is, its ask (INT4g). */
   onAnswerAsk?: (ask: string) => void;
+  /** And a running intake's stop, which has no composer to live on (INT4h). */
+  onStop?: () => void;
   /**
    * The chain its quest belongs to (MAP1), the same strip a quest's drawer shows. Rendered only
    * when there is one, like there: a lone quest has nothing before or after it to show.
@@ -61,8 +66,10 @@ export function AttendedSession({ session, quest, resolving, onResolve, onAnswer
         session={session}
         quest={quest}
         resolving={resolving}
+        stopping={stopping}
         onResolve={onResolve}
         onAnswerAsk={onAnswerAsk}
+        onStop={onStop}
       />
       {chain.length > 1 && <ChainStrip chain={chain} level={3} onSession={onSession} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It

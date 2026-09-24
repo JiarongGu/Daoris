@@ -301,6 +301,20 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   elsewhere: a protocol agent answers, and a direct one holds it. Its title is *Registered, not
 >   adopted*, because *not addressable* stopped being true.
 
+> **Amended 2026-09-24, a running intake in Sessions (INT4h).** Held by vitest, and **not yet
+> looked at on the real window** (Sessions is desktop-only, so Playwright does not reach it).
+>
+> - **No box where nothing listens, running or parked.** A running intake is one turn too. On the
+>   pipe door a typed line went nowhere, and the page read the driver's `false` as *it ended*. On the
+>   protocol door the line landed in the middle of the JSON-RPC stream. So it gets no composer, and
+>   the head says why in the one line the box would have taken.
+> - **A move that lived on a removed control moves with it.** The composer carried the only stop a
+>   running intake had. The head carries it now, with the same line saying the ask then stays a
+>   proposal. *Finish* does not move, because an intake ends itself.
+> - **A door that looks is not a door that answers.** A running intake has asked nothing yet, so its
+>   door to the ask is a default button (*open ask #id*), and only a parked one's is primary
+>   (*answer ask #id*).
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

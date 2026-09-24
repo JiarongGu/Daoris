@@ -364,6 +364,43 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains(Refusals.DriverNotReady, refusal);
     }
 
+    /// <summary>
+    /// 🔴 A session that takes no input — an intake, one turn, whose stdin on the protocol door
+    /// carries the driver's own frames (INT4h) — is REFUSED in the driver's words, never answered
+    /// false. False means "it ended while you were typing", and a page that read it so would tell the
+    /// person something untrue about a session that is running fine. Finishing it is refused too:
+    /// closing that stream would end the protocol's turn, not a conversation.
+    /// </summary>
+    [Theory]
+    [InlineData("SESSION_INPUT")]
+    [InlineData("END_CHAT")]
+    public async Task A_session_that_takes_no_input_is_refused_in_the_drivers_words(string type)
+    {
+        var loop = Loop();
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "node",
+            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
+            RedirectStandardInput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        })!;
+        using var tracked = loop.Processes.Track(
+            "i1", process, refusesInput: "ask #a1b2c3's intake takes no messages.");
+
+        try
+        {
+            var refusal = await RefusalAsync(new DriverModule(Bus, loop), type, new { id = "i1", text = "hello" });
+
+            Assert.Contains(Refusals.DriverRefused, refusal);
+            Assert.Contains("ask #a1b2c3's intake takes no messages.", refusal);
+        }
+        finally
+        {
+            loop.Processes.Stop("i1");
+        }
+    }
+
     [Fact]
     public async Task Sending_to_a_session_that_is_not_listening_answers_false()
     {

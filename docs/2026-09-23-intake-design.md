@@ -304,10 +304,29 @@ you*, and its record says who answered it.
   goes through the ledger as `stopped`, as before, and the surface says the ask stays a proposal for
   the person to publish or close.
 - **No composer.** An intake is one turn, and a parked one has no process left to hear a message.
-  A running intake keeps the composer, whose *stop* is the only way to end it early.
+  A running one has none either since INT4h, below.
 - **Named for what it serves.** An intake's title is *intake for ask #id*, never *conversation*. Its
   rail kind is *intake*, its head says *ask* and *room*, and a parked one's rail group claims no busy
   room, because the room's lock is the process.
+
+*As built (INT4h, 2026-09-24):* a running intake takes no messages, on either door.
+
+- **What a typed line did, verified in the driver.** The composer's send is `SESSION_INPUT`, which
+  wrote one line into the process's stdin through the same registry intakes are tracked in. On the
+  pipe door an intake has no stdin (`Spawning.InRoot` opens none), so the line went nowhere and the
+  page was told `sent: false`, which it reads as *the session ended*. On the protocol door its stdin
+  is open, because the driver writes the protocol's frames into it (D53). The line landed in the
+  middle of the JSON-RPC stream, and the page was told `sent: true`. *Finish* (`END_CHAT`) closed that
+  stream, which ends the protocol's turn rather than a conversation.
+- **The driver refuses, in its own words.** A session is tracked with whether it takes a person's
+  line. An intake is tracked as not taking one, and `Send` and `CloseInput` refuse it before anything
+  is written or closed. The bridge answers `SESSION_INPUT` and `END_CHAT` for it with the driver's
+  sentence (`DRIVER_REFUSED`), which says where the answer goes, rather than `false`. The terminal
+  has no twin to change: `daoris-driver chat` speaks only to the conversation it started.
+- **The screen offers no box.** A running intake has no composer. Its head says why in one line, and
+  where an answer goes if it asks: it parks, and the answer is on the ask. It carries the stop the
+  composer used to, over `STOP_SESSION`, with the same line saying the ask then stays a proposal, and
+  a door that opens the ask to look at. *Finish* is gone, since an intake ends itself.
 
 ## 2. What is deliberately not built
 

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type Attention, AttentionRow } from './AttentionRow';
 import { AwaitingIntake } from './AwaitingIntake';
+import { RunningIntake } from './RunningIntake';
 import { AwaitingPerson } from './AwaitingPerson';
 
 // The two surfaces of attention (design §4): the row Overview's band is made of, and the parked
@@ -127,6 +128,18 @@ export const IntakeAskingReadOnly: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
       <AwaitingIntake ask="0fda18" note={QUESTION} />
+    </div>
+  ),
+};
+
+/**
+ * A RUNNING intake (INT4h): one turn, so no message box — the line says why, and where an answer
+ * goes if it asks. The door opens the ask to look at; the stop is the composer's, moved here.
+ */
+export const IntakeRunning: StoryObj = {
+  render: () => (
+    <div className="max-w-3xl">
+      <RunningIntake ask="0fda18" onOpen={() => {}} onStop={() => {}} />
     </div>
   ),
 };

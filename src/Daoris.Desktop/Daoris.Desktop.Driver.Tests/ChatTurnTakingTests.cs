@@ -78,6 +78,46 @@ public sealed class ChatTurnTakingTests
     }
 
     /// <summary>
+    /// 🔴 "No stream to write to" stopped being the whole answer at ACP1: a protocol-door session's
+    /// stdin is OPEN, because the driver writes the protocol's frames into it (D53) — and an intake is
+    /// such a session on that door (INT4h). A person's line written there lands in the middle of the
+    /// JSON-RPC stream. A session tracked as taking no input is refused BEFORE anything is written or
+    /// closed, whatever its streams are, and the registry says why in the driver's own sentence.
+    /// </summary>
+    [Fact]
+    public async Task A_session_that_takes_no_input_is_never_written_into_even_with_its_stdin_open()
+    {
+        const string Why = "ask #a1b2c3's intake takes no messages.";
+        var processes = new SessionProcesses();
+        using var process = Echo();
+        using var tracked = processes.Track("intake1", process, refusesInput: Why);
+
+        Assert.False(processes.Send("intake1", "hello?"));
+        Assert.False(processes.CloseInput("intake1"));
+        Assert.Equal(Why, processes.RefusesInput("intake1"));
+        Assert.Null(processes.RefusesInput("nobody"));
+
+        // Nothing reached it and nothing ended it: the echo heard no line and saw no end-of-input, so
+        // it is still waiting — and it ends only when stopped.
+        Assert.False(process.HasExited);
+        Assert.True(processes.Stop("intake1"));
+        await process.WaitForExitAsync();
+        Assert.Equal("", await process.StandardOutput.ReadToEndAsync());
+    }
+
+    /// <summary>A conversation is tracked as one that takes input, and says nothing to refuse.</summary>
+    [Fact]
+    public void A_conversation_refuses_no_input()
+    {
+        var processes = new SessionProcesses();
+        using var process = Echo();
+        using var tracked = processes.Track("chat3", process);
+
+        Assert.Null(processes.RefusesInput("chat3"));
+        processes.Stop("chat3");
+    }
+
+    /// <summary>
     /// Stop is the other verb, and it means something else: the person cut the conversation off. The
     /// flag is what lets the record say whose decision the end was.
     /// </summary>

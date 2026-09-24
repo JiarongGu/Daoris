@@ -372,6 +372,42 @@ public sealed class IntakeTests : IDisposable
         Assert.Single(service.Intakes);
     }
 
+    /// <summary>
+    /// 🔴 An intake is one turn (§1b), so it takes no messages on either door: the pipe door gives it
+    /// no stdin, and the protocol door's stdin carries the driver's own frames (INT4h). While it runs,
+    /// the process registry refuses a person's line for it, in a sentence that says where the answer
+    /// goes — and the stop still reaches it.
+    /// </summary>
+    [Fact]
+    public async Task A_running_intake_takes_no_messages_and_says_where_the_answer_goes()
+    {
+        await using var service = StandInService.Start(Circle, Ask("a lingering ask the stub takes its time over"));
+        var processes = new SessionProcesses();
+        var driver = Driver(IntakeOn(), service, processes);
+
+        var tick = driver.TickAsync();
+        await Until(() => processes.Running.Contains("i1"));
+
+        var why = processes.RefusesInput("i1");
+        Assert.NotNull(why);
+        Assert.Contains("ask #a1b2c3", why);
+        Assert.Contains("parking", why);
+        Assert.False(processes.Send("i1", "it is the storefront"));
+
+        Assert.True(processes.Stop("i1"));
+        await tick;
+        Assert.Equal("stopped", service.Session("i1")["state"]!.GetValue<string>());
+    }
+
+    private static async Task Until(Func<bool> condition)
+    {
+        for (var waited = 0; !condition(); waited += 50)
+        {
+            if (waited > 15_000) throw new TimeoutException("the intake never started");
+            await Task.Delay(50);
+        }
+    }
+
     /// <summary>With no harness named for it, an ask is the declarations tier's alone — INT4a, unchanged.</summary>
     [Fact]
     public async Task With_no_intake_harness_named_no_intake_runs()
@@ -393,11 +429,11 @@ public sealed class IntakeTests : IDisposable
 
     private DriverConfig IntakeOn() => Config().WithIntake("stub");
 
-    private Daoris.Driver.Driver Driver(DriverConfig config, StandInService service)
+    private Daoris.Driver.Driver Driver(DriverConfig config, StandInService service, SessionProcesses? processes = null)
     {
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
-            new ServiceClient(service.Url, null), config, adapters, _home,
+            new ServiceClient(service.Url, null), config, adapters, _home, processes: processes,
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
     }
 
@@ -419,6 +455,9 @@ public sealed class IntakeTests : IDisposable
             const target = process.env.DAORIS_TARGET ?? '';
             console.log('stub: intake for ask ' + ask + ' as session ' + session);
             console.log('stub: quest ' + (process.env.DAORIS_QUEST_ID ?? '(none)'));
+
+            // An intake still at work: it holds its turn until it is stopped.
+            if (/lingering/.test(target)) await new Promise((resolve) => setTimeout(resolve, 60000));
 
             const agents = existsSync('AGENTS.md') ? readFileSync('AGENTS.md', 'utf8') : '';
             if (agents.includes('`media-api`')) console.log('stub: the room declares media-api');
