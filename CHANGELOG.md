@@ -477,6 +477,10 @@ The first version: doctrine that installs, is checked, and flows back.
   the next tick, without a reload. The record names who answered: the `intake` tier in words, and
   the intake session, which is a door into Sessions on the desktop. A band row with nowhere to go (a
   parked session, in a browser) is no longer a button.
+- **A parked intake in Sessions leads to its ask** (INT4g). It offers *answer ask #id*, which opens
+  the ask's record where it is published or closed, and a stop that says the ask then stays a
+  proposal, instead of a parked session's finish, decline and stop, none of which answered the ask.
+  It has no message box, and Sessions names it as an intake for its ask rather than a conversation.
 - **Settings says what Daoris's own AI is** (AGT6): search and convergence with the service's tier,
   verbatim, and the variables that choose its model; on the desktop, the intake's agent — off, or a
   way in this machine has — and the account an intake in each circle runs as. What a start runs on

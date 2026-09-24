@@ -4993,3 +4993,25 @@ pill, the hint, the select and its options, and the status-bar door. **The on st
 at**, because choosing the machine's one agent with asks waiting spawns a real session on a real
 account. Its rows are held by vitest. Modules 109, web 733 + 21, and the Playwright check (a browser
 is told the tier verbatim, and nothing of the intake) passed on its first run here.
+
+## INT4g — a parked intake in Sessions leads to its ask (2026-09-24)
+
+- [x] ~~**INT4g — a parked intake's moves in Sessions answer nothing.** Sessions offers a parked
+  intake the three parked-session moves (finish, decline, stop). Each ends the record without
+  publishing or closing its ask, which falls back to a proposal. The answer is on the ask, so the
+  surface should say so or lead there. Found by INT4d.~~
+✅ **done 2026-09-24**. A parked intake offers **answer ask #id**, a door to the ask's record in
+Quests (App's `openAsk`, the band's own door), and **stop it**, which says the ask then stays a
+proposal. Finish and decline are gone: finish wrote `completed`, which §1b reserves for an intake
+that published, and decline had nothing to decline. A parked intake gets no composer, because an
+intake is one turn with no process left. Sessions names it for what it serves: *intake for ask #id*,
+the rail kind *intake*, *ask* and *room* in the head, and no busy claim on the rail for a parked
+one. The driver needed nothing: its tick already ends a parked intake whose ask was answered, and
+`IntakeTests` hold that. Decisions are in intake design §1h and platform-ux §4.
+
+Built in a parallel worktree and cherry-picked. **Looked at on the real window** in both themes: the
+rail, the card, the head and no composer. *Answer ask #0fda18* opened Quests on that ask's record,
+which also showed the window fix's tier line (*by declarations; an intake read it and has not
+published*). *Stop it* was not pressed; it is the existing parked-session move. **Filed: INT4h**, a
+*running* intake still offers a message box whose words reach a one-turn process. Web 733 → 751,
+Playwright 21, verify green.

@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: INT4g, INT3, MAP3d.** 🔴 **The owner authorized real sessions on this machine's
+- **Actionable: INT3, MAP3d, INT4h.** 🔴 **The owner authorized real sessions on this machine's
   Claude Code account, 2026-09-24**: ACP2's driven run, INT4f and the ACP measurement DEPLOY1 needs.
   Not the AGT2c downloads. INT6 waits on the owner's presence; PLUG2, HELP3 and DEPLOY1's decision on
   the owner's answer.
@@ -256,7 +256,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (451),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (464), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (109), `npm run rehearse:family` (256/256), `npm run test:web` (733 vitest + 21 Playwright),
+  (464), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (109), `npm run rehearse:family` (256/256), `npm run test:web` (751 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -281,8 +281,8 @@ question first, not a build** (where the guard lives), and 🔴 **TOOL5 is a tri
 design's §5 is realised and what waits is a tool somebody names. The other five are the regular
 task's (D65, below) and PLUG7, held.
 
-🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **D67's buildable items and
-INT4d are closed too; next is INT4g**, filed by INT4d. Each is one session-sized landing, TDD, gates green, moved to the archive.
+🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **D67's buildable items,
+INT4d and INT4g are closed too; next are INT3, MAP3d and INT4h.** Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -432,16 +432,15 @@ workspace; an **intake session** (the harness carries the model, D24) reads the 
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
 engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT4a, INT4b, INT4c,
-INT4d and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
+INT4d, INT4g and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
 - [ ] **INT3 — registered is drivable over the ACP door.** The exchange and the planner stop
   requiring a manifest for a target with a root; the pipe door keeps its own requirements. **The
   owner said yes, 2026-09-24** — it amends the letter of D34/D46, recorded as D70. In progress.
-- [ ] **INT4g — a parked intake's moves in Sessions answer nothing.** Sessions offers a parked
-  intake the three parked-session moves (finish, decline, stop). Each ends the record without
-  publishing or closing its ask, which falls back to a proposal. The answer is on the ask, so the
-  surface should say so or lead there. Found by INT4d.
+- [ ] **INT4h — a running intake offers a message box whose words go nowhere.** An intake is one
+  turn, framed as one prompt, so a message typed into its composer reaches a process that never
+  reads it. Say so or offer no box, as INT4g did for a parked one. Found by INT4g.
 - [ ] **INT4f — a real ask through a real intake harness.** INT4b is proven by a stub. What is
   unseen: the MCP host publishing as the ask under a real harness's environment, and the room's
   trust hold for an intake. It spends a login, so it is the owner's.

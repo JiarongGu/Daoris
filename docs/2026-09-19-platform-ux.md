@@ -273,8 +273,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   circle has two. Two rows called "a start in aurora" naming different agents would read as one
 >   fact stated twice, and wrongly.
 
-> **Amended 2026-09-24, a parked intake in Sessions (INT4g).** Held by vitest, and **not yet looked
-> at on the real window** (Sessions is desktop-only, so Playwright does not reach it).
+> **Amended 2026-09-24, a parked intake in Sessions (INT4g).** Held by vitest, and looked at on the
+> real window in both themes, where *answer ask #id* opened the ask's record in Quests (Sessions is
+> desktop-only, so Playwright does not reach it).
 >
 > - **A move offered where the answer is not is a dead end.** A parked intake was offered a parked
 >   session's three moves, and each one ended the record without answering its ask, which fell back
