@@ -408,14 +408,7 @@ public sealed partial class Driver(
         try
         {
             var adapter = _adapters.Resolve(config.Adapter);
-            var target = new SessionTarget(
-                quest.Id, quest.Title, quest.Body, quest.From, quest.To, workTree, service.BaseUrl)
-            {
-                Links = quest.Links,
-                Attachments = quest.Attachments,
-                Then = quest.Then,
-                Parent = quest.Parent,
-            };
+            var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl);
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
             await service.AdvanceAsync(

@@ -514,6 +514,10 @@ if (/linger/i.test(title)) {
 // A file named on the record and kept on another machine is said to be elsewhere by the target.
 const target = process.env.DAORIS_TARGET ?? '';
 for (const link of target.match(/https:\\/\\/\\S+/g) ?? []) console.log('stub: link ' + link);
+// The agent producer (MAP3d): a repository that keeps a code map is asked to keep it current, and
+// the stub says which file it was pointed at — so the gate reads the ASK back, not the driver's word.
+const mapped = target.match(/keeps a code map in \\W(\\S+?\\.json)/);
+if (mapped) console.log('stub: told to keep the code map ' + mapped[1]);
 const attachments = process.env.DAORIS_QUEST_ATTACHMENTS;
 if (attachments) {
   for (const name of readdirSync(attachments)) {
@@ -625,6 +629,13 @@ const said = existsSync(completed?.transcript ?? '') ? readFileSync(completed.tr
 check(
   'the session was handed the link in its target, and READ the file from the directory it was given',
   said.includes('stub: link https://tickets.example/T-42') && said.includes(`-brief.txt reads ${BRIEF}`),
+  said.split('\n').filter((line) => line.startsWith('stub:')).join('\n'),
+);
+// The newcomer keeps no code map yet (it gains one before the crossing, below), so its session is
+// not asked about one (MAP3d): a map nobody started is not a session's to invent.
+check(
+  'a repository that keeps no code map is not asked to keep one',
+  said.includes(`stub: taking quest ${drivenId}`) && !said.includes('stub: told to keep the code map'),
   said.split('\n').filter((line) => line.startsWith('stub:')).join('\n'),
 );
 const landed = run('git log --oneline', newcomer);
@@ -2583,6 +2594,17 @@ check(
   existsSync(profiled?.transcript ?? '')
     && readFileSync(profiled.transcript, 'utf8').includes(`stub: config home ${profileAt('stub', 'alpha')}`),
   `${profiled?.transcript}`,
+);
+// By now the newcomer keeps a code map (committed before the crossing), so its session is asked to
+// keep it current, by the file the reader would find (MAP3d, the agent producer).
+check(
+  'a repository that keeps a code map is asked to keep it current, by its file',
+  existsSync(join(newcomer, 'docs', 'code-map.json'))
+    && existsSync(profiled?.transcript ?? '')
+    && readFileSync(profiled.transcript, 'utf8').includes('stub: told to keep the code map docs/code-map.json'),
+  existsSync(profiled?.transcript ?? '')
+    ? readFileSync(profiled.transcript, 'utf8').split('\n').filter((line) => line.startsWith('stub:')).join('\n')
+    : `${profiled?.transcript}`,
 );
 
 // A profile nobody has logged into refuses BEFORE anything is recorded, and names the action.

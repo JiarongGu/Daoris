@@ -50,6 +50,27 @@ public sealed record SessionTarget(
     public string? Prompt { get; init; }
 
     /// <summary>
+    /// The code map the session's tree keeps, repository-relative, or null when it keeps none. Where
+    /// there is one, the session is asked to keep it current as it works (MAP3d, the agent producer).
+    /// </summary>
+    public string? CodeMap { get; init; }
+
+    /// <summary>
+    /// The target a quest's session is handed: the quest as the service answered it, run in
+    /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
+    /// otherwise — naming the code map that tree keeps.
+    /// </summary>
+    public static SessionTarget ForQuest(QuestView quest, string workTree, string serviceUrl) =>
+        new(quest.Id, quest.Title, quest.Body, quest.From, quest.To, workTree, serviceUrl)
+        {
+            Links = quest.Links,
+            Attachments = quest.Attachments,
+            Then = quest.Then,
+            Parent = quest.Parent,
+            CodeMap = CodeMapFile.Find(workTree),
+        };
+
+    /// <summary>
     /// The directory the session is handed as <c>DAORIS_QUEST_ATTACHMENTS</c> — the one the service
     /// keeps this quest's files in — or null when none of them is on this machine.
     /// </summary>
@@ -88,12 +109,32 @@ public static class TargetPrompt
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
         taken or closed, stand down and finish without changing anything.
-
+        {Mapped(target)}
         Never write outside this repository. Work another repository needs is a quest published to it,
         never an edit — that is the rule the whole arrangement rests on. Anything that cannot be taken
         back or that leaves the repository — a push, a publish, a release — is not yours to do; surface
         it and finish.
         """;
+
+    /// <summary>
+    /// The agent producer (MAP3d): a repository that keeps a code map is asked to keep it moving with
+    /// its code — only where one exists, because a map nobody started is not this session's to invent.
+    /// It says "the repository's own tool where it has one" because nothing here can tell which
+    /// producer wrote the file, and the file itself does not say. Empty when there is no map, so the
+    /// target reads exactly as it did before.
+    /// </summary>
+    private static string Mapped(SessionTarget target) => target.CodeMap is not { } map
+        ? ""
+        : $"""
+
+          This repository keeps a code map in `{map}`: its modules, a line on what each is for, and which
+          depends on which. If your work adds, removes, moves or rewires a module, bring the map up to date
+          in the same change: with the repository's own tool for it where it has one, otherwise by hand in
+          the same shape — each module's `id` unique, its `path` relative to the repository, its `summary`
+          one line, and each dependency naming two modules by `id`. A map that breaks that shape is shown as
+          nothing at all, so leave it whole.
+
+          """;
 
     /// <summary>
     /// What the asker gave beside their words, said plainly — each link, each file where it lies, and a

@@ -144,18 +144,39 @@ lays it out in layers by dependency: a pure function, tested, and still no graph
 
 **Who produces it — decided (owner, 2026-09-23): both.** A tool per stack where one exists (Roslyn
 for C#, the TypeScript compiler for TS), run by the repository's own gates, because it is exact.
-Elsewhere, a canon skill asks the repository's agent to keep the file current as it works: that
-works for any language, and is only as fresh as the last session. Both write the same small file,
-so the service and the page never know which produced it. Rejected: the agent alone (drifts where a
-tool could be exact) and a tool alone (nothing for a stack without one).
+Elsewhere, the repository's agent keeps the file current as it works, asked by the driver's session
+prompt (MAP3d, below): that works for any language, and is only as fresh as the last session. Both
+write the same small file, so the service and the page never know which produced it. Rejected: the
+agent alone (drifts where a tool could be exact) and a tool alone (nothing for a stack without one).
 
-⛔ **One question for the owner before the agent's half (MAP3d)**: *how* the agent is asked. A canon
-skill installs into every adopter, and the canon's bar is that two repositories learned a thing
-before it is doctrine (DECISIONS: the bar "is what makes canonical content trustworthy"). No
-repository has learned to keep a code map; it is a Daoris feature. The alternative keeps the canon
-out of it: the driver's session prompt asks, for a repository whose code map exists, to keep it
-current, as wiring at spawn (HELP3's shape). The file is still written by that repository's own
-agent (D32). **Recommended: the prompt.** A pack is the middle road, but packs have the same bar.
+**How the agent is asked — decided (owner, 2026-09-24): the session prompt.** The driver's prompt
+asks, for a repository whose code map exists, to keep it current, as wiring at spawn (HELP3's
+shape). The file is still written by that repository's own agent, in its own tree (D32). Rejected:
+**a canon skill**. It installs into every adopter, and the canon's bar is that two repositories
+learned a thing before it is doctrine (DECISIONS: the bar "is what makes canonical content
+trustworthy"). No repository has learned to keep a code map; it is a Daoris feature. **A pack**
+was the middle road, and packs have the same bar.
+
+**MAP3d is built (2026-09-24): the agent producer.**
+- **When.** A driven quest's session is asked exactly when the tree it runs in keeps a map, found
+  where the reader looks (`CodeMapFile.Find`, the reader's candidates restated and held to its
+  source like the devkit's twin). A repository that keeps none is not asked to start one: a map
+  nobody started is not a session's to invent, and a person or the tool starts one deliberately. A
+  conversation carries no composed prompt, and an intake runs in a room under the home rather than
+  in a repository, so neither is asked.
+- **What.** One paragraph of the claiming instruction, after the take-work-close paragraph and
+  before the boundary. It names the file. It asks the session to bring the map up to date in the same
+  change when the work adds, removes, moves or rewires a module. It says how: with the repository's
+  own tool where it has one, otherwise by hand in the reader's shape (a unique `id`, a
+  repository-relative `path`, a one-line `summary`, dependencies naming modules by `id`). And it says
+  why the shape matters: a map that breaks it is shown as nothing at all.
+- **Not the tool's authority.** The prompt cannot tell which producer wrote the file, and the file
+  does not say, so it defers to the repository's own tool rather than to `daoris-devkit map`, which
+  a repository may not use. `map --check` stays a declared gate for exactly that reason.
+- **Proof.** Driver tests hold the clause to exactly the case above, and hold the target a quest is
+  handed (`SessionTarget.ForQuest`) to naming the map its tree keeps. The family rehearsal reads
+  the stub session's own transcript both ways: the newcomer's first session, before it keeps a map,
+  is not asked, and a session after it commits one is asked, by `docs/code-map.json`.
 
 **MAP3a is built (2026-09-23).** `CodeMapReader` (service core) judges the file, and
 `GET /api/code-map/{repository}` answers from the registered checkout. On the page, a MAP2 node's
@@ -216,7 +237,7 @@ still what they say.
 **Build order.** MAP3a: the contract, the local read, the page, and the example family carrying a
 map. MAP3b: the feed to a shared deployment, with WSP4's provenance. MAP3c: a tool producer (the
 devkit reads project references, which is exact for C# without Roslyn, and a package's
-dependencies for TS). MAP3d: the agent producer, once the owner has answered the question above.
+dependencies for TS). MAP3d: the agent producer, by the session prompt.
 
 ## 4. What does not move
 
