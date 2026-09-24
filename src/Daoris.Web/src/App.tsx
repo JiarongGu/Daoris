@@ -17,7 +17,7 @@ import { MapView } from './MapView';
 import { SearchView } from './SearchView';
 import { QuestsView } from './QuestsView';
 import { ProjectsView } from './ProjectsView';
-import { SettingsView } from './SettingsView';
+import { type SettingsSection, SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import { useDriver, useOpenWindow, useRemotes, useSyncNow, useTrustFolder, useUntrusted } from './shell';
@@ -53,6 +53,12 @@ const VIEW = 'daoris.view';
  * is cleared by the view's own effect, so a stale one costs nothing.
  */
 const ATTENDING = 'daoris.attending';
+
+/**
+ * And which domain of Settings they last had open (D75), so the gear returns to it. A domain this
+ * window cannot show is Settings' own business: it opens on Appearance instead.
+ */
+const SETTINGS_SECTION = 'daoris.settings';
 
 function remembered(key: string): string | null {
   try {
@@ -101,6 +107,8 @@ export function App() {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState<Tab>(rememberedView);
   const [attending, setAttendingState] = useState<string | null>(() => remembered(ATTENDING));
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>(
+    () => (remembered(SETTINGS_SECTION) as SettingsSection | null) ?? 'appearance');
   const [readingId, setReadingId] = useState<string | null>(null);
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
@@ -233,6 +241,20 @@ export function App() {
     remember(VIEW, next === 'sessions' ? 'sessions' : null);
   };
 
+  /**
+   * Settings, open at one domain (D75). Every way in names the domain its fact is set in: the tier
+   * opens Daoris's own AI, the remote opens Workspace, the driver opens Driver. Before this each one
+   * opened the whole page at its top.
+   */
+  const chooseSettings = (section: SettingsSection) => {
+    setSettingsSection(section);
+    remember(SETTINGS_SECTION, section);
+  };
+  const openSettings = (section: SettingsSection) => {
+    chooseSettings(section);
+    setView('settings');
+  };
+
   // Ctrl/Cmd+K, the one this class of application has agreed on. Captured on the window so it works
   // wherever focus is — except inside a text field, where a person typing is typing.
   useEffect(() => {
@@ -275,7 +297,7 @@ export function App() {
     ...(attached ? { trust: (item) => item.trust && setTrusting(item.trust) } : {}),
     // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is
     // answered beside them. Only a shell reads the rules.
-    ...(attached ? { rule: () => setView('settings') } : {}),
+    ...(attached ? { rule: () => openSettings('permissions') } : {}),
   };
 
   return (
@@ -322,9 +344,9 @@ export function App() {
                   void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh');
                   return;
                 }
-                // Every setting lives in one view; the menu is how you reach it by name instead of
-                // by remembering which icon it is.
-                setView('settings');
+                // Each item opens its own domain (D75): the menu is how you reach a setting by name
+                // instead of by remembering which icon it is. FRAME3 gives each domain a menu.
+                openSettings(item === 'harnesses' ? 'agents' : item === 'remotes' ? 'workspace' : 'appearance');
               }}
             />
             <AppMenu
@@ -449,7 +471,9 @@ export function App() {
                   <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
                 )}
                 {view === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
-                {view === 'settings' && <SettingsView notify={notify} />}
+                {view === 'settings' && (
+                  <SettingsView notify={notify} section={settingsSection} onSection={chooseSettings} />
+                )}
               </div>
             </main>
           )}
@@ -495,7 +519,7 @@ export function App() {
               // offered a button that could not run it.
               onSyncNow={attached ? () => onSyncNow(circle) : undefined}
               onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
-              onRemotes={attached ? () => setView('settings') : undefined}
+              onRemotes={attached ? () => openSettings('workspace') : undefined}
             />
           )
           : undefined}
@@ -508,12 +532,12 @@ export function App() {
            🔴 Handed over unconditionally and refused per-item inside the bar. A browser has no
            machine settings at all, and `driver === 'absent'` is exactly that case — the bar drops
            the target itself rather than making every caller remember to. */
-        onDriver={() => setView('settings')}
-        onRemote={() => setView('settings')}
+        onDriver={() => openSettings('driver')}
+        onRemote={() => openSettings('workspace')}
         onSessions={attached ? () => setView('sessions') : undefined}
         onIndex={() => setView('projects')}
         // Settings holds Daoris's own AI (AGT6) in a browser too, so the tier leads there everywhere.
-        onTier={() => setView('settings')}
+        onTier={() => openSettings('ai')}
         tier={status.data
           ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
           : undefined}

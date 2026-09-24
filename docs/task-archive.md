@@ -5406,3 +5406,20 @@ before writing anything. A key or a placeholder named `circle` stays, because no
 against the old catalogue. Eight vitest and four Playwright assertions moved with the words. Looked
 at on the install: the top bar, the status bar and the ask composer all say 工作区. The sentences the
 other doors print are FRAME5. Web unit 838 → 839.
+
+## FRAME2 — Settings by domain (2026-09-24)
+
+- [x] ~~**FRAME2 — Settings by domain.** One page, the domains in a list at its left, one shown at a
+  time and reachable by name (design §3). Every domain is cards the page already holds.~~
+✅ **done 2026-09-24** (D75 §2). The seven domains sit in a list that stays put while a long one
+scrolls. A browser is offered Appearance and Daoris's own AI, and nothing it may not know. The chosen
+domain is App's to hold and is remembered per viewer. Every way in now names its domain: the
+status bar's tier opens Daoris's own AI, its remote and the sync item's wiring open Workspace, the
+driver opens Driver, a waiting proposal's row opens Permissions, and the menu's items their own.
+The machine's settings split into a Driver card and a Wiring card. The home is the Driver card's
+first row, where it had floated unlabelled once the "This machine" heading went. Looking found one
+more repetition: a card alone in its domain carried the domain's name as its title (外观 beside
+外观), so four titles and their keys went. 51 of the Settings tests now open the domain they are
+about; the one that read the intake's account "in both places it is drawn" reads it in both
+domains; and a browser has its own test. Looked at on the install in 中文, light and dark. Web unit
+839 → 842.

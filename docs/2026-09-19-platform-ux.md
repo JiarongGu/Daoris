@@ -447,8 +447,12 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   `docs/2026-09-23-map-design.md` §1. A node's detail opens **its code map** (MAP3a), the same
   page one level in: modules as boxes in layers, what uses a module above it, an arrow that skips a
   layer bowed out past the column, and *Back to the workspace* where the page action goes.
-- **Settings** (D66) — *Appearance* first, for everyone: the theme and the language, each a
-  segmented choice. Then, also for everyone, **Daoris's own AI** (AGT6): search and convergence with
+- **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
+  one shown at a time and reachable by name: *Appearance*, *Daoris's own AI*, *Workspace*,
+  *Driver*, *Agents & accounts*, *Permissions*, *Plugins*. Every way in opens the domain its fact is
+  set in, and a browser is offered only the first two. A card alone in its domain carries no title,
+  because the list already names it. What follows is what the domains hold. *Appearance*: the theme
+  and the language, each a segmented choice. Then, also for everyone, **Daoris's own AI** (AGT6): search and convergence with
   the service's tier and note verbatim and the variables that choose the model, and on the desktop
   the intake's agent with the account an intake in each circle runs as. Then, on the desktop only, **This machine**: the home's path under its heading,
   then cards that are *sections of one settings page*: Driver (the notification switch, the strikes dial), Wiring (the map's path,

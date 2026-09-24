@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
+import { cn } from './lib/cn';
 import { useRegistry, useStatus } from './queries';
 import {
   useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
@@ -31,10 +32,44 @@ import { useThemeChoice } from './theme';
  * everyone has; a browser shows only that part, because a browser may learn nothing of a machine
  * (D47 §4) — the machine's half is absent there, never disabled.
  */
-export function SettingsView({ notify }: { notify: Notify }) {
+/** Settings' domains, in the order its list shows them (D75 §2). */
+export type SettingsSection = 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins';
+
+/** Which domains need this machine: a browser is never offered one (D47 §4). */
+const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
+  { id: 'appearance', machine: false },
+  { id: 'ai', machine: false },
+  { id: 'workspace', machine: true },
+  { id: 'driver', machine: true },
+  { id: 'agents', machine: true },
+  { id: 'permissions', machine: true },
+  { id: 'plugins', machine: true },
+];
+
+/**
+ * Settings (D66, as amended by D75): one page, its domains in a list at its left, one shown at a time,
+ * as an IDE's settings are.
+ *
+ * @remarks
+ * 🔴 **It was one long page**, and every way in (three menu items, the status bar's driver, remote and
+ * tier, a waiting proposal's row) opened it at its top. A domain is now reachable by name, and the
+ * one chosen is the caller's to hold, so a menu can open *Permissions* rather than the page.
+ *
+ * Every domain is cards the page already held. The two doors are unchanged (D50): each row is still
+ * the file a terminal edits.
+ */
+export function SettingsView({ notify, section = 'appearance', onSection }: {
+  notify: Notify;
+  section?: SettingsSection;
+  onSection?: (section: SettingsSection) => void;
+}) {
   const { t } = useTranslation();
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const attached = useDriver().data !== undefined;
+  const offered = SECTIONS.filter((domain) => attached || !domain.machine);
+  // A domain this window cannot show opens on Appearance: a machine's domain in a browser, or one a
+  // shell remembered.
+  const shown = offered.some((domain) => domain.id === section) ? section : 'appearance';
 
   return (
     <section>
@@ -42,9 +77,45 @@ export function SettingsView({ notify }: { notify: Notify }) {
         title={t('settings.title')}
         description={t(attached ? 'settings.description' : 'settings.descriptionBrowser')}
       />
-      <Appearance />
-      <OwnAi attached={attached} notify={notify} />
-      {attached && <MachineSettings notify={notify} />}
+      <div className="grid items-start gap-x-6 gap-y-3 md:grid-cols-[11rem_minmax(0,1fr)]">
+        {/* It stays put while a long domain scrolls, as an IDE's settings list does. */}
+        <nav aria-label={t('settings.domains')} className="md:sticky md:top-0">
+          <ul className="m-0 list-none p-0">
+            {offered.map(({ id }) => (
+              <li key={id}>
+                <button
+                  type="button"
+                  aria-current={id === shown ? 'page' : undefined}
+                  onClick={() => onSection?.(id)}
+                  className={cn(
+                    'w-full rounded-control border-l-2 px-3 py-1.5 text-left text-body transition-colors duration-(--speed)',
+                    id === shown
+                      ? 'border-l-accent bg-accent-soft font-medium text-ink'
+                      : 'border-l-transparent text-ink-soft hover:bg-accent-soft/50',
+                  )}
+                >
+                  {t(`settings.domain.${id}`)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {/* A card stacked under another keeps its own top margin; the first in a domain does not. */}
+        <div className="min-w-0 [&>*:first-child]:mt-0">
+          {shown === 'appearance' && <Appearance />}
+          {shown === 'ai' && <OwnAi attached={attached} notify={notify} />}
+          {shown === 'workspace' && (
+            <>
+              <WiringSettings notify={notify} />
+              <Starts notify={notify} />
+            </>
+          )}
+          {shown === 'driver' && <DriverSettings notify={notify} />}
+          {shown === 'agents' && <HarnessRoster notify={notify} />}
+          {shown === 'permissions' && <Rules notify={notify} />}
+          {shown === 'plugins' && <Plugins notify={notify} />}
+        </div>
+      </div>
     </section>
   );
 }
@@ -142,8 +213,8 @@ function Appearance() {
   const language = i18n.language.startsWith('zh') ? 'zh' : 'en';
 
   return (
+    // No title of its own: the domain list names it, and a card alone in its domain would say it twice.
     <Card>
-      <SectionTitle>{t('settings.appearance.title')}</SectionTitle>
       <SettingRow
         label={t('settings.theme.label')}
         hint={t('settings.theme.hint')}
@@ -182,25 +253,17 @@ function Appearance() {
 }
 
 /**
- * The machine's own settings (D50): what is true about THIS computer rather than about the family.
+ * The Driver domain (D75): where this machine's Daoris lives, and the driver's two dials over
+ * `driver.json`, the same file `daoris driver` edits (D50). The file is the truth and this is an
+ * editor over it: hand-editing keeps working, and neither surface is the only way to say anything.
  *
- * Today that is the wiring — which deployment serves each workspace here (D48 §5) — over
- * the home's `remotes.json`, the same file `daoris remote` edits and the sync loop reads. The file is
- * the truth and this is an editor over it, exactly as the driver's controls are editors over
- * `driver.json`: hand-editing keeps working, and neither surface is the only way to say anything.
- *
- * **Shell-only, and more strictly than the other controls.** A browser over a keyed remote must never
- * read where a machine syncs, and never re-point it — so the state lives behind the shell's bridge and
- * the service has no route onto it at all. The key goes in and never comes out: what is rendered is
- * the audit prefix a deployment's own `keys list` prints.
+ * **Shell-only, like every machine domain.** A browser over a keyed remote must never read where a
+ * machine lives or syncs, and never re-point it, so the state lives behind the shell's bridge and the
+ * service has no route onto it at all. For the wiring, the key goes in and never comes out: what is
+ * rendered is the audit prefix a deployment's own `keys list` prints (`WiringSettings`).
  */
-function MachineSettings({ notify }: { notify: Notify }) {
+function DriverSettings({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
-  const wiring = useRemotes();
-  const wire = useWireRemote();
-  const unwire = useUnwireRemote();
-  useErrorNotify(wiring.error, notify);
-
   // Whether this machine interrupts the person (SURF5b) — the same `driver.json` field
   // `daoris driver notify on|off` edits, which is what makes this a door rather than the door.
   const driver = useDriver();
@@ -211,45 +274,10 @@ function MachineSettings({ notify }: { notify: Notify }) {
   // and through "0", and writing either straight to the config would park nothing while the person
   // was still reaching for the second digit.
   const [strikes, setStrikes] = useState<string | null>(null);
-
-  const [workspace, setWorkspace] = useState('');
-  const [url, setUrl] = useState('');
-  const [key, setKey] = useState('');
-  // The wiring form is one press away, not open on every visit: it is done once per machine per
-  // deployment, and open it was the largest thing on a page most people come to for a checkbox.
-  const [wiringOpen, setWiringOpen] = useState(false);
-
-  const remotes = wiring.data?.remotes ?? [];
   const onError = (error: unknown) => notify(sentence(error), 'error');
 
-  const add = () => wire.mutate(
-    { workspace: workspace.trim(), url: url.trim(), key: key.trim() },
-    {
-      onSuccess: (state) => {
-        // "Wired" and "in effect" are two different things, and only here do they come apart: the
-        // edit always lands in the FILE, but with the environment pair set no loader reads that file
-        // (D48 §5). Saying only "wired" while the new row does not appear reads as an edit that
-        // failed — so the sentence says what actually happened, using the answer's own flag rather
-        // than this form's idea of the machine.
-        notify(t(
-          state.fromEnvironment ? 'settings.wiring.wiredButOverridden' : 'settings.wiring.wired',
-          { workspace: workspace.trim() || 'default' }));
-        // The key never lingers in a form's state once it has landed in the file.
-        setWorkspace('');
-        setUrl('');
-        setKey('');
-        setWiringOpen(false);
-      },
-      onError,
-    });
-
   return (
-    <section aria-label={t('settings.machine.title')} className="mt-8">
-      {/* The machine's half, under its own name: every row below is a file under the Daoris home,
-          which is the one thing the appearance above is not. */}
-      <h2 className="m-0 text-title font-semibold text-ink">{t('settings.machine.title')}</h2>
-      <Prose className="mb-3.5 mt-1 text-ink-soft">{t('settings.machine.description')}</Prose>
-
+    <>
       {/* 🔴 A setting is a ROW (owner, 2026-09-23: *"you have this really long list of setup (this
           machine), which probably can be improved ui/ux"*). Every card here used to open with a
           paragraph and put its one control beneath it, so the first checkbox sat 580px below the
@@ -257,40 +285,36 @@ function MachineSettings({ notify }: { notify: Notify }) {
           label leads, the hint is one line, the control is at the right, the paragraph is on the
           glyph — and the cards are the sections of one settings page rather than five essays. */}
 
-      {/* Where this machine's Daoris lives (D63) — under the header, because the header's sentence
-          is about it and every path below is under it. A card of its own cost 200px of the page for
-          one line of fact (measured), and pushed the first control below the fold's first third. The
-          notice is the shell's own sentence about what the start did, carried in the state rather
-          than only raised: a toast raised before the page subscribed reached nobody. */}
-      {driver.data?.home && (
-        <div className="mb-5">
-          <Tip content={t('settings.home.hint')}>
-            <p className="m-0 inline-block max-w-full cursor-help break-all font-mono text-small text-ink-soft">
-              {driver.data.home}
-            </p>
-          </Tip>
-          {driver.data.homeNotice && (
-            <p className="mt-2 max-w-prose border-l-[3px] border-accent bg-raised px-3.5 py-2 text-body text-ink-soft">
-              {driver.data.homeNotice}
-            </p>
-          )}
-          {/* The host this window adopted serves another install's page (case study 4d). A
-              standing fact, so a standing line: the toast that carried it fired before this page
-              existed to hear it, which is how the second deployment showed a new window, an old
-              page, and no surface saying so. */}
-          {driver.data.hostNotice && (
-            <p className="mt-2 max-w-prose border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-              {driver.data.hostNotice}
-            </p>
-          )}
-        </div>
-      )}
-
       {/* The driver's two dials, in one card: that one asks to be TOLD when a driver stops, this one
           bounds what it spends before anyone is told (D58). The notification switch leads because it
           is the setting a person is most likely to have come here to change. */}
       <Card>
-        <SectionTitle>{t('settings.driver.title')}</SectionTitle>
+        {/* Where this machine's Daoris lives (D63): the card's first row since D75, where it had
+            floated above the card with no label once the page lost its "This machine" heading. The
+            notice is the shell's own sentence about what the start did, carried in the state rather
+            than only raised: a toast raised before the page subscribed reached nobody. */}
+        {driver.data?.home && (
+          <SettingRow
+            label={t('settings.home.label')}
+            why={t('settings.home.hint')}
+            control={<span className="break-all font-mono text-small text-ink-soft">{driver.data.home}</span>}
+          >
+            {driver.data.homeNotice && (
+              <p className="max-w-prose border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+                {driver.data.homeNotice}
+              </p>
+            )}
+            {/* The host this window adopted serves another install's page (case study 4d). A
+                standing fact, so a standing line: the toast that carried it fired before this page
+                existed to hear it, which is how the second deployment showed a new window, an old
+                page, and no surface saying so. */}
+            {driver.data.hostNotice && (
+              <p className="mt-2 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+                {driver.data.hostNotice}
+              </p>
+            )}
+          </SettingRow>
+        )}
         <SettingRow
           label={t('settings.notify.label')}
           hint={t('settings.notify.terminal')}
@@ -346,8 +370,54 @@ function MachineSettings({ notify }: { notify: Notify }) {
           )}
         </SettingRow>
       </Card>
+    </>
+  );
+}
 
-      <Card className="mt-3.5">
+/**
+ * Which deployment serves each workspace here (D48 §5), over the home's `remotes.json`: the same
+ * file `daoris remote` edits and the sync loop reads. A domain of its own since D75, under Workspace.
+ */
+function WiringSettings({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const wiring = useRemotes();
+  const wire = useWireRemote();
+  const unwire = useUnwireRemote();
+  useErrorNotify(wiring.error, notify);
+
+  const [workspace, setWorkspace] = useState('');
+  const [url, setUrl] = useState('');
+  const [key, setKey] = useState('');
+  // The wiring form is one press away, not open on every visit: it is done once per machine per
+  // deployment, and open it was the largest thing on a page most people come to for a checkbox.
+  const [wiringOpen, setWiringOpen] = useState(false);
+
+  const remotes = wiring.data?.remotes ?? [];
+  const onError = (error: unknown) => notify(sentence(error), 'error');
+
+  const add = () => wire.mutate(
+    { workspace: workspace.trim(), url: url.trim(), key: key.trim() },
+    {
+      onSuccess: (state) => {
+        // "Wired" and "in effect" are two different things, and only here do they come apart: the
+        // edit always lands in the FILE, but with the environment pair set no loader reads that file
+        // (D48 §5). Saying only "wired" while the new row does not appear reads as an edit that
+        // failed — so the sentence says what actually happened, using the answer's own flag rather
+        // than this form's idea of the machine.
+        notify(t(
+          state.fromEnvironment ? 'settings.wiring.wiredButOverridden' : 'settings.wiring.wired',
+          { workspace: workspace.trim() || 'default' }));
+        // The key never lingers in a form's state once it has landed in the file.
+        setWorkspace('');
+        setUrl('');
+        setKey('');
+        setWiringOpen(false);
+      },
+      onError,
+    });
+
+  return (
+      <Card>
         <SectionTitle>{t('settings.wiring.title')}</SectionTitle>
         <SettingRow
           label={t('settings.wiring.label')}
@@ -457,12 +527,6 @@ function MachineSettings({ notify }: { notify: Notify }) {
         </div>
         )}
       </Card>
-
-      <HarnessRoster notify={notify} />
-      <Starts notify={notify} />
-      <Rules notify={notify} />
-      <Plugins notify={notify} />
-    </section>
   );
 }
 
@@ -592,7 +656,6 @@ function Plugins({ notify }: { notify: Notify }) {
 
   return (
     <Card className="mt-3.5">
-      <SectionTitle>{t('plugin.title')}</SectionTitle>
       <SettingRow
         label={t('plugin.folder')}
         hint={t('plugin.terminal')}

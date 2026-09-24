@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**443 CLI tests, 469 service, 586 driver, 118 desktop modules, 839 web unit, 21 Playwright**, 73
+**443 CLI tests, 469 service, 586 driver, 118 desktop modules, 842 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **The owner's newest direction is the menus by domain** (D75, FRAME2–FRAME5), and it outranks the
+- **The owner's newest direction is the menus by domain** (D75, FRAME3–FRAME5), and it outranks the
   rest. Beyond it, surface work is whatever the next look at the install finds (POLISH2 and POLISH3
   are in the archive). 🔴 **The owner authorized real sessions on this
   machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
@@ -256,7 +256,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (469),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (586), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (839 vitest + 21 Playwright),
+  (586), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (842 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -270,9 +270,9 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Fourteen items are open**, and every closed one
+the archive; its decision is **D53, accepted**). **Thirteen items are open**, and every closed one
 is in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Four are the owner's new direction and buildable now (FRAME2–FRAME5, D75), three wait on the
+ships. Three are the owner's new direction and buildable now (FRAME3–FRAME5, D75), three wait on the
 owner (TRUST2, AGT2c, INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
@@ -426,8 +426,6 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
 `docs/2026-09-24-menus-design.md` is the contract; the owner chose each shape from options (D75).
 Take them in order, and look at each on the installed application before it closes.
 
-- [ ] **FRAME2 — Settings by domain.** One page, the domains in a list at its left, one shown at a
-  time and reachable by name (design §3). Every domain is cards the page already holds.
 - [ ] **FRAME3 — the menus by domain.** *Daoris · Workspace · Agents · View*, each setup item opening
   its domain, *Workspace* choosing the scope, and a browser's menus holding only what it may know
   (design §2).

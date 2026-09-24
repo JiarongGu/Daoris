@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Card, Pill, Prose, SectionTitle, SelectField, SettingRow } from '../ui';
+import { Card, Pill, Prose, SelectField, SettingRow } from '../ui';
 import type { StartWiring } from '../map/wiring';
 
 /** What the service says answers search and convergence (D24) — its own words, verbatim. */
@@ -47,8 +47,8 @@ export function AiJobs({ search, intake }: { search?: SearchTier; intake?: Intak
   const { t } = useTranslation();
 
   return (
+    // No title of its own: the domain list names it (D75), and a lone card would say it twice.
     <Card className="mt-3.5">
-      <SectionTitle>{t('settings.ai.title')}</SectionTitle>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.body')}</Prose>
 
       <SettingRow

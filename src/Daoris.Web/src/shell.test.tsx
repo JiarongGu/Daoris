@@ -362,7 +362,7 @@ describe('the machine settings surface', () => {
   });
 
   it('reads the wiring over the bridge and never over the service', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="workspace" />);
 
     expect(await screen.findByText('aurora')).toBeTruthy();
     expect(screen.getByText('https://aurora.example.com')).toBeTruthy();
@@ -386,24 +386,20 @@ describe('the machine settings surface', () => {
         hostNotice: 'the host at http://localhost:5177 was already running and serves a different page than this install carries.',
       }
       : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="driver" />);
 
     expect(await screen.findByText('D:/somewhere/Daoris/data')).toBeTruthy();
     expect(screen.getByText(/moved in from/)).toBeTruthy();
     // The adopted host's page is a standing fact and gets a standing line, not only a toast.
     expect(screen.getByText(/serves a different page/)).toBeTruthy();
-    // Every path on the page is under it — the wiring file included. Awaited: the machine's half
-    // mounts once the driver has answered (D66: Settings asks whether a shell is here first), so its
-    // wiring query starts a beat after the home is already on the page.
-    expect(await screen.findByText('C:/somewhere/.daoris/remotes.json')).toBeTruthy();
   });
 
   it('says nothing about the home on a shell that has never heard of one', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
-    show(<SettingsView notify={() => {}} />);
-    await screen.findByText('aurora');
+    show(<SettingsView notify={() => {}} section="driver" />);
+    await screen.findByLabelText('Park a quest after this many failed sessions');
 
-    // The header still names the home in a sentence; what is absent is the path a newer shell answers.
+    // What is absent is the path a newer shell answers.
     expect(screen.queryByText(/somewhere\/Daoris\/data/)).toBeNull();
     expect(screen.queryByText(/moved in from/)).toBeNull();
   });
@@ -416,21 +412,50 @@ describe('the machine settings surface', () => {
   it('lays each setting out as a row, with its why one hover away rather than on the page', async () => {
     invoke.mockImplementation(async (module: string) => (
       module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: true, strikes: 3 } : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="driver" />);
     await screen.findByRole('checkbox', { checked: true });
 
     // The number dial is reachable by its label, and the why is a note, not a paragraph.
     expect(screen.getByLabelText('Park a quest after this many failed sessions')).toBeTruthy();
     expect(screen.getByRole('note', { name: /Nobody should have to watch a driver/ })).toBeTruthy();
     expect(screen.queryByText(/Nobody should have to watch a driver/)).toBeNull();
-    // The wiring form is one press away, not open on every visit.
-    expect(screen.queryByLabelText('deployment')).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'Wire a workspace' }));
+  });
+
+  it('keeps the wiring form one press away, not open on every visit', async () => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    show(<SettingsView notify={() => {}} section="workspace" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Wire a workspace' }));
     expect(screen.getByLabelText('deployment')).toBeTruthy();
   });
 
+  /**
+   * D75: one page, its domains in a list, one shown at a time. Every way in names its domain, so the
+   * page is the caller's to open at one; the list is how the person moves between them.
+   */
+  it('lists its domains, shows only the one chosen, and asks for another by name', async () => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    const onSection = vi.fn();
+    show(<SettingsView notify={() => {}} section="driver" onSection={onSection} />);
+
+    const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(7));
+    expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
+    expect(await screen.findByLabelText('Park a quest after this many failed sessions')).toBeTruthy();
+    // A card alone in its domain does not say the domain's name again: the list already has.
+    expect(screen.getAllByText('Driver')).toHaveLength(1);
+    // Another domain's cards are not on the page at all.
+    expect(screen.queryByRole('button', { name: 'Wire a workspace' })).toBeNull();
+    expect(screen.queryByText('Theme')).toBeNull();
+
+    await userEvent.click(within(domains).getByRole('button', { name: 'Plugins' }));
+    expect(onSection).toHaveBeenCalledWith('plugins');
+  });
+
   it('wiring a workspace edits the map and clears the key out of the form', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="workspace" />);
     await screen.findByText('aurora');
 
     await userEvent.click(screen.getByRole('button', { name: 'Wire a workspace' }));
@@ -451,7 +476,7 @@ describe('the machine settings surface', () => {
 
   /** A key goes in and never comes out: what is rendered is the prefix the module chose to answer. */
   it('renders only the audit prefix a key was reduced to', async () => {
-    const { container } = show(<SettingsView notify={() => {}} />);
+    const { container } = show(<SettingsView notify={() => {}} section="workspace" />);
     await screen.findByText('aurora');
 
     expect(screen.getByText('dk_abcd1234…')).toBeTruthy();
@@ -468,7 +493,7 @@ describe('the machine settings surface', () => {
     invoke.mockImplementation(async (module: string) => (
       module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: true } : WIRING));
 
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="driver" />);
 
     // Found by its loaded STATE rather than by its label, because the switch renders before the
     // machine has answered and its default is on — a bare label query would pass either way.
@@ -483,14 +508,14 @@ describe('the machine settings surface', () => {
     invoke.mockImplementation(async (module: string) => (
       module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, notify: false } : WIRING));
 
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="driver" />);
 
     expect(await screen.findByRole('checkbox', { checked: false })).toBeTruthy();
   });
 
   it('unwiring says what it did not do, and touches no deployment', async () => {
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="workspace" />);
     await screen.findByText('aurora');
 
     await userEvent.click(screen.getByRole('button', { name: 'unwire' }));
@@ -506,7 +531,7 @@ describe('the machine settings surface', () => {
    */
   it('says when the environment, not the file, is the answer', async () => {
     invoke.mockImplementation(async () => ({ ...WIRING, fromEnvironment: true }));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="workspace" />);
 
     expect(await screen.findByText(/environment names this machine's remote/i)).toBeTruthy();
   });
@@ -545,7 +570,7 @@ describe('the plugins card', () => {
   });
 
   it('lists each plugin with what it declares, what it speaks on, and the driver\'s sentence for a refused one', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="plugins" />);
 
     expect(await screen.findByText('Acme gate')).toBeTruthy();
     expect(screen.getByText(/declares acme-agent; speaks on quest\/consider/)).toBeTruthy();
@@ -558,7 +583,7 @@ describe('the plugins card', () => {
 
   it('the switch and Remove land on the bridge as the actions a terminal has', async () => {
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="plugins" />);
     const row = (await screen.findByText('Acme gate')).closest('div')!.parentElement!.parentElement!;
 
     await userEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Turn off' }));
@@ -571,7 +596,7 @@ describe('the plugins card', () => {
   it('a machine with no plugins says where one would go', async () => {
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'PLUGINS' ? { folder: 'C:/somewhere/data/plugins', plugins: [] } : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="plugins" />);
 
     expect(await screen.findByText(/daoris plugin add/)).toBeTruthy();
     expect(screen.getByText('C:/somewhere/data/plugins')).toBeTruthy();
@@ -607,7 +632,7 @@ describe('the rules card', () => {
   });
 
   it('shows the defaults and each scope from the machine\'s own file, asking no service', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="permissions" />);
 
     expect(await screen.findByText('C:/somewhere/data/permissions.json')).toBeTruthy();
     expect(screen.getByRole('listitem', { name: 'no-push' })).toBeTruthy();
@@ -617,7 +642,7 @@ describe('the rules card', () => {
 
   it('a default switched and a rule removed land on the bridge as the actions a terminal has', async () => {
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="permissions" />);
 
     const push = await screen.findByRole('listitem', { name: 'no-push' });
     await userEvent.click(within(push).getByRole('checkbox'));
@@ -641,7 +666,7 @@ describe('the rules card', () => {
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'RULES' || type === 'RULE_PROPOSAL' ? proposed : WIRING));
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="permissions" />);
 
     const row = await screen.findByRole('listitem', { name: 'proposal #p0000002' });
     await userEvent.click(within(row).getByRole('button', { name: 'accept' }));
@@ -653,9 +678,10 @@ describe('the rules card', () => {
   /** A shell older than the rules answers something else to a question it never heard: no card, no blank page. */
   it('an older shell gets no card', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'RULES' ? undefined : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="permissions" />);
 
-    expect(await screen.findByRole('heading', { name: 'This machine' })).toBeTruthy();
+    // The machine's domains appear once the shell has answered, and Permissions is the one open.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Permissions' })).toHaveAttribute('aria-current', 'page'));
     expect(screen.queryByText('What agents may do')).toBeNull();
   });
 });
@@ -720,7 +746,7 @@ describe("Daoris's own AI on Settings", () => {
   });
 
   it("states the service's own tier, verbatim, and how the model is chosen", async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="ai" />);
 
     expect(await screen.findByText('lexical only')).toBeTruthy();
     expect(screen.getByText(STATUS.note)).toBeTruthy();
@@ -733,7 +759,7 @@ describe("Daoris's own AI on Settings", () => {
    * intake. Off is "" on the wire now, and reads as Off.
    */
   it('offers the intake control while it is off, reading as Off', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="ai" />);
 
     const trigger = await screen.findByRole('combobox', { name: 'the intake agent' });
     expect(trigger).toHaveTextContent('Off — declarations only');
@@ -748,10 +774,11 @@ describe("Daoris's own AI on Settings", () => {
       if (type === 'STARTS') return { adapter: 'claude-code', starts: [start('work', 'claude-code')] };
       return undefined;
     });
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="ai" />);
 
     expect(await screen.findByText('lexical only')).toBeTruthy();
-    await screen.findByRole('heading', { name: 'This machine' });
+    // The machine's domains appear once the shell has answered: the shell is here, and old.
+    await screen.findByRole('button', { name: 'Permissions' });
     expect(screen.queryByRole('combobox', { name: 'the intake agent' })).toBeNull();
   });
 
@@ -761,7 +788,7 @@ describe("Daoris's own AI on Settings", () => {
    */
   it('names an agent this machine has for the intake, over SET_INTAKE, and says what that does', async () => {
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="ai" />);
 
     const user = userEvent.setup();
     const trigger = await screen.findByRole('combobox', { name: 'the intake agent' });
@@ -780,20 +807,22 @@ describe("Daoris's own AI on Settings", () => {
    */
   it('says which account an intake runs as, from the driver\'s answer, in both places it is drawn', async () => {
     intakeAdapter = 'claude-code-acp';
-    show(<SettingsView notify={() => {}} />);
-
+    // Two domains since D75, Daoris's own AI and Workspace: one answer read in each.
+    const ai = show(<SettingsView notify={() => {}} section="ai" />);
     expect(await screen.findByText(/opens a session on claude-code-acp/)).toBeTruthy();
-    // Awaited as a pair: the machine's half mounts after the driver answers, a beat behind this card.
-    await waitFor(() => expect(screen.getAllByRole('listitem', { name: 'an intake in default' })).toHaveLength(2));
-    for (const row of screen.getAllByRole('listitem', { name: 'an intake in default' })) {
-      expect(within(row).getByText('personal')).toBeTruthy();
-    }
+    const here = await screen.findByRole('listitem', { name: 'an intake in default' });
+    expect(within(here).getByText('personal')).toBeTruthy();
+    ai.unmount();
+
+    show(<SettingsView notify={() => {}} section="workspace" />);
+    const there = await screen.findByRole('listitem', { name: 'an intake in default' });
+    expect(within(there).getByText('personal')).toBeTruthy();
   });
 
   it('turns the intake off as the terminal does — no agent named', async () => {
     intakeAdapter = 'claude-code-acp';
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="ai" />);
 
     const user = userEvent.setup();
     const trigger = await screen.findByRole('combobox', { name: 'the intake agent' });
@@ -852,7 +881,7 @@ describe('the harness roster', () => {
   });
 
   it('reads the roster over the bridge and never over the service', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     expect(await screen.findByText('claude 9.9.9')).toBeTruthy();
     // AGT1: a tool is named as a person knows it, with whose it is; one that says neither keeps its id.
@@ -878,7 +907,7 @@ describe('the harness roster', () => {
     };
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'HARNESSES' ? ROSTER : type === 'STARTS' ? STARTS : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="workspace" />);
 
     const row = await screen.findByRole('listitem', { name: 'a start in default' });
     expect(within(row).getByText('personal')).toBeTruthy();
@@ -889,7 +918,7 @@ describe('the harness roster', () => {
 
   /** An absent harness names what it is and offers the action, rather than leaving a blank row. */
   it('an absent tool says so and offers its own installer', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     // 🔴 Twice over, and on purpose: the TOOL says whether a person has it, and the way in says
     // whether that particular door is installed. They were one line when a door was a tool.
@@ -913,7 +942,7 @@ describe('the harness roster', () => {
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="agents" />);
 
     const logins = await screen.findAllByRole('button', { name: /^Log in/ });
     await userEvent.click(logins[1]!);
@@ -932,7 +961,7 @@ describe('the harness roster', () => {
   });
 
   it('each profile shows its login state, and logging in names the profile', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     // The tool's own home and `personal` are both logged in; `work` is the one that is not.
     expect(await screen.findAllByText('logged in')).toHaveLength(2);
@@ -955,7 +984,7 @@ describe('the harness roster', () => {
    * row says so instead of offering a button.
    */
   it('the tool’s own home leads the accounts, with its login state, and takes no login from here', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     // Two tools, two own rows; claude-code's is first, in the roster's order.
     const own = (await screen.findAllByText("this machine's own"))[0]!.closest('li')!;
@@ -974,7 +1003,7 @@ describe('the harness roster', () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], machineDefault: null, profiles: [] }] }
       : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const own = (await screen.findAllByText("this machine's own"))[0]!.closest('li')!;
     expect(within(own).getByText('sessions use this')).toBeTruthy();
@@ -992,7 +1021,7 @@ describe('the harness roster', () => {
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="agents" />);
 
     // No name box anywhere: the account is named by who signs in.
     await screen.findByText('claude 9.9.9');
@@ -1022,7 +1051,7 @@ describe('the harness roster', () => {
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
     const notify = vi.fn();
-    show(<SettingsView notify={notify} />);
+    show(<SettingsView notify={notify} section="agents" />);
 
     await userEvent.click((await screen.findAllByRole('button', { name: 'Sign in to another account' }))[0]!);
     await act(async () => {
@@ -1049,7 +1078,7 @@ describe('the harness roster', () => {
         }],
       }
       : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const row = (await screen.findByText('someone@example.invalid')).closest('li')!;
     // The directory's name is still there, inside its path, for a terminal.
@@ -1077,7 +1106,7 @@ describe('the harness roster', () => {
         }],
       }
       : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const [own, made] = (await screen.findAllByText('owner@example.invalid')).map((name) => name.closest('li')!);
     expect(within(own!).getByText("this machine's own")).toBeTruthy();
@@ -1100,7 +1129,7 @@ describe('the harness roster', () => {
       }
       return type === 'HARNESSES' ? ROSTER : WIRING;
     });
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const work = (await screen.findByText('work')).closest('li')!;
     await userEvent.click(within(work).getByRole('button', { name: 'Remove' }));
@@ -1118,7 +1147,7 @@ describe('the harness roster', () => {
   });
 
   it('Remove can be taken back before it deletes anything', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const work = (await screen.findByText('work')).closest('li')!;
     await userEvent.click(within(work).getByRole('button', { name: 'Remove' }));
@@ -1133,7 +1162,7 @@ describe('the harness roster', () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], signsIn: false }] }
       : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     await screen.findByText('claude 9.9.9');
     expect(screen.queryByRole('button', { name: 'Sign in to another account' })).toBeNull();
@@ -1142,7 +1171,7 @@ describe('the harness roster', () => {
 
   /** After "Add", the next step and what it does were nowhere: the logged-out row says both. */
   it('a logged-out account says what Log in will do', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const work = (await screen.findByText('work')).closest('li')!;
     expect(within(work).getByText(/runs the tool's own sign-in/)).toBeTruthy();
@@ -1165,7 +1194,7 @@ describe('the harness roster', () => {
       }
       return respond(url);
     }));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const work = (await screen.findByText('work')).closest('li')!;
     expect(within(work).getByText('sessions in orbit use this')).toBeTruthy();
@@ -1187,7 +1216,7 @@ describe('the harness roster', () => {
    * test below: one field, behind a press, on an agent that takes a key.
    */
   it('offers nowhere to put a sign-in, and says where one lives instead', async () => {
-    const { container } = show(<SettingsView notify={() => {}} />);
+    const { container } = show(<SettingsView notify={() => {}} section="agents" />);
     await screen.findByText('claude 9.9.9');
 
     const card = screen.getByText('Agent tools').closest('section, div')!;
@@ -1211,7 +1240,7 @@ describe('the harness roster', () => {
         : WIRING;
     });
     const notify = vi.fn();
-    const { container } = show(<SettingsView notify={notify} />);
+    const { container } = show(<SettingsView notify={notify} section="agents" />);
 
     // Only the agent that takes a key offers it; codex, in this roster, does not.
     await screen.findByText('claude 9.9.9');
@@ -1246,7 +1275,7 @@ describe('the harness roster', () => {
         }],
       }
       : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     const row = (await screen.findByText('API key …wxyz')).closest('li')!;
     expect(within(row).queryByRole('button', { name: /^Log in/ })).toBeNull();
@@ -1270,19 +1299,19 @@ describe('the harness roster', () => {
         ],
       }
       : WIRING));
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     expect(await screen.findByText('declared by plugin acme.gate')).toBeTruthy();
     expect(screen.getAllByText(/declared by plugin/)).toHaveLength(1);
   });
 
   /** A shell older than this surface answers something else; the rest of the page must stand. */
-  it('an answer that is not a roster leaves the wiring card standing', async () => {
+  it('an answer that is not a roster draws no tools, and takes the page down with it nowhere', async () => {
     invoke.mockImplementation(async () => WIRING); // no `harnesses` anywhere in it
 
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
-    expect(await screen.findByText('aurora')).toBeTruthy();
+    expect(await screen.findByRole('navigation', { name: 'Settings domains' })).toBeTruthy();
     expect(screen.queryByText('Agent tools')).toBeNull();
   });
 
@@ -1292,7 +1321,7 @@ describe('the harness roster', () => {
    * was measured.
    */
   it('says nothing about usage on a machine that has measured none', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     await screen.findByText('claude 9.9.9');
     expect(screen.queryByText('What each account has carried')).toBeNull();
@@ -1313,7 +1342,7 @@ describe('the harness roster', () => {
       return WIRING;
     });
 
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     expect(await screen.findByText('What each account has carried')).toBeTruthy();
     // The unit is named beside the figure: a bare number in a column says nothing, and "context"
@@ -1331,7 +1360,7 @@ describe('the harness roster', () => {
    * different facts about the same working session.
    */
   it('says a harness runs from PATH until something is pinned', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     // Said on the door itself, where the pin control is — the roster's body no longer restates it.
     expect(await screen.findAllByText(/from PATH/)).not.toHaveLength(0);
@@ -1339,7 +1368,7 @@ describe('the harness roster', () => {
   });
 
   it('pinning installs that version and pins to it, in one action', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     // The form is behind a press now: five always-open version boxes were the widest thing on
     // the surface and almost nobody types in one.
@@ -1354,7 +1383,7 @@ describe('the harness roster', () => {
   });
 
   it('offers nothing to press until a version is typed', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     await userEvent.click((await screen.findAllByRole('button', { name: 'Pin a version' }))[0]!);
     const [pin] = await screen.findAllByRole('button', { name: 'pin it' });
@@ -1368,7 +1397,7 @@ describe('the harness roster', () => {
    * outcome was a refusal.
    */
   it('offers no pin at all for a harness that cannot be pinned', async () => {
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     await screen.findByText('claude 9.9.9');
     // Only the pinnable tool offers the disclosure at all, though the roster carries two.
@@ -1388,7 +1417,7 @@ describe('the harness roster', () => {
       }
       : WIRING));
 
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     expect(await screen.findByText(/pinned 9\.9\.9 — not installed/)).toBeTruthy();
     // And the way back is offered, because a refusing pin is exactly when somebody wants it.
@@ -1407,7 +1436,7 @@ describe('the harness roster', () => {
       }
       : WIRING));
 
-    show(<SettingsView notify={() => {}} />);
+    show(<SettingsView notify={() => {}} section="agents" />);
 
     expect(await screen.findByText('Daoris runs 1.2.3')).toBeTruthy();
     expect(screen.getByText(/toolchain[\\/]claude-code[\\/]1\.2\.3/)).toBeTruthy();
