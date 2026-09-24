@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**445 CLI tests, 469 service, 586 driver, 118 desktop modules, 853 web unit, 21 Playwright**, 73
+**446 CLI tests, 470 service, 587 driver, 118 desktop modules, 866 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **271/271 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -242,8 +242,11 @@ the traps that are not in any contract, because they were found rather than desi
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
 - **The owner's newest direction, the menus by domain (D75), is built and closed** (FRAME1–FRAME5).
-  Beyond it, surface work is whatever the next look at the install finds (POLISH2, POLISH3 and the
-  FRAME items are in the archive). 🔴 **The owner authorized real sessions on this
+  Beyond it, surface work is whatever the next look at the install finds (POLISH2–POLISH4 and the
+  FRAME items are in the archive). 🔴 **The install is empty, so look with data too**: POLISH4 read
+  the scratch shell over the example family (`npm run desktop -- run`), where a parked session,
+  intakes, asks and an unadopted repository exist, and found nineteen things the install could not
+  show. 🔴 **The owner authorized real sessions on this
   machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
   (16/16), INT4j (17/17) and PERM2b (14/14) one each. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
@@ -252,11 +255,11 @@ the traps that are not in any contract, because they were found rather than desi
   for a service-side point. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 445 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 446 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (469),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (470),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (586), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (853 vitest + 21 Playwright),
+  (587), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (118), `npm run rehearse:family` (271/271), `npm run test:web` (866 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -428,26 +431,6 @@ from options (D75), and FRAME1–FRAME5 are in the archive. Nothing here is open
 Settings domain is built against that design, not against this heading.
 
 ### Open — the arc's leftovers, in the order they are worth doing
-
-- [ ] **POLISH4 — the surfaces an empty install cannot show, read with data in them** (2026-09-24).
-  The scratch shell over the example family, which holds a parked session, a running and a parked
-  intake, five asks and an unadopted repository. Read surface by surface in English and 中文, both
-  themes. Nineteen findings, in three landings:
-  - **a — what the words claim.** Overview's repositories note says the index *scans the family's
-    folder* and only an adopter is addressable (false since WSP2 and D70). The band promises
-    finished work *once review exists* (review exists; nothing records looking). Projects' header
-    says *who cannot be asked yet*, and its unadopted paragraph says a real agent's use of the
-    connector is *not yet proven* (PERM1 measured it). The intake room lists an unadopted repository
-    under *Not addressable: nothing there can see a quest*. The default rules explain themselves with
-    decision numbers (*(D37)*, *(D51)*) a person cannot look up.
-  - **b — the asks.** A card names its place as a bare `default` beside `game → engine`; a card
-    never says an intake is reading it or has asked the person, though the band does; *Asks · 5*
-    beside *Open … (5)*; the record reads *answered by by declarations*, repeats a one-line ask as
-    its body, and offers *any repository in default*.
-  - **c — layout.** A wrapped chip in a project card falls under its label; the join steps are all
-    monospace prose; the map's node number is in no legend, and a parked session rings its
-    repository *working now*; Convergence's tier note runs the column (~180 characters), and an
-    empty result is a bare line; a search snippet opens with the entry's raw frontmatter.
 
 
 ### Held — each waits on a trigger that has not arrived

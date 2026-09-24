@@ -65,6 +65,20 @@ describe('the workspace topology', () => {
     expect(map.nodes.map((n) => [n.id, n.working])).toEqual([['engine', true], ['game', false]]);
   });
 
+  /**
+   * 🔴 Seen on the window (POLISH4): a repository whose one session was parked, waiting on the
+   * person, was ringed "working now". Parked is its own fact, and the one the person acts on.
+   */
+  it('marks a session parked on the person apart from one working', () => {
+    const map = buildTopology([repo('game'), repo('engine')], [], [], [
+      session('engine', 'awaiting-person'), session('game', 'working'),
+    ]);
+
+    expect(map.nodes.map((n) => [n.id, n.working, n.parked])).toEqual([
+      ['engine', false, true], ['game', true, false],
+    ]);
+  });
+
   /** Two repositories that learned the same thing (D17): undirected, once per pair, counted. */
   it('draws a knowledge edge per pair that converged, once however the group lists them', () => {
     const map = buildTopology([repo('a'), repo('b'), repo('c')], [], [

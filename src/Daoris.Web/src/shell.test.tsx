@@ -326,6 +326,40 @@ describe('the shell-attached registry management', () => {
     expect(screen.queryByText('—')).not.toBeInTheDocument();
   });
 
+  /**
+   * 🔴 Seen on the window (POLISH4): a chip that wrapped fell back under its row's label, because
+   * the label and the chips were one flowing line. The labels are a column of their own now.
+   */
+  it("keeps a project row's label apart from its chips, so a wrapped chip lines up with the first", async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) {
+        return Response.json([{ ...REGISTRY[0], owns: ['the runtime', 'the public API'], accepts: ['a failing case'] }]);
+      }
+      return respond(url);
+    }));
+    show(<ProjectsView notify={() => {}} />);
+
+    const owns = await screen.findByText('owns');
+    expect(owns.tagName).toBe('DT');
+    expect(owns.nextElementSibling?.tagName).toBe('DD');
+    expect(within(owns.nextElementSibling as HTMLElement).getByText('the public API')).toBeTruthy();
+  });
+
+  /** The join steps were all monospace, prose included; the commands are code in a sentence. */
+  it('sets the join steps as a sentence with its commands as code', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) return Response.json([...REGISTRY, { ...REGISTRY[0], repository: 'lone', adopted: false }]);
+      return respond(url);
+    }));
+    show(<ProjectsView notify={() => {}} />);
+
+    const init = await screen.findByText('daoris init');
+    expect(init.tagName).toBe('CODE');
+    expect(init.parentElement).not.toHaveClass('font-mono');
+  });
+
   /** Re-wiring is a row on this machine; it must not touch the repository's tracked file. */
   it('re-wiring edits one row and writes no file', async () => {
     show(<ProjectsView notify={() => {}} />);

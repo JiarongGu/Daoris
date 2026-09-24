@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { ConvergenceView } from './ConvergenceView';
@@ -46,5 +47,28 @@ describe('ConvergenceView', () => {
     expect(await screen.findByText('1 group')).toBeInTheDocument();
     expect(screen.queryByText('comparing…')).not.toBeInTheDocument();
     expect(container.querySelectorAll('[aria-hidden="true"] > i')).toHaveLength(0);
+  });
+});
+
+describe('ConvergenceView, looked at on the window (POLISH4)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** The tier's note ran the whole column, about 180 characters a line; prose has a measure (§4). */
+  it('sets the tier note at the prose measure', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json([GROUP])));
+    view();
+
+    const note = await screen.findByText(/Without an embedding endpoint/);
+    expect(note).toHaveClass('max-w-prose');
+  });
+
+  /** An empty answer was a bare line; an empty state names the fact and offers what changes it. */
+  it('says nothing converges as an empty state, and lowers the similarity on a press', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json([])));
+    view();
+
+    expect(await screen.findByText('Nothing converges at 0.75 or above')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'lower it to 0.65' }));
+    expect(await screen.findByText('Nothing converges at 0.65 or above')).toBeInTheDocument();
   });
 });

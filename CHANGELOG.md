@@ -396,6 +396,13 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Convergence answers about three times faster**, with the same answers: about seven seconds a
   call on a 1,052-entry index before, under two and a half after. A drawer no longer dims half the
   status bar, and two accounts signed in as one person say which is the tool's own.
+- **Asks say what they wait for, and old claims are gone.** An ask's card says when an intake is
+  reading it or has asked you, and names its place as a workspace. Its record no longer repeats a
+  one-line ask or reads "answered by by". The map says *waiting on you* for a parked session and
+  names the number in a repository; a search snippet shows the entry's prose, not its frontmatter;
+  Convergence's empty answer offers a lower similarity. Sentences that stopped being true (the
+  index scanning a folder, only adopters being askable) are rewritten, the default rules explain
+  themselves without decision numbers, and 中文 calls a quest 委托 throughout.
 - **The menus are the setup domains** (D75). The title bar carries *Daoris · Workspace · Agents ·
   View*, and each setup item opens its own domain. Settings is one page with its domains in a
   list, one shown at a time, as an IDE's settings are. The Workspace menu lists every workspace with

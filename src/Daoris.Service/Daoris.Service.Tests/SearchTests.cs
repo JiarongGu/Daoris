@@ -90,6 +90,30 @@ public class SearchTests
         Assert.True(hits[0].Excerpt!.Length < 250, "an excerpt is a window, not the whole entry");
     }
 
+    /// <summary>
+    /// 🔴 Seen on the window (POLISH4): every canon-shaped entry opens with its frontmatter, so its
+    /// excerpt read "--- name: world-streaming applies_when: …" — the file's machinery, flattened onto
+    /// one line, where the reader wanted its prose. The frontmatter still matches; it is not shown.
+    /// </summary>
+    [Fact]
+    public async Task An_excerpt_is_taken_from_the_prose_and_never_from_the_frontmatter()
+    {
+        var search = await SearchOver(Entry(
+            "game", "world-streaming",
+            "---\nname: world-streaming\napplies_when: loading or unloading world chunks\nenforces: hydrate first\n---\n\n"
+            + "# Streaming the world\n\nHydrate a chunk before its neighbours are visible."));
+
+        var byProse = await search.SearchAsync(new KnowledgeQuery("streaming"));
+        Assert.StartsWith("# Streaming the world", byProse[0].Excerpt);
+
+        // Matched only in the frontmatter: still found, and the excerpt is the prose's opening.
+        var byField = await search.SearchAsync(new KnowledgeQuery("unloading"));
+        Assert.Single(byField);
+        Assert.DoesNotContain("applies_when", byField[0].Excerpt);
+        Assert.DoesNotContain("---", byField[0].Excerpt);
+        Assert.StartsWith("# Streaming the world", byField[0].Excerpt);
+    }
+
     [Fact]
     public async Task Results_are_stable_for_equal_scores()
     {

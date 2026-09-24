@@ -5473,3 +5473,42 @@ stay, because nobody reads them. `one-word.test.ts` in the CLI suite scans the s
 all three artefacts and was seen failing on the service's old ask refusal. Three assertions moved
 with the words: a CLI permissions test, a driver sync test and a family-rehearsal check. CLI 443 →
 445, driver 586, modules 118, service 469, verify green.
+
+## POLISH4 — the surfaces an empty install cannot show, read with data in them (2026-09-24)
+
+- [x] ~~**POLISH4 — the surfaces an empty install cannot show, read with data in them.** The
+  scratch shell over the example family, which holds a parked session, a running and a parked
+  intake, five asks and an unadopted repository. Read surface by surface in English and 中文, both
+  themes. Nineteen findings, in three landings: **a**, what the words claim; **b**, the asks; **c**,
+  layout.~~
+✅ **done 2026-09-24**, in three commits, each looked at on the rebuilt window.
+
+The owner's install is empty (every registration retired), so it shows a new installation and
+nothing else. What POLISH2 and the FRAME items could not look at was everything with data in it.
+
+- **a — what the words claimed.** Five sentences had outlived the decision under them: Overview's
+  note that the index scans the family's folder and only an adopter is addressable (WSP2, D70); the
+  band's promise that finished work would join it once review existed (review exists, looking is not
+  recorded); Projects' "who cannot be asked yet" and "not yet proven" about the connector in an
+  unadopted repository (PERM1 measured it); and the intake room's "Not addressable: nothing there
+  can see a quest", which now says one with a root can be published to when the person names it.
+  The default rules explained themselves with decision numbers, in the CLI's table, the driver's and
+  the zh catalogue; a test on each side holds that they do not.
+- **b — the asks.** A card named its place as a bare `default`, which beside `game → engine` read
+  as a repository. It never said an intake was reading it or had asked the person, though the band
+  above it did. It says both now, the second with the band's own warn mark. The group was counted
+  *Asks · 5* beside *Open … (5)*. The record read "answered by by declarations", repeated a one-line
+  ask as its own body, and offered *any repository in default*.
+- **c — layout.** A project card's wrapped chip fell under its label; the labels are a column now.
+  The join steps were monospace prose; the commands are code in a sentence. The map's node number
+  was in no legend, and a parked session ringed its repository *working now*: it reads *waiting on
+  you* in the warn tone. Convergence's tier note ran about 180 characters a line and its empty
+  answer was a bare line; it has a measure and an empty state that lowers the similarity on a press.
+  A search snippet opened with the entry's raw frontmatter; the service's excerpt is taken from the
+  prose now, and the frontmatter still matches. And 中文 said 任务 for a quest in nineteen strings,
+  held by a catalogue test now as 工作区 and 账户 are.
+
+`docs/2026-09-19-platform-ux.md` §4 (POLISH4) has the rules and `docs/FIX-LOG.md` the mechanisms,
+with one trap: `max-w-prose` on a flex item caps its `basis-full`. CLI 445 → 446, driver 586 → 587,
+service 469 → 470, web unit 853 → 866, Playwright 21/21, family 271/271, verify green. The card's
+two new states have a story (`CardsWithTheirIntake`).

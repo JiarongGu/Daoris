@@ -5,6 +5,41 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Sentences that stopped being true, and four marks the window read wrongly (2026-09-24)
+
+**Symptom.** Read with data in it (POLISH4: the scratch shell over the example family, which holds a
+parked session, two intakes, five asks and an unadopted repository), the window said things that were
+no longer so. Overview: the index "scans the family's folder" and only an adopter is addressable.
+Projects: "who cannot be asked yet", and a real agent's use of the connector in an unadopted
+repository "not yet proven". The band: finished work would join it "once review exists". The intake
+room told its agent an unadopted repository was "Not addressable: nothing there can see a quest". And
+four marks misread: a parked session ringed its repository *working now* on the map; every search
+snippet of a canon-shaped entry opened `--- name: … applies_when: …`; the ask cards all read
+*proposed* whatever their intake was doing; and 中文 said 任务 for a quest in nineteen strings.
+
+**Root cause.** Each sentence was true when written and was never re-read when the decision under it
+moved: WSP2 made the registry explicit, D70 made a registered repository with a root addressable,
+PERM1 measured the connector working there, SURF6 built review without recording what was looked at.
+**A claim in a catalogue has no test pointing at the code it describes**, so nothing failed. The
+marks: the map's `LIVE` set counted `awaiting-person` as working; `Text.Excerpt` windowed the raw
+body, frontmatter first; `AskCard` was never handed its intake's state, though the band beside it
+read the same record; and the map, the chain strip, the monitor and the strikes setting were
+translated after the glossary set 委托, by strings nobody compared.
+
+**Fix.** Each sentence says what is true now (two artefacts' rule tables too, which explained
+themselves with decision numbers a person cannot look up). The map marks a parked session apart, in
+the warn tone, and its legend names the number in a node. The excerpt is taken from the prose, and
+the frontmatter still matches. The card says *an intake is reading it* or *its intake asked you*.
+`i18n.test.ts` now holds that a string about a quest never says 任务, as it holds 工作区 and 账户.
+🔴 **One trap found on the way:** `max-w-prose` on a flex item caps its `basis-full`, so a note
+given a measure stopped breaking to its own line and sat beside the slider; the measure goes on a
+child of the full-basis item.
+
+**Verify.** Tests on each side: CLI and driver (no decision number in a default's reason), the intake
+room, the service (an excerpt never from the frontmatter), topology and the map view, the ask card
+and record, Convergence, Projects, the catalogue. Looked at on the rebuilt window in both languages
+and themes. CLI 446, driver 587, service 470, web 866 + 21 Playwright, family 271/271.
+
 ## Convergence took about seven seconds on the first real index (2026-09-24)
 
 **Symptom.** On the owner's install (1,052 entries, lexical only) the Convergence view showed a bare

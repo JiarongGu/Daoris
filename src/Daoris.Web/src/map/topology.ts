@@ -23,6 +23,11 @@ export type MapNode = {
   open: number;
   /** Whether a session is working there now. */
   working: boolean;
+  /**
+   * Whether a session there is parked on the person — its own fact, and the one the person acts on.
+   * It held the tree and was ringed "working now" until the window showed it (POLISH4).
+   */
+  parked: boolean;
 };
 
 /** Every quest that went from one repository on the map to another, one edge per direction. */
@@ -40,7 +45,7 @@ export type Topology = {
 };
 
 const isOpen = (quest: Quest) => quest.status === 'Open' || quest.status === 'Taken';
-const LIVE: ReadonlySet<Session['state']> = new Set(['starting', 'working', 'awaiting-person']);
+const WORKING: ReadonlySet<Session['state']> = new Set(['starting', 'working']);
 
 export function buildTopology(
   registry: readonly Registration[],
@@ -57,7 +62,8 @@ export function buildTopology(
       owns: row.owns,
       accepts: row.accepts,
       open: quests.filter((q) => q.to === row.repository && isOpen(q)).length,
-      working: sessions.some((s) => s.repository === row.repository && LIVE.has(s.state)),
+      working: sessions.some((s) => s.repository === row.repository && WORKING.has(s.state)),
+      parked: sessions.some((s) => s.repository === row.repository && s.state === 'awaiting-person'),
     }));
 
   let outside = 0;

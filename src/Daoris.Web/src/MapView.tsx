@@ -135,8 +135,10 @@ export function MapView({ notify, onOpenConvergence }: {
             selected={selected}
             onSelect={(next) => setSelected(next)}
           />
-          {/* The key, in words: each line's meaning is its shape as well as its hue (D41). */}
+          {/* The key, in words: each line's meaning is its shape as well as its hue (D41) — and the
+              number in a node, which no key named until the window showed it (POLISH4). */}
           <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-meta text-ink-faint">
+            <li>{t('map.legend.open')}</li>
             <li>{t('map.legend.quests')}</li>
             <li>{t('map.legend.closed')}</li>
             <li>{t('map.legend.knowledge')}</li>

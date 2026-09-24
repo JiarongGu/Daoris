@@ -39,8 +39,10 @@ export function placeLabel(x: number, y: number): {
  *
  * @remarks
  * **Status is never colour alone** (D41): an open quest edge is solid and accented, a closed one
- * faint, a shared finding dashed, and a repository with a session working is ringed AND says so in
- * its label. Every node and edge is a button a keyboard can reach, and its name says what it holds.
+ * faint, a shared finding dashed, and a repository with a session there is ringed AND says so in its
+ * label — *working now*, or *waiting on you* for one parked on the person, in the warn tone the band
+ * gives that fact. Every node and edge is a button a keyboard can reach, and its name says what it
+ * holds.
  */
 export function MapCanvas({ topology, selected, onSelect }: {
   topology: Topology;
@@ -175,12 +177,16 @@ export function MapCanvas({ topology, selected, onSelect }: {
         const { x, y } = at[node.id]!;
         const chosen = selected?.kind === 'node' && selected.id === node.id;
         const label = placeLabel(x, y);
+        // Parked leads: it is the one a person acts on, and a repository may hold one of each.
+        const there = node.parked ? 'parked' : node.working ? 'working' : null;
         return (
           <g
             key={node.id}
             role="button"
             tabIndex={0}
-            aria-label={t(node.working ? 'map.nodeLabelWorking' : 'map.nodeLabel', { repository: node.id, count: node.open })}
+            aria-label={t(
+              there === 'parked' ? 'map.nodeLabelParked' : there === 'working' ? 'map.nodeLabelWorking' : 'map.nodeLabel',
+              { repository: node.id, count: node.open })}
             aria-pressed={chosen}
             onClick={() => onSelect({ kind: 'node', id: node.id })}
             onKeyDown={press({ kind: 'node', id: node.id })}
@@ -188,8 +194,11 @@ export function MapCanvas({ topology, selected, onSelect }: {
             onPointerLeave={() => setHovered(null)}
             className="cursor-pointer outline-none [&:focus-visible>circle.body]:stroke-ink"
           >
-            {node.working && (
-              <circle cx={x} cy={y} r={RADIUS + 6} fill="none" strokeDasharray="3 3" className="stroke-st-taken stroke-2" />
+            {there && (
+              <circle
+                cx={x} cy={y} r={RADIUS + 6} fill="none" strokeDasharray="3 3"
+                className={cn('stroke-2', there === 'parked' ? 'stroke-warn' : 'stroke-st-taken')}
+              />
             )}
             <circle
               cx={x} cy={y} r={RADIUS}
@@ -201,9 +210,12 @@ export function MapCanvas({ topology, selected, onSelect }: {
             <text x={label.x} y={label.y} textAnchor={label.anchor} className="fill-ink text-small font-semibold">
               {node.id}
             </text>
-            {node.working && (
-              <text x={label.x} y={label.y + label.next} textAnchor={label.anchor} className="fill-ink-soft text-meta">
-                {t('map.working')}
+            {there && (
+              <text
+                x={label.x} y={label.y + label.next} textAnchor={label.anchor}
+                className={cn('text-meta', there === 'parked' ? 'fill-warn' : 'fill-ink-soft')}
+              >
+                {t(there === 'parked' ? 'map.parked' : 'map.working')}
               </text>
             )}
           </g>

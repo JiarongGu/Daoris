@@ -34,6 +34,16 @@ export const Cards: StoryObj = {
   ),
 };
 
+/** What an ask waits for, as the band says it (POLISH4): an intake reading it, then one asking you. */
+export const CardsWithTheirIntake: StoryObj = {
+  render: () => (
+    <div className="grid max-w-3xl gap-0">
+      <AskCard ask={INTAKE_ASKED} intake="working" onOpen={noop} />
+      <AskCard ask={INTAKE_ASKED} intake="awaiting-person" onOpen={noop} />
+    </div>
+  ),
+};
+
 const record = (ask: Ask, intake: Session | null = null, attend = false) => () => (
   <Provided>
     <AskRecord

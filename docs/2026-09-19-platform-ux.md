@@ -411,6 +411,43 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **A slow first answer is skeleton rows**, as §4 always said, with its words on the line the
 >   count will take.
 
+> **Amended 2026-09-24, the surfaces an empty install cannot show (POLISH4).** Read in the scratch
+> shell over the example family, which holds what the owner's install did not: a parked session, a
+> running and a parked intake, five asks, an unadopted repository. Both languages, both themes.
+>
+> - **A sentence about what the system can do is re-read when the decision under it moves.** Five
+>   had outlived theirs: the index "scans the family's folder" (WSP2), only an adopter is
+>   addressable (D70), the connector in an unadopted repository is unproven (PERM1 measured it),
+>   finished work joins the band "once review exists" (review exists; looking is not recorded), and
+>   the intake room's "nothing there can see a quest". A catalogue claim has no test pointing at the
+>   code it describes, so it goes stale silently.
+> - **A reason a person reads names no decision number.** The rules card said *(D37)*, and a person
+>   using the application has no decisions record to look it up in. The sentence says what the
+>   number meant.
+> - **An ask says what it waits for wherever it is shown.** The band said *its intake asked you*
+>   and the card below it said only *proposed*. The card now says *an intake is reading it*, or
+>   wears the band's own warn mark.
+> - **A place is named by its kind.** An ask's `default` beside `game → engine` read as one more
+>   repository, as INT4d found for the band. The card and the record's receiver field say
+>   *workspace default*.
+> - **A label never repeats its value's first word**: *answered by* over *by declarations…*. And a
+>   record's title is its first line, so its body is what follows, never the title again.
+> - **Labels are a column.** A project card's *owns* and *accepts* flowed on one line with their
+>   chips, so a wrapped chip fell back under the label. The labels sit in a column of their own and
+>   the chips wrap in theirs. A command in a sentence is code, and the sentence is not monospace.
+> - **A key names every mark, a number included; and parked is not working.** The number inside a
+>   map node was in no legend, and a repository whose one session waited on the person was ringed
+>   *working now*. It reads *waiting on you*, in the warn tone the band gives that fact.
+> - **An excerpt shows the prose, never the file's machinery.** Every canon-shaped entry opens with
+>   frontmatter, and a search snippet read `--- name: … applies_when: …`. The frontmatter still
+>   matches; the window is taken after it.
+> - **An empty answer is an empty state, and a note has a measure.** Convergence said *Nothing
+>   converges above 0.75.* as a bare line beside a slider labelled ≥, and its tier note ran about
+>   180 characters a line. 🔴 `max-w-prose` on a flex item caps its `basis-full`, so the measure goes
+>   on a child of the full-width item, or the note stops breaking to its own line.
+> - **One word per thing, again**: 中文 said 任务 for a quest in nineteen strings the map, the chain
+>   strip, the monitor and the strikes setting grew after the glossary set 委托. A test holds it now.
+
 ## 5. The views, restated in this language
 
 - **Overview** — tiles row; then a two-column band on wide screens: *Outstanding, oldest first*

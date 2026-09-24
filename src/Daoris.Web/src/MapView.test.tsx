@@ -67,6 +67,20 @@ describe('the workspace map', () => {
     expect(screen.getByText(/1 quest comes from, or goes to, somewhere off this map/)).toBeTruthy();
     // The key says each line's meaning in words, not by hue alone (D41).
     expect(screen.getByText(/dashed line: the same thing learned in both/)).toBeTruthy();
+    // 🔴 Seen on the window (POLISH4): the number inside a repository was in no key.
+    expect(screen.getByText('the number in a repository: quests to it still open')).toBeTruthy();
+  });
+
+  it('says a repository whose session is parked is waiting on the person, not working', async () => {
+    SESSIONS[0] = { ...SESSIONS[0]!, state: 'awaiting-person' };
+    try {
+      show();
+      expect(await screen.findByRole('button', { name: 'engine, 1 open, a session waiting on you' })).toBeTruthy();
+      expect(screen.getByText('waiting on you')).toBeTruthy();
+      expect(screen.queryByText('working now')).toBeNull();
+    } finally {
+      SESSIONS[0] = { ...SESSIONS[0]!, state: 'working' };
+    }
   });
 
   it('a repository shows what it declares and the quests to and from it', async () => {

@@ -25,6 +25,16 @@ describe('the catalogs', () => {
     expect(Object.entries(zh).filter(([, value]) => value.includes('账号')).map(([key]) => key)).toEqual([]);
   });
 
+  /**
+   * And for a quest (POLISH4): 委托 43 times, and 任务 in about twenty strings the map, the chain
+   * strip, the monitor and the strikes setting grew later. 任务 is the family's word for a *task*, and
+   * the glossary keeps the two apart, so a string about a quest never says 任务.
+   */
+  it('call a quest 委托 in 中文, never 任务', () => {
+    const aboutQuests = Object.entries(en).filter(([, value]) => /\bquests?\b/i.test(value)).map(([key]) => key);
+    expect(aboutQuests.filter((key) => (zh as Record<string, string>)[key]!.includes('任务'))).toEqual([]);
+  });
+
   it('serve flat dotted keys in both languages, placeholders intact', async () => {
     await i18n.changeLanguage('en');
     expect(i18n.t('nav.quests')).toBe('Quests');

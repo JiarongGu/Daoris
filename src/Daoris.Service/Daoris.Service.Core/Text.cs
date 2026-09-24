@@ -138,10 +138,15 @@ public static class Text
     /// A result list that cannot show its reasoning gets treated as an oracle, which is exactly what
     /// it is not. When nothing matches — a semantic hit shares no literal term by definition — the
     /// opening of the body is still more useful than nothing.
+    ///
+    /// **The window is the prose's, never the frontmatter's** (POLISH4). Every canon-shaped entry
+    /// opens with its frontmatter, and a window there read "--- name: … applies_when: …" flattened
+    /// onto one line. The frontmatter is still searched; a hit found only there shows the prose's
+    /// opening, as a semantic hit does.
     /// </remarks>
     public static string Excerpt(string body, IEnumerable<string>? terms = null, int window = 180)
     {
-        body ??= string.Empty;
+        body = WithoutFrontmatter(body ?? string.Empty);
 
         var index = -1;
         foreach (var term in terms ?? [])
@@ -164,6 +169,19 @@ public static class Text
         return (start > 0 ? "…" : string.Empty)
              + Flatten(body.Substring(start, length))
              + (start + length < body.Length ? "…" : string.Empty);
+    }
+
+    /// <summary>
+    /// A body without its leading frontmatter block — a <c>---</c> line, fields, and a closing <c>---</c>
+    /// line. A body that only opens with a rule and never closes one keeps everything.
+    /// </summary>
+    private static string WithoutFrontmatter(string body)
+    {
+        if (!body.StartsWith("---\n", StringComparison.Ordinal)) return body;
+        var close = body.IndexOf("\n---", 3, StringComparison.Ordinal);
+        if (close < 0) return body;
+        var after = body.IndexOf('\n', close + 4);
+        return after < 0 ? string.Empty : body[(after + 1)..].TrimStart();
     }
 
     /// <summary>One line: an excerpt is shown inline, and embedded newlines break every caller's layout.</summary>

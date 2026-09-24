@@ -153,50 +153,53 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
                     <Inline text={t('projects.undeclared')} />
                   </p>
                 )}
-              {project.owns.length > 0 && (
-                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.owns')}</span>
-                  {project.owns.map((item) => <Chip key={item}>{item}</Chip>)}
-                </p>
-              )}
-              {project.accepts.length > 0 && (
-                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.accepts')}</span>
-                  {project.accepts.map((item) => <Chip key={item} accent>{item}</Chip>)}
-                </p>
-              )}
-              {project.packs.length > 0 && (
-                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.packs')}</span>
-                  {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
-                </p>
-              )}
-              {counts?.fed && (
-                /* Where this deployment's copy came from (D48 §6). Shown rather than implied: the
-                   index is a claim about a commit, and a person who cannot see which commit has no
-                   way to tell a current view from one a machine stopped feeding a month ago. */
-                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.fed')}</span>
-                  <Tip content={t('projects.fedTip', {
-                    commit: counts.fed.commit,
-                    branch: counts.fed.branch,
-                    origin: counts.fed.origin ?? t('projects.fedUnknownOrigin'),
-                  })}
-                  >
-                    <span className="font-mono text-small text-ink-soft">
-                      {counts.fed.shortCommit} · {ago(counts.fed.committedAt)}
-                    </span>
-                  </Tip>
-                </p>
-              )}
-              {project.workspace && (
-                /* Which circle this one shares with (D48). Shown rather than assumed: a machine
-                   holding two workspaces would otherwise present them as one family, and the
-                   person would have no way to tell from the list that it was two. */
-                <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
-                  <span className="min-w-12 text-meta text-ink-faint">{t('projects.workspace')}</span>
-                  <Tip content={t('projects.workspaceTip')}><Chip>{project.workspace}</Chip></Tip>
-                </p>
+              {/* The labels are a column and the chips wrap in their own, so a second line of chips
+                  lines up under the first. As one flowing line, a wrapped chip fell back under its
+                  label (POLISH4). */}
+              {(project.owns.length > 0 || project.accepts.length > 0 || project.packs.length > 0
+                || counts?.fed || project.workspace) && (
+                <dl className="m-0 mt-2 grid grid-cols-[max-content_1fr] items-baseline gap-x-3 gap-y-2">
+                  {project.owns.length > 0 && (
+                    <Row label={t('projects.owns')}>
+                      {project.owns.map((item) => <Chip key={item}>{item}</Chip>)}
+                    </Row>
+                  )}
+                  {project.accepts.length > 0 && (
+                    <Row label={t('projects.accepts')}>
+                      {project.accepts.map((item) => <Chip key={item} accent>{item}</Chip>)}
+                    </Row>
+                  )}
+                  {project.packs.length > 0 && (
+                    <Row label={t('projects.packs')}>
+                      {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
+                    </Row>
+                  )}
+                  {counts?.fed && (
+                    /* Where this deployment's copy came from (D48 §6). Shown rather than implied: the
+                       index is a claim about a commit, and a person who cannot see which commit has no
+                       way to tell a current view from one a machine stopped feeding a month ago. */
+                    <Row label={t('projects.fed')}>
+                      <Tip content={t('projects.fedTip', {
+                        commit: counts.fed.commit,
+                        branch: counts.fed.branch,
+                        origin: counts.fed.origin ?? t('projects.fedUnknownOrigin'),
+                      })}
+                      >
+                        <span className="font-mono text-small text-ink-soft">
+                          {counts.fed.shortCommit} · {ago(counts.fed.committedAt)}
+                        </span>
+                      </Tip>
+                    </Row>
+                  )}
+                  {project.workspace && (
+                    /* Which workspace this one shares with (D48). Shown rather than assumed: a machine
+                       holding two workspaces would otherwise present them as one family, and the
+                       person would have no way to tell from the list that it was two. */
+                    <Row label={t('projects.workspace')}>
+                      <Tip content={t('projects.workspaceTip')}><Chip>{project.workspace}</Chip></Tip>
+                    </Row>
+                  )}
+                </dl>
               )}
               {/* The person's standing choices for THIS machine's driver (D46 §6) — rendered only
                   where a shell answers; a browser has no driver to control, and shows nothing. */}
@@ -251,11 +254,22 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
               );
             })}
           </ul>
-          <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 font-mono text-small">
+          {/* A sentence with its commands as code — it was all monospace, prose included (POLISH4). */}
+          <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 text-small">
             <Inline text={t('projects.outside.join')} />
           </p>
         </Card>
       )}
     </section>
+  );
+}
+
+/** One row of a project card: its label in the card's label column, its content wrapping beside it. */
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <>
+      <dt className="text-meta text-ink-faint">{label}</dt>
+      <dd className="m-0 flex min-w-0 flex-wrap items-baseline gap-1.5">{children}</dd>
+    </>
   );
 }

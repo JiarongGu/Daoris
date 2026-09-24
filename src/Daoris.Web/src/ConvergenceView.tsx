@@ -2,10 +2,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Convergence } from './api';
 import { useConvergence } from './queries';
-import { Card, Inline, type Notify, PageHeader, SkeletonRows, useErrorNotify } from './ui';
+import { Button, Card, EmptyState, Inline, type Notify, PageHeader, Prose, SkeletonRows, useErrorNotify } from './ui';
 import { cn } from './lib/cn';
 import { useDebounced } from './lib/useDebounced';
 import { page } from './results';
+
+/** The slider's floor. */
+const MIN = 0.5;
+
+/** One step down from an empty answer: a tenth, never below the floor, in the slider's own steps. */
+const lower = (value: number) => Math.max(MIN, Math.round((value - 0.1) * 100) / 100);
 
 /**
  * The knowledge half's lead view (D30). The threshold is a control rather than a constant,
@@ -37,14 +43,16 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
         <label className="flex items-center gap-2.5 text-body text-ink-soft">
           {t('convergence.threshold')} <strong className="tabular-nums">{threshold.toFixed(2)}</strong>
           <input
-            type="range" min={0.5} max={0.95} step={0.01} value={threshold}
+            type="range" min={MIN} max={0.95} step={0.01} value={threshold}
             onChange={(e) => setThreshold(Number(e.target.value))}
             className="w-56 accent-accent"
           />
         </label>
-        <p className="m-0 basis-full text-body text-ink-soft">
-          {semantic ? t('convergence.hintSemantic') : t('convergence.hintLexical')}
-        </p>
+        {/* At the prose measure: across the column it ran about 180 characters a line (POLISH4).
+            Its own line still — a capped width alone let it fit beside the slider. */}
+        <div className="basis-full">
+          <Prose>{semantic ? t('convergence.hintSemantic') : t('convergence.hintLexical')}</Prose>
+        </div>
       </div>
 
       {/* A first load is skeleton rows (D41 §4), with the words in the line the count takes, so
@@ -56,10 +64,19 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
           <SkeletonRows rows={4} />
         </>
       )}
+      {/* Designed, not a bare line (D41 §4): the fact, and the act that changes it. The value is the
+          one the answer is for, so the headline never names a threshold still being debounced. */}
       {groups.data?.length === 0 && (
-        <p className="text-body text-ink-soft">
-          {t('convergence.empty', { value: threshold.toFixed(2) })}
-        </p>
+        <EmptyState
+          icon="convergence"
+          headline={t('convergence.empty', { value: debounced.toFixed(2) })}
+          body={t('convergence.emptyBody')}
+          action={debounced > MIN + 0.001 && (
+            <Button onClick={() => setThreshold(lower(debounced))}>
+              {t('convergence.lower', { value: lower(debounced).toFixed(2) })}
+            </Button>
+          )}
+        />
       )}
 
       {/* How many, and whether that is all of them — the same promise the search makes, for the

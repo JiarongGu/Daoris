@@ -46,6 +46,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode }:
       <div className="grid gap-3">
         <header className="flex flex-wrap items-center gap-2">
           <span className="text-body font-semibold text-ink">{node.id}</span>
+          {node.parked && <Chip accent>{t('map.parked')}</Chip>}
           {node.working && <Chip accent>{t('map.working')}</Chip>}
         </header>
         {node.summary && <p className="m-0 text-small text-ink-soft">{node.summary}</p>}
