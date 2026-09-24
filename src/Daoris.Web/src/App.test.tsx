@@ -93,6 +93,38 @@ describe('the shell in a browser, over two workspaces', () => {
    * D75: the Workspace menu is the scope's second door. It lists every workspace with what it holds,
    * ticks the scope, and choosing one scopes the window as the switcher does.
    */
+  /**
+   * D75 §3: the workspace is named whatever the machine holds. Seen on the installed window with none
+   * registered: the top bar and the status bar both said "every workspace", of nothing, and the
+   * switcher that would have said more is absent below two by WSP5's rule. The rule still hides the
+   * control; it no longer hides the fact.
+   */
+  const withRegistry = (rows: unknown[]) => {
+    fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json(rows) : respond(url);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+  };
+
+  it('says there is no workspace yet in the top bar and the status bar, with none registered', async () => {
+    withRegistry([]);
+    shell();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Commands (Ctrl+K)' })).toHaveTextContent('no workspace yet'));
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('no workspace yet');
+    expect(screen.queryByRole('combobox', { name: 'workspace' })).toBeNull();
+  });
+
+  it('names the one workspace there is, with no switcher to choose it', async () => {
+    withRegistry([REGISTRY[1]]);
+    shell();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Commands (Ctrl+K)' })).toHaveTextContent('aurora'));
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('aurora');
+    expect(screen.queryByRole('combobox', { name: 'workspace' })).toBeNull();
+  });
+
   /** A menu opens from the keyboard in jsdom, the path D41 §6 requires anyway (see `AppMenu.test`). */
   const openMenu = async (name: string) => {
     const user = userEvent.setup();

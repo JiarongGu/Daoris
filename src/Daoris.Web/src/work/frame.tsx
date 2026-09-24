@@ -220,7 +220,10 @@ export function StatusBar({
 }: {
   driver: DriverPresence;
   sessions: number;
-  /** The chosen circle, or null for every circle this deployment holds (WSP5). */
+  /**
+   * The scope in words (D75 §3): the chosen workspace, the one there is, every one among several, or
+   * none yet. Null only while the registry has not answered.
+   */
   workspace: string | null;
   /** Whether this workspace has a deployment wired, or null where the question cannot be asked. */
   remote: boolean | null;

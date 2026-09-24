@@ -175,6 +175,17 @@ export function App() {
   const scope = useScope();
   const workspaces = useWorkspaces();
   const holdings = useWorkspaceHoldings();
+  // 🔴 The scope in words, whatever the machine holds (D75 §3): the one chosen, the one there is,
+  // every one among several, or none yet. With none registered the top bar and the status bar both
+  // said "every workspace", of nothing, and the switcher that would have said more is absent below
+  // two by WSP5's rule. That rule still hides the control; it no longer hides the fact.
+  const scopeNamed = scope.workspace ?? (workspaces.data === undefined
+    ? null
+    : workspaces.data.length === 0
+      ? t('scope.none')
+      : workspaces.data.length === 1
+        ? workspaces.data[0]!
+        : t('scope.every', { count: workspaces.data.length }));
   useEffect(() => {
     if (workspaces.data && scope.workspace && !workspaces.data.includes(scope.workspace)) {
       scope.setWorkspace(null);
@@ -383,7 +394,7 @@ export function App() {
         // caption buttons — same dialog, a target a person can find.
         center={(
           <CommandCenter
-            scope={scope.workspace ?? t('palette.scope')}
+            scope={scopeNamed ?? t('palette.scope')}
             shortcut="Ctrl K"
             onOpen={() => setPalette(true)}
             label={t('palette.open')}
@@ -525,7 +536,7 @@ export function App() {
           : undefined}
         driver={presence}
         sessions={liveSessions}
-        workspace={scope.workspace}
+        workspace={scopeNamed}
         remote={wired}
         sync={circle && standing.data?.wired
           ? (

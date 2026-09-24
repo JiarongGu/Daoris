@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import { cn } from './lib/cn';
-import { useRegistry, useStatus } from './queries';
+import { useRegistry, useStatus, useWorkspaceHoldings } from './queries';
+import { useScope } from './scope';
 import {
   useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
   useRemotes, useRuleAction, useRuleProposal, useRules, useSetIntake, useSetNotify, useSetStrikes,
@@ -39,7 +40,8 @@ export type SettingsSection = 'appearance' | 'ai' | 'workspace' | 'driver' | 'ag
 const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
   { id: 'appearance', machine: false },
   { id: 'ai', machine: false },
-  { id: 'workspace', machine: true },
+  // Its list of workspaces is for everyone; its wiring is the machine's, and only a shell sees that.
+  { id: 'workspace', machine: false },
   { id: 'driver', machine: true },
   { id: 'agents', machine: true },
   { id: 'permissions', machine: true },
@@ -106,8 +108,9 @@ export function SettingsView({ notify, section = 'appearance', onSection }: {
           {shown === 'ai' && <OwnAi attached={attached} notify={notify} />}
           {shown === 'workspace' && (
             <>
-              <WiringSettings notify={notify} />
-              <Starts notify={notify} />
+              <WorkspaceList />
+              {attached && <WiringSettings notify={notify} />}
+              {attached && <Starts notify={notify} />}
             </>
           )}
           {shown === 'driver' && <DriverSettings notify={notify} />}
@@ -417,7 +420,7 @@ function WiringSettings({ notify }: { notify: Notify }) {
     });
 
   return (
-      <Card>
+      <Card className="mt-3.5">
         <SectionTitle>{t('settings.wiring.title')}</SectionTitle>
         <SettingRow
           label={t('settings.wiring.label')}
@@ -595,6 +598,43 @@ function Rules({ notify }: { notify: Notify }) {
  * **Read from the driver, never recomputed here.** The answer is `SelectAsync`'s, so the page cannot
  * show an account the loop would not take; this organism only names the circles and the accounts.
  */
+/**
+ * Every workspace and what it holds (D75 §3), from the same unscoped registry answer the Workspace
+ * menu reads, so the two cannot disagree. For everyone: which repositories share a workspace is what
+ * a browser is told too, and no machine path is in it.
+ */
+function WorkspaceList() {
+  const { t } = useTranslation();
+  const { workspace: scoped } = useScope();
+  const holdings = useWorkspaceHoldings();
+  const list = holdings.data ?? [];
+
+  return (
+    <Card>
+      <SectionTitle>{t('settings.workspaces.title', { count: list.length })}</SectionTitle>
+      {holdings.data && list.length === 0 && (
+        <Prose className="text-small">{t('settings.workspaces.none')}</Prose>
+      )}
+      <ul className="m-0 list-none p-0">
+        {list.map((workspace) => (
+          <li key={workspace.name} aria-label={workspace.name} className="border-t border-line py-2 first:border-t-0">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span className="text-body font-medium text-ink">{workspace.name}</span>
+              {scoped === workspace.name && <Chip accent>{t('settings.workspaces.inView')}</Chip>}
+              <span className="text-small text-ink-faint">
+                {t('settings.workspaces.repositories', { count: workspace.repositories })}
+              </span>
+            </div>
+            <p title={workspace.members.join(' · ')} className="m-0 mt-0.5 truncate text-small text-ink-soft">
+              {workspace.members.join(' · ')}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 function Starts({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const registry = useRegistry();

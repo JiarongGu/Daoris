@@ -5445,3 +5445,17 @@ end-to-end. Two things were found while building it. The zh catalogue said 账�
 11, and is now 账户 throughout, held by a test. And a `check` icon beside the menu's check column
 read as "ticked", so what agents may do wears a shield. Looked at on the install in 中文, light and
 dark. Web unit 842 → 850.
+
+## FRAME4 — the workspace always named (2026-09-24)
+
+- [x] ~~**FRAME4 — the workspace always named.** The command center and the status bar name it in
+  every state, none included, and the Workspace domain lists each workspace with its repositories
+  (design §4).~~
+✅ **done 2026-09-24** (D75 §3). App words the scope once, as the chosen workspace, the one there is,
+*every workspace · N* among several, or *no workspace yet*. The command center and the status bar
+both show that. WSP5's switcher still appears only with a choice to make: the rule hides the
+control and no longer hides the fact. The Workspace domain opens with every workspace, its
+repository count and its repositories, from the same unscoped registry answer the Workspace menu
+reads. It is offered in a browser too, with none of the machine's wiring. Seen on the empty install:
+all three say 还没有工作区. A body that began by repeating its own title lost the repetition. Web
+unit 850 → 853.

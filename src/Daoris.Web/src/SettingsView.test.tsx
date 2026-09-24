@@ -22,10 +22,32 @@ describe('SettingsView in a browser', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.startsWith('/api/status')) return Response.json({ semantic: false, tier: 'lexical only', note: '' });
+      if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
       throw new Error(`unstubbed request: ${url}`);
     }));
   });
   afterEach(() => vi.unstubAllGlobals());
+
+  const REGISTRY = [
+    { repository: 'engine', adopted: true, registered: true, owns: [], accepts: [], packs: [], workspace: 'aurora' },
+    { repository: 'game', adopted: true, registered: true, owns: [], accepts: [], packs: [], workspace: 'aurora' },
+    { repository: 'tools', adopted: false, registered: true, owns: [], accepts: [], packs: [], workspace: 'forge' },
+  ];
+
+  /**
+   * D75 §3: the workspace is always named, and its domain says what each one holds. That is what a
+   * browser may know too, so the domain is offered there, holding the list and none of the wiring.
+   */
+  it('lists every workspace with the repositories it holds, in a browser too', async () => {
+    view('workspace');
+
+    const aurora = await screen.findByRole('listitem', { name: 'aurora' });
+    expect(within(aurora).getByText('2 repositories')).toBeTruthy();
+    expect(within(aurora).getByText('engine · game')).toBeTruthy();
+    expect(within(screen.getByRole('listitem', { name: 'forge' })).getByText('1 repository')).toBeTruthy();
+    // None of the machine's wiring reaches a browser.
+    expect(screen.queryByRole('button', { name: 'Wire a workspace' })).toBeNull();
+  });
 
   /**
    * A browser is never offered a machine's domain (D47 §4, D75): not a disabled one, none. A domain it
@@ -36,7 +58,7 @@ describe('SettingsView in a browser', () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Appearance', "Daoris's own AI"]);
+      .toEqual(['Appearance', "Daoris's own AI", 'Workspace']);
     expect(within(domains).getByRole('button', { name: 'Appearance' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByText('Theme')).toBeTruthy();
   });

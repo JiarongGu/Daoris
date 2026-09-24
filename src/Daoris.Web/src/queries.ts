@@ -116,12 +116,13 @@ export const useWorkspaceHoldings = () =>
     queryKey: keys.registry(null),
     queryFn: ({ signal }) => api.registry(null, signal),
     select: (rows) => {
-      const counts = new Map<string, number>();
+      const members = new Map<string, string[]>();
       for (const row of rows) {
         const name = row.workspace ?? 'default';
-        counts.set(name, (counts.get(name) ?? 0) + 1);
+        members.set(name, [...(members.get(name) ?? []), row.repository]);
       }
-      return [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([name, repositories]) => ({ name, repositories }));
+      return [...members].sort(([a], [b]) => a.localeCompare(b))
+        .map(([name, names]) => ({ name, repositories: names.length, members: names.sort() }));
     },
   });
 
