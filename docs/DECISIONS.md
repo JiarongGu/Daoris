@@ -3075,3 +3075,52 @@ is conditional on the connector offering the tool, because the same words reach 
 agent. An intake's own prompt is untouched. `tools/perm2-proof.mjs` is the real-session proof.
 Rejected: saying it only when rules are handed. The target is composed before the door is known, and a
 sentence that names its own condition is honest on every door.
+
+## D75 — The menus are the setup domains, Settings is one page of them, and the workspace is always named (2026-09-24)
+
+**Decision.** The owner, looking at the installed application: *"I think we can use the topbar menu to
+have more different domain of setup, this is closer to ide logic, and I dont see workspace
+anymore?"* The owner chose each shape below from options put to them the same day. It amends D56 §3a
+and D66 §2; `docs/2026-09-24-menus-design.md` is the contract.
+
+1. **The app strip's menus are the setup domains: Daoris · Workspace · Agents · View.** *Daoris* holds
+   the application (settings for appearance and language, the driver, plugins, refresh, language,
+   about). *Workspace* lists every workspace, choosing one scopes the window, and holds adding a
+   repository, importing a folder, wiring a remote and the workspace's settings. *Agents* holds the
+   tools and accounts, what agents may do, their proposals with the count waiting, usage, and
+   Daoris's own AI. *View* is unchanged. Every setup item opens its own domain. Before this every one
+   opened the same long page at its top.
+2. **Settings is one page with a list of its domains**, one shown at a time, as an IDE's settings
+   are: Appearance, Daoris's own AI, Workspace, Driver, Agents & accounts, Permissions, Plugins. A
+   menu item opens the page at its domain. The domains are the cards the page already held, regrouped.
+   Nothing moves between the two doors (D50): each setting is still the same file.
+3. **The workspace is always named.** The command center and the status bar name the scope whatever
+   the machine holds: one workspace by its name, several as *every workspace · N* until one is
+   chosen, and none as *no workspace yet*. WSP5's rule, a switcher absent below two, stays for the
+   CONTROL and no longer hides the FACT.
+4. **One word: workspace / 工作区.** The interface said *workspace* 41 times and *circle* 26, and
+   工作区 27 times and 圈子 24, sometimes both in one sentence. It keeps the CLI's word
+   (`connect --workspace`, `DAORIS_WORKSPACE`), in every catalogue and in the sentences the CLI,
+   the driver and the service print. *Circle* stays prose in the design documents, which explain what
+   a workspace is for.
+
+**Why.** A menu bar that names three domains and opens one page for all three is not a menu. And a
+scope that decides every number on the screen (workspace design §4) was invisible on the machine
+that needed it most, one with no workspace yet, because the rule that hid an unneeded control hid
+the fact too.
+
+**Rejected.**
+- **One menu per domain** (Daoris, Workspace, Driver, Agents, Plugins, View, Help): seven shallow
+  menus and a wide bar, for two domains that fit under the application.
+- **A classic IDE's File menu first.** Daoris opens no files, and "File" would hold repositories.
+- **Scrolling one long page to a section**, the smallest change. The page stays an essay to scroll
+  past, which D66's own settings rows were written against.
+- **A drawer per domain.** A setting a person changes twice would open in two places with no page to
+  come back to.
+- **A Workspaces view on the activity bar.** The owner chose naming the workspace in the chrome over
+  a seventh navigation item, keeping D66's one list.
+- **An empty *Help* menu.** *About* sits under *Daoris*, and a menu with nothing to open is not a door.
+- **Keeping *circle* in the interface.** Two names for one scope, and the CLI can only say one.
+
+**What does not move.** D66's one navigation: the menus open setup and never views. D47 §4: a
+browser's menus hold only what a browser may know. D50's two doors. WSP5's scoping itself.

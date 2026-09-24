@@ -241,8 +241,9 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Only surface work is actionable without the owner**: whatever the next look at the install
-  finds (POLISH2 and POLISH3 are in the archive). 🔴 **The owner authorized real sessions on this
+- **The owner's newest direction is the menus by domain** (D75, FRAME1–FRAME5), and it outranks the
+  rest. Beyond it, surface work is whatever the next look at the install finds (POLISH2 and POLISH3
+  are in the archive). 🔴 **The owner authorized real sessions on this
   machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
   (16/16), INT4j (17/17) and PERM2b (14/14) one each. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
@@ -269,9 +270,10 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Ten items are open**, and every closed one is
-in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Three wait on the owner (TRUST2, AGT2c, INT6), and seven on a trigger (see *Handover*).
+the archive; its decision is **D53, accepted**). **Fifteen items are open**, and every closed one
+is in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
+ships. Five are the owner's new direction and buildable now (FRAME1–FRAME5, D75), three wait on the
+owner (TRUST2, AGT2c, INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
 (2026-09-24, in the archive). Each landing is one session-sized item, TDD, gates green, moved to the
@@ -415,6 +417,27 @@ the seam), and no plugin runtime for the surface (D52). **No code loads into a h
 
 - [ ] ⏸ **PLUG7 — service-side points** (held): the same wire reaches the knowledge service when a
   plugin somebody writes asks for a point there. PLUG4–6 are in the archive.
+
+### The menus are the setup domains (owner, 2026-09-24 → D75)
+
+> *"I think we can use the topbar menu to have more different domain of setup, this is closer to ide
+> logic, and I dont see workspace anymore?"*
+
+`docs/2026-09-24-menus-design.md` is the contract; the owner chose each shape from options (D75).
+Take them in order, and look at each on the installed application before it closes.
+
+- [ ] **FRAME1 — one word in the interface.** *workspace* / 工作区 in both catalogues, where the
+  interface said *circle* 26 times and 圈子 24. The tests that read the old words move with them.
+- [ ] **FRAME2 — Settings by domain.** One page, the domains in a list at its left, one shown at a
+  time and reachable by name (design §3). Every domain is cards the page already holds.
+- [ ] **FRAME3 — the menus by domain.** *Daoris · Workspace · Agents · View*, each setup item opening
+  its domain, *Workspace* choosing the scope, and a browser's menus holding only what it may know
+  (design §2).
+- [ ] **FRAME4 — the workspace always named.** The command center and the status bar name it in
+  every state, none included, and the Workspace domain lists each workspace with its repositories
+  (design §4).
+- [ ] **FRAME5 — one word at the other doors.** The sentences the CLI, the driver and the service
+  print, which three artefacts' tests assert verbatim.
 
 ### Open — the arc's leftovers, in the order they are worth doing
 

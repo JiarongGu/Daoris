@@ -86,6 +86,10 @@ applications do with the **window** itself. Five rules recur, and Daoris breaks 
 
 ### a. The app strip — one global row, 36px
 
+> **Amended by D75 (2026-09-24, the owner's choice).** The strip's menus are the setup domains,
+> *Daoris · Workspace · Agents · View*, each item opening its own domain of one Settings page, and the
+> workspace is named in every state, none included. `docs/2026-09-24-menus-design.md` is the contract.
+
 Wordmark (`Daoris` 道衍 — the serif's one appearance, D41 §1), the **Manage ⇄ Work** mode switch, and
 the **workspace scope**, right-aligned with three reserved slots at its right edge. It is present in
 both frames because everything in it is true in both.
