@@ -5015,3 +5015,21 @@ which also showed the window fix's tier line (*by declarations; an intake read i
 published*). *Stop it* was not pressed; it is the existing parked-session move. **Filed: INT4h**, a
 *running* intake still offers a message box whose words reach a one-turn process. Web 733 → 751,
 Playwright 21, verify green.
+
+## MAP3d — the agent producer: a code map kept current by the session prompt (2026-09-24)
+
+- [x] ~~⛔ **MAP3d — the agent producer.** The owner's call first (design §3): canon skill, or the
+  session prompt (recommended).~~
+✅ **done 2026-09-24** — the owner chose the session prompt. A driven quest's session is asked to
+keep the repository's code map current exactly when its tree keeps one. The map is found where the
+reader looks (`CodeMapFile`, whose candidates a test holds to the reader's source). One paragraph
+after take-work-close names the file and asks for the map to move in the same change when a module
+is added, removed, moved or rewired: with the repository's own tool where it has one, otherwise by
+hand in the reader's shape. A repository with no map is not asked to start one, and a conversation
+and an intake are never asked. With no map the prompt is unchanged byte for byte. The map is still
+written by that repository's own session (D32). Rejected: a canon skill (a Daoris feature is not
+doctrine that two repositories learned) and a pack (the same bar). Decision in the map design §3;
+no D-number, following the precedent that the owner's map answers live in the design.
+
+Built in a parallel worktree and cherry-picked. Driver 464 → 470. The family rehearsal reads the
+stub's own transcript both ways, and its two new checks passed on their first run here (256 → 258).

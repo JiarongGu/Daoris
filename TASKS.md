@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**334 CLI tests, 448 service, 447 driver, 107 desktop modules, 684 web unit, 19 Playwright**, 73
-devkit, 56/56 release rehearsal, **256/256 family rehearsal** (it names its own phases when you run
+**383 CLI tests, 451 service, 470 driver, 109 desktop modules, 751 web unit, 21 Playwright**, 73
+devkit, 56/56 release rehearsal, **258/258 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: INT3, MAP3d, INT4h.** 🔴 **The owner authorized real sessions on this machine's
+- **Actionable: INT3, INT4h.** 🔴 **The owner authorized real sessions on this machine's
   Claude Code account, 2026-09-24**: ACP2's driven run, INT4f and the ACP measurement DEPLOY1 needs.
   Not the AGT2c downloads. INT6 waits on the owner's presence; PLUG2, HELP3 and DEPLOY1's decision on
   the owner's answer.
@@ -256,7 +256,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (451),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (464), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (109), `npm run rehearse:family` (256/256), `npm run test:web` (751 vitest + 21 Playwright),
+  (470), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (109), `npm run rehearse:family` (258/258), `npm run test:web` (751 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -270,7 +270,7 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Seventeen items are open** — two of them D67's —
+the archive; its decision is **D53, accepted**). **Sixteen items are open** — one of them D67's —
 and every closed one is
 in `docs/task-archive.md` — this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. Four are **the owner's** to make or spend rather than work anyone can pick up (ACP2,
@@ -282,7 +282,7 @@ design's §5 is realised and what waits is a tool somebody names. The other five
 task's (D65, below) and PLUG7, held.
 
 🔴 **D68's SYNC arc is closed** (2026-09-24, every item in the archive). **D67's buildable items,
-INT4d and INT4g are closed too; next are INT3, MAP3d and INT4h.** Each is one session-sized landing, TDD, gates green, moved to the archive.
+INT4d, INT4g and MAP3d are closed too; next are INT3 and INT4h.** Each is one session-sized landing, TDD, gates green, moved to the archive.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -416,14 +416,12 @@ both are the owner's.**
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
 **D67** holds the owner's answers; `docs/2026-09-23-agents-direction.md` the asks and what was
-checked. AGT1, AGT2a, AGT2b, AGT3, AGT3b, AGT4, AGT6, AGT7, MAP2, MAP1a, MAP1b, MAP3a, MAP3c and
-MAP3e are archived.
+checked. AGT1, AGT2a, AGT2b, AGT3, AGT3b, AGT4, AGT6, AGT7, MAP2, MAP1a, MAP1b, MAP3a, MAP3c,
+MAP3d and MAP3e are archived.
 
 - [ ] **AGT2c — one real vendor-channel pin of each, observed:** that Claude Code stays at its version
   under `DISABLE_UPDATES`, and that a pinned Codex outside its own layout takes no update action (the
   evidence says so; nothing measured it). Spends two real downloads — the owner's call.
-- [ ] **MAP3d — the agent producer.** The owner chose **the session prompt** over a canon skill,
-  2026-09-24 (design §3). In progress.
 
 ### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
 

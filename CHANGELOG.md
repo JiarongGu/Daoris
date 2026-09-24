@@ -443,6 +443,11 @@ The first version: doctrine that installs, is checked, and flows back.
   a pinned copy reported exactly that. Every spawn of a pinned binary now runs with
   `DISABLE_UPDATES=1`: sessions and chats over either door, and the version and sign-in questions.
   A `claude` from `PATH` is left as the machine has it.
+- **A repository that keeps a code map is asked to keep it current** (MAP3d). A driven session in a
+  repository whose tree holds `docs/code-map.json` (or `code-map.json`) is asked, in its prompt, to
+  bring the map up to date in the same change when its work adds, removes, moves or rewires a module:
+  with the repository's own tool where it has one, else by hand in the map's format. A repository
+  that keeps no map is not asked to start one, and the prompt is otherwise unchanged.
 - **`daoris agent pin` installs Claude Code and Codex from their makers' own channels, verified**
   (AGT2b). Claude Code's release manifest must carry Anthropic's signature before its SHA-256 is
   trusted for the binary; a version before 2.1.89, which has none, is refused. Codex's package must
