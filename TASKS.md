@@ -31,7 +31,7 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**431 CLI tests, 454 service, 532 driver, 116 desktop modules, 809 web unit, 21 Playwright**, 73
+**433 CLI tests, 454 service, 551 driver, 116 desktop modules, 810 web unit, 21 Playwright**, 73
 devkit, 66/66 release rehearsal, **268/268 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -241,7 +241,7 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Actionable: PERM3 with PERM4 (being built), then PERM2 and INT4j.** 🔴 **The owner authorized
+- **Being built: PERM2.** 🔴 **The owner authorized
   real sessions on this machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach
   17/17, and INT4f one to reach 16/16. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
@@ -250,11 +250,11 @@ the traps that are not in any contract, because they were found rather than desi
   for a service-side point. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 431 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 433 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (454),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (532), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (116), `npm run rehearse:family` (268/268), `npm run test:web` (809 vitest + 21 Playwright),
+  (551), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (116), `npm run rehearse:family` (268/268), `npm run test:web` (810 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -268,9 +268,9 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Fourteen items are open**, and every closed one is
+the archive; its decision is **D53, accepted**). **Eleven items are open**, and every closed one is
 in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Four are actionable (PERM3, PERM4, PERM2, INT4j), three wait on the owner (TRUST2, AGT2c,
+ships. One is being built (PERM2), three wait on the owner (TRUST2, AGT2c,
 INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
@@ -297,22 +297,14 @@ wire evidence.
 
 ### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 
-PERM1 (phase 1) and DEPLOY1's second half are in the archive, with HELP3 and INT3b folded in.
-Measured: rules Daoris hands over at spawn reach an untrusted session on both doors, and a
+PERM1, PERM3, PERM4 and DEPLOY1's second half are in the archive, with HELP3 and INT3b folded in.
+Measured: rules and hooks Daoris hands over at spawn reach an untrusted session on both doors, and a
 repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidence.md`).
 
-- [ ] **PERM4 — should a driven session be allowed to commit by default?** ACP2's real run showed
-  a session in an untrusted repository taking its quest, making the edit and being refused `git
-  add`/`git commit`, so it declined honestly. 🔴 **The owner said yes, 2026-09-24**: a `commit`
-  default (`cd`, `git add`, `git commit`; push stays denied), switchable off by id. Being built with
-  PERM3.
 - [ ] **PERM2 — an agent updates the rules.** A connector tool, `permission_propose`. Narrowing
   applies at the next tick, widening waits for the person's yes, and every change is recorded with
   who made it (design §6). 🔴 **The owner answered, 2026-09-24**: a widening never applies without
-  the person.
-- [ ] **PERM3 — the tree guard as a hook.** Refuse a write outside the session's tree structurally,
-  with a PreToolUse hook Daoris ships (`permissionDecision: deny`, never an exit code). A rule cannot
-  say "outside" (design §3).
+  the person. Being built.
 - [ ] **TRUST2 — what D73 leaves unmeasured.** Whether Claude Code honours a trust key Daoris wrote
   as its own; whether a trusted parent covers a child, since the hold matches the exact folder; and
   whether the screen should offer a grant before any hold exists (INT6's onboarding). The first
@@ -407,14 +399,9 @@ workspace; an **intake session** (the harness carries the model, D24) reads the 
 the owning repository from the declarations, and publishes quests; a plugin-declared **browser
 server** puts testing in the session's hands; **`then`** chains quests, and the driver is the
 engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT3, INT4a, INT4b,
-INT4c, INT4d, INT4f, INT4g, INT4h and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
+INT4c, INT4d, INT4f, INT4g, INT4h, INT4j and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
-- [ ] **INT4j — a real intake cannot read its ask's files.** INT4f's real run was refused `Read` twice
-  on the ask's kept file, because it lives under the Daoris home, outside the intake's room, and D52
-  refuses every request. The sentence settled it there. An ask whose substance is in its file would
-  be decided blind. A read-only allowance for that ask's own files, carried at spawn like PERM1's
-  rules, is the likely answer. Found by INT4f.
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 

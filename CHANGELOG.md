@@ -504,6 +504,22 @@ The first version: doctrine that installs, is checked, and flows back.
   one more settings scope, so the agent's own order decides and a repository's deny still wins. They
   reach a session even in a folder the agent has never trusted, where a repository's own allow-list
   does not. Set them with `daoris agent rules`, or on Settings → *What agents may do*.
+- **A session can read the files its quest or ask carries** (INT4j, D72). The files are kept under
+  the Daoris home, outside the session's folder, and reading them was refused. Every session Daoris
+  starts on Claude Code is now handed a read of exactly its own quest's or ask's kept folder, and
+  nothing else under the home.
+- **A real intake is proven end to end** (INT4f). A real Claude Code intake read a circle's
+  declarations, chose the repository, and published the quest as the ask, carrying its link and file,
+  in a room nobody had trusted.
+- **A driven session may commit, by default** (PERM4, D72). Daoris's rules now allow `cd`, `git add`
+  and `git commit`, so a session in a folder the agent never trusted can land its work instead of
+  declining. A push is still refused. Switch it off with `daoris agent rules default commit off` or
+  on Settings → *What agents may do*.
+- **A session writes files only inside its own tree** (PERM3, D72). Every Claude Code session Daoris
+  starts is handed a hook that refuses an edit or a write whose path, followed through links, is
+  outside the session's tree, and says why: a change needed elsewhere is a quest. It is a default,
+  `tree-guard`, switched like the others, and proven on a real session on both doors. A shell
+  command's writes are not its call; the agent's own working-directory boundary stands there.
 - **Trusting a folder for the agent is asked, then written** (DEPLOY1, D73). `daoris agent trust
   <agent> <folder> --yes` grants what Claude Code asks the first time it runs in a folder, in the
   agent's own file and nothing else; without `--yes` it only asks. On the desktop, a start held for

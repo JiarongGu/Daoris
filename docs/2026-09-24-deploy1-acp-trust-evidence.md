@@ -52,6 +52,18 @@ take and close its quest without anyone trusting the folder. The driver's hold w
 opposite assumption, so it is now stricter than the facts. DEPLOY1(b)'s trust command still decides
 whether a repository's own rules count, but it no longer has to gate driving.
 
+## A hook handed over at spawn fires untrusted too (PERM3, measured the same day)
+
+The tree guard, a `PreToolUse` hook in the same settings file, in exec form (`node <script>
+<tree>`), was tested in a fresh untrusted git room, asking for a `Write` one folder up:
+
+| Door | How the hook arrived | Write outside the room | Write inside |
+|---|---|---|---|
+| pipe | `--settings <file>` | refused, with the guard's own sentence; no file | written (control) |
+| ACP | `_meta.claudeCode.options.settings` | refused, with the guard's own sentence; no file | — |
+
+No permission request reached the client on either door. The hook decided on its own.
+
 ## What it meant before PERM1
 
 DEPLOY1's open question stands on both doors: should adoption **ask** and write the flag (b), or

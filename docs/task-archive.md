@@ -5244,3 +5244,56 @@ temporal-dead-zone trap `acp2-proof.mjs` already warns about (a `const` declared
 reads it), and it was fixed here. **Two refused requests on the way**, both `Read` of the ask's kept
 file, which lives under the home and outside the room. The sentence settled this ask. One whose
 substance is in its file would be decided blind, which is INT4j.
+
+## PERM3 — the tree guard as a hook (2026-09-24)
+
+- [x] ~~**PERM3 — the tree guard as a hook.** Refuse a write outside the session's tree structurally,
+  with a PreToolUse hook Daoris ships (`permissionDecision: deny`, never an exit code). A rule cannot
+  say "outside" (design §3).~~
+✅ **done 2026-09-24** — D72 as amended, design §3b. `tree-guard` is a default that is a hook rather
+than a rule, handed in the same settings file on both doors. It runs in exec form (`node`, the script
+and the session's own tree as one argument each) on `Edit|Write|MultiEdit|NotebookEdit`. A path is
+resolved through links and compared with the tree's real path, case-folded on Windows. A write
+outside is denied on stdout with exit 0. Inside, the hook says nothing, because an allow would lift
+the harness's asking. An unreadable call, or a tree the hook was not told, is refused. The script is
+carried in the driver's assembly and written under the home, and the person switches it by id from
+either door. It does not cover a shell command's writes, where the working-directory boundary stands,
+and a hook that fails or times out does not block, so it is defence beside that boundary.
+
+**Proven on real sessions at integration**, in a fresh untrusted room: a `Write` one folder up was
+refused with the guard's own sentence on the pipe door (`--settings`) and on the ACP door
+(`session/new`'s settings), with no file made. A write inside was allowed as the control. Recorded in
+the DEPLOY1 evidence document. Built in a parallel worktree, together with PERM4. Driver 532 → 547,
+CLI 431 → 433, web 809 → 810; service 454, family 268/268, deploy 39/39.
+
+## PERM4 — a driven session may commit, by default (2026-09-24)
+
+- [x] ~~**PERM4 — should a driven session be allowed to commit by default?** ACP2's real run showed
+  a session in an untrusted repository taking its quest, making the edit and being refused `git
+  add`/`git commit`, so it declined honestly.~~
+✅ **done 2026-09-24** — the owner said yes. A `commit` default allows `Bash(cd:*)`, `Bash(git
+add:*)` and `Bash(git commit:*)`. `cd` is there because the agent prefixes its commit with one, and
+every part of a compound command must be allowed. `no-push` still refuses the push, since deny beats
+allow in the harness. The person switches it off by id from either door, and it shows on Settings →
+*What agents may do* beside the others. The CLI and driver tables are held together, and a test holds
+that it is handed and that switching it off removes it. Built in the same commit as PERM3.
+
+## INT4j — a session reads its own quest's or ask's kept files (2026-09-24)
+
+- [x] ~~**INT4j — a real intake cannot read its ask's files.** INT4f's real run was refused `Read`
+  twice on the ask's kept file, because it lives under the Daoris home, outside the intake's room, and
+  D52 refuses every request. The sentence settled it there. An ask whose substance is in its file
+  would be decided blind. A read-only allowance for that ask's own files, carried at spawn like
+  PERM1's rules, is the likely answer. Found by INT4f.~~
+✅ **done 2026-09-24** — D72 as amended, design §4. The executor adds one rule to the session's
+composed settings, `Read(//<folder>/**)`, for the folder its own quest's or ask's files are kept in:
+not the home, not another's, and nothing when none is kept here. A driven quest session gets the
+same, since its files are kept the same way (D65 §2). The form is Claude Code's own, read from its
+2.1.281 bundle: `oLn` resolves `//` as absolute, and `rR` normalises a Windows target to `/c/x` before
+`Na` compares it, case-sensitively for an allow. The tree guard judges writes only and is untouched.
+Rejected: `additionalDirectories`, which under `acceptEdits` would also let edits there through
+unasked. Built in a parallel worktree. Driver 547 → 551.
+
+**Proven on a real session at integration**: `tools/int4f-proof.mjs --drive` ran 17/17 with **zero
+refused requests**, where INT4f's run had two. The intake read the ask's kept file without being
+asked and published as the ask again.
