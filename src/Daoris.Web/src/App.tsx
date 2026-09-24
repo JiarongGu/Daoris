@@ -405,7 +405,10 @@ export function App() {
             />
           )
           : (
-            <main className="min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
+            // `relative`: the containing block for what is positioned inside the column. Without it an
+            // `sr-only` label far down a long page took the viewport as its block and stretched the
+            // document, which grew a second scrollbar beside this one (seen on the window, PERM1).
+            <main className="relative min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
               <div className="max-w-6xl">
                 {view === 'overview' && (
                   <OverviewView

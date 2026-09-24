@@ -157,6 +157,19 @@ describe('the views, in a browser', () => {
     expect(within(bar).getByRole('button', { name: 'Settings' })).toBeInTheDocument();
   });
 
+  /**
+   * 🔴 Seen on the window (PERM1): Settings grew a second scrollbar. `sr-only` text is absolutely
+   * positioned, and with no positioned ancestor inside the scroll column its containing block was
+   * the viewport — so a screen-reader label 3,000px down the column stretched the whole document.
+   * jsdom lays nothing out, so this holds the one property that prevents it.
+   */
+  it('makes the scroll column the containing block for what is positioned inside it', async () => {
+    shell();
+    await screen.findByRole('navigation', { name: 'Views' });
+
+    expect(screen.getByRole('main')).toHaveClass('relative');
+  });
+
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
     window.localStorage.setItem('daoris.view', 'sessions');
     shell();
