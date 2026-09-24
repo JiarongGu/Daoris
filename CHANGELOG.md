@@ -497,6 +497,24 @@ The first version: doctrine that installs, is checked, and flows back.
   which door could carry it, and the publish tells the asker so. Every place that offers a receiver
   offers exactly who can be asked. Adding a folder with no manifest from Projects now registers it as
   not adopted.
+- **What an agent Daoris starts may do is yours to set** (PERM1, D72). It uses Claude Code's own
+  permission rules, in three scopes Daoris keeps (this machine, a circle, a repository), in
+  `permissions.json` under the home. Daoris's defaults allow its connector's quest tools and deny a
+  `git push`. Every session Daoris starts on Claude Code is handed them at spawn, on either door, as
+  one more settings scope, so the agent's own order decides and a repository's deny still wins. They
+  reach a session even in a folder the agent has never trusted, where a repository's own allow-list
+  does not. Set them with `daoris agent rules`, or on Settings → *What agents may do*.
+- **Trusting a folder for the agent is asked, then written** (DEPLOY1, D73). `daoris agent trust
+  <agent> <folder> --yes` grants what Claude Code asks the first time it runs in a folder, in the
+  agent's own file and nothing else; without `--yes` it only asks. On the desktop, a start held for
+  trust shows in *What needs you* and in its quest's drawer, and *trust this folder…* grants exactly
+  that hold. Since Daoris's own rules reach an untrusted session, the driver holds for trust only when
+  those rules would not let the session reach its connector.
+- **Claude Code over the protocol door is proven on a real login** (ACP2). A real quest reached a
+  real commit, and the session closed its own quest through its connector, in a folder nobody had
+  trusted. Getting there fixed a defect no gate could see: a real tool call carries its content as a
+  list, and reading it as an object ended the driver's reader at the first tool call, reported as
+  "the stream ended".
 - **An unadopted repository can be opted into driving from Projects** (INT3c). One registered here
   with a root carries the same driving row as an adopter: drive, hold, own tree per session. On a
   machine that drives on a direct agent, the row says a quest there will sit until it drives on a

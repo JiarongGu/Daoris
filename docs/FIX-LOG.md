@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The first real ACP run died at its first tool call, reported as "the stream ended" (2026-09-24)
+
+**Symptom.** ACP2's real driven run, once PERM1 let it past the trust hold, started three real
+sessions. Each said "I'll start by taking the quest", then ended "exited without touching its quest".
+The transcript said *the ACP agent's stream ended before it answered*, and the adapter said *ACP
+connection closed*. The strike limit parked the quest after three.
+
+**Root cause.** `Render` read an update's `content.text` for every update before looking at its
+kind. A real `tool_call` carries `content` as a **list**, and `TryGetProperty` on a list throws. The
+throw escaped `DispatchAsync`, ended `PumpAsync`, and its `finally` faulted every pending request
+with "the stream ended". The driver then tore the session down, which is what the adapter saw as its
+connection closing. The rehearsals' stub only ever sent flat updates.
+
+**Fix.** `Text` reads `content` only when it is an object, and the update's kind is read safely in
+`Render` and `Measure`. The pump now survives any frame it cannot read: it shows the frame and keeps
+reading. The trap: **a `finally` that explains a failure must not be the only thing that sees it.**
+Here it replaced the real exception with a plausible, wrong sentence.
+
+**Verify.** `A_real_tool_call_whose_content_is_a_list_is_rendered_and_the_turn_goes_on` and
+`An_update_this_client_cannot_read_is_shown_and_the_turn_goes_on` failed first. Then `node
+tools/acp2-proof.mjs --drive` ran 17/17 on a real login.
+
 ## A line typed to a running intake landed in the protocol's own stream (2026-09-24)
 
 **Symptom.** INT4g noticed that a running intake still offered a message box. Checked in the driver,

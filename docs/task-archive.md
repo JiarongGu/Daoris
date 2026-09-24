@@ -5137,3 +5137,90 @@ switch a row off, and did not say whether the repository gets a say. D71 takes t
 names it as the owner's to reverse (one check in `resolveSelection`). Built in a parallel worktree and
 cherry-picked. CLI 383 → 403, and the release rehearsal's switch-off phase 5(e) passed on its first
 run here (56 → 66/66). Service 454, family 265/265, verify green.
+
+## PERM1 — what an agent may do: Daoris's rules in scopes, handed over at spawn (2026-09-24)
+
+- [x] ~~**HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json`
+  in Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a
+  guard written **once** — refuse a write outside the session's tree (D51), refuse a push (D37) — runs
+  on all three. ⛔ Where does the guard live?~~ and ~~⛔ **INT3b — a real protocol agent in an
+  unadopted repository cannot use its connector.** An unadopted repository has no allow-list for the
+  connector's tools, so a real Claude Code agent asks before each call, and D52 refuses.~~ Both were
+  folded into PERM1 on the owner's answer (2026-09-24): *"so we should be able to do just like how
+  claude code scopes configured by rules in daoris (which daoris can also use llm to update those too
+  or modified by user)"*.
+✅ **done 2026-09-24 (phase 1)** — **D72**, design in `docs/2026-09-24-permission-scopes-design.md`.
+The rules are Claude Code's own, in three Daoris scopes (machine, circle, repository), kept in one
+file under the home. They are unioned with Daoris's defaults: `connector` allows the connector's quest
+and knowledge tools, and `no-push` denies a push. The union is handed to the harness as its
+command-line tier. On the pipe door that is `--settings` (quests, intakes and conversations); on the
+protocol door it is `session/new`'s `_meta.claudeCode.options.settings`, read from the adapter's
+0.79.0 source. The harness's own precedence decides, so a repository's deny still wins. There are two
+doors: `daoris agent rules …` and Settings → *What agents may do*. It covers Claude Code only; other
+agents are handed nothing. "Refuse a write outside the tree" has no rule form, so the harness's
+working-directory boundary holds it and a path-checking hook is PERM3. An agent updating the rules is
+PERM2, designed and not built.
+
+**Measured on real sessions at integration**, which changed the picture. The command-line tier is
+honoured in an **untrusted** folder on both doors: the probe's third room over ACP, and `claude -p
+--settings` on the pipe (`docs/2026-09-24-deploy1-acp-trust-evidence.md`). So the `connector` default
+alone lets a real agent take and close its quest untrusted, which is what INT3b asked for, and ACP2's
+real run showed it. **Looked at on the window** in both themes: the card was right, and the page had
+grown a second scrollbar. The rules card's `sr-only` labels sat far down a column that was not a
+containing block, so they stretched the document to 3,284px in a 919px window. The column is
+`relative` now (`77c60c8`). Built in a parallel worktree and cherry-picked. CLI 403 → 415, driver
+479 → 515, modules 111 → 114, web 781 → 794, family 265 → 268.
+
+## DEPLOY1 — the second half: trust asked, then written (2026-09-24)
+
+- [x] ~~🔴 **DEPLOY1's second half — should adoption ever ASK for the trust flag?** The detection half
+  shipped 2026-09-22: the driver reads the harness's own record and **holds**. What is left is the
+  owner's: whether adoption should *ask* and write the flag (option b), or whether the pipe door stays
+  documented as needing a human's first visit (option c). 🔴 **Never (d), silently** — that flag *is*
+  the grant. 🔴 **The owner chose (b), 2026-09-24**: Daoris asks per folder, then writes the flag. For
+  managed repositories *"we should follow what claude code does"*.~~
+✅ **done 2026-09-24** — **D73**. Daoris writes the agent's trust flag only on the person's explicit
+act naming the folder. From the terminal that is `daoris agent trust <agent> <folder> [--profile P]
+--yes`; without `--yes` it is only the question and writes nothing. On the screen it is *trust this
+folder…* on a hold the driver is showing: in the quest's drawer, and as a `trust` row in *What needs
+you*, which also carries an intake's room. One flag moves, in the agent's own file: written beside,
+renamed, then read back, and a file this build cannot read is refused. `ClaudeTrust.Grant` and
+`trust.ts` are twins held by the same cases. The bridge grants only a pair the last tick held.
+
+Since PERM1, which the fork cherry-picked on the parent's message, the driver holds for trust only
+where the connector allowance would not reach the session. Trust now decides whether a repository's
+own allow-list counts, not whether it can be driven. **Looked at on the window** in both themes, with
+the connector default switched off on the scratch machine so a hold would show: the row and the
+question it opens, which names the folder, the quest held and the file and flag it would write. *Trust
+this folder* was not pressed, because it writes the account's `.claude.json` and the permission check
+refused an agent that write. Nit: the drawer's title and its card's heading repeat one sentence.
+Unmeasured: whether Claude Code honours a key Daoris wrote, and whether a trusted parent covers a
+child (TRUST2). The fork studied the real `.claude.json`'s key form once, which echoed some folder
+names into its own session output; nothing reached a tracked file. CLI 415 → 431, driver 515 → 530,
+modules 114 → 116, web 795 → 809.
+
+## ACP2 — `claude-code` over the protocol door, proven on a real login (2026-09-24)
+
+- [x] ~~**ACP2 — `claude-code` over ACP.** `@agentclientprotocol/claude-agent-acp` pinned exact as a
+  managed toolchain entry; `acceptEdits` set as the ACP **mode**, not a flag; the permission answerer
+  against Claude Code's real requests; the record naming adapter, harness version and profile as
+  today. Closes with **the real driven run** (DRV4's shape) — the owner supplies the login. **This is
+  D23's "on proof".**~~
+✅ **done 2026-09-24** — `node tools/acp2-proof.mjs --drive`: **17/17**, on the owner's authorization
+for real sessions. A real Claude Code session over the protocol door took a real quest, made the
+change, committed it and closed its quest through its own connector, in a scratch folder nobody had
+trusted. It took seven sessions to get there, and each stop taught something:
+
+1. **Held on trust** (no login spent), until PERM1 carried the connector allowance and D73 made the
+   hold conditional on it.
+2. **Three sessions died at their first tool call.** A real `tool_call` carries `content` as a list,
+   and the reader read it as an object. The throw ended the reader behind the false sentence "the
+   stream ended" (FIX-LOG, `cba1be8`). The strike limit parked the quest after three, as designed.
+3. **Three sessions declined honestly.** They took the quest, made the edit, and were refused `git
+   add`/`git commit`. The repository's own allow-list does not apply untrusted, and the proof's rules
+   were in the wrong home: the driver's home is the folder its `driver.json` sits in. The proof now
+   writes the person's commit rule there.
+
+**What it leaves for the owner: PERM4.** Without a rule allowing it, a real driven session in an
+untrusted repository cannot commit, so it declines. Whether Daoris should ship that as a default is
+the owner's call. Driver 530 → 532.

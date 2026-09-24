@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**403 CLI tests, 454 service, 479 driver, 111 desktop modules, 781 web unit, 21 Playwright**, 73
-devkit, 66/66 release rehearsal, **265/265 family rehearsal** (it names its own phases when you run
+**431 CLI tests, 454 service, 532 driver, 116 desktop modules, 809 web unit, 21 Playwright**, 73
+devkit, 66/66 release rehearsal, **268/268 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -241,21 +241,21 @@ the traps that are not in any contract, because they were found rather than desi
 - **A release stays blocked on REH1** (below), and the new arc moves the target anyway — tagging waits
   until the owner calls it, as ever. **Nothing is pushed or published**; adoption stays the owner's
   call, and the live consumer count is zero.
-- **Being built, as parallel worktrees: DEPLOY1's second half (D73), and PERM1 (D72), which absorbs
-  HELP3 and INT3b.** 🔴 **The owner authorized real sessions on this machine's Claude
-  Code account, 2026-09-24.** ACP2's driven run and INT4f wait only on trust for their scratch
-  folders. The permission check refused an agent's write to the account's `.claude.json`, so the
-  grant is the owner's. **The owner's**: AGT2c (two downloads, not authorized) and INT6 (presence).
+- **Actionable: INT4f (its proof script, then a real run) and PERM3.** 🔴 **The owner authorized real
+  sessions on this machine's Claude Code account, 2026-09-24**; ACP2 used seven of them to reach
+  17/17. **The owner's to decide**: PERM4 (a `commit` default) and PERM2 (may a widening apply
+  unasked). **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
+  agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
   **Seven wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1 on a
   repository naming what it wants; REH1 and TEST1 on a captured recurrence; PLUG7 on a plugin asking
   for a service-side point. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 403 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 431 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (454),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (479), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (111), `npm run rehearse:family` (265/265), `npm run test:web` (781 vitest + 21 Playwright),
+  (532), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (116), `npm run rehearse:family` (268/268), `npm run test:web` (809 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -271,8 +271,8 @@ the traps that are not in any contract, because they were found rather than desi
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
 the archive; its decision is **D53, accepted**). **Fourteen items are open**, and every closed one is
 in `docs/task-archive.md`. This file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. Three are being built (DEPLOY1's second half, and PERM1 with HELP3 and INT3b folded in). Four wait on the owner (ACP2's and INT4f's trust, AGT2c, INT6), and seven on a trigger (see
-*Handover*).
+ships. Two are actionable (INT4f, PERM3), five wait on the owner (PERM4, PERM2, TRUST2, AGT2c,
+INT6), and seven on a trigger (see *Handover*).
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
 (2026-09-24, in the archive). Each landing is one session-sized item, TDD, gates green, moved to the
@@ -286,7 +286,8 @@ that way is a *configuration* of the door. **ACP1 has landed** (2026-09-21, in t
 carries a `Wire`, `AcpSession` speaks the protocol, and the rehearsal drives a quest to done over it
 with no model in the gate — including the permission refusal from both sides. **ACP4 and ACP3 have
 landed too**, so the door now carries four configurations — `acp-stub`, `claude-code-acp`, `codex-acp`
-and `dsh`. **ACP2 is the one left, and it is the owner's**: its closing step spends a real login.
+and `dsh`. **ACP2 is proven too** (2026-09-24, 17/17 on a real login, in the archive), so every ACP
+item is closed.
 
 🔴 **The posture is the adapter's, in that adapter's own words** (ACP3): `acceptEdits` to Claude Code,
 `agent` to Codex, and to dsh not a wire concept at all — `DSH_PERMISSION_MODE=workspace-write` in the
@@ -295,43 +296,28 @@ own, and **null means the wire carries none** rather than a licence to guess a n
 `docs/2026-09-22-acp3-probe-evidence.md` is how each was established, and which are bundle rather than
 wire evidence.
 
-- [ ] **ACP2 — `claude-code` over ACP.** `@agentclientprotocol/claude-agent-acp` pinned exact as a
-  managed toolchain entry (`daoris agent`: install, version, the executable seam
-  `CLAUDE_CODE_EXECUTABLE` → the managed `claude`, the profile seam `CLAUDE_CONFIG_DIR` → the chosen
-  credential profile — both verified keylessly in the evaluation's §1a); `acceptEdits` set as the ACP
-  **mode**, not a flag; the permission answerer against Claude Code's real requests; the record naming
-  adapter, harness version and profile as today. Closes with **the real driven run** (DRV4's shape) —
-  the owner supplies the login. **This is D23's "on proof".** The pipe door stays supported until it
-  passes. **Run 2026-09-24** (`tools/acp2-proof.mjs --drive`, with the login authorized): the keyless
-  half passed 6/6, and the driven run held on its scratch repository's trust, 11/13 with no login
-  spent. It passes once that folder is trusted.
+### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 
-  ⏸ **Driven for real 2026-09-22 to 11 of 13 checks**; the two missing were ACP4 (no MCP server
-  handed over), which has since landed. Re-run 2026-09-23: readiness 6/6, then the drive was held by
-  the trust preflight, because Claude has never trusted the proof's scratch repository. The owner
-  accepts that prompt once, and `--drive` should then pass 13/13.
+PERM1 (phase 1) and DEPLOY1's second half are in the archive, with HELP3 and INT3b folded in.
+Measured: rules Daoris hands over at spawn reach an untrusted session on both doors, and a
+repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidence.md`).
 
-- [ ] **HELP3 — one guard, every harness.** `dsh-hooks-claude-code` runs an existing `hooks.json` in
-  Claude Code's dialect and `dsh-hook-protocol` makes the Codex bridge behave identically, so a guard
-  written **once** — refuse a write outside the session's tree (D51), refuse a push (D37) — runs on
-  all three. Probe 4 found the Windows trap. (HELP1 became CANON8; D59 has it.)
-  ⛔ **Where does the guard live? — measured 2026-09-23, and there is a third door.** The two named
-  on 2026-09-22 were `sync` writing part of a JSON file the adopter also owns (D59's region problem,
-  with no comment markers) and the driver writing into the tree, which **D32 forbids** and ACP4 was
-  built to avoid. Claude Code 2.1.280 on this machine takes `--settings <file-or-json>` — *"load
-  additional settings from"* — so the pipe door can carry a guard **as wiring at spawn**, from a
-  file Daoris owns under `~/.daoris`, and the repository is never written: ACP4's shape exactly. A
-  named credential profile is a configuration home Daoris owns, so a `settings.json` there reaches
-  every session under that profile on both doors, while the person's own home stays untouched.
-  **That is the proposal, not the decision**: it is bundle evidence (`--help`), and one driven
-  session under a profile proves the hook fires — the owner's login. Whatever is written blocks
-  **structurally** (`permissionDecision: deny`), never by exit 2 — PowerShell 5.1 collapses a native
-  exit code (probe 4, run 2).
-  🔴 **The owner's answer, 2026-09-24**: wider than the proposal. *"just like how claude code scopes
-  configured by rules in daoris (which daoris can also use llm to update those too or modified by
-  user)"*. Daoris holds permission rules in scopes (as Claude Code does) and applies them at spawn.
-  The person edits them, and an agent may update them. The guard is default rules in that model.
-  Being designed and built as **PERM1 (D72)**, with INT3b.
+- [ ] ⛔ **PERM4 — should a driven session be allowed to commit by default?** ACP2's real run showed
+  a session in an untrusted repository taking its quest, making the edit and being refused `git
+  add`/`git commit`, so it declined honestly. The repository's own allow-list does not apply there,
+  and Daoris's defaults allow only the connector. D37 already makes local commits automatic and
+  pushes the person's. A `commit` default (`cd`, `git add`, `git commit`, still with no push) would
+  let driven work land untrusted. It widens what an agent may do, so it is the owner's call.
+- [ ] ⛔ **PERM2 — an agent updates the rules.** A connector tool, `permission_propose`. Narrowing
+  applies at the next tick, widening waits for the person's yes, and every change is recorded with
+  who made it (design §6). The owner's question first: may a widening ever apply without the person?
+- [ ] **PERM3 — the tree guard as a hook.** Refuse a write outside the session's tree structurally,
+  with a PreToolUse hook Daoris ships (`permissionDecision: deny`, never an exit code). A rule cannot
+  say "outside" (design §3).
+- [ ] **TRUST2 — what D73 leaves unmeasured.** Whether Claude Code honours a trust key Daoris wrote
+  as its own; whether a trusted parent covers a child, since the hold matches the exact folder; and
+  whether the screen should offer a grant before any hold exists (INT6's onboarding). The first
+  needs one grant, and a grant is the owner's.
 
 ### The working surface — the build order (D51/D52/D55/D56)
 
@@ -402,21 +388,8 @@ nobody installed refuses) and usage at each session's high-water mark (🔴 abse
 **Done and in the archive**: the deployment itself, `tools/desktop-publish.mjs`, the install layout,
 the command center, the scrim, four defects only deploying found — and **DEPLOY2, the gate over the
 deployed artefact** (`npm run rehearse:deploy`, D60).
-`docs/2026-09-22-first-deployment-case-study.md` is the record. **What is left is two decisions, and
-both are the owner's.**
-
-- [ ] 🔴 **DEPLOY1's second half — should adoption ever ASK for the trust flag?** The detection half
-  shipped 2026-09-22 and is in the archive: the driver reads the harness's own record and **holds**
-  rather than spending nine minutes and a real login on a session that could never close its quest.
-  What is left is the owner's: whether adoption should *ask* and write the flag (option b), or
-  whether the pipe door stays documented as needing a human's first visit (option c). 🔴 **Never
-  (d), silently** — that flag *is* the grant. **The ACP door was measured, 2026-09-24**
-  (`docs/2026-09-24-deploy1-acp-trust-evidence.md`, `tools/acp-trust-probe.mjs`): it ignored an
-  untrusted room's allow-list too, so the question stands on both doors. It holds ACP2's proof run
-  and INT4f's intake room until the person grants trust. 🔴 **The owner chose (b), 2026-09-24**:
-  Daoris asks per folder, then writes the flag. For managed repositories *"we should follow what
-  claude code does"*. For Daoris's own development folders, the owner granted trust outright. In
-  progress.
+`docs/2026-09-22-first-deployment-case-study.md` is the record. **DEPLOY1 is closed** (D73, in the
+archive); what it left unmeasured is TRUST2.
 
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
@@ -438,16 +411,11 @@ engine. Nothing new runs a model and nothing new orchestrates. **INT1, INT2, INT
 INT4c, INT4d, INT4g, INT4h and INT5 are in the archive.** INT4 was split in three (D65 as amended): the ask and its floor, the session, the
 screen.
 
-- [ ] ⛔ **INT3b — a real protocol agent in an unadopted repository cannot use its connector.** An
-  unadopted repository has no allow-list for the connector's tools, so a real Claude Code agent asks
-  before each call, and D52 refuses. DEPLOY1's measurement adds that the door ignores an untrusted
-  room's allow-list anyway. Proven only with the stub (D70's last paragraph). The likely answer is to
-  allow the connector's own tools at session creation, a posture D52 permits there. 🔴 **The owner
-  answered, 2026-09-24**: it is part of PERM1 (D72, under HELP3).
 - [ ] **INT4f — a real ask through a real intake harness.** INT4b is proven by a stub. What is
-  unseen: the MCP host publishing as the ask under a real harness's environment, and the room's
-  trust hold for an intake. The login is authorized (2026-09-24). It waits on the room being trusted,
-  which is the owner's grant.
+  unseen: the MCP host publishing as the ask under a real harness's environment. The login is
+  authorized (2026-09-24). The room's trust no longer blocks it: PERM1's `connector` default carries
+  `quest_publish` untrusted, and the hold lifts where it does (D73). What it needs is a proof script
+  in ACP2's shape.
 - [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
   real ask — owner present, adoption playbook.
 
