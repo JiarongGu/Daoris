@@ -235,10 +235,61 @@ test('daoris holds its own doctrine and checks clean', () => {
  * stayed in one file. Had each verb opened its own socket, "the named management modules" would be a
  * list that grows, and a list that grows is one somebody eventually appends to without thinking.
  */
-const NETWORK = /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(|(?:^|[^\w.])require\(['"]https?['"]\)|from\s+['"]node:https?['"]/;
+/** A module named by any import spelling: `from`, a bare `import`, a dynamic `import(`, a `require(`. */
+const importing = (modules: string) => new RegExp(
+  String.raw`(?:\bfrom|\bimport\s*\(?|\brequire\s*\()\s*['"](?:node:)?(?:${modules})['"]`);
+
+/**
+ * Widened by REV3: it held only `node:http(s)` and `require('http(s)')`, so a bare `'https'`, `net`,
+ * `tls`, `http2`, `undici` or a dynamic `import()` walked straight past it.
+ */
+const NETWORK = new RegExp([
+  String.raw`\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(`,
+  importing('https?|http2|net|tls|dgram|undici').source,
+].join('|'));
+
+/** The spawning primitive, in any spelling — held to one module the way the network is. */
+const SPAWNING = importing('child_process');
 
 /** The one module permitted a network primitive. Every management command speaks through it. */
 const SERVICE_CLIENT = 'service.ts';
+
+/**
+ * A check you have not watched fail proves nothing — and a pattern is only as good as the spellings it
+ * was shown. These are the realistic regressions, each of which the previous patterns missed.
+ */
+test('the guards recognise every spelling of the primitives they hold', () => {
+  for (const line of [
+    "import { request } from 'https';", "import { request } from \"node:https\";",
+    "import net from 'node:net';", "import { connect } from 'tls';", "import * as h2 from 'node:http2';",
+    "const { request } = await import('node:https');", "import { fetch as f } from 'undici';",
+    "const h = require('http');", "await fetch(url);",
+  ]) assert.ok(NETWORK.test(line), `NETWORK misses: ${line}`);
+
+  for (const line of [
+    "import { spawnSync } from 'node:child_process';", "import { execSync } from \"child_process\";",
+    "const cp = await import('node:child_process');", "const { spawn } = require('child_process');",
+  ]) assert.ok(SPAWNING.test(line), `SPAWNING misses: ${line}`);
+
+  // And it is not a pattern that matches everything: the words alone are not the primitive.
+  for (const line of ['const releaseFetcher = () => 1;', '// a network is not a socket', "import { x } from './nettle.ts';"]) {
+    assert.equal(NETWORK.test(line), false, `NETWORK matches innocent: ${line}`);
+  }
+});
+
+/** The one module permitted to spawn. Doctrine commands must not reach it either (below). */
+const SPAWNS = 'toolchain.ts';
+
+test('only the toolchain may spawn a process', () => {
+  for (const dir of ['src', 'bin']) {
+    for (const file of listFiles(join(cliRoot, dir), (n) => n.endsWith('.ts') || n.endsWith('.mjs'))) {
+      if (file === SPAWNS) continue;
+      assert.equal(
+        SPAWNING.test(readText(join(cliRoot, dir, file))), false,
+        `${dir}/${file} imports a spawning primitive — only ${SPAWNS} may`);
+    }
+  }
+});
 
 test('only the service client may touch the network', () => {
   for (const dir of ['src', 'bin']) {
@@ -283,8 +334,6 @@ test('nothing a doctrine command reaches can import the service client', () => {
  * reasoning that makes spawning fine (opt-in, a person asked for it, never run by a gate) is exactly
  * the reasoning that stops holding the moment `check` can reach it.
  */
-const SPAWNS = 'toolchain.ts';
-
 test('nothing a doctrine command reaches can spawn a harness', () => {
   for (const entry of DOCTRINE) {
     const seen = reachableFrom(entry);
@@ -303,9 +352,11 @@ function reachableFrom(entry: string): Set<string> {
     seen.add(module);
     const file = join(cliRoot, 'src', module);
     if (!existsSync(file)) return;
-    // Both `from './x.ts'` and a bare `import './x.ts'` — the second was missed at first, and a
-    // side-effect import is exactly how a module acquires a dependency nobody meant to add.
-    for (const match of readText(file).matchAll(/(?:from|import)\s+'\.\/([\w.-]+\.ts)'/g)) walk(match[1]!);
+    // `from './x.ts'`, a bare `import './x.ts'` and a dynamic `import('./x.ts')`, in either quote — the
+    // side-effect import was missed at first, and the dynamic one and the double quote until REV3.
+    for (const match of readText(file).matchAll(/(?:\bfrom|\bimport)\s*\(?\s*['"]\.\/([\w.-]+\.ts)['"]/g)) {
+      walk(match[1]!);
+    }
   };
 
   walk(entry);
