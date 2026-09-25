@@ -33,24 +33,60 @@ describe('starting a session', () => {
     return onStart;
   }
 
-  const accountNames = () =>
-    [...(screen.getByLabelText('account') as HTMLSelectElement).options].map((option) => option.value).filter(Boolean);
+  // The platform's own select (UX5 U5): a combobox that opens a listbox, never the OS's control.
+  // Opened from the keyboard, as AiJobs' tests do: in jsdom a pointer-opened select opened in the
+  // first test of the file and in no test after it.
+  const open = async (field: string) => {
+    screen.getByRole('combobox', { name: field }).focus();
+    await userEvent.keyboard('{Enter}');
+    return screen.findAllByRole('option');
+  };
+  const choose = async (field: string, option: string) => {
+    await open(field);
+    await userEvent.click(await screen.findByRole('option', { name: option }));
+  };
+  const accountNames = async () => {
+    const options = await open('account');
+    const names = options.map((option) => option.textContent);
+    await userEvent.keyboard('{Escape}');
+    return names;
+  };
 
   it('offers the accounts of the harness chosen, and the default harness\'s when none is', async () => {
     show();
-    expect(accountNames()).toEqual(['personal']);
+    expect(await accountNames()).toEqual(['whatever this machine already decided', 'personal']);
 
-    await userEvent.selectOptions(screen.getByLabelText('agent tool'), 'codex');
-    expect(accountNames()).toEqual(['team']);
+    await choose('agent tool', 'codex');
+    expect(await accountNames()).toEqual(['whatever this machine already decided', 'team@example.com']);
   });
 
   it('forgets an account chosen for another harness when the harness changes', async () => {
     const onStart = show();
-    await userEvent.selectOptions(screen.getByLabelText('account'), 'personal');
-    await userEvent.selectOptions(screen.getByLabelText('agent tool'), 'codex');
+    await choose('account', 'personal');
+    await choose('agent tool', 'codex');
 
     await userEvent.click(screen.getByRole('button', { name: /start/i }));
 
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ adapter: 'codex', profile: undefined }));
+  });
+
+  /**
+   * UX5 U5: three native selects and a native checkbox sat beside `ui.tsx`'s own, so this one form
+   * wore the OS's controls in a palette that draws its own (platform language §4). The default
+   * choices mean "leave it to the driver", and they stay choosable after another was chosen.
+   */
+  it('wears the platform\'s own controls, and a default can be chosen back', async () => {
+    const onStart = show();
+    // Radix keeps a hidden native select for the form, which nobody sees; a VISIBLE one is the defect.
+    expect(document.querySelector('select:not([aria-hidden="true"]), input[type="checkbox"]:not([aria-hidden="true"])')).toBeNull();
+
+    await choose('agent tool', 'codex');
+    await choose('agent tool', 'this machine\'s default');
+    await userEvent.click(screen.getByRole('checkbox', { name: /working tree of its own/ }));
+    await userEvent.click(screen.getByRole('button', { name: /start/i }));
+
+    expect(onStart).toHaveBeenCalledWith({
+      repository: 'engine', adapter: undefined, profile: undefined, ownTree: true,
+    });
   });
 });

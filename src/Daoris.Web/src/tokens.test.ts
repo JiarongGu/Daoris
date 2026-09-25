@@ -212,3 +212,32 @@ describe('the page body', () => {
     expect(body).toMatch(/font-synthesis-style:\s*none/);
   });
 });
+
+/**
+ * 🔴 **A choice is the platform's own control, never the OS's** (UX5 U5). The start form's three
+ * selects and checkbox, and a review file's *viewed*, were native controls beside `ui.tsx`'s own, so
+ * they wore the OS's look and its accent in a palette that draws its own (platform language §4).
+ * `SelectField`, `CheckField` and `Segmented` are the controls; only `ui.tsx` may build one.
+ */
+const NATIVE_CHOICE = /<select\b|type=["']checkbox["']|type=["']radio["']/g;
+
+export function nativeChoices(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => path !== './ui.tsx')
+    .flatMap(([path, source]) =>
+      (source.match(NATIVE_CHOICE) ?? []).map((hit) => `${path} builds a native control: ${hit}`));
+}
+
+describe('the form controls', () => {
+  it('catches a native select, checkbox or radio, and leaves ui.tsx its own', () => {
+    expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);
+    expect(nativeChoices([['./work/Row.tsx', '<input type="checkbox" checked />']])).toHaveLength(1);
+    expect(nativeChoices([['./work/Row.tsx', "<input type='radio' />"]])).toHaveLength(1);
+    expect(nativeChoices([['./ui.tsx', '<select value={x}>']])).toEqual([]);
+    expect(nativeChoices([['./work/Row.tsx', '<SelectField value={x} />']])).toEqual([]);
+  });
+
+  it('holds: every choice in the platform is the platform\'s own control', () => {
+    expect(nativeChoices(components)).toEqual([]);
+  });
+});

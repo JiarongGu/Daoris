@@ -78,6 +78,8 @@ describe('DiffFileRow', () => {
     const { onViewed } = show(FILE);
     await userEvent.click(screen.getByRole('checkbox', { name: 'viewed' }));
     expect(onViewed).toHaveBeenCalledWith(true);
+    // The platform's own box, never the OS's (UX5 U5).
+    expect(document.querySelector('input[type="checkbox"]:not([aria-hidden="true"])')).toBeNull();
   });
 
   /** An empty patch line must still occupy a line, or the diff silently loses its blank context. */

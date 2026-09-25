@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { DiffFile } from './diff';
-import { Icon, Inline } from '../ui';
+import { CheckField, Icon, Inline } from '../ui';
 import { cn } from '../lib/cn';
 import { type DiffLayout, PatchView } from './PatchView';
 
@@ -82,15 +82,13 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
             )}
         </span>
 
-        <label className="flex shrink-0 cursor-pointer items-center gap-1 text-meta text-ink-faint">
-          <input
-            type="checkbox"
-            checked={viewed}
-            onChange={(event) => onViewed(event.target.checked)}
-            className="accent-accent"
-          />
-          {t('work.review.viewed')}
-        </label>
+        {/* The platform's own box (UX5 U5): a native one wore the OS's accent. */}
+        <CheckField
+          checked={viewed}
+          onChange={onViewed}
+          label={t('work.review.viewed')}
+          className="shrink-0 gap-1.5 text-meta text-ink-faint"
+        />
       </div>
 
       {open && (

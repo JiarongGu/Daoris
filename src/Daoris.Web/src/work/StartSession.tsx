@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Tip } from '../ui';
+import { Button, CheckField, SelectField, Tip } from '../ui';
+
+/**
+ * "Leave it to the driver", as a select's value: the platform's select reserves the empty value for
+ * "nothing chosen", and a default must stay choosable after another choice was made.
+ */
+const DEFAULT = '*';
 
 export type StartChoice = {
   repository: string;
@@ -55,8 +61,7 @@ export function StartSession({ repositories, harnesses, defaultHarness = '', acc
     return <p className="m-0 px-3 py-2 text-small text-ink-faint">{t('work.start.none')}</p>;
   }
 
-  const chosen = repository || repositories[0];
-  const field = 'rounded-control border border-line-strong bg-raised px-2 py-1 text-small text-ink';
+  const chosen = repository || repositories[0]!;
 
   return (
     <form
@@ -71,64 +76,69 @@ export function StartSession({ repositories, harnesses, defaultHarness = '', acc
         });
       }}
     >
+      {/* The platform's own controls (UX5 U5): a native select and checkbox wore the OS's look and
+          its accent in a palette that draws its own (platform language §4). */}
       <label className="grid gap-1 text-meta text-ink-faint">
         {t('work.start.repository')}
-        <select value={chosen} onChange={(event) => setRepository(event.target.value)} className={field}>
-          {repositories.map((name) => <option key={name} value={name}>{name}</option>)}
-        </select>
+        <SelectField
+          value={chosen}
+          onChange={setRepository}
+          ariaLabel={t('work.start.repository')}
+          options={repositories.map((name) => ({ value: name, label: name }))}
+        />
       </label>
 
       {harnesses.length > 1 && (
         <label className="grid gap-1 text-meta text-ink-faint">
           {t('work.start.harness')}
-          <select
-            value={adapter}
-            onChange={(event) => {
-              setAdapter(event.target.value);
+          <SelectField
+            value={adapter || DEFAULT}
+            onChange={(next) => {
+              setAdapter(next === DEFAULT ? '' : next);
               // An account is a harness's own: one chosen for another harness means nothing here.
               setProfile('');
             }}
-            className={field}
-          >
-            <option value="">{t('work.start.harnessDefault')}</option>
-            {harnesses.map((name) => <option key={name} value={name}>{name}</option>)}
-          </select>
+            ariaLabel={t('work.start.harness')}
+            options={[
+              { value: DEFAULT, label: t('work.start.harnessDefault') },
+              ...harnesses.map((name) => ({ value: name, label: name })),
+            ]}
+          />
         </label>
       )}
 
       {profiles.length > 0 && (
         <label className="grid gap-1 text-meta text-ink-faint">
           {t('work.start.profile')}
-          <select value={profile} onChange={(event) => setProfile(event.target.value)} className={field}>
-            <option value="">{t('work.start.profileDefault')}</option>
-            {profiles.map((choice) => (
+          <SelectField
+            value={profile || DEFAULT}
+            onChange={(next) => setProfile(next === DEFAULT ? '' : next)}
+            ariaLabel={t('work.start.profile')}
+            options={[
+              { value: DEFAULT, label: t('work.start.profileDefault') },
               // A logged-out profile is offered and labelled rather than hidden: the spawn refuses
               // with the sentence that names the login action, which teaches more than a missing row.
               // Named by who is signed in, where the tool says (D66 §3) — the same name the
               // settings page gives it; the value is still the directory's, which the spawn takes.
-              <option key={choice.name} value={choice.name}>
-                {choice.login === 'out'
+              ...profiles.map((choice) => ({
+                value: choice.name,
+                label: choice.login === 'out'
                   ? t('harness.profileOut', { name: choice.account ?? choice.name })
-                  : choice.account ?? choice.name}
-              </option>
-            ))}
-          </select>
+                  : choice.account ?? choice.name,
+              })),
+            ]}
+          />
         </label>
       )}
 
       <Tip content={t('work.start.ownTreeTip')}>
-        <label className="flex items-center gap-1.5 text-small text-ink-soft">
-          <input
-            type="checkbox"
-            checked={ownTree}
-            onChange={(event) => setOwnTree(event.target.checked)}
-            className="accent-accent"
-          />
-          {t('work.start.ownTree')}
-        </label>
+        <span className="w-fit">
+          <CheckField checked={ownTree} onChange={setOwnTree} label={t('work.start.ownTree')} />
+        </span>
       </Tip>
 
-      <Button variant="primary" type="submit" disabled={pending}>{t('work.start.go')}</Button>
+      {/* Sized to its word (platform language §4): in the form's grid it ran the drawer's width. */}
+      <Button variant="primary" type="submit" disabled={pending} className="justify-self-start">{t('work.start.go')}</Button>
     </form>
   );
 }

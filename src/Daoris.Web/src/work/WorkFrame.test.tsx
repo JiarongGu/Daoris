@@ -424,10 +424,12 @@ describe('starting and holding a conversation', () => {
 
     show(null);
     await openStart();
-    await screen.findByLabelText('account');
-
-    await userEvent.selectOptions(screen.getByLabelText('account'), 'work');
-    await userEvent.click(screen.getByLabelText('in a working tree of its own'));
+    // The platform's own select (UX5 U5), opened from the keyboard as StartSession's tests explain.
+    (await screen.findByRole('combobox', { name: 'account' })).focus();
+    await userEvent.keyboard('{Enter}');
+    // Signed out, so labelled so (the spawn's refusal then names the login action).
+    await userEvent.click(await screen.findByRole('option', { name: /^work/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'in a working tree of its own' }));
     await userEvent.click(screen.getByRole('button', { name: 'start' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
