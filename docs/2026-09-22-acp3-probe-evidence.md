@@ -1,5 +1,8 @@
 # ACP3 — what the three harnesses actually expose (evidence note)
 
+**Carried by:** D53 and ACP3 (in the archive). Each posture it established is the adapter's, in that
+harness's own words; a record, not a contract.
+
 > Written 2026-09-22, building **ACP3** (`docs/DECISIONS.md` **D53**; the build order is
 > `docs/2026-09-21-dsh-evaluation.md` §5). **Driven, not read about**, and **keylessly**: every claim
 > below was observed against an installed artefact at an exact version, with **no model call, no

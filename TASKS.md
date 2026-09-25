@@ -21,7 +21,7 @@ rather than re-running it, REV2 and REV3.
 **475 CLI tests, 497 service, 681 driver, 129 desktop modules, 972 web unit, 21 Playwright**, 80
 devkit, 66/66 release rehearsal, **279/279 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
-core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
+core is **22,492 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
 principle from detail (D28).
 
@@ -386,7 +386,7 @@ archive); what it left unmeasured is TRUST2.
 
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
-**D67** holds the owner's answers; `docs/2026-09-23-agents-direction.md` the asks and what was
+**D67** holds the owner's answers; `docs/archive/2026-09-23-agents-direction.md` the asks and what was
 checked. AGT1, AGT2a, AGT2b, AGT3, AGT3b, AGT4, AGT6, AGT7, MAP2, MAP1a, MAP1b, MAP3a, MAP3c,
 MAP3d and MAP3e are archived.
 

@@ -174,7 +174,8 @@ still carries the guard.
 
 Both doors write the same file, and a hand edit keeps working because **the file is the contract**:
 the CLI's `permissions.ts` and the driver's `PermissionRules` (`Permissions.cs`) read it by the same rules, with a
-test on each side and a test that holds the two defaults tables together.
+test on each side and a test that holds the two defaults tables together (the twin arrangement,
+`.claude/knowledge/twins.md`).
 
 ## 6. An agent updating the rules — PERM2, as built (D74)
 

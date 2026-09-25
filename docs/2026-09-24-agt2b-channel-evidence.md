@@ -1,7 +1,10 @@
 # The vendors' own channels — evidence for AGT2b (2026-09-24)
 
+**Carried by:** D67 and AGT2b (in the archive): the pinned installs `daoris agent pin` makes. What it
+could not confirm is AGT2c, an open row in `TASKS.md`. A record, not a contract.
+
 AGT2b installs Claude Code and Codex at an exact pinned version from each vendor's own channel, and
-verifies what it fetched, instead of going through npm (`docs/2026-09-23-agents-direction.md` §2–§3).
+verifies what it fetched, instead of going through npm (`docs/archive/2026-09-23-agents-direction.md` §2–§3).
 This records what was checked on 2026-09-24, read-only, from the vendors' documents, install scripts
 and release metadata. Nothing was downloaded to run, only HEAD requests against binaries. **Every
 fact here is a claim about somebody else's program**, so each carries its source, and what could not

@@ -1,5 +1,8 @@
 # What a message can carry, checked against both doors (CONV4c)
 
+**Carried by:** D76 and CONV4c (in the archive), and it is CONV4d's premise (open): both doors expand
+`@path` themselves. A record, not a contract.
+
 **Date:** 2026-09-25 · **Binaries:** Claude Code 2.1.281 on `PATH`; `claude-code-acp` 0.79.0 (the
 dsh probe's install under `_fixtures/dsh/npm`) · **Cost:** two real sessions of four and six
 one-word turns, under the owner's authorisation of 2026-09-24.

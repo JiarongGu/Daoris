@@ -1610,7 +1610,7 @@ circle because it holds one store.
 ## REV1 — the post-redesign review sweep: fix, dedup, and re-document the D45–D47 arc (2026-09-20)
 
 > Five parallel audits over the arc's ~94 files; the consolidated findings live in
-> `docs/2026-09-20-post-redesign-review.md`, grouped by disposition, each checked off as its commit
+> `docs/archive/2026-09-20-post-redesign-review.md`, grouped by disposition, each checked off as its commit
 > lands. Headline: the remote sync could wipe a teammate's shared knowledge (mirror-down rows feed back
 > up empty), shared mode scans the server's disk through `EnsureIndexedAsync`, `postpack --clean` was
 > never implemented (the FIX-LOG's stale-`dist/` trap is still manufacturable), and `CLAUDE.md` names a
@@ -2483,7 +2483,7 @@ the window holds `Daoris.Desktop.Modules.dll` open. `kill`, then `build`, then `
 > dont see good design for the desktop app itself"*). **The next thing to do, and it comes before
 > SURF5b, SURF6 and SURF7** — SURF7 is a piece of the answer, not the whole of it. Every region
 > SURF4–5 built works; what is missing is the *application* they sit in. The brief is
-> **`docs/2026-09-21-desktop-design-brief.md`** … **Take it as a direction and confirm the reading
+> **`docs/archive/2026-09-21-desktop-design-brief.md`** … **Take it as a direction and confirm the reading
 > with the owner before building**, the way D53 and ARCH1 were. Deliverable: a reference pass on the
 > *window*, a decision recorded before the build, and a real-window loop.
 

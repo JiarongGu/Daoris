@@ -235,12 +235,12 @@ choices the building settled:
   open and nobody's.
 
 **What the CLI and the driver share is a FILE and a LAYOUT, not code** — `~/.daoris/harnesses.json`
-plus `harnesses/<harness>/<profile>/` — the same twin arrangement the remotes map established (WSP3),
-with three rules asserted in both test tables: a profile is a directory; resolution is chosen → the
+plus `harnesses/<harness>/<profile>/` — the same twin arrangement the remotes map established (WSP3,
+`.claude/knowledge/twins.md`), with three rules asserted in both test tables: a profile is a directory; resolution is chosen → the
 workspace's → the machine's → none; and none means the harness's own home. Two consequences for
 whoever extends this: the CLI's managed set (`claude-code`, `codex`) is deliberately **not** the
 driver's adapter set — managing a tool and spawning sessions on it are different questions, and
-`codex` is manageable here while no adapter spawns it — and the CLI's `driver` verbs edit a file the
+`codex` is managed under that name while its sessions ride the `codex-acp` adapter (ACP3) — and the CLI's `driver` verbs edit a file the
 C# side owns, so **every edit preserves the fields it has no verb for**; an editor that rewrote
 `driver.json` from its own idea of the shape would silently delete the command the stub adapter runs.
 

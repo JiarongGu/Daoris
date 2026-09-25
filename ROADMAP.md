@@ -78,7 +78,7 @@ owner's to run.
 ## The next direction: agents, and the map (D67, set 2026-09-23)
 
 **Daoris's loop is the higher one**; an agent keeps its own and reaches Daoris over MCP; Daoris may
-keep an API key; the wiring is a **map**. The asks are in `docs/2026-09-23-agents-direction.md`.
+keep an API key; the wiring is a **map**. The asks are in `docs/archive/2026-09-23-agents-direction.md`.
 
 | Step | What | State |
 |---|---|---|

@@ -1,6 +1,6 @@
 # The dsh evaluation — evidence note (DSH1)
 
-> Written 2026-09-21, executing `docs/2026-09-21-dsh-direction.md`. **Driven, not read about**: every
+> Written 2026-09-21, executing `docs/archive/2026-09-21-dsh-direction.md`. **Driven, not read about**: every
 > probe below was run against an installed `dsh` over a scratch repository, and what is quoted is what
 > was observed. Where a probe could not be run to its pass shape, this note says so and why — a
 > half-evaluated option is recorded as exactly that. The decision this feeds is **D53** in

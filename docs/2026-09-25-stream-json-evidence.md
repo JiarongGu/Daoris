@@ -1,5 +1,8 @@
 # Claude Code's structured output, checked against the binary (CONV3, D76)
 
+**Carried by:** D76 and CONV3a (in the archive): the native door's `stream-json` mapping. A record,
+not a contract.
+
 **Date:** 2026-09-25 · **Binary:** Claude Code 2.1.281, the machine's own on `PATH` · **Cost:** one
 real two-turn session, a word each, under the owner's authorisation of 2026-09-24.
 

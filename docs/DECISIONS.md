@@ -1910,7 +1910,7 @@ not anything about IDEs.
 
 **Decision.** Set by the owner, 2026-09-21, after SURF5a landed: *"I still dont see good design for
 the desktop app itself"*, and confirmed the same day against three stated forks. The brief is
-`docs/2026-09-21-desktop-design-brief.md`; the contract is
+`docs/archive/2026-09-21-desktop-design-brief.md`; the contract is
 `docs/2026-09-21-desktop-frame-design.md`; this records what it settles.
 
 **The diagnosis is an allocation, and it was measured rather than eyeballed.** `npm run desktop --
@@ -2549,7 +2549,7 @@ browser still learns nothing about this machine — Settings in a browser is app
 ## D67 — Daoris keeps the key and the higher loop; an agent keeps its own loop; wiring is a map (2026-09-23)
 
 **Decision.** The owner answered the three questions the agents direction left open
-(`docs/2026-09-23-agents-direction.md`), in their own words: *"daoris can keep the key"*; *"daoris
+(`docs/archive/2026-09-23-agents-direction.md`), in their own words: *"daoris can keep the key"*; *"daoris
 already should have a loop but not more like higher level, and agent itself should remine its own and
 access other things from daoris via mcp"*; and *"wiring means few things, how daoris agent loop chain
 workflow, and how repos wired in the workspace (so a topo map might need to be introduced and this
