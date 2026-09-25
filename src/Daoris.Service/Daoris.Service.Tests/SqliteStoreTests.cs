@@ -113,6 +113,39 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// A repository filter compares names the way every other door does, case-insensitively (REV3
+    /// service F14). The parsed set was `OrdinalIgnoreCase`, and the SQL beneath it compared BINARY, so
+    /// `repositories=Alpha` found nothing here and everything in the in-memory search.
+    /// </summary>
+    [Fact]
+    public async Task The_repository_filter_ignores_case_like_every_other_door()
+    {
+        await _store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "Storage", "sqlite affinity")]);
+
+        var hits = await new SqliteKnowledgeSearch(_store).SearchAsync(new KnowledgeQuery("sqlite")
+        {
+            Repositories = KnowledgeQuery.ParseSet("Alpha"),
+        });
+
+        Assert.Single(hits);
+    }
+
+    /// <summary>
+    /// A kind nobody has is refused, naming what there is (REV3 service F14). It used to parse to no
+    /// kinds, and no kinds means every kind — a typo widened the search it meant to narrow.
+    /// </summary>
+    [Fact]
+    public void A_mistyped_kind_is_refused_rather_than_widening_the_search()
+    {
+        var refusal = Assert.Throws<ArgumentException>(() => KnowledgeQuery.ParseKinds("decison"));
+        Assert.Contains("decison", refusal.Message);
+        Assert.Contains("decision", refusal.Message, StringComparison.OrdinalIgnoreCase);
+
+        Assert.Equal(new HashSet<EntryKind> { EntryKind.TaskOutcome, EntryKind.Fix }, KnowledgeQuery.ParseKinds("task, FIX"));
+        Assert.Null(KnowledgeQuery.ParseKinds(" "));
+    }
+
+    /// <summary>
     /// 🔴 <b>Found on the deployed application, on the first real index.</b> `记录` and `会话` each
     /// returned forty-one hits in the same order with the rules TEMPLATE first and the term in no
     /// excerpt — every Chinese query was returning the whole corpus. The tokeniser's floor drops

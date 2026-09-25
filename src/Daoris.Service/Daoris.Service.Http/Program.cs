@@ -259,6 +259,7 @@ app.MapGet("/api/search", async (
     string? workspace, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(q)) return Results.BadRequest(new ErrorResponse("q is required"));
+    if (KindsOrRefusal(kinds) is { Refusal: { } refused }) return Results.BadRequest(new ErrorResponse(refused));
 
     var hits = await s.Service.SearchAsync(new KnowledgeQuery(q)
     {
@@ -293,13 +294,15 @@ app.MapGet("/api/convergence", async (
     ComposedService s, double? minimumSimilarity, string? kinds, int? limit, string? workspace,
     CancellationToken ct) =>
 {
+    if (KindsOrRefusal(kinds) is { Refusal: { } refused }) return Results.BadRequest(new ErrorResponse(refused));
+
     var found = await s.Service.FindConvergenceAsync(
         new ConvergenceOptions(
             Math.Clamp(minimumSimilarity ?? 0.82, 0, 1), KnowledgeQuery.ParseKinds(kinds),
             Math.Clamp(limit ?? 25, 1, 100), workspace),
         ct);
 
-    return found.Select(c => new ConvergenceResponse(
+    return Results.Ok(found.Select(c => new ConvergenceResponse(
         c.Method.ToString(),
         c.Similarity,
         c.Repositories,
@@ -307,7 +310,7 @@ app.MapGet("/api/convergence", async (
             e.Id, e.Repository, e.Kind.ToString(), e.Title, e.RelativePath)).ToList(),
         // The command, not an edit box (D31). The UI shows where the change belongs; the person makes it
         // in the repository that owns the file, where review happens.
-        Suggestion: SuggestionFor(c)));
+        Suggestion: SuggestionFor(c))));
 });
 
 // What each repository OWES, as opposed to what it knows. Held by the service rather than written
@@ -1094,6 +1097,19 @@ static IResult FeedAnswer(FeedOutcome outcome) =>
 // A convergence is a prompt to look, so the suggestion says what to read and where the change goes —
 // never "apply this". Doctrine that appeared without anyone choosing it is the failure this project
 // exists to prevent (D21).
+// A kind nobody has is the caller's mistake, said back as a 400 rather than widened to every kind (REV3).
+static (IReadOnlySet<EntryKind>? Kinds, string? Refusal) KindsOrRefusal(string? kinds)
+{
+    try
+    {
+        return (KnowledgeQuery.ParseKinds(kinds), null);
+    }
+    catch (ArgumentException refused)
+    {
+        return (null, refused.Message);
+    }
+}
+
 static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method switch
 {
     ConvergenceMethod.Identical =>

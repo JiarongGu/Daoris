@@ -56,10 +56,18 @@ public sealed record KnowledgeQuery(string Text = "")
         {
             // "task" is friendlier than "taskoutcome", and a model will reach for the short form.
             var normalized = name.Equals("task", StringComparison.OrdinalIgnoreCase) ? "TaskOutcome" : name;
-            if (Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind)) kinds.Add(kind);
+            // 🔴 A name that is no kind is refused, never skipped (REV3): skipping left no kinds, and no
+            // kinds means every kind — so a typo widened the search it was meant to narrow.
+            if (!Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind) || int.TryParse(normalized, out _))
+            {
+                throw new ArgumentException(
+                    $"'{name}' is not a kind of knowledge — one of: rule, knowledge, skill, decision, fix, task.");
+            }
+
+            kinds.Add(kind);
         }
 
-        return kinds.Count > 0 ? kinds : null;
+        return kinds;
     }
 
     /// <summary>A caller's comma-separated list, case-insensitive; null when it names nothing.</summary>

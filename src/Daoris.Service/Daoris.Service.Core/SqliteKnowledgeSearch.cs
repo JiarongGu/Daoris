@@ -133,7 +133,8 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
         if (query.Repositories is { Count: > 0 } repositories)
         {
             var names = repositories.Select((r, i) => (Name: $"$repo{i}", Value: (object)r)).ToList();
-            filter.Append($" AND e.repository IN ({string.Join(", ", names.Select(n => n.Name))})");
+            // NOCASE, as the parsed set is and as every other door compares a repository name (REV3).
+            filter.Append($" AND e.repository COLLATE NOCASE IN ({string.Join(", ", names.Select(n => n.Name))})");
             parameters.AddRange(names);
         }
 

@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A mistyped kind widened a search, and a repository filter depended on case (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service.
+- `kinds=decison` (or any name that is no kind) parsed to no kinds. No kinds means every kind, so
+  the typo widened the search it meant to narrow, on search and convergence, over HTTP and MCP.
+- `repositories=Alpha` found nothing in the SQLite search, and found `alpha` in the in-memory search.
+  The parsed set compares `OrdinalIgnoreCase`, and the SQL compared `BINARY`.
+
+**Root cause.** `ParseKinds` skipped what it could not parse. The repository filter was the one
+comparison in the query without `COLLATE NOCASE`; the workspace filter beside it has it.
+
+**Fix.** An unknown kind is refused naming the ones there are. The HTTP doors answer 400 with the
+sentence, and the MCP tools return it. The repository filter compares `NOCASE`.
+
+**Verify.** `A_mistyped_kind_is_refused_rather_than_widening_the_search` and
+`The_repository_filter_ignores_case_like_every_other_door` both failed first. Service 489/489.
+
 ## A re-wire that named no workspace moved the row to `default` (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. `POST /api/registry/{repository}/workspace`

@@ -61,6 +61,20 @@ public sealed class KnowledgeTools(
     /// difference from the results. Naming it is the same discipline as reporting which recall tier
     /// answered (D24): the shape of the answer is part of the answer.
     /// </remarks>
+    /// <summary>The sentence for a kind nobody has, or null when every name is one (REV3).</summary>
+    private static string? UnknownKinds(string? kinds)
+    {
+        try
+        {
+            KnowledgeQuery.ParseKinds(kinds);
+            return null;
+        }
+        catch (ArgumentException refused)
+        {
+            return refused.Message;
+        }
+    }
+
     private static string Scoped(string? scope) =>
         scope is null ? " across every workspace on this machine" : $" in workspace `{scope}`";
 
@@ -82,6 +96,7 @@ public sealed class KnowledgeTools(
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
+        if (UnknownKinds(kinds) is { } refused) return refused;
         var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
         var hits = await service.SearchAsync(
             new KnowledgeQuery(query)
@@ -184,6 +199,7 @@ public sealed class KnowledgeTools(
         [Description(WorkspaceArgument)] string? workspace = null,
         CancellationToken ct = default)
     {
+        if (UnknownKinds(kinds) is { } refused) return refused;
         var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
         var candidates = await service.FindConvergenceAsync(
             new ConvergenceOptions(
