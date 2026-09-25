@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A schema bump emptied a shared index until every repository committed again (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. A build that bumps the index schema rebuilds it
+on open: the entries go, and the store's own remarks promise a shared deployment is "re-fed whole by
+each desktop's next sync tick". The next feed arrived at the same commit, was judged *already held*,
+and was answered as accepted with nothing stored. The deployment searched an empty index until each
+repository's next commit.
+
+**Root cause.** The claim and the thing claimed live in two stores. The rebuild dropped
+`entries`, and `feed_provenance` in the registration store kept saying which commit they came from.
+
+**Fix.** The knowledge store says when opening it rebuilt an index an older schema wrote (`Rebuilt`),
+and the composer then forgets every repository's knowledge provenance. Code maps and declarations
+keep theirs, because they hold their bodies in the registration store and survive the rebuild.
+
+**Verify.** `A_rebuilt_index_takes_the_same_commit_again` feeds a commit, sets the file's
+`user_version` back as an older build would have left it, reopens, and feeds the same commit. It
+failed with an empty summary, and passes. Service 483/483.
+
 ## A session's connector answered from the registry it loaded at spawn (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. Every host on a machine opens one store: the

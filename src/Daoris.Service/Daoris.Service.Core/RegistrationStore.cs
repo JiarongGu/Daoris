@@ -350,6 +350,20 @@ public sealed class RegistrationStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Forget the commit every repository's knowledge was fed at — the index that held it was rebuilt.
+    /// </summary>
+    /// <remarks>
+    /// Knowledge only. A code map and a declaration are held here with their bodies, so they survive a
+    /// rebuild of the index, and so does the commit each was taken at.
+    /// </remarks>
+    public async Task ForgetAllKnowledgeProvenanceAsync(CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "DELETE FROM feed_provenance;";
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
     /// <summary>Every repository's fed provenance, for the one read a summary needs.</summary>
     public async Task<IReadOnlyDictionary<string, FeedProvenance>> AllProvenanceAsync(CancellationToken ct = default)
     {

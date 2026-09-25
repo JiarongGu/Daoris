@@ -33,6 +33,15 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
     private SqliteKnowledgeStore(SqliteConnection connection) => _connection = connection;
 
+    /// <summary>
+    /// Whether opening this store dropped an index an older schema had written (a version bump).
+    /// </summary>
+    /// <remarks>
+    /// The composer reads it to forget which commits a fed deployment held (REV3): the entries went,
+    /// and a claim that they are held would refuse the very re-feed that restores them.
+    /// </remarks>
+    public bool Rebuilt { get; private set; }
+
 
     /// <summary>Open (or create) a store at a path. Use <c>":memory:"</c> for a throwaway one.</summary>
     public static async Task<SqliteKnowledgeStore> OpenAsync(string path, CancellationToken ct = default)
@@ -58,6 +67,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         {
             await ExecuteAsync("DROP TABLE IF EXISTS entries_fts; DROP TABLE IF EXISTS entries;", ct)
                 .ConfigureAwait(false);
+            Rebuilt = version != 0;   // 0 is a store nobody has written yet
         }
 
         await ExecuteAsync(

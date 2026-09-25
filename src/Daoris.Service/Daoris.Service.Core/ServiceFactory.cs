@@ -156,6 +156,11 @@ public static class ServiceFactory
         var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var asks = await AskStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
 
+        // 🔴 A rebuilt index holds nothing, so nothing may claim it holds a commit (REV3). Otherwise the
+        // re-feed that restores a shared deployment is judged already held, and it stays empty until
+        // each repository commits again.
+        if (store.Rebuilt) await registrations.ForgetAllKnowledgeProvenanceAsync(ct).ConfigureAwait(false);
+
         // The registry is the authority now (D48 §3): the list is what has been registered, not what a
         // folder happens to hold. Loaded before the first read so a restart is invisible to a client.
         var registry = new Registry();
