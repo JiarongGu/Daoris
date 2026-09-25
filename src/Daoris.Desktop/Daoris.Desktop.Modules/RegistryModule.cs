@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 
@@ -15,9 +16,11 @@ namespace Daoris.Desktop;
 /// layer up. What a browser genuinely cannot do is name a directory on this machine, so that is the
 /// whole of this module.</para>
 ///
-/// <para><b>It inspects and never writes.</b> Adoption is the repository's own agent's job — `init`,
-/// `sync`, the collision review — and a shell that wrote a manifest would be doing that work from
-/// outside, badly. This answers three facts about a folder and leaves every decision to the person.</para>
+/// <para><b>It never adopts.</b> Adoption is the repository's own agent's job — `init`, `sync`, the
+/// collision review — and a shell that wrote a first manifest would be doing that work from outside,
+/// badly. It inspects a folder, and the one thing it writes is the declaration of a manifest that
+/// already exists, uncommitted, for that repository's own review (REV3 CLEAN1 corrected "never
+/// writes").</para>
 /// </remarks>
 public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) : ModuleBase(events: events)
 {
@@ -139,9 +142,8 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             writer.WriteEndObject();
         }
 
-        var beside = manifest + ".tmp";
-        File.WriteAllText(beside, System.Text.Encoding.UTF8.GetString(buffer.ToArray()).ReplaceLineEndings("\n") + "\n");
-        File.Move(beside, manifest, overwrite: true);
+        // The driver's one atomic writer (REV3): a name of its own beside the file, not a fixed `.tmp`.
+        AtomicFile.WriteText(manifest, System.Text.Encoding.UTF8.GetString(buffer.ToArray()).ReplaceLineEndings("\n") + "\n");
     }
 
     /// <summary>An object with no properties — what every reader below treats as "nothing was sent".</summary>
