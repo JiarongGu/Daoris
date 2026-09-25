@@ -107,17 +107,33 @@ const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mod
     });
   });
 
-/** One HTTP call against a host. The key rides only when a step is meant to be authorized. */
+const API_TIMEOUT = 30_000;
+
+/**
+ * One HTTP call against a host. The key rides only when a step is meant to be authorized.
+ *
+ * Bounded (REV3 CLEAN1): a host that accepts a connection and never answers would hang the gate with
+ * nothing on screen. No answer in time is an answer a check fails on; a refused connection still
+ * throws, which is what the start-up poll waits through.
+ */
 async function api(method, path, { body, key, base = BASE } = {}) {
-  const response = await fetch(`${base}${path}`, {
-    method,
-    headers: {
-      ...(body ? { 'content-type': 'application/json' } : {}),
-      ...(key ? { authorization: `Bearer ${key}` } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const text = await response.text();
+  let response;
+  let text;
+  try {
+    response = await fetch(`${base}${path}`, {
+      method,
+      headers: {
+        ...(body ? { 'content-type': 'application/json' } : {}),
+        ...(key ? { authorization: `Bearer ${key}` } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(API_TIMEOUT),
+    });
+    text = await response.text();
+  } catch (error) {
+    if (error?.name !== 'TimeoutError') throw error;
+    return { status: 0, json: null, text: `no answer to ${method} ${path} within ${API_TIMEOUT / 1000}s` };
+  }
   let json = null;
   try {
     json = JSON.parse(text);
