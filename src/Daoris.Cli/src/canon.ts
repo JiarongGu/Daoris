@@ -259,10 +259,3 @@ export function resolveSelection(
     offers: offers.sort(byTarget),
   };
 }
-
-/** Core is never opt-in. Sorted by target so plans and locks are stable. */
-export function selectFiles(
-  canon: Canon, packNames: readonly string[], confirmed: Readonly<Record<string, string>> = {},
-): CanonFile[] {
-  return resolveSelection(canon, packNames, confirmed).files;
-}

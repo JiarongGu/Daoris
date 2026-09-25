@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture, captureError } from './_fixture.ts';
-import { readCanon, selectFiles, resolveCanonRoot } from '../src/canon.ts';
+import { readCanon, resolveSelection, resolveCanonRoot } from '../src/canon.ts';
 import { DaorisError } from '../src/errors.ts';
 
 function seedCanon() {
@@ -50,7 +50,7 @@ test('readCanon reads the version, its own root, core, and packs', () => {
 test('the source directory is the target directory', () => {
   const fx = seedCanon();
   const canon = readCanon(fx.root);
-  const targets = selectFiles(canon, ['dotnet-library']).map((f) => f.target);
+  const targets = resolveSelection(canon, ['dotnet-library']).files.map((f) => f.target);
   assert.deepEqual(targets, [
     'knowledge/storage.md',
     'rules/dev-conventions.md',
@@ -79,7 +79,7 @@ test('core carries tiers of its own, skills included', () => {
 
 test('core is selected without being asked for', () => {
   const fx = seedCanon();
-  const files = selectFiles(readCanon(fx.root), []);
+  const files = resolveSelection(readCanon(fx.root), []).files;
   assert.deepEqual(files.map((f) => f.target), [
     'rules/sensitive-info.md',
     'rules/task-lifecycle.md',
@@ -92,7 +92,7 @@ test('core is selected without being asked for', () => {
 test('an unknown pack is a tool error naming the available packs', () => {
   const fx = seedCanon();
   const canon = readCanon(fx.root);
-  const error = captureError(() => selectFiles(canon, ['nope']));
+  const error = captureError(() => resolveSelection(canon, ['nope']));
   assert.ok(error instanceof DaorisError);
   assert.equal(error.exitCode, 2);
   assert.match(error.message, /nope/);

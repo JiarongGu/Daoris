@@ -17,8 +17,6 @@ import type { ExitCode } from './errors.ts';
 
 const REGISTRY_PATH = '/api/registry';
 
-export { endpoint, isLocalService } from './service.ts';
-
 /**
  * What this repository tells a service about itself.
  *
