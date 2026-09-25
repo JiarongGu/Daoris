@@ -718,8 +718,10 @@ public sealed class QuestStore
                 return new QuestDismissal(await FindAsync(id, transaction, inside).ConfigureAwait(false), 0);
             }
 
+            // Naming NONE is every conflict. A sequence without its machine names none: sequences are
+            // per machine, and reading it as "none named" dismissed every one (REV3).
             var named = quest.Conflicts
-                .Where(conflict => machine is null
+                .Where(conflict => (machine is null && sequence is null)
                     || (conflict.Machine == machine && (sequence is null || conflict.Sequence == sequence)))
                 .ToList();
             var written = new List<QuestOperation>(history);

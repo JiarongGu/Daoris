@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Half a conflict's name dismissed every conflict (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. A conflict is named by its machine and its
+sequence, since sequences count per machine. A dismissal naming a sequence and no machine
+(`{"sequence": 5}` on the HTTP door) fell into "names none", and dismissed every conflict the quest
+carried, on every machine the next pass reached.
+
+**Root cause.** The filter asked only whether a machine was named.
+
+**Fix.** Naming neither is every conflict. A sequence without its machine names none, and the door
+answers "carries no such conflict".
+
+**Verify.** `Dismissing_names_one_conflict_or_every_one_the_quest_carries` gained the half-named
+case, which dismissed 1 before the fix and dismisses 0 now. Service 495/495.
+
 ## JSON of the wrong shape crashed an import, or a whole refresh (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. A `daoris.json` that is valid JSON but not an

@@ -447,6 +447,13 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(0, elsewhere.Dismissed);
         Assert.Single(elsewhere.Quest!.Conflicts);
 
+        // A sequence with no machine names no conflict — sequences are per machine — so it dismisses
+        // none. It used to fall into "naming none" and dismiss every one (REV3 service F18).
+        var conflict = Assert.Single(elsewhere.Quest.Conflicts);
+        var half = await _a.DismissAsync(quest.Id, machine: null, conflict.Sequence, Now.AddHours(3));
+        Assert.Equal(0, half.Dismissed);
+        Assert.Single(half.Quest!.Conflicts);
+
         var every = await _a.DismissAsync(quest.Id, machine: null, sequence: null, Now.AddHours(4));
         Assert.Equal(1, every.Dismissed);
         Assert.Empty(every.Quest!.Conflicts);
