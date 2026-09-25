@@ -211,12 +211,7 @@ public sealed class DriverModule : ModuleBase
             case "START_CHAT":
             {
                 var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
-                if (_loop.Chat is not { } chat)
-                {
-                    throw Refusals.Because(
-                        Refusals.DriverNotReady,
-                        "the driver is still coming up — its service is not answering yet. A moment.");
-                }
+                var chat = _loop.Chat ?? throw NotReady();
 
                 var config = DriverConfig.Load(_loop.ConfigPath);
                 var adapter = request.Payload is { } payload
@@ -849,9 +844,7 @@ public sealed class DriverModule : ModuleBase
                 var workspace = RemoteTarget.Workspace(
                     PayloadHelper.GetRequiredValue<string>(request.Payload, "workspace"));
                 var pass = _loop.SyncNowAsync(workspace, cancellationToken)
-                    ?? throw Refusals.Because(
-                        Refusals.DriverNotReady,
-                        "the driver is still coming up — its service is not answering yet. A moment.");
+                    ?? throw NotReady();
                 var report = await pass;
                 return new { Workspace = workspace, report.Problem, report.Notes };
             }
@@ -906,12 +899,7 @@ public sealed class DriverModule : ModuleBase
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
 
-        if (_loop.Service is not { } service)
-        {
-            throw Refusals.Because(
-                Refusals.DriverNotReady,
-                "the driver is still coming up — its service is not answering yet. A moment.");
-        }
+        var service = _loop.Service ?? throw NotReady();
 
         var (tree, baseCommit) = await service.SessionGroundAsync(id, cancellationToken);
 
@@ -982,12 +970,7 @@ public sealed class DriverModule : ModuleBase
             && payload.TryGetProperty("force", out var meant)
             && meant.ValueKind == JsonValueKind.True;
 
-        if (_loop.Service is not { } service)
-        {
-            throw Refusals.Because(
-                Refusals.DriverNotReady,
-                "the driver is still coming up — its service is not answering yet. A moment.");
-        }
+        var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
         if (string.IsNullOrWhiteSpace(tree))
@@ -1034,12 +1017,7 @@ public sealed class DriverModule : ModuleBase
             throw Refusals.Because(Refusals.SessionDeclineNeedsReason, DeclineNeedsReason);
         }
 
-        if (_loop.Service is not { } service)
-        {
-            throw Refusals.Because(
-                Refusals.DriverNotReady,
-                "the driver is still coming up — its service is not answering yet. A moment.");
-        }
+        var service = _loop.Service ?? throw NotReady();
 
         // False is the common case, not a failure: a parked session usually has no process here.
         _loop.Processes.Stop(id);
@@ -1341,6 +1319,10 @@ public sealed class DriverModule : ModuleBase
     /// failure. The page makes accounts by signing in (<c>login-new</c>, D66 §3); this is the
     /// bridge's half of <c>daoris agent profile add</c>, for a name a person picks before signing in.
     /// </remarks>
+    /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
+    private static Exception NotReady() => Refusals.Because(
+        Refusals.DriverNotReady, "the driver is still coming up — its service is not answering yet. A moment.");
+
     private int ProfileAdd(string harness, IpcRequest request)
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, Named(request)));
