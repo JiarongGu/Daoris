@@ -748,7 +748,7 @@ app.MapDelete("/api/registry/{repository}", async (
     // Read before it goes: a joined checkout's retire is owed to its circle (SYNC5b), and a person
     // removing it should hear that the team's deployment will too, not only this machine.
     var leaving = (await s.Service.RegistryAsync(ct: ct))
-        .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+        .Named(repository);
     var retired = await s.Service.RetireAsync(repository, ct);
     var circle = retired && mode == ServiceMode.Local && leaving is { Joined: true, Root: not null }
         && s.Remotes?.For(leaving.InWorkspace) is not null
@@ -779,7 +779,7 @@ app.MapPost("/api/registry/{repository}/workspace", async (
     }
 
     var existing = (await s.Service.RegistryAsync(ct: ct))
-        .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+        .Named(repository);
     if (existing is null)
     {
         return Results.NotFound(new ErrorResponse(
@@ -985,8 +985,7 @@ if (mode == ServiceMode.Shared)
         var judged = await s.Quests.ReceiveAsync(
             @base, pushed,
             asked => s.Exchange.JudgeReceived(asked, registered),
-            asked => registered.FirstOrDefault(r =>
-                string.Equals(r.Repository, asked.To, StringComparison.OrdinalIgnoreCase))?.InWorkspace ?? Workspaces.Default,
+            asked => registered.Named(asked.To)?.InWorkspace ?? Workspaces.Default,
             ct);
         return Results.Text(QuestWire.Pushed(judged), "application/json");
     });

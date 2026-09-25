@@ -183,7 +183,7 @@ public sealed class SessionLedger(
         var known = registry is null
             ? null
             : (await registry.RegistryAsync(ct: ct).ConfigureAwait(false))
-                .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+                .Named(repository);
 
         if (known is null)
         {
@@ -358,7 +358,7 @@ public sealed class SessionLedger(
         if (registry is null) return null;
 
         return (await registry.RegistryAsync(ct: ct).ConfigureAwait(false))
-            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            .Named(repository)
             ?.Root;
     }
 

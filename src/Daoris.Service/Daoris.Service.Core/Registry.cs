@@ -76,6 +76,16 @@ public sealed record Registration(
     public bool Addressable => Adopted || !string.IsNullOrWhiteSpace(Root);
 }
 
+/// <summary>A repository looked up by name — in any case, as every door here matches it.</summary>
+public static class Registrations
+{
+    /// <summary>The row naming <paramref name="repository"/>, or null when none does.</summary>
+    public static Registration? Named(this IEnumerable<Registration> registry, string? repository) =>
+        repository is null
+            ? null
+            : registry.FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+}
+
 /// <summary>
 /// Who is out there, what each one owns, and what is worth asking of them.
 /// </summary>

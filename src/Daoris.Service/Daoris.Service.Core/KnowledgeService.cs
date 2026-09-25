@@ -301,7 +301,7 @@ public sealed class KnowledgeService(
     /// </remarks>
     public async Task<string> WorkspaceOfAsync(string repository, CancellationToken ct = default) =>
         (await RegistryAsync(ct: ct).ConfigureAwait(false))
-            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            .Named(repository)
             ?.InWorkspace
         ?? Workspaces.Default;
 
@@ -350,7 +350,7 @@ public sealed class KnowledgeService(
         var held = registrations
             ?? throw new InvalidOperationException("a fed registration is held in the registration store, and this service was composed without one");
         var existing = (await RegistryAsync(ct: ct).ConfigureAwait(false))
-            .FirstOrDefault(r => string.Equals(r.Repository, registration.Repository, StringComparison.OrdinalIgnoreCase));
+            .Named(registration.Repository);
 
         await _feedGate.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -637,7 +637,7 @@ public sealed class KnowledgeService(
         string repository, FeedProvenance? provenance, string what, CancellationToken ct)
     {
         var registration = (await RegistryAsync(ct: ct).ConfigureAwait(false))
-            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+            .Named(repository);
 
         if (registration is null || !registration.Joined)
         {
@@ -790,7 +790,7 @@ public sealed class KnowledgeService(
     {
         await ReloadRegistryAsync(ct).ConfigureAwait(false);
         var registration = (registry?.Read(new Dictionary<string, int>()) ?? [])
-            .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
+            .Named(repository);
         if (registration is null) return null;
 
         if (!string.IsNullOrWhiteSpace(registration.Root) && Directory.Exists(registration.Root))

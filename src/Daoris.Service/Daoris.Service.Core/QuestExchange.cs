@@ -178,8 +178,7 @@ public sealed class QuestExchange(
         // narrowed to one would answer the cross-workspace case as "no such repository" — a refusal
         // that sends the asker looking for a name they can see perfectly well.
         var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
-        var sender = registered.FirstOrDefault(r =>
-            string.Equals(r.Repository, from, StringComparison.OrdinalIgnoreCase));
+        var sender = registered.Named(from);
         // A registered sender's row decides its circle. A sender with none — an ask (D65 §1a) — names
         // its own, and silence places it where an unregistered sender always was.
         var home = sender?.InWorkspace ?? Workspaces.Normalize(ask.Workspace);
@@ -190,8 +189,7 @@ public sealed class QuestExchange(
             .Where(r => r.Addressable && Workspaces.Same(r.InWorkspace, home))
             .Select(r => r.Repository)
             .ToList();
-        var target = registered.FirstOrDefault(r =>
-            string.Equals(r.Repository, to, StringComparison.OrdinalIgnoreCase));
+        var target = registered.Named(to);
 
         if (target is null || !target.Addressable)
         {
@@ -298,8 +296,7 @@ public sealed class QuestExchange(
                        + "behalf, so that would be a quest to itself. Its own backlog is the place for that.";
             }
 
-            var receiver = registered.FirstOrDefault(r =>
-                string.Equals(r.Repository, step.To, StringComparison.OrdinalIgnoreCase));
+            var receiver = registered.Named(step.To);
             if (receiver is null || !receiver.Addressable || !Workspaces.Same(receiver.InWorkspace, home))
             {
                 return $"Step {index} asks `{step.To}`, which cannot be asked from `{ask.From}` — nothing would see it "
