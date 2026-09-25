@@ -172,9 +172,7 @@ public sealed class SessionUsage(string home)
             writer.WriteEndArray();
         }
 
-        var beside = _path + ".writing";
-        File.WriteAllText(beside, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
-        File.Move(beside, _path, overwrite: true);
+        AtomicFile.WriteText(_path, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
     }
 
     private static string? Text(JsonElement element, string name) =>

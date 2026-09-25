@@ -228,9 +228,7 @@ public static class IntakeRoom
     /// <summary>Beside, then renamed — a harness starting in the room never reads half a file.</summary>
     private static void Write(string path, string content)
     {
-        var beside = path + ".writing";
-        File.WriteAllText(beside, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, content);
     }
 }
 

@@ -115,9 +115,7 @@ public sealed record DriverConfig(
     public void Save(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        var beside = path + ".writing";
-        File.WriteAllText(beside, ToJson());
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, ToJson());
     }
 
     /// <summary>The file's shape, written by hand for the same AOT reason it is read by hand.</summary>

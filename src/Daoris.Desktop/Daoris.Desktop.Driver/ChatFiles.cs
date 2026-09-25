@@ -87,9 +87,7 @@ public static class ChatFiles
             var path = Path.Combine(folder, $"{hash[..HashInName]}-{name}");
             if (!File.Exists(path))
             {
-                var beside = path + ".tmp";
-                File.WriteAllBytes(beside, upload.Content);
-                File.Move(beside, path, overwrite: true);
+                AtomicFile.WriteBytes(path, upload.Content);
             }
 
             kept.Add(new KeptFile(name, path));

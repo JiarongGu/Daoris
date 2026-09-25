@@ -42,9 +42,7 @@ public static class SpawnServers
                 StringComparer.Ordinal),
         };
 
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
         return path;
     }
 

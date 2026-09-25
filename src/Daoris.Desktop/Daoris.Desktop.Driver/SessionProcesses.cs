@@ -264,9 +264,7 @@ public sealed class SessionProcesses(string? markers = null)
         {
             var line = $"{process.Id} {process.StartTime.ToUniversalTime().Ticks}";
             Directory.CreateDirectory(markers!);
-            var beside = marker + ".tmp";
-            File.WriteAllText(beside, line);
-            File.Move(beside, marker, overwrite: true);
+            AtomicFile.WriteText(marker, line);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
                                           or System.ComponentModel.Win32Exception)

@@ -47,9 +47,7 @@ public static class TreeGuard
         if (File.Exists(path) && File.ReadAllText(path) == Source) return path;
 
         Directory.CreateDirectory(folder);
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, Source);
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, Source);
         return path;
     }
 

@@ -235,9 +235,7 @@ public static class PermissionRules
         if (file.DefaultsOff.Count > 0) root["defaultsOff"] = new JsonArray([.. file.DefaultsOff.Order(StringComparer.Ordinal).Select(id => (JsonNode)id)]);
 
         var path = PathOf(home);
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
     }
 
     /// <summary>
@@ -440,9 +438,7 @@ public static class SpawnSettings
             };
         }
 
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, document.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, document.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
         return path;
     }
 

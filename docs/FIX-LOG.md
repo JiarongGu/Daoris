@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Two writers of one file failed a finished session (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the driver. Fourteen places in the driver wrote a file
+beside itself under a fixed name (`path + ".tmp"` or `".writing"`), then renamed it over the file.
+Two writers of one file at once collided: two sessions in one tick installing the tree guard, or a
+desktop and a terminal driver on one home recording usage. One's write met the other's open beside
+file, or its rename found it already renamed. The throw came out of a session that had finished its
+work, and the session was recorded `failed`.
+
+**Root cause.** A shared scratch name. And one thing the review did not predict, found by the test
+written for it: even with names of their own, two renames over one file at once are refused on
+Windows with *access denied*.
+
+**Fix.** `AtomicFile` is the driver's one writer, now used by all fourteen (REV3 driver C1). The
+beside file is named per write, and the rename is retried while the target is busy: a bounded
+number of times, a few milliseconds apart, and never for a file that is missing.
+
+**Verify.** `Many_writers_of_one_file_at_once_all_land_and_leave_nothing_beside` runs 32 writers of
+one file. Without the retry it failed eight runs in eight with `UnauthorizedAccessException`. With
+it, it passed eight in eight. Driver suite green.
+
 ## Closing the application left a driven session's record saying `working` (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the driver. On close, the loop's token is cancelled, and each

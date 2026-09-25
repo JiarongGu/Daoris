@@ -326,9 +326,7 @@ public sealed record HarnessSettings(
             writer.WriteEndObject();
         }
 
-        var beside = path + ".writing";
-        File.WriteAllText(beside, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
     }
 
     /// <summary>
@@ -755,9 +753,7 @@ public static class HarnessKeys
         }
 
         var path = Path.Combine(home, FileName);
-        var beside = path + ".writing";
-        File.WriteAllText(beside, Encoding.UTF8.GetString(stream.ToArray()) + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, Encoding.UTF8.GetString(stream.ToArray()) + "\n");
     }
 }
 

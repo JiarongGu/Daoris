@@ -137,9 +137,7 @@ public sealed record RemoteTarget(string Url, string Key)
             writer.WriteEndObject();
         }
 
-        var beside = path + ".writing";
-        File.WriteAllText(beside, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
     }
 
     /// <summary>

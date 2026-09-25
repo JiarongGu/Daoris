@@ -468,9 +468,7 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
         Directory.CreateDirectory(home);
         var json = JsonSerializer.Serialize(new { disabled = disabled.OrderBy(d => d, StringComparer.Ordinal) },
             new JsonSerializerOptions { WriteIndented = true });
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, json.Replace("\r\n", "\n") + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, json.Replace("\r\n", "\n") + "\n");
     }
 }
 

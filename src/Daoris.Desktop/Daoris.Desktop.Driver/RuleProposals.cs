@@ -329,9 +329,7 @@ public static class RuleProposals
         root["state"] = state.ToString().ToLowerInvariant();
         root["settled"] = new JsonObject { ["at"] = at.ToString("O"), ["by"] = by, ["note"] = note };
 
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
-        File.Move(beside, path, overwrite: true);
+        AtomicFile.WriteText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
     }
 
     private static string? Text(JsonNode? node) =>
