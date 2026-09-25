@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `sync` deleted a repository's own rule file, and rewrote its CRLF instruction files (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then shown by probe. Both defects came in with D59.
+(1) Since D59 a repository may keep its own `.claude/rules/<name>.md` even when a canon rule has the
+same name, and a test holds that. When the canon then retired that rule, or a pack switched it off,
+the next plain `sync` deleted the repository's file. The output said only "retired 1". That broke
+three promises: D19's row, the instruction-file design §5, and "`--force` is the only way to lose
+work". (2) An adopter whose `AGENTS.md` or `CLAUDE.md` used CRLF or had a BOM saw every line of its
+own text change on the first sync, even though `writeRegion` promises that everything outside the
+region "survives byte for byte".
+
+**Root cause.** (1) `applySync` removed a file for every retired lock entry. A retired span has no
+file of Daoris's at its old path, because it leaves when the region is rewritten, so the only file
+there is one the repository wrote. (2) `writeSpans` read the file through `readText`, which strips the
+BOM and turns CRLF into LF before `writeRegion` sees the text. `writeRegion`'s own line-ending
+detection therefore always answered LF. `region.test.ts` called `writeRegion` directly and passed.
+
+**Fix.** The plan now names the deletes that were spans (`leavesRegion`), and `applySync` removes a
+file only for the rest. That still covers a pre-D59 file and the migration's old file. `writeSpans`
+and the pointer write now hand the writer the raw bytes, and every comparison still reads normalized
+text.
+
+**Verify.** Two new tests in `sync.test.ts`, both failing before the fix. `retiring a span never
+deletes the repository's own file at the old path` failed with ENOENT on the file sync had deleted.
+`an adopter's CRLF instruction files keep their line endings and BOM through a sync` checks that
+there is no bare LF anywhere, that both prefixes survive, and that a second sync leaves identical
+bytes.
+
 ## An edit over a home file the CLI could not read erased what it held (2026-09-25)
 
 **Symptom.** Found by REV3's reading, then shown by probe. The CLI reads each of the home's JSON files

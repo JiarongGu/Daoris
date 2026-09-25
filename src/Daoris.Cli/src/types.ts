@@ -266,6 +266,11 @@ export interface Rename {
 export interface SyncPlan {
   writes: PlannedWrite[];
   deletes: string[];
+  /**
+   * The deletes that were SPANS (D59): they leave with the region's rewrite, and there is no file of
+   * Daoris's at their old path — a file there is the repository's own, and is never removed.
+   */
+  leavesRegion?: string[];
   /** In the lock and edited here — an improvement that may want promoting, not a mistake (D13). */
   drifted: string[];
   /** Not in the lock: the repository wrote it before adopting, and overwriting would destroy it (D12). */

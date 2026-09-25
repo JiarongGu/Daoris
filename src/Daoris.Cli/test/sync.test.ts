@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { existsSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 import { readCanon } from '../src/canon.ts';
@@ -243,6 +243,51 @@ test('retiring an untouched rule needs no ceremony', () => {
   rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
   run(fx);
   assert.equal(fx.repoFx.rule('win/packs/win/rules/gotchas.md'), null);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+/**
+ * 🔴 A retired SPAN leaves with the region's rewrite — there is no file of Daoris's at its old path.
+ * A file there now is the repository's own (the test above makes that legal), and deleting it was the
+ * one thing `sync` does without `--force` that lost work (REV3).
+ */
+test('retiring a span never deletes the repository\'s own file at the old path', () => {
+  const fx = seed(['win']);
+  run(fx);
+  fx.repoFx.write('.claude/rules/gotchas.md', 'our own gotchas, written after adopting\n');
+  rmSync(join(fx.canonFx.root, 'packs/win/rules/gotchas.md'));
+
+  run(fx);
+  assert.equal(fx.repoFx.rule('win/packs/win/rules/gotchas.md'), null, 'the span left the region');
+  assert.equal(fx.repoFx.read('.claude/rules/gotchas.md'), 'our own gotchas, written after adopting\n');
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+/**
+ * "Everything outside the region survives byte for byte" (`writeRegion`). It did not through `sync`:
+ * the file was normalized before it reached the writer, so the line-ending detection always answered
+ * LF and every line of an adopter's CRLF file changed on its first sync, BOM gone too (REV3).
+ */
+test('an adopter\'s CRLF instruction files keep their line endings and BOM through a sync', () => {
+  const fx = seed();
+  const theirs = '﻿# Our agents\r\n\r\nHouse notes that are ours.\r\n';
+  const pointer = '﻿# Claude\r\n\r\nOur own notes.\r\n';
+  writeFileSync(join(fx.repoFx.root, 'AGENTS.md'), theirs, 'utf8');
+  writeFileSync(join(fx.repoFx.root, 'CLAUDE.md'), pointer, 'utf8');
+
+  run(fx);
+  const agents = readFileSync(join(fx.repoFx.root, 'AGENTS.md'), 'utf8');
+  const claude = readFileSync(join(fx.repoFx.root, 'CLAUDE.md'), 'utf8');
+  assert.ok(agents.startsWith(theirs.trimEnd()), 'their text is untouched, BOM and CRLF included');
+  assert.equal(/(?<!\r)\n/.test(agents), false, 'no bare LF anywhere: the region takes the file\'s ending');
+  assert.ok(claude.startsWith(pointer.trimEnd()));
+  assert.match(claude, /@AGENTS\.md\r\n/);
+
+  // And a second sync is a no-op on the bytes.
+  run(fx);
+  assert.equal(readFileSync(join(fx.repoFx.root, 'AGENTS.md'), 'utf8'), agents);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

@@ -1,7 +1,7 @@
 import type { Canon, CommandArgs, CoreSwitch, Lock, Manifest, PlannedWrite, Rename, SyncPlan }
   from './types.ts';
 import type { ExitCode } from './errors.ts';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.ts';
 import { renderCanonFile, stripHeader } from './document.ts';
@@ -221,8 +221,11 @@ export function planSync(
   // 🔴 Never paired as a rename: a pack's replacement reads like the core row it switches off, by
   // design, and "renamed task-lifecycle -> ticket-lifecycle" would hide the decision behind a move.
   const renames = detectRenames({ writes, deletes: retiring, previous: previousAt });
+  // A span that leaves is gone once the region is rewritten; only a FILE-backed entry (pre-D59, or a
+  // migrating rule's old file) has anything on disk at its target for `applySync` to remove.
+  const leavesRegion = deletes.filter((target) => locked.get(target)?.in !== undefined);
   return {
-    writes, deletes, drifted, collisions, renames, editedRetirements,
+    writes, deletes, leavesRegion, drifted, collisions, renames, editedRetirements,
     switchedOff: selection.switchedOff, offers: selection.offers, editedSwitchedOff,
   };
 }
@@ -415,7 +418,11 @@ export function applySync(
     write,
     abs: containedPath(root, manifest.target, write.target),
   }));
-  const deletes = plan.deletes.map((target) => containedPath(root, manifest.target, target));
+  // 🔴 Never a span's old path: what sits there now is the repository's own file (REV3).
+  const leaving = new Set(plan.leavesRegion ?? []);
+  const deletes = plan.deletes
+    .filter((target) => !leaving.has(target))
+    .map((target) => containedPath(root, manifest.target, target));
 
   for (const { write, abs } of writes) {
     if (write.state !== 'unchanged' || force) writeTextAtomic(abs, write.content);
@@ -495,8 +502,10 @@ function writeSpans(
       off,
     };
 
+    // 🔴 The RAW bytes: `writeRegion` keeps everything outside the region byte for byte and takes the
+    // file's own line ending — both of which a normalized read had already erased (REV3).
     const abs = join(root, file);
-    const held = existsSync(abs) ? readText(abs) : '';
+    const held = existsSync(abs) ? readFileSync(abs, 'utf8') : '';
     const body = [renderRoster(input), ...renderRules(input)].join('\n');
     writeTextAtomic(abs, writeRegion(held, tier.region.name, body));
 
@@ -510,7 +519,7 @@ function writeSpans(
     // The pointer, for the one harness that reads another file and follows imports.
     if (harness.pointer) {
       const pointer = join(root, harness.pointer.file);
-      const made = ensureImport(existsSync(pointer) ? readText(pointer) : null, harness.pointer.imports);
+      const made = ensureImport(existsSync(pointer) ? readFileSync(pointer, 'utf8') : null, harness.pointer.imports);
       if (made !== null) writeTextAtomic(pointer, made);
     }
   }
