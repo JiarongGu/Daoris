@@ -162,6 +162,62 @@ public sealed class HookTests : IDisposable
         Assert.Contains("acme.gate", error.Message);
     }
 
+    /// <summary>
+    /// 🔴 REV3: an answer of the wrong JSON SHAPE threw InvalidOperationException from a property read —
+    /// not a DriverException — so it escaped the tick's catch and killed every tick, naming no plugin.
+    /// Every shape the wire can carry is a sentence naming the plugin.
+    /// </summary>
+    [Theory]
+    [InlineData("initialize", "null")]
+    [InlineData("initialize", "\"not a handshake\"")]
+    [InlineData("initialize", """{"protocolVersion":"1"}""")]
+    [InlineData("consider", "null")]
+    [InlineData("consider", """{"kind":5}""")]
+    [InlineData("consider", """{"kind":"hold","reason":7}""")]
+    [InlineData("consider", "[]")]
+    public async Task An_answer_of_the_wrong_shape_is_a_sentence_naming_the_plugin(string call, string result)
+    {
+        var plugin = new FakePlugin((frame, _) => Method(frame) switch
+        {
+            "initialize" => Ok(frame, call == "initialize" ? result : """{"protocolVersion":1,"points":["quest/consider"]}"""),
+            "hook/quest/consider" => Ok(frame, result),
+            _ => null,
+        });
+        var peer = Peer(plugin);
+
+        if (call == "initialize")
+        {
+            var refused = await Assert.ThrowsAsync<DriverException>(() =>
+                peer.InitializeAsync("h", "d", ["quest/consider"], CancellationToken.None));
+            Assert.Contains("acme.gate", refused.Message);
+            return;
+        }
+
+        await peer.InitializeAsync("h", "d", ["quest/consider"], CancellationToken.None);
+        if (result.Contains("\"reason\":7", StringComparison.Ordinal))
+        {
+            // A hold is a hold; a reason that is not words is "no reason given", as an absent one is.
+            Assert.Equal("no reason given", (await peer.ConsiderAsync(new { }, CancellationToken.None)).Reason);
+            return;
+        }
+
+        var error = await Assert.ThrowsAsync<DriverException>(() => peer.ConsiderAsync(new { }, CancellationToken.None));
+        Assert.Contains("acme.gate", error.Message);
+    }
+
+    /// <summary>A JSON-RPC error that is not the object the wire promises is still the plugin's refusal, in a sentence.</summary>
+    [Fact]
+    public async Task An_error_of_the_wrong_shape_is_still_the_plugin_s_refusal()
+    {
+        var plugin = new FakePlugin((frame, _) =>
+            $$"""{"jsonrpc":"2.0","id":{{frame.GetProperty("id").GetRawText()}},"error":"no"}""");
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() =>
+            Peer(plugin).InitializeAsync("h", "d", [], CancellationToken.None));
+
+        Assert.Contains("acme.gate", refused.Message);
+    }
+
     [Fact]
     public async Task A_plugin_that_does_not_answer_in_time_is_a_sentence_naming_the_plugin_and_the_call()
     {

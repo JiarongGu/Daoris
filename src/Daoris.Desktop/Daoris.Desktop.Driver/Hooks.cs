@@ -93,7 +93,18 @@ public sealed class HookPeer(
             new { protocolVersion = ProtocolVersion, plugin, home, data, points = declared },
             ct).ConfigureAwait(false);
 
+        // 🔴 Every read checks the shape first (REV3): a property read on the wrong kind throws
+        // InvalidOperationException, which is not a DriverException, so it escaped the tick's catch and
+        // killed every tick without naming the plugin.
+        if (answer.ValueKind != JsonValueKind.Object)
+        {
+            throw new DriverException(
+                $"plugin `{plugin}` answered the handshake with {Raw(answer)}, which is not one — "
+                + $"`{{ \"protocolVersion\": {ProtocolVersion}, \"points\": [ … ] }}`.");
+        }
+
         if (!answer.TryGetProperty("protocolVersion", out var version)
+            || version.ValueKind != JsonValueKind.Number
             || !version.TryGetInt32(out var spoken) || spoken != ProtocolVersion)
         {
             throw new DriverException(
@@ -133,6 +144,7 @@ public sealed class HookPeer(
     {
         var answer = await RequestAsync($"hook/{HookPoints.QuestConsider}", payload, ct).ConfigureAwait(false);
         var kind = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("kind", out var k)
+            && k.ValueKind == JsonValueKind.String
             ? k.GetString()
             : null;
 
@@ -145,7 +157,7 @@ public sealed class HookPeer(
                     ? why
                     : "no reason given"),
             _ => throw new DriverException(
-                $"plugin `{plugin}` answered {Truncate(answer.GetRawText())}, which is not a decision — "
+                $"plugin `{plugin}` answered {Raw(answer)}, which is not a decision — "
                 + "`{ \"kind\": \"allow\" }` or `{ \"kind\": \"hold\", \"reason\": \"…\" }`."),
         };
     }
@@ -272,13 +284,20 @@ public sealed class HookPeer(
 
         if (frame.TryGetProperty("error", out var error))
         {
-            var message = error.TryGetProperty("message", out var m) ? m.GetString() : error.GetRawText();
+            var message = error.ValueKind == JsonValueKind.Object
+                && error.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String
+                ? m.GetString()
+                : Raw(error);
             waiting.TrySetException(new DriverException($"plugin `{plugin}` refused the call: {message}"));
             return;
         }
 
         waiting.TrySetResult(frame.TryGetProperty("result", out var result) ? result.Clone() : default);
     }
+
+    /// <summary>What an answer said, for a sentence — "(no result)" where it said nothing at all.</summary>
+    private static string Raw(JsonElement answer) =>
+        answer.ValueKind == JsonValueKind.Undefined ? "(no result)" : Truncate(answer.GetRawText());
 
     private static string Truncate(string text) => text.Length <= 80 ? text : text[..77] + "…";
 }

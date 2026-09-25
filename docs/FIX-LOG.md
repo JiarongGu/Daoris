@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A plugin answering the hook wire in the wrong shape killed every tick, naming nobody (2026-09-25)
+
+**Symptom.** Found by REV3's reading. Several answers from a plugin's hook process made the driver
+throw `InvalidOperationException` ("Operation is not valid due to the current state of the
+object"):
+- `initialize` answered with `null`, a string, or `"protocolVersion":"1"`;
+- `hook/quest/consider` answered with `{"kind":5}`;
+- a JSON-RPC `error` that was not an object.
+
+That exception is not a `DriverException`, so it escaped the reconcile's catch and the tick. Reconcile
+retries every tick, so the driver did nothing else, and no sentence said which plugin to disable. The
+plugin design promises "The person reads the sentence and disables the plugin; the driver never
+stops."
+
+**Root cause.** `HookPeer` read properties without checking each element's kind first. `TryGetProperty`
+on a non-object, `TryGetInt32` on a non-number and `GetString` on a non-string all throw rather than
+answer false.
+
+**Fix.** Every read checks the element's kind first. A wrong shape is a `DriverException` naming the
+plugin and what it answered, "(no result)" when it answered nothing. A hold whose reason is not words
+reads "no reason given", as an absent one already did.
+
+**Verify.** `An_answer_of_the_wrong_shape_is_a_sentence_naming_the_plugin` covers seven shapes, and
+four of them failed before the fix. `An_error_of_the_wrong_shape_is_still_the_plugin_s_refusal` covers
+the error frame. All 22 hook tests pass.
+
 ## A typo in `driver.json` stopped the driver: a torn file killed the loop, an unknown adapter every tick (2026-09-25)
 
 **Symptom.** Found by REV3's reading. A hand edit of `driver.json` that left a trailing comma, or a
