@@ -17,11 +17,10 @@
 //
 // It is a MANAGEMENT verb and it opens no socket and spawns nothing: it reads and writes one file.
 
-import { existsSync, readFileSync } from 'node:fs';
 import { flagValue } from './args.ts';
 import { DaorisError } from './errors.ts';
 import type { ExitCode } from './errors.ts';
-import { writeTextAtomic } from './fsx.ts';
+import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { requireHomeFile } from './home.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import type { CommandArgs } from './types.ts';
@@ -123,32 +122,23 @@ export function ruleRefusal(rule: string): string | null {
 /** The file as it stands: absent is empty, and unreadable is empty and says why. */
 export function readPermissions(path: string): PermissionFile {
   const nothing: PermissionFile = { machine: empty(), workspaces: {}, repositories: {}, defaultsOff: [], rest: {} };
-  if (!existsSync(path)) return nothing;
-
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { ...nothing, problem: `${PERMISSIONS_FILE} is not a JSON object, so no rule of it applies.` };
-    }
-
-    const { machine, workspaces, repositories, defaultsOff, ...rest } = parsed as Record<string, unknown>;
-    return {
-      machine: lists(machine),
-      workspaces: scopes(workspaces),
-      repositories: scopes(repositories),
-      defaultsOff: strings(defaultsOff),
-      rest,
-    };
-  } catch (error) {
-    return {
-      ...nothing,
-      problem: `${PERMISSIONS_FILE} could not be read (${(error as Error).message}), so no rule of it `
-        + 'applies. The defaults still do.',
-    };
+  const { value, problem } = readJsonObject(path);
+  if (problem !== null) {
+    return { ...nothing, problem: `${problem}, so no rule of it applies. The defaults still do.` };
   }
+  if (value === null) return nothing;
+
+  const { machine, workspaces, repositories, defaultsOff, ...rest } = value;
+  return {
+    machine: lists(machine),
+    workspaces: scopes(workspaces),
+    repositories: scopes(repositories),
+    defaultsOff: strings(defaultsOff),
+    rest,
+  };
 }
 
-/** Written beside and renamed over, BOM-less and LF; an empty scope is left out. */
+/** Written beside and renamed over, BOM-less and LF; an empty scope is left out — and never over a file it could not read. */
 export function writePermissions(path: string, file: PermissionFile): void {
   const node = (held: RuleLists) => Object.fromEntries(LISTS.filter((list) => held[list].length > 0).map((list) => [list, held[list]]));
   const named = (map: Record<string, RuleLists>) => Object.fromEntries(
@@ -160,7 +150,7 @@ export function writePermissions(path: string, file: PermissionFile): void {
   if (Object.keys(named(file.repositories)).length > 0) out.repositories = named(file.repositories);
   if (file.defaultsOff.length > 0) out.defaultsOff = [...new Set(file.defaultsOff)].sort();
 
-  writeTextAtomic(path, `${JSON.stringify(out, null, 2)}\n`);
+  writeJsonAtomic(path, out);
 }
 
 /**

@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## An edit over a home file the CLI could not read erased what it held (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then shown by probe. The CLI reads each of the home's JSON files
+(`permissions.json`, `remotes.json`, `harnesses.json`, `keys.json`, `plugins.json`) as empty when it
+cannot parse it. Its editors then wrote the edit back over that empty reading. One `agent rules allow`
+over a `permissions.json` saved with a BOM erased every deny rule and every switched-off default. The
+same pattern hit the other files: one `remote add` dropped every other workspace's remote, one
+`agent key` erased the other accounts' keys, and one `plugin disable` switched back on every plugin
+the person had turned off. Each printed success. A BOM alone was enough, and that is how Windows
+PowerShell 5.1 saves UTF-8. The C# twins strip a BOM, so the driver was enforcing rules the CLI could
+not see. `remote list` said "no remote" while the driver kept syncing. Separately, the remotes map was
+a case-sensitive `Map` here and `OrdinalIgnoreCase` in both C# twins. So `remote remove aurora`
+answered "not wired" over an `Aurora` the driver still fed.
+
+**Root cause.** Eight readers each hand-rolled `JSON.parse(readFileSync(…))`, and none stripped a
+BOM. They made four different choices about an unreadable file, and only `driver.json`'s editor
+refused. Reading an unreadable file as empty is right for a session about to spawn. It is the wrong
+starting point for an edit, and nothing separated the two uses.
+
+**Fix.** `fsx.ts` now has one reader, `readJsonObject`. It strips the BOM, answers absent as null and
+names what is unreadable. It also has one writer, `writeJsonAtomic`, which refuses while the file on
+disk is one the reader could not read. Every editor writes through that writer, so the rule holds for
+whichever editor comes next. `addKeyAccount` now keeps the key before it makes the account's
+directory, so a refusal leaves nothing behind. `plugin add` names a broken manifest instead of
+throwing past the dispatcher. The remotes map now matches workspace names the way its twins do, and
+keeps whatever spelling the file already uses.
+
+**Verify.** `homefiles.test.ts` covers each of the six files. For each one, a BOM reads, and an edit
+over a torn file is refused with the file byte-for-byte unchanged. All six failed before the fix. The
+remotes suite gains a case test in which `add aurora` over `Aurora` replaces the entry and
+`remove AURORA` removes it.
+
 ## `daoris plugin remove ..` deleted the Daoris home (2026-09-25)
 
 **Symptom.** Found by REV3's reading, never hit. `daoris plugin remove ..` answered "plugin `..`

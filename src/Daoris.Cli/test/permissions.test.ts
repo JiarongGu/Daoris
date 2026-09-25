@@ -220,7 +220,7 @@ test('a file that is not JSON reads as empty, says why, and the defaults still h
 
     const { code, out } = run([], fx.root);
     assert.equal(code, 0);
-    assert.match(out, /could not be read/);
+    assert.match(out, /not readable JSON/);
     assert.match(out, /no-push/);
   } finally {
     fx.cleanup();

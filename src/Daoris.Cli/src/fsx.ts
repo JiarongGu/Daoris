@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { DaorisError } from './errors.ts';
 
 /**
  * BOM-less, LF. Every comparison in this tool happens on normalized text, so a
@@ -23,6 +24,43 @@ export function writeTextAtomic(file: string, text: string): void {
   const tmp = `${file}.daoris-tmp`;
   writeFileSync(tmp, text, 'utf8');
   renameSync(tmp, file);
+}
+
+/**
+ * A JSON object out of one of the home's files, which a C# twin reads and edits too: absent is a null
+ * value, a BOM is stripped because `File.ReadAllText` strips it on the other side, and anything that is
+ * not a JSON object names why rather than reading as empty.
+ */
+export function readJsonObject(path: string): { value: Record<string, unknown> | null; problem: string | null } {
+  if (!existsSync(path)) return { value: null, problem: null };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readText(path));
+  } catch (error) {
+    return { value: null, problem: `${path} is not readable JSON (${(error as Error).message})` };
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { value: null, problem: `${path} is not a JSON object` };
+  }
+  return { value: parsed as Record<string, unknown>, problem: null };
+}
+
+/**
+ * Write an edited home file — refused while the file on disk is one the editor could not have read.
+ *
+ * @remarks
+ * 🔴 The choke point for every editor (REV3): each reader answers an unreadable file with the empty
+ * default, which is the right reading for a session about to spawn and the wrong starting point for an
+ * edit. Writing it back erased every deny rule, every other workspace's key and every disabled plugin,
+ * and reported success. Checking here holds every editor, including the next one.
+ */
+export function writeJsonAtomic(path: string, value: unknown): void {
+  const { problem } = readJsonObject(path);
+  if (problem !== null) {
+    throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
+      + 'this command will not overwrite a file it could not understand.');
+  }
+  writeTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 export function sha256(text: string): string {

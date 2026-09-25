@@ -12,10 +12,9 @@
 // (`timeoutMinutes`, `pollSeconds`, the per-adapter `commands` map), and an editor that rewrote the
 // file from its own idea of the shape would silently delete the command that makes the stub run.
 
-import { existsSync, readFileSync } from 'node:fs';
 import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
-import { writeTextAtomic } from './fsx.ts';
+import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -61,46 +60,42 @@ const EMPTY: DriverChoices = {
  * up driving something nobody opted in.
  */
 export function readDriverChoices(path = driverConfigPath()): DriverChoices {
-  if (!existsSync(path)) return { ...EMPTY, rest: {} };
-
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ...EMPTY, rest: {} };
-
-    const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, ...rest } = parsed;
-    return {
-      drivable: names(drivable),
-      holds: names(holds),
-      trees: names(trees),
-      cap: typeof cap === 'number' && cap >= 1 ? Math.floor(cap) : EMPTY.cap,
-      adapter: typeof adapter === 'string' && adapter.length > 0 ? adapter : EMPTY.adapter,
-      // 🔴 Absent means the DEFAULT, and this is the OPPOSITE reading from `notify` directly above.
-      // A machine whose file predates this field is the one that has been driving unattended longest,
-      // so silence there must not mean "never park". Zero is settable and means exactly that.
-      strikes: typeof strikes === 'number' && strikes >= 0 ? Math.floor(strikes) : EMPTY.strikes,
-      forgiven: marks(forgiven),
-      // 🔴 Absent means ON, the same reading the driver makes (SURF5b): every machine that already
-      // has this file predates the field, and taking silence for "off" would ship the feature
-      // switched off on exactly the machines that have been driving longest.
-      notify: typeof notify === 'boolean' ? notify : EMPTY.notify,
-      // 🔴 Absent means OFF — the opposite of `notify`, the driver's own reading (INT4b): an intake
-      // spends a real login on every ask, so it runs only where a person named the harness for it.
-      intakeAdapter: typeof intakeAdapter === 'string' && intakeAdapter.trim().length > 0
-        ? intakeAdapter.trim() : null,
-      rest,
-    };
-  } catch {
+  const { value: parsed, problem } = readJsonObject(path);
+  if (problem !== null) {
     // A torn or hand-mangled file is reported, never silently replaced: rewriting it would destroy
     // whatever the person was in the middle of typing, and the driver reads the same file.
-    throw new DaorisError(
-      `${path} is not readable JSON. Fix it, or delete it to start from nothing — `
+    throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
+  if (parsed === null) return { ...EMPTY, rest: {} };
+
+  const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, ...rest } = parsed;
+  return {
+    drivable: names(drivable),
+    holds: names(holds),
+    trees: names(trees),
+    cap: typeof cap === 'number' && cap >= 1 ? Math.floor(cap) : EMPTY.cap,
+    adapter: typeof adapter === 'string' && adapter.length > 0 ? adapter : EMPTY.adapter,
+    // 🔴 Absent means the DEFAULT, and this is the OPPOSITE reading from `notify` directly above.
+    // A machine whose file predates this field is the one that has been driving unattended longest,
+    // so silence there must not mean "never park". Zero is settable and means exactly that.
+    strikes: typeof strikes === 'number' && strikes >= 0 ? Math.floor(strikes) : EMPTY.strikes,
+    forgiven: marks(forgiven),
+    // 🔴 Absent means ON, the same reading the driver makes (SURF5b): every machine that already
+    // has this file predates the field, and taking silence for "off" would ship the feature
+    // switched off on exactly the machines that have been driving longest.
+    notify: typeof notify === 'boolean' ? notify : EMPTY.notify,
+    // 🔴 Absent means OFF — the opposite of `notify`, the driver's own reading (INT4b): an intake
+    // spends a real login on every ask, so it runs only where a person named the harness for it.
+    intakeAdapter: typeof intakeAdapter === 'string' && intakeAdapter.trim().length > 0
+      ? intakeAdapter.trim() : null,
+    rest,
+  };
 }
 
 /** Write them back, preserving anything this build did not put there. */
 export function writeDriverChoices(path: string, choices: DriverChoices): void {
-  writeTextAtomic(path, `${JSON.stringify({
+  writeJsonAtomic(path, {
     ...choices.rest,
     drivable: choices.drivable,
     holds: choices.holds,
@@ -112,7 +107,7 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     forgiven: choices.forgiven,
     // Written only when named — absent IS off, and the driver writes it the same way.
     ...(choices.intakeAdapter ? { intakeAdapter: choices.intakeAdapter } : {}),
-  }, null, 2)}\n`);
+  });
 }
 
 /**

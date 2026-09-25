@@ -41,7 +41,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { flagValue } from './args.ts';
 import { DaorisError } from './errors.ts';
-import { writeTextAtomic } from './fsx.ts';
+import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
@@ -310,25 +310,20 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
   const empty: HarnessSettings = {
     defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rest: {},
   };
-  if (!existsSync(path)) return empty;
+  // Unreadable reads as empty, for a session about to spawn; an EDIT over it is refused by the writer.
+  const { value: parsed } = readJsonObject(path);
+  if (parsed === null) return empty;
 
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return empty;
-
-    const { defaults, workspaces, versions, workspaceVersions, ...rest } = parsed;
-    return {
-      defaults: stringMap(defaults),
-      workspaces: Object.fromEntries(
-        Object.entries(asObject(workspaces)).map(([circle, map]) => [circle, stringMap(map)])),
-      versions: stringMap(versions),
-      workspaceVersions: Object.fromEntries(
-        Object.entries(asObject(workspaceVersions)).map(([circle, map]) => [circle, stringMap(map)])),
-      rest,
-    };
-  } catch {
-    return empty;
-  }
+  const { defaults, workspaces, versions, workspaceVersions, ...rest } = parsed;
+  return {
+    defaults: stringMap(defaults),
+    workspaces: Object.fromEntries(
+      Object.entries(asObject(workspaces)).map(([circle, map]) => [circle, stringMap(map)])),
+    versions: stringMap(versions),
+    workspaceVersions: Object.fromEntries(
+      Object.entries(asObject(workspaceVersions)).map(([circle, map]) => [circle, stringMap(map)])),
+    rest,
+  };
 }
 
 /** Write it back, preserving anything this build did not put there. */
@@ -338,13 +333,13 @@ export function writeHarnessSettings(path: string, settings: HarnessSettings): v
       .filter(([, inner]) => Object.keys(inner).length > 0)
       .sort(([a], [b]) => (a < b ? -1 : 1)));
 
-  writeTextAtomic(path, `${JSON.stringify({
+  writeJsonAtomic(path, {
     ...settings.rest,
     defaults: sorted(settings.defaults),
     workspaces: circles(settings.workspaces),
     versions: sorted(settings.versions),
     workspaceVersions: circles(settings.workspaceVersions),
-  }, null, 2)}\n`);
+  });
 }
 
 /**
@@ -498,16 +493,11 @@ function keysPath(home: string): string {
 }
 
 function readKeys(home: string): Keys {
-  if (!existsSync(keysPath(home))) return {};
-  try {
-    const parsed = JSON.parse(readFileSync(keysPath(home), 'utf8')) as unknown;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-    return Object.fromEntries(Object.entries(parsed as Record<string, unknown>)
-      .map(([agent, held]) => [agent, stringMap(held)]));
-  } catch {
-    // An unreadable file holds no key anyone can be handed; the account then asks for one.
-    return {};
-  }
+  // An unreadable file holds no key anyone can be handed; the account then asks for one. Writing a
+  // new key over it is refused by `writeJsonAtomic`, or every other account's key would go with it.
+  const { value: parsed } = readJsonObject(keysPath(home));
+  if (parsed === null) return {};
+  return Object.fromEntries(Object.entries(parsed).map(([agent, held]) => [agent, stringMap(held)]));
 }
 
 function writeKeys(home: string, keys: Keys): void {
@@ -515,7 +505,7 @@ function writeKeys(home: string, keys: Keys): void {
     .filter(([, held]) => Object.keys(held).length > 0)
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([agent, held]) => [agent, sorted(held)]));
-  writeTextAtomic(keysPath(home), `${JSON.stringify(kept, null, 2)}\n`);
+  writeJsonAtomic(keysPath(home), kept);
 }
 
 /** The key's last four characters — every Anthropic key begins the same way. */
@@ -554,10 +544,11 @@ export function addKeyAccount(
   if (!key || /\s/.test(key)) throw new DaorisError('that is not an API key — it is blank, or has spaces in it.');
 
   const account = nextAccount(home, harness);
-  mkdirSync(profileHome(home, harness, account), { recursive: true });
   const keys = readKeys(home);
   keys[harness] = { ...keys[harness], [account]: key };
+  // The key first: a `keys.json` it cannot read refuses here, before an account directory exists.
   writeKeys(home, keys);
+  mkdirSync(profileHome(home, harness, account), { recursive: true });
 
   write(`daoris: \`${harness}\` account \`${account}\` is the API key ${keyHandle(key)}.`);
   write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);

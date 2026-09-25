@@ -13,8 +13,7 @@
 //   2. A half-set pair is no remote at all — never an env url with the file's key.
 //   3. Absence is the default, and it is silent (D21).
 
-import { existsSync, readFileSync } from 'node:fs';
-import { normalize, writeTextAtomic } from './fsx.ts';
+import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { homeFile, requireHomeFile } from './home.ts';
 
 /** Where a workspace's shared deployment is, and the key this machine speaks to it with. */
@@ -75,19 +74,15 @@ export function redactKey(key: string): string {
 /** The map as it sits on disk — every entry, including ones missing half a pair. */
 function parse(path: string | null): Map<string, Remote> {
   const remotes = new Map<string, Remote>();
-  if (path === null || !existsSync(path)) return remotes;
+  if (path === null) return remotes;
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    // A file that will not parse names no remote. The sync loop, not this reader, is where "you
-    // configured a remote and it does not work" gets said out loud.
-    return remotes;
-  }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return remotes;
+  // A file that will not parse names no remote. The sync loop, not this reader, is where "you
+  // configured a remote and it does not work" gets said out loud — and the editor refuses to write
+  // over it (`writeJsonAtomic`). A BOM is not "will not parse": the C# twins strip it.
+  const { value: parsed } = readJsonObject(path);
+  if (parsed === null) return remotes;
 
-  for (const [workspace, value] of Object.entries(parsed as Record<string, unknown>)) {
+  for (const [workspace, value] of Object.entries(parsed)) {
     if (!value || typeof value !== 'object') continue;
     const { url, key } = value as { url?: unknown; key?: unknown };
     // An entry missing half its pair is one workspace with no remote, never a machine with none: a
@@ -129,5 +124,15 @@ export function writeRemotes(path: string, remotes: Map<string, Remote>): void {
   const body: Record<string, Remote> = {};
   for (const workspace of [...remotes.keys()].sort()) body[workspace] = remotes.get(workspace)!;
 
-  writeTextAtomic(path, `${normalize(JSON.stringify(body, null, 2))}\n`);
+  writeJsonAtomic(path, body);
+}
+
+/**
+ * The key a workspace is held under in `remotes`, compared as a person compares names — trimmed and
+ * case-insensitive, the rule both C# twins read the file by (`OrdinalIgnoreCase`). Without it `remote
+ * remove aurora` said "not wired" over an `Aurora` the driver kept syncing to (REV3).
+ */
+export function heldAs(remotes: Map<string, Remote>, workspace: string): string | undefined {
+  const wanted = normalizeWorkspace(workspace).toLowerCase();
+  return [...remotes.keys()].find((held) => held.toLowerCase() === wanted);
 }

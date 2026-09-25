@@ -16,12 +16,12 @@
 //
 // It opens no socket and spawns nothing: it reads and writes files under the home.
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { flagValue } from './args.ts';
 import { DaorisError } from './errors.ts';
 import type { ExitCode } from './errors.ts';
-import { writeTextAtomic } from './fsx.ts';
+import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { requireHomeFile } from './home.ts';
 import {
   PERMISSIONS_FILE, addRule, readPermissions, removeRule, switchDefault, writePermissions,
@@ -184,8 +184,9 @@ function apply(file: PermissionFile, change: ProposedChange): PermissionFile {
 
 function parse(path: string): RuleProposal | null {
   try {
-    const root = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
-    const id = text(root?.id);
+    const root = readJsonObject(path).value;
+    if (root === null) return null;
+    const id = text(root.id);
     const change = record(root?.change);
     if (!id || !change) return null;
 
@@ -219,10 +220,10 @@ function parse(path: string): RuleProposal | null {
 
 /** Rewrite the file's state and settling, keeping every other key the session wrote. */
 function mark(path: string, state: ProposalState, by: string, note: string | null, at: string): void {
-  const root = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+  const root = readJsonObject(path).value ?? {};
   root.state = state;
   root.settled = { at, by, note };
-  writeTextAtomic(path, `${JSON.stringify(root, null, 2)}\n`);
+  writeJsonAtomic(path, root);
 }
 
 function text(value: unknown): string | null {

@@ -188,6 +188,23 @@ test('removing takes the workspace off the map and says what it did not do', asy
   fx.cleanup();
 });
 
+test('a workspace name is a person\'s name — case does not make a second row, and remove finds it', async () => {
+  // Both C# twins read the map `OrdinalIgnoreCase` (`RemoteTarget`, `RemoteConfig`). Here it was a
+  // plain Map: `remove aurora` said "not wired" over an `Aurora` the driver kept syncing to (REV3).
+  const fx = makeFixture('remotes-case');
+  const path = mapAt(fx);
+  await run(['add', 'Aurora', '--url', 'https://aurora.example.com', '--key', KEY], path);
+
+  const replaced = await run(['add', 'aurora', '--url', 'https://new.example.com', '--key', KEY], path);
+  assert.match(replaced.out, /replacing https:\/\/aurora\.example\.com/);
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(path, 'utf8'))), ['Aurora']);
+
+  const removed = await run(['remove', 'AURORA'], path);
+  assert.doesNotMatch(removed.out, /not wired/);
+  assert.deepEqual(JSON.parse(readFileSync(path, 'utf8')), {});
+  fx.cleanup();
+});
+
 test('removing what was never wired is an answer, not a failure', async () => {
   const fx = makeFixture('remotes-remove-absent');
 

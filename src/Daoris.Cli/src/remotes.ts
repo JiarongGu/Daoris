@@ -19,7 +19,7 @@ import { flagValue } from './args.ts';
 import { DaorisError } from './errors.ts';
 import {
   KEY_VARIABLE, PATH_VARIABLE, URL_VARIABLE, WORKSPACE_VARIABLE,
-  normalizeWorkspace, readRemotes, redactKey, remotesPath, remotesPathRequired, writeRemotes,
+  heldAs, normalizeWorkspace, readRemotes, redactKey, remotesPath, remotesPathRequired, writeRemotes,
 } from './remotemap.ts';
 import type { Remote } from './remotemap.ts';
 import type { CommandArgs } from './types.ts';
@@ -117,8 +117,10 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
       const key = await resolveKey(argv, workspace, write);
 
       const { remotes } = readFile(target);
-      const replacing = remotes.get(workspace);
-      remotes.set(workspace, { url: url.replace(/\/+$/, ''), key });
+      // Held under whatever spelling the map already uses, so `Aurora` and `aurora` stay one row.
+      const held = heldAs(remotes, workspace);
+      const replacing = held === undefined ? undefined : remotes.get(held);
+      remotes.set(held ?? workspace, { url: url.replace(/\/+$/, ''), key });
       writeRemotes(target, remotes);
 
       write(`  ${workspace}  ${url.replace(/\/+$/, '')}  ${redactKey(key)}`);
@@ -132,8 +134,9 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
       const workspace = normalizeWorkspace(requireName(argv, 'remove'));
       const target = remotesPathRequired();
       const { remotes } = readFile(target);
+      const held = heldAs(remotes, workspace);
 
-      if (!remotes.delete(workspace)) {
+      if (held === undefined || !remotes.delete(held)) {
         // The end state is the one that was asked for, so a non-zero exit would make an idempotent
         // script look broken — the same judgement `retire` makes.
         write(`daoris: \`${workspace}\` is not wired on this machine — nothing to remove.`);

@@ -19,12 +19,10 @@
 // It is a MANAGEMENT command and it opens no socket and spawns nothing: it reads and writes files
 // under the home. No code from a plugin is ever loaded here or anywhere (D64).
 
-import {
-  cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync,
-  writeFileSync,
-} from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
+import { readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
 import type { ExitCode } from './errors.ts';
 import { daorisHome, HOME_SENTENCE } from './home.ts';
 import { TOOLCHAINS } from './toolchain.ts';
@@ -128,25 +126,18 @@ const empty = (id: string): PluginManifest =>
 
 /** `plugins.json`: which plugins are disabled. An unreadable file disables nothing — the safe direction. */
 export function readPluginState(home: string): { disabled: string[] } {
-  const path = join(home, STATE_FILE);
-  if (!existsSync(path)) return { disabled: [] };
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8')) as { disabled?: unknown };
-    const rows = Array.isArray(parsed.disabled) ? parsed.disabled : [];
-    return { disabled: rows.filter((row): row is string => typeof row === 'string' && row.length > 0) };
-  } catch {
-    return { disabled: [] };
-  }
+  const { value: parsed } = readJsonObject(join(home, STATE_FILE));
+  const rows = Array.isArray(parsed?.disabled) ? parsed.disabled : [];
+  return { disabled: rows.filter((row): row is string => typeof row === 'string' && row.length > 0) };
 }
 
-/** Written beside and renamed over, like every file Daoris owns. */
+/**
+ * Written beside and renamed over, like every file Daoris owns — and never over a file it could not
+ * read, which would switch back on every plugin the person had switched off.
+ */
 export function writePluginState(home: string, state: { disabled: string[] }): void {
-  mkdirSync(home, { recursive: true });
-  const path = join(home, STATE_FILE);
-  const beside = `${path}.tmp`;
   const disabled = [...new Set(state.disabled)].sort();
-  writeFileSync(beside, `${JSON.stringify({ disabled }, null, 2)}\n`, 'utf8');
-  renameSync(beside, path);
+  writeJsonAtomic(join(home, STATE_FILE), { disabled });
 }
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -186,7 +177,7 @@ function strings(row: unknown, name: string, folder: string): string[] | null {
 export function readManifest(folderName: string, folder: string): { manifest: PluginManifest; problem: string | null } {
   let root: unknown;
   try {
-    root = JSON.parse(readFileSync(join(folder, MANIFEST), 'utf8'));
+    root = JSON.parse(readText(join(folder, MANIFEST)));
   } catch (error) {
     return { manifest: empty(folderName), problem: `\`${MANIFEST}\` could not be read: ${(error as Error).message}` };
   }
@@ -442,8 +433,11 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
 
       // Read as the catalogue would, with the target folder's name as the folder — the id decides
       // where it lands, so the source folder may be called anything.
-      const probe = JSON.parse(readFileSync(join(from, MANIFEST), 'utf8')) as { id?: unknown };
-      const id = typeof probe.id === 'string' ? probe.id : '';
+      // A broken manifest is a named problem, never a crash (plugin design, rule 2) — a bare parse here
+      // threw past the dispatcher as a stack trace (REV3).
+      const probe = readJsonObject(join(from, MANIFEST));
+      if (probe.problem !== null) throw new DaorisError(`${probe.problem}. Nothing was copied.`);
+      const id = typeof probe.value?.id === 'string' ? probe.value.id : '';
       const { manifest, problem } = readManifest(id, from);
       if (problem !== null) {
         throw new DaorisError(`${MANIFEST} in ${from}: ${problem} Nothing was copied.`);
