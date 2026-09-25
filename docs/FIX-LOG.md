@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A session's connector answered from the registry it loaded at spawn (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. Every host on a machine opens one store: the
+desktop's HTTP host, and a `daoris-knowledge` connector per agent session. Each loaded the registry
+into memory once, when it started. So a repository retired from the desktop stayed addressable and
+indexed in every session already running, one added was unknown there, and that session's refresh
+swept the newcomer's entries out of the shared index.
+
+**Root cause.** `Registry` was a copy of the `registrations` table, loaded by `ServiceFactory` and
+then maintained only by the process's own writes. D48 §3 made the store the authority, and the copy
+was never told.
+
+**Fix.** `KnowledgeService` re-reads the table into the registry before every answer that reads it:
+the registry query, a refresh, and the code map. The swap is whole (`Registry.Replace`), so a
+concurrent reader never sees half a reload.
+
+**Verify.** `A_second_host_over_the_same_store_sees_what_the_first_retired_and_added` failed with
+`["engine", "game"]` where `["engine", "newcomer"]` was due, and passes. Service 482/482.
+
 ## `status` hid what `check` fails on, and a pack's switch could take out a whole tier (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the CLI.

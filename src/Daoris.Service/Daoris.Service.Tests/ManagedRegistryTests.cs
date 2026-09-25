@@ -326,6 +326,38 @@ public sealed class FirstRunImportTests : IDisposable
     }
 
     /// <summary>
+    /// Two hosts over one store — the machine's HTTP host and a session's MCP host, opened at spawn —
+    /// see each other's registrations. The store is the authority (D48 §3), never a process's memory.
+    /// </summary>
+    /// <remarks>
+    /// REV3 service F2: each host loaded the registry once, at start. A repository retired from the
+    /// desktop stayed addressable and indexed in every session already running, and one added was
+    /// refused as unknown there — and swept from the index by that session's refresh.
+    /// </remarks>
+    [Fact]
+    public async Task A_second_host_over_the_same_store_sees_what_the_first_retired_and_added()
+    {
+        var options = Options();
+        Know(options, "engine", "game", "newcomer");
+        await using var desktop = await ServiceFactory.CreateAsync(options);
+        await desktop.Service.RetireAsync("newcomer");   // the bootstrap imported it; it arrives later
+        await using var session = await ServiceFactory.CreateAsync(options);
+        await session.Service.RefreshAsync();
+
+        await desktop.Service.RetireAsync("game");
+        await desktop.Service.RegisterAsync(new Registration(
+            "newcomer", Adopted: true, "Arrived after the session started.", [], [], [], 0,
+            Root: Path.Combine(options.RepositoryRoot, "newcomer")), DateTimeOffset.UtcNow);
+
+        Assert.Equal(["engine", "newcomer"],
+            (await session.Service.RegistryAsync()).Select(r => r.Repository).Order());
+
+        await session.Service.RefreshAsync();
+        Assert.Equal(["engine", "newcomer"],
+            (await session.Service.SummarizeAsync()).Select(r => r.Repository).Order());
+    }
+
+    /// <summary>
     /// The index reads the REGISTERED paths (D48 §3) — so a repository that is merely present in the
     /// folder, and never registered, contributes nothing. The folder stopped being the authority.
     /// </summary>

@@ -102,11 +102,28 @@ public sealed class Registry
     // 🔴 Concurrent (REV3): a host's requests register and read at once — an import loop, a sync
     // mirroring a teammate's row — and a plain dictionary enumerated during an insert threw "collection
     // was modified", answering 500 on whichever door was reading.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Registration> _known =
+    private volatile System.Collections.Concurrent.ConcurrentDictionary<string, Registration> _known =
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Record what a repository said about itself. Re-registering replaces: the name is the identity.</summary>
     public void Register(Registration registration) => _known[registration.Repository] = registration;
+
+    /// <summary>
+    /// Hold exactly these registrations — the store's rows, re-read by the service before it answers.
+    /// </summary>
+    /// <remarks>
+    /// Swapped whole, so a reader sees the old list or the new one and never half of a reload. The
+    /// store is the authority, and every host on a machine opens the same one: the desktop's host and
+    /// each session's connector. This copy was loaded once at start, so a retire in one host was
+    /// invisible in another for as long as it ran (REV3).
+    /// </remarks>
+    public void Replace(IEnumerable<Registration> registrations)
+    {
+        var known = new System.Collections.Concurrent.ConcurrentDictionary<string, Registration>(
+            StringComparer.OrdinalIgnoreCase);
+        foreach (var registration in registrations) known[registration.Repository] = registration;
+        _known = known;
+    }
 
     /// <summary>
     /// Take a repository off the map. <b>Nothing on disk is touched</b> — retiring is the registration

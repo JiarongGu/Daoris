@@ -237,6 +237,7 @@ public sealed class KnowledgeService(
     public async Task<IReadOnlyList<Registration>> RegistryAsync(
         string? workspace = null, CancellationToken ct = default)
     {
+        await ReloadRegistryAsync(ct).ConfigureAwait(false);
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var counts = (await store.AllAsync(ct).ConfigureAwait(false))
             .GroupBy(entry => entry.Repository, StringComparer.Ordinal)
@@ -729,6 +730,8 @@ public sealed class KnowledgeService(
         await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            await ReloadRegistryAsync(ct).ConfigureAwait(false);
+
             // The wiring, read once per refresh rather than once per entry: it is a small table and the
             // corpus is not. Read BEFORE the scan so every entry of one repository is stamped alike.
             var wiring = (registry?.Read(new Dictionary<string, int>()) ?? [])
@@ -787,6 +790,7 @@ public sealed class KnowledgeService(
     /// </summary>
     public async Task<CodeMapRead?> CodeMapAsync(string repository, CancellationToken ct = default)
     {
+        await ReloadRegistryAsync(ct).ConfigureAwait(false);
         var registration = (registry?.Read(new Dictionary<string, int>()) ?? [])
             .FirstOrDefault(r => string.Equals(r.Repository, repository, StringComparison.OrdinalIgnoreCase));
         if (registration is null) return null;
@@ -834,6 +838,21 @@ public sealed class KnowledgeService(
     /// <returns>Whether there was one to forget.</returns>
     public async Task<bool> ForgetFedCodeMapAsync(string repository, CancellationToken ct = default) =>
         registrations is not null && await registrations.ForgetCodeMapAsync(repository, ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// The registry as the store holds it NOW, re-read before every answer that reads it (REV3).
+    /// </summary>
+    /// <remarks>
+    /// Every host on a machine opens one store: the desktop's HTTP host, and a connector for each
+    /// session. A copy loaded once at start made a retire in one invisible to the others for as long
+    /// as they ran, and a session's refresh then swept a repository added after it started. The table
+    /// is small, and the corpus the same answers read is not.
+    /// </remarks>
+    private async Task ReloadRegistryAsync(CancellationToken ct)
+    {
+        if (registry is null || registrations is null) return;
+        registry.Replace(await registrations.AllAsync(ct).ConfigureAwait(false));
+    }
 
     /// <summary>
     /// Registered repositories whose checkout is not where the registry says it is (D48 §3).
