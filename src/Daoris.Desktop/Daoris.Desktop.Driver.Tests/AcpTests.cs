@@ -226,6 +226,49 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// A permission request whose shape this client cannot read is still ANSWERED — cancelled, which is
+    /// the refusal (REV3 chat F10). It used to throw while reading the options, and the pump showed the
+    /// frame as unreadable and went on, while the agent waited for an answer that never came: a turn
+    /// hung for ever.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"sessionId":"s-1","options":"not a list"}""")]
+    [InlineData("""{"sessionId":"s-1","options":[1, "x", {"kind":7,"optionId":"no"}]}""")]
+    [InlineData("\"params that are a string\"")]
+    public async Task A_permission_request_of_an_unreadable_shape_is_still_answered(string parameters)
+    {
+        string? answered = null;
+        var agent = new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out var method))
+            {
+                if (frame.TryGetProperty("id", out var id) && id.GetRawText() == "902")
+                {
+                    answered = frame.GetProperty("result").GetProperty("outcome").GetRawText();
+                }
+
+                return null;
+            }
+
+            switch (method.GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push($$"""{"jsonrpc":"2.0","id":902,"method":"session/request_permission","params":{{parameters}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do it", CancellationToken.None);
+
+        Assert.NotNull(answered);
+        Assert.Contains("cancelled", answered);
+    }
+
+    /// <summary>
     /// A tool call and its outcome reach the console as readable lines — the structured source the
     /// timeline needs, rendered for the transcript without anything being parsed out of stdout.
     /// </summary>

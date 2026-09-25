@@ -217,7 +217,12 @@ public sealed class AcpSession(
                 ? new { cwd, mcpServers = offered }
                 : (object)new { cwd, mcpServers = offered, _meta = meta },
             ct).ConfigureAwait(false);
-        _sessionId = created.TryGetProperty("sessionId", out var id) ? id.GetString() : null;
+        // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
+        // names this client's own failures, and a conversation waited for a session that never came.
+        _sessionId = created.ValueKind == JsonValueKind.Object && created.TryGetProperty("sessionId", out var id)
+                     && id.ValueKind == JsonValueKind.String
+            ? id.GetString()
+            : null;
         if (string.IsNullOrEmpty(_sessionId))
         {
             throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
@@ -400,10 +405,26 @@ public sealed class AcpSession(
 
         if (!hasMethod) return; // neither a call nor an answer; nothing to do with it
 
-        var name = method.GetString();
+        var name = method.ValueKind == JsonValueKind.String ? method.GetString() : null;
         if (hasId)
         {
-            await AnswerRequestAsync(name, id, frame).ConfigureAwait(false);
+            try
+            {
+                await AnswerRequestAsync(name, id, frame).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // 🔴 A request is ANSWERED, whatever went wrong reading it (REV3): an unanswered one is
+                // a turn hung for ever, which is worse than any error the agent can be told.
+                await SendAsync(new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = JsonNode.Parse(id.GetRawText()),
+                    ["error"] = new JsonObject { ["code"] = -32603, ["message"] = $"daoris-driver could not read {name}: {error.Message}" },
+                }).ConfigureAwait(false);
+                throw;
+            }
+
             return;
         }
 
@@ -440,12 +461,42 @@ public sealed class AcpSession(
 
         if (frame.TryGetProperty("error", out var error))
         {
-            var message = error.TryGetProperty("message", out var m) ? m.GetString() : error.GetRawText();
+            // Read without trusting the shape (REV3): a throw here left the call it answers waiting.
+            var message = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("message", out var m)
+                          && m.ValueKind == JsonValueKind.String
+                ? m.GetString()
+                : error.GetRawText();
             waiting.TrySetException(new DriverException($"the ACP agent refused the call: {message}"));
             return;
         }
 
         waiting.TrySetResult(frame.TryGetProperty("result", out var result) ? result.Clone() : default);
+    }
+
+    /// <summary>
+    /// The option that refuses, read without trusting the frame's shape — null when none can be read.
+    /// </summary>
+    /// <remarks>
+    /// Null answers <c>cancelled</c>, which is also a refusal. A read that threw on an unexpected shape
+    /// used to leave the request unanswered, and an unanswered request is a turn hung for ever (REV3).
+    /// </remarks>
+    private static string? RejectOption(JsonElement frame)
+    {
+        if (!frame.TryGetProperty("params", out var p) || p.ValueKind != JsonValueKind.Object
+            || !p.TryGetProperty("options", out var options) || options.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var option in options.EnumerateArray())
+        {
+            if (option.ValueKind != JsonValueKind.Object) continue;
+            if (!option.TryGetProperty("kind", out var kind) || kind.ValueKind != JsonValueKind.String) continue;
+            if (kind.GetString() is not ("reject_once" or "reject_always")) continue;
+            if (option.TryGetProperty("optionId", out var o) && o.ValueKind == JsonValueKind.String) return o.GetString();
+        }
+
+        return null;
     }
 
     private async Task AnswerRequestAsync(string? method, JsonElement id, JsonElement frame)
@@ -487,24 +538,13 @@ public sealed class AcpSession(
     /// </remarks>
     private async Task AnswerPermissionAsync(JsonElement id, JsonElement frame)
     {
-        string? rejectId = null;
-        if (frame.TryGetProperty("params", out var p) && p.TryGetProperty("options", out var options)
-            && options.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var option in options.EnumerateArray())
-            {
-                var kind = option.TryGetProperty("kind", out var k) ? k.GetString() : null;
-                if (kind is not ("reject_once" or "reject_always")) continue;
-                rejectId = option.TryGetProperty("optionId", out var o) ? o.GetString() : null;
-                if (rejectId is not null) break;
-            }
-        }
-
+        var rejectId = RejectOption(frame);
         var outcome = rejectId is null
             ? new JsonObject { ["outcome"] = "cancelled" }
             : new JsonObject { ["outcome"] = "selected", ["optionId"] = rejectId };
 
-        var tool = frame.TryGetProperty("params", out var q) && q.TryGetProperty("toolCall", out var call)
+        var tool = frame.TryGetProperty("params", out var q) && q.ValueKind == JsonValueKind.Object
+                   && q.TryGetProperty("toolCall", out var call)
             ? Compact(call) : "a tool call";
         var refused = $"permission refused: {tool} — the repository's own configuration governs, and the "
                       + "driver may not widen it";
