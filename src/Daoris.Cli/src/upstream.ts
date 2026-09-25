@@ -3,7 +3,7 @@ import type { ExitCode } from './errors.ts';
 import { existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.ts';
-import { parseFrontmatter, stripHeader } from './document.ts';
+import { frontmatterEnd, stripHeader } from './document.ts';
 import { resolveCanonRoot } from './canon.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
 import { spanBody } from './tierrender.ts';
@@ -55,8 +55,8 @@ export function upstreamFile(
     }
 
     const held = existsSync(canonFile) ? readText(canonFile) : '';
-    const { meta } = parseFrontmatter(held, []);
-    const front = meta ? `${held.slice(0, held.indexOf('\n---\n', 3) + 5)}\n` : '';
+    const end = frontmatterEnd(held);
+    const front = end === -1 ? '' : `${held.slice(0, end)}\n`;
     writeTextAtomic(canonFile, `${front}${body}\n`);
     return { target: entry.target, source: entry.source };
   }

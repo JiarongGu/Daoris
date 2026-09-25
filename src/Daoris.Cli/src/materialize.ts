@@ -4,7 +4,7 @@ import type { ExitCode } from './errors.ts';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.ts';
-import { renderCanonFile, stripHeader } from './document.ts';
+import { parseFrontmatter, renderCanonFile, stripFrontmatter, stripHeader } from './document.ts';
 import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
@@ -12,14 +12,7 @@ import { readTier } from './indexgen.ts';
 import { renderRoster, renderRules, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
 import { resolveHarness } from './harness.ts';
-import { parseFrontmatter } from './document.ts';
 import { DaorisError } from './errors.ts';
-
-/** A canon document's body, with its frontmatter removed — what a span carries (D59). */
-function stripFrontmatter(text: string): string {
-  const { meta, body } = parseFrontmatter(text, []);
-  return (meta ? body : text).trim();
-}
 
 /** Which directory name a tier answers to, for matching a canon target against it. */
 function tierPrefix(tier: { region?: { name: string }; dir?: string }, _harness: unknown): string {
@@ -92,13 +85,14 @@ export function planSync(
         if (entry && sha256(onDisk) !== entry.sha256 && onDisk !== trimmed) drifted.push(file.target);
       }
 
+      const { meta } = parseFrontmatter(body, []);
       writes.push({
         ...file,
         content: trimmed,
         sha256: digest,
         state,
         in: region.file,
-        ...(parseFrontmatter(body, []).meta ? { meta: parseFrontmatter(body, []).meta! } : {}),
+        ...(meta ? { meta } : {}),
       });
       continue;
     }

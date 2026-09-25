@@ -16,7 +16,7 @@
 import type { CanonFile, Harness, LockEntry } from './types.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { makeHeader, parseFrontmatter, SKILL_FIELDS } from './document.ts';
+import { makeHeader, parseFrontmatter, SKILL_FIELDS, stripFrontmatter } from './document.ts';
 import { readText } from './fsx.ts';
 import { regionIn } from './harness.ts';
 import { findRegion } from './region.ts';
@@ -52,12 +52,6 @@ const SKILL_HEAD = '| Skill | Use when |\n|---|---|';
 /** A document's name — the filename, which is what every rule's frontmatter `name` must match. */
 function nameOf(file: CanonFile): string {
   return file.target.replace(/^.*\//, '').replace(/\.md$/, '');
-}
-
-/** The body a document contributes: its own text, with the frontmatter gone and the edges trimmed. */
-function bodyOf(text: string): string {
-  const { meta, body } = parseFrontmatter(text, []);
-  return (meta ? body : text).trim();
 }
 
 function metaOf(document: TierDocument, required: readonly string[] = ['applies_when', 'enforces']) {
@@ -177,7 +171,7 @@ export function renderRules(input: TierInput): string[] {
       '',
       makeHeader(document.file.pack, document.file.source, input.version),
       '',
-      bodyOf(document.text),
+      stripFrontmatter(document.text),
     );
   }
 

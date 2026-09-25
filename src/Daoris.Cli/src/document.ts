@@ -23,10 +23,11 @@ export function makeHeader(pack: string, source: string, version: string): strin
 
 /**
  * Where the frontmatter ends, or -1 when there is no complete block. Kept in one
- * place because withHeader and stripHeader must agree on it exactly, or a
- * materialized file stops round-tripping back through `upstream`.
+ * place because withHeader, stripHeader, parseFrontmatter and `upstream`'s
+ * restoring of a span's frontmatter must agree on it exactly, or a materialized
+ * file stops round-tripping back through `upstream`.
  */
-function frontmatterEnd(text: string): number {
+export function frontmatterEnd(text: string): number {
   if (!text.startsWith('---\n')) return -1;
   const fence = text.indexOf('\n---\n', 3);
   return fence === -1 ? -1 : fence + 5;
@@ -83,16 +84,21 @@ export function parseFrontmatter(
   text: string,
   required: readonly string[] = RULE_FIELDS,
 ): { meta: Record<string, string> | null; body: string } {
-  if (!text.startsWith('---\n')) return { meta: null, body: text };
-  const end = text.indexOf('\n---\n', 3);
+  const end = frontmatterEnd(text);
   if (end === -1) return { meta: null, body: text };
 
   const meta: Record<string, string> = {};
-  for (const line of text.slice(4, end + 1).split('\n')) {
+  for (const line of text.slice(4, end - 4).split('\n')) {
     const at = line.indexOf(':');
     if (at === -1) continue;
     meta[line.slice(0, at).trim()] = line.slice(at + 1).trim();
   }
   if (required.some((field) => !meta[field])) return { meta: null, body: text };
-  return { meta, body: text.slice(end + 5) };
+  return { meta, body: text.slice(end) };
+}
+
+/** A document's body with its frontmatter removed and the edges trimmed — what a span carries (D59). */
+export function stripFrontmatter(text: string): string {
+  const { meta, body } = parseFrontmatter(text, []);
+  return (meta ? body : text).trim();
 }
