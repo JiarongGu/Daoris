@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The desktop's Install never started on Windows — the CLI's 2026-09-22 fix had a twin (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the modules, then reproduced. On Windows, pressing *Install* on
+any agent, or pinning one that ships only on npm (`claude-code-acp`, `dsh`, `codex-acp`), failed
+before it started. The page showed the generic "something on this machine refused". The CLI's
+`daoris agent install` had exactly this defect until 2026-09-22 ("`daoris harness install` has never
+worked on Windows", below), and that fix went into the TypeScript only.
+
+**Root cause.** Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`.
+`HarnessActions.RunAsync` started `FileName = "npm"` with no shell. `CreateProcess` appends only
+`.exe` and found nothing. The resulting `Win32Exception` was not a `DriverException`, so the module
+boundary flattened it to a type name, and its own message named the working directory.
+
+**Fix.** On Windows, the command is resolved through `PATHEXT` to the shim it names. This skips the
+extensionless POSIX `npm` script npm installs beside `npm.cmd`, which no Windows process can start.
+An argument `cmd.exe` would reinterpret is refused rather than escaped, as the CLI does. A command
+that cannot start becomes the driver's own sentence, with no path in it. `CommandPresence.Resolve` is
+the one lookup behind both the presence check and the start.
+
+**Verify.** Two new `HarnessRunTests`, both failing before the fix:
+- `A_bare_command_that_is_a_windows_shim_starts` puts a `.cmd` on PATH, runs it by its bare name, and
+  refuses `@acme/agent@1&calc`.
+- `A_command_that_is_nowhere_is_refused_in_a_sentence` expects a `DriverException`, where before it
+  got a raw `Win32Exception` carrying the test's working directory.
+
 ## A harness outlived its session when anything failed between its spawn and its wait (2026-09-25)
 
 **Symptom.** Found by REV3's reading of both spawn paths, then reproduced. The trigger was any

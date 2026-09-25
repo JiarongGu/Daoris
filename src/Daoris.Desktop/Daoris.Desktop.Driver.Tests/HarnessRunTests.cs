@@ -73,6 +73,51 @@ public sealed class HarnessRunTests
         Assert.Equal("plain", HarnessActions.Clean("plain"));
     }
 
+    /// <summary>
+    /// 🔴 REV3: every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`. A bare name with
+    /// no shell appends only `.exe`, so *Install* — and a pin of anything that ships only on npm — never
+    /// started from the desktop, and the page read the generic "something refused". The CLI's twin was
+    /// fixed 2026-09-22; this is the driver's.
+    /// </summary>
+    [Fact]
+    public async Task A_bare_command_that_is_a_windows_shim_starts()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var folder = Path.Combine(Path.GetTempPath(), "daoris-shim-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "rev3-shim.cmd"), "@echo shim %*\r\n");
+        var saved = Environment.GetEnvironmentVariable("PATH");
+        Environment.SetEnvironmentVariable("PATH", folder + Path.PathSeparator + saved);
+        try
+        {
+            var lines = new List<string>();
+            var exit = await HarnessActions.RunAsync(
+                ["rev3-shim", "install", "-g", "@acme/agent@1.2.3"], Node, null, lines.Add, CancellationToken.None);
+
+            Assert.Equal(0, exit);
+            Assert.Contains(lines, line => line.StartsWith("shim install -g @acme/agent@1.2.3", StringComparison.Ordinal));
+
+            // An argument the shim's shell would reinterpret is refused, never passed through.
+            var refused = await Assert.ThrowsAsync<DriverException>(() => HarnessActions.RunAsync(
+                ["rev3-shim", "install", "@acme/agent@1&calc"], Node, null, _ => { }, CancellationToken.None));
+            Assert.Contains("cannot be passed to a Windows command shim safely", refused.Message);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", saved);
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    /// <summary>A command that is nowhere is the driver's sentence, never the generic refusal the page falls back to.</summary>
+    [Fact]
+    public async Task A_command_that_is_nowhere_is_refused_in_a_sentence()
+    {
+        var refused = await Assert.ThrowsAsync<DriverException>(() => HarnessActions.RunAsync(
+            ["daoris-rev3-no-such-command"], Node, null, _ => { }, CancellationToken.None));
+        Assert.Contains("daoris-rev3-no-such-command", refused.Message);
+    }
+
     /// <summary>A blank line is a line — the shape of the output is the harness's.</summary>
     [Fact]
     public async Task Whole_lines_arrive_as_they_did_blank_ones_included()

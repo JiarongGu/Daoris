@@ -1671,17 +1671,65 @@ public static class HarnessActions
         };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
         HarnessProbe.Apply(info, toolchain, profileHome);
+        info.FileName = WindowsShim(info.FileName, command.Skip(1), info.Environment["PATH"]);
 
         write($"$ {string.Join(' ', command)}");
 
-        using var process = Process.Start(info)
-            ?? throw new DriverException($"`{command[0]}` did not start");
+        Process process;
+        try
+        {
+            process = Process.Start(info) ?? throw new DriverException($"`{command[0]}` did not start");
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // Said by the driver, not by Win32: its message names the working directory, and one that
+            // reached the page as a bare exception became the generic "something refused" (REV3).
+            throw new DriverException(
+                $"`{command[0]}` could not be started — it is not on this machine's PATH, or it could not be run. "
+                + "Daoris runs the agent's own tooling; install that first, or run it from a terminal.");
+        }
+
+        using var _ = process;
         started?.Invoke(new HarnessRun(process));
 
         await Task.WhenAll(PumpAsync(process.StandardOutput, write, ct), PumpAsync(process.StandardError, write, ct))
             .ConfigureAwait(false);
         await process.WaitForExitAsync(ct).ConfigureAwait(false);
         return process.ExitCode;
+    }
+
+    /// <summary>
+    /// The file to start for <paramref name="command"/> — on Windows, the shim a bare name resolves to.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`: started by its bare
+    /// name with no shell, Windows appends only `.exe` and finds nothing (REV3; the CLI's `spawnable` is
+    /// the twin, fixed 2026-09-22). A shim is then run by `cmd.exe`, which parses its arguments again —
+    /// so an argument it would reinterpret is refused rather than escaped: every one here is a path or
+    /// a `package@version`, and none legitimately carries one.
+    /// </remarks>
+    internal static string WindowsShim(string command, IEnumerable<string> arguments, string? path)
+    {
+        if (!OperatingSystem.IsWindows()) return command;
+
+        var file = CommandPresence.Resolve(command, path, startable: true) ?? command;
+        if (!file.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase)
+            && !file.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
+        {
+            return file;
+        }
+
+        foreach (var argument in arguments)
+        {
+            if (argument.IndexOfAny(['"', '%', '&', '|', '<', '>', '^', '\r', '\n']) >= 0)
+            {
+                throw new DriverException(
+                    $"`{argument}` cannot be passed to a Windows command shim safely. Run the agent's own "
+                    + "tooling from a terminal instead.");
+            }
+        }
+
+        return file;
     }
 
     /// <summary>How long a partial line may sit before it is taken for a prompt.</summary>
