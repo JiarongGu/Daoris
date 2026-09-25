@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A shell with no home opened nothing and said nothing (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the desktop. A workspace build started without
+`DAORIS_HOME` (`dotnet run`, or the exe from its build folder) exited at once, with no window and no
+sentence. An install sets its own home, and `npm run desktop -- run` gives a scratch one; everything
+else had nothing.
+
+**Root cause.** `DriverLoop`'s property initializers resolve the home and throw a `DriverException`
+when there is none. The container built the loop as the application started, before any window, and
+a windowed program has no console to print the throw to.
+
+**Fix.** `Main` checks the home first. With none, a message box says the home's own sentence and how
+a development run gets one, and the process exits 2. The Remotes module's path now says the same
+thing, rather than handing a null path onward (the build warned of that one, CS8603).
+
+**Verify.** Build only. A message box cannot be dismissed from this session, so the check was not
+run by starting the window. The sentence is `DaorisHome`'s, which the driver's tests already cover.
+
 ## With a secondary window in front, the same news came twice (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the desktop. A session that parks or ends unasked raises an

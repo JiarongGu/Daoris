@@ -7,10 +7,13 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The session-control surface's host half (D46 §6): the page asks, this answers — and every mutation
-/// is an edit to `driver.json` plus a nudge, because the file is the person's standing choices and the
-/// loop already re-reads it every tick. Stopping a session is the one control that touches a process,
-/// through the shared registry, and the driver records the end as the person's.
+/// The session-control surface's host half (D46 §6): the page asks, this answers. A standing choice is
+/// an edit to its file under the home (`driver.json`, `harnesses.json`, `permissions.json`,
+/// `plugins.json`) plus a nudge, because the file is the truth and the loop re-reads it every tick —
+/// the same files the terminal's verbs edit (D50). The controls that touch a process or a tree (stop,
+/// a parked session's answer, a conversation, a merge or a discard) go through the shared registry and
+/// the service's ledger, and the record says whose act it was. (REV3 corrected "every mutation is an
+/// edit to `driver.json`", written when that was true.)
 /// </summary>
 public sealed class DriverModule : ModuleBase
 {

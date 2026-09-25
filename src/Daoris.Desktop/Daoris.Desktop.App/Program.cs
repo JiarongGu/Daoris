@@ -29,6 +29,22 @@ internal static class Program
         // scratch home stays the dev loop's.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
 
+        // 🔴 No home is a sentence, not a silent exit (REV3). A workspace build started with no
+        // DAORIS_HOME threw from the loop's construction, before any window existed, and a windowed
+        // program has no console to say it on — so nothing appeared and nothing said why.
+        try
+        {
+            Daoris.Driver.DriverConfig.ResolvePath();
+        }
+        catch (Daoris.Driver.DriverException error)
+        {
+            MessageBox.Show(
+                $"{error.Message}\n\n`npm run desktop -- run` gives a development run a home of its own.",
+                "Daoris cannot start", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            Environment.ExitCode = 2;
+            return;
+        }
+
         var serviceUrl = Environment.GetEnvironmentVariable(Daoris.Driver.ServiceClient.UrlVariable)
             ?? "http://localhost:5177";
 
