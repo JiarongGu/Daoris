@@ -363,6 +363,29 @@ test('remove takes the install folder and names the data folder rather than dele
   fx.cleanup();
 });
 
+test('a plugin whose folder a running process holds is refused whole, never half-removed', {
+  // A process's working directory holds its folder on Windows only; elsewhere the move succeeds.
+  skip: process.platform !== 'win32',
+}, async () => {
+  // REV3 modules F5, the terminal's twin: the desktop's hook process runs IN the plugin's folder, and
+  // a recursive delete took every file it could before failing, stranding a plugin with no manifest.
+  const fx = makeFixture('plugins-remove-held');
+  plugin(fx.root, 'acme.held', '{ "id": "acme.held" }');
+  const folder = join(pluginsRoot(fx.root), 'acme.held');
+  const { spawn } = await import('node:child_process');
+  const holder = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 20000)'], { cwd: folder, stdio: 'ignore' });
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const error = captureError(() => run(['remove', 'acme.held'], fx.root));
+    assert.match(error.message, /not removed/);
+    assert.equal(existsSync(join(folder, 'plugin.json')), true, 'the removal took the manifest and stranded the plugin');
+  } finally {
+    holder.kill();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    fx.cleanup();
+  }
+});
+
 test('an id that is not a plugin id is refused before it becomes a path — the home and .data survive', () => {
   // REV3: `remove ..` joined the id under plugins/ and deleted the whole Daoris home; `remove .`
   // deleted plugins/ with every plugin's kept data inside it.

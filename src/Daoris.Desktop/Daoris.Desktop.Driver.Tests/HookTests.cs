@@ -352,6 +352,28 @@ public sealed class HookTests : IDisposable
         Assert.Contains("daoris plugin disable acme.gate", decision.Reason);
     }
 
+    /// <summary>
+    /// One plugin's process is stopped NOW, not at the next tick — what removing it needs first, since
+    /// on Windows a running hook holds its folder (REV3 modules F5).
+    /// </summary>
+    [Fact]
+    public async Task One_plugin_can_be_stopped_now_and_the_others_keep_running()
+    {
+        var gate = new FakeChannel(["quest/consider"]);
+        var watch = new FakeChannel(["session/ended"]);
+        var channels = new Dictionary<string, IHookChannel> { ["acme.gate"] = gate, ["acme.watch"] = watch };
+        await using var set = new HookSet(_home, start: (plugin, _, _) => Task.FromResult(channels[plugin.Manifest.Id]));
+        await set.ReconcileAsync(
+            Catalog(_home, ("acme.gate", ["quest/consider"]), ("acme.watch", ["session/ended"])), CancellationToken.None);
+
+        Assert.True(await set.StopAsync("acme.gate"));
+
+        Assert.True(gate.Disposed);
+        Assert.False(watch.Disposed);
+        Assert.Equal(["acme.watch"], set.Running);
+        Assert.False(await set.StopAsync("acme.gate"));
+    }
+
     [Fact]
     public async Task Nobody_listening_is_allow_and_a_plugin_listening_elsewhere_is_not_asked()
     {

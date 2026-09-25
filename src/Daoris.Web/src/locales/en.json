@@ -223,6 +223,7 @@
   "errors.HARNESS_ACTION_BUSY": "{{running}} is still running — wait for it to end, or stop it, before starting another.",
   "errors.PLUGIN_UNKNOWN": "There is no plugin called {{id}} on this machine.",
   "errors.PLUGIN_ACTION_UNKNOWN": "There is no plugin action called {{action}}.",
+  "errors.PLUGIN_BUSY": "{{id}} was not removed: something on this machine still has a file in its folder open. Close it and remove it again — nothing was taken.",
   "errors.DRIVER_REFUSED": "{{message}}",
   "errors.SESSION_MOVE_NOT_YOURS": "A person may finish, decline or stop a parked session — not move it to {{state}}. Answering it so it carries on is a message, not a move.",
   "errors.SESSION_DECLINE_NEEDS_REASON": "Declining needs a reason: it is the part whoever reads this record can act on.",

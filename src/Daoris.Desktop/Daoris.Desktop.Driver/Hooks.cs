@@ -527,6 +527,32 @@ public sealed class HookSet(
         return lines;
     }
 
+    /// <summary>
+    /// Stop one plugin's hook process now, rather than at the next tick — what removing a plugin needs
+    /// first, because on Windows a running process holds its working directory (REV3).
+    /// </summary>
+    /// <returns>Whether a process was running to stop.</returns>
+    public async Task<bool> StopAsync(string id, CancellationToken ct = default)
+    {
+        await _reconciling.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            IHookChannel? channel;
+            lock (_running)
+            {
+                if (!_running.Remove(id, out var held)) return false;
+                channel = held.Channel;
+            }
+
+            await channel.DisposeAsync().ConfigureAwait(false);
+            return true;
+        }
+        finally
+        {
+            _reconciling.Release();
+        }
+    }
+
     /// <summary>The waterfall, for one planned start.</summary>
     public async Task<HookDecision> ConsiderAsync(Consideration start, CancellationToken ct)
     {

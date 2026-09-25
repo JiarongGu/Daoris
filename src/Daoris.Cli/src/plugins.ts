@@ -19,7 +19,7 @@
 // It is a MANAGEMENT command and it opens no socket and spawns nothing: it reads and writes files
 // under the home. No code from a plugin is ever loaded here or anywhere (D64).
 
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
 import { readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
@@ -115,6 +115,20 @@ export interface PluginCatalog {
 
 export function pluginsRoot(home: string): string {
   return join(home, PLUGINS_DIR);
+}
+
+/**
+ * A folder copied file by file with explicit reads and writes, never `fs.cpSync` (the contract §8: a
+ * documented crash on the Node version in use). Links are not followed or copied (D3).
+ */
+function copyTree(from: string, to: string): void {
+  mkdirSync(to, { recursive: true });
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    const source = join(from, entry.name);
+    const target = join(to, entry.name);
+    if (entry.isDirectory()) copyTree(source, target);
+    else if (entry.isFile()) copyFileSync(source, target);
+  }
 }
 
 export function dataFolder(home: string, id: string): string {
@@ -460,9 +474,31 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
       const replacing = existsSync(target);
       // 🔴 Replaced wholesale, never merged: a stale file from the previous install is exactly the
       // kind of thing that makes "which version is running" unanswerable. `.data/` is beside it.
-      rmSync(target, { recursive: true, force: true });
+      // Copied in beside first, and the old folder moved aside WHOLE (REV3): deleting it first left
+      // no plugin at all when its folder was held, or when the copy then failed.
       mkdirSync(pluginsRoot(home), { recursive: true });
-      cpSync(from, target, { recursive: true });
+      const staging = join(pluginsRoot(home), `.adding-${manifest.id}-${process.pid}-${Date.now()}`);
+      copyTree(from, staging);
+      if (replacing) {
+        const aside = join(pluginsRoot(home), `.removing-${manifest.id}-${process.pid}-${Date.now()}`);
+        try {
+          renameSync(target, aside);
+        } catch {
+          rmSync(staging, { recursive: true, force: true });
+          throw new DaorisError(
+            `\`${manifest.id}\` was not replaced: something on this machine still has its folder open — a `
+            + `running desktop's hook process, most likely. \`daoris plugin disable ${manifest.id}\`, give the `
+            + 'desktop a moment to stop it, then add it again. The installed version is untouched.');
+        }
+        renameSync(staging, target);
+        try {
+          rmSync(aside, { recursive: true, force: true });
+        } catch {
+          // A dot-folder is never read as a plugin; one that cannot be deleted now is nobody's.
+        }
+      } else {
+        renameSync(staging, target);
+      }
 
       write(`daoris: ${replacing ? 'replaced' : 'added'} plugin \`${manifest.id}\` at ${target}`);
       write(`  ${describe({ manifest, folder: target, data: dataFolder(home, manifest.id), enabled: true, problem: null })}.`);
@@ -479,7 +515,23 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
         write(`daoris: no plugin \`${id}\` on this machine — nothing to remove.`);
         return 0;
       }
-      rmSync(target, { recursive: true, force: true });
+      // 🔴 Moved aside WHOLE, then deleted (REV3): a running desktop's hook process holds its plugin's
+      // folder on Windows, and a recursive delete took every file it could before failing — a plugin
+      // with no manifest, neither there nor gone. A dot-folder is never read as a plugin.
+      const aside = join(pluginsRoot(home), `.removing-${id}-${process.pid}-${Date.now()}`);
+      try {
+        renameSync(target, aside);
+      } catch {
+        throw new DaorisError(
+          `\`${id}\` was not removed: something on this machine still has its folder open — a running `
+          + `desktop's hook process, most likely. \`daoris plugin disable ${id}\`, give the desktop a moment `
+          + 'to stop it, then remove it again. Nothing was taken.');
+      }
+      try {
+        rmSync(aside, { recursive: true, force: true });
+      } catch {
+        // Aside is invisible to the catalogue; a delete that cannot finish leaves no plugin behind.
+      }
       enablePlugin(home, id);
       write(`daoris: plugin \`${id}\` removed from this machine.`);
       const data = dataFolder(home, id);

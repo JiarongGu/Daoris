@@ -656,6 +656,33 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// A plugin whose folder something on the machine still holds is not half-removed (REV3 modules
+    /// F5). On Windows the folder of a running hook process — its working directory — cannot go, and
+    /// the recursive delete took every file it could first, leaving a folder with no manifest: a
+    /// plugin stranded, neither there nor gone. Removal moves the folder aside whole, or refuses whole.
+    /// </summary>
+    [Fact]
+    public async Task A_plugin_whose_folder_is_held_is_refused_whole_and_left_intact()
+    {
+        var folder = Path.Combine(Home, "plugins", "acme.held");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """{ "id": "acme.held", "harnesses": [] }""");
+        File.WriteAllText(Path.Combine(folder, "hooks.mjs"), "// a hook the plugin ships");
+        var module = Module();
+
+        string refusal;
+        using (File.Open(Path.Combine(folder, "hooks.mjs"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            refusal = await RefusalAsync(module, "PLUGIN_ACTION", new { id = "acme.held", action = "remove" });
+        }
+
+        Assert.Contains("PLUGIN_BUSY", refusal);
+        Assert.True(File.Exists(Path.Combine(folder, "plugin.json")), "the removal took the manifest and stranded the plugin");
+        Assert.True(File.Exists(Path.Combine(folder, "hooks.mjs")));
+        Assert.Empty(Directory.GetDirectories(Path.Combine(Home, "plugins"), ".removing-*"));
+    }
+
+    /// <summary>
     /// What an agent may do (PERM1, D72) as the page reads it: Daoris's defaults, each with its reason and
     /// whether it is on, and every scope the machine's file holds — the file the terminal's
     /// `daoris agent rules` edits.

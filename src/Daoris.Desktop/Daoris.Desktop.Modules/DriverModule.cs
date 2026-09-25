@@ -695,11 +695,35 @@ public sealed class DriverModule : ModuleBase
                         PluginState.Disable(_loop.Home, entry.Manifest.Id);
                         break;
                     case "remove":
+                    {
                         // The install folder goes; what the plugin kept is NAMED and stays — it is
                         // the person's to throw away, the same judgement Forget makes for an account.
-                        Directory.Delete(entry.Folder, recursive: true);
+                        // 🔴 Its hook process first, then the folder moved aside WHOLE (REV3): on
+                        // Windows a running hook holds its folder, and a recursive delete took every
+                        // file it could before failing, stranding a plugin with no manifest.
+                        await _loop.StopPluginAsync(entry.Manifest.Id).ConfigureAwait(false);
+                        var aside = Path.Combine(
+                            Path.GetDirectoryName(entry.Folder)!, $".removing-{entry.Manifest.Id}-{Guid.NewGuid():N}");
+                        try
+                        {
+                            Directory.Move(entry.Folder, aside);
+                        }
+                        catch (Exception held) when (held is IOException or UnauthorizedAccessException)
+                        {
+                            throw Refusals.Because(
+                                Refusals.PluginBusy,
+                                $"`{entry.Manifest.Id}` was not removed: something on this machine still has a file in "
+                                + "its folder open. Close it, or wait for the plugin's own process to end, and remove it "
+                                + "again. Nothing was taken.",
+                                ("id", entry.Manifest.Id));
+                        }
+
+                        // Aside is a dot-folder, which the catalogue never reads, so a delete that
+                        // cannot finish leaves nothing that looks like a plugin.
+                        try { Directory.Delete(aside, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
                         PluginState.Enable(_loop.Home, entry.Manifest.Id);
                         break;
+                    }
                     default:
                         throw Refusals.Because(
                             Refusals.PluginActionUnknown,

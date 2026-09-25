@@ -86,6 +86,7 @@ public static class Refusals
 
     /// <summary>A plugin action this build does not have.</summary>
     public const string PluginActionUnknown = "PLUGIN_ACTION_UNKNOWN";
+    public const string PluginBusy = "PLUGIN_BUSY";
 
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
@@ -93,7 +94,7 @@ public static class Refusals
         RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, HarnessActionIdle,
         HarnessActionBusy, DriverRefused,
         SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, WindowUnknown,
-        PluginUnknown, PluginActionUnknown,
+        PluginUnknown, PluginActionUnknown, PluginBusy,
     ];
 
     /// <summary>

@@ -124,6 +124,9 @@ public sealed class DriverLoop(
     /// <summary>Which plugins have a hook process up right now, by id — what the Plugins card shows as running.</summary>
     public IReadOnlyList<string> RunningPlugins => _hooks?.Running ?? [];
 
+    /// <summary>Stop one plugin's hook process now — before its folder is removed (REV3).</summary>
+    public Task<bool> StopPluginAsync(string id) => _hooks?.StopAsync(id) ?? Task.FromResult(false);
+
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
     public void Nudge() => _watch?.Nudge();

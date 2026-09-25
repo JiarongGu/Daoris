@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Removing a plugin that speaks could strand it half-deleted (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the desktop. A plugin that speaks runs a hook process whose
+working directory is the plugin's folder, and on Windows a running process holds that folder.
+Removing it deleted every file it could, the manifest included, then failed on the folder. That left
+a folder with no manifest (a plugin neither there nor gone) and the page a bare `IOException`. The
+terminal's `daoris plugin remove`, and `plugin add` replacing an installed plugin, did the same, with
+a raw `EPERM` naming a machine path. `plugin add` also copied with `fs.cpSync`, which the contract
+(§8) forbids.
+
+**Root cause.** A recursive delete used as a removal, on a folder another process could hold.
+
+**Fix.** The desktop stops the plugin's hook process first (`HookSet.StopAsync`, rather than at the
+next tick). Then every door moves the folder aside WHOLE into a dot-folder the catalogue never reads,
+and deletes that. If the move is refused, nothing was taken, and the person is told what holds it:
+`PLUGIN_BUSY` on the page, in English and Chinese, and a sentence at the terminal. `plugin add` copies
+into a staging dot-folder, file by file, and swaps it in the same way.
+
+**Verify.** Each test failed before its fix. `A_plugin_whose_folder_is_held_is_refused_whole_and_left_intact`
+(the module, a file held open) got `UNKNOWN_ERROR IOException`. The CLI's `a plugin whose folder a
+running process holds…` (a process's working directory) got `EPERM`. `One_plugin_can_be_stopped_now…`
+holds the hook set's half. The CLI test runs on Windows only, because elsewhere the move succeeds.
+
 ## The headless driver died on Ctrl+C and on a missing home (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the headless host (`daoris-driver`).

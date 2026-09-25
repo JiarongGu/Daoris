@@ -223,6 +223,7 @@
   "errors.HARNESS_ACTION_BUSY": "{{running}} 仍在运行——等它结束或先停止它，再开始另一个。",
   "errors.PLUGIN_UNKNOWN": "本机没有名为 {{id}} 的插件。",
   "errors.PLUGIN_ACTION_UNKNOWN": "没有名为 {{action}} 的插件操作。",
+  "errors.PLUGIN_BUSY": "{{id}} 未被移除：本机仍有程序打开着它文件夹里的文件。关闭后再移除一次——什么都没有被删掉。",
   "errors.DRIVER_REFUSED": "{{message}}",
   "errors.SESSION_MOVE_NOT_YOURS": "对一个已停下等人的会话，人能做的是完成、谢绝或停止——而不是把它改成 {{state}}。回答它让它继续，是发消息，不是改状态。",
   "errors.SESSION_DECLINE_NEEDS_REASON": "谢绝需要给出理由：这是之后读到这条记录的人唯一能据以行动的部分。",
