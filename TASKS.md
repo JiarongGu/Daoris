@@ -31,8 +31,8 @@ thing, in `analyze`, in D7, in the README and in `canon-authoring`.
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 640 driver, 124 desktop modules, 940 web unit, 21 Playwright**, 73
-devkit, 66/66 release rehearsal, **277/277 family rehearsal** (it names its own phases when you run
+**446 CLI tests, 473 service, 646 driver, 126 desktop modules, 948 web unit, 21 Playwright**, 73
+devkit, 66/66 release rehearsal, **279/279 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
 enforced** (D54: a fact gates, a judgement reports). The answer to a full budget is still splitting
@@ -84,10 +84,11 @@ and a release is still blocked on REH1.
 🔴 **The live arc is D76, the conversation** (owner, 2026-09-25), taken in the order under *The
 reference gap* below.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
-  (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors) and CONV4b (the
-  composer's turn, queue and drafts), with the fixes the looks found. All are in the archive under
-  2026-09-25.
-- **Next:** **CONV4c, attachments and `@`**, which is measured on both wires before it is built.
+  (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
+  composer's turn, queue and drafts) and CONV4c (attachments), with the fixes the looks found. All
+  are in the archive under 2026-09-25.
+- **Next:** **CONV4d, `@` a file in the session's tree** — measured with CONV4c: both doors expand
+  `@path` text themselves, so the work is the completion list and the bridge call behind it.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
@@ -266,7 +267,7 @@ the traps that are not in any contract, because they were found rather than desi
   budgets + version agreement + the devkit's universal gates),
   `dotnet test src/Daoris.Service/Daoris.Service.Tests` (473),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (640), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (124), `npm run rehearse:family` (277/277), `npm run test:web` (940 vitest + 21 Playwright),
+  (646), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (126), `npm run rehearse:family` (279/279), `npm run test:web` (948 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -449,10 +450,10 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24).
-**CONV4 was split in three (2026-09-25)**; CONV4a and CONV4b are in the archive.
-- [ ] **CONV4c — what a message carries.** Attachments (the `carry` molecule) and `@` a file in
-  the session's tree. Measure each wire first: ACP's content blocks against `promptCapabilities`,
-  `stream-json`'s against the binary.
+**CONV4 was split (2026-09-25)**; CONV4a, CONV4b and CONV4c are in the archive.
+- [ ] **CONV4d — `@` a file in the session's tree.** Measured: both doors expand `@path` text
+  themselves, so the wire needs nothing. The work is the completion: a bridge call listing the
+  tree's files, and the composer offering them after `@`.
 - [ ] **CONV5 — meters.** A context ring under the composer and per-turn usage, from the usage the
   wire reports; absent is never zero.
 - [ ] **FRAME6 — the frame.** A resizable, collapsible rail (264–420px, 56px strip) and a resizable

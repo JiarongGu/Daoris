@@ -74,6 +74,12 @@ public sealed record SessionEvent
     /// <summary>For <see cref="SessionEventKind.User"/>: <c>person</c>, or <c>target</c> for the driver's composed prompt.</summary>
     public string? Origin { get; init; }
 
+    /// <summary>
+    /// For <see cref="SessionEventKind.User"/>: the names of the files the person attached (CONV4c) —
+    /// names, never the kept paths or the lines Daoris added to reach them.
+    /// </summary>
+    public IReadOnlyList<string>? Files { get; init; }
+
     public string? Title { get; init; }
 
     /// <summary>ACP's tool kind — read, edit, delete, move, search, execute, think, fetch, other.</summary>
@@ -225,13 +231,20 @@ public sealed class SessionEvents(string directory)
     /// <summary>Where a session's events are kept — refused for anything that is not an id.</summary>
     public string PathOf(string sessionId)
     {
-        if (string.IsNullOrEmpty(sessionId) || !Id.IsMatch(sessionId) || sessionId.Contains(".."))
+        if (!IsId(sessionId))
         {
             throw new DriverException($"`{sessionId}` is not a session id, so it names no record.");
         }
 
         return Path.Combine(directory, $"{sessionId}.events.jsonl");
     }
+
+    /// <summary>
+    /// Whether this is a session id — the one check for everything named by one under the home (the
+    /// record here, a conversation's kept files), so an id that arrives from a page never names a path.
+    /// </summary>
+    public static bool IsId(string? sessionId) =>
+        !string.IsNullOrEmpty(sessionId) && Id.IsMatch(sessionId) && !sessionId.Contains("..");
 
     private static long Last(string path)
     {

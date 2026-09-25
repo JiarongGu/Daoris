@@ -56,6 +56,17 @@ describe('toTurns', () => {
     expect(turns[0]!.ended).toBe('end_turn');
   });
 
+  /** CONV4c: what the person attached travels with what they asked — names only, as the record keeps them. */
+  it('keeps the names of what the person attached with what they asked', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', text: 'what does this log say?', files: ['run.log', 'shot.png'] }),
+      e(2, { kind: 'user', origin: 'person', text: 'and without files' }),
+    ]);
+
+    expect(turns[0]!.ask?.files).toEqual(['run.log', 'shot.png']);
+    expect(turns[1]!.ask?.files).toBeUndefined();
+  });
+
   /** A tool call and its updates are one card, where it first appeared, carrying its latest state. */
   it('merges a tool call\'s updates into the one card, in the place it began', () => {
     const { turns } = toTurns([
@@ -231,17 +242,17 @@ describe('useSessionEvents', () => {
  * record lags it, and a message that is only waiting is in no record at all.
  */
 describe('useSessionTurns', () => {
-  const queued = (session: string, state: { queued: string[]; taking: boolean }) =>
+  const queued = (session: string, state: { queued: { text: string; files: string[] }[]; taking: boolean }) =>
     act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session, ...state }); });
 
   it('asks once on open, then follows the driver live, for its own session only', async () => {
-    invoke.mockResolvedValue({ session: 's1', queued: ['second'], taking: true });
+    invoke.mockResolvedValue({ session: 's1', queued: [{ text: 'second', files: ['plan.md'] }], taking: true });
     const { result } = renderHook(() => useSessionTurns('s1'));
 
-    await waitFor(() => expect(result.current).toEqual({ queued: ['second'], taking: true }));
+    await waitFor(() => expect(result.current).toEqual({ queued: [{ text: 'second', files: ['plan.md'] }], taking: true }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1' } });
 
-    queued('s2', { queued: ['not mine'], taking: true });
+    queued('s2', { queued: [{ text: 'not mine', files: [] }], taking: true });
     queued('s1', { queued: [], taking: false });
     expect(result.current).toEqual({ queued: [], taking: false });
   });

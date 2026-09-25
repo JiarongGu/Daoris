@@ -162,6 +162,13 @@ describe('ConversationView', () => {
     expect(screen.getByText('src/chunk.rs')).toBeTruthy();
   });
 
+  it('names what the person attached under what they asked', () => {
+    view([ev({ kind: 'user', origin: 'person', text: 'what does this log say?', files: ['run.log'] })]);
+
+    const attached = screen.getByRole('list', { name: 'attached' });
+    expect(within(attached).getByText('run.log')).toBeTruthy();
+  });
+
   it('marks a turn that ended for a reason other than finishing', () => {
     view([ev({ kind: 'message', text: 'out of room' }), ev({ kind: 'turn', stopReason: 'max_tokens' })]);
 

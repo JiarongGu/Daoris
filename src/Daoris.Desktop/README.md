@@ -72,7 +72,9 @@ since D76 **the conversation** — `SESSION_HISTORY` reads a session's record a 
 (newest, `before`, or `after` for a gap) and batched `SESSION_EVENTS` carry what it does next, both
 from the typed events the driver keeps as `sessions/<id>.events.jsonl` beside each transcript, mapped
 from the door's own wire (ACP's `session/update`, Claude Code's `stream-json`) and never parsed from a
-console line; since CONV4a **the turn** — `CANCEL_TURN` stops a conversation's turn and keeps the
+console line; since CONV4c `SESSION_INPUT` takes a message's **files** as names and base64 bytes,
+kept under the home's `sessions/<id>/files/` and read by the agent there under a read granted at
+spawn; since CONV4a **the turn** — `CANCEL_TURN` stops a conversation's turn and keeps the
 session, answering what it withdrew, and `SESSION_QUEUE` with live `SESSION_QUEUED` events says
 whether a turn is in flight and what the person sent that has not reached the harness yet (on a
 terminal, Ctrl+C during a turn);

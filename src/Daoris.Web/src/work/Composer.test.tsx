@@ -24,7 +24,7 @@ describe('the composer', () => {
     // Once: the button is the form's submit, and a click that also called `say` sent every message
     // twice — seen as two "you" blocks once the record kept what was sent (CONV3).
     expect(send).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith('cap hydration per frame');
+    expect(send).toHaveBeenCalledWith('cap hydration per frame', []);
     expect(box()).toHaveValue('');
   });
 
@@ -36,7 +36,7 @@ describe('the composer', () => {
     expect(send).not.toHaveBeenCalled();
 
     await userEvent.type(box(), '{Enter}');
-    expect(send).toHaveBeenCalledWith('first\nsecond');
+    expect(send).toHaveBeenCalledWith('first\nsecond', []);
   });
 
   it('will not send nothing, nor send twice while one is in flight', async () => {
@@ -128,14 +128,66 @@ describe('the composer', () => {
    */
   it('says a message sent now will wait, and shows what is waiting in order', async () => {
     const send = vi.fn();
-    show({ taking: true, stoppable: true, queued: ['and test it', 'then commit'], onSend: send });
+    show({
+      taking: true, stoppable: true, onSend: send,
+      queued: [{ text: 'and test it', files: [] }, { text: 'then commit', files: ['plan.md'] }],
+    });
 
     const waiting = screen.getByRole('list', { name: 'waiting for this turn to end' });
-    expect(within(waiting).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['and test it', 'then commit']);
+    const items = within(waiting).getAllByRole('listitem');
+    expect(items.map((item) => item.textContent)).toEqual(['and test it', 'then commitplan.md']);
+    // A waiting message's files are named with it (CONV4c).
+    expect(within(items[1]!).getByText('plan.md')).toBeInTheDocument();
 
     await userEvent.type(box(), 'and push nothing');
     await userEvent.click(screen.getByRole('button', { name: 'queue' }));
-    expect(send).toHaveBeenCalledWith('and push nothing');
+    expect(send).toHaveBeenCalledWith('and push nothing', []);
+  });
+
+  /**
+   * CONV4c: files go with the message. Chosen, dropped or pasted, they wait above the box as chips a
+   * person can take back off, travel with the next send, and are let go of once sent. A message may be
+   * files alone.
+   */
+  it('attaches files, sends them with the words, and lets them go once sent', async () => {
+    const send = vi.fn();
+    show({ onSend: send });
+    const log = new File(['exit 3'], 'run.log', { type: 'text/plain' });
+    const shot = new File(['png'], 'shot.png', { type: 'image/png' });
+
+    await userEvent.upload(screen.getByLabelText('choose files…'), [log, shot]);
+    const attached = screen.getByRole('list', { name: 'attached' });
+    expect(within(attached).getAllByRole('listitem').map((item) => item.textContent)).toEqual(
+      [expect.stringContaining('run.log'), expect.stringContaining('shot.png')]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'remove shot.png' }));
+    await userEvent.type(box(), 'what does this say?');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    expect(send).toHaveBeenCalledWith('what does this say?', [log]);
+    expect(screen.queryByRole('list', { name: 'attached' })).not.toBeInTheDocument();
+  });
+
+  it('sends files with no words', async () => {
+    const send = vi.fn();
+    show({ onSend: send });
+    const shot = new File(['png'], 'shot.png', { type: 'image/png' });
+
+    expect(screen.getByRole('button', { name: 'send' })).toBeDisabled();
+    await userEvent.upload(screen.getByLabelText('choose files…'), shot);
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    expect(send).toHaveBeenCalledWith('', [shot]);
+  });
+
+  it('says what a drop left off when it is past what a message carries', async () => {
+    show();
+    const files = Array.from({ length: 11 }, (_, i) => new File([`${i}`], `f${i}.txt`));
+
+    await userEvent.upload(screen.getByLabelText('choose files…'), files);
+
+    expect(within(screen.getByRole('list', { name: 'attached' })).getAllByRole('listitem')).toHaveLength(10);
+    expect(screen.getByRole('status')).toHaveTextContent('At most 10 files travel together.');
   });
 
   it('shows nothing waiting when nothing is', () => {
@@ -158,7 +210,7 @@ describe('the composer', () => {
     expect(draft).toHaveBeenLastCalledWith('half a thought!');
 
     await userEvent.click(screen.getByRole('button', { name: 'send' }));
-    expect(send).toHaveBeenCalledWith('half a thought');
+    expect(send).toHaveBeenCalledWith('half a thought', []);
     expect(draft).toHaveBeenLastCalledWith('');
   });
 

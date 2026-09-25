@@ -247,7 +247,9 @@ public sealed class DriverModule : ModuleBase
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
                 if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
-                return new { Sent = _loop.Chat?.Say(id, text) ?? false };
+                // What the person attached, kept for this conversation before the message goes (CONV4c).
+                var files = request.Payload is { } payload ? FilesOf(payload) : [];
+                return new { Sent = _loop.Chat?.Say(id, text, files) ?? false };
             }
 
             // Finishing a conversation rather than cutting it off: the harness gets end-of-input, says
@@ -271,7 +273,7 @@ public sealed class DriverModule : ModuleBase
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
                 var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id).ConfigureAwait(false) : TurnStop.Nothing;
-                return new { stop.Cancelled, stop.Withdrawn };
+                return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
             }
 
             // Where a conversation's turns stand (CONV4a): whether one is in flight, and what is waiting.
@@ -280,7 +282,7 @@ public sealed class DriverModule : ModuleBase
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 var queue = _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
-                return new { Session = id, queue.Queued, queue.Taking };
+                return new { Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking };
             }
 
             case "STOP_SESSION":
@@ -1079,6 +1081,39 @@ public sealed class DriverModule : ModuleBase
         && value.GetString() is { Length: > 0 } text
             ? text
             : null;
+
+    /// <summary>
+    /// A message's attached files as the page sent them (CONV4c): each a name and its bytes as base64,
+    /// the shape a quest's uploads take. Bytes that are not base64 are refused in a sentence — kept,
+    /// they would be a file nobody sent.
+    /// </summary>
+    public static IReadOnlyList<ChatUpload> FilesOf(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("files", out var files) || files.ValueKind != JsonValueKind.Array) return [];
+
+        var uploads = new List<ChatUpload>();
+        foreach (var file in files.EnumerateArray())
+        {
+            var name = file.ValueKind == JsonValueKind.Object && file.TryGetProperty("name", out var n)
+                && n.ValueKind == JsonValueKind.String ? n.GetString() ?? "" : "";
+            var content = file.ValueKind == JsonValueKind.Object && file.TryGetProperty("content", out var c)
+                && c.ValueKind == JsonValueKind.String ? c.GetString() : null;
+            try
+            {
+                uploads.Add(new ChatUpload(name, Convert.FromBase64String(content ?? throw new FormatException())));
+            }
+            catch (FormatException)
+            {
+                throw new DriverException($"`{name}` did not arrive as a file's bytes, so it was not attached. Attach it again.");
+            }
+        }
+
+        return uploads;
+    }
+
+    /// <summary>A message as the page is told it: the words, and the names of its files — never where they are kept.</summary>
+    private static object Said(ChatMessage message) =>
+        new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() };
 
     /// <summary>
     /// A harness action's output, relayed as it happens — the same console the session drawer already

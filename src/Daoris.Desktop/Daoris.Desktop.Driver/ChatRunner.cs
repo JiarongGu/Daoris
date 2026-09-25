@@ -189,8 +189,16 @@ public sealed class ChatRunner(
             if (resolved.TakesSettings)
             {
                 var file = PermissionRules.Load(home);
+                var composed = PermissionRules.Compose(file, known?.Workspace, repository);
+                // What the person attaches is kept outside the tree, for this conversation alone, and the
+                // agent reads it where it lies (CONV4c): a read of exactly that folder, INT4j's rule —
+                // every other read there would be asked, and every ask is refused (D52).
+                composed = composed with
+                {
+                    Allow = [.. composed.Allow, PermissionRules.ReadRule(ChatFiles.Folder(home, sessionId))],
+                };
                 rules = SpawnSettings.Write(
-                    home, sessionId, PermissionRules.Compose(file, known?.Workspace, repository),
+                    home, sessionId, composed,
                     PermissionRules.GuardsTree(file) ? TreeGuard.For(home, workTree) : null);
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
                 else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
@@ -306,14 +314,26 @@ public sealed class ChatRunner(
     /// words were never in it before (D76 §4). On either structured door a message sent mid-turn waits
     /// for its own (CONV4a).
     /// </remarks>
-    public bool Say(string sessionId, string message)
+    /// <param name="files">
+    /// What the person attached (CONV4c): kept for this conversation before the message is queued, so a
+    /// refusal — too many, too large — reaches the person while they are still looking, and nothing
+    /// half-kept is sent.
+    /// </param>
+    /// <exception cref="DriverException">The files are more than a message carries.</exception>
+    public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null)
     {
-        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Turns.Say(message);
-        if (_native.TryGetValue(sessionId, out var native)) return native.Turns.Say(message);
+        var held = _protocol.ContainsKey(sessionId) || _native.ContainsKey(sessionId) || _talking.ContainsKey(sessionId);
+        var kept = held && files is { Count: > 0 } ? ChatFiles.Keep(home, sessionId, files) : [];
+        var said = new ChatMessage(message, kept);
+
+        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Turns.Say(said);
+        if (_native.TryGetValue(sessionId, out var native)) return native.Turns.Say(said);
 
         // A text-only door keeps the person's words where it keeps the agent's — the console. In the
-        // record they would be half a conversation: questions with no answers beside them.
-        var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message) : message;
+        // record they would be half a conversation: questions with no answers beside them. A file it is
+        // handed is named by its path, which any agent can read.
+        var text = message + ChatFiles.PathLines(kept);
+        var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(text) : text;
         return processes.Send(sessionId, framed);
     }
 
@@ -321,9 +341,6 @@ public sealed class ChatRunner(
     public bool Taking(string sessionId) =>
         _protocol.TryGetValue(sessionId, out var chat) ? chat.Turns.Running
         : _native.TryGetValue(sessionId, out var native) && native.Turns.Running;
-
-    /// <summary>What a conversation has waiting — sent, not yet at the harness — in the order sent.</summary>
-    public IReadOnlyList<string> Queued(string sessionId) => Queue(sessionId).Queued;
 
     /// <summary>Where a conversation's turns stand; <see cref="ChatQueue.Idle"/> for one nothing here holds.</summary>
     public ChatQueue Queue(string sessionId) =>
@@ -350,6 +367,18 @@ public sealed class ChatRunner(
 
         return Task.FromResult(TurnStop.Nothing);
     }
+
+    /// <summary>
+    /// The person's message as the record keeps it (CONV4c): their words and the names of what they
+    /// attached — never the kept paths, nor the lines or links a door added to reach them.
+    /// </summary>
+    private static SessionEvent Asked(ChatMessage message) => new()
+    {
+        Kind = SessionEventKind.User,
+        Origin = "person",
+        Text = message.Text,
+        Files = message.Files.Count > 0 ? [.. message.Files.Select(file => file.Name)] : null,
+    };
 
     /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
     private void Record(string sessionId, SessionEvent e)
@@ -573,14 +602,15 @@ public sealed class ChatRunner(
             _open.TrySetResult(session);
         }
 
-        private async Task TurnAsync(string text, Action sent)
+        private async Task TurnAsync(ChatMessage message, Action sent)
         {
             if (await _open.Task.ConfigureAwait(false) is not { } session) return;
 
-            _record(new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = text });
+            _record(Asked(message));
             try
             {
-                await session.PromptAsync(text, CancellationToken.None, sent).ConfigureAwait(false);
+                // Each attached file a `resource_link` to where it is kept (CONV4c).
+                await session.PromptAsync(message.Text, CancellationToken.None, sent, message.Files).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException
                                               or InvalidOperationException)
@@ -643,12 +673,14 @@ public sealed class ChatRunner(
         {
             Turns = new ChatTurns(
                 ready: () => Task.FromResult(true),
-                take: (text, sent) =>
+                take: (message, sent) =>
                 {
                     var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                     lock (_gate) _turn = ended;
-                    record(new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = text });
-                    if (!processes.Send(sessionId, adapter.FrameMessage(text)))
+                    record(Asked(message));
+                    // Each attached file named by its path, which the agent reads with its own tool
+                    // (CONV4c, measured); the record keeps the person's words, not these lines.
+                    if (!processes.Send(sessionId, adapter.FrameMessage(message.Text + ChatFiles.PathLines(message.Files))))
                     {
                         // Nothing is listening: the process is going, and its watch concludes the record.
                         record(new SessionEvent { Kind = SessionEventKind.Note, Text = "the message could not be sent: the harness had gone." });

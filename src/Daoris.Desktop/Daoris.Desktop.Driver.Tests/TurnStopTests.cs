@@ -47,7 +47,7 @@ public sealed class TurnStopTests : IDisposable
 
         Assert.True(session.Runner.Say(session.Id, "first"));
         Assert.True(session.Runner.Say(session.Id, "second"));
-        Assert.Equal(["second"], session.Runner.Queued(session.Id));
+        Assert.Equal(["second"], Texts(session.Runner.Queue(session.Id).Queued));
 
         await Until(() => Turns(session) == 2, () => session.Seen());
 
@@ -55,10 +55,10 @@ public sealed class TurnStopTests : IDisposable
         Assert.Equal(
             ["person: first", "agent: heard first", "turn: end_turn", "person: second", "agent: heard second", "turn: end_turn"],
             Said(session));
-        Assert.Empty(session.Runner.Queued(session.Id));
+        Assert.Empty(session.Runner.Queue(session.Id).Queued);
         // The queue was told as it moved, which is what the page shows as queued.
         // …and whether a turn was in flight, which is what the page's stop-the-turn control follows.
-        Assert.Contains(session.Queues, queue => queue.Taking && queue.Queued.SequenceEqual(["second"]));
+        Assert.Contains(session.Queues, queue => queue.Taking && Texts(queue.Queued).SequenceEqual(["second"]));
         Assert.False(session.Queues[^1].Taking);
         Assert.Empty(session.Queues[^1].Queued);
     }
@@ -83,7 +83,7 @@ public sealed class TurnStopTests : IDisposable
         var stop = await session.Runner.CancelTurnAsync(session.Id);
 
         Assert.True(stop.Cancelled);
-        Assert.Equal(["after"], stop.Withdrawn);
+        Assert.Equal(["after"], Texts(stop.Withdrawn));
         await Until(() => Turns(session) == 1, () => session.Seen());
         Assert.Equal("turn: cancelled", Said(session)[^1]);
         await Until(() => !session.Runner.Taking(session.Id), () => session.Seen());
@@ -110,7 +110,7 @@ public sealed class TurnStopTests : IDisposable
         var stop = await session.Runner.CancelTurnAsync(session.Id);
 
         Assert.True(stop.Cancelled);
-        Assert.Equal(["after"], stop.Withdrawn);
+        Assert.Equal(["after"], Texts(stop.Withdrawn));
         await Until(() => Turns(session) == 1, () => session.Seen());
         Assert.Equal("turn: cancelled", Said(session)[^1]);
 
@@ -135,7 +135,7 @@ public sealed class TurnStopTests : IDisposable
         var stop = await session.Runner.CancelTurnAsync(session.Id);
 
         Assert.False(stop.Cancelled);
-        Assert.Equal(["early"], stop.Withdrawn);
+        Assert.Equal(["early"], Texts(stop.Withdrawn));
 
         Assert.True(session.Runner.Say(session.Id, "later"));
         await Until(() => Turns(session) == 1, () => session.Seen());
@@ -234,6 +234,9 @@ public sealed class TurnStopTests : IDisposable
     }
 
     private static string[] Said(Session session) => Said(session.Events, session.Id);
+
+    /// <summary>The words of each message — what these tests are about; attachments are CONV4c's own tests.</summary>
+    private static string[] Texts(IEnumerable<ChatMessage> messages) => [.. messages.Select(message => message.Text)];
 
     private static string[] Said(SessionEvents events, string id) => [.. events.Page(id).Events
         .Where(e => e.Kind is SessionEventKind.User or SessionEventKind.Message or SessionEventKind.Turn)

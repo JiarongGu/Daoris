@@ -234,7 +234,13 @@ public sealed class DriverLoop(
         // waiting, which is in no record until it is sent. Each change is the whole state, so a missed one
         // costs nothing.
         chat.QueueChanged += (session, queue) =>
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new { Session = session, queue.Queued, queue.Taking });
+            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
+            {
+                Session = session,
+                // The words and the names of their files — never where the files are kept.
+                Queued = queue.Queued.Select(message => new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() }).ToArray(),
+                queue.Taking,
+            });
         Chat = chat;
         Service = service;
 

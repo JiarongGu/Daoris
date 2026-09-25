@@ -484,8 +484,8 @@ describe('starting and holding a conversation', () => {
     const notify = vi.fn();
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
-      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: ['and then test it'], taking: true };
-      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: ['and then test it'] };
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ text: 'and then test it', files: [] }], taking: true };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [{ text: 'and then test it', files: [] }] };
       return DRIVER_STATE;
     });
 
@@ -507,8 +507,8 @@ describe('starting and holding a conversation', () => {
     const notify = vi.fn();
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
-      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: ['然后测试'], taking: true };
-      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: ['然后测试'] };
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ text: '然后测试', files: [] }], taking: true };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [{ text: '然后测试', files: [] }] };
       return DRIVER_STATE;
     });
     await i18n.changeLanguage('zh');
@@ -520,6 +520,46 @@ describe('starting and holding a conversation', () => {
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+
+  /** CONV4c: a message's files go over the bridge as names and their bytes, the way a quest's uploads do. */
+  it('sends a message\'s files over the bridge as names and bytes', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_INPUT') return { sent: true };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    await userEvent.upload(await screen.findByLabelText('choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
+    await userEvent.type(screen.getByLabelText('message'), 'what does this say?');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'c0ffee11', text: 'what does this say?', files: [{ name: 'run.log', content: btoa('exit 3') }] },
+    }));
+  });
+
+  /**
+   * CONV4c: a file cannot come back into the box — the page no longer holds its bytes — so a stop that
+   * hands back a message with files says which were not sent, for the person to attach again.
+   */
+  it('names the files a stop kept from being sent', async () => {
+    SESSIONS = [CHAT];
+    const notify = vi.fn();
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ text: 'then this', files: ['plan.md'] }], taking: true };
+      if (type === 'CANCEL_TURN') return { cancelled: false, withdrawn: [{ text: 'then this', files: ['plan.md', 'shot.png'] }] };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11', notify);
+    await userEvent.click(await screen.findByRole('button', { name: 'stop turn' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      '1 waiting message came back to the box, unsent. Not sent with it: plan.md, shot.png — attach them again.'));
+    expect(screen.getByLabelText('message')).toHaveValue('then this');
   });
 
   /** CONV4b: the stop is there while the driver says a turn is in flight, and the send button says *queue*. */

@@ -5842,3 +5842,50 @@ Driver 629 → 640, modules 121 → 124, family 274 → 277. The FIX-LOG has the
   and could not hold.
 
 Web unit 917 → 940, Playwright 21/21, driver 640, modules 124.
+
+## CONV4c — attachments (2026-09-25)
+
+- [x] ~~**CONV4c — what a message carries.** Attachments (the `carry` molecule) and `@` a file in
+  the session's tree. Measure each wire first: ACP's content blocks against `promptCapabilities`,
+  `stream-json`'s against the binary.~~
+✅ **attachments done 2026-09-25.** The item was split once measured: `@` needs nothing on either
+wire, and it is **CONV4d**, open in the backlog.
+
+- **Measured first** (`docs/2026-09-25-message-content-evidence.md`), with two real sessions:
+  - Claude Code 2.1.281 on `stream-json`: an `@` mention expanded by the binary with no tool call,
+    an inline image block, and a text file and an image outside the tree read by path under INT4j's
+    grant, no denial.
+  - `claude-code-acp` 0.79.0: `promptCapabilities: {image, embeddedContext}`; `@` text, a
+    `resource_link` in and outside the tree, an image and an embedded resource, none needing a
+    permission.
+  - Its bundle shows a link becomes `[@name](file://…)`, a mention, so sending a file both ways would
+    attach it twice.
+- **The driver:**
+  - `ChatFiles` keeps a message's files under `sessions/<id>/files/<hash>-<name>`, twinning the
+    service's quest layout and name rules, with a quest's limits (10 files, 20 MB), refused in a
+    sentence with nothing kept.
+  - A chat is spawned with a read of exactly that folder.
+  - The native door adds a line naming each path; the protocol door sends a `resource_link` per
+    file.
+  - The record keeps the person's words and the files' names (`SessionEvent.Files`).
+  - The queue and a stop carry `ChatMessage`s, so a waiting message and a withdrawn one keep their
+    files.
+  - `SessionEvents.IsId` is the one check for everything an id names under the home.
+- **Both doors (D50).** `SESSION_INPUT` takes `files` as names and base64 bytes, and refuses bytes
+  that are not base64 in a sentence. A terminal attaches with an `:attach <path>` line. The family
+  rehearsal holds it over the ACP stub, which reads the linked file (279/279).
+- **The page:**
+  - The composer holds a `carry` of its own, keyed by session: drop anywhere on the form, paste a
+    screenshot, or the paperclip. Chips carry size and remove, and a message may be files alone.
+  - The sent message's ask shows the names.
+  - A waiting message names its files.
+  - A stop names the files it could not hand back.
+- **Looked at** on the scratch window with real chats:
+  - on Claude Code's door, a log was read by its path and answered correctly;
+  - on `claude-code-acp`, a PNG was read through its link and answered *Red*, with no permission
+    refused.
+
+  The record held the words and the names on both.
+
+Driver 640 → 646, modules 124 → 126, web unit 940 → 948, family 277 → 279, Playwright 21/21, deploy
+39/39.

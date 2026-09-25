@@ -42,12 +42,31 @@ export const Refused: Story = {
 export const TurnRunning: Story = {
   args: {
     taking: true, stoppable: true, onStopTurn: () => {},
-    queued: ['and then run the streaming tests', 'if they pass, commit it — do not push'],
+    queued: [
+      { text: 'and then run the streaming tests', files: [] },
+      { text: 'if they pass, commit it — do not push', files: ['release-notes.md'] },
+    ],
   },
 };
 
 /** The stop was asked for; the button holds until the driver answers. */
 export const StoppingTheTurn: Story = { args: { taking: true, stoppable: true, stopping: true, onStopTurn: () => {} } };
+
+/**
+ * Files attached (CONV4c): chips above the box a person can take back off, going with the next send.
+ * Chosen here through the paperclip in the story; dropped or pasted on the window.
+ */
+export const WithFilesAttached: Story = {
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<HTMLInputElement>('input[type=file]');
+    if (!input) return;
+    const files = new DataTransfer();
+    files.items.add(new File(['exit 3\npanic at chunk 12'], 'crash.log', { type: 'text/plain' }));
+    files.items.add(new File([new Uint8Array(48_000)], 'screenshot.png', { type: 'image/png' }));
+    input.files = files.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  },
+};
 
 /** A door that carries only text cannot see a turn end, so it offers no stop — never one that is refused. */
 export const TurnRunningOnATextDoor: Story = { args: { taking: true, stoppable: false, onStopTurn: () => {} } };

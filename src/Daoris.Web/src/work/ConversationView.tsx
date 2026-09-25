@@ -134,7 +134,23 @@ function AskView({ ask }: { ask: Ask }) {
           </button>
         )}
       </div>
-      <p className={cn('m-0 mt-0.5 whitespace-pre-wrap text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
+      {ask.text && (
+        <p className={cn('m-0 mt-0.5 whitespace-pre-wrap text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
+      )}
+      {/* What the person attached (CONV4c): names, as the record keeps them. */}
+      {ask.files && ask.files.length > 0 && (
+        <ul aria-label={t('work.conversation.attached')} className="m-0 mt-1.5 flex list-none flex-wrap gap-1.5 p-0">
+          {ask.files.map((name, index) => (
+            <li
+              key={`${index}:${name}`}
+              className="inline-flex min-w-0 items-center gap-1 rounded-control border border-line bg-page px-2 py-0.5 text-meta text-ink-soft"
+            >
+              <Icon name="attach" size={11} className="shrink-0 text-ink-faint" />
+              <span className="min-w-0 truncate">{name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

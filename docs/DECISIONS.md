@@ -3196,3 +3196,25 @@ waiting.** Three choices, each with the one it beat.
   turn ended, and the person's stop would stop nothing they could see. Also rejected: dropping the
   queue silently, which loses what they wrote. Finishing is different: the turns already asked for
   run first, because finishing is not withdrawing.
+
+**Amended 2026-09-25 (CONV4c): an attachment is a file kept for the session, granted read, and
+named once per door; `@` a file is text.** Measured on both doors first
+(`docs/2026-09-25-message-content-evidence.md`).
+- **Kept** under the home at `sessions/<id>/files/`, beside the transcript and the record, and
+  **granted** by INT4j's read rule for that folder alone, at spawn.
+- **Named** as each door reads best: a line naming its path on the native door, which the agent
+  reads with its own tool, and a `resource_link` on the protocol door, the protocol's baseline block.
+  Never both, since `claude-code-acp` turns a link into a mention and the file would arrive twice.
+- **The record keeps names**, beside the person's words, never the paths or the lines Daoris added.
+- **`@path` travels as typed**: both doors expand it themselves.
+- **The terminal attaches with an `:attach <path>` line.** `/` is the harnesses' own command
+  namespace, and `@` is a mention.
+
+Rejected:
+- **Inline image blocks and embedded resources.** Both work on both doors, but they put a file's
+  bytes into the message on the wire, and an embedded blob is dropped by the adapter, so a second
+  way would be needed for the kinds it drops.
+- **Writing the file into the tree.** The tree is the repository's, and an attachment is the
+  person's (D32 in spirit; the tree guard in fact).
+- **`additionalDirectories`.** INT4j already refused it, because under `acceptEdits` it would also let
+  edits there through unasked.

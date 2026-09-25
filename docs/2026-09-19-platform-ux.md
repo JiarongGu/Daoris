@@ -490,6 +490,12 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **A draft is kept per session**, across a switch and a reload.
 > - **Two sentences join the catalogue's way**: English puts a space after a full stop and Chinese
 >   does not. Seen on the window.
+> - **Files ride the composer** (CONV4c): the whole form takes a drop and the box lights up to say
+>   where it went, a paste of a screenshot attaches it, and the paperclip beside *send* chooses.
+>   They wait above the box as chips with their size and a remove, and the sent message shows their
+>   names under the person's words. A waiting message names its files too. A stop that hands a
+>   message back names the files it could not return, since the page no longer holds their bytes.
+>   Looked at with real chats on both doors: a log read by path, an image read through a link.
 
 ## 5. The views, restated in this language
 

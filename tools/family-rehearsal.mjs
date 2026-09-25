@@ -15,7 +15,7 @@
  * Exit 0 = the router works. Exit 1 = it does not; the transcript names the first thing that broke.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -2991,8 +2991,9 @@ section('17. The protocol door — a session held over ACP (D53/ACP1)');
 const acpAgent = join(scratch, 'acp-agent.mjs');
 writeFileSync(acpAgent, `
 import { execSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
+import { fileURLToPath } from 'node:url';
 
 const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\\n');
 const say = (...parts) => console.error('acp-agent:', ...parts);
@@ -3101,6 +3102,15 @@ const handle = async (line) => {
         update(frame.params?.sessionId ?? session, {
           sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'acp heard: ' + said + ' (in ' + frame.params?.sessionId + ')' },
         });
+        // An attached file arrives as a resource_link to where it is kept (CONV4c): read it, as an agent would.
+        for (const block of frame.params?.prompt ?? []) {
+          if (block.type !== 'resource_link') continue;
+          let bytes = -1;
+          try { bytes = readFileSync(fileURLToPath(block.uri)).length; } catch {}
+          update(frame.params?.sessionId ?? session, {
+            sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: ' · acp read file ' + block.name + ': ' + bytes + ' bytes' },
+          });
+        }
         // A turn that runs until it is stopped (CONV4a): answered only by session/cancel, the way a
         // real agent answers a cancelled prompt — with its own stop reason.
         if (said === 'hold this turn') { holding = frame.id; break; }
@@ -3331,6 +3341,43 @@ check(
   JSON.stringify(stopSaid) === JSON.stringify(
     ['person: hold this turn', 'turn cancelled', 'person: after the stop', 'turn end_turn']),
   JSON.stringify(stopSaid),
+);
+
+// 🔴 ATTACHING from a terminal (CONV4c, D50): `:attach <path>` puts a file with the next message. It is
+// kept for the conversation under the home — never in the repository — and reaches the agent on this
+// door as a resource_link to the kept copy, which the stub reads the way an agent would.
+const attachedFile = join(scratch, 'crash.log');
+writeFileSync(attachedFile, 'panic at chunk 12\n');
+const attachInput = join(scratch, 'acp-attach-input.txt');
+writeFileSync(attachInput, `:attach ${attachedFile}\nwhat does this log say?\n`);
+const attachChat = run(
+  // stderr folded in: the terminal door says what it attached there, and `run` keeps stdout alone on success.
+  `dotnet "${driverDll}" chat --repository newcomer --adapter acp-stub < "${attachInput}" 2>&1`,
+  scratch,
+  { DAORIS_SERVICE_URL: BASE, DAORIS_DRIVER_CONFIG: acpConfig, ...NO_HARNESS },
+  DRIVE_TIMEOUT,
+);
+check(
+  'a person attaches a file from a terminal, and the agent reads it through the link it was given',
+  attachChat.code === 0
+    && /crash\.log goes with your next message/.test(attachChat.out)
+    && /acp read file crash\.log: 18 bytes/.test(attachChat.out),
+  attachChat.out,
+);
+
+const attachRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => s.kind === 'chat' && s.adapter === 'acp-stub' && s.id !== acpChatRecord?.id && s.id !== stopRecord?.id);
+const attachEvents = join(scratch, 'sessions', `${attachRecord?.id}.events.jsonl`);
+const attachAsked = existsSync(attachEvents)
+  ? readFileSync(attachEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)).find((e) => e.kind === 'user')
+  : null;
+const keptFolder = join(scratch, 'sessions', attachRecord?.id ?? 'none', 'files');
+check(
+  '…kept for the conversation under the home, named in its record, and never written into the repository',
+  attachAsked?.text === 'what does this log say?' && JSON.stringify(attachAsked?.files) === '["crash.log"]'
+    && existsSync(keptFolder) && readdirSync(keptFolder).some((name) => name.endsWith('-crash.log'))
+    && !run('git status --porcelain', newcomer).out.includes('crash.log'),
+  `${JSON.stringify(attachAsked)}\n${existsSync(keptFolder) ? readdirSync(keptFolder).join(', ') : '(no folder)'}`,
 );
 
 // -------------------------------------------------- 17b. registered is drivable over the protocol door

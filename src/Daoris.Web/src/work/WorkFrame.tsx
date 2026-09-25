@@ -192,9 +192,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     });
   };
 
-  const onSend = (text: string) => {
+  const onSend = (text: string, files: File[] = []) => {
     if (!attended) return;
-    send.mutate({ id: attended.id, text }, {
+    send.mutate({ id: attended.id, text, files }, {
       // False is an answer: the session ended while they were typing. It lands on the composer
       // rather than in a toast, because that is where the person is looking.
       onSuccess: (result) => setRefusal(result.sent ? null : t('work.composer.notListening')),
@@ -209,14 +209,22 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     if (!attended) return;
     cancelTurn.mutate(attended.id, {
       onSuccess: ({ cancelled, withdrawn }: TurnStop) => {
-        if (withdrawn.length > 0) setDraft((was) => [...withdrawn, was.trim()].filter(Boolean).join('\n\n'));
-        const stopping = cancelled ? t('work.composer.turnStopping') : null;
-        const back = withdrawn.length > 0 ? t('work.composer.withdrawn', { count: withdrawn.length }) : null;
-        // Two sentences are joined the catalogue's way: English puts a space after a full stop, and
+        if (withdrawn.length > 0) {
+          setDraft((was) => [...withdrawn.map((message) => message.text), was.trim()].filter(Boolean).join('\n\n'));
+        }
+        // A file cannot come back into the box — the page no longer holds its bytes — so it is named,
+        // for the person to attach again (CONV4c).
+        const unsent = withdrawn.flatMap((message) => message.files);
+        const said = [
+          cancelled ? t('work.composer.turnStopping') : null,
+          withdrawn.length > 0 ? t('work.composer.withdrawn', { count: withdrawn.length }) : null,
+          unsent.length > 0 ? t('work.composer.filesNotSent', { count: withdrawn.length, names: unsent.join(', ') }) : null,
+        ].filter((sentence): sentence is string => Boolean(sentence));
+        // Sentences are joined the catalogue's way: English puts a space after a full stop, and
         // Chinese does not (seen on the window, CONV4b).
-        notify(stopping && back
-          ? t('work.composer.twoSentences', { first: stopping, second: back })
-          : stopping ?? back ?? t('work.composer.noTurn'));
+        notify(said.length > 0
+          ? said.reduce((first, second) => t('work.composer.twoSentences', { first, second }))
+          : t('work.composer.noTurn'));
       },
       onError: (error: unknown) => notify(sentence(error), 'error'),
     });
@@ -336,6 +344,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
 
         {talking && attended && (
           <Composer
+            // Per session: the files attached in one conversation never follow the person to another.
+            key={attended.id}
             live={live}
             sending={send.isPending}
             refusal={refusal}

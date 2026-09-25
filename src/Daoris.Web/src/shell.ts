@@ -6,7 +6,8 @@ import type { Consideration, TrustHold } from './signals';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
-import { type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
+import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
+import { toUpload } from './attachments';
 import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 
@@ -521,21 +522,29 @@ export function useSessionEvents(sessionId: string | null) {
 
 /** Where a conversation's turns stand, as the driver holds them (CONV4a). */
 export type SessionTurns = {
-  /** What the person sent that has not reached the harness yet, in the order sent. */
-  queued: string[];
+  /** What the person sent that has not reached the harness yet, in the order sent, with its files' names. */
+  queued: ChatMessage[];
   /** A turn is on its way to the harness or running there — what stopping the turn acts on. */
   taking: boolean;
 };
 
 const NO_TURNS: SessionTurns = { queued: [], taking: false };
 
+/** Messages as the driver told them, read defensively: anything that is not one is left out. */
+const messagesOf = (list: unknown): ChatMessage[] =>
+  (Array.isArray(list) ? list : []).flatMap((item) => {
+    const message = item as Partial<ChatMessage> | null;
+    if (typeof message?.text !== 'string') return [];
+    return [{
+      text: message.text,
+      files: Array.isArray(message.files) ? message.files.filter((name): name is string => typeof name === 'string') : [],
+    }];
+  });
+
 /** The driver's answer, read defensively: anything that is not a queue is nothing waiting and nothing running. */
 const turnsOf = (answer: unknown): SessionTurns => {
-  const held = answer as Partial<SessionTurns> | null | undefined;
-  return {
-    queued: Array.isArray(held?.queued) ? held.queued.filter((text): text is string => typeof text === 'string') : [],
-    taking: held?.taking === true,
-  };
+  const held = answer as { queued?: unknown; taking?: unknown } | null | undefined;
+  return { queued: messagesOf(held?.queued), taking: held?.taking === true };
 };
 
 /**
@@ -578,7 +587,7 @@ export function useSessionTurns(sessionId: string | null): SessionTurns {
 }
 
 /** What stopping a turn did (CONV4a): whether a turn was asked to stop, and what came back unsent. */
-export type TurnStop = { cancelled: boolean; withdrawn: string[] };
+export type TurnStop = { cancelled: boolean; withdrawn: ChatMessage[] };
 
 /**
  * Stop the conversation's turn and keep the conversation (CONV4a) — the third verb, beside finishing
@@ -587,11 +596,8 @@ export type TurnStop = { cancelled: boolean; withdrawn: string[] };
 export const useCancelTurn = () =>
   useMutation({
     mutationFn: async (id: string): Promise<TurnStop> => {
-      const answer = await call<Partial<TurnStop>>('CANCEL_TURN', { id });
-      return {
-        cancelled: answer?.cancelled === true,
-        withdrawn: Array.isArray(answer?.withdrawn) ? answer.withdrawn.filter((text) => typeof text === 'string') : [],
-      };
+      const answer = await call<{ cancelled?: unknown; withdrawn?: unknown }>('CANCEL_TURN', { id });
+      return { cancelled: answer?.cancelled === true, withdrawn: messagesOf(answer?.withdrawn) };
     },
   });
 
@@ -939,11 +945,21 @@ export const useStarts = (workspaces: string[]) => {
   });
 };
 
-/** One message into the session. False means it ended while the person was typing — an answer. */
+/**
+ * One message into the session. False means it ended while the person was typing — an answer.
+ *
+ * @remarks
+ * Its files (CONV4c) go as names and bytes, the way a quest's uploads do, and the driver keeps them
+ * for the conversation outside its tree — the page never learns where. A message with none sends none.
+ */
 export const useSendMessage = () =>
   useMutation({
-    mutationFn: (message: { id: string; text: string }) =>
-      call<{ sent: boolean }>('SESSION_INPUT', message),
+    mutationFn: async (message: { id: string; text: string; files?: File[] }) => {
+      const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
+      return call<{ sent: boolean }>('SESSION_INPUT', {
+        id: message.id, text: message.text, ...(files.length > 0 ? { files } : {}),
+      });
+    },
   });
 
 /**

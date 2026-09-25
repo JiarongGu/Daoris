@@ -238,16 +238,28 @@ public sealed class AcpSession(
     /// Told once the prompt is on the wire (CONV4a): a stop asked before that moment must wait for it,
     /// or its <c>session/cancel</c> overtakes the prompt it meant to stop and stops nothing.
     /// </param>
-    public async Task<string> PromptAsync(string text, CancellationToken ct, Action? sent = null)
+    /// <param name="files">
+    /// What the person attached (CONV4c), each a <c>resource_link</c> to where it is kept — the
+    /// protocol's baseline block, which every agent takes and <c>claude-code-acp</c> reads without a tool
+    /// call (docs/2026-09-25-message-content-evidence.md).
+    /// </param>
+    public async Task<string> PromptAsync(
+        string text, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null)
     {
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
+
+        object[] prompt =
+        [
+            new { type = "text", text },
+            .. (files ?? []).Select(file => (object)new { type = "resource_link", uri = new Uri(file.Path).AbsoluteUri, name = file.Name }),
+        ];
 
         JsonElement result;
         try
         {
             result = await RequestAsync(
                 "session/prompt",
-                new { sessionId = _sessionId, prompt = new[] { new { type = "text", text } } },
+                new { sessionId = _sessionId, prompt },
                 ct, sent).ConfigureAwait(false);
         }
         catch (OperationCanceledException)

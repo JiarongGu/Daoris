@@ -36,6 +36,8 @@ export type SessionEvent = {
   text?: string | null;
   /** For `user`: `person`, or `target` for the prompt the driver composed. */
   origin?: string | null;
+  /** For `user`: the names of the files the person attached (CONV4c). */
+  files?: string[] | null;
   title?: string | null;
   toolKind?: string | null;
   status?: string | null;
@@ -87,8 +89,14 @@ export type Block = {
   stopped?: boolean;
 };
 
-/** What was asked — by the person, or the target the driver composed. */
-export type Ask = { key: string; text: string; origin: string; at: string };
+/** What was asked — by the person, or the target the driver composed — and what the person attached. */
+export type Ask = { key: string; text: string; origin: string; at: string; files?: string[] };
+
+/**
+ * A message as the driver tells the page of one it has not sent yet, or handed back (CONV4a/c): the
+ * words, and the names of its files — never where they are kept.
+ */
+export type ChatMessage = { text: string; files: string[] };
 
 /**
  * One turn: what was asked, what the agent did about it, and how it ended. A turn with no `ended`
@@ -134,7 +142,10 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
     const key = `e${event.seq}`;
     switch (event.kind) {
       case 'user':
-        open(key, { key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at });
+        open(key, {
+          key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
+          ...(event.files?.length ? { files: event.files } : {}),
+        });
         break;
       case 'turn': {
         const turn = here(key);

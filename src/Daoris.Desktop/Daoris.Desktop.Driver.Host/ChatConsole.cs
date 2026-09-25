@@ -32,6 +32,8 @@ internal static class ChatConsole
                 + "  A message sent while a turn runs waits for it. Ctrl+C during a turn stops the turn and\n"
                 + "  keeps the conversation, handing back what was waiting; from a script, a line holding only\n"
                 + "  ETX (U+0003, the character Ctrl+C is) does the same.\n"
+                + "  A line `:attach <path>` attaches that file to your next message; the agent reads it\n"
+                + "  where it is kept for this conversation, outside the repository.\n"
                 + "  End of input ends the conversation, and the record says how it finished.\n"
                 + "  --profile picks which account to run as; omitted takes the workspace's\n"
                 + "  default, then the machine's (`daoris agent profile ...`).\n"
@@ -99,6 +101,8 @@ internal static class ChatConsole
         // Stdin is the person. A closed stdin is them finishing, which ENDS the conversation rather
         // than killing it: the harness gets end-of-input, says whatever it was going to say, and exits
         // on its own — a `completed` record, not a `stopped` one.
+        // What goes with the next message (CONV4c), read from this machine's files as the person names them.
+        var attaching = new List<ChatUpload>();
         try
         {
             while (await Console.In.ReadLineAsync().ConfigureAwait(false) is { } line)
@@ -111,7 +115,37 @@ internal static class ChatConsole
                     continue;
                 }
 
-                if (!runner.Say(id, line))
+                // The terminal's attach (CONV4c, D50): a colon line, the convention of line-oriented tools.
+                // `/` is the harnesses' own command namespace and `@` is a mention, so neither is taken.
+                if (line.StartsWith(Attach, StringComparison.Ordinal))
+                {
+                    var path = line[Attach.Length..].Trim().Trim('"');
+                    if (!File.Exists(path))
+                    {
+                        Console.Error.WriteLine($"chat: `{path}` is not a file on this machine, so nothing was attached.");
+                        continue;
+                    }
+
+                    attaching.Add(new ChatUpload(Path.GetFileName(path), await File.ReadAllBytesAsync(path).ConfigureAwait(false)));
+                    Console.Error.WriteLine($"chat: {Path.GetFileName(path)} goes with your next message.");
+                    continue;
+                }
+
+                bool listening;
+                try
+                {
+                    listening = runner.Say(id, line, attaching);
+                }
+                catch (DriverException refused)
+                {
+                    // Too many or too large: the message was not sent, and neither were its files.
+                    Console.Error.WriteLine($"chat: {refused.Message} Nothing was sent; attach again.");
+                    attaching = [];
+                    continue;
+                }
+
+                attaching = [];
+                if (!listening)
                 {
                     Console.Error.WriteLine("chat: the session is no longer listening.");
                     break;
@@ -144,13 +178,20 @@ internal static class ChatConsole
                 stop.Cancelled ? "chat: the turn was asked to stop; the conversation goes on."
                 : stop.Withdrawn.Count > 0 ? "chat: nothing had reached the agent yet; the conversation goes on."
                 : "chat: no turn was running.");
-            foreach (var withdrawn in stop.Withdrawn) Console.Error.WriteLine($"chat: not sent: {withdrawn}");
+            foreach (var withdrawn in stop.Withdrawn)
+            {
+                var files = withdrawn.Files.Count > 0 ? $" (with {string.Join(", ", withdrawn.Files.Select(file => file.Name))})" : "";
+                Console.Error.WriteLine($"chat: not sent: {withdrawn.Text}{files}");
+            }
         }
         catch (DriverException refused)
         {
             Console.Error.WriteLine($"chat: {refused.Message}");
         }
     }
+
+    /// <summary>The line that attaches a file to the next message (CONV4c).</summary>
+    private const string Attach = ":attach ";
 
     private static string? Flag(string[] args, string name)
     {

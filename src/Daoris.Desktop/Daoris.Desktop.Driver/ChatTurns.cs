@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// What the person had sent that had not reached the harness, in the order sent — withdrawn and handed
 /// back, never sent, so nothing they queued fires after they said stop.
 /// </param>
-public sealed record TurnStop(bool Cancelled, IReadOnlyList<string> Withdrawn)
+public sealed record TurnStop(bool Cancelled, IReadOnlyList<ChatMessage> Withdrawn)
 {
     /// <summary>Nothing was running and nothing was waiting: an answer, never an error.</summary>
     public static readonly TurnStop Nothing = new(false, []);
@@ -18,7 +18,7 @@ public sealed record TurnStop(bool Cancelled, IReadOnlyList<string> Withdrawn)
 /// <summary>Where a conversation's turns stand, as the page is told it (CONV4a, CONV4b).</summary>
 /// <param name="Taking">A turn is on its way to the harness or running there — what a stop would act on.</param>
 /// <param name="Queued">What the person sent that has not reached the harness, in the order sent.</param>
-public sealed record ChatQueue(bool Taking, IReadOnlyList<string> Queued)
+public sealed record ChatQueue(bool Taking, IReadOnlyList<ChatMessage> Queued)
 {
     /// <summary>Nothing running and nothing waiting — a conversation between turns, or none at all.</summary>
     public static readonly ChatQueue Idle = new(false, []);
@@ -57,13 +57,13 @@ public sealed record ChatQueue(bool Taking, IReadOnlyList<string> Queued)
 /// <param name="changed">Where the turns stand, each time that changes.</param>
 internal sealed class ChatTurns(
     Func<Task<bool>> ready,
-    Func<string, Action, Task> take,
+    Func<ChatMessage, Action, Task> take,
     Func<Task> interrupt,
     Action<ChatQueue> changed)
 {
     private readonly object _gate = new();
-    private readonly List<string> _waiting = [];
-    private string? _holding;
+    private readonly List<ChatMessage> _waiting = [];
+    private ChatMessage? _holding;
     private bool _pumping;
     private bool _inFlight;
     private bool _sent;
@@ -74,7 +74,7 @@ internal sealed class ChatTurns(
     private TaskCompletionSource _drained = Completed();
 
     /// <summary>What the person has sent that has not reached the harness, in order.</summary>
-    public IReadOnlyList<string> Waiting
+    public IReadOnlyList<ChatMessage> Waiting
     {
         get
         {
@@ -101,13 +101,13 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>Queue a turn. False once the conversation is finishing or gone: nothing more will be heard.</summary>
-    public bool Say(string text)
+    public bool Say(ChatMessage message)
     {
         bool start;
         lock (_gate)
         {
             if (_finishing || _gone) return false;
-            _waiting.Add(text);
+            _waiting.Add(message);
             start = !_pumping;
             if (start)
             {
@@ -129,7 +129,7 @@ internal sealed class ChatTurns(
     /// </summary>
     public async Task<TurnStop> StopAsync()
     {
-        List<string> withdrawn = [];
+        List<ChatMessage> withdrawn = [];
         bool cancelled;
         bool now;
         lock (_gate)
@@ -182,7 +182,7 @@ internal sealed class ChatTurns(
     {
         while (true)
         {
-            string text;
+            ChatMessage message;
             lock (_gate)
             {
                 if (_waiting.Count == 0 || _gone)
@@ -193,9 +193,9 @@ internal sealed class ChatTurns(
                     return;
                 }
 
-                text = _waiting[0];
+                message = _waiting[0];
                 _waiting.RemoveAt(0);
-                _holding = text;
+                _holding = message;
             }
 
             var readying = ready();
@@ -237,7 +237,7 @@ internal sealed class ChatTurns(
 
             try
             {
-                await take(text, Sent).ConfigureAwait(false);
+                await take(message, Sent).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -270,9 +270,9 @@ internal sealed class ChatTurns(
         if (late) _ = interrupt();
     }
 
-    private List<string> Snapshot()
+    private List<ChatMessage> Snapshot()
     {
-        List<string> now = _holding is null ? [] : [_holding];
+        List<ChatMessage> now = _holding is null ? [] : [_holding];
         now.AddRange(_waiting);
         return now;
     }

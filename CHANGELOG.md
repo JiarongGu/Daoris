@@ -429,6 +429,12 @@ The first version: doctrine that installs, is checked, and flows back.
   what was waiting back in the box. A stopped turn reads *the turn was stopped here*, and the tool
   call it cut reads *stopped* rather than failed. What you were typing to each session is kept per
   session, across a switch and a reload.
+- **A message can carry files.** Drop them on the composer, paste a screenshot, or use the
+  paperclip, and they go with your next message, alone if you type nothing. They are kept for that
+  conversation beside its transcript, never in the repository, and the agent is allowed to read
+  exactly that folder. On Claude Code's own door the message names each file's path, and on the
+  protocol door it links each one. The conversation shows what you attached under what you asked.
+  From a terminal, a line `:attach <path>` puts a file with the next message.
 - **A chat you start stays open in front of you**, where it used to fall back to *Nothing attended*
   until you picked it from the list. A long code line scrolls inside its block, not widening the
   conversation.

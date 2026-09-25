@@ -461,6 +461,39 @@ public sealed class DriverModuleTests : Bridge
         Assert.False(state.GetProperty("sent").GetBoolean());
     }
 
+    /// <summary>CONV4c: the payload's files read back as the names and bytes the page sent; none is none.</summary>
+    [Fact]
+    public void A_messages_files_are_read_from_the_payload_as_names_and_bytes()
+    {
+        using var payload = JsonDocument.Parse("""
+            {"id":"s1","text":"look","files":[{"name":"run.log","content":"ZXhpdCAz"},{"name":"shot.png","content":""}]}
+            """);
+        using var bare = JsonDocument.Parse("""{"id":"s1","text":"look"}""");
+
+        var files = DriverModule.FilesOf(payload.RootElement);
+
+        Assert.Equal(["run.log", "shot.png"], files.Select(file => file.Name));
+        Assert.Equal("exit 3", System.Text.Encoding.UTF8.GetString(files[0].Content));
+        Assert.Empty(files[1].Content);
+        Assert.Empty(DriverModule.FilesOf(bare.RootElement));
+    }
+
+    /// <summary>
+    /// CONV4c: a message's files arrive as bytes the way a quest's do, base64 in the payload — and bytes
+    /// that are not base64 are refused in a sentence, never kept as something else.
+    /// </summary>
+    [Fact]
+    public async Task A_file_that_is_not_base64_is_refused_in_a_sentence()
+    {
+        var refusal = await RefusalAsync(Module(), "SESSION_INPUT", new
+        {
+            id = "nothing-here", text = "look", files = new[] { new { name = "a.png", content = "not base64 at all!" } },
+        });
+
+        Assert.Contains(Refusals.DriverRefused, refusal);
+        Assert.Contains("`a.png` did not arrive as a file's bytes", refusal);
+    }
+
     /// <summary>
     /// CONV4a: stopping a turn nothing here holds stops nothing and withdraws nothing — an answer, as
     /// the page asking a moment late deserves, never an error.
