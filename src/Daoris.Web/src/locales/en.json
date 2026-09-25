@@ -794,6 +794,7 @@
   "work.composer.stop": "stop",
   "work.composer.stopTip": "cut it off now — the record says the person ended it.",
   "work.composer.over": "This session is over. What you typed is still here; nothing is listening to it.",
+  "work.composer.ended": "This session has ended; nothing is listening for a message.",
   "work.composer.notListening": "That session has ended, so the message went nowhere.",
   "work.composer.ending": "The conversation is winding up — the session will say how it ended.",
   "work.composer.queue": "queue",

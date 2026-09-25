@@ -90,8 +90,27 @@ describe('the composer', () => {
     );
 
     expect(box()).toHaveValue('half a thought');
-    expect(box()).toBeDisabled();
     expect(screen.getByText(/This session is over/)).toBeInTheDocument();
+    // Read-only, not disabled: a disabled box's words cannot be selected, and they are the person's to
+    // copy out. And no send, which could only ever be a dead press (UX5 U9).
+    expect(box()).toHaveAttribute('readonly');
+    expect(box()).not.toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+  });
+
+  /**
+   * UX5 U9, seen on the window: an ended session opened from the rail showed an empty box and a send
+   * under "What you typed is still here", when nothing was typed. A box where nothing listens is the
+   * one INT4h removed from the intake; here it is removed wherever nothing was written.
+   */
+  it('offers no box to an ended session nobody was writing in, and keeps the meter', () => {
+    show({ live: false, context: { door: 'structured' } });
+
+    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+    expect(screen.getByText('This session has ended; nothing is listening for a message.')).toBeInTheDocument();
+    expect(screen.queryByText(/What you typed/)).toBeNull();
+    expect(screen.getByLabelText(/^context/)).toBeInTheDocument();
   });
 
   /**

@@ -186,6 +186,11 @@ export function Composer({
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); say(); }
   };
 
+  // 🔴 No box where nothing listens (UX5 U9, INT4h's rule): an ended session keeps a box only while it
+  // holds words the person wrote, read-only so they can be copied out. An empty box and a send under
+  // "what you typed is still here" was the window's view of every ended session opened from the rail.
+  const writing = live || text.trim() !== '';
+
   const say = () => {
     const message = text.trim();
     if ((!message && files.length === 0) || !live || sending) return;
@@ -203,7 +208,7 @@ export function Composer({
       {...(live ? attach.handlers : {})}
     >
       {refusal && <p className="m-0 text-small text-st-declined">{refusal}</p>}
-      {!live && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
+      {!live && writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
 
       {live && queued.length > 0 && (
         <div className="grid gap-1">
@@ -255,7 +260,7 @@ export function Composer({
         </p>
       )}
 
-      <div className="relative grid">
+      {writing && <div className="relative grid">
         {mention && open && mentions && (
           <MentionList
             id={listId}
@@ -275,7 +280,7 @@ export function Composer({
           <textarea
             ref={field}
             value={text}
-            disabled={!live}
+            readOnly={!live}
             aria-label={t('work.composer.label')}
             // The files are the box's list, and the box keeps the focus: a screen reader follows the
             // arrows through `aria-activedescendant`, as the palette's does.
@@ -291,18 +296,21 @@ export function Composer({
             onKeyDown={onKeyDown}
             placeholder={t('work.composer.placeholder')}
             className={cn(
-              'min-h-14 resize-y rounded-control border bg-raised px-2.5 py-1.5 text-body text-ink transition-colors duration-(--speed) disabled:opacity-55',
+              'min-h-14 resize-y rounded-control border bg-raised px-2.5 py-1.5 text-body text-ink transition-colors duration-(--speed) read-only:bg-page read-only:text-ink-soft',
               // Where a dragged file will go: the whole form takes it, and the box lights up to say so.
               attach.dragging ? 'border-accent bg-accent-soft' : 'border-line-strong',
             )}
           />
         </label>
-      </div>
+      </div>}
 
       <div className="flex flex-wrap items-center gap-2">
+        {/* With no box, the sentence saying why stands where the send would, on the meter's line. */}
+        {!writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.ended')}</p>}
         {/* The form's submit, and nothing else: its submit handler is the one path a press takes.
-            While a turn runs it says *queue*, because that is what a press does then. */}
-        {taking && live
+            While a turn runs it says *queue*, because that is what a press does then. Absent once
+            the session has ended, where a send could only ever be a dead press (UX5 U9). */}
+        {live && (taking
           ? (
             <Tip content={t('work.composer.queueTip')}>
               <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
@@ -311,10 +319,10 @@ export function Composer({
             </Tip>
           )
           : (
-            <Button type="submit" variant="primary" disabled={!live || (!text.trim() && files.length === 0) || sending}>
+            <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
               {t('work.composer.send')}
             </Button>
-          )}
+          ))}
         {live && (
           <>
             <Tip content={t('work.composer.attachTip')}>

@@ -25,10 +25,13 @@ export const Idle: Story = {};
 export const Sending: Story = { args: { sending: true } };
 
 /**
- * The session ended while somebody was typing. What they wrote stays — a box that swallowed a
- * paragraph they were halfway through gives them no way to get it back.
+ * The session ended while somebody was typing. What they wrote stays, read-only so it can be copied
+ * out — a box that swallowed a paragraph they were halfway through gives them no way to get it back.
  */
-export const Ended: Story = { args: { live: false } };
+export const Ended: Story = { args: { live: false, draft: 'half a thought about the chunk cap', onDraft: () => {} } };
+
+/** An ended session nobody was writing in: no box and no send, since nothing listens (UX5 U9). */
+export const EndedWithNothingWritten: Story = { args: { live: false, context: { door: 'structured' } } };
 
 /** The ledger's own sentence, verbatim, where the person is looking rather than in a toast. */
 export const Refused: Story = {

@@ -794,6 +794,7 @@
   "work.composer.stop": "停止",
   "work.composer.stopTip": "立即中断——记录会写明是人终止的。",
   "work.composer.over": "这个会话已经结束。你写的内容还在，但没有人在听。",
+  "work.composer.ended": "这个会话已经结束，不再接收消息。",
   "work.composer.notListening": "那个会话已经结束，这条消息没有送到任何地方。",
   "work.composer.ending": "对话正在收尾——会话记录会说明它是如何结束的。",
   "work.composer.queue": "排队",
