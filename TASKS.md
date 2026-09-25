@@ -20,7 +20,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 696 driver,
+**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 697 driver,
 129 desktop modules, 80 devkit, 1054 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -47,8 +47,7 @@ reference gap* below. Nothing is pushed or published, and a release is still blo
 - **REV3, the owner's full review, is closed**, and so is **CLEAN1**, its cleanup lists (both in
   the archive). The ledger is `docs/2026-09-25-rev3-review.md`, and what they left is under *What
   REV3 left* below.
-- 🔴 **Next: GROUND1** (a finished session cannot be reviewed; found by FRAME6's look), **then
-  RAIL1, the list.**
+- 🔴 **Next: RAIL1, the list.** Search sessions by name and by content, and a row menu.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
@@ -108,7 +107,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-seven rows are open**: D76's three, GROUND1 beside them, and the held file tools; the ten REV3 left, with RETRY1;
+**Twenty-six rows are open**: D76's three and its held file tools; the ten REV3 left, with RETRY1;
 three leftovers (FLAKE1, DEPLOY5, TEST1); three on the owner (TRUST2, AGT2c, INT6); and six on a
 trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -234,12 +233,6 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24). **CONV4 was split (2026-09-25)**, and all four parts are in the archive.
-- [ ] **GROUND1 — a finished session cannot be reviewed** (found by FRAME6's look). The driver finds
-  a session's tree through `ServiceClient.SessionGroundAsync`, which reads `/api/sessions`, and that
-  route lists ACTIVE sessions only. So `SESSION_DIFF`, `MERGE_SESSION_TREE` and `DISCARD_SESSION_TREE`
-  on any session that ended refuse as *not on this machine*, while its head shows its tree, and the
-  review pane still offers *accept* and *discard* beneath the refusal. A review is read at the end, so
-  this is the usual case. Read closed records too, test-first against a stand-in service.
 - [ ] **RAIL1 — the list.** Search sessions by name and by content, and a row menu.
 - [ ] **REVIEW2 — review.** Highlighted diffs, split or unified.
 - [ ] **UX5 — screen by screen.** Every surface, every state (empty, loading, error, long, 中文,

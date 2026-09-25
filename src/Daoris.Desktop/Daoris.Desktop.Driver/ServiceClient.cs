@@ -403,15 +403,18 @@ public sealed class ServiceClient : IDisposable
     /// (SURF6).
     /// </summary>
     /// <remarks>
-    /// Both come back only over loopback, which is the point: the tree is a filesystem path and the
+    /// <para>Both come back only over loopback, which is the point: the tree is a filesystem path and the
     /// base is useless without the checkout it names. A caller on another machine reads nulls and has
-    /// nothing to diff, which is the honest answer rather than a refusal.
+    /// nothing to diff, which is the honest answer rather than a refusal.</para>
+    ///
+    /// <para>🔴 <b>Closed records too</b> (GROUND1): <c>/api/sessions</c> alone means ACTIVE, and a session
+    /// is reviewed, merged or discarded once it has ended — which read here as a session with no tree.</para>
     /// </remarks>
     public async Task<(string? Tree, string? BaseCommit)> SessionGroundAsync(
         string id, CancellationToken ct = default)
     {
         using var document = JsonDocument.Parse(
-            await GetAsync("/api/sessions", ct).ConfigureAwait(false));
+            await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
 
         foreach (var session in document.RootElement.EnumerateArray())
         {

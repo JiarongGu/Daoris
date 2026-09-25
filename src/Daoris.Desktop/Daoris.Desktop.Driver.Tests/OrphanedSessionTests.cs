@@ -276,11 +276,14 @@ public sealed class OrphanedSessionTests : IDisposable
             return new StandInService(listener, url, root) { WriteDelay = writeDelay, Refuses = refuses };
         }
 
-        public void Seed(string id, string state)
+        public void Seed(string id, string state, string? tree = null, string? baseCommit = null)
         {
             lock (_sessions)
             {
-                _sessions.Add(new JsonObject { ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = "chat" });
+                var session = new JsonObject { ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = "chat" };
+                if (tree is not null) session["tree"] = tree;
+                if (baseCommit is not null) session["baseCommit"] = baseCommit;
+                _sessions.Add(session);
             }
         }
 

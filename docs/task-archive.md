@@ -6168,5 +6168,22 @@ reference did not make for us.
 Gates: CLI 478, web unit 1026 → 1054, Playwright 21/21, deploy 39/39, code-map green. The driver,
 modules, service and family suites were not re-run, since FRAME6 changed none of their code.
 
+## GROUND1 — a finished session cannot be reviewed (2026-09-26)
+
+- [x] ~~**GROUND1 — a finished session cannot be reviewed** (found by FRAME6's look). The driver finds
+  a session's tree through `ServiceClient.SessionGroundAsync`, which reads `/api/sessions`, and that
+  route lists ACTIVE sessions only. So `SESSION_DIFF`, `MERGE_SESSION_TREE` and `DISCARD_SESSION_TREE`
+  on any session that ended refuse as *not on this machine*, while its head shows its tree, and the
+  review pane still offers *accept* and *discard* beneath the refusal. A review is read at the end, so
+  this is the usual case. Read closed records too, test-first against a stand-in service.~~
+✅ **done 2026-09-26**. The FIX-LOG has the root cause.
+
+- `SessionGroundAsync` reads closed records too. A test against the stand-in service, which honours
+  `includeClosed` as the real host does, was red first: a completed session's ground came back null.
+- **Looked at** on the scratch window: the completed chat's Review reads *Nothing landed* where it
+  read *not on this machine*.
+
+Gates: CLI 478, driver 696 → 697, modules 129, family 279/279, deploy 39/39.
+
 Gates: CLI 478, driver 694 → 696, modules 129, web unit 1026, Playwright 21/21, family 279/279,
 deploy 39/39.

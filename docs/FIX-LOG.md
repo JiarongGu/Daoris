@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A session that had ended could not be reviewed, merged or discarded from the screen (2026-09-26)
+
+**Symptom.** Found by FRAME6's look, on the scratch window. A completed chat's Review said *This
+session's work is not on this machine — its record names no working tree here*. The session's own
+head, above it, showed its tree, and the pane still offered *accept* and *discard* beneath the
+refusal.
+
+**Root cause.** `ServiceClient.SessionGroundAsync`, where `SESSION_DIFF`, `MERGE_SESSION_TREE` and
+`DISCARD_SESSION_TREE` find a session's tree and base commit, read `/api/sessions`. That route lists
+ACTIVE sessions, and the client's own comment two methods up says so (DRV6). A session is reviewed,
+merged or discarded once it has ended, so the usual case fell through to *no tree here*. No gate
+reached it: the module tests run without a service, and the platform's suite mocks the bridge.
+
+**Fix.** The ground is read with `includeClosed=true`.
+
+**Verification.** A test against the stand-in service, which honours `includeClosed` as the real
+host does. A completed session's tree and base were null before the fix and are read after it, while
+a live one's and an unknown one's are unchanged. On the window, the same chat's Review now reads
+*Nothing landed*.
+
+**The trap to inherit.** A list route that means *active* is a filter as well as a list. Asking it
+for one record by id returns *not found* for every record the filter hides.
+
 ## Conversations were missing from what each account carried, and the screen said why wrongly (2026-09-26)
 
 **Symptom.** Found by CONV5 while reading the usage copy. Settings' *What each account has carried*
