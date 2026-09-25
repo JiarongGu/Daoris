@@ -233,14 +233,7 @@ public sealed class OrphanedSessionTests : IDisposable
         return script;
     }
 
-    private static async Task Until(Func<bool> condition)
-    {
-        for (var waited = 0; !condition(); waited += 50)
-        {
-            if (waited > 15_000) throw new TimeoutException("the condition never held");
-            await Task.Delay(50);
-        }
-    }
+    private static Task Until(Func<bool> condition) => Poll.Until(condition, within: TimeSpan.FromSeconds(15));
 
     /// <summary>
     /// The service's session doors, on a loopback port: records seeded or opened as chats, listed as

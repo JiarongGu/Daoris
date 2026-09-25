@@ -435,14 +435,8 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal("stopped", service.Session("i1")["state"]!.GetValue<string>());
     }
 
-    private static async Task Until(Func<bool> condition)
-    {
-        for (var waited = 0; !condition(); waited += 50)
-        {
-            if (waited > 15_000) throw new TimeoutException("the intake never started");
-            await Task.Delay(50);
-        }
-    }
+    private static Task Until(Func<bool> condition) =>
+        Poll.Until(condition, () => "the intake never started", TimeSpan.FromSeconds(15));
 
     /// <summary>With no harness named for it, an ask is the declarations tier's alone — INT4a, unchanged.</summary>
     [Fact]

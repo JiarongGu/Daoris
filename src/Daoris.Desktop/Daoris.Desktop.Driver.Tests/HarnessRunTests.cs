@@ -13,15 +13,7 @@ public sealed class HarnessRunTests
 {
     private static readonly HarnessToolchain Node = new(Binary: ["node"], VersionArguments: ["--version"]);
 
-    private static async Task Until(Func<bool> condition)
-    {
-        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
-        while (!condition())
-        {
-            Assert.True(DateTime.UtcNow < patience, "the condition never held");
-            await Task.Delay(25);
-        }
-    }
+    private static Task Until(Func<bool> condition) => Poll.Until(condition, within: TimeSpan.FromSeconds(15));
 
     [Fact]
     public async Task A_prompt_with_no_newline_is_delivered_and_the_answer_sent_reaches_the_process()

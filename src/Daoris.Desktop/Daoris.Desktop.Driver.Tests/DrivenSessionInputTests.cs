@@ -226,14 +226,8 @@ public sealed class DrivenSessionInputTests : IDisposable
         process.WaitForExit();
     }
 
-    private static async Task Until(Func<bool> condition)
-    {
-        for (var waited = 0; !condition(); waited += 50)
-        {
-            if (waited > 15_000) throw new TimeoutException("the driven session never started");
-            await Task.Delay(50);
-        }
-    }
+    private static Task Until(Func<bool> condition) =>
+        Poll.Until(condition, () => "the driven session never started", TimeSpan.FromSeconds(15));
 
     /// <summary>
     /// A stand-in for the service's doors one driven quest crosses — a real loopback listener, because

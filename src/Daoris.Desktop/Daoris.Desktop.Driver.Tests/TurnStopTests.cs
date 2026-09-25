@@ -463,12 +463,5 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>Wait for a condition, bounded for a loaded machine, saying what it saw when it gives up.</summary>
-    private static async Task Until(Func<bool> condition, Func<string>? seen = null)
-    {
-        for (var waited = 0; !condition(); waited += 50)
-        {
-            if (waited > 30_000) throw new TimeoutException($"the condition never held — {seen?.Invoke() ?? "nothing more to say"}");
-            await Task.Delay(50);
-        }
-    }
+    private static Task Until(Func<bool> condition, Func<string>? seen = null) => Poll.Until(condition, seen);
 }
