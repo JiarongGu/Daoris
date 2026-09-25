@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { Session } from '../api';
-import { AttendedSession } from './AttendedSession';
+import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 
 const NOW = new Date('2026-09-21T12:00:00Z');
 
@@ -74,5 +74,33 @@ describe('the attended session', () => {
     expect(invoke).not.toHaveBeenCalledWith(
       'DAORIS.DRIVER', 'TAIL_SESSION', expect.anything(),
     );
+  });
+
+  const timelineHolder = () => screen.getByRole('heading', { name: 'Timeline' }).closest('div');
+
+  /**
+   * REV3 web-work F8: the column's timeline is hidden on a wide window because the main window's dock
+   * shows it there. A detached window has no dock, so on a wide screen it showed no timeline at all.
+   */
+  it('keeps its timeline at every width where there is no dock to hold it', () => {
+    render(<AttendedSession session={session()} timeline="always" />);
+    expect(timelineHolder()?.className ?? '').not.toContain('lg:hidden');
+  });
+
+  it('leaves its timeline to the dock on a wide window by default', () => {
+    render(<AttendedSession session={session()} />);
+    expect(timelineHolder()?.className ?? '').toContain('lg:hidden');
+  });
+
+  /**
+   * One rule for where a parked session's note is shown, read by the column AND the dock (REV3). The
+   * dock hid the note of every parked session, while the head shows it only where it can be answered
+   * here — so another machine's parked note, on a wide window, was shown nowhere.
+   */
+  it('says the note is in the head only where the session can be answered here', () => {
+    const parked = session({ state: 'awaiting-person', note: 'Two ways forward.' });
+    expect(noteIsInTheHead(parked, true)).toBe(true);
+    expect(noteIsInTheHead(parked, false)).toBe(false);
+    expect(noteIsInTheHead(session(), true)).toBe(false);
   });
 });

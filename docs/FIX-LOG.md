@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A detached session had no timeline when wide, and a parked note could show nowhere (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page.
+- The attended column hides its timeline on a wide window (`lg:hidden`), because the main window's
+  right dock shows it there. A detached session window has no dock, so at 1024 px and up it showed no
+  timeline at all.
+- Two places decided whether a parked session's note is left out of the timeline, because the head
+  already shows it with its moves: the column (`awaiting-person` and answerable here) and the dock
+  (`awaiting-person` alone). For another machine's parked session, which is not answerable here, the
+  head showed no note and the dock hid it, so on a wide window it was shown nowhere.
+
+**Root cause.** A layout rule that assumed the main window, and one judgement written twice.
+
+**Fix.** `AttendedSession` takes `timeline="always"`, which the detached window passes.
+`noteIsInTheHead` is the one rule, read by the column and the dock.
+
+**Verify.** Three cases were added to `AttendedSession.test.tsx`; two failed first (the third passes
+as the default it pins). Frame and attended tests 61/61.
+
 ## A tool call that failed mid-turn stayed closed (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page. The conversation draws a tool call as it runs, and

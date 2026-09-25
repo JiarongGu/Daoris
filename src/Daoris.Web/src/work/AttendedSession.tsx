@@ -26,8 +26,18 @@ import { SessionTimeline } from './SessionTimeline';
  * The composer sits beneath this region rather than inside it, for the same reason the panel does:
  * the record scrolls and the things you act with do not.
  */
+/**
+ * Whether a session's current note is already shown in its head — the parked card, with its moves —
+ * so the timeline leaves it out rather than saying it twice. ONE rule for the column and the dock
+ * (REV3): the dock hid every parked note, while the head shows one only where it can be answered
+ * here, so another machine's parked note was shown nowhere on a wide window.
+ */
+export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
+  session.state === 'awaiting-person' && answerableHere;
+
 export function AttendedSession({
   session, quest, resolving, stopping, onResolve, onAnswerAsk, onStop, chain = [], onSession,
+  timeline = 'narrow',
 }: {
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
@@ -47,6 +57,11 @@ export function AttendedSession({
   chain?: ChainStep[];
   /** Attend another session of the chain — the frame's own selection, so every region follows. */
   onSession?: (session: Session) => void;
+  /**
+   * Where the timeline is: here only on a narrow window, because the main window's dock holds it
+   * when wide — or here always, in a window with no dock (a detached session, REV3).
+   */
+  timeline?: 'narrow' | 'always';
 }) {
   const { t } = useTranslation();
 
@@ -75,11 +90,11 @@ export function AttendedSession({
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It
           stays here on a narrow window, where the dock is not rendered at all — the column is the
           fallback, so nothing is unreachable on a laptop. */}
-      <div className="lg:hidden">
+      <div className={timeline === 'narrow' ? 'lg:hidden' : undefined}>
         <SessionTimeline
           session={session}
           quest={quest}
-          hideCurrentNote={session.state === 'awaiting-person' && Boolean(onResolve)}
+          hideCurrentNote={noteIsInTheHead(session, Boolean(onResolve))}
         />
       </div>
     </article>

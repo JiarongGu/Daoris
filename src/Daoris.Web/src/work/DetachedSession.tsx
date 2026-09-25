@@ -61,7 +61,8 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
       {/* The record and the conversation scroll together, as in the main window (D76); the
           conversation follows its tail there too. */}
       <div ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
-        <AttendedSession session={session} quest={quest} />
+        {/* No dock in this window, so the timeline stays in the column at every width (REV3). */}
+        <AttendedSession session={session} quest={quest} timeline="always" />
         {here && (
           <div className="mt-4 min-w-0">
             <SessionConversation session={session.id} adapter={session.adapter} chat={session.kind === 'chat'} tree={session.tree} live={SESSION_ACTIVE.has(session.state)} scroller={scroller} />

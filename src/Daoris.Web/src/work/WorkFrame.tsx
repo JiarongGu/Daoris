@@ -8,7 +8,7 @@ import {
   useSessionTurns, useStartChat, useStopSession,
 } from '../shell';
 import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
-import { AttendedSession } from './AttendedSession';
+import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import { isIntake, sessionOrigin } from './identity';
 import type { Resolution } from './AwaitingPerson';
@@ -422,7 +422,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
                 <SessionTimeline
                   session={attended}
                   quest={quest}
-                  hideCurrentNote={attended.state === 'awaiting-person'}
+                  hideCurrentNote={noteIsInTheHead(attended, here)}
                 />
               </div>
             )
