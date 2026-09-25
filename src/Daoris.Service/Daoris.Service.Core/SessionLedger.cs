@@ -147,7 +147,7 @@ public sealed class SessionLedger(
                 null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
                 harnessVersion, profile, holding, baseCommit: null, ct, ask: ask.Id)
             .ConfigureAwait(false);
-        await asks!.SaveAsync(ask with { Intake = session.Id, Updated = now }, ct).ConfigureAwait(false);
+        await asks!.RecordIntakeAsync(ask.Id, session.Id, now, ct).ConfigureAwait(false);
 
         return new(
             SessionOpenRefusal.None,

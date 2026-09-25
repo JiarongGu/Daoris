@@ -153,6 +153,61 @@ public sealed class AskStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Record that the ask became <paramref name="quest"/>: appended where the list is kept, in one
+    /// statement, so two publishers never overwrite each other (REV3).
+    /// </summary>
+    /// <remarks>
+    /// An intake's connector and a person's page publish from two processes. Each used to save the
+    /// whole record it had read, and the second save dropped the first one's quest. A closed ask stays
+    /// closed: a quest that was published before the close landed is still one the ask became.
+    /// </remarks>
+    /// <param name="tier">The tier the ask is now answered at, or null to keep it.</param>
+    public async Task RecordPublishedAsync(
+        string id, string quest, string? tier, DateTimeOffset now, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            UPDATE asks SET
+              quests = CASE WHEN EXISTS (SELECT 1 FROM json_each(asks.quests) WHERE json_each.value = $quest)
+                            THEN quests ELSE json_insert(quests, '$[#]', $quest) END,
+              state = CASE WHEN state = 'Closed' THEN state ELSE 'Published' END,
+              tier = COALESCE($tier, tier),
+              updated = $updated
+            WHERE id = $id
+            """;
+        command.Parameters.AddWithValue("$id", id.TrimStart('#'));
+        command.Parameters.AddWithValue("$quest", quest);
+        command.Parameters.AddWithValue("$tier", (object?)tier ?? DBNull.Value);
+        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Close the ask with its reason — only the columns a close owns, so a quest published meanwhile
+    /// stays on it (REV3).
+    /// </summary>
+    public async Task RecordClosedAsync(string id, string note, DateTimeOffset now, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "UPDATE asks SET state = 'Closed', note = $note, updated = $updated WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id.TrimStart('#'));
+        command.Parameters.AddWithValue("$note", note);
+        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Record the intake session serving the ask — that column alone, for the same reason (REV3).</summary>
+    public async Task RecordIntakeAsync(string id, string session, DateTimeOffset now, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "UPDATE asks SET intake = $intake, updated = $updated WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id.TrimStart('#'));
+        command.Parameters.AddWithValue("$intake", session);
+        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
     public async Task<Ask?> FindAsync(string id, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
@@ -430,14 +485,9 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         if (published.Quest is null) return new(AskRefusal.QuestRefused, published.Message, ask);
 
         var byIntake = session is { Length: > 0 } && string.Equals(session, ask.Intake, StringComparison.Ordinal);
-        var took = ask with
-        {
-            State = AskState.Published,
-            Tier = byIntake ? ByIntake : ask.Tier,
-            Updated = now,
-            Quests = ask.Quests.Contains(published.Quest.Id) ? ask.Quests : [.. ask.Quests, published.Quest.Id],
-        };
-        await asks.SaveAsync(took, ct).ConfigureAwait(false);
+        await asks.RecordPublishedAsync(ask.Id, published.Quest.Id, byIntake ? ByIntake : null, now, ct)
+            .ConfigureAwait(false);
+        var took = await asks.FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
         return new(AskRefusal.None, published.Message, took, published.Quest);
     }
 
@@ -452,8 +502,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var ask = await asks.FindAsync(id, ct).ConfigureAwait(false);
         if (ask is null) return new(AskRefusal.NotFound, $"No ask `#{id.TrimStart('#')}`.", Ask: null);
 
-        var closed = ask with { State = AskState.Closed, Note = reason.Trim(), Updated = now };
-        await asks.SaveAsync(closed, ct).ConfigureAwait(false);
+        await asks.RecordClosedAsync(ask.Id, reason.Trim(), now, ct).ConfigureAwait(false);
+        var closed = await asks.FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
         return new(AskRefusal.None, $"Ask `#{ask.Id}` is closed: {closed.Note}", closed);
     }
 

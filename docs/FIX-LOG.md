@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Two publishes on one ask kept one quest (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. An ask becomes quests from two processes: the
+intake session's connector, and the person's page through the desktop's host. Each publish read the
+ask, added its quest to the list it had read, and saved the whole record. Two at once kept only the
+second quest. A close, and an intake recording itself on the ask, were written whole the same way,
+so either could drop a quest published between their read and their write.
+
+**Root cause.** Read-modify-write on a record that more than one process writes. An in-process lock
+would not have helped.
+
+**Fix.** Each change writes only what it owns, in one statement, which SQLite makes atomic across
+processes. `RecordPublishedAsync` appends the quest where the list is kept, unless it is already
+there, and leaves a closed ask closed. `RecordClosedAsync` and `RecordIntakeAsync` set their own
+columns.
+
+**Verify.** `A_publish_appends_to_what_the_ask_holds_and_a_close_keeps_it` pins the store operations.
+Two publishers each record their quest without seeing the other's, a repeat is kept once, and a
+close keeps every quest. It did not fail first, because the operations did not exist. The race itself
+cannot be timed from outside; what the test shows is that no publish writes from a copy anymore.
+Service 496/496.
+
 ## Half a conflict's name dismissed every conflict (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. A conflict is named by its machine and its

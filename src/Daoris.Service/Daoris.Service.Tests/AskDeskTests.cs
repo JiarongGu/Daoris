@@ -200,4 +200,29 @@ public sealed class AskDeskTests : IAsyncLifetime
     {
         Assert.Equal(AskRefusal.NotFound, (await _desk.PublishAsync("zzzzzz", "media-api", Now)).Refusal);
     }
+
+    /// <summary>
+    /// An ask's quests are appended where they are kept, never rewritten from what one caller read
+    /// (REV3 service F10). The intake's connector and the person's page publish from two processes, and
+    /// each used to save the whole record it had read — so of two publishes at once, one quest vanished
+    /// from the ask. A close written whole the same way could drop a quest published meanwhile.
+    /// </summary>
+    [Fact]
+    public async Task A_publish_appends_to_what_the_ask_holds_and_a_close_keeps_it()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!;
+
+        // Two publishers, each holding the record as it read it — the second never saw the first's.
+        await asks.RecordPublishedAsync(asked.Id, "q-intake", tier: null, Now.AddMinutes(1));
+        await asks.RecordPublishedAsync(asked.Id, "q-person", tier: null, Now.AddMinutes(1));
+        await asks.RecordPublishedAsync(asked.Id, "q-intake", tier: null, Now.AddMinutes(2));
+        await asks.RecordClosedAsync(asked.Id, "Handled.", Now.AddMinutes(3));
+        await asks.RecordPublishedAsync(asked.Id, "q-late", tier: null, Now.AddMinutes(4));
+
+        var held = (await asks.FindAsync(asked.Id))!;
+        Assert.Equal(["q-intake", "q-person", "q-late"], held.Quests);
+        Assert.Equal(AskState.Closed, held.State);
+        Assert.Equal("Handled.", held.Note);
+    }
 }
