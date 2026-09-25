@@ -357,13 +357,12 @@ export function App() {
         // the only navigation there is. The items are `appMenus`'s, built as data.
         menus={(
           <AppMenuBar>
-            <AppMenu label={t('menu.app')} trigger="app" active={false} items={menus.daoris} onChoose={onMenu} />
-            <AppMenu label={t('menu.workspace')} trigger="workspace" active={false} items={menus.workspace} onChoose={onMenu} />
-            <AppMenu label={t('menu.agents')} trigger="agents" active={false} items={menus.agents} onChoose={onMenu} />
+            <AppMenu label={t('menu.app')} trigger="app" items={menus.daoris} onChoose={onMenu} />
+            <AppMenu label={t('menu.workspace')} trigger="workspace" items={menus.workspace} onChoose={onMenu} />
+            <AppMenu label={t('menu.agents')} trigger="agents" items={menus.agents} onChoose={onMenu} />
             <AppMenu
               label={t('menu.view')}
               trigger="view"
-              active={false}
               items={[
                 { id: 'palette', label: t('palette.title'), icon: 'search' },
                 // A window is the shell's to open, so a browser is offered none — the item was there

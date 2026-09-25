@@ -21,26 +21,16 @@ describe('AppMenu', () => {
   };
 
   it('names its destinations, which the icon rail cannot', async () => {
-    render(
-      <AppMenu label="Manage" trigger="manage" items={MANAGE} active current="overview"
-        onChoose={() => {}} />,
-    );
+    render(<AppMenu label="Manage" trigger="manage" items={MANAGE} onChoose={() => {}} />);
     await open();
 
     expect(screen.getByRole('menuitem', { name: /Overview/ })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: /Machine/ })).toBeInTheDocument();
   });
 
-  /**
-   * 🔴 The point of the whole change: a view in the OTHER frame is one click, where the toggle made
-   * it two — switch, then hunt an unlabelled icon.
-   */
-  it('says which frame as well as which view, so one click crosses the boundary', async () => {
+  it('says which menu as well as which item, so the chooser knows what was asked', async () => {
     const onChoose = vi.fn();
-    render(
-      <AppMenu label="Manage" trigger="manage" items={MANAGE} active={false}
-        onChoose={onChoose} />,
-    );
+    render(<AppMenu label="Manage" trigger="manage" items={MANAGE} onChoose={onChoose} />);
     const user = await open();
     // Arrow to it and press Enter: the keyboard path is the one D41 §6 requires, and it is also
     // the one that does not depend on the pointer state a previous test may have left behind.
@@ -50,43 +40,22 @@ describe('AppMenu', () => {
   });
 
   it('carries a count beside the destination it belongs to', async () => {
-    render(
-      <AppMenu label="Manage" trigger="manage" items={MANAGE} active current="overview"
-        onChoose={() => {}} />,
-    );
+    render(<AppMenu label="Manage" trigger="manage" items={MANAGE} onChoose={() => {}} />);
     await open();
 
     expect(screen.getByRole('menuitem', { name: /Quests/ })).toHaveTextContent('3');
   });
 
-  it('wears no badge for zero — a zero badge is furniture', () => {
-    render(
-      <AppMenu label="Work" trigger="work" items={MANAGE} active={false} badge={0}
-        onChoose={() => {}} />,
-    );
+  /** The workspace the window is scoped to wears the check (D75); nothing else does. */
+  it('ticks the checked item and no other', async () => {
+    const items: MenuItem[] = [
+      { id: 'default', label: 'default', checked: true },
+      { id: 'studio', label: 'studio' },
+    ];
+    render(<AppMenu label="Workspace" trigger="workspace" items={items} onChoose={() => {}} />);
+    await open('Workspace');
 
-    expect(screen.getByRole('button', { name: /Work/ })).not.toHaveTextContent('0');
-  });
-
-  it('shows attention on the frame itself when it rides there', () => {
-    render(
-      <AppMenu label="Work" trigger="work" items={MANAGE} active={false} badge={2}
-        onChoose={() => {}} />,
-    );
-
-    expect(screen.getByRole('button', { name: /Work/ })).toHaveTextContent('2');
-  });
-
-  /** The check follows the frame too: Manage's current view is not current while you are in Work. */
-  it('marks nothing current in a frame you are not in', async () => {
-    render(
-      <AppMenu label="Manage" trigger="manage" items={MANAGE} active={false} current="overview"
-        onChoose={() => {}} />,
-    );
-    await open();
-
-    const items = screen.getAllByRole('menuitem');
-    expect(items.some((item) => item.querySelector('svg'))).toBe(true); // the row icons still render
-    expect(screen.getByRole('menuitem', { name: /Overview/ })).toHaveTextContent('Overview');
+    expect(screen.getByRole('menuitem', { name: /default/ }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: /studio/ }).querySelector('svg')).toBeNull();
   });
 });

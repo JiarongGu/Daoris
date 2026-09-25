@@ -34,20 +34,15 @@ export interface MenuItem {
  * asks, and building the first as the second kept navigation in the one place an IDE reserves for
  * configuration.
  *
- * **Presentational, and it imports no hook** (components §3): open state, the current item, a badge
- * — every one reachable by passing props.
+ * **Presentational, and it imports no hook** (components §3): an item's check and its count are
+ * props on the item. The frame-era props — a current item, a selected trigger, a badge on the menu
+ * itself — went with the frames (REV3 CLEAN1: nothing passed them).
  */
 export function AppMenu({
-  label, items, current, active, badge = 0, onChoose, trigger,
+  label, items, onChoose, trigger,
 }: {
   label: string;
   items: MenuItem[];
-  /** The item showing now, when this frame is the one on screen. */
-  current?: string;
-  /** Whether this frame is the one on screen — what the trigger shows as selected. */
-  active: boolean;
-  /** Attention riding on the frame itself, not on one of its items. */
-  badge?: number;
   onChoose: (frame: string, item: string) => void;
   /** Its own name, for the callback — the menu does not know which frame it is otherwise. */
   trigger: string;
@@ -68,15 +63,10 @@ export function AppMenu({
           'inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-small',
           'transition-colors duration-(--speed)',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
-          active ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:bg-raised hover:text-ink',
+          'text-ink-soft hover:bg-raised hover:text-ink',
         )}
       >
         {label}
-        {badge > 0 && (
-          <span className="rounded-full border border-st-open bg-st-open/15 px-1.5 font-mono text-meta tabular-nums text-st-open">
-            {badge}
-          </span>
-        )}
       </Menu.Trigger>
 
       <Menu.Portal>
@@ -95,13 +85,13 @@ export function AppMenu({
                   'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small outline-none',
                   'data-[highlighted]:bg-raised data-[highlighted]:text-ink',
                   'data-[disabled]:cursor-default data-[disabled]:text-ink-faint',
-                  (active && current === item.id) || item.checked ? 'text-ink' : 'text-ink-soft',
+                  item.checked ? 'text-ink' : 'text-ink-soft',
                 )}
               >
                 {/* The check column is always reserved, so labels line up whether or not anything
-                    is current — a list that shifts by 16px when you change view reads as two lists. */}
+                    is checked — a list that shifts by 16px when the check moves reads as two lists. */}
                 <span className="flex w-3.5 shrink-0 justify-center">
-                  {((active && current === item.id) || item.checked) && <Icon name="check" size={12} aria-hidden />}
+                  {item.checked && <Icon name="check" size={12} aria-hidden />}
                 </span>
                 {item.icon && <Icon name={item.icon} size={13} className="shrink-0 opacity-70" aria-hidden />}
                 <span className="truncate">{item.label}</span>
