@@ -64,11 +64,9 @@ workspace, a key never printed back beyond its audit prefix. **A feed carries th
 for** (WSP4): only the canonical line feeds knowledge, and a stale feed is refused as *information*
 rather than as a failure. **The console
 streams** (SES1) — transcript-class, desktop-only, no HTTP surface at all. **A conversation is a
-session** (SES2) — same entity, same lock, quest optional; the harness carries the model and Daoris
-pipes text. **The ACCOUNTS are Daoris's; the binary is still the machine's** (SES3, measured
-2026-09-22): harnesses are found on `PATH`, installed by their own global installer, and many
-accounts are held as **named credential profiles** — directories Daoris owns and never reads. No
-managed CLI, no pinned version, no per-account usage — the owner named that gap; it is **TOOL1**. **Everything has two doors** (D50): whatever
+session** (SES2) — same entity, same lock, quest optional; the harness carries the model. **The
+ACCOUNTS are Daoris's** (SES3): **named credential profiles**, directories Daoris owns and never
+reads — and since D57 the binary may be too (below). **Everything has two doors** (D50): whatever
 a screen can set, a terminal can.
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
@@ -110,8 +108,8 @@ hand-bump leaves every file consistent and still wrong: **authorship** was at ri
   design complaint became a decision. 🔴 **git walks UP** — a diff of a path that is not a
   repository answers for the one above it (FIX-LOG).
 - **Two traps the last surface items left** (2026-09-22). A secondary window needs its **own**
-  WebView2 environment, and `shot`/`eval`/`click` need **`--window <monitor|session:ID>`** or they
-  address whichever window Windows calls main (FIX-LOG, three times over).
+  WebView2 environment, and `shot` needs **`--window <monitor|session:ID>`** or it photographs
+  whichever window Windows calls main (`eval`/`click` default to the application's page).
 - 🔴 **The desktop app is the focus, and the install is where it is judged** (owner, 2026-09-22 →
   **D62**): it carries the platform, runs the driver loop, hosts the machine's service, and is the
   only surface that reaches a machine-local fact. `npm run desktop -- run --install <dir>` starts the
