@@ -326,81 +326,87 @@ public sealed class DriverModule : ModuleBase
                 {
                     _loop.Harnesses.SettingsPath,
                     Adapter = config.Adapter,
-                    Harnesses = roster.Select(report => new
+                    Harnesses = roster.Select(report =>
                     {
-                        Harness = report.Adapter,
-                        report.Present,
-                        report.Version,
-                        report.Problem,
-                        report.MachineDefault,
-                        // The managed toolchain (TOOL2/D57). `Pinned` is what the machine asked for
-                        // and `Managed` is what is actually there — they differ exactly when a pin
-                        // names a version nobody installed, which the surface must say rather than
-                        // imply the pin is in force.
-                        Pinned = settings.ResolveVersion(report.Adapter, null, null),
-                        Managed = HarnessSettings.ManagedBinary(
-                            _loop.Harnesses.Home, report.Adapter,
-                            settings.ResolveVersion(report.Adapter, null, null),
-                            _loop.Harnesses.Toolchain(report.Adapter)?.Binary ?? []),
-                        // Whether this harness CAN be pinned at all. A harness that declares neither
-                        // a package nor a maker's channel (AGT2b) has no version for Daoris to fetch,
-                        // and a surface offering the control anyway would be a button whose only
-                        // outcome is a refusal.
-                        Pinnable = _loop.Harnesses.Toolchain(report.Adapter) is { } pinnable
-                            && (pinnable.Package is { Length: > 0 } || pinnable.Channel is { Length: > 0 }),
-                        // Whether this door can run a sign-in at all — the same rule: a harness that
-                        // declares no login flow gets no "Sign in" whose only outcome is a refusal.
-                        SignsIn = _loop.Harnesses.Toolchain(report.Adapter)?.LoginArguments is { Count: > 0 },
-                        // 🔴 Which TOOL's account this entry runs as, and which door it holds a
-                        // session over. Both were already declared and neither reached the page,
-                        // which is why the surface listed `claude-code` and `claude-code-acp` as two
-                        // things a person has to have opinions about. They are one tool and one
-                        // account; the second is a way in. The page groups on these two fields.
-                        AccountOf = _loop.Harnesses.Toolchain(report.Adapter)?.AccountOf,
-                        // What a person calls the tool, and whose it is (AGT1) — `dsh` meant nothing
-                        // to the owner until it said.
-                        _loop.Harnesses.Toolchain(report.Adapter)?.Product,
-                        _loop.Harnesses.Toolchain(report.Adapter)?.Maker,
-                        Wire = _loop.Harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
-                        // Whether a session on this door keeps a conversation (D76 §1) — what the page
-                        // reads an empty record by, rather than guessing from the emptiness (CONV3b).
-                        Structured = _loop.Harnesses.Structured(report.Adapter),
-                        // The plugin this harness came from (D64), or null for one this build carries
-                        // — shown beside it, so a person knows which folder to look in.
-                        Plugin = _loop.Harnesses.Adapters.DeclaredBy(report.Adapter),
-                        // The profile HOME is a machine path, and this bridge is the one surface
-                        // allowed to carry one (D47 §4) — the page renders it so a person can find
-                        // the directory they were told Daoris owns.
-                        Profiles = report.Profiles.Select(profile => new
+                        // Asked once per harness: every field below reads the same two answers.
+                        var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
+                        var pinned = settings.ResolveVersion(report.Adapter, null, null);
+                        return new
                         {
-                            profile.Name,
-                            profile.Home,
-                            Login = profile.Login.ToString().ToLowerInvariant(),
-                            // Who is signed in there, by the tool's own answer (D66 §3) — the name
-                            // a person knows the account by, where the directory's is `account-2`.
-                            profile.Account,
-                            // An account that is a key, by its handle only (AGT3). Never the key.
-                            profile.Key,
-                        }).ToArray(),
-                        // Whether this agent takes an API key at all — the control is absent where
-                        // it does not, by the rule `Pinnable` and `SignsIn` follow.
-                        TakesKey = _loop.Harnesses.AccountToolchain(report.Adapter)?.KeyVariable is { Length: > 0 },
-                        // 🔴 The account a person actually HAS — the tool's own configuration home —
-                        // answered beside the profiles rather than left out, which read as "No
-                        // accounts" to an owner who was logged in.
-                        OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
-                        report.OwnAccount,
-                        // Which circles run this harness as which account (D49 §4): the terminal
-                        // could set it and the page could not even see it. A door's are its
-                        // owner's (AGT7).
-                        WorkspaceDefaults = settings.Workspaces
-                            .Select(circle => (Workspace: circle.Key, Map: circle.Value,
-                                Owner: _loop.Harnesses.Toolchain(report.Adapter)?.Owner(report.Adapter) ?? report.Adapter))
-                            .Where(circle => circle.Map.TryGetValue(circle.Owner, out var chosen)
-                                && !string.IsNullOrWhiteSpace(chosen))
-                            .OrderBy(circle => circle.Workspace, StringComparer.Ordinal)
-                            .Select(circle => new { circle.Workspace, Profile = circle.Map[circle.Owner] })
-                            .ToArray(),
+                            Harness = report.Adapter,
+                            report.Present,
+                            report.Version,
+                            report.Problem,
+                            report.MachineDefault,
+                            // The managed toolchain (TOOL2/D57). `Pinned` is what the machine asked for
+                            // and `Managed` is what is actually there — they differ exactly when a pin
+                            // names a version nobody installed, which the surface must say rather than
+                            // imply the pin is in force.
+                            Pinned = pinned,
+                            Managed = HarnessSettings.ManagedBinary(
+                                _loop.Harnesses.Home, report.Adapter,
+                                pinned,
+                                toolchain?.Binary ?? []),
+                            // Whether this harness CAN be pinned at all. A harness that declares neither
+                            // a package nor a maker's channel (AGT2b) has no version for Daoris to fetch,
+                            // and a surface offering the control anyway would be a button whose only
+                            // outcome is a refusal.
+                            Pinnable = toolchain is { } pinnable
+                                && (pinnable.Package is { Length: > 0 } || pinnable.Channel is { Length: > 0 }),
+                            // Whether this door can run a sign-in at all — the same rule: a harness that
+                            // declares no login flow gets no "Sign in" whose only outcome is a refusal.
+                            SignsIn = toolchain?.LoginArguments is { Count: > 0 },
+                            // 🔴 Which TOOL's account this entry runs as, and which door it holds a
+                            // session over. Both were already declared and neither reached the page,
+                            // which is why the surface listed `claude-code` and `claude-code-acp` as two
+                            // things a person has to have opinions about. They are one tool and one
+                            // account; the second is a way in. The page groups on these two fields.
+                            AccountOf = toolchain?.AccountOf,
+                            // What a person calls the tool, and whose it is (AGT1) — `dsh` meant nothing
+                            // to the owner until it said.
+                            toolchain?.Product,
+                            toolchain?.Maker,
+                            Wire = _loop.Harnesses.Wire(report.Adapter).ToString().ToLowerInvariant(),
+                            // Whether a session on this door keeps a conversation (D76 §1) — what the page
+                            // reads an empty record by, rather than guessing from the emptiness (CONV3b).
+                            Structured = _loop.Harnesses.Structured(report.Adapter),
+                            // The plugin this harness came from (D64), or null for one this build carries
+                            // — shown beside it, so a person knows which folder to look in.
+                            Plugin = _loop.Harnesses.Adapters.DeclaredBy(report.Adapter),
+                            // The profile HOME is a machine path, and this bridge is the one surface
+                            // allowed to carry one (D47 §4) — the page renders it so a person can find
+                            // the directory they were told Daoris owns.
+                            Profiles = report.Profiles.Select(profile => new
+                            {
+                                profile.Name,
+                                profile.Home,
+                                Login = profile.Login.ToString().ToLowerInvariant(),
+                                // Who is signed in there, by the tool's own answer (D66 §3) — the name
+                                // a person knows the account by, where the directory's is `account-2`.
+                                profile.Account,
+                                // An account that is a key, by its handle only (AGT3). Never the key.
+                                profile.Key,
+                            }).ToArray(),
+                            // Whether this agent takes an API key at all — the control is absent where
+                            // it does not, by the rule `Pinnable` and `SignsIn` follow.
+                            TakesKey = _loop.Harnesses.AccountToolchain(report.Adapter)?.KeyVariable is { Length: > 0 },
+                            // 🔴 The account a person actually HAS — the tool's own configuration home —
+                            // answered beside the profiles rather than left out, which read as "No
+                            // accounts" to an owner who was logged in.
+                            OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
+                            report.OwnAccount,
+                            // Which circles run this harness as which account (D49 §4): the terminal
+                            // could set it and the page could not even see it. A door's are its
+                            // owner's (AGT7).
+                            WorkspaceDefaults = settings.Workspaces
+                                .Select(circle => (Workspace: circle.Key, Map: circle.Value,
+                                    Owner: toolchain?.Owner(report.Adapter) ?? report.Adapter))
+                                .Where(circle => circle.Map.TryGetValue(circle.Owner, out var chosen)
+                                    && !string.IsNullOrWhiteSpace(chosen))
+                                .OrderBy(circle => circle.Workspace, StringComparer.Ordinal)
+                                .Select(circle => new { circle.Workspace, Profile = circle.Map[circle.Owner] })
+                                .ToArray(),
+                        };
                     }).ToArray(),
                 };
             }
