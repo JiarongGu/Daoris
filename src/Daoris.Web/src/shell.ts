@@ -373,18 +373,27 @@ export function useSessionConsole(sessionId: string | null) {
   // The newest sequence the page holds — read inside the event handler, which must not re-subscribe
   // every time a line arrives.
   const seen = useRef(0);
+  // Which session this console is for NOW, so an answer asked for another one is dropped (REV3).
+  const attended = useRef(sessionId);
+  attended.current = sessionId;
 
   // Defensive about the shape, deliberately: a shell older than this surface answers something else
   // entirely, and the console is the part of the drawer that may be missing. The RECORD above it is
   // what the drawer exists to show, and a console cannot be allowed to take it down.
+  //
+  // 🔴 MERGED by sequence, whichever source lands first (REV3) — as `mergeEvents` does for the
+  // conversation. Filtered by "newer than the newest held", a live batch that beat the backlog's answer
+  // moved that mark past the whole backlog, and it was thrown away without a word.
   const take = useCallback((tail: SessionTail | undefined) => {
     setLive(Boolean(tail?.live));
     setDropped(tail?.dropped ?? 0);
     setLines((held) => {
-      const fresh = (tail?.lines ?? []).filter((line) => line.sequence > seen.current);
+      const known = new Set(held.map((line) => line.sequence));
+      const fresh = (tail?.lines ?? []).filter((line) => !known.has(line.sequence));
       if (fresh.length === 0) return held;
-      seen.current = fresh[fresh.length - 1]!.sequence;
-      return [...held, ...fresh].slice(-CONSOLE_LINES);
+      const merged = [...held, ...fresh].sort((a, b) => a.sequence - b.sequence).slice(-CONSOLE_LINES);
+      seen.current = Math.max(seen.current, merged[merged.length - 1]!.sequence);
+      return merged;
     });
   }, []);
 
@@ -415,7 +424,8 @@ export function useSessionConsole(sessionId: string | null) {
       // Something was missed. Ask for it rather than showing two halves as though they joined.
       void getBridge()
         .invoke<SessionTail>('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: sessionId, after: seen.current } })
-        .then(take)
+        // Only while this console is still that session's: the answer may land after a switch.
+        .then((tail) => { if (attended.current === sessionId && tail?.session === sessionId) take(tail); })
         .catch(() => {});
       return;
     }

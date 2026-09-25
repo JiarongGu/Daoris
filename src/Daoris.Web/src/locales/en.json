@@ -341,6 +341,7 @@
   "sidebar.refresh": "refresh index",
   "sidebar.refreshing": "reading…",
   "sidebar.refreshed": "Indexed {{entries}} entries from {{repositories}} repositories.",
+  "sidebar.absent": "Not found where the registry says: {{names}} — registered here, and nothing of it is in this refresh.",
   "scope.label": "workspace",
   "scope.every": "every workspace · {{count}}",
   "scope.none": "no workspace yet",

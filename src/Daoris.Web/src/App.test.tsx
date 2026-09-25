@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { App } from './App';
+import { keys, useRefreshIndex } from './queries';
 import { WorkspaceScopeProvider } from './scope';
 
 // The shell in BROWSER mode — no bridge, so nothing shell-only renders — over a stubbed service that
@@ -55,6 +56,33 @@ function shell(initial: string | null = null) {
 
 const requested = () => fetchMock.mock.calls.map((call) => String(call[0]));
 
+/**
+ * REV3: the service names a registered repository whose checkout is not where the registry says — "a
+ * repository that quietly stops contributing looks exactly like one with nothing to say" — and the
+ * toast read only the count. It says which, as the error it is. Pressed with `fireEvent`, not
+ * `userEvent`: the latter's hover opened the refresh button's tooltip, which outlived the render and
+ * made the scope test that ran after it miss its options.
+ */
+describe('a refresh, said whole', () => {
+  beforeEach(() => {
+    fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({ entries: 3, repositories: 1, withheld: 0, absent: ['studio'] })
+        : respond(String(input))));
+    vi.stubGlobal('fetch', fetchMock);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('a refresh that could not find a registered checkout says which', async () => {
+    shell();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'refresh index' }));
+
+    expect(await screen.findByText(/Indexed 3 entries/)).toBeTruthy();
+    expect(await screen.findByText(/Not found where the registry says: studio/)).toBeTruthy();
+  });
+});
+
 describe('the shell in a browser, over two workspaces', () => {
   beforeEach(() => {
     fetchMock = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
@@ -64,6 +92,28 @@ describe('the shell in a browser, over two workspaces', () => {
     vi.unstubAllGlobals();
     // A menu opens Settings at a domain, and the domain is remembered per viewer (D75).
     window.localStorage.removeItem('daoris.settings');
+  });
+
+  /**
+   * REV3: a refresh invalidated EVERY query — the tick-written answers too, whose "fetch" is an empty
+   * list, so each refresh wiped *why a quest is sitting* and the trust holds until the next tick.
+   */
+  it('a refresh asks again what the index feeds, and leaves what the tick wrote alone', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({ entries: 3, repositories: 1, withheld: 0 })
+        : respond(String(input))));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(keys.considered, [{ quest: 'q1', verdict: 'sitting' }]);
+    client.setQueryData(keys.repositories(null), REPOSITORIES);
+    const { result } = renderHook(() => useRefreshIndex(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+
+    await act(async () => { await result.current.mutateAsync(); });
+
+    expect(client.getQueryState(keys.considered)?.isInvalidated).toBe(false);
+    expect(client.getQueryState(keys.repositories(null))?.isInvalidated).toBe(true);
   });
 
   it('offers the scope in the app strip, stating that it spans every workspace', async () => {

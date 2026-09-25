@@ -209,6 +209,9 @@ export function App() {
   const onRefresh = () => refresh.mutate(undefined, {
     onSuccess: (report) => {
       notify(t('sidebar.refreshed', report));
+      // A registered checkout that was not where the registry says contributed nothing, and the count
+      // still looks healthy — so it is named, as the failure it is (D48 §3; REV3).
+      if (report.absent?.length) notify(t('sidebar.absent', { names: report.absent.join(', ') }), 'error');
       // The semantic half's failure is the service's own sentence — dropped nowhere (D24).
       if (report.semanticError) notify(report.semanticError, 'error');
     },

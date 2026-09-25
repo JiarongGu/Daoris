@@ -239,12 +239,19 @@ export const useDismissConflict = () => {
   });
 };
 
+/** What a re-scan can change: the index and what reads it — never a quest, a session, or the tick's own answers. */
+const FED_BY_THE_INDEX = new Set<unknown>([
+  keys.status[0], keys.allRepositories[0], keys.allRegistry[0], 'code-map', 'entry', 'convergence', 'search',
+]);
+
 export const useRefreshIndex = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => api.refresh(),
-    // A re-scan can change anything the index feeds.
-    onSuccess: () => void client.invalidateQueries(),
+    // 🔴 Only what the index feeds (REV3). Everything was invalidated once — the tick-written answers
+    // too, whose "fetch" is an empty list, so each refresh wiped why a quest is sitting and the trust
+    // holds until the next tick, and ran `git` again for an open review.
+    onSuccess: () => void client.invalidateQueries({ predicate: (query) => FED_BY_THE_INDEX.has(query.queryKey[0]) }),
   });
 };
 

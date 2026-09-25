@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A console lost its backlog, and a refresh said less than the service did while wiping what the tick wrote (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page.
+- **The console's backlog.** A running session's console asked for its backlog and received live
+  batches over the same bridge. When a batch (sequence 250) arrived before the backlog's answer, lines
+  1 to 249 were never shown, and the `dropped` footer said nothing.
+- **A session switch.** A gap-fill answered after a session switch appended session A's lines to B's
+  console.
+- **Refresh index, what it says.** The service's report names a registered repository whose checkout
+  is not where the registry says. The toast read only the count.
+- **Refresh index, what it wipes.** It invalidated every query, the tick-written answers included.
+  Their "fetch" is an empty list, so every refresh wiped *why a quest is sitting* and the trust holds
+  until the next tick, and ran git again for an open review.
+
+**Root cause.** The console filtered each source by "newer than the newest held", and `take` checked
+no session. The refresh used `invalidateQueries()` with no filter, and its success handler read two of
+the report's fields.
+
+**Fix.** The console merges lines by sequence, whichever source lands first, as the conversation's
+`mergeEvents` already does. A gap-fill is taken only for the session still attended. The refresh
+invalidates only what the index feeds, and names an absent checkout as an error, in both catalogues.
+
+**Verify.** Every test named here was watched failing before its fix.
+- `keeps the backlog when a live batch lands before it`.
+- `never shows one session's lines on another's console`.
+- `a refresh asks again what the index feeds, and leaves what the tick wrote alone`.
+- `a refresh that could not find a registered checkout says which`. Pressing it with `userEvent`
+  opened the button's tooltip, which outlived the render and broke the scope test after it, so it
+  presses with `fireEvent`.
+
 ## The terminal's conversation: Ctrl+C left it `working`, an unreadable attach ended it, and plugin servers never reached it (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the conversation's two doors.
