@@ -5889,3 +5889,74 @@ wire, and it is **CONV4d**, open in the backlog.
 
 Driver 640 → 646, modules 124 → 126, web unit 940 → 948, family 277 → 279, Playwright 21/21, deploy
 39/39.
+
+## REV3 — the owner's full review, code and docs (2026-09-25)
+
+> *"next session let's do a full code review include docs"*, and once it was running, *"please also
+> consider code refactor/dedup/cleanup"*.
+
+✅ done 2026-09-25. Ten read-only reviewers read one area each: the CLI, the service, the driver's
+conversation half, the rest of the driver, the modules and app, the web's `work/`, the rest of the
+web, tools with the devkit, canon and examples, and two for the docs. Every finding was then checked
+here against the code before it landed. `docs/2026-09-25-rev3-review.md` is the ledger, with each
+finding's verdict and the commit that settled it. Every landing is its own commit
+(`git log --grep=REV3`), and `docs/FIX-LOG.md` carries the root cause of each non-trivial defect.
+
+**What it found.** 171 numbered findings, 19 of them high. 111 were fixed, 51 were prose
+corrections, and 9 are backlog rows. The highest:
+
+- `daoris plugin remove ..` deleted the Daoris home.
+- `sync` deleted a repository's own `.claude/rules/<name>.md` when a canon span of that name retired.
+- An unreadable home file (a BOM was enough) read as empty, so the next edit wrote back a file with
+  every deny gone.
+- A shared deployment kept serving a retired repository's knowledge forever.
+- A failure between spawn and wait left a harness running, untracked, with its tree unlocked.
+- Session notes carried an absolute path and a profile name to the remote.
+- A discard refusal landing after a session switch armed *discard it anyway* on the new session.
+- Tabbing through the strikes field told the driver never to park.
+- The release job never ran `npm ci`. It also bumped the canon version before the gates, so the
+  family rehearsal failed on examples one version behind.
+- The README's install command cannot run (DIST1).
+
+**The pattern worth keeping: a check that cannot fail.** More than one gate was green for a reason
+unrelated to its name:
+
+- the gates-vs-workflow test matched comments, so deleting a gate's step stayed green;
+- the e2e absence assertions looked for strings that no longer existed;
+- family phase 1 repaired the examples it judged, so a second run passed;
+- the unwired-circle check passed on an unrelated refusal;
+- the pre-commit leak scan read the working tree rather than what was staged.
+
+The fix is the one TDD already asks for: watch it fail. Every fix here was seen failing first where a
+test could hold it, and FIX-LOG says why where none could (a Ctrl+C, a notifier, a transaction
+cancelled mid-flight, a process disposed).
+
+**Found while fixing.** On Windows a unique temp name per write is not enough for two writers of one
+file: `File.Replace` still fails while the other rename holds the target, so the driver's one atomic
+writer (`AtomicFile`, now used at fourteen sites that each rolled their own) retries a bounded number of times. The
+tools' runner guard compared a path string, so run through a junction a gate ran nothing and exited
+0. It now compares real paths, in one helper.
+
+**My own mistakes, each caught by the gates or the method:**
+
+- a test fixture used a private address, which the sensitive gate refused;
+- the contract went over its word budget, and was condensed;
+- a commit landed before its FIX-LOG entry, and a follow-up added it;
+- two new tests could not fail as first written (the same file on both sides, and the wrong label),
+  and were fixed before commit;
+- an overwritten test file was restored from git before appending.
+
+**What it left**, in `TASKS.md` under *What REV3 left*:
+
+- DIST1 (the install command);
+- BUDGET1 (what the core budget caps);
+- HOME1 (which home a second install uses);
+- HOSTID1 (the shell adopts any host);
+- REFUSE1 (the refusal rule, enforced);
+- TIER1 (the tier per answer);
+- HTTP1 (the HTTP host under test);
+- SIGNIN1 and WINDOW1 (two web state bugs);
+- CLEAN1, the reviewers' duplication and dead-code lists, reported but not yet re-read.
+
+Gates: CLI 446 → 475, service 473 → 497, driver 646 → 681, modules 126 → 129, devkit 73 → 80, web
+unit 948 → 972, Playwright 21/21, family 279/279, deploy 39/39.

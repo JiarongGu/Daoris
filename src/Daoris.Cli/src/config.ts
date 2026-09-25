@@ -25,6 +25,12 @@ const LOCK_VERSION = 1;
  * actually matters: a repository's OWN always-loaded material getting fat. That is the case it has
  * earned its keep on — it caught a 45% overage on first contact with one adopter, and forced the
  * retirement of an 8.3 KB duplicated rule in another.
+ *
+ * 🔴 **Since D59 that is no longer what is measured.** The always-loaded tier became Daoris's region
+ * of `AGENTS.md`, and `inspect` counts that region's body alone — the canon's rules and the index. A
+ * repository's own always-loaded material (the rest of `AGENTS.md`, `CLAUDE.md`, a local
+ * `.claude/rules/` file) is not counted, and `analyze` still projects the pre-D59 quantity. What the
+ * number should cap is open in `TASKS.md` (REV3 CLI F10).
  */
 export const DEFAULT_CORE_BUDGET_BYTES = 30000;
 

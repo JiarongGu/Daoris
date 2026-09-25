@@ -10,28 +10,15 @@ the family, kept from drifting, and improved from wherever the improvement was f
 **Daoris as the driver**: the workflow manager that triggers and coordinates the agent sessions doing
 the family's work.
 
-**The arcs, in order, all closed and all in the archive.** **D45** — the driver: three parts, built,
-with a real driven run behind part 2 (DRV4) and a two-machine crossing behind part 3 (DRV5).
-**D48/D49/D50** — workspaces, the interactive surface, management parity: WSP1–4, SES1–3 and CANON6,
-then reviewed at the owner's request (REV2, which found the release workflow running one of four
-declared gates and the shell's 1,128 lines with no tests at all — both fixed and gated).
-**D51/D52/D55/D56** — the desktop as a **code-gen-driven IDE**, designed by SURF1 after two reference
-studies, built as SURF2–SURF10, closed 2026-09-22 when SURF5b also closed driver open question 5.
-**D53** — the dsh evaluation the owner interposed, accepted the same day: *dsh is adopted as a
-protocol, not a product*, which put the protocol door in front of the view.
-
-**Two live directions, both the owner's and both measured before they were designed.** **The
-toolchain** (2026-09-22 → **TOOL1/D57**): the measurement corrected a doctrine overclaim — the
-accounts were Daoris's and the binary was still the machine's — and **TOOL2 and TOOL3 have landed**.
-**The instruction file** (2026-09-22 → **CANON8/D59**): `.claude/rules/` is read by one harness of
-three, so the always-loaded tier lives in `AGENTS.md` — **built and migrated**, this repository and
-both examples with it. **The arc is closed** — CANON8a–e landed the move and CANON8d said the new
-thing, in `analyze`, in D7, in the README and in `canon-authoring`.
+**Every arc before D76 is closed and in the archive**: the driver (D45), workspaces, the interactive
+surface and management parity (D48–D50), the working surface (D51–D56), the protocol door (D53), the
+toolchain (D57, bar TOOL4 and TOOL5) and the instruction file (D59). Two reviews read the code
+rather than re-running it, REV2 and REV3.
 
 ## State
 
 **All five artefacts exist and are built, and all three parts of D45 with them.** Fifteen commands,
-**446 CLI tests, 473 service, 646 driver, 126 desktop modules, 948 web unit, 21 Playwright**, 73
+**475 CLI tests, 497 service, 681 driver, 129 desktop modules, 972 web unit, 21 Playwright**, 80
 devkit, 66/66 release rehearsal, **279/279 family rehearsal** (it names its own phases when you run
 it), **39/39 deployment rehearsal** (D60), 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge documents, 5 skills, 7 packs. Always-loaded
 core is **22,171 of 26,000 bytes** — a span in `AGENTS.md` since D59 — and **advisory rather than
@@ -44,26 +31,11 @@ bind: what may leave a machine is two manifest declarations, silence meaning loc
 machine is the only lock and outside sessions stay first-class; and a session's record is concluded
 from its exit code and its quest's state, never from what it said about itself (D46 §4).
 
-The service is **deployable** (D36) and **ships as executables** (D43): `npm run publish:service --
---install` lands both hosts self-contained under the home's `bin/` and prints the ready `.mcp.json`
-snippet; the release workflow ships them per platform with sha256s beside the devkit. Local sessions
-spawn the MCP host over one persistent store; the HTTP host carries registrations and quests for a
-remote deployment, key-gated, **no model required**. **The loops create their consumer** (D44): both
-rehearsals run over a scratch copy of the examples and take a project born mid-run through init →
-declare → sync → check → connect → its first quest. `Daoris.Web` is **the platform** (D38,
-D40, D41, D42): five views landing on **Overview** — is anything sitting, the family's health, quests
-grouped by state with sitting time, projects as scannable declarations — in a designed console shell
-(sidebar, drawers, toasts, a validated status palette; `docs/2026-09-19-platform-ux.md`), built on
-headless libraries (Tailwind v4 on the tokens, Radix, TanStack Query; `docs/2026-09-19-frontend-architecture.md`),
-speaking **en + 简体中文** with a parity gate, with Storybook as the design tool and a test pyramid
-declared in `daoris.gates.json` — a **Vitest inner loop** (the shell-attached surfaces, over a mocked
-bridge) and a **Playwright outer loop over `examples/`** (the real bundle over the real host —
-including what a browser must NEVER learn about the machine it is not running on). Doctrine stays
-unwritable from every view. The **example family** under `examples/` is the router's proof (D39) — a
-canon change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
-Development is **automation-first** (D37): the person sets the target and verifies the final diff;
-agents execute and gates verify the middle. `docs/FIX-LOG.md` carries fix root causes, indexed by the
-service like every sibling's.
+The service **ships as executables** (D43), and the HTTP host carries a remote deployment, key-gated,
+with **no model required**. `Daoris.Web` is **the platform** (D38–D42), in en and 简体中文 with a
+parity gate. The README and each artefact's own README describe what is built. This file only
+records what is open. The **example family** under `examples/` is the router's proof (D39): a canon
+change must re-sync it in the same commit, and `npm run rehearse:family` enforces that.
 
 Nothing is published; development runs at `0.0.x`. **Adoption by other repositories is the owner's call
 and happens when Daoris is ready** — it is not tracked here, and no repository is asked to adopt until
@@ -87,9 +59,9 @@ reference gap* below.
   (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
   composer's turn, queue and drafts) and CONV4c (attachments), with the fixes the looks found. All
   are in the archive under 2026-09-25.
-- 🔴 **Next: REV3, the full review of code and docs the owner asked for (2026-09-25)**, under
-  *The review the owner asked for* below. It comes before anything else.
-- **Then:** **CONV4d, `@` a file in the session's tree** — measured with CONV4c: both doors expand
+- **REV3, the owner's full review, is closed** (2026-09-25, in the archive). Its ledger is
+  `docs/2026-09-25-rev3-review.md`, and what it left is under *What REV3 left* below.
+- 🔴 **Next: CONV4d, `@` a file in the session's tree.** Measured with CONV4c: both doors expand
   `@path` text themselves, so the work is the completion list and the bridge call behind it.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
@@ -116,8 +88,8 @@ and LOOK after every surface change, in both themes** — that is how all of the
 🔴 **Plugins exist** (D64, 2026-09-23, `docs/2026-09-23-plugin-design.md`): a folder under the
 home's `plugins/` that declares harnesses on the ACP door, **hands every session its MCP servers**
 (INT1 — `examples/plugins/browser` declares the Playwright MCP, beside the knowledge host, never in
-its place), and may speak from a process of its own; `daoris plugin` and the Machine view's Plugins
-card are the two doors, and the family rehearsal's phase 18 drives all three. No code from a plugin
+its place), and may speak from a process of its own; `daoris plugin` and Settings' Plugins domain
+are the two doors, and the family rehearsal's phase 18 drives all three. No code from a plugin
 loads into any host, ever.
 
 🔴 **A harness action's end is news** (2026-09-23, `HARNESS_ENDED`): a login waits on a person in a
@@ -237,11 +209,11 @@ the traps that are not in any contract, because they were found rather than desi
   service-side point. TEST1's second sighting arrived (2026-09-25), so it is open. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
   gate, and `eval` is the one instrument that reaches the bridge-attached half.
-- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 446 + `check` + doc
+- **Verify before claiming done, always:** `npm run verify` (typecheck + CLI 475 + `check` + doc
   budgets + version agreement + the devkit's universal gates),
-  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (473),
+  `dotnet test src/Daoris.Service/Daoris.Service.Tests` (497),
   `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`
-  (646), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (126), `npm run rehearse:family` (279/279), `npm run test:web` (948 vitest + 21 Playwright),
+  (681), `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` (129), `npm run rehearse:family` (279/279), `npm run test:web` (972 vitest + 21 Playwright),
   and — when the desktop, the publish or the locator moved — `npm run rehearse:deploy` (39/39), which
   publishes the shell to `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is
   the INSTALL's own** — the gate plants a decoy under the scratch home's `bin/` itself since D63, so
@@ -255,48 +227,62 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Twenty rows are open**: REV3, the owner's
-review, first; D76's six and its held file tools; three leftovers (FLAKE1, DEPLOY5, TEST1); three on
-the owner (TRUST2, AGT2c, INT6); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this
-file holds no ticked rows, by the `task-lifecycle` rule it also ships.
+the archive; its decision is **D53, accepted**). **Twenty-nine rows are open**: D76's six and its
+held file tools; the ten REV3 left; three leftovers (FLAKE1, DEPLOY5, TEST1); three on the owner
+(TRUST2, AGT2c, INT6); and six on a trigger (see *Handover*). Every closed one is in
+`docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle` rule it also
+ships.
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
 (2026-09-24, in the archive). Each landing is one session-sized item, TDD, gates green, moved to the
 archive.
 
-### The review the owner asked for (owner, 2026-09-25) — FIRST next session
+### What REV3 left (2026-09-25)
 
-> *"next session let's do a full code review include docs"*
+REV3 is in the archive, and `docs/2026-09-25-rev3-review.md` is its ledger. These rows are what it
+found that is not session-sized, or is the owner's call. Each one was confirmed in the code.
 
-- [ ] **REV3 — a full review, code and docs.** REV2 is the precedent (archive, 2026-09-20): by
-  *reading* rather than re-running, it found two defects no gate could see. Gates prove what they
-  assert; a review looks for what nothing asserts.
-  - **Scope, every artefact:** `src/Daoris.Cli`, `src/Daoris.Service`, `src/Daoris.Devkit`,
-    `src/Daoris.Web`, `src/Daoris.Desktop` (driver, modules, app, headless host), `tools/`, `canon/`
-    and `examples/`.
-  - **Scope, docs:** `CLAUDE.md`, `AGENTS.md`'s local rows, `README.md` and each artefact's README,
-    `TASKS.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/DECISIONS.md`, `docs/FIX-LOG.md`, and the
-    design documents under `docs/`.
-  - **Code, for correctness first:** concurrency, error paths, what crosses a boundary (D47 §4), a
-    refusal that reaches nobody, a twin set that drifted. Weigh the newest code most:
-    - D76's landings, CONV1–CONV4c: `ChatTurns`, `ChatRunner`, `ChatFiles`, the stream-json mapper,
-      the event record, and the page's conversation;
-    - the D72–D75 permission, proposal and menu work.
-  - **Docs, by `claims-need-checks`:** behavioural prose checked against the code, never against the
-    design. Look for stale counts and claims, *as built* notes that diverge, duplicated rules,
-    status in prose, and history outside the records that hold it (the `post-feature` prose pass).
-  - **Method:**
-    1. Run the discovery skills, then scope by artefact.
-    2. Verify every finding before reporting it: a concrete failure, or the line that is untrue.
-    3. Land each confirmed defect as a fix (TDD, its own commit, a FIX-LOG entry when it is a
-       defect), or as a backlog row when it is not session-sized.
-    4. The archive gets the findings, as REV2's entry has them.
-  - A fan-out, one reviewer per artefact and one for the docs, needs the owner's go-ahead for its
-    scale. **Given 2026-09-25**: ten read-only reviewers (CLI, service, the driver's conversation
-    half, the rest of the driver, modules and app, the web's `work/`, the rest of the web, tools
-    with devkit, canon and examples, and two for the docs), every finding then verified here before
-    it lands. **Widened the same day**: refactor, dedup and cleanup too, reported after correctness.
-  - **Already known, so not re-found:** TEST1, FLAKE1, DEPLOY5, REH1 and UX5's written findings.
+- [ ] **DIST1 — how a consumer installs Daoris** (docs F1; the owner's call). The README's
+  `npx github:JiarongGu/Daoris#v0.0.1 …` cannot run: the root package is a private workspace with no
+  `bin`, and no tag exists. Choose npm's `daoris@X` (the release workflow already publishes it) or a
+  git ref with a root `bin`; the README, `init`'s written `source`, `release-prep` and
+  `version.test.ts` then move together.
+- [ ] **BUDGET1 — what the core budget caps** (CLI F10; the owner's call). Since D59 `inspect` counts
+  only the body of Daoris's `AGENTS.md` region. The repository's own always-loaded material is not
+  counted: the rest of `AGENTS.md`, `CLAUDE.md`, a local `.claude/rules/` file. The README and the
+  instruction-file design still say the budget guards it, and `analyze` projects the pre-D59
+  quantity (`config.ts` now says so). Decide what the number caps, then move all three together.
+- [ ] **HOME1 — which home a second install uses** (modules F4; the owner's call).
+  `InstallHome.Establish` defers to a `DAORIS_HOME` already in the environment, and the first
+  install set one for the account. So a moved or second install runs on the first one's `data/`
+  and says nothing. Either the install's own `data/` wins, or the inherited home wins and the shell
+  says so.
+- [ ] **HOSTID1 — the shell adopts whatever answers `/api/status`** (modules F7). `HostSupervisor`
+  takes any process answering on the service port as this machine's host, and hands its page the
+  full bridge. The shell needs a way to tell its own host from another process, such as a token it
+  passes at spawn, or the install path the host reports.
+- [ ] **REFUSE1 — the refusal rule, enforced** (modules F10). `Refusals.All` is kept by hand, so a
+  code left out of it escapes the catalogue test, and nothing checks that a throw site uses a
+  declared code. Enumerate the constants by reflection and scan the throw sites.
+- [ ] **TIER1 — which tier answered, per answer** (service F13, D24). `HybridKnowledgeSearch`
+  swallows either half's failure, and the tools report the configured tier (`SemanticEnabled`)
+  rather than the one that answered. With the embedder down, a search still says `lexical +
+  semantic`, and if both halves fail, nothing matching and nothing answering look the same. The
+  search result has to carry its tier.
+- [ ] **HTTP1 — the HTTP host under test** (service F19). The service suite references Core and the
+  MCP host only, so the shared gate, the key check and path stripping are exercised by one
+  rehearsal route each. The fix is a `WebApplicationFactory` suite over shared mode's doors.
+- [ ] **SIGNIN1 — a sign-in outlives leaving the Agents domain** (web-rest F4). The running action
+  is the domain component's state, and `HARNESS_ENDED` is heard only while it is mounted. Leaving
+  mid-login loses the code panel and the end notice. Lift the running action above the domain.
+- [ ] **WINDOW1 — a secondary window follows scope and theme** (web-rest F8). Both are read from
+  `localStorage` once, and nothing listens for a `storage` event, so a detached session keeps the
+  workspace and theme it opened with.
+- [ ] **CLEAN1 — the review's cleanup lists.** Each ledger section ends in a C or K row: duplication
+  and dead code a reviewer reported and nobody here has re-read. Examples are a JSON helper written
+  seven times in the service, "driver not ready" five times in the modules, and the session centre
+  built twice in the web. Take one section at a time. Confirm each item, and land the ones worth
+  the change as refactors under the tests already there.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -483,12 +469,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   card wants to open a file); a terminal (design §6's trigger).
 
 ### Open — the arc's leftovers, in the order they are worth doing
-
-- [ ] **DIST1 — how a consumer installs Daoris** (found by REV3; the owner's call). The README's
-  `npx github:JiarongGu/Daoris#v0.0.1 …` cannot run: the root package is a private workspace with no
-  `bin`, and no tag exists. Choose npm's `daoris@X` (the release workflow already publishes it) or a
-  git ref with a root `bin`; the README, `init`'s written `source`, `release-prep` and
-  `version.test.ts` then move together.
 
 - [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the

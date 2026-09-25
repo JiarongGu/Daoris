@@ -1,6 +1,6 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built and run over this repository.** One self-contained 2.7 MB binary and 73 tests. The two
+**Status: built and run over this repository.** One self-contained 2.7 MB binary and 80 tests. The two
 questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
 
 **The universal gates run here** (DEVKIT3, 2026-09-22): `universal` in `daoris.gates.json` and a step

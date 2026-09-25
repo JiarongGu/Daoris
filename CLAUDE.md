@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 446 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 473, `Daoris.Devkit` 73, and the
-driver 646. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+**Built and proven; nothing published.** Fifteen commands, 475 CLI tests, a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 497, `Daoris.Devkit` 80, and the
+driver 681. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -243,8 +243,8 @@ Run every command from the **workspace root**, not from a package directory.
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - **`npm run desktop -- <doctor|build|run|shot|eval|click|restart|kill>`** — the shell's dev loop, and
   **not a gate**: it starts the real window on a scratch machine of its own and lets you *see* it —
-  `eval` is the only instrument that reaches the bridge-attached half (the Machine view, the driver
-  controls, the console, chat), which Playwright cannot reach and the vitest loop only mocks. A run
+  `eval` is the only instrument that reaches the bridge-attached half (Settings' machine domains, the
+  driver controls, the console, chat), which Playwright cannot reach and the vitest loop only mocks. A run
   redirects every machine-local file because the driver loop starts with the app and spawns **real
   sessions**; `--real` is your own machine and says so. `src/Daoris.Desktop/README.md` has the table.
 - `node --test` — tests only.
