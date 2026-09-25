@@ -21,7 +21,7 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>It is quiet while the person is looking.</b> The same event reaches the page over the
 /// bridge, which raises the platform's own toast — so an OS balloon on top of that would be the same
-/// news twice. The window being in the foreground is the test, because that is what "they are
+/// news twice. One of this application's windows in the foreground is the test, because that is what "they are
 /// already looking" actually means.</para>
 ///
 /// <para>🔴 <b>The icon has to be visible for a balloon to show at all</b>, so Daoris now has a tray
@@ -128,7 +128,8 @@ public sealed class SessionNotifier : IDisposable
     public event Action<string>? Attend;
 
     /// <summary>
-    /// Whether the person is already looking at this window — the test for staying quiet.
+    /// Whether the person is already looking at one of this application's windows — the test for
+    /// staying quiet.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Focused is not enough; it must also be on screen.</b> A minimized window can still be
@@ -140,8 +141,13 @@ public sealed class SessionNotifier : IDisposable
     {
         try
         {
-            var handle = _window.Handle;
-            return GetForegroundWindow() == handle && !IsIconic(handle);
+            // 🔴 ANY of this application's windows (REV3): a secondary window — the monitor, a detached
+            // session — carries the same page, which raises its own toast, so testing the main window
+            // alone sent the same news twice, as a balloon and as a toast.
+            var foreground = GetForegroundWindow();
+            if (foreground == IntPtr.Zero || IsIconic(foreground)) return false;
+            GetWindowThreadProcessId(foreground, out var owner);
+            return owner == (uint)Environment.ProcessId;
         }
         catch
         {
@@ -152,6 +158,9 @@ public sealed class SessionNotifier : IDisposable
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

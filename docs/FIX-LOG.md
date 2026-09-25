@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## With a secondary window in front, the same news came twice (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the desktop. A session that parks or ends unasked raises an
+OS balloon, unless the person is already looking, because the page's own toast carries it then. The
+test for "looking" was whether the MAIN window was in the foreground. A secondary window (the
+monitor, a detached session) mounts the same page with its own toasts (`SecondaryWindowRoot` mounts
+`ShellSignals`). So with one of those in front, the person got the toast in front of them and the
+balloon as well.
+
+**Root cause.** "Looking at Daoris" was tested as "looking at one window".
+
+**Fix.** Looking is: the foreground window belongs to this process, and is not minimized.
+
+**Verify.** Build only. The notifier is WinForms tray code with no test harness, and a balloon cannot
+be observed from a test. The premise was checked in the page source: every Daoris window's page
+raises the attention toast.
+
 ## Two refusal codes said the wrong sentence for most of their causes (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the desktop. The page translates a refusal's CODE into a

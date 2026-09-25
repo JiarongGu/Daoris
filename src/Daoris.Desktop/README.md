@@ -39,7 +39,7 @@ needs a live form.
 
 **It notifies** (SURF5b/D55 §4), which closes driver design open question 5: a session that parks, or
 ends without the person asking, raises an OS balloon from the shell's own `NotifyIcon` — and stays
-quiet while the window is on screen and focused, because the page's own toast has it. It decides
+quiet while any of its windows is on screen and focused, because the page's own toast has it. It decides
 nothing: `AttentionWatch` in the driver library does, so `daoris-driver` on a machine with no screen
 prints the same judgement as a line. `daoris driver notify on|off` and the Settings page's checkbox
 are two doors onto one `driver.json` field (D50).
