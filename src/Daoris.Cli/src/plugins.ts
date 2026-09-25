@@ -376,6 +376,12 @@ function requireId(argv: string[], verb: string): string {
   if (!id || id.startsWith('--')) {
     throw new DaorisError(`\`plugin ${verb}\` needs a plugin id — e.g. \`daoris plugin ${verb} acme.quiet-hours\`.`);
   }
+  // 🔴 Before the id becomes a path: `remove` joins it under plugins/ and deletes recursively, so `..`
+  // was the whole home and `.` every plugin's kept data (REV3). An installed id always has this shape.
+  if (!ID_SHAPE.test(id.toLowerCase())) {
+    throw new DaorisError(`\`${id}\` is not a plugin id — one is lowercase letters, digits, dots and dashes, `
+      + 'like `acme.quiet-hours`; `daoris plugin list` shows what there is.');
+  }
   return id;
 }
 

@@ -363,6 +363,36 @@ test('remove takes the install folder and names the data folder rather than dele
   fx.cleanup();
 });
 
+test('an id that is not a plugin id is refused before it becomes a path — the home and .data survive', () => {
+  // REV3: `remove ..` joined the id under plugins/ and deleted the whole Daoris home; `remove .`
+  // deleted plugins/ with every plugin's kept data inside it.
+  const fx = makeFixture('plugins-remove-escape');
+  plugin(fx.root, 'acme.agent', '{ "id": "acme.agent" }');
+  mkdirSync(dataFolder(fx.root, 'acme.agent'), { recursive: true });
+  writeFileSync(join(fx.root, 'driver.json'), '{}', 'utf8');
+
+  const saved = process.env.DAORIS_HOME;
+  process.env.DAORIS_HOME = fx.root;
+  try {
+    for (const id of ['..', '.', '.data', '../acme.agent', 'acme/agent', 'acme\\agent']) {
+      for (const verb of ['remove', 'enable', 'disable']) {
+        const error = captureError(() => commandPlugin({
+          root: process.cwd(), argv: [verb, id], write: () => {}, packageRoot: process.cwd(),
+        }));
+        assert.match(error.message, /not a plugin id/, `${verb} ${id}`);
+      }
+    }
+  } finally {
+    if (saved === undefined) delete process.env.DAORIS_HOME;
+    else process.env.DAORIS_HOME = saved;
+  }
+
+  assert.equal(existsSync(join(fx.root, 'driver.json')), true);
+  assert.equal(existsSync(join(pluginsRoot(fx.root), 'acme.agent')), true);
+  assert.equal(existsSync(dataFolder(fx.root, 'acme.agent')), true);
+  fx.cleanup();
+});
+
 test('enable and disable edit the row, and an unknown id is refused naming the list', () => {
   const fx = makeFixture('plugins-switch');
   plugin(fx.root, 'acme.agent', '{ "id": "acme.agent" }');

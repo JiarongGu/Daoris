@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `daoris plugin remove ..` deleted the Daoris home (2026-09-25)
+
+**Symptom.** Found by REV3's reading, never hit. `daoris plugin remove ..` answered "plugin `..`
+removed" and had deleted the whole home: `driver.json`, `remotes.json` with its keys, every account,
+`keys.json`. `remove .` deleted `plugins/` with every plugin's kept data inside it, which the verb
+promises it never touches.
+
+**Root cause.** `requireId` checked only that an id was present, and `remove` joined it under
+`plugins/` and deleted recursively. Every installed id already has `ID_SHAPE` (the catalogue refuses
+anything else), so the operand was the one place an arbitrary string became a path. The desktop's
+Plugins card resolves its id through the catalogue first and never had the flaw.
+
+**Fix.** `requireId` refuses an id that is not `ID_SHAPE` before any path is built, for `remove`,
+`enable` and `disable` alike.
+
+**Verify.** `an id that is not a plugin id is refused before it becomes a path`: `..`, `.`, `.data`,
+`../x` and both slash forms, on all three verbs, with the home, the install and `.data` still there
+after. Before the fix, `remove ..` deleted the fixture's home and the test failed on its first case.
+
 ## A message sent mid-turn on Claude Code's door sat inside the turn before it (2026-09-25)
 
 **Symptom.** Found by reading CONV3b's code, never seen on the window. On the native door, a
