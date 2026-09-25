@@ -93,7 +93,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   onIntentTaken?: () => void;
 }) {
   const { t } = useTranslation();
-  const [refusal, setRefusal] = useState<string | null>(null);
+  // A refusal belongs to the session that gave it: attending another by any door (a notification, the
+  // palette, a quest's record) must not show one session's "went nowhere" on another's composer (REV3).
+  const [refusal, setRefusal] = useState<{ session: string; text: string } | null>(null);
   const [starting, setStarting] = useState(false);
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLDivElement>(null);
@@ -194,11 +196,31 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
 
   const onSend = (text: string, files: File[] = []) => {
     if (!attended) return;
-    send.mutate({ id: attended.id, text, files }, {
+    const session = attended.id;
+    // 🔴 The composer lets go of the words when it sends; a send that did not arrive hands them back,
+    // into THIS session's draft (the setter is bound to it), and names the files — the page no longer
+    // holds their bytes. Losing a paragraph to a refusal is the failure the composer exists to prevent (REV3).
+    const giveBack = () => {
+      if (text) setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+      if (files.length > 0) {
+        notify(t('work.composer.filesNotSent', { count: 1, names: files.map((file) => file.name).join(', ') }), 'error');
+      }
+    };
+    send.mutate({ id: session, text, files }, {
       // False is an answer: the session ended while they were typing. It lands on the composer
-      // rather than in a toast, because that is where the person is looking.
-      onSuccess: (result) => setRefusal(result.sent ? null : t('work.composer.notListening')),
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      // rather than in a toast, because that is where the person is looking — on THAT session's.
+      onSuccess: (result) => {
+        if (result.sent) {
+          setRefusal(null);
+          return;
+        }
+        giveBack();
+        setRefusal({ session, text: t('work.composer.notListening') });
+      },
+      onError: (error: unknown) => {
+        giveBack();
+        notify(sentence(error), 'error');
+      },
     });
   };
 
@@ -348,7 +370,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             key={attended.id}
             live={live}
             sending={send.isPending}
-            refusal={refusal}
+            refusal={refusal?.session === attended.id ? refusal.text : null}
             // One owner for the moves at a time (D56): while the session is parked the attention
             // band above holds finish, decline and stop, and this form keeps `send` alone.
             endings={attended.state !== 'awaiting-person'}

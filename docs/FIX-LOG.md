@@ -5,6 +5,47 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A send that did not arrive lost the paragraph, and a chat's end went unheard (2026-09-25)
+
+**Symptom.** Found by REV3's reading. Three parts of one failure:
+- The composer cleared its words and files as it sent, before the driver answered. When the answer
+  was "that session has ended" (`sent: false`) or a refusal, what the person had written was gone.
+- The frame kept one refusal for every session. Attending another session by a notification, the
+  palette or a quest's door showed one session's "went nowhere" on another's composer.
+- The driver emits `SESSION_ENDED` the moment a conversation's record moves, and no page code had ever
+  subscribed to it. A chat whose harness exited read as working until the next tick, up to a poll
+  later. That is exactly the window in which a message sent into it went nowhere.
+
+**Root cause.** The composer treated a send as delivered once asked. The refusal was frame state with
+no session attached. The event's emitter was written with the chats (SES2), and its consumer never
+was.
+
+**Fix.** A send that does not arrive hands its words back into that session's draft, ahead of anything
+typed since, and names its files, since the page no longer holds their bytes. A refusal carries the
+session it belongs to. `ShellSignals` refetches the sessions and the driver on `SESSION_ENDED`, without
+a toast.
+
+**Verify.**
+- `hands the words back into the box, and names the files, when a send does not arrive` was watched
+  failing without the fix.
+- `a conversation's end refetches the sessions at once` failed on the missing handler.
+
+## Drafts for an all-digit session were dropped as they were typed (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then shown by probe. Once 50 drafts were kept, typing into a
+conversation whose session id was all digits lost each keystroke as it was made. Session ids are 8 hex
+characters, so about one in fifty is all digits.
+
+**Root cause.** Drafts were a map, and their age was the order of its keys. JavaScript orders
+integer-like keys first, whatever order they were written in. So the draft being typed was always the
+"oldest", and it was the one cut to keep the limit.
+
+**Fix.** Drafts are an ordered list of `[session, words]` pairs, which is what age needs. A map written
+by the earlier build is still read.
+
+**Verify.** `keeps the draft being typed however its session id is spelled, through a reload too` fills
+the limit, types into `12345678`, and does it again after a round-trip through storage.
+
 ## An agent's Markdown image made the page fetch a URL the agent chose (2026-09-25)
 
 **Symptom.** Found by REV3's reading, then shown by probe. An agent's message containing

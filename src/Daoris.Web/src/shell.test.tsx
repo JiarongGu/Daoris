@@ -1666,6 +1666,23 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  /**
+   * REV3: the driver said a conversation ended the moment its record moved, and no page code
+   * listened — so a chat whose harness exited read as working until the next tick, and a message
+   * typed into it in that window went nowhere.
+   */
+  it('a conversation\'s end refetches the sessions at once, without a toast', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />, client);
+
+    eventHandlers.get('DAORIS.SESSION_ENDED')!({ session: 'c0ffee11', state: 'completed' });
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   /** A notification is a door (design §4): clicking it names the session to attend. */
   it('the shell can ask the page to attend a session', () => {
     const onAttend = vi.fn();

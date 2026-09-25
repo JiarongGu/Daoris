@@ -102,6 +102,17 @@ export function ShellSignals({ notify, onAttend }: {
       void client.invalidateQueries({ queryKey: keys.allSessions });
     });
 
+  /**
+   * A conversation ended (SES2). The driver says so the moment its record moves, because nothing
+   * else would until the next tick — which is up to a poll in which a chat whose harness exited read
+   * as working, and a message typed into it went nowhere (REV3). Not a toast: the person asked for
+   * the ending, or `SESSION_ATTENTION` already told them.
+   */
+  useShenoraEvent<{ session?: string; state?: string }>('DAORIS', 'SESSION_ENDED', () => {
+    void client.invalidateQueries({ queryKey: keys.allSessions });
+    void client.invalidateQueries({ queryKey: keys.driver });
+  });
+
   /** The person clicked an OS notification, so the window comes forward on that session. */
   useShenoraEvent<{ session?: string }>('DAORIS', 'ATTEND_SESSION', (asked) => {
     if (asked?.session) onAttend?.(asked.session);

@@ -438,6 +438,30 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * REV3: the composer lets go of the words when it sends. A send that did not arrive — the session
+   * ended while they typed, or the driver refused — handed back nothing, so a paragraph and its files
+   * were gone. They come back into the box now, and the files are named.
+   */
+  it('hands the words back into the box, and names the files, when a send does not arrive', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_INPUT') return { sent: false };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('c0ffee11', notify);
+    await userEvent.upload(await screen.findByLabelText('choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
+    const box = screen.getByLabelText('message');
+    await userEvent.type(box, 'a long paragraph worth keeping');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    expect(await screen.findByText(/went nowhere/)).toBeTruthy();
+    await waitFor(() => expect((box as HTMLTextAreaElement).value).toBe('a long paragraph worth keeping'));
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('run.log'), 'error');
+  });
+
+  /**
    * Finishing and stopping are different verbs and mean different things: end-of-input lets the
    * harness wind up, a stop cuts it off and the record says the person did.
    */
