@@ -223,8 +223,8 @@ The first version: doctrine that installs, is checked, and flows back.
   activity bar (D66).
   Doctrine is never editable from the browser: where a rule should change, the UI proposes the command
   to run in the repository that owns the file.
-- **A designed console, not a styled document.** A sidebar shell with the global state stated once at
-  its foot, a page header per view with its one primary action, a right drawer as the single
+- **A designed console, not a styled document.** One activity bar and a status bar with the global
+  state stated once (D56, D66), a page header per view with its one primary action, a right drawer as the single
   detail-and-form surface (a knowledge entry, a quest's detail and its actions, the compose form),
   toasts carrying every outcome verbatim, designed empty states, and static skeletons. The quest-state
   palette is computed rather than tasted: both themes pass all six checks of a color-vision validator,
@@ -380,10 +380,9 @@ The first version: doctrine that installs, is checked, and flows back.
   every step must be addressable, and every step must live in the same home. The composer offers
   a next step; the drawer shows what is coming and what a quest follows; `quest_publish` takes the
   list; and a driven session is told both what its quest follows and what closing it will publish.
-- **One navigation** (D66). There is no Manage ⇄ Work switch any more: the activity bar lists
-  Overview, Sessions, Quests, Projects, Convergence and Search, with Settings at its foot, and
-  Sessions is what the Work frame was. The palette offers the same list, minus the view you are
-  on. A remembered Sessions reopens it, and a browser has no Sessions to reopen.
+- **One navigation** (D66). The activity bar lists Overview, Sessions, Quests, Projects,
+  Convergence and Search, with Settings at its foot. The palette offers the same list, minus the
+  view you are on. A remembered Sessions reopens it, and a browser has no Sessions to reopen.
 - **A settings page, and the theme is yours to choose** (D66). Settings holds *Appearance* (theme:
   system, light or dark; language) and, on the desktop, everything *This machine* held. A chosen
   theme applies before the first paint and repaints the window's own caption buttons. In a browser,
@@ -642,7 +641,7 @@ The first version: doctrine that installs, is checked, and flows back.
   bar wears the line token.
 - **"Send it back as a quest" opens the composer again.** The review's door switched the window to
   Quests and opened nothing, because the composer consumed the draft during render and lost it to
-  the parent's clear. The palette's *start a session* and *review* reached the Work frame the same
+  the parent's clear. The palette's *start a session* and *review* reached Sessions the same
   way. Both are now consumed once, by identity.
 
 ### The remote

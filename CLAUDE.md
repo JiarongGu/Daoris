@@ -37,9 +37,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands, 475 CLI tests, a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 7 packs. `Daoris.Service` adds 497, `Daoris.Devkit` 80, and the
-driver 681. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
+**Built and proven; nothing published.** Fifteen commands and a canon of 8 core rules, 5 core
+knowledge documents, 5 core skills and 7 packs; the test counts live in `TASKS.md`'s State, their one
+home. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
 first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
@@ -52,22 +52,14 @@ platform, runs the driver loop, and lands the person's session controls. The **r
 (D47/DRV5) is the same HTTP host in **shared mode** — every route gated by per-person per-machine
 minted keys, no page and no machine path served, refusing to bind beyond loopback in local mode, the
 quest lock hardened into code, and the desktop's sync feeding up and rebasing quests (D68). **The family
-rehearsal gates all of it with no model, no account and no credential** (279/279) — it names its own
+rehearsal gates all of it with no model, no account and no credential** — it names its own
 phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
-**The D48/D49/D50 arc is closed**, and each piece is one sentence here because `docs/DECISIONS.md`
-and `docs/task-archive.md` carry the rest. **The workspace is the unit of sharing** (WSP1) and is
-**wiring, never a tracked declaration** — a registry row, set by `connect --workspace`. **The
-registry is the authority** (WSP2): an explicit list `connect`, `retire` and `import` maintain, never
-a view over a folder. **The remotes are a map** (WSP3): the home's `remotes.json`, one deployment per
-workspace, a key never printed back beyond its audit prefix. **A feed carries the commit it speaks
-for** (WSP4): only the canonical line feeds knowledge, and a stale feed is refused as *information*
-rather than as a failure. **The console
-streams** (SES1) — transcript-class, desktop-only, no HTTP surface at all. **A conversation is a
-session** (SES2) — same entity, same lock, quest optional; the harness carries the model. **The
-ACCOUNTS are Daoris's** (SES3): **named credential profiles**, directories Daoris owns and never
-reads — and since D57 the binary may be too (below). **Everything has two doors** (D50): whatever
-a screen can set, a terminal can.
+**The D48/D49/D50 arc is closed**, and `docs/DECISIONS.md` carries each piece. Two of its rules bind
+every change: **the workspace is wiring and the registry is the authority** (WSP1, WSP2) — a registry
+row set by `connect --workspace`, an explicit list `connect`, `retire` and `import` maintain, never a
+tracked declaration nor a view over a folder; and **everything has two doors** (D50): whatever a
+screen can set, a terminal can.
 **Nothing is published**, and development runs at `0.0.x`. **Development is automation-first** (D37):
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
@@ -86,8 +78,8 @@ writes is committed, so it survives the tool's absence; the test is *file or ser
 vocabulary (`.claude/knowledge/canon-authoring.md`).
 
 **Never edit the version by hand, and never stamp a changelog heading.** Both belong to the release
-workflow (`tools/release-prep.mjs`); the desktop sibling burned a version on exactly this. A
-hand-bump leaves every file consistent and still wrong: **authorship** was at risk, not consistency.
+workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent and still wrong:
+**authorship** was at risk, not consistency.
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
@@ -156,6 +148,7 @@ hand-bump leaves every file consistent and still wrong: **authorship** was at ri
   The regular task (D65: an ask becomes quests through an **intake session**) is built.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.
+  `docs/README.md` — what each document is now, and what amended it.
 
 ## The model, in three sentences
 
@@ -208,7 +201,7 @@ Run every command from the **workspace root**, not from a package directory.
   drift, promote, upgrade, rename, check. Everything else tests the source tree; this tests the
   **artefact**. Run before tagging.
 - **`npm run rehearse:family`** — the "does the router work?" gate (D39), and since D46–D48 the
-  driver's, the remote's and the boundary's. 279 checks over the example family, from both examples current and clean
+  driver's, the remote's and the boundary's. Its checks run over the example family, from both examples current and clean
   through a quest's whole life, the workspace boundary refused naming both sides, two simulated
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to
@@ -236,9 +229,8 @@ Run every command from the **workspace root**, not from a package directory.
   devkit on Linux, Windows and macOS. Nothing runs on push — **a gate
   you did not run locally has not been run.** Development happens on Windows and the release gates on
   Linux, which is exactly the gap that hid D25's line-ending assumption. **The declared set and the
-  workflow are two lists that must agree**, and they silently did not: the service's 248 tests were
-  declared and never run, and the driver's 130 were in neither. A rehearsal of the same code hid
-  it, and is no substitute for the tests underneath.
+  workflow are two lists that must agree**, and a dogfood test holds them together: a rehearsal of
+  the same code is no substitute for the tests underneath.
 - **Changing what `sync` does with a file? Read `docs/DECISIONS.md` D19 first.** That state space is
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - **`npm run desktop -- <doctor|build|run|shot|eval|click|restart|kill>`** — the shell's dev loop, and

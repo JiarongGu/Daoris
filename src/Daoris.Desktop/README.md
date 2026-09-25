@@ -1,93 +1,52 @@
 # Daoris.Desktop — the local driver
 
-**Status: built — the driver, its headless host, and the shell all exist, and the person's controls
-landed.** The brief was rewritten 2026-09-19 for D45; **the design is settled:
-`docs/2026-09-19-driver-design.md` (D46) is the contract.** `Daoris.Desktop.Driver` (the loop, the
-adapter seam with its `interactive` capability (D49 §3), its `Toolchain` (D49 §4 — where a harness's
-binary, version question, configuration-home variable and own install/update/login flows are declared)
-and, since D53/ACP1, its **`Wire`** — the door the driver holds a session over: the original pipe, or
-**ACP** (`AcpSession`, JSON-RPC on the process's stdio, with `session/request_permission` refused by
-construction and the record still concluded from the exit code and the quest) — the stub, the
-`acp-stub` that proves the protocol door with no model in it, the `claude-code` adapter and the
-protocol door's configurations (`claude-code-acp`, `codex-acp`, `dsh`),
-`ChatRunner` for conversations, `HarnessRoster` — one judgement for both spawn doors: is the harness
-here, and which named credential profile does this run as — and since D47 the machine's **remote sync** —
-`RemoteSync` rides the tick, feeding joined registrations, session records and opted-in knowledge up
-and mirroring the remote's quests and foreign registrations down, once **per workspace** since D48 §5,
-because one shared deployment serves one circle) and `Daoris.Desktop.Driver.Host`
-(`daoris-driver`) are driven end to end by the family rehearsal's driver, two-machine remote and
-remotes-map phases.
+**Status: built — the driver, its headless host and the shell all exist, and the family rehearsal
+drives them end to end.** `docs/2026-09-19-driver-design.md` (D46) is the contract; how each part
+got its shape is in `docs/DECISIONS.md` and `docs/task-archive.md`, not here.
 
-**`Daoris.Desktop.Modules`** is the shell's **head**, split out from its window 2026-09-20: the loop,
-the host supervisor, and every IPC module the platform page talks to (`DAORIS.DRIVER`,
-`DAORIS.REGISTRY`, `DAORIS.REMOTES`, `DAORIS.WINDOWS`) — plus `Refusals`, where a refusal is declared once as a code the
-page translates. Plain `net10.0`, because none of it is WinForms; it had been Windows-only by accident
-of where it was written, and that accident cost it every test it should have had. **The contract
-between the page and this machine was asserted on neither side** — the page's suite mocks the bridge,
-this half had no test project — which is how five written refusals reached people as a blank failure
-for as long as they existed (`docs/FIX-LOG.md`). It now carries its own test project and gate.
+| Project | What it is |
+|---|---|
+| `Daoris.Desktop.Driver` | The library: the loop and the planner; the adapter seam, whose `Toolchain` declares a harness's binary, version question, configuration home and install, update and login flows (D49 §4), and whose `Wire` is the door a session is held over — the pipe, or ACP (`AcpSession`, with a permission request refused by construction); `ChatRunner` for conversations; `HarnessRoster` (is the harness here, and which account does this run as); and `RemoteSync`, which rides the tick once per workspace |
+| `Daoris.Desktop.Driver.Host` | `daoris-driver`, the headless door onto the same library: the tick, chat, ask, trees and sync |
+| `Daoris.Desktop.Modules` | The shell's head: the loop, the host supervisor, every IPC module the page talks to, and `Refusals`, where a refusal is declared once as a code the page translates. Plain `net10.0`, with its own tests and gate |
+| `Daoris.Desktop.App` | `daoris-desktop`, the window and only the window, on Shenora.Windows 0.16.0 (D22) |
 
-**`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
-window, and now only the window. **It is frameless since SURF7** (`OptimizedForm` +
-`FramelessChrome`): there is no OS title bar, the platform's own app strip is the title bar — it
-drags, double-click maximizes, a sliver above it resizes from the top — and the room that strip
-reserves is handed to the OS as real caption buttons, which the **window** paints
-(`NativeCaptionButtons`, D56 as amended) from `ChromePalette`'s copy of D41's tokens. 🔴
-`AppPlacement` is the truth about maximized, never `Form.WindowState`, which lies about a window that
-maximizes by hand. `WindowCommandModule` is mapped **late**, from the form's constructor, because it
-needs a live form.
+The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
+protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
+concluded from its exit code and its quest, never from what it said.
 
-**It notifies** (SURF5b/D55 §4), which closes driver design open question 5: a session that parks, or
-ends without the person asking, raises an OS balloon from the shell's own `NotifyIcon` — and stays
-quiet while any of its windows is on screen and focused, because the page's own toast has it. It decides
-nothing: `AttentionWatch` in the driver library does, so `daoris-driver` on a machine with no screen
-prints the same judgement as a line. `daoris driver notify on|off` and the Settings page's checkbox
-are two doors onto one `driver.json` field (D50).
+## What the page can ask this machine
 
-**It is no longer the only window** (SURF8/D55 §b). `SecondaryWindows` opens named ones on their own
-STA pumps — `monitor` and `session:<id>`, asked for over `DAORIS.WINDOWS` — each a `SecondaryForm`
-carrying the **same bundle at its own route** (`?window=<name>`), so they are the platform's own
-components and not a second frontend. Three things about them are load-bearing: they keep their
-**native frame** (`WindowCommandModule` targets one form and its module name is reserved and
-singular, so frameless chrome is the main window's alone); each builds its **own WebView2
-environment** (🔴 `UseSharedEnvironment = false` — a `CoreWebView2Environment` is affine to the thread
-that created it, and sharing the main window's opens the window and then fails its bring-up); and each
-follows the **OS theme directly** through `SystemEvents`, because it has no `SET_THEME` channel of its
-own. They are disposed — not abandoned — on shutdown, since their threads are background and an
-unwaited exit kills them before their geometry saves run.
+| Module | What it carries |
+|---|---|
+| `DAORIS.DRIVER` | The driver: its state and tick reports; the drivable set, holds, trees, strikes, notifications and the intake harness; trust and retry; a session's live console (`TAIL_SESSION`, batched `SESSION_OUTPUT`), its record a page at a time (`SESSION_HISTORY`, batched `SESSION_EVENTS`, from the typed events kept beside each transcript), a conversation (`START_CHAT`, `SESSION_INPUT` with files, `END_CHAT`, `CANCEL_TURN`, `SESSION_QUEUE`), stop and resolve, and review (`SESSION_DIFF`, merge or discard a tree); the toolchain (`HARNESSES`, `HARNESS_ACTION` relayed under `<harness>:<action>`, its input and cancel); plugins, permission rules and proposals, usage; `NUDGE` after a publish or an ask, and `SYNC_NOW` |
+| `DAORIS.REGISTRY` | A folder picked and inspected; an existing manifest's declaration written, uncommitted, for that repository's review |
+| `DAORIS.REMOTES` | The machine's `remotes.json`, the file `daoris remote` edits: a key goes in, and only its audit prefix comes back |
+| `DAORIS.WINDOWS` | Named secondary windows: `monitor` and `session:<id>` |
 
-Beyond the frame it brings up the local HTTP host — adopting one already running, spawning and owning one
-otherwise, a dev build run from its project so the bundle serves — carries the platform in its WebView
-(`ProductionUrl`, the same bytes a browser gets), runs the driver's shared watch loop in-process with
-`driver.json` re-read every tick, forwards tick reports over the IPC bridge (`DAORIS.DRIVER`, consumed
-by the page — drivable and hold per repository, stop a running session, and since D49 §2 **the live
-console**: `TAIL_SESSION` for a session's backlog and batched `SESSION_OUTPUT` events for what it says
-next, fed by the capture pump's tee into a bounded per-session buffer that never leaves this machine;
-since D49 §3 **conversations** too — `START_CHAT`, `SESSION_INPUT`, `END_CHAT` and a `SESSION_ENDED`
-event over the same bridge, and `daoris-driver chat --repository <name>` for a machine with no screen; since SURF6 **the
-review** — `SESSION_DIFF` returns a session's landed work as a bounded diff, measured from the
-`base_commit` the spawn records, read-only by construction and desktop-only for the console's
-reason (🔴 it confirms `rev-parse --show-toplevel` names the tree it was given, because git
-searches UPWARD and would otherwise answer for the repository above it);
-since D76 **the conversation** — `SESSION_HISTORY` reads a session's record a page at a time
-(newest, `before`, or `after` for a gap) and batched `SESSION_EVENTS` carry what it does next, both
-from the typed events the driver keeps as `sessions/<id>.events.jsonl` beside each transcript, mapped
-from the door's own wire (ACP's `session/update`, Claude Code's `stream-json`) and never parsed from a
-console line; since CONV4c `SESSION_INPUT` takes a message's **files** as names and base64 bytes,
-kept under the home's `sessions/<id>/files/` and read by the agent there under a read granted at
-spawn; since CONV4a **the turn** — `CANCEL_TURN` stops a conversation's turn and keeps the
-session, answering what it withdrew, and `SESSION_QUEUE` with live `SESSION_QUEUED` events says
-whether a turn is in flight and what the person sent that has not reached the harness yet (on a
-terminal, Ctrl+C during a turn);
-and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine has and `HARNESS_ACTION`
-for the person's install, update or login, each spawning that harness's own mechanism and relaying it
-through the console under `<harness>:<action>`, never a session id, because it is not a session),
-edits the machine's wiring
-over `DAORIS.REMOTES` (the Settings page, over the same `remotes.json` the CLI edits — a key
-goes in and only its audit prefix comes back), and takes the loop and its
-owned host down with it on close, in-flight sessions ended and recorded `stopped`. The one designed
-control not yet wired page-side is **start-now**: the host answers `NUDGE`, and no page surface calls
-it yet.
+These doors are the shell's alone: machine-local facts never reach a browser (D47 §4), so none of
+them is an HTTP route. A session's *record* is on the host; its console, events and diff are here.
+
+## What the window must keep
+
+- **It is frameless** (SURF7, D56): the platform's app strip is the title bar, and the room it
+  reserves is handed to the OS as real caption buttons, which the window paints from
+  `ChromePalette`'s copy of D41's tokens. 🔴 `AppPlacement` is the truth about maximized, never
+  `Form.WindowState`, which lies about a window that maximizes by hand. `WindowCommandModule` is
+  mapped **late**, from the form's constructor, because it needs a live form.
+- **Secondary windows** (SURF8) carry the same bundle at their own route, so they are the platform's
+  own components and not a second frontend. They keep their **native frame**; each builds its **own
+  WebView2 environment** (🔴 an environment is affine to the thread that created it, and sharing the
+  main window's fails the bring-up); each follows the OS theme directly, having no `SET_THEME`
+  channel; and they are disposed on shutdown, before their geometry saves would be killed.
+- **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
+  asking, raises an OS balloon unless one of its windows has focus. `AttentionWatch` in the library
+  makes the judgement, so `daoris-driver` prints the same one as a line.
+- **It brings up the local host**, adopting one already running or spawning and owning one, and runs
+  the driver's watch loop in-process with `driver.json` re-read every tick. On close it takes the
+  loop and its owned host down, with in-flight sessions ended and recorded `stopped`.
+- 🔴 **A diff confirms the tree it was given** (`rev-parse --show-toplevel`): git searches upward, and
+  would otherwise answer for the repository above it.
 
 ## What it is
 
