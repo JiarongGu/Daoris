@@ -73,15 +73,6 @@ internal sealed class ChatTurns(
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
 
-    /// <summary>What the person has sent that has not reached the harness, in order.</summary>
-    public IReadOnlyList<ChatMessage> Waiting
-    {
-        get
-        {
-            lock (_gate) return Snapshot();
-        }
-    }
-
     /// <summary>Where the turns stand now — what a page that just opened the conversation is told.</summary>
     public ChatQueue State
     {

@@ -864,19 +864,8 @@ public sealed partial class Driver(
             output?.Append(sessionId, text);
         }
 
-        // The record's half (D76 §2). A record that cannot be written costs a console line, never the
-        // session: the conversation enriches the run, it does not run it.
-        void Event(SessionEvent e)
-        {
-            try
-            {
-                _events.Append(sessionId, e);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-            {
-                Line($"[the conversation record could not keep an event: {error.Message}]");
-            }
-        }
+        // The record's half (D76 §2): a record that cannot be written costs a console line, never the session.
+        void Event(SessionEvent e) => _events.Keep(sessionId, e, Line);
 
         // A driver line that is also part of the conversation: a note in the record as well.
         void Said(string text)
@@ -1049,17 +1038,7 @@ public sealed partial class Driver(
             output?.Append(sessionId, text);
         }
 
-        void Event(SessionEvent e)
-        {
-            try
-            {
-                events?.Append(sessionId, e);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-            {
-                Line($"[the conversation record could not keep an event: {error.Message}]");
-            }
-        }
+        void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
 
         if (preamble is { Length: > 0 }) Line(preamble);
         if (prompt is not null) Event(new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt });

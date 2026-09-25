@@ -405,17 +405,7 @@ public sealed class ChatRunner(
     };
 
     /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
-    private void Record(string sessionId, SessionEvent e)
-    {
-        try
-        {
-            _events.Append(sessionId, e);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            // The conversation goes on; the console still has its lines.
-        }
-    }
+    private void Record(string sessionId, SessionEvent e) => _events.Keep(sessionId, e, say: null);
 
     /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
     /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
@@ -538,17 +528,7 @@ public sealed class ChatRunner(
             output?.Append(sessionId, text);
         }
 
-        void Record(SessionEvent e)
-        {
-            try
-            {
-                _events.Append(sessionId, e);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-            {
-                Line($"[the conversation record could not keep an event: {error.Message}]");
-            }
-        }
+        void Record(SessionEvent e) => _events.Keep(sessionId, e, Line);
 
         var errors = Driver.PumpAsync(process.StandardError, file, sessionId, output, CancellationToken.None);
         var session = new AcpSession(

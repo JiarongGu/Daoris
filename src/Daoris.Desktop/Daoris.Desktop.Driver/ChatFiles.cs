@@ -10,11 +10,7 @@ public sealed record ChatUpload(string Name, byte[] Content);
 public sealed record KeptFile(string Name, string Path);
 
 /// <summary>One message of a conversation: the person's words and the files they attached (CONV4c).</summary>
-public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
-{
-    /// <summary>Words alone — most messages.</summary>
-    public static ChatMessage Of(string text) => new(text, []);
-}
+public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files);
 
 /// <summary>
 /// What a person attaches to a conversation (CONV4c), kept under the home for the session it was sent

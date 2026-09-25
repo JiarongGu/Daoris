@@ -208,6 +208,24 @@ public sealed class SessionEvents(string directory)
     }
 
     /// <summary>
+    /// Record one event, or say why it could not be kept — never throwing. A record that cannot be
+    /// written costs its caller a console line, never the session: the conversation enriches a run, it
+    /// does not run it (D76 §2). Four callers had written this guard for themselves (REV3 CLEAN1).
+    /// </summary>
+    /// <param name="say">Where the reason goes — the session's console — or null to drop it.</param>
+    public void Keep(string sessionId, SessionEvent e, Action<string>? say)
+    {
+        try
+        {
+            Append(sessionId, e);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            say?.Invoke($"[the conversation record could not keep an event: {error.Message}]");
+        }
+    }
+
+    /// <summary>
     /// The newest <paramref name="limit"/> events, or those before <paramref name="before"/> — how a
     /// page opens a session, and how it loads earlier ones.
     /// </summary>
