@@ -119,6 +119,69 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 REV3 chat F9: a person stopping the session mid-turn ended the agent, and the turn's prompt then
+    /// failed with "the stream ended" — which was recorded as the turn "could not be taken", a failure
+    /// of the agent's. The person stopped it. The turn ends as cancelled, and no failure is written.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_mid_turn_ends_the_turn_as_cancelled_and_writes_no_failure()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, processes, events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        string Seen() => $"state {service.State(id)}, record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}:{e.Text}"))}]";
+        await Until(() => service.State(id) == "working", Seen);
+
+        Assert.True(runner.Say(id, "hold"));
+        await Until(() => HeardLines().Contains("prompt: hold"), Seen);
+        Assert.True(processes.Stop(id));
+        await Until(() => service.State(id) == "stopped", Seen);
+        await Until(() => events.Page(id).Events.Any(e => e.Kind == SessionEventKind.Turn), Seen);
+
+        Assert.DoesNotContain(events.Page(id).Events, e => e.Text?.Contains("could not be taken") == true);
+        Assert.Equal("cancelled", events.Page(id).Events.Single(e => e.Kind == SessionEventKind.Turn).StopReason);
+    }
+
+    /// <summary>
+    /// 🔴 REV3 chat F7: a session that could not open for any reason but a <c>DriverException</c> — here a
+    /// <c>session/new</c> answer whose id is a number — skipped the open's own ending. The queue waited
+    /// for a session that would never come, and the transcript closed under the stderr pump still
+    /// writing to it. It concludes like any other open that failed: a note, and the record ended.
+    /// </summary>
+    [Fact]
+    public async Task A_session_that_cannot_open_for_any_reason_ends_the_conversation_with_a_note()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard, "numeric"] },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        string Seen() => $"state {service.State(id)}, record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.Text}"))}]";
+
+        await Until(() => service.State(id) == "failed", Seen);
+        Assert.Contains(events.Page(id).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("could not open"));
+    }
+
+    /// <summary>
     /// A text-only door keeps the person's words where it keeps the agent's — the console — so its
     /// record holds no half a conversation: questions with no answers beside them would read as an
     /// agent that never replied.
@@ -177,10 +240,12 @@ public sealed class ProtocolChatTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
               } else if (frame.method === 'session/new') {
                 note('session/new');
-                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-chat' } });
+                // A session id of the wrong kind: an agent this client cannot open a session on.
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: process.argv[3] === 'numeric' ? 5 : 'acp-chat' } });
               } else if (frame.method === 'session/prompt') {
                 const said = frame.params.prompt[0].text;
                 note('prompt: ' + said);
+                if (said === 'hold') continue;   // a turn that runs until someone stops it
                 if (said === 'refuse') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'overloaded' } });
                   continue;

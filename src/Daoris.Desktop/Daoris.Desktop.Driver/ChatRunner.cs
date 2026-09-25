@@ -253,7 +253,9 @@ public sealed class ChatRunner(
         void Changed(ChatQueue queue) => QueueChanged?.Invoke(sessionId, queue);
         if (resolved.Wire == SessionWire.Acp)
         {
-            chat = new ProtocolChat(resolved.AcpPosture, meta, workTree, Servers(sessionId), Changed);
+            chat = new ProtocolChat(
+                resolved.AcpPosture, meta, workTree, Servers(sessionId), Changed,
+                stopped: () => processes.WasStopRequested(sessionId));
             _protocol[sessionId] = chat;
         }
         else if (mapper is not null)
@@ -425,6 +427,9 @@ public sealed class ChatRunner(
         string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null, NativeChat? native = null,
         string? servers = null)
     {
+        // Declared first, so it is disposed LAST — after the process is untracked and every map that
+        // talks to it has let go (REV3: nothing disposed a conversation's process or its pipes).
+        using var owned = process;
         using var tracked = processes.Track(sessionId, process);
         using var talking = new Disposer(() =>
         {
@@ -549,14 +554,17 @@ public sealed class ChatRunner(
         var session = new AcpSession(
             process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record);
 
-        DriverException? failed = null;
+        Exception? failed = null;
         try
         {
             await session.OpenAsync(chat.Cwd, CancellationToken.None, chat.Servers).ConfigureAwait(false);
             chat.Opened(session, Line, Record);
         }
-        catch (DriverException error)
+        catch (Exception error)
         {
+            // 🔴 EVERY failure ends the open here (REV3): one that escaped — an unreadable answer, a pipe
+            // that broke mid-write — left the queue waiting on a session that never came, and skipped
+            // the wait below, so the transcript closed under a stderr pump still writing to it.
             failed = error;
             chat.Opened(null, Line, Record);
             Line($"— the ACP session could not open: {error.Message}");
@@ -595,13 +603,15 @@ public sealed class ChatRunner(
     private sealed class ProtocolChat
     {
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly Func<bool> _stopped;
         private Action<string> _line = _ => { };
         private Action<SessionEvent> _record = _ => { };
 
         public ProtocolChat(
             string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
-            Action<ChatQueue> changed)
+            Action<ChatQueue> changed, Func<bool> stopped)
         {
+            _stopped = stopped;
             Posture = posture;
             Meta = meta;
             Cwd = cwd;
@@ -644,6 +654,16 @@ public sealed class ChatRunner(
             catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException
                                               or InvalidOperationException)
             {
+                if (_stopped())
+                {
+                    // 🔴 The person stopped the session, which ended the agent and this turn's prompt
+                    // with it (REV3). That is not the turn failing, and a note saying so would blame
+                    // the agent for the person's act. The turn ends as a stopped turn does.
+                    _line("— the turn ended: the session was stopped");
+                    _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
+                    return;
+                }
+
                 _line($"— the turn could not be taken: {error.Message}");
                 _record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the turn could not be taken: {error.Message}" });
                 // 🔴 And the turn ENDS (REV3). Only a turn event closes a turn on the page, so a refused
