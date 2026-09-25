@@ -14,7 +14,7 @@ import { DaorisError } from '../src/errors.ts';
  * The file is the truth and this is an editor over it, exactly as `driver.json` and the desktop's
  * checkboxes are: hand-editing keeps working, and nothing here is the only way to say anything.
  *
- * It is **offline** — it edits a file under the profile and talks to nothing — which is why it may sit
+ * It is **offline** — it edits a file under the Daoris home and talks to nothing — which is why it may sit
  * beside `status` without touching the doctrine commands' guarantee. The dogfood suite holds that line
  * structurally; these tests hold the behaviour.
  */
@@ -333,5 +333,26 @@ test('status --machine on an unwired machine says the family is local, silently'
   const machine = JSON.parse(lines.join('\n')).machine;
   assert.deepEqual(machine.remotes, []);
   assert.equal(machine.source, 'none');
+  fx.cleanup();
+});
+
+test('status --machine with no Daoris home says what to set, never "machine null" (REV3 CLI F17)', async () => {
+  const fx = makeFixture('status-machine-homeless');
+  fx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));
+
+  const saved = { config: process.env.DAORIS_REMOTE_CONFIG, home: process.env.DAORIS_HOME };
+  delete process.env.DAORIS_REMOTE_CONFIG;
+  delete process.env.DAORIS_HOME;
+  const lines: string[] = [];
+  try {
+    commandStatus({ root: fx.root, argv: ['--machine'], write: (line) => lines.push(line), packageRoot: process.cwd() });
+  } finally {
+    if (saved.config !== undefined) process.env.DAORIS_REMOTE_CONFIG = saved.config;
+    if (saved.home !== undefined) process.env.DAORIS_HOME = saved.home;
+  }
+
+  const out = lines.join('\n');
+  assert.equal(/machine\s+null/.test(out), false, out);
+  assert.match(out, /machine\s+no Daoris home.*DAORIS_HOME/, out);
   fx.cleanup();
 });

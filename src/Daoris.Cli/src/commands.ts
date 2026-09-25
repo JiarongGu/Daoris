@@ -165,7 +165,7 @@ export function commandStatus(
   // The machine's WIRING, when asked for (D50). The manifest says MAY this repository's material
   // leave; the machine says WHERE it would go — two different questions with two different homes
   // (D48 §2), and a person debugging a sync needs them side by side. Offline: it reads one more
-  // file under the profile and asks nothing.
+  // file under the Daoris home and asks nothing.
   const wiring = argv.includes('--machine') ? readRemotes() : null;
   const machine = wiring === null ? null : {
     source: wiring.source,
@@ -193,6 +193,9 @@ export function commandStatus(
       drifted: inspection?.drifted ?? [],
       missing: inspection?.missing ?? [],
       stalePacks: inspection?.stalePacks ?? [],
+      // Everything `check` fails on, so "why is check red?" is answered here too (REV3 CLI F11).
+      staleSwitches: inspection?.staleSwitches ?? [],
+      indexStale: inspection?.indexStale ?? false,
       switchedOff,
       offers,
       selectionProblem,
@@ -218,7 +221,9 @@ export function commandStatus(
   }
 
   if (machine) {
-    write(`  machine       ${machine.path}${machine.source === 'environment' ? ' (overridden by the environment)' : ''}`);
+    write(machine.path === null
+      ? '  machine       no Daoris home — set DAORIS_HOME to read this machine\'s wiring (D63)'
+      : `  machine       ${machine.path}${machine.source === 'environment' ? ' (overridden by the environment)' : ''}`);
     if (machine.remotes.length === 0) {
       write('  wiring        none — every workspace on this machine stays local (D21)');
     }
@@ -232,6 +237,10 @@ export function commandStatus(
     if (inspection.drifted.length) write(`  drifted       ${inspection.drifted.join(', ')}`);
     if (inspection.missing.length) write(`  missing       ${inspection.missing.join(', ')}`);
     if (inspection.stalePacks.length) write(`  stale packs   ${inspection.stalePacks.join(', ')}`);
+    for (const stale of inspection.staleSwitches) write(`  stale         ${stale} — run 'daoris sync'`);
+    if (inspection.indexStale) {
+      write("  roster        the doctrine region's on-demand tables are out of date — run 'daoris sync'");
+    }
   }
 
   if (selectionProblem) write(`  selection     ${selectionProblem}`);

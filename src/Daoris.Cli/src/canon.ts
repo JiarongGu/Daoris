@@ -169,7 +169,12 @@ function readSwitches(pack: string, declared: unknown, core: Pack): Record<strin
 
   const switches: Record<string, string> = {};
   for (const [target, because] of Object.entries(declared)) {
-    if (!core.files.some((file) => covers(target, file))) {
+    // A ROW, in the shape D71 names — never a whole tier, never one file of a skill. `covers` matches
+    // by prefix, so without this `rules` took every core rule out (REV3).
+    const document = /^(rules|knowledge)\/[^/]+\.md$/.test(target)
+      && core.files.some((file) => file.target === target);
+    const skill = /^skills\/[^/]+$/.test(target) && core.files.some((file) => covers(target, file));
+    if (!document && !skill) {
       throw new DaorisError(
         `pack '${pack}' offers to switch off '${target}', which is not a core row. A pack may switch off `
         + 'only core documents — rules/<name>.md, knowledge/<name>.md, or a skill as skills/<name>.');

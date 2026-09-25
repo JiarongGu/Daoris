@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `status` hid what `check` fails on, and a pack's switch could take out a whole tier (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the CLI.
+- **`status`** printed drifted, missing and stale packs. It said nothing of the other two facts `check`
+  fails on: a switch the manifest confirmed and `sync` never applied, and a roster behind the disk.
+  So the command a person runs to learn why `check` is red was silent about two of its five reasons,
+  in text and in `--json`. With no Daoris home, `status --machine` printed `machine null`.
+- **`switchesOff`** matched its key as a prefix. A pack declaring `"rules": "…"` took every core rule
+  out once confirmed. `"skills/fix-log/template.md"` took one file of a skill, and its `SKILL.md` stayed.
+
+**Root cause.** `status` rendered `inspect`'s fields one by one and was never updated when
+`staleSwitches` and `indexStale` joined them. The switch check asked "does this key cover some core
+file", when D71's question is "is this key a row".
+
+**Fix.** `status` renders both facts, and `--json` carries them. The machine line names
+`DAORIS_HOME` when there is none. A switch key must be `rules/<name>.md` or `knowledge/<name>.md`
+naming a core document, or `skills/<name>` naming a core skill, or the canon is refused naming it.
+
+**Verify.** Each new test was watched failing first: `status names what check would fail on`, `status
+--machine with no Daoris home says what to set`, and `a switch names one document or one whole skill`.
+CLI suite green.
+
 ## A flag before the operands became one, and `agent list` promised a fallback the driver refuses (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the CLI.

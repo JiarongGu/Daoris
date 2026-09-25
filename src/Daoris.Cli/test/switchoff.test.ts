@@ -89,6 +89,18 @@ test('a switch naming no core document is refused, naming the pack and the row',
   done(canonFx);
 });
 
+test('a switch names one document or one whole skill — never a tier, never a file inside a skill', () => {
+  // REV3 CLI F15: the key was matched as a prefix, so `rules` took every core rule out, and one file
+  // of a skill could go while its SKILL.md stayed — a skill shipped without what it uses.
+  for (const key of ['rules', 'skills', 'skills/fix-log/template.md', 'skills/fix-log/SKILL.md']) {
+    const canonFx = canonFixture(`shape-${key.replace(/\W/g, '-')}`, { [key]: 'why' });
+    const error = captureError(() => readCanon(canonFx.root));
+    assert.ok(error instanceof DaorisError, `${key}: ${String(error)}`);
+    assert.ok(error.message.includes(key), error.message);
+    done(canonFx);
+  }
+});
+
 test('a switch without its reason is refused — the reason is what status prints', () => {
   const canonFx = canonFixture('no-reason', { 'rules/task-lifecycle.md': '  ' });
 
@@ -347,6 +359,35 @@ test('status names each switched-off row with its pack and reason, and each pend
   const status = JSON.parse(json.join('\n'));
   assert.deepEqual(status.switchedOff, [{ target: 'rules/task-lifecycle.md', by: 'tracker', because: REASON }]);
   assert.deepEqual(status.offers.map((offer: { target: string }) => offer.target), ['skills/fix-log']);
+
+  delete process.env.DAORIS_CANON;
+  done(canonFx, repoFx);
+});
+
+test('status names what check would fail on: a switch never synced, and a roster behind the disk', () => {
+  // REV3 CLI F11: `status` rendered drifted, missing and stale packs, and dropped the other two facts
+  // `inspect` computes — so the one command a person asks "why is check red?" said nothing about them.
+  const canonFx = canonFixture('status-stale');
+  const repoFx = repoFixture('status-stale', { packs: ['tracker'] });
+  sync(canonFx, repoFx);
+  process.env.DAORIS_CANON = canonFx.root;
+
+  setManifest(repoFx, { packs: ['tracker'], switchedOff: { 'rules/task-lifecycle.md': 'tracker' } });
+  repoFx.write('.claude/knowledge/our-own.md', doc('our-own'));
+
+  const out: string[] = [];
+  commandStatus({ root: repoFx.root, write: (line) => out.push(line), packageRoot: '' });
+  const text = out.join('\n');
+  assert.match(text, /stale\s+rules\/task-lifecycle\.md is switched off by 'tracker' in the manifest and still on here/, text);
+  assert.match(text, /roster\s+.*out of date/, text);
+
+  const json: string[] = [];
+  commandStatus({ root: repoFx.root, argv: ['--json'], write: (line) => json.push(line), packageRoot: '' });
+  const status = JSON.parse(json.join('\n'));
+  assert.deepEqual(status.staleSwitches, [
+    "rules/task-lifecycle.md is switched off by 'tracker' in the manifest and still on here",
+  ]);
+  assert.equal(status.indexStale, true);
 
   delete process.env.DAORIS_CANON;
   done(canonFx, repoFx);
