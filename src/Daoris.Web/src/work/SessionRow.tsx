@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
-import { Dot, SESSION_ACTIVE, SESSION_DOT } from '../ui';
+import { Dot, DotMark, SESSION_ACTIVE, SESSION_DOT, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 
@@ -21,6 +21,43 @@ import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
  * **Selection is the frame's to hold** (see `SessionRail`): this row is told whether it is attended
  * and reports a click.
  */
+/**
+ * One session in the rail's 56px strip (FRAME6): its repository's initial and its mark, one press
+ * away. The title, the repository and the state are its name and its tip, since the strip has no room
+ * for the words and a mark is never hue alone (D41 §6).
+ */
+export function SessionStripRow({ session, quest, selected = false, onSelect }: {
+  session: Session;
+  quest?: Quest | null;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const name = [sessionTitle(session, quest), session.repository, t(`sessionState.${session.state}`)].join(' · ');
+
+  return (
+    <li>
+      <Tip content={name} side="right">
+        <button
+          type="button"
+          aria-label={name}
+          aria-current={selected || undefined}
+          onClick={() => onSelect?.(session.id)}
+          className={cn(
+            'relative flex h-8 w-10 items-center justify-center rounded-control transition-colors duration-(--speed)',
+            selected ? 'bg-accent-soft text-ink' : 'text-ink-soft hover:bg-accent-soft/50',
+          )}
+        >
+          {/* The same 2px accent rail the activity bar gives its current place. */}
+          {selected && <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />}
+          <span aria-hidden className="text-small font-semibold uppercase">{Array.from(session.repository)[0] ?? '?'}</span>
+          <DotMark tone={SESSION_DOT[session.state]} className="absolute right-1 top-1" />
+        </button>
+      </Tip>
+    </li>
+  );
+}
+
 export function SessionRow({ session, quest, root, selected = false, onSelect }: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */

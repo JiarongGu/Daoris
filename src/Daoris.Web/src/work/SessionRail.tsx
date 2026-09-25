@@ -5,7 +5,7 @@ import { partition, waitingFirst } from './rail';
 import { useDriver } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { RepositoryGroup } from './RepositoryGroup';
-import { SessionRow } from './SessionRow';
+import { SessionRow, SessionStripRow } from './SessionRow';
 import { isIntake, ownTree } from './identity';
 
 /**
@@ -24,11 +24,16 @@ import { isIntake, ownTree } from './identity';
  * A session that finished while its person was reading it must not vanish out from under them, and
  * reviewing finished work is a surface of its own (SURF6), not a growing list here.
  */
-export function SessionRail({ selected = null, onSelect, notify }: {
+export function SessionRail({ selected = null, onSelect, notify, compact = false }: {
   /** The attended session's id, held by the frame. */
   selected?: string | null;
   onSelect?: (id: string) => void;
   notify: Notify;
+  /**
+   * The rail closed to its 56px strip (FRAME6): every running session as its initial and its mark,
+   * in the open rail's order. What ended is left to the open rail.
+   */
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
@@ -60,6 +65,25 @@ export function SessionRail({ selected = null, onSelect, notify }: {
   const ordered = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
   for (const [, rows] of ordered) {
     rows.sort(waitingFirst);
+  }
+
+  if (compact) {
+    if (sessions.isPending) return null;
+    return (
+      <nav aria-label={t('work.rail.label')}>
+        <ul className="m-0 grid list-none justify-items-center gap-1 px-0 py-1.5">
+          {ordered.flatMap(([, rows]) => rows).map((session) => (
+            <SessionStripRow
+              key={session.id}
+              session={session}
+              quest={session.quest ? questFor.get(session.quest) : null}
+              selected={session.id === selected}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+      </nav>
+    );
   }
 
   if (sessions.isPending) return <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>;

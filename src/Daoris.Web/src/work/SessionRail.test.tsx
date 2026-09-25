@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Tooltip from '@radix-ui/react-tooltip';
 
 // An ORGANISM, so this is the layer that holds the hooks and the layer a mocked bridge is for
 // (components plan §2). The bridge is mocked as present, because the Work frame is desktop-only
@@ -88,6 +89,38 @@ describe('the session rail', () => {
     const headings = screen.getAllByRole('heading', { level: 3 })
       .filter((heading) => !ended.contains(heading));
     expect(headings.map((heading) => heading.textContent)).toEqual(['engine', 'tools']);
+  });
+
+  /**
+   * FRAME6: closed to its 56px strip, the rail keeps every running session one press away — its
+   * repository's initial and its mark, with the title, the repository and the state as its name, since
+   * a strip has no room for the words and a mark is never hue alone (D41 §6). What ended is left to
+   * the open rail; the attended session stays, whatever state it reached.
+   */
+  it('keeps every running session one press away as a strip', async () => {
+    const select = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <SessionRail notify={() => {}} compact selected="c3d4e5f6" onSelect={select} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const strip = await screen.findByRole('navigation', { name: 'sessions' });
+    await within(strip).findAllByRole('button');
+    const rows = within(strip).getAllByRole('button');
+    expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
+      'Expose a streaming budget on the chunk API · engine · working',
+      'conversation · tools · awaiting person',
+      'conversation · tools · working',
+    ]);
+    expect(rows.map((row) => row.textContent)).toEqual(['e', 't', 't']);
+    expect(rows[2]).toHaveAttribute('aria-current', 'true');
+
+    await userEvent.click(rows[1]!);
+    expect(select).toHaveBeenCalledWith('b2c3d4e5');
   });
 
   it('carries the machine\'s standing choices on the header, where the repository\'s facts live', async () => {

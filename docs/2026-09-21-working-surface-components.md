@@ -87,6 +87,23 @@ local web console holding live agent sessions — and its licence permits taking
   are keyed per session — which is where our **Diff** (SURF6) and **Timeline** (SURF4c) live, leaving
   the center to the stream and composer. Fullscreen presentation shares the content tree (switching
   never remounts a tab), and below 768px the dock opens fullscreen automatically.
+
+**Built (FRAME6, 2026-09-26).** The numbers above are `work/layout.ts`, one pure function from the
+window's width and the person's choices, and the frame only measures and renders. Four choices the
+reference did not make for us:
+- **A closed dock leaves a 32px strip of its tabs**, since nothing but the person may open it again
+  and a closed panel needs a door back.
+- **The rail's 56px strip is each running session's initial and its mark**, with the title, the
+  repository and the state as its name and tip. The strip has no room for the words, and a mark is
+  never hue alone (D41 §6).
+- **A strip the window drew offers no "open"**: only widening undoes it, so the button would do
+  nothing.
+- **Each session's dock tab is kept in memory, not across launches**, as the one dock tab was.
+- **Widths and closings are remembered** per viewer, like the panel's height; fullscreen is not.
+
+The dock opens beside the session at 45%, as adopted, and ours is open by default where the
+reference's opens on demand. On a 1400px window that leaves the conversation 442px. UX5 carries the
+question.
 - **Trajectory beside conversation, never inside it.** Their `ui-trajectory`/`ui-chat` split is our
   timeline-beside-stream decision, independently arrived at — adopted with two of its rules: the view
   **follows the tail until the person scrolls up**, and an in-flight record **shows a start marker
@@ -174,6 +191,9 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `RunningIntake` | a running intake: why it takes no messages, a door to look at its ask, and the stop its composer used to carry (INT4h) | running · nothing can act |
 | `TrustAsk` | the agent's trust question for a folder the driver holds: the folder, what trusting means, what it holds, the one file written, and the grant on the press (D73) | asking · granting |
 | `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
+| `RightDock` | the per-session surfaces beside the session, with its geometry handed in (FRAME6) | docked · cramped · full · full in a narrow window · closed |
+| `SessionStripRow` | one running session in the rail's 56px strip (FRAME6) | working · attended · awaiting person · a 中文 repository |
+| `Splitter` | the edge a column is resized by, keyboard-operable (FRAME6) | held by `chrome.test.tsx` |
 
 ### Organisms — `src/work/`
 

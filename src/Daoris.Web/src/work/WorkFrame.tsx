@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
@@ -21,17 +21,56 @@ import { type DockTab, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
-import { OutputPanel, PANEL_MIN } from './frame';
+import { OutputPanel, PANEL_MIN, Splitter } from './frame';
+import { dockRange, frameLayout, RAIL } from './layout';
 import { store, stored } from '../lib/stored';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
 // a preference, never machine wiring and never a tracked file.
 const PANEL_HEIGHT = 'daoris.panelHeight';
 const PANEL_CLOSED = 'daoris.panelClosed';
+// The frame's columns (FRAME6): the widths the person dragged, and what they closed.
+const RAIL_WIDTH = 'daoris.railWidth';
+const RAIL_CLOSED = 'daoris.railClosed';
+const DOCK_WIDTH = 'daoris.dockWidth';
+const DOCK_CLOSED = 'daoris.dockClosed';
 
 function remembered(key: string, fallback: number): number {
   const held = Number(stored(key));
   return Number.isFinite(held) && held > 0 ? held : fallback;
+}
+
+/** A width the person dragged, or null where they never did — which is not the same as a default. */
+function rememberedWidth(key: string): number | null {
+  const held = Number(stored(key));
+  return Number.isFinite(held) && held > 0 ? held : null;
+}
+
+/**
+ * How wide the window is and how wide this frame is (FRAME6): the window decides the thresholds —
+ * a strip rail under 1024px, a full dock under 768 — and the frame decides the room. Where nothing
+ * measures the frame (a unit test's DOM), it is the window less the 48px activity bar beside it.
+ */
+function useFrameWidth(frame: RefObject<HTMLDivElement | null>) {
+  const [viewport, setViewport] = useState(() => window.innerWidth);
+  const [measured, setMeasured] = useState(0);
+
+  useEffect(() => {
+    const onResize = () => setViewport(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    const element = frame.current;
+    if (element) setMeasured(element.getBoundingClientRect().width);
+    const observer = element && typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(([entry]) => { if (entry) setMeasured(entry.contentRect.width); })
+      : null;
+    if (element) observer?.observe(element);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      observer?.disconnect();
+    };
+  }, [frame]);
+
+  return { viewport, frame: measured > 0 ? measured : Math.max(0, viewport - 48) };
 }
 
 /** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
@@ -93,11 +132,41 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const [starting, setStarting] = useState(false);
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLDivElement>(null);
-  // Which dock surface is up. Not remembered across launches: unlike the mode and the attended
-  // session, this one is answered by what the person is doing in the next ten seconds.
-  const [dock, setDock] = useState<DockTab>('timeline');
+  // Which dock surface each session has up (FRAME6: tabs per session). Not remembered across launches:
+  // unlike the attended session, this one is answered by what the person is doing in the next ten seconds.
+  const [docked, setDocked] = useState<Record<string, DockTab>>({});
   const [height, setHeight] = useState(() => remembered(PANEL_HEIGHT, 200));
   const [collapsed, setCollapsed] = useState(() => stored(PANEL_CLOSED) === '1');
+
+  // The frame's columns (FRAME6): what the person chose, and what the window leaves room for.
+  const root = useRef<HTMLDivElement>(null);
+  const width = useFrameWidth(root);
+  const [railWidth, setRailWidth] = useState(() => rememberedWidth(RAIL_WIDTH));
+  const [railClosed, setRailClosed] = useState(() => stored(RAIL_CLOSED) === '1');
+  const [dockWidth, setDockWidth] = useState(() => rememberedWidth(DOCK_WIDTH));
+  const [dockClosed, setDockClosed] = useState(() => stored(DOCK_CLOSED) === '1');
+  const [dockFull, setDockFull] = useState(false);
+  const layout = frameLayout(width.viewport, width.frame, {
+    rail: railWidth, railClosed, dock: dockWidth, dockClosed, dockFull,
+  });
+
+  const resizeRail = (next: number | null) => {
+    setRailWidth(next);
+    store(RAIL_WIDTH, next === null ? null : String(next));
+  };
+  const closeRail = (closed: boolean) => {
+    setRailClosed(closed);
+    store(RAIL_CLOSED, closed ? '1' : null);
+  };
+  const resizeDock = (next: number | null) => {
+    setDockWidth(next);
+    store(DOCK_WIDTH, next === null ? null : String(next));
+  };
+  const closeDock = (closed: boolean) => {
+    setDockClosed(closed);
+    store(DOCK_CLOSED, closed ? '1' : null);
+    if (closed) setDockFull(false);
+  };
 
   const sessions = useSessions(null, true);
   const quests = useQuests(null, true);
@@ -272,11 +341,21 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is (FIX-LOG 2026-09-23):
   // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
+  // The attended session's dock surface: the one it had, or the timeline it opens on (FRAME6).
+  const dockKey = attended?.id ?? '';
+  const dock: DockTab = docked[dockKey] ?? 'timeline';
+  const setDock = (tab: DockTab) => setDocked((was) => ({ ...was, [dockKey]: tab }));
+  // The person opening the dock on a surface — from its strip, or the palette's review.
+  const openDock = (tab: DockTab) => {
+    setDock(tab);
+    closeDock(false);
+  };
+
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
     setTaken(intent);
     if (intent === 'start') setStarting(true);
-    else setDock('review');
+    else openDock('review');
   }
   if (!intent && taken) setTaken(null);
   useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
@@ -285,30 +364,84 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-line max-lg:w-52">
+    // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
+    <div ref={root} className="relative flex min-h-0 flex-1">
+      <aside className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.rail.width }}>
         {/* The rail is a list of sessions, and NEW is one control (D56). It used to be a permanent
             287×200 form above the list — 27% of the rail, always, for something a person does
             occasionally. Every reference in the study puts new behind a single affordance. */}
-        <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line pl-3 pr-1.5">
-          <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">
-            {t('work.rail.label')}
-          </span>
-          <Tip content={t('work.start.title')}>
-            <Button
-              variant="ghost"
-              aria-label={t('work.start.title')}
-              onClick={() => setStarting(true)}
-              className="ml-auto h-6 w-6 justify-center px-0"
-            >
-              <Icon name="plus" size={15} />
-            </Button>
-          </Tip>
-        </header>
+        {layout.rail.strip
+          ? (
+            // The strip (FRAME6): its controls stacked, since 56px holds one across. A strip the window
+            // drew opens only by widening it, so it offers no way to — a button that could do nothing.
+            <header className="flex shrink-0 flex-col items-center gap-0.5 border-b border-line py-1">
+              {!layout.rail.auto && (
+                <Tip content={t('work.rail.open')} side="right">
+                  <Button
+                    variant="ghost"
+                    aria-label={t('work.rail.open')}
+                    onClick={() => closeRail(false)}
+                    className="h-6 w-6 justify-center px-0"
+                  >
+                    <Icon name="railOpen" size={14} />
+                  </Button>
+                </Tip>
+              )}
+              <Tip content={t('work.start.title')} side="right">
+                <Button
+                  variant="ghost"
+                  aria-label={t('work.start.title')}
+                  onClick={() => setStarting(true)}
+                  className="h-6 w-6 justify-center px-0"
+                >
+                  <Icon name="plus" size={15} />
+                </Button>
+              </Tip>
+            </header>
+          )
+          : (
+            <header className="flex h-8 shrink-0 items-center gap-1 border-b border-line pl-3 pr-1.5">
+              <span className="mr-auto text-meta uppercase tracking-[0.06em] text-ink-faint">
+                {t('work.rail.label')}
+              </span>
+              <Tip content={t('work.start.title')}>
+                <Button
+                  variant="ghost"
+                  aria-label={t('work.start.title')}
+                  onClick={() => setStarting(true)}
+                  className="h-6 w-6 justify-center px-0"
+                >
+                  <Icon name="plus" size={15} />
+                </Button>
+              </Tip>
+              <Tip content={t('work.rail.close')}>
+                <Button
+                  variant="ghost"
+                  aria-label={t('work.rail.close')}
+                  onClick={() => closeRail(true)}
+                  className="h-6 w-6 justify-center px-0"
+                >
+                  <Icon name="railClose" size={14} />
+                </Button>
+              </Tip>
+            </header>
+          )}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <SessionRail selected={selected} onSelect={attend} notify={notify} />
+          <SessionRail selected={selected} onSelect={attend} notify={notify} compact={layout.rail.strip} />
         </div>
+
+        {!layout.rail.strip && (
+          <Splitter
+            label={t('work.rail.resize')}
+            value={layout.rail.width}
+            min={RAIL.min}
+            max={RAIL.max}
+            edge="right"
+            onChange={resizeRail}
+            onReset={() => resizeRail(null)}
+          />
+        )}
       </aside>
 
       {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
@@ -413,7 +546,20 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
           keyed to the attended session like every other region, and it is what gives the centre
           column its height back — the timeline used to share that space with the composer and the
           panel. */}
-      <RightDock tab={dock} onTab={setDock}>
+      <RightDock
+        tab={dock}
+        onTab={setDock}
+        mode={layout.dock.mode}
+        width={layout.dock.width}
+        range={dockRange(width.viewport, width.frame, layout.rail.width)}
+        // Full because the window is narrow, not because the person asked: only widening undoes it.
+        autoFull={layout.dock.mode === 'full' && !dockFull}
+        onResize={resizeDock}
+        onResetWidth={() => resizeDock(null)}
+        onClose={() => closeDock(true)}
+        onOpen={openDock}
+        onFull={setDockFull}
+      >
         {dock === 'review'
           ? (
             <DiffPane

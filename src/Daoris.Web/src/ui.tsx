@@ -8,7 +8,8 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, Cloud,
   CloudOff, Copy, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
-  LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Monitor, Network, Paperclip, Plug, Plus,
+  LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, Paperclip, Plug, Plus,
   RotateCw, Search, Settings, Shield, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
   Wrench, X,
 } from 'lucide-react';
@@ -88,6 +89,12 @@ const ICONS = {
   tool: Wrench,
   plan: ListTodo,
   toBottom: ArrowDownToLine,
+  // The frame's own controls (FRAME6): the rail and the dock closed and opened, and the dock over the frame.
+  railClose: PanelLeftClose,
+  railOpen: PanelLeftOpen,
+  dockClose: PanelRightClose,
+  full: Maximize2,
+  unfull: Minimize2,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -263,10 +270,19 @@ export function Dot({ tone = 'idle', label, className }: {
       'inline-flex items-center gap-1.5 whitespace-nowrap text-meta', shade.word, className,
     )}
     >
-      <span aria-hidden className={cn('inline-block size-1.5 shrink-0 rounded-full', shade.mark)} />
+      <DotMark tone={tone} />
       {label}
     </span>
   );
+}
+
+/**
+ * The mark alone, for a surface too narrow for the word — the rail's strip (FRAME6). The word goes
+ * where the mark's control names itself, so it is never hue alone (D41 §6); anywhere with room for the
+ * word, `Dot` is the component.
+ */
+export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_TONE; className?: string }) {
+  return <span aria-hidden className={cn('inline-block size-1.5 shrink-0 rounded-full', DOT_TONE[tone].mark, className)} />;
 }
 
 /**

@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import { SessionConsole } from '../SessionConsole';
-import { ActivityBar, AppStrip, OutputPanel, StatusBar } from './frame';
+import { ActivityBar, AppStrip, OutputPanel, Splitter, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
 const render = (node: ReactElement) => {
@@ -278,6 +278,52 @@ describe('StatusBar', () => {
  * field to type in. SURF8 had already given the console a sentence for this, and the panel never
  * passed one.
  */
+/**
+ * FRAME6: the edge a column is resized by. Keyboard-operable as the output panel's is — a resize that
+ * needs a mouse is one some people do not have — and moving AWAY from its column grows the column,
+ * whichever side of it the edge is on.
+ */
+describe('the splitter', () => {
+  const edge = (props: Partial<Parameters<typeof Splitter>[0]> = {}) => {
+    const change = vi.fn();
+    const reset = vi.fn();
+    render(<Splitter label="resize the rail" value={300} min={264} max={420} edge="right" onChange={change} onReset={reset} {...props} />);
+    return { change, reset, handle: screen.getByRole('separator', { name: 'resize the rail' }) };
+  };
+
+  it('steps with the arrows away from its column, and goes to either end on Home and End', () => {
+    const { change, handle } = edge();
+    expect(handle).toHaveAttribute('aria-orientation', 'vertical');
+    expect(handle).toHaveAttribute('aria-valuenow', '300');
+
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    fireEvent.keyDown(handle, { key: 'Home' });
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(change.mock.calls.map(([value]) => value)).toEqual([324, 276, 420, 264]);
+  });
+
+  it('grows a column on its left edge by moving left, and never past its bounds', () => {
+    const { change, handle } = edge({ edge: 'left', value: 410 });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(change).toHaveBeenLastCalledWith(420);
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(change).toHaveBeenLastCalledWith(386);
+  });
+
+  it('follows a drag, and a double-click puts the column back where it started', () => {
+    const { change, reset, handle } = edge();
+    fireEvent.pointerDown(handle, { clientX: 100, button: 0 });
+    fireEvent.pointerMove(window, { clientX: 160 });
+    fireEvent.pointerUp(window);
+    fireEvent.pointerMove(window, { clientX: 400 });
+    expect(change.mock.calls.map(([value]) => value)).toEqual([360]);
+
+    fireEvent.doubleClick(handle);
+    expect(reset).toHaveBeenCalledOnce();
+  });
+});
+
 describe('the output panel', () => {
   it('says why a session has nothing to show, instead of an empty well at the height it keeps', () => {
     // No shell in a unit test, so the console holds nothing and is not live: an ended session after

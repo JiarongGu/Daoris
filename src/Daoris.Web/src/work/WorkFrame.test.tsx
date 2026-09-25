@@ -1234,3 +1234,116 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('src/chunk.ts')).toBeTruthy();
   });
 });
+
+/**
+ * FRAME6: the frame's geometry (components plan §3a) — a rail and a dock a person can resize, close to
+ * a strip and open again, with the session in the middle keeping its floor. The numbers themselves are
+ * `layout.ts`'s, asserted there; this is the frame doing what they say, and remembering what the person
+ * chose.
+ */
+describe('the frame\'s geometry (FRAME6)', () => {
+  const KEPT = ['daoris.railWidth', 'daoris.railClosed', 'daoris.dockWidth', 'daoris.dockClosed'];
+  const widen = (width: number) => act(() => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+    window.dispatchEvent(new Event('resize'));
+  });
+
+  beforeEach(() => {
+    SESSIONS = [DRIVEN, CHAT];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async () => DRIVER_STATE);
+    widen(1600);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+    for (const key of KEPT) window.localStorage.removeItem(key);
+    widen(1024);
+  });
+
+  it('resizes the rail from the keyboard within its bounds, and remembers the width', async () => {
+    show('s1a2b3c4');
+    const edge = await screen.findByRole('separator', { name: 'rail width' });
+    expect(edge).toHaveAttribute('aria-valuenow', '280');
+
+    edge.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByRole('separator', { name: 'rail width' })).toHaveAttribute('aria-valuenow', '304');
+    expect(window.localStorage.getItem('daoris.railWidth')).toBe('304');
+  });
+
+  it('closes the rail to a strip that still reaches every session, and only the person opens it again', async () => {
+    const { onSelect } = show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('button', { name: 'close the rail' }));
+
+    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+    await userEvent.click(await screen.findByRole('button', { name: 'conversation · engine · working' }));
+    expect(onSelect).toHaveBeenCalledWith('c0ffee11');
+
+    // A wider window is not the person asking for it back.
+    widen(2400);
+    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+    expect(window.localStorage.getItem('daoris.railClosed')).toBe('1');
+
+    await userEvent.click(screen.getByRole('button', { name: 'open the rail' }));
+    expect(await screen.findByRole('separator', { name: 'rail width' })).toBeInTheDocument();
+  });
+
+  it('draws the rail as a strip in a narrow window, and gives it back when the window widens', async () => {
+    widen(1000);
+    show('s1a2b3c4');
+    expect(await screen.findByRole('button', { name: 'conversation · engine · working' })).toBeInTheDocument();
+    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+
+    widen(1600);
+    expect(await screen.findByRole('separator', { name: 'rail width' })).toBeInTheDocument();
+  });
+
+  it('closes the dock to a strip, and opens it again only on the person\'s press, on the tab they chose', async () => {
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('button', { name: 'close the panel' }));
+    expect(screen.queryByRole('tablist', { name: 'Session surfaces' })).toBeNull();
+
+    widen(2400);
+    expect(screen.queryByRole('tablist', { name: 'Session surfaces' })).toBeNull();
+    expect(window.localStorage.getItem('daoris.dockClosed')).toBe('1');
+
+    await userEvent.click(screen.getByRole('button', { name: 'open Review' }));
+    expect(await screen.findByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('keeps each session\'s own tab in the dock', async () => {
+    const { rerender, client, onSelect } = show('s1a2b3c4');
+    const attend = (id: string) => rerender(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><WorkFrame selected={id} onSelect={onSelect} notify={() => {}} /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    attend('c0ffee11');
+    expect(await screen.findByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
+    attend('s1a2b3c4');
+    expect(await screen.findByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('fills the frame when asked, drawing the same surface rather than a new one', async () => {
+    show('s1a2b3c4');
+    const surface = await screen.findByRole('tabpanel');
+
+    await userEvent.click(screen.getByRole('button', { name: 'fill the frame' }));
+    expect(screen.getByRole('tabpanel')).toBe(surface);
+    await userEvent.click(screen.getByRole('button', { name: 'back beside the session' }));
+    expect(screen.getByRole('tabpanel')).toBe(surface);
+  });
+
+  it('asks to be closed rather than squeezing the session, when it cannot fit beside it', async () => {
+    widen(1024);
+    show('s1a2b3c4');
+    expect(await screen.findByText(/too narrow to sit beside the session/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'close the panel' }));
+    expect(screen.queryByText(/too narrow to sit beside the session/)).toBeNull();
+  });
+});

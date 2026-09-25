@@ -6129,5 +6129,44 @@ Playwright 21/21, family 279/279, deploy 39/39.
 - **Looked at** on the scratch window: a one-word chat on Claude Code's door ended, and Settings
   counted it under its account, at 46,698 (a fixture's 9,000 and this chat's 37,698).
 
+## FRAME6 — the frame (2026-09-26)
+
+- [x] ~~**FRAME6 — the frame.** A resizable, collapsible rail (264–420px, 56px strip) and a resizable
+  dock (45% default, 70% cap) with tabs per session, deterministic close (components §3a).~~
+✅ **done 2026-09-26**. The components plan's §3a says what was built and the four choices the
+reference did not make for us.
+
+- **`work/layout.ts`** decides the columns in one pure function, from the window's width, the
+  frame's, and what the person chose.
+  - The rail is 264–420px, 280 to start, and a 56px strip when closed or when the window is under
+    1024px. Widening undoes the second and never the first.
+  - The dock opens at 45% of the window and never takes more than 70%. It gives way to hold the
+    session at 400px, down to its own 300px floor, and past that it asks to be closed. It covers
+    the frame under 768px or when asked, and stays closed at every width once the person closed it.
+- **`Splitter`**, one keyboard-operable edge for both columns. The arrows step away from its column,
+  Home and End go to either end, and a double-click resets.
+- **The rail's strip** (`SessionRail compact`, `SessionStripRow`) shows each running session as its
+  repository's initial and its mark, with the title, the repository and the state as its name.
+  `DotMark` is the mark alone, for where the word goes in the name.
+- **The dock** (`RightDock`) takes a mode and a width. It is one element across docked, cramped
+  and full, so a surface switched in and out of full is never drawn anew. Closed, it leaves a strip
+  of its tabs. Each session keeps its own tab, and the palette's review opens the attended one's.
+- Widths and closings are remembered per viewer, like the panel's height.
+- **Looked at** on the scratch window, at 1400px: the rail at 280, the dock at 45% and the
+  conversation at 442; the rail closed to a strip of A, E and G; the dock closed to its strip,
+  reopened on Review, filling the frame and back; the dock narrowed by its edge and remembered.
+  - Not looked at on the window: a window narrower than 1024 or 768, since the instruments cannot
+    resize it. The tests cover both.
+- **Found while looking:**
+  - The dock's 45% default leaves a 1400px window's conversation near its floor, because ours is
+    open by default where the reference's opens on demand.
+  - The head's tree path breaks mid-word in a narrow centre.
+
+  Both went to UX5. The look also found that a finished session cannot be reviewed at all, which
+  is GROUND1.
+
+Gates: CLI 478, web unit 1026 → 1054, Playwright 21/21, deploy 39/39, code-map green. The driver,
+modules, service and family suites were not re-run, since FRAME6 changed none of their code.
+
 Gates: CLI 478, driver 694 → 696, modules 129, web unit 1026, Playwright 21/21, family 279/279,
 deploy 39/39.

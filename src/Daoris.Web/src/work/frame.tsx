@@ -406,6 +406,74 @@ function StatusItem({ children, label, tip, onPress, className }: {
   return tip ? <Tip content={`${label} — ${tip}`}>{item}</Tip> : item;
 }
 
+/** How far one arrow press moves an edge — a column's width in a few presses, not dozens. */
+const SPLITTER_STEP = 24;
+
+/**
+ * The edge a column is resized by (FRAME6): the rail's right edge, the dock's left.
+ *
+ * @remarks
+ * **Moving away from its column grows the column**, whichever side of it the edge is on, by pointer
+ * and by arrow alike — the output panel's rule turned on its side. Home and End take it to either end,
+ * and a double-click puts the column back where it started, as a sash does in every workbench.
+ *
+ * It lies OVER the border between two columns, 6px wide and centred on it, so it takes no width of its
+ * own: its parent is positioned, and `edge` says which side of it this is.
+ */
+export function Splitter({ label, value, min, max, edge, onChange, onReset }: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  /** Which edge of its column this is. */
+  edge: 'left' | 'right';
+  onChange: (value: number) => void;
+  onReset?: () => void;
+}) {
+  const clamp = (next: number) => Math.min(max, Math.max(min, next));
+  const outward = edge === 'right' ? 1 : -1;
+
+  const drag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const startX = event.clientX;
+    const move = (moved: PointerEvent) => onChange(clamp(value + (moved.clientX - startX) * outward));
+    const done = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', done);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', done);
+  };
+
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-valuenow={value}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      tabIndex={0}
+      onPointerDown={drag}
+      onDoubleClick={onReset}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight') onChange(clamp(value + SPLITTER_STEP * outward));
+        else if (event.key === 'ArrowLeft') onChange(clamp(value - SPLITTER_STEP * outward));
+        else if (event.key === 'Home') onChange(max);
+        else if (event.key === 'End') onChange(min);
+        else return;
+        event.preventDefault();
+      }}
+      className={cn(
+        'absolute inset-y-0 z-10 w-1.5 cursor-ew-resize bg-transparent transition-colors duration-(--speed)',
+        'hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none',
+        edge === 'right' ? '-right-[3px]' : '-left-[3px]',
+      )}
+    />
+  );
+}
+
 /** What a person can drag the panel between. Below the floor it is not a panel, it is a sliver. */
 export const PANEL_MIN = 96;
 export const PANEL_MAX = 720;
