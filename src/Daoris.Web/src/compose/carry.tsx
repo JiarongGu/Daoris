@@ -15,6 +15,25 @@ export const NO_CARRY: Carry = { links: '', files: [] };
 /** Why a drop left something off: past the count, or past the total. */
 export type LeftOff = 'tooMany' | 'tooLarge' | null;
 
+/**
+ * The browser's file dialog, hidden, and the way to open it — each composer's own button opens it.
+ * Cleared after every choice, so choosing a file again after removing it is still a change. Both
+ * composers wrote this input out (REV3 CLEAN1).
+ */
+export function useFileChooser(onChoose: (files: File[]) => void, label: string) {
+  const ref = useRef<HTMLInputElement>(null);
+  const input = (
+    <input
+      ref={ref} type="file" multiple className="sr-only" tabIndex={-1} aria-label={label}
+      onChange={(event) => {
+        onChoose(Array.from(event.target.files ?? []));
+        event.target.value = '';
+      }}
+    />
+  );
+  return { open: () => ref.current?.click(), input };
+}
+
 /** Whether a drag carries files — a dragged selection of text is the words' business, not ours. */
 export const carriesFiles = (event: { dataTransfer: DataTransfer | null }) =>
   Array.from(event.dataTransfer?.types ?? []).includes('Files');
@@ -107,7 +126,7 @@ export function CarryFields({ carry, filesLabel, leftOff, dragging, busy = false
   onRemove: (index: number) => void;
 }) {
   const { t } = useTranslation();
-  const chooser = useRef<HTMLInputElement>(null);
+  const chooser = useFileChooser(onAttach, t('carry.choose'));
 
   return (
     <>
@@ -130,18 +149,10 @@ export function CarryFields({ carry, filesLabel, leftOff, dragging, busy = false
         >
           <Icon name="attach" size={14} className="text-ink-faint" />
           <span className="flex-1 text-body text-ink-soft">{t('carry.drop')}</span>
-          <Button type="button" disabled={busy} onClick={() => chooser.current?.click()}>
+          <Button type="button" disabled={busy} onClick={chooser.open}>
             {t('carry.choose')}
           </Button>
-          <input
-            ref={chooser} type="file" multiple className="sr-only" tabIndex={-1}
-            aria-label={t('carry.choose')}
-            onChange={(e) => {
-              onAttach(Array.from(e.target.files ?? []));
-              // Cleared, so choosing the same file again after removing it is a change.
-              e.target.value = '';
-            }}
-          />
+          {chooser.input}
         </div>
         {leftOff && (
           <p role="status" className="m-0 text-body text-st-declined">

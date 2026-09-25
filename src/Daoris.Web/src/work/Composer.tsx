@@ -1,7 +1,7 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
-import { type Carry, NO_CARRY, useCarry } from '../compose/carry';
+import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
 import { size } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Icon, Tip } from '../ui';
@@ -81,7 +81,7 @@ export function Composer({
   const setText = onDraft ?? setOwn;
   const [carry, setCarry] = useState<Carry>(NO_CARRY);
   const attach = useCarry(carry, setCarry, live);
-  const chooser = useRef<HTMLInputElement>(null);
+  const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const files = carry.files;
 
   const say = () => {
@@ -195,21 +195,13 @@ export function Composer({
               <Button
                 type="button" variant="ghost"
                 aria-label={t('work.composer.attach')}
-                onClick={() => chooser.current?.click()}
+                onClick={chooser.open}
                 className="h-7 w-7 justify-center px-0"
               >
                 <Icon name="attach" size={15} />
               </Button>
             </Tip>
-            <input
-              ref={chooser} type="file" multiple className="sr-only" tabIndex={-1}
-              aria-label={t('carry.choose')}
-              onChange={(event) => {
-                attach.attach(Array.from(event.target.files ?? []));
-                // Cleared, so choosing the same file again after removing it is a change.
-                event.target.value = '';
-              }}
-            />
+            {chooser.input}
           </>
         )}
         {live && taking && stoppable && onStopTurn && (
