@@ -52,37 +52,49 @@ if (OperatingSystem.IsWindows())
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
 
-// A conversation from a terminal (D49 §3, D50): the same ledger, the same lock, the same record —
-// the desktop is where a person usually chats, and a machine with no screen is still a machine.
-if (args is ["chat", .. var chatArgs])
-{
-    return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
-}
-
-// An ask from a terminal (D65 §1a, D50): the page's composer at workspace scope is the other door.
-if (args is ["ask", .. var askArgs])
-{
-    return await Daoris.Driver.Host.AskConsole.RunAsync(askArgs);
-}
-
-// The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —
-// the CLI's `daoris driver trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
-if (args is ["trees", .. var treesArgs])
-{
-    return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs);
-}
-
-// The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.
-if (args is ["sync", .. var syncArgs])
-{
-    return await Daoris.Driver.Host.SyncConsole.RunAsync(syncArgs);
-}
-
-var once = args.Contains("--once");
-var untilIdle = args.Contains("--until-idle");
-
+// Every door inside the one catch, so a missing home or service is exit 2 and a sentence, never a
+// stack trace (REV3: `trees` with no home was an unhandled exception).
 try
 {
+    // A conversation from a terminal (D49 §3, D50): the same ledger, the same lock, the same record —
+    // the desktop is where a person usually chats, and a machine with no screen is still a machine.
+    if (args is ["chat", .. var chatArgs])
+    {
+        return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
+    }
+
+    // An ask from a terminal (D65 §1a, D50): the page's composer at workspace scope is the other door.
+    if (args is ["ask", .. var askArgs])
+    {
+        return await Daoris.Driver.Host.AskConsole.RunAsync(askArgs);
+    }
+
+    // The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —
+    // the CLI's `daoris driver trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
+    if (args is ["trees", .. var treesArgs])
+    {
+        return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs);
+    }
+
+    // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.
+    if (args is ["sync", .. var syncArgs])
+    {
+        return await Daoris.Driver.Host.SyncConsole.RunAsync(syncArgs);
+    }
+
+    var once = args.Contains("--once");
+    var untilIdle = args.Contains("--until-idle");
+
+    // 🔴 Ctrl+C ends the loop, not the process (REV3): killed outright, this host left every session
+    // it ran working in its record and its agent running on. Cancelled, each session is ended and says
+    // so, as the desktop's close does. Registered here, after the subcommands: `chat` has its own.
+    using var closing = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, press) =>
+    {
+        press.Cancel = true;
+        closing.Cancel();
+    };
+
     var configPath = DriverConfig.ResolvePath();
     var config = DriverConfig.Load(configPath);
     var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
@@ -114,11 +126,11 @@ try
 
     if (once)
     {
-        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).TickAsync());
+        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).TickAsync(closing.Token));
     }
     else if (untilIdle)
     {
-        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).RunUntilIdleAsync())
+        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).RunUntilIdleAsync(closing.Token))
         {
             Print(report);
         }
@@ -146,9 +158,16 @@ try
                 return Task.CompletedTask;
             },
             onError: null,
-            CancellationToken.None);
+            closing.Token);
+        Console.WriteLine("driver: stopped — every session it ran was ended and recorded.");
     }
 
+    return 0;
+}
+catch (OperationCanceledException)
+{
+    // Ctrl+C during --once or --until-idle: the tick ended its sessions before it let go.
+    Console.WriteLine("driver: stopped.");
     return 0;
 }
 catch (DriverException error)

@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The headless driver died on Ctrl+C and on a missing home (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the headless host (`daoris-driver`).
+- **Ctrl+C** killed the process outright. Its watch loop ran on `CancellationToken.None`, so nothing
+  ended the sessions it ran. Their records stayed `working` and their agents ran on until the next
+  driver's orphan sweep.
+- **`daoris-driver trees` with no Daoris home** was an unhandled exception and exit −1. The
+  subcommands were dispatched before the `try` that turns a `DriverException` into a sentence and
+  exit 2.
+
+**Root cause.** A token nobody could cancel, and the dispatch placed above the catch.
+
+**Fix.** Ctrl+C cancels a token that the watch loop, `--once` and `--until-idle` all honour. Each
+session ends and is recorded, as the desktop's close does (with the fix above). The chat door keeps
+its own Ctrl+C, so the handler is registered after the subcommands. Every subcommand sits inside the
+exit-2 catch.
+
+**Verify.** `daoris-driver trees` with `DAORIS_HOME` unset now prints `driver: no Daoris home: …`
+and exits 2 (it exited −1 with a stack trace before). The Ctrl+C half has no test: a console
+interrupt cannot be sent from the suite. It rests on the cancellation path `DriverWatch` and
+`TickAsync` already take, which the driven-session test above covers.
+
 ## Settling an agent's proposals could undo a person's deny (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the driver. Each tick, `RuleProposals.Settle` applies every

@@ -81,10 +81,6 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
-    /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
-    /// driver learns that a session it is running took a quest another machine took first.
-    /// </summary>
-    /// <summary>
     /// Dismiss every conflict a quest carries (SYNC6c) — the terminal's form of the drawer's button. The
     /// service's sentence comes back verbatim, including "nothing to dismiss".
     /// </summary>
@@ -101,6 +97,10 @@ public sealed class ServiceClient : IDisposable
     public async Task<SyncStanding> SyncStandingAsync(string workspace, CancellationToken ct = default) =>
         RemoteSyncPayloads.Standing(await GetAsync($"/api/sync?workspace={Uri.EscapeDataString(workspace)}", ct).ConfigureAwait(false));
 
+    /// <summary>
+    /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
+    /// driver learns that a session it is running took a quest another machine took first.
+    /// </summary>
     public async Task<string> ClaimAsync(string id, CancellationToken ct = default) =>
         RemoteSyncPayloads.Claim(await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false));
 

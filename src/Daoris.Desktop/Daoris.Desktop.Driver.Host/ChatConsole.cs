@@ -142,7 +142,7 @@ internal static class ChatConsole
                 // The conversation can end while the person is not typing — the harness exits, or they
                 // stopped it with Ctrl+C — and a read that waited for a line would wait for ever.
                 var reading = Console.In.ReadLineAsync();
-                if (await Task.WhenAny(reading, ended.Task).ConfigureAwait(false) == ended.Task) break;
+                if (await Task.WhenAny((Task)reading, ended.Task).ConfigureAwait(false) == ended.Task) break;
                 if (await reading.ConfigureAwait(false) is not { } line) break;
 
                 // A script has no Ctrl+C to press: a line that is only the character it stands for is the

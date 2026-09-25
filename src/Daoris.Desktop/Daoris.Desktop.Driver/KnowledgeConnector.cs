@@ -92,8 +92,10 @@ public static class KnowledgeConnector
         Candidates(explicitPath, home, baseDirectory).FirstOrDefault(File.Exists);
 
     /// <summary>
-    /// Where to look, in the order they deserve trust — the same order the HTTP host's locator uses,
-    /// because a machine that installed one installed both.
+    /// Where to look, in the order they deserve trust: the HTTP host's order (<see cref="ServiceHostLocator"/>)
+    /// less its first rung. A deployed shell carries its own HTTP host (`desktop-publish --service`)
+    /// and no connector, so the connector is found where `publish:service --install` put it — the
+    /// home's `bin/` — or in a development build.
     /// </summary>
     /// <param name="home">The Daoris home (D63), whose `bin/` is the CLI's install landing place; null when the machine has none.</param>
     public static IReadOnlyList<string> Candidates(
