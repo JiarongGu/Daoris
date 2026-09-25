@@ -281,7 +281,7 @@ describe('QuestsView', () => {
       expect(await screen.findByRole('option', { name: 'legacy' })).toBeInTheDocument();
     });
 
-    /** The palette's "Ask the circle…" is an event, consumed by identity and cleared by its holder (frontend §4b). */
+    /** The palette's "Ask the workspace…" is an event, consumed by identity and cleared by its holder (frontend §4b). */
     it('a palette request opens the composer, once', async () => {
       const onAsked = vi.fn();
       function Asking() {

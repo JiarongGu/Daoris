@@ -13,8 +13,10 @@ daoris plugin add examples/plugins/browser        # copies it under the home's p
 
 Nothing runs until a session starts. Over the protocol door the server rides `session/new` (ACP4);
 over the pipe door the harness is given a file Daoris writes under its own home for that session —
-never the repository's `.mcp.json`. What the session may **call** stays the repository's own
-allow-list (D37): a server handed is a tool available, not a tool approved.
+never the repository's `.mcp.json`. A server handed is a tool available, not a tool approved. What
+the session may **call** is its permission rules: Daoris's scopes, handed at spawn, together with the
+repository's own, with a deny winning (D72). To let sessions drive a browser, allow the server:
+`daoris agent rules allow mcp__browser`, for the machine, or with `--workspace`/`--repository`.
 
 A server needs a `name` (what the agent calls it — tools arrive as `mcp__<name>__<tool>`), a
 `command`, and may carry `env`. `${plugin}` in either is the plugin's install folder. The knowledge

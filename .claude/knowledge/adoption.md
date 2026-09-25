@@ -40,9 +40,10 @@ overwritten. For each one, open both versions and separate:
 
 ### 3. Preserve the mechanism in a local companion
 
-Write the repository-specific mechanics into one local rule — `repo-mechanics.md` works well — that says
-plainly: the canonical rules state the intent, this file states how it is enforced *here*. It is local, so
-Daoris never touches it, and the index marks it `(local)`.
+Write the repository-specific mechanics into one local document — `.claude/knowledge/repo-mechanics.md`
+works well — that says plainly: the canonical rules state the intent, this file states how it is
+enforced *here*. It is local, so Daoris never touches it, and the index lists it marked `(local)`. A
+mechanic every task needs goes in the repository's own part of `AGENTS.md`, outside Daoris's region.
 
 This is the whole point of the three-layer model. A repository that loses its release policy to a generic
 rule has been made worse by adoption.
@@ -78,7 +79,7 @@ somewhere else."** Check each section against the canon *and* the repository's o
 move what only exists here. A twin removed correctly costs nothing; one removed carelessly loses exactly
 the hard-won specifics that were never going to be canonical.
 
-### 5. `sync --force`, then `index`, then `check`
+### 5. `sync --force`, then `check`
 
 `--force` here means "yes, take the canonical version" — a deliberate answer to a question that was
 asked, not a way to skip it.

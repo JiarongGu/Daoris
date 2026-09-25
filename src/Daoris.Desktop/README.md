@@ -8,7 +8,8 @@ binary, version question, configuration-home variable and own install/update/log
 and, since D53/ACP1, its **`Wire`** — the door the driver holds a session over: the original pipe, or
 **ACP** (`AcpSession`, JSON-RPC on the process's stdio, with `session/request_permission` refused by
 construction and the record still concluded from the exit code and the quest) — the stub, the
-`acp-stub` that proves the protocol door with no model in it, the `claude-code` adapter,
+`acp-stub` that proves the protocol door with no model in it, the `claude-code` adapter and the
+protocol door's configurations (`claude-code-acp`, `codex-acp`, `dsh`),
 `ChatRunner` for conversations, `HarnessRoster` — one judgement for both spawn doors: is the harness
 here, and which named credential profile does this run as — and since D47 the machine's **remote sync** —
 `RemoteSync` rides the tick, feeding joined registrations, session records and opted-in knowledge up
@@ -19,12 +20,12 @@ remotes-map phases.
 
 **`Daoris.Desktop.Modules`** is the shell's **head**, split out from its window 2026-09-20: the loop,
 the host supervisor, and every IPC module the platform page talks to (`DAORIS.DRIVER`,
-`DAORIS.REGISTRY`, `DAORIS.REMOTES`) — plus `Refusals`, where a refusal is declared once as a code the
+`DAORIS.REGISTRY`, `DAORIS.REMOTES`, `DAORIS.WINDOWS`) — plus `Refusals`, where a refusal is declared once as a code the
 page translates. Plain `net10.0`, because none of it is WinForms; it had been Windows-only by accident
 of where it was written, and that accident cost it every test it should have had. **The contract
 between the page and this machine was asserted on neither side** — the page's suite mocks the bridge,
 this half had no test project — which is how five written refusals reached people as a blank failure
-for as long as they existed (`docs/FIX-LOG.md`). It now carries 39 tests and its own gate.
+for as long as they existed (`docs/FIX-LOG.md`). It now carries its own test project and gate.
 
 **`Daoris.Desktop.App`** (`daoris-desktop`, on Shenora.Windows 0.16.0 — released, D22) is the
 window, and now only the window. **It is frameless since SURF7** (`OptimizedForm` +
@@ -40,7 +41,7 @@ needs a live form.
 ends without the person asking, raises an OS balloon from the shell's own `NotifyIcon` — and stays
 quiet while the window is on screen and focused, because the page's own toast has it. It decides
 nothing: `AttentionWatch` in the driver library does, so `daoris-driver` on a machine with no screen
-prints the same judgement as a line. `daoris driver notify on|off` and the Machine view's checkbox
+prints the same judgement as a line. `daoris driver notify on|off` and the Settings page's checkbox
 are two doors onto one `driver.json` field (D50).
 
 **It is no longer the only window** (SURF8/D55 §b). `SecondaryWindows` opens named ones on their own
@@ -82,7 +83,7 @@ and since D49 §4 **the toolchain** — `HARNESSES` for the roster this machine 
 for the person's install, update or login, each spawning that harness's own mechanism and relaying it
 through the console under `<harness>:<action>`, never a session id, because it is not a session),
 edits the machine's wiring
-over `DAORIS.REMOTES` (the Machine view, over the same `remotes.json` the CLI edits — a key
+over `DAORIS.REMOTES` (the Settings page, over the same `remotes.json` the CLI edits — a key
 goes in and only its audit prefix comes back), and takes the loop and its
 owned host down with it on close, in-flight sessions ended and recorded `stopped`. The one designed
 control not yet wired page-side is **start-now**: the host answers `NUDGE`, and no page surface calls
@@ -92,7 +93,7 @@ it yet.
 
 The desktop application a person runs to **drive the family**: it hosts the local service, carries the
 platform UI, and **controls the repositories and their agent sessions** — spawning, monitoring and
-coordinating development sessions (claude/codex, through an adapter seam) one per domain-owning
+coordinating development sessions (Claude Code, Codex, dsh, through an adapter seam) one per domain-owning
 repository. Built on the family's desktop runtime sibling, consumed at a released version (D22).
 
 ## Installing it (2026-09-22)
@@ -120,7 +121,7 @@ process of its own, started with the loop and stopped with it. The driver asks t
 its points — `quest/consider` before a start costs anything (a hold is the quest's own sitting
 reason, and a plugin that cannot decide holds too, naming itself), `session/ended` after — and
 every line one writes reaches the console under `plugin:<id>`, over the bridge and nowhere else.
-`daoris plugin list|add|remove|enable|disable` is the terminal door; the Machine view's Plugins
+`daoris plugin list|add|remove|enable|disable` is the terminal door; the Settings page's Plugins
 card is the other — the same rows, the same `plugins.json`, Remove naming what a plugin kept.
 **No plugin code ever runs inside the shell, the host or the page.**
 
@@ -145,7 +146,7 @@ bytes. Everything this loop provides is what hid two of the first deployment's f
 | `run --install <dir>` | start the **DEPLOYED** shell in that folder, on its own `data/` home, with the debug port attached. 🔴 The published application opens no port — this launch does, through the environment, which is the deliberate opt-in the first deployment asked for and did not build (case study 2d). `shot`, `eval`, `click` and `kill` then address that install, because they follow the run file rather than this checkout |
 | `restart` · `kill` | stop the shell **this checkout built** — matched by executable path, never by process name |
 | `shot [name] [--theme light\|dark] [--window <name>]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it). `--theme` photographs the OTHER theme without touching the machine's setting — a media-query emulation over the debug port, which makes the page push `SET_THEME` and the **main** window repaint its native chrome (DWM border, caption buttons) for real: the only way to see that chrome in both. 🔴 A **secondary** window has no `SET_THEME` channel and follows the OS directly, so in a `--theme` capture its title bar stays in the machine's own theme — a light title bar over a dark monitor page there is the instrument, not a defect. 🔴 `--window monitor` or `--window session:<id>` since SURF8: without it the capture takes whichever window **Windows** calls main, which with a secondary window open is not the caller's choice |
-| `eval [--window <name>] "<js>"` | evaluate inside one of the running shell's pages — **the only instrument that sees the bridge-attached half** (the Machine view, the driver controls, the console, chat). `--window` picks a secondary window's page (SURF8); without it, the application's own |
+| `eval [--window <name>] "<js>"` | evaluate inside one of the running shell's pages — **the only instrument that sees the bridge-attached half** (the Settings page, the driver controls, the console, chat). `--window` picks a secondary window's page (SURF8); without it, the application's own |
 | `click [--window <name>] "<css>"` | click exactly one element, and say what it clicked; a selector matching none or several is a refusal, not a first match |
 
 **A dev run gets its own machine, and that is a safety property rather than a convenience.** The shell
@@ -198,10 +199,11 @@ sitting that the driver should have started".
    exclusive — D46).
 2. **The session lifecycle** is observed, not self-reported — process lifetime plus quest transitions —
    and its records live in the service beside the quests; processes and transcripts stay here.
-3. **The adapter seam** is D23 one layer up: claude-code supported, codex explicit second, unknown
-   adapters error naming what exists; an adapter names a harness, never a model. Since D49 §4 it also
-   declares that harness **as a tool** — and managing a tool is a different question from spawning
-   sessions on it, which is why `codex` is manageable from `daoris agent` while no adapter spawns it.
+3. **The adapter seam** is D23 one layer up: claude-code supported, unknown adapters error naming
+   what exists; an adapter names a harness, never a model. Since D49 §4 it also declares that harness
+   **as a tool** — and managing a tool is a different question from spawning sessions on it, which
+   is why `codex` is manageable from `daoris agent` while only its protocol door, `codex-acp`,
+   spawns sessions (D53).
 4. **The service holds state, the driver holds action**: session records and the machine-local
    repository root go to the service; the scheduler, process control, adapters, driver config and
    notifications live here.

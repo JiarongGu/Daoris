@@ -15,15 +15,16 @@ diff at the end (`autonomous-development`, D37):
 1. **`daoris init`** — writes the manifest, names the available packs and everything the project
    already owns.
 2. **Fill in `domain`** — one line of what the project *is*, the areas it **owns**, the kinds of quest
-   it **accepts**. This is what makes it addressable: the registry answers "whose problem is this",
-   which no search can (D34).
+   it **accepts**. This is what an ask is matched against: the registry answers "whose problem is
+   this", which no search can (D34).
 3. **`daoris sync`** — materializes the canon: always-loaded rules, on-demand knowledge, skills, the
-   generated index, the lock. The project's own documents are untouched and listed `(local)`.
+   generated index, the lock. The project's own documents are untouched, and its own knowledge and skills are listed `(local)`.
 4. **`daoris check`** — the offline gate: drift, staleness, index freshness, the always-loaded budget.
    Wire it into the project's own verification.
-5. **`daoris connect`** *(opt-in)* — pushes the declaration to a knowledge service, which is how a
-   **remote** service learns the project exists at all. On one machine the service reads manifests off
-   disk and this step only confirms the path works. The manifest's `remote` declaration travels with
+5. **`daoris connect`** *(a management command, never run by a gate)* — registers the project with
+   a knowledge service, carrying its declaration and, to a local one, its root. The registry is an
+   explicit list (WSP2): a project nobody connected or imported is not a member, on one machine or
+   many, and a registered one is addressable (D70). The manifest's `remote` declaration travels with
    the registration (D47): `join` opts the project into a team deployment, `knowledge` — a second,
    separate declaration — feeds its indexed content too, and silence means local.
 
@@ -35,8 +36,9 @@ project's own `.mcp.json` — see `src/Daoris.Service/README.md` for the entry.
 Projects here are never developed across (D32). When `game` needs something from `engine`, it
 publishes a **quest** — what is needed and why, with the evidence, never the prescribed change — and
 the engine's own agent pulls it, then answers: **take**, **done**, or **decline with a reason**. The
-quest lives in the service's store; nothing is written into anyone's tree, and a repository that has
-not adopted cannot be addressed, because nobody there could see the ask.
+quest lives in the service's store; nothing is written into anyone's tree. A repository nobody registered
+cannot be addressed; one registered and not adopted can, and only a protocol-door session answers
+it, because that door hands the session its connector (D70).
 
 ## How knowledge crosses
 

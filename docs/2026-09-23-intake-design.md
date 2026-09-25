@@ -51,7 +51,7 @@ desktop composer is INT4c.
 
 *As built (INT4c, 2026-09-24):* an ask is made at the scope the status bar names. Its door lives in
 **Quests**, not on the bar: the bar says what is true, and an ask is an action. *Ask* is the Quests
-header's primary action and the palette's *Ask the circle…*. The asks sit above the quests as a group
+header's primary action and the palette's *Ask the workspace…*. The asks sit above the quests as a group
 of their own, because quests come from them and a proposal waits on a person. **The circle is the
 scope, or the only circle held**. Scoped to none of several, the composer asks which, and never
 assumes `default`. The record shows:

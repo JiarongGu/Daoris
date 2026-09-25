@@ -14,7 +14,8 @@ The first version: doctrine that installs, is checked, and flows back.
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
   judgement reports — D54); `upstream` promotes a locally-improved file back into the
-  canon (`--all` for every edit at once); `index` regenerates `RULES_INDEX.md` from what is on disk;
+  canon (`--all` for every edit at once); `index` says where the roster went — the `AGENTS.md`
+  region, which `sync` regenerates (D59);
   `status` summarizes — the remote disclosure declaration included, and this machine's wiring with
   `--machine` — and reports when a newer canon is available; `doctor` reports local documents that
   restate a canonical one under a different name; and the **management** commands (D35, D50) are
@@ -22,11 +23,11 @@ The first version: doctrine that installs, is checked, and flows back.
   carrying its declaration and, to a local service only, its root; `retire` takes it off the machine's
   registry without touching a file; `import` registers a folder's subdirectories at once; `remote`
   edits the machine's map of one deployment per workspace, talking to nothing and never printing a key
-  back; `harness` manages the agent tools sessions run on and the named credential profiles they run
-  as, spawning each harness's own installer and never handling a credential itself; `driver` sets
-  what this machine drives; and `plugin` lists, adds, removes and switches the machine's plugins,
-  loading no code from any of them. `harness` **spawns**; the rest of the class only edits files
-  under the Daoris home.
+  back; `agent` manages the agent tools sessions run on and the named accounts they run as, spawning
+  each tool's own installer and sign-in — and keeps an API key only for an account that is one
+  (D67); `driver` sets what this machine drives; and `plugin` lists, adds, removes and switches the
+  machine's plugins, loading no code from any of them. `agent` **spawns**; `connect`, `retire` and
+  `import` talk to a service; `remote`, `driver` and `plugin` only edit files under the Daoris home.
 - **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
   offers `switchesOff`: a core rule, knowledge document or skill, with the reason its own document
   replaces it. The row goes off only when `daoris.json` names it under `switchedOff`. Until then it
@@ -202,7 +203,7 @@ The first version: doctrine that installs, is checked, and flows back.
   (the team deployment) gates every route with minted keys (below). It runs with **no model at all** and
   still carries the whole transfer of request and task.
 - **The server ships as executables.** `npm run publish:service -- --install` publishes both hosts
-  self-contained single-file into `~/.daoris/bin` and prints the ready `.mcp.json` snippet with the
+  self-contained single-file into the home's `bin/` (D63) and prints the ready `.mcp.json` snippet with the
   family root filled in; releases carry the same binaries per platform with sha256s beside the
   devkit's. The hosts are safe to run from anywhere: the HTTP host finds its web bundle beside its own
   executable, and the MCP host says plainly when no family root is named instead of silently indexing
@@ -212,13 +213,14 @@ The first version: doctrine that installs, is checked, and flows back.
   nothing, joined through the real CLI — `init`, the domain declared, `sync`, `check` clean on first
   contact, `connect` — a member in the registry and the Projects view at once, quest-addressable on
   day one, and still there after a host restart.
-- **`Daoris.Web` — the platform: the person's window over the family.** Five views, landing on
+- **`Daoris.Web` — the platform: the person's window over the family.** Its views land on
   management: **Overview** (is anything sitting and for how long, the family's health as stat tiles,
   the repositories by what the index holds), **Quests** (grouped by where each is in its life, sitting
   time made visible, publish behind a deliberate action — with the service's refusals shown verbatim
   and the form unable to offer the mistakes the service refuses), **Projects** (who is in the family,
   declarations as scannable chips, the local/canonical split, who cannot be asked yet with the join
-  steps proposed as text), then **Convergence** — the knowledge half's lead view — and **Search**.
+  steps proposed as text), then **Convergence** — the knowledge half's lead view — and **Search**; *Sessions*, *Map* and *Settings* joined them on one
+  activity bar (D66).
   Doctrine is never editable from the browser: where a rule should change, the UI proposes the command
   to run in the repository that owns the file.
 - **A designed console, not a styled document.** A sidebar shell with the global state stated once at
@@ -260,8 +262,9 @@ The first version: doctrine that installs, is checked, and flows back.
   survive a restart); the **process** never leaves the machine that spawned it. The record carries the
   reviewable evidence — the commits that landed — and a machine-local transcript path that is answered
   only to a caller on that machine.
-- **One supported harness, others explicit.** The adapter seam is `claude-code` (supported) and `codex`
-  (explicit second); an unknown adapter is an error naming what exists, never a silent fallback. An
+- **One supported harness, others explicit.** The adapter seam's native adapter is `claude-code`;
+  Codex arrives over the protocol door below as `codex-acp`. An unknown adapter is an error naming
+  what exists, never a silent fallback. An
   adapter names a harness, never a model. Gate-proven with a **stub adapter** — real spawn, real claim,
   real commit, no model — and then by a **real `claude-code` run**: a quest became a session became a
   commit became `done` in 71 seconds.
@@ -306,7 +309,7 @@ The first version: doctrine that installs, is checked, and flows back.
   plugin disabled between ticks is stopped at the next one. A plugin that only declares is never
   started. The family rehearsal drives one: a declared harness a session runs on, a quest held with
   the plugin's sentence, an ending kept in its data folder, and the switch from a terminal. The
-  Machine view's Plugins card is the other door: a row per plugin with what it declares and speaks
+  Settings page's Plugins card is the other door: a row per plugin with what it declares and speaks
   on, running or off, the driver's sentence under a refused one, the switch, and Remove naming what
   the plugin kept; a declared harness on the roster wears the plugin it came from.
   `examples/plugins/hold-by-title` is the tracked example of a plugin that speaks — the one the
@@ -323,10 +326,10 @@ The first version: doctrine that installs, is checked, and flows back.
   live adapter set — the desktop's through the roster the driver's tick updates, the terminal's by
   reading the home's plugins — so a plugin added after the shell started is a harness a chat can
   use now, without a restart.
-- **What the shell adopted stands on the Machine view.** A host already running and serving another
+- **What the shell adopted stands on the Settings page.** A host already running and serving another
   install's page was said once, as a toast raised before the page existed to hear it; the sentence
   now rides the driver state beside the home's, and stands for as long as it is true.
-- **The Machine view is a settings page of rows.** Each setting is a label, a one-line hint naming
+- **Settings is a page of rows.** Each setting is a label, a one-line hint naming
   its terminal twin, and the control at the right; the paragraph that motivated it is on an info
   glyph. The home's path sits under the header, the driver's two dials share a card, and wiring a
   deployment is behind a press — five cards of prose became a page a person scans.
@@ -462,8 +465,8 @@ The first version: doctrine that installs, is checked, and flows back.
   finished; the name box that came first is gone. Accounts are listed by who is signed in (the email
   `claude auth status` reports), the tool's own included. **Remove deletes the account, sign-in
   included**, after asking once — it used to keep a signed-in account on disk and on the list.
-  From a terminal: `daoris harness login <harness> --new`, and `profile remove` deletes;
-  `harness list` shows who is signed in to each account.
+  From a terminal: `daoris agent login <agent> --new`, and `profile remove` deletes;
+  `agent list` shows who is signed in to each account.
 - **An account can be an API key** (AGT3, D67 §1). *Add an API key* on an agent that takes one
   (Claude Code today), or `daoris agent key <agent>` with the key on stdin. Daoris keeps it in the
   home's `keys.json`, beside the account and never inside the tool's own directory, and hands it to
@@ -701,7 +704,7 @@ The first version: doctrine that installs, is checked, and flows back.
 - **One shared deployment serves one workspace**, and says which (`DAORIS_WORKSPACE`): every row it
   takes lands in that circle, and a registration declaring another is refused in a sentence naming
   both sides. A local host, which holds every circle the machine wired, refuses the variable outright
-  rather than ignoring it. The machine's remotes became a **map** — `~/.daoris/remotes.json`, one
+  rather than ignoring it. The machine's remotes became a **map** — `remotes.json` under the home, one
   deployment per workspace — with the sync running once per circle and the quest relay resolving by
   the quest's own workspace. A circle with no entry syncs nowhere, silently, which is what every
   machine does until someone says otherwise.
@@ -808,7 +811,7 @@ The first version: doctrine that installs, is checked, and flows back.
   not installed, or a profile nobody has signed into, holds the start with the sentence that says what
   to run — not a bare not-found. The quest stays open and nobody's, and doing what the sentence says
   releases it on the very next tick, with nothing restarted.
-- **Two more commands, and both surfaces do the same thing.** `daoris harness list|install|update|
+- **Two more commands, and both surfaces do the same thing.** `daoris agent list|install|update|
   login|profile …` and `daoris driver list|drive|hold|resume|cap|adapter` set all of it from a
   terminal, because a server with no screen is still a machine; the desktop's roster edits the same
   files. Neither reaches a network.

@@ -30,78 +30,21 @@ Three parts, in build order:
 
 ---
 
-## The current arc: workspaces and the working surface (D48–D50, set 2026-09-20)
+## Closed arcs: workspaces, the working surface (D48–D56, 2026-09-20 → 22)
 
-The sharing boundary was an accident of folder layout — right for one person with one folder of
-checkouts, wrong the first time one machine holds two circles' repositories. So: **the workspace is the
-unit of sharing**, a server serves one, the registry becomes managed, a person works *inside* Daoris
-(live console, chat sessions, managed harnesses), and everything a person manages has a real surface in
-the desktop **or** the CLI. The contracts are `docs/2026-09-20-workspace-design.md` and
-`docs/2026-09-20-interactive-design.md`; the build items are in `TASKS.md`.
+Both are built; the archive has every item's outcome and `docs/DECISIONS.md` the reasons.
 
-| Item | What | Where it stands |
+| Arc | What it settled | Contract |
 |---|---|---|
-| **WSP1 · The workspace exists** | Membership as wiring (`connect --workspace`, a registry row, nothing tracked); every cross-repo entity carries it; search, convergence, registry and quests scoped by it | **Built** (2026-09-20) — the family rehearsal's two-workspace phase proves the boundary, and the refusal names both sides |
-| **WSP2 · The managed registry** | The registry becomes the authority and the folder scan becomes `import`; `retire` beside `connect`; absences named; the desktop manages add/update/remove | **Built** (2026-09-20) — the rehearsal proves a folder nobody registered stays invisible, and that retiring touches no file |
-| **WSP3 · Remotes become a map** | One deployment per workspace (`~/.daoris/remotes.json`), a per-workspace sync loop, the shared host's own `DAORIS_WORKSPACE` identity, and both editors over the one file — `daoris remote`, `status --machine`, the desktop's Machine view | **Built** (2026-09-20) — the rehearsal proves only the wired circle feeds, and a registration declaring another workspace is refused naming both |
-| **WSP4 · Knowledge sync semantics** | Git provenance stamped by the driver, with monotonic, default-branch-only replacement, served and shown | **Built** (2026-09-20) — the rehearsal proves a newer feed replacing (a deletion travelling with it), a stale one refused as *information*, and an unmerged branch refused though newer |
-| **SES1 · The live console** | The capture pump tees into a bounded per-session buffer; the shell streams it to the session drawer, verbatim and desktop-only | **Built** (2026-09-20) — the transcript stays the durable record; the window states what it dropped |
-| **SES2 · Chat sessions** | A conversation is a session: `driven \| chat`, quest optional, the same one-session-per-repository lock; the seam grows `interactive`; two doors (desktop, and a terminal) | **Built** (2026-09-20) — the rehearsal holds one with no model in it, publishing the work that came up rather than editing across |
-| **SES3 · The toolchain** | Harnesses Daoris installs and updates, with named credential profiles | **Built** (2026-09-20) — each harness's own mechanism, only on the person's action; a profile is a directory Daoris owns the location of, and never its contents |
-| **CANON6 · Coexistence** | Doctrine must not hard-require Daoris: a named mechanism carries its tool-absent path in the same breath | **Built** (2026-09-20) — one case in the whole canon, because what `sync` writes is committed; only a *service* is a dead end without the tool |
+| **WSP1–4 · Workspaces** (D48) | The workspace is the unit of sharing, as wiring, never tracked; the registry is an explicit list (`connect`, `retire`, `import`); remotes are a map, one deployment per workspace; a feed names the commit it speaks for | `docs/2026-09-20-workspace-design.md` |
+| **SES1–3 · The interactive surface** (D49) | The console streams, desktop-only; a conversation is a session; the accounts are Daoris's, the binary the machine's | `docs/2026-09-20-interactive-design.md` |
+| **CANON6 · Coexistence** (D48 §2a) | Doctrine never hard-requires Daoris: the one service-bound instruction names its alternative | `.claude/knowledge/canon-authoring.md` |
+| **Management parity** (D50) | Whatever a screen can set, a terminal can | workspace design §2b |
+| **SURF1–10 · The working surface** (D51–D52, D55–D56) | The tree is the unit of exclusion; the session, not a file, organises the desktop; review is a diff; attention, a monitor window, a command palette, a frameless window with one type scale — then **D66** made Sessions one view on the activity bar | `docs/2026-09-21-working-surface-design.md` |
+| **ACP1–4 · The protocol door** (D53) | dsh adopted as a protocol, not a product: an ACP door on the adapter seam, a permission request refused by construction; Claude Code, Codex and dsh ride it | `docs/2026-09-21-dsh-evaluation.md` |
 
-**Reviewed after it closed (REV2, 2026-09-20).** Two things no gate could see: the release workflow
-ran one of four declared gates, and the shell's 1,128 lines had no tests — so every refusal the
-desktop made reached people as a blank failure. Both fixed and gated.
-
----
-
-## The next arc: the desktop as a working surface (D51/D52, set 2026-09-20, designed 2026-09-21)
-
-**The desktop half is becoming a user-driven application, and it should hold code sessions the way a
-terminal agent CLI does — across different agents, repositories and concurrent sessions, designed with
-real UI/UX.** That is a different product from what exists: the platform today is an *operations
-console*, which optimises for scanning state, and a working surface optimises for holding attention on
-one thing while several others run.
-
-**Interposed 2026-09-21 (owner): the dsh evaluation came first, and has run.** **DSH1** probed an
-installed [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) the same day
-(`docs/2026-09-21-dsh-evaluation.md`), and **D53 is the answer, accepted 2026-09-21**: *dsh is
-adopted as a protocol, not a product* — the adapter seam grows an **ACP door**, dsh and codex arrive
-as configurations of it, and the working surface stays `Daoris.Web`. **ACP1 → ACP2 → ACP3** come
-first; SURF4a–d and the UI halves of SURF5/SURF6 follow.
-
-The research is `docs/2026-09-20-working-surface-research.md`; the contract is
-`docs/2026-09-21-working-surface-design.md` (SURF1, done 2026-09-21). The question that came before
-any screen is settled as **D51**: **the tree is the unit of exclusion, and a repository may have more
-than one** — "one session per repository" was two claims welded together, and unwelding them lets the
-person and the driver work in one repository at once without weakening D46 §9. **D52** settles the
-surface: the stream promoted with an observed timeline beside it (and no screen-scraping of another
-program's stdout), `AwaitingPerson` given a surface at last, review as a real diff, and no PTY.
-
-**D55 then re-positions it** (2026-09-21, from the owner: *the desktop is becoming more a dev IDE,
-but code-gen driven* — and *reference more existing applications*). The second study answered the
-method note (`docs/2026-09-21-ide-reference-study.md`: IDEs, not session managers) and found five
-patterns recurring in nearly every reference that the platform has **none** of. So **Work is a second
-frame, not a sixth view**: Manage ⇄ Work as peers, a status bar, a growable output panel, a frameless
-window whose top strip is application chrome (SURF7), and a monitor window (SURF8). The organising
-object is a **session, not a file**, and there is no editor in the plan at any point.
-
-| Item | What | Where it stands |
-|---|---|---|
-| **SURF2 · The lock keys on the tree** | The record names its tree; the ledger's refusals move with it; the planner's rule does not. Nothing creates a tree yet, so behaviour is identical | **Built** (2026-09-21) — two trees in one repository run at once over the real host, and an unknown tree holds every tree, because the lock errs toward refusing |
-| **SURF3 · Session trees** | `git worktree` under `~/.daoris/trees/`, on request and opt-in; `connect` refused from a linked worktree; removal that refuses to destroy work; only the registered root ever feeds | **Built** (2026-09-21) — a deliberately dirty root no longer holds the driver: the session ran in its own tree, the person's file untouched, and removal refused while the work sat unmerged |
-| **ACP1 · The protocol door** (D53) | An ACP door on the adapter seam: `AcpSession` over the spawned process's stdio, a permission request refused by construction, the record still moved by the exit code and the quest | **Built** (2026-09-21) — the rehearsal drives a quest to done over it with no model, and the refusal reaches both sides |
-| **ACP2–3 · The harnesses on it** | `claude-code` through the ACP project's adapter, closing with a real driven run; then dsh and codex as configurations of the same door (HARNESS2 closes into ACP3) | **Built** — ACP2 proven on a real login, 17/17 (2026-09-24) |
-| **SURF4a–d · The Work frame** | Built component by component (D52 as amended, `docs/2026-09-21-working-surface-components.md`): the atoms and the two helpers, then the rail, then the attended session, then — **D55** — the *frame* rather than a sixth nav item. A story before each component, its own test, and no hook inside a molecule. SURF4c's timeline reads the protocol | **SURF4a built** (2026-09-21): three atoms, `SESSION_TONE` moved, `sessionTitle`, a sabotage-tested presentational boundary, every story a smoke test. 4b next |
-| **SURF5 · Attention** | Overview's *what needs you*, `AwaitingPerson`'s surface, the sidebar counts, OS notification on park and end | **Built** (5a 2026-09-21, 5b 2026-09-22): the attention band and a parked session's three moves, then the notification — a park is seen by diffing the tick's sessions, an end is known from the driver's own conclusion, so "never for an ending the person caused" needs no suppression list. Closes driver open question 5 |
-| **SURF6 · Review** | The diff over the bridge, bounded; **a multibuffer with a per-file *viewed* mark** (D55); accept, or send it back as a quest | **Built** (6a and 6b, 2026-09-22) — what a session landed, read off the checkout, and the two acts over it |
-| **SURF7 · The window is the frame** (D55) | `OptimizedForm` with frameless chrome; the top strip becomes app menu + mode switch + scope + caption buttons; `WindowCommandModule` mapped late, Snap Layouts bought by reporting the button rectangles | **Built** (2026-09-22, with SURF10 → **D56**) — the app strip is the title bar, one denser type scale held by a test |
-| **SURF8 · The monitor window** (D55) | `SecondaryWindows`: a read-only rail-and-streams window for a second screen, and a detached session — named windows on their own STA threads, geometry per name | **Built** (2026-09-22): both are routes into the same bundle; the second reader was already true (`Tail` keeps no cursor) and is now asserted; a secondary window needs its own thread-affine WebView2 environment and follows the OS theme itself |
-| **SURF9 · Command palette** (D55) | The only affordance that scales past ~7 domains, and cheaper before the count grows | **Built** (2026-09-22) — centred in the app strip, printing its own shortcut |
-
-**Every SURF item is built**; the Work frame is usable, and `docs/2026-09-19-platform-ux.md` §4
-carries what each looking pass settled.
+REV2 (2026-09-20) reviewed the first of these after it closed: the release workflow ran one of four
+declared gates, and the shell had no tests. Both were fixed and gated.
 
 ---
 
@@ -123,8 +66,9 @@ A sentence with a ticket, a file and a link enters at the workspace; an **intake
 harness carries the model — reads the ticket, decides the owning repository from the declarations,
 and publishes quests; the driver develops; a plugin-declared **browser server** lets the session
 test in a browser; **`then`** chains develop → verify → report, and the driver is the engine.
-`docs/2026-09-23-intake-design.md` is the contract; INT1–INT6 are the build order in `TASKS.md`,
-with INT3 (registered is drivable) waiting on the owner's yes.
+`docs/2026-09-23-intake-design.md` is the contract. **Built**, INT1–INT5 (INT3 decided as D70:
+registered is addressable, adopted is disciplined); INT6, onboarding a real workspace, is the
+owner's to run.
 
 ## The newest direction: the remote as a git remote (D68, set 2026-09-23)
 
@@ -143,9 +87,18 @@ keep an API key; the wiring is a **map**. The asks are in `docs/2026-09-23-agent
 | **MAP1 · The workflow** | ask → intake → quests → sessions → `then`, each step's agent, account and version | **Built**: the chain strip (MAP1a) and the wiring panel (MAP1b); the intake joins with INT4b |
 | **MAP3 · A repository's code** | The same map inside one repository, fed by it (D32): **repository intelligence**'s first consumer | **Built**: MAP3a drawn, MAP3c a tool producer, MAP3d the session prompt, MAP3e a teammate's |
 
-**What else is open is decisions and triggers**, not work: what an agent may do by default (PERM4,
-PERM2) is the owner's call, and the held rows wait on something arriving. Surface work comes from
-looking at the deployed application after every change.
+## Since: what an agent may do, and the conversation (D72–D76, set 2026-09-24 → 25)
+
+| Arc | What | State |
+|---|---|---|
+| **PERM · Permission scopes** (D72, D74, `docs/2026-09-24-permission-scopes-design.md`) | Daoris's rules in scopes, handed to the harness at spawn; the tree guard as a hook; an agent proposes a rule change, a narrowing applies and a widening waits for the person | **Built**, PERM1–PERM4 and PERM2b |
+| **TRUST · A folder's trust** (D73) | Asked per folder, then written, never silently; two doors | **Built**; whether the harness honours a key Daoris wrote is TRUST2, the owner's to run |
+| **MENU · The menus** (D75, `docs/2026-09-24-menus-design.md`) | The menus are the setup domains, Settings one page of them, the workspace always named | **Built** |
+| **CONV · The conversation** (D76) | A session's structured updates kept as typed events on the machine; the page renders a conversation from them, the console its raw view | **Built**, CONV1–CONV4c; CONV4d and CONV5 are open in `TASKS.md` |
+
+**What else is open is decisions and triggers**, not work: the owner's calls and the held rows are in
+`TASKS.md`, each saying what it waits on. Surface work comes from looking at the deployed application
+after every change.
 
 ---
 

@@ -1,7 +1,8 @@
 // The service's surface. Same origin in production; the dev server proxies /api, so no code path
-// differs between the two. Reads everywhere; the writes are exactly the narrow service-state set —
-// quests and refresh (D36, D38). Doctrine has no write here, by design (D31): where a rule should
-// change, the UI proposes the command to run in the repository that owns it.
+// differs between the two. Reads everywhere; the writes are service state only — quests and their
+// conflicts, asks, registrations and refresh (D36, D38, D48, D65). Doctrine has no write here, by
+// design (D31): where a rule should change, the UI proposes the command to run in the repository that
+// owns it.
 
 // `workspace` rides every cross-repository shape (D48): it is the unit of sharing, so a view that
 // shows material from more than one must be able to say which is which. Optional on the way in —
@@ -291,7 +292,7 @@ export const api = {
   // `daoris import <folder>`'s screen door (D50, D75): a folder's subdirectories registered at once.
   // The answer's `message` is the service's sentence, and it is shown as said.
   importFolder: (folder: string) =>
-    post<{ folder: string; count: number; repositories: string[]; message: string }>(
+    post<{ folder: string; imported: number; repositories: string[]; message: string }>(
       '/api/registry/import', { folder }),
   // Files travel WHOLE to the local host, which keeps them under this machine's home (D65 §2); a
   // shared deployment refuses content outright, and the platform is only ever served by a local one.

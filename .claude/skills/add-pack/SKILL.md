@@ -14,7 +14,8 @@ everywhere; a pack installs where the manifest asks for it.
   is a local document, not canon. Count first — the survey in `docs/task-archive.md` Part 2 is how the
   first three packs were chosen.
 - **A repository must be ready to adopt it.** A pack nobody installs is unvalidated doctrine that looks
-  authoritative. If no adopter is lined up, add it to `TASKS.md` under canon growth and wait.
+  authoritative. If no adopter is lined up, add it to `TASKS.md`'s held rows, naming the trigger it
+  waits on, and wait.
 - **Would it install cleanly into a repository you have never seen?** If it needs a build command or a
   directory layout to make sense, it is not canon — see `.claude/knowledge/canon-authoring.md`.
 
@@ -24,8 +25,9 @@ everywhere; a pack installs where the manifest asks for it.
 
    ```
    canon/packs/<name>/pack.json
-   canon/packs/<name>/rules/<file>.md        -> installs to rules/     (always loaded)
-   canon/packs/<name>/knowledge/<file>.md    -> installs to knowledge/ (on demand)
+   canon/packs/<name>/rules/<file>.md         -> the AGENTS.md region  (always loaded, D59)
+   canon/packs/<name>/knowledge/<file>.md     -> .claude/knowledge/    (on demand)
+   canon/packs/<name>/skills/<n>/SKILL.md     -> .claude/skills/<n>/   (invoked by name)
    ```
 
    The subdirectory *is* the target tier. There is no `tier` field (`docs/DECISIONS.md` D7).
@@ -33,11 +35,13 @@ everywhere; a pack installs where the manifest asks for it.
 2. **Write `pack.json`.**
 
    ```json
-   { "name": "<name>", "description": "<what it covers, in one line>" }
+   { "name": "<name>", "apiVersion": 1, "description": "<what it covers, in one line>" }
    ```
 
    The description is printed by `daoris init` to someone choosing packs — write it for that moment, not
-   as a summary.
+   as a summary. `apiVersion` is read first; a number this build does not know is refused. A pack may
+   also offer to switch a core row off with `switchesOff` (D71) — a map from a core document to the
+   reason — and the adopting manifest must confirm it.
 
 3. **Write the documents**, each with complete frontmatter whose `name` matches the filename:
 
@@ -53,7 +57,8 @@ everywhere; a pack installs where the manifest asks for it.
    loudly — the loud ones teach themselves.
 
 4. **Be ruthless about `rules/` versus `knowledge/`.** Anything in `rules/` is loaded in every session of
-   every repository that takes the pack. Long, or narrow, means `knowledge/`.
+   every repository that takes the pack, and counts against its always-loaded budget. Long, or narrow,
+   means `knowledge/`.
 
 5. **Verify.**
 

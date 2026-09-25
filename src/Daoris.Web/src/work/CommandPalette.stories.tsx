@@ -18,7 +18,7 @@ const LABELS: Record<string, string> = {
   'work.review': 'Review what this session landed',
   'work.monitor': 'Open the monitor window',
   'work.detach': 'Open this session in its own window',
-  'do.ask': 'Ask the circle…',
+  'do.ask': 'Ask the workspace…',
   'do.refresh': 'Refresh the index',
   'do.language': 'Switch language',
 };

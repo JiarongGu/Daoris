@@ -96,7 +96,7 @@ reference gap* below.
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
   probe installed under `_fixtures/dsh/npm` (0.79.0), which is how a protocol-door chat is looked
   at without installing anything.
-- **Open beside it:** FLAKE1 (an intake test, about 1 run in 20), DEPLOY3 (the artefact gate
+- **Open beside it:** FLAKE1 (an intake test, about 1 run in 20), DEPLOY5 (the artefact gate
   holding a chat at close) and TEST1 (the Playwright worker's `0xC0000409`, seen a second time).
 
 🔴 **Daoris is DEPLOYED and running as an installed application** (2026-09-22), which is new and
@@ -165,10 +165,10 @@ the traps that are not in any contract, because they were found rather than desi
   behind them for the driver and remote these extend; the REV1 entry in `docs/task-archive.md` and `docs/FIX-LOG.md`'s top entries (the
   key-console scan, the mirror-down feed-back and the shared-scan fixes — WSP4 builds directly on
   those lessons).
-- **The gates are a list, and it is checked.** `daoris.gates.json` declares seven; a CLI test asserts the
+- **The gates are a list, and it is checked.** `daoris.gates.json` declares nine; a CLI test asserts the
   release workflow runs every one, because they silently disagreed for eight landings and both
   rehearsals passing is exactly what hid it. Adding a test project means adding it to **both**. The
-  seventh (`deployment`, D60) is the one that runs on **Windows** — the shell is `net10.0-windows`,
+  ninth (`deployment`, D60) is the one that runs on **Windows** — the shell is `net10.0-windows`,
   so the workflow carries a `windows-latest` job for it.
 - **Adding a refusal to a desktop module is three things**, and a test holds each: a code in
   `Refusals`, an entry in **both** locale catalogues, and a throw site using it. A thrown exception's
@@ -232,7 +232,7 @@ the traps that are not in any contract, because they were found rather than desi
   machine's Claude Code account, 2026-09-24**. ACP2 used seven of them to reach 17/17, then INT4f
   (16/16), INT4j (17/17) and PERM2b (14/14) one each. **The owner's to spend or attend**: TRUST2's first grant (the permission check refused an
   agent's write to the account's `.claude.json`), AGT2c (two downloads, not authorized) and INT6.
-  **Six wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON2 and HARNESS1 on a
+  **Six wait on a trigger**: TOOL4 on TOOL3's transcripts; TOOL5, CANON9 and HARNESS1 on a
   repository naming what it wants; REH1 on a captured recurrence; PLUG7 on a plugin asking for a
   service-side point. TEST1's second sighting arrived (2026-09-25), so it is open. **A new direction from the owner outranks all of them.**
 - **The shell has a dev loop (DEV1):** `npm run desktop -- doctor|build|run|shot|eval|click` — not a
@@ -256,7 +256,7 @@ the traps that are not in any contract, because they were found rather than desi
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
 the archive; its decision is **D53, accepted**). **Twenty rows are open**: REV3, the owner's
-review, first; D76's six and its held file tools; three leftovers (FLAKE1, DEPLOY3, TEST1); three on
+review, first; D76's six and its held file tools; three leftovers (FLAKE1, DEPLOY5, TEST1); three on
 the owner (TRUST2, AGT2c, INT6); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this
 file holds no ticked rows, by the `task-lifecycle` rule it also ships.
 
@@ -296,7 +296,7 @@ archive.
     half, the rest of the driver, modules and app, the web's `work/`, the rest of the web, tools
     with devkit, canon and examples, and two for the docs), every finding then verified here before
     it lands. **Widened the same day**: refactor, dedup and cleanup too, reported after correctness.
-  - **Already known, so not re-found:** TEST1, FLAKE1, DEPLOY3, REH1 and UX1's written findings.
+  - **Already known, so not re-found:** TEST1, FLAKE1, DEPLOY5, REH1 and UX5's written findings.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
@@ -379,7 +379,7 @@ nobody installed refuses) and usage at each session's high-water mark (🔴 abse
   of §5 is realised — the adapter seam, the ACP door, a tool being both (`codex` is managed with no
   native adapter and its sessions ride `codex-acp`, which §5 names as the sanctioned shape), the
   declaration duplicated in two artefacts, no registry, no model named. **Nothing is waiting except a
-  tool somebody actually wants**, so this is held on the same bar CANON2 and HARNESS1 use: start it
+  tool somebody actually wants**, so this is held on the same bar CANON9 and HARNESS1 use: start it
   when a repository names the tool, because an adapter's every field is a claim about somebody else's
   program and a guessed one fails in a person's terminal. The reading did find one real gap, and that
   is fixed rather than carried — the twin tables pinned the three ACP arrivals and left `claude-code`
@@ -468,7 +468,7 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   dock (45% default, 70% cap) with tabs per session, deterministic close (components §3a).
 - [ ] **RAIL1 — the list.** Search sessions by name and by content, and a row menu.
 - [ ] **REVIEW2 — review.** Highlighted diffs, split or unified.
-- [ ] **UX1 — screen by screen.** Every surface, every state (empty, loading, error, long, 中文,
+- [ ] **UX5 — screen by screen.** Every surface, every state (empty, loading, error, long, 中文,
   dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),
   against the reference and D41. Written down as it is found, and fixed. **Already found, to settle
   there:** a session waiting on the person wears declined's red (`Dot tone="parked"`) in the rail,
@@ -498,7 +498,7 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   something else. A gate that fails one run in twenty is a gate people learn to re-run, which is how
   a real failure gets waved through.
 
-- [ ] **DEPLOY3 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
+- [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
   when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect
   that survived them lived in the shell's own shutdown order, and only the window saw it. The
   deployment rehearsal closes the installed shell (§6) with no chat open, and it has no way to open
@@ -534,7 +534,7 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   deterministic broken publish build, fixed and gated (FIX-LOG). REH1 is 45/52 with the canon-upgrade
   phase's 7 checks failing; a run that never reaches a check is a different animal.
 
-- [ ] **CANON2 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
+- [ ] **CANON9 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until
   a second repository needs the same thing.
 

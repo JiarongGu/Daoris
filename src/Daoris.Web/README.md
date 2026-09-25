@@ -7,7 +7,7 @@ place.
 
 ## What it is
 
-Five views, three halves of one job — landing on management (D40):
+One activity bar (D66), landing on management (D40). The views that read the family:
 
 | View | What it answers |
 |---|---|
@@ -17,8 +17,14 @@ Five views, three halves of one job — landing on management (D40):
 | **Convergence** | where two repositories reached the same conclusion independently — the knowledge half's lead view |
 | **Search** | what the family has already learned about X |
 
+**Sessions** is the working surface — the agent sessions this machine runs, attended one at a
+time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
+stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
+**Settings** is everywhere: appearance in a browser, and in the desktop this machine's wiring,
+driver and agents too.
+
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
-(sidebar, page headers, one primary action per view), the token system, the drawer as the single
+(an activity bar, page headers, one primary action per view), the token system, the drawer as the single
 detail-and-form surface, toasts carrying the service's sentences verbatim, and a status palette that
 was **computed, not tasted** — both themes pass all six checks of the visualization validator, and a
 status pill never appears without its text label.
@@ -33,7 +39,7 @@ status pill never appears without its text label.
 | Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation |
 | i18n | **react-i18next**, `en` + `zh`, flat dotted keys; `scripts/i18n-check.mjs` fails the build when the catalogs diverge |
 | Shell bridge | **@shenora/react** — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`shell.ts`, `ShellSignals.tsx`); in a browser none of it mounts, by design |
-| Design tool | **Storybook** (`npm run storybook`) — the component states and the token gallery, on the shipped code (the arc's session states and driver controls do not have stories yet) |
+| Design tool | **Storybook** (`npm run storybook`) — the component states and the token gallery, on the shipped code |
 | Test loop | **Vitest + Testing Library** as the millisecond inner loop (view logic, primitives, catalogs — with the sibling's proven jsdom shims), **Playwright** as the outer loop — the real host over `examples/`, driving the shipped bundle. `npm run test:web` at the workspace root runs the whole pyramid |
 
 **The i18n boundary:** UI chrome translates; **data does not**. Quest content, registry declarations,

@@ -4,7 +4,8 @@
 locked version and the version shipping in the package, so a consumer sees not only *which* documents
 moved but whether the change matters to them.
 
-Write one entry per version, newest first, under a `## <version>` heading. Say what changed and what an
+Write each entry under `## Unreleased`; the release workflow stamps that heading with the version,
+and nobody stamps it by hand. Newest version first. Say what changed and what an
 adopting repository should do about it — a line that only repeats the filename adds nothing that the
 `changed` list did not already say. This file ships inside the package, so nothing here touches the
 network.
@@ -95,7 +96,9 @@ network.
   property that keeps declining a real answer — and declining requires a reason, because a bare refusal
   gives the asker nothing to act on.
   **Only a repository that has adopted can be addressed**, because one without the client cannot see
-  what was asked, and an unread quest looks exactly like an ignored one.
+  what was asked, and an unread quest looks exactly like an ignored one. *(Since widened: a
+  repository registered with the service is addressable too, answered by a session that is handed
+  its connector at start.)*
   Practice came before the rule: repositories here already kept "waiting on the sibling repository"
   sections, arrived at independently. What was missing was a name, a place, and a readable status.
   **Adopting repositories:** once adopted, siblings can address quests to you. Nothing is written into

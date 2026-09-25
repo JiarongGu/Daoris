@@ -173,8 +173,8 @@ without `join` is refused. `daoris status` reports the declaration.
   pack offers to switch one off and the manifest confirms it under `switchedOff` (D71); `sync`, `check`
   and `status` all say so.
 - **Packs** — stack-specific sets, named in the manifest.
-- **Local** — the repository's own documents. Never synced, never touched, and listed in the generated
-  index marked `(local)`.
+- **Local** — the repository's own documents: never synced or touched, and its knowledge and skills
+  are indexed as `(local)`.
 
 The rule that makes this safe: **anything not in the lock is invisible to the tool.** Daoris only ever
 writes files it put there. A repository that already owns a file at a canonical path gets a refusal, not
