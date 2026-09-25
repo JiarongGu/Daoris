@@ -1,9 +1,11 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { useQuests, useSessions } from '../queries';
-import { useDriver, useOpenWindow, useSessionOpenings } from '../shell';
+import { useDriver, useHarnesses, useOpenWindow, useSessionOpenings } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from '../SessionConsole';
+import { SessionConversation } from './SessionConversation';
 import { SessionRail } from './SessionRail';
 import { StreamTile } from './StreamTile';
 import { sessionOrigin } from './identity';
@@ -29,10 +31,12 @@ const tileId = (session: string) => `stream-${session}`;
  * **What it answers is "what is each session doing"** — which is why a tray icon was rejected for
  * it (D55 §b): a tray icon answers whether anything is running, and that is a different question.
  *
- * **A second reader on the console pump.** Every tile holds its own `SessionConsole`, and so does
- * the main window's output panel. That works because the driver's buffer keeps no cursor — a reader
- * says what it has seen and is told the rest (`SessionOutput`, SES1) — which is asserted in the
- * driver's own tests rather than assumed here.
+ * **A second reader on the console pump.** A tile on a text door holds its own `SessionConsole`,
+ * and so does the main window's output panel. That works because the driver's buffer keeps no
+ * cursor — a reader says what it has seen and is told the rest (`SessionOutput`, SES1) — which is
+ * asserted in the driver's own tests rather than assumed here. A tile on a door that keeps a
+ * conversation shows the conversation instead (UX5 U2), read from the same record the main window
+ * reads.
  */
 export function MonitorWindow({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
@@ -149,12 +153,31 @@ function Tile({ session, quest, opening, onDetach }: {
   const { t } = useTranslation();
   // Somebody else's machine holds this one, so there is no stream to ask for and the tile says so.
   const here = sessionOrigin(session) === null;
+  // 🔴 The conversation where the door keeps one (UX5 U2, D76 §3): the console is its raw view, and
+  // a tile of console alone said "Nothing said yet" over a kept conversation. A text door, or a
+  // roster that has not answered, keeps the console, which claims least.
+  const harnesses = useHarnesses();
+  const structured = harnesses.data?.harnesses?.find((row) => row.harness === session.adapter)?.structured === true;
+  const body = useRef<HTMLDivElement>(null);
 
   return (
     // The id is what the rail scrolls to — a session is one thing with one anchor in this window.
     <div id={tileId(session.id)} className="flex min-h-0 scroll-mt-3 flex-col">
       <StreamTile session={session} quest={quest} opening={opening} onDetach={here ? onDetach : undefined}>
-        {here && <SessionConsole id={session.id} fill quiet={t('work.monitor.silent')} />}
+        {here && (structured
+          ? (
+            <div ref={body} className="min-h-0 flex-1 overflow-y-auto">
+              <SessionConversation
+                session={session.id}
+                adapter={session.adapter}
+                chat={session.kind === 'chat'}
+                tree={session.tree}
+                live
+                scroller={body}
+              />
+            </div>
+          )
+          : <SessionConsole id={session.id} fill quiet={t('work.monitor.silent')} />)}
       </StreamTile>
     </div>
   );

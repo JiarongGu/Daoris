@@ -43,6 +43,36 @@ public sealed class AskSignatureTests
 }
 
 /// <summary>
+/// And when the ACTIVE SESSIONS changed (UX5 U13): a conversation started or ended from the main
+/// window moves nothing a tick reports, so a quiet tick never told the other windows, and the monitor
+/// never showed a chat the person had just opened. Seen on the window: a minute and two ticks later,
+/// still absent.
+/// </summary>
+public sealed class ActiveSessionSignatureTests
+{
+    [Fact]
+    public void The_same_sessions_sign_the_same_whatever_their_order()
+    {
+        var a = new[] { new SessionView("s1", "engine", "working"), new SessionView("c2", "game", "awaiting-person") };
+
+        Assert.Equal(ActiveSessions.Signature(a), ActiveSessions.Signature([a[1], a[0]]));
+    }
+
+    [Fact]
+    public void A_session_started_ended_or_moved_signs_differently()
+    {
+        var before = new[] { new SessionView("s1", "engine", "working") };
+
+        Assert.NotEqual(ActiveSessions.Signature(before),
+            ActiveSessions.Signature([.. before, new SessionView("c2", "game", "working")]));
+        Assert.NotEqual(ActiveSessions.Signature(before), ActiveSessions.Signature([]));
+        Assert.NotEqual(ActiveSessions.Signature(before),
+            ActiveSessions.Signature([new SessionView("s1", "engine", "awaiting-person")]));
+        Assert.Equal(string.Empty, ActiveSessions.Signature([]));
+    }
+}
+
+/// <summary>
 /// The intake session (D65 §1b, INT4b): an ask the declarations did not settle is answered by a
 /// SESSION the driver opens in a room it owns — which reads the circle's declarations, publishes the
 /// quests onto the ask itself, and asks the person where the declarations do not settle it.

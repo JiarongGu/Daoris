@@ -149,6 +149,40 @@ describe('the monitor window', () => {
     expect(screen.getAllByRole('button', { name: /own window/i })).toHaveLength(2);
   });
 
+  /**
+   * UX5 U2: every tile was the console, and D76 made the console the raw view of a conversation. A
+   * tile over a kept conversation said *Nothing said yet*. Where the door keeps one, the tile shows
+   * what was said; a text door, or a roster that has not answered, keeps the console.
+   */
+  it('shows the conversation where the door keeps one, and the console where it does not', async () => {
+    invoke.mockImplementation(async (_module: string, type: string, request?: unknown) => {
+      const id = (request as { payload?: { id?: string } } | undefined)?.payload?.id;
+      if (type === 'HARNESSES') {
+        return { adapter: 'claude-code', harnesses: [
+          { harness: 'claude-code', present: true, structured: true, profiles: [] },
+          { harness: 'pipe-tool', present: true, structured: false, profiles: [] },
+        ] };
+      }
+      if (type === 'SESSION_HISTORY') {
+        return { events: [{ seq: 1, at: at(1), kind: 'message', text: `${id} said this` }], earlier: false };
+      }
+      if (type === 'TAIL_SESSION') {
+        return { session: id, lines: [{ sequence: 1, text: `${id} is talking` }], sequence: 1, live: true, dropped: 0 };
+      }
+      return DRIVER_STATE;
+    });
+    SESSIONS = [
+      LIVE[0],
+      { ...(LIVE[1] as object), adapter: 'pipe-tool' },
+    ];
+    show();
+
+    expect(await screen.findByText('s1a2b3c4 said this')).toBeInTheDocument();
+    expect(await screen.findByText(/b2c3d4e5 is talking/)).toBeInTheDocument();
+    expect(screen.queryByText(/s1a2b3c4 is talking/)).toBeNull();
+    expect(screen.queryByText('Nothing said yet.')).toBeNull();
+  });
+
   it('says when nothing is running rather than showing an empty grid', async () => {
     SESSIONS = [];
     show();

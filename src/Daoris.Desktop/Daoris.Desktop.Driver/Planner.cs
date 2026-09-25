@@ -57,6 +57,20 @@ public sealed record SessionView(
     public string? Ask { get; init; }
 }
 
+public static class ActiveSessions
+{
+    /// <summary>
+    /// Which sessions are active and where each stands, as one string — equal when the same ones stand
+    /// in the same states, whatever the order. The shell forwards a tick to the page when this changes
+    /// (UX5 U13), as it does for <see cref="Asks.Signature"/>: a conversation started or ended from the
+    /// main window moves nothing else a tick reports, so the other windows never heard of it.
+    /// </summary>
+    public static string Signature(IEnumerable<SessionView> sessions) =>
+        string.Join("\n", sessions
+            .Select(session => $"{session.Id}\t{session.State}")
+            .OrderBy(line => line, StringComparer.Ordinal));
+}
+
 /// <summary>Everything a tick's decisions are made from, fetched once so the plan is coherent.</summary>
 /// <param name="Strikes">
 /// How many sessions have <b>failed</b> on each quest, by quest id — <b>derived</b> from the session

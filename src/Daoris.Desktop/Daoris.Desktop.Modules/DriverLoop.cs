@@ -263,6 +263,7 @@ public sealed class DriverLoop(
         var attention = new AttentionWatch();
         string? lastConsidered = null;
         string? lastAsked = null;
+        string? lastActive = null;
 
         _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events);
         await _watch.RunAsync(
@@ -312,6 +313,17 @@ public sealed class DriverLoop(
                     lastAsked = asked;
                 }
 
+                // 🔴 And the sessions (UX5 U13), for the same reason: a conversation started or ended
+                // from the main window moves nothing this tick reports, so the monitor and a detached
+                // window, which hear of sessions only by a tick, never showed it. Seen on the window: a
+                // chat opened in `game`, and a minute later the monitor still did not have it.
+                var active = await ActiveAsync(service, ct).ConfigureAwait(false);
+                if (active is not null && active != lastActive)
+                {
+                    changed = true;
+                    lastActive = active;
+                }
+
                 if (report.PlannedAnything || report.Events.Count > 0 || changed)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
@@ -347,6 +359,19 @@ public sealed class DriverLoop(
         try
         {
             return Asks.Signature(await service.AsksAsync(ct).ConfigureAwait(false));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Which sessions are active and how, or null when the host could not answer — never a change.</summary>
+    private static async Task<string?> ActiveAsync(ServiceClient service, CancellationToken ct)
+    {
+        try
+        {
+            return ActiveSessions.Signature(await service.ActiveSessionsAsync(ct).ConfigureAwait(false));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
