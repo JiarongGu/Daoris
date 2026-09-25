@@ -64,12 +64,18 @@ public sealed class DriverWatch(
         // repository's lock (2026-09-25). Retried each tick until the service has answered it once.
         var swept = false;
         IReadOnlyList<string> sweep = [];
+        // The last choices that read, for the wait: a torn file keeps the pace it had.
+        var config = DriverConfig.Empty;
 
         while (!ct.IsCancellationRequested)
         {
-            var config = DriverConfig.Load(configPath);
             try
             {
+                // 🔴 Inside the catch (REV3): a hand edit that tore the file threw from here, outside it,
+                // and the watch died on its first tick — silently, in the shell. Now it is said, nothing
+                // ticks on choices it cannot read, and the next look after the fix ticks again.
+                config = Load(configPath);
+
                 if (!swept)
                 {
                     sweep = [.. (await Orphans.EndAsync(service, processes, ct: ct).ConfigureAwait(false))
@@ -107,6 +113,23 @@ public sealed class DriverWatch(
             {
                 if (ct.IsCancellationRequested) return;
             }
+        }
+    }
+
+    /// <summary>The standing choices, or the driver's own sentence about why they could not be read.</summary>
+    private static DriverConfig Load(string path)
+    {
+        try
+        {
+            return DriverConfig.Load(path);
+        }
+        catch (Exception error) when (
+            error is System.Text.Json.JsonException or FormatException or InvalidOperationException or IOException
+                or UnauthorizedAccessException)
+        {
+            throw new DriverException(
+                $"{Path.GetFileName(path)} could not be read ({error.Message}) — nothing is driven until it reads; "
+                + "the loop keeps watching it, and takes the fix at its next look.");
         }
     }
 }

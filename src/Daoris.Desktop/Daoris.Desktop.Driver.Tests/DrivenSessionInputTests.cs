@@ -103,6 +103,24 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.True(before == after, "the harness is still beating after its tick ended");
     }
 
+    /// <summary>
+    /// REV3: an adapter name nobody knows — a typo in `driver.json` — threw from the harness selection
+    /// out of the whole tick, every tick. The quest is held on the driver's sentence instead, as the
+    /// intake's twin already did, and the tick reports.
+    /// </summary>
+    [Fact]
+    public async Task An_adapter_nobody_knows_holds_the_quest_and_the_tick_still_reports()
+    {
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        var driver = Driver("claude_code", Path.Combine(_home, "heard.txt"), service, processes);
+
+        var report = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Contains(report.Events, line => line.StartsWith("held", StringComparison.Ordinal) && line.Contains("claude_code"));
+        Assert.Empty(processes.Running);
+    }
+
     private Daoris.Driver.Driver Driver(string adapter, string heard, StandInService service, SessionProcesses processes)
     {
         var config = DriverConfig.Empty with

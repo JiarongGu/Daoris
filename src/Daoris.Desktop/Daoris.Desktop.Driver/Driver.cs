@@ -386,9 +386,21 @@ public sealed partial class Driver(
         // spawn that could never have happened would hold the repository and explain nothing. A
         // missing binary and a logged-out profile are the same shape of answer, and each names the
         // action that fixes it.
-        var selection = await _harnesses
-            .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, ct)
-            .ConfigureAwait(false);
+        // Held, never thrown (REV3): an adapter name the roster does not know — a typo in `driver.json` —
+        // threw from here out of the tick, every tick, losing the report's holds and considerations
+        // with it. The intake's twin already held on the same sentence.
+        HarnessSelection selection;
+        try
+        {
+            selection = await _harnesses
+                .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, ct)
+                .ConfigureAwait(false);
+        }
+        catch (DriverException error)
+        {
+            return Hold(error.Message);
+        }
+
         if (!selection.Allowed)
         {
             return Hold(selection.Refusal!);

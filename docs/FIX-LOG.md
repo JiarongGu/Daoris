@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A typo in `driver.json` stopped the driver: a torn file killed the loop, an unknown adapter every tick (2026-09-25)
+
+**Symptom.** Found by REV3's reading. A hand edit of `driver.json` that left a trailing comma, or a
+number like `"pollSeconds": 1.5`, threw from the loop's config load. That load sat outside its catch,
+so the watch died on the first tick, and in the shell no `DRIVER_ERROR` said so. A sibling file
+promises "a hand-mangled file must never be what stops a driver coming up". An adapter name the roster
+did not know, such as `claude_code`, threw from the harness selection out of the whole tick, every
+tick. That lost the report's holds and considerations, and the intake's twin already held on the same
+sentence.
+
+**Root cause.** The load was the loop's first statement, outside the `try` that carries every other
+failure to `onError`. The quest path called `SelectAsync` bare, where the intake path wrapped it.
+
+**Fix.** The loop loads the config inside its catch. A file that will not read becomes the driver's
+own sentence. Nothing ticks on choices it cannot read, the wait keeps the last pace that read, and the
+next look after a fix ticks. The quest path holds on the selection's `DriverException`, as the intake
+does.
+
+**Verify.** Both tests were watched failing before the fix.
+- `A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop` tears the file, receives one
+  `DriverException` naming it, fixes the file in the error handler, and gets the tick.
+- `An_adapter_nobody_knows_holds_the_quest_and_the_tick_still_reports`.
+
 ## A repository's deny rules missed its session when its name was spelled in another case (2026-09-25)
 
 **Symptom.** Found by REV3's reading. The person added `deny Bash(rm:*)` for repository `Engine`, the

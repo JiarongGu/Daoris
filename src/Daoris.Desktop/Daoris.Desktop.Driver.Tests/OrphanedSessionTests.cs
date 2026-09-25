@@ -182,6 +182,44 @@ public sealed class OrphanedSessionTests : IDisposable
         Assert.Contains(Assert.Single(reports).Events, line => line.Contains("a1") && line.Contains("nothing on this machine"));
     }
 
+    /// <summary>
+    /// 🔴 REV3: a hand edit that left `driver.json` torn threw from the load, OUTSIDE the loop's catch —
+    /// so the watch died on the first tick, and in the shell nothing said so. The loop says what is wrong
+    /// with the file, keeps watching it, and ticks again the moment it reads.
+    /// </summary>
+    [Fact]
+    public async Task A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = Path.Combine(_home, "driver.json");
+        File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1, }""");
+
+        using var client = new ServiceClient(service.Url, null);
+        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var reports = new List<TickReport>();
+        var errors = new List<Exception>();
+        var watch = new DriverWatch(
+            client, config, _home, new SessionProcesses(Markers), sync: null,
+            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")));
+
+        var running = watch.RunAsync(
+            (report, _) => { reports.Add(report); stop.Cancel(); return Task.CompletedTask; },
+            error =>
+            {
+                errors.Add(error);
+                File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1 }""");
+                watch.Nudge();
+                return Task.CompletedTask;
+            },
+            stop.Token);
+        await running;
+
+        var said = Assert.Single(errors);
+        Assert.IsType<DriverException>(said);
+        Assert.Contains("driver.json", said.Message);
+        Assert.Single(reports);
+    }
+
     /// <summary>A conversation's stand-in: it answers the toolchain's two questions, then listens until its input closes.</summary>
     private string Conversing()
     {
