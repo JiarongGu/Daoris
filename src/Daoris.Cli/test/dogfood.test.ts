@@ -161,6 +161,29 @@ test('every declared gate is actually run by the release workflow', () => {
 });
 
 /**
+ * The release commit stages what release-prep rewrote, by a pathspec the workflow spells out — a
+ * second list of the same files (REV3 CLEAN1). It had already missed the example manifests once, and
+ * `verify` went red on main after a release. release-prep says what it writes; this holds the
+ * pathspec to it. (The re-sync's writes are the workflow's own and are not read here.)
+ */
+test('the release commit stages every file release-prep writes', async () => {
+  // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
+  const { written } = await import('../../../tools/release-prep.mjs') as { written: () => string[] };
+  const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'));
+  const staging = /git add -u -- ((?:[^\n]*\\\n)*[^\n]*)/.exec(workflow);
+  assert.ok(staging, 'the release workflow no longer stages with `git add -u --` — this test must follow it');
+  const pathspecs = staging[1].replace(/\\\n/g, ' ').trim().split(/\s+/);
+
+  const files = written();
+  assert.ok(files.some((file) => file.startsWith('examples/')), 'release-prep no longer finds the example manifests');
+  for (const file of files) {
+    assert.ok(
+      pathspecs.some((spec) => file === spec || file.startsWith(`${spec}/`)),
+      `release-prep writes ${file}, and the release commit's \`git add -u\` does not stage it`);
+  }
+});
+
+/**
  * The same gap one list further in (SEN1): the universal gates were declared and in the workflow, and
  * red on this repository for a day, because nothing a session runs before committing ran them — the
  * workflow is dispatched by hand and the pre-commit hook was never installed. Placeholder home paths

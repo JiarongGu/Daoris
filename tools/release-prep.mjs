@@ -20,6 +20,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from './fsx.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (rel) => readFileSync(join(repoRoot, rel), 'utf8');
@@ -76,22 +77,36 @@ function stampChangelog(rel, heading) {
   write(rel, text.slice(0, match.index) + heading + after);
 }
 
+/** Each file the version lives in, and how it is rewritten to carry `version`. */
+const rewrites = (version) => [
+  [CLI_PKG, (text) => text.replace(/"version": "[^"]+"/, `"version": "${version}"`)],
+  ['canon/canon.json', () => `{\n  "version": "${version}"\n}\n`],
+  ['daoris.json', (text) => text.replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`)],
+  ['README.md', (text) => text.replace(/github:JiarongGu\/Daoris#v[\d.]+/g, `${REPO_REF}${version}`)],
+  [DEVKIT, (text) => text.replace(DEVKIT_VERSION, `public const string DevkitVersion = "${version}";`)],
+  ...exampleManifests().map((rel) =>
+    [rel, (text) => text.replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`)]),
+];
+
+/** The changelogs a release stamps: the release-facing one first, then the canon's. */
+const CHANGELOGS = ['CHANGELOG.md', 'canon/CHANGELOG.md'];
+
+/**
+ * Every file a release rewrites — what the release commit must stage (REV3 CLEAN1). The workflow's
+ * `git add` is a second list, and it had already missed the example manifests once, which left
+ * `verify` red on main after a release; `dogfood.test.ts` holds that list against this one.
+ */
+export const written = () => [...rewrites('0.0.0').map(([rel]) => rel), ...CHANGELOGS];
+
 function setVersion(version, today) {
   if (!/^\d+\.\d+\.\d+$/.test(version)) fail(`'${version}' is not a semver triple`);
 
-  write(CLI_PKG, read(CLI_PKG).replace(/"version": "[^"]+"/, `"version": "${version}"`));
-  write('canon/canon.json', `{\n  "version": "${version}"\n}\n`);
-  write('daoris.json', read('daoris.json').replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`));
-  write('README.md', read('README.md').replace(/github:JiarongGu\/Daoris#v[\d.]+/g, `${REPO_REF}${version}`));
-  write(DEVKIT, read(DEVKIT).replace(DEVKIT_VERSION, `public const string DevkitVersion = "${version}";`));
-  for (const rel of exampleManifests()) {
-    write(rel, read(rel).replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`));
-  }
+  for (const [rel, rewrite] of rewrites(version)) write(rel, rewrite(read(rel)));
 
   // The release-facing log carries the date; the canon's own log is read by
   // consumers upgrading between versions, where the version alone is the key.
-  stampChangelog('CHANGELOG.md', `## ${version} — ${today}`);
-  stampChangelog('canon/CHANGELOG.md', `## ${version}`);
+  stampChangelog(CHANGELOGS[0], `## ${version} — ${today}`);
+  stampChangelog(CHANGELOGS[1], `## ${version}`);
 
   console.log(`release-prep: set ${version} across package.json, canon.json, the manifest, the README and the devkit`);
   console.log(`release-prep: stamped CHANGELOG.md and canon/CHANGELOG.md`);
@@ -122,13 +137,16 @@ function checkAgreement() {
   console.log(`release-prep: ${version} agrees across every shipped reference`);
 }
 
-const argv = process.argv.slice(2);
-if (argv.includes('--check')) {
-  checkAgreement();
-} else {
-  const at = argv.indexOf('--version');
-  if (at === -1 || !argv[at + 1]) fail('usage: release-prep.mjs --version X.Y.Z | --check');
-  const dateArg = argv.indexOf('--date');
-  const today = dateArg === -1 ? new Date().toISOString().slice(0, 10) : argv[dateArg + 1];
-  setVersion(argv[at + 1], today);
+// Guarded, because `written` is imported by a test — and importing this file must not release anything.
+if (isMain(import.meta.url)) {
+  const argv = process.argv.slice(2);
+  if (argv.includes('--check')) {
+    checkAgreement();
+  } else {
+    const at = argv.indexOf('--version');
+    if (at === -1 || !argv[at + 1]) fail('usage: release-prep.mjs --version X.Y.Z | --check');
+    const dateArg = argv.indexOf('--date');
+    const today = dateArg === -1 ? new Date().toISOString().slice(0, 10) : argv[dateArg + 1];
+    setVersion(argv[at + 1], today);
+  }
 }
