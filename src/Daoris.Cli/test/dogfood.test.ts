@@ -146,11 +146,17 @@ test('every declared gate is actually run by the release workflow', () => {
   // `npm run verify`. Full-line comments go; a step's own text stays.
   const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'))
     .split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
+  // A gate `npm run verify` runs is run wherever verify is — the universal gates' one home (REV3
+  // CLEAN1: the workflow ran them as a step of their own too, the same command twice).
+  const verify = (JSON.parse(readText(join(repoRoot, 'package.json'))) as {
+    scripts: { verify: string };
+  }).scripts.verify;
+  const runsVerify = /run:\s*npm run verify\s*$/m.test(workflow);
 
   assert.ok(gates.gates.length >= 4, 'the gate list emptied — that is not a pass');
   for (const gate of gates.gates) {
     assert.ok(
-      workflow.includes(gate.run),
+      workflow.includes(gate.run) || (runsVerify && verify.includes(gate.run)),
       `the '${gate.name}' gate is declared in daoris.gates.json but the release workflow never runs `
       + `it: ${gate.run}`);
   }

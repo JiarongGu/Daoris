@@ -228,27 +228,24 @@ jobs:
             fi
           done
 
-      # The devkit's five universal gates, over THIS repository (DEVKIT3). They were configured in
-      # `daoris.gates.json` and read by nothing for as long as that file has existed — the workflow ran
-      # the devkit's own test suite and then each declared gate by name, and never the binary itself.
-      #
-      # `--universal-only` is not a shortcut: `verify` runs the declared gates too, so the full form
-      # would reach its own row and start itself. `--allow-builtins-only` is the explicit opt-out the
-      # sensitive gate requires when the private pattern list is absent, which on a runner it always is
-      # — that list holds names that cannot live in the repository being scanned. The half of the scan
-      # that knows them runs locally, in `npm run verify` (SEN1), where the list exists; no pre-commit
-      # hook is installed here (`install-hooks` is the owner's to run). CI gets the structural
-      # patterns, and says so rather than discovering it silently.
-      - name: Universal gates
-        run: dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only --allow-builtins-only
-
       # The committed code map is what the project files say (MAP3c) — a fact, so it gates (D54). It is
       # a DECLARED gate rather than a universal one: a map an agent or a person wrote for another stack
       # is not the devkit's to judge, and nothing in the file says which producer wrote it.
       - name: Code map gate
         run: dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check
 
-      # Everything that protects a consumer, in the order a consumer meets it.
+      # Everything that protects a consumer, in the order a consumer meets it — ending with the devkit's
+      # five universal gates over THIS repository (DEVKIT3, SEN1). They ran here as a step of their own
+      # as well, the same command twice (REV3 CLEAN1); `verify` is their one home, and the dogfood test
+      # counts a gate `verify` runs as run.
+      #
+      # `--universal-only` is not a shortcut: the devkit's `verify` runs the declared gates too, so the
+      # full form would reach its own row and start itself. `--allow-builtins-only` is the explicit
+      # opt-out the sensitive gate requires when the private pattern list is absent, which on a runner
+      # it always is — that list holds names that cannot live in the repository being scanned. Locally
+      # the list exists, and the same scan knows them; no pre-commit hook is installed here
+      # (`install-hooks` is the owner's to run). CI gets the structural patterns, and says so rather
+      # than discovering it silently.
       - name: Verify gate
         run: npm run verify
 
