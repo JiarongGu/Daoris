@@ -29,13 +29,18 @@ export type StartChoice = {
  * A molecule: the rosters arrive as props, which is what makes "no repository has a checkout here",
  * "one harness, no accounts" and "a logged-out profile" reachable without a machine in that state.
  */
-export function StartSession({ repositories, harnesses, profiles, pending = false, onStart }: {
+export function StartSession({ repositories, harnesses, defaultHarness = '', accounts, pending = false, onStart }: {
   /** Repositories with a checkout on this machine — there is nowhere else to talk (D48 §7). */
   repositories: string[];
-  /** The harnesses this machine has; the first is the driver's own, and empty offers no choice. */
+  /** The harnesses this machine has; empty offers no choice. */
   harnesses: string[];
-  /** The accounts the chosen harness holds, with their login state (D49 §4). */
-  profiles: { name: string; login: 'in' | 'out' | 'unknown'; account?: string | null }[];
+  /** The driver's own harness — whose accounts are offered while no other is chosen. */
+  defaultHarness?: string;
+  /**
+   * Each harness's accounts, with their login state (D49 §4). By harness, because the accounts follow
+   * the harness CHOSEN (REV3): the default's alone offered names another harness does not have.
+   */
+  accounts: Record<string, { name: string; login: 'in' | 'out' | 'unknown'; account?: string | null }[]>;
   pending?: boolean;
   onStart: (choice: StartChoice) => void;
 }) {
@@ -43,6 +48,7 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
   const [repository, setRepository] = useState('');
   const [adapter, setAdapter] = useState('');
   const [profile, setProfile] = useState('');
+  const profiles = accounts[adapter || defaultHarness] ?? [];
   const [ownTree, setOwnTree] = useState(false);
 
   if (repositories.length === 0) {
@@ -75,7 +81,15 @@ export function StartSession({ repositories, harnesses, profiles, pending = fals
       {harnesses.length > 1 && (
         <label className="grid gap-1 text-meta text-ink-faint">
           {t('work.start.harness')}
-          <select value={adapter} onChange={(event) => setAdapter(event.target.value)} className={field}>
+          <select
+            value={adapter}
+            onChange={(event) => {
+              setAdapter(event.target.value);
+              // An account is a harness's own: one chosen for another harness means nothing here.
+              setProfile('');
+            }}
+            className={field}
+          >
             <option value="">{t('work.start.harnessDefault')}</option>
             {harnesses.map((name) => <option key={name} value={name}>{name}</option>)}
           </select>

@@ -55,13 +55,14 @@ export const Starting: StoryObj = {
       <StartSession
         repositories={['engine', 'game', '世界流式加载引擎']}
         harnesses={['claude-code', 'codex']}
-        profiles={PROFILES}
+        defaultHarness="claude-code"
+        accounts={{ 'claude-code': PROFILES }}
         onStart={() => {}}
       />
       {/* One harness and no accounts: both choices are absent rather than offered as one option. */}
-      <StartSession repositories={['engine']} harnesses={['claude-code']} profiles={[]} onStart={() => {}} />
+      <StartSession repositories={['engine']} harnesses={['claude-code']} accounts={{}} onStart={() => {}} />
       {/* Nothing on this machine to talk in. */}
-      <StartSession repositories={[]} harnesses={[]} profiles={[]} onStart={() => {}} />
+      <StartSession repositories={[]} harnesses={[]} accounts={{}} onStart={() => {}} />
     </div>
   ),
 };

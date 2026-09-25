@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Starting a session offered the default harness's accounts for any harness (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page. The *Start a session* form lets a person choose the
+agent tool and the account. It was handed the accounts of the driver's default harness only. So
+choosing Codex still offered Claude Code's accounts, and the spawn refused a profile name Codex had
+never heard of. An account chosen before switching harness also stayed chosen.
+
+**Root cause.** The frame computed one harness's accounts before the form knew which harness would
+be chosen.
+
+**Fix.** The form is handed every harness's accounts, and shows those of the harness chosen (the
+default's while none is). Changing the harness clears the account.
+
+**Verify.** `StartSession.test.tsx`, new: both cases failed first, and pass. Frame tests green.
+
 ## A shell with no home opened nothing and said nothing (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the desktop. A workspace build started without

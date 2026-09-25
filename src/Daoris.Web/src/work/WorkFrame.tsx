@@ -327,7 +327,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
               .map((row) => row.repository)
               .sort()}
             harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
-            profiles={Array.isArray(spawning?.profiles) ? spawning.profiles : []}
+            defaultHarness={spawning?.harness}
+            accounts={Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []]))}
             pending={startChat.isPending}
             onStart={onStart}
           />
