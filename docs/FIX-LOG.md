@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## One folder held in two accounts' files shared one row key (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page. *What needs you* lists a folder the agent has not
+been trusted in once per account file that holds it, since each file is a grant of its own. Rows
+were grouped by file and folder, but each row's id was the folder alone. The band keys its rows by
+kind and id, so one folder held in two accounts' files gave two rows one React key, and React could
+reconcile one onto the other or drop it as the list moved.
+
+**Root cause.** The grouping key and the row's id were two different things that should have been one.
+
+**Fix.** The row's id is the key it is grouped by: file and folder. The trust door reads the row's
+`trust` pair, not its id, so nothing else moves.
+
+**Verify.** `gives one folder held in two files two rows with ids of their own` failed on one shared
+id, and passes. Attention tests 25/25.
+
 ## A detached session had no timeline when wide, and a parked note could show nowhere (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page.

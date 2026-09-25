@@ -125,7 +125,9 @@ export function needsAPerson(
       continue;
     }
     folders.set(key, {
-      id: hold.folder,
+      // The row's identity is what makes it one row: the file AND the folder (REV3). The folder alone
+      // gave one folder held in two accounts' files two rows with one key.
+      id: key,
       kind: 'trust',
       title: hold.folder,
       where,

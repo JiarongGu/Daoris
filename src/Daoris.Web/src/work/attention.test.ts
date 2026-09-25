@@ -257,6 +257,20 @@ describe('a folder waiting on the person\'s trust', () => {
     expect(item.detail).toContain('permissions.allow');
   });
 
+  /**
+   * REV3 web-work F12: one folder held in two accounts' files is two grants, and two rows — and each
+   * row needs an id of its own, because the band keys its rows by kind and id. Both were `folder`.
+   */
+  it('gives one folder held in two files two rows with ids of their own', () => {
+    const other = { ...hold, trustFile: 'C:/somewhere/data/harnesses/claude-code/personal/.claude.json' };
+
+    const rows = needsAPerson([], [quest()], [registration('engine')], [], [hold, other])
+      .filter((row) => row.kind === 'trust');
+
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map((row) => row.id)).size).toBe(2);
+  });
+
   it('names an intake\'s room by its ask, since the ask was asked', () => {
     const room = { folder: 'C:/somewhere/data/intake/aurora', trustFile: hold.trustFile, ask: '7c1e9a04b2d5' };
 
