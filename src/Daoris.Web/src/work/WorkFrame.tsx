@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
@@ -11,6 +11,7 @@ import {
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
+import type { Usage } from './conversation';
 import { isIntake, sessionOrigin } from './identity';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -32,6 +33,10 @@ function remembered(key: string, fallback: number): number {
   const held = Number(stored(key));
   return Number.isFinite(held) && held > 0 ? held : fallback;
 }
+
+/** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
+const door = (structured?: boolean): 'structured' | 'text' | undefined =>
+  structured === true ? 'structured' : structured === false ? 'text' : undefined;
 
 /**
  * The **Work frame** (D55): the rail, the attended session, the composer and the output panel.
@@ -137,6 +142,10 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // The tree's files for `@` (CONV4d), asked for only while the person is writing a mention.
   const [mentioning, setMentioning] = useState(false);
   const treeFiles = useTreeFiles(talking ? attended!.id : null, mentioning);
+  // The conversation's context reading, as its record says (CONV5) — told by the conversation, and
+  // kept with the session it came from, so switching never shows one session's ring under another.
+  const [reading, setReading] = useState<{ session: string; usage?: Usage } | null>(null);
+  const onUsage = useCallback((session: string, usage?: Usage) => setReading({ session, usage }), []);
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that. 🔴 And only a record this
@@ -346,6 +355,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
                 tree={attended.tree}
                 live={live}
                 scroller={centre}
+                onUsage={onUsage}
               />
             </div>
           )}
@@ -375,6 +385,10 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
               refusal: treeFiles.error ? sentence(treeFiles.error) : null,
             }}
             onMentioning={setMentioning}
+            context={{
+              usage: reading?.session === attended.id ? reading.usage : undefined,
+              door: door(roster.find((row) => row.harness === attended.adapter)?.structured),
+            }}
             onSend={onSend}
             onFinish={() => end.mutate(attended.id, {
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),

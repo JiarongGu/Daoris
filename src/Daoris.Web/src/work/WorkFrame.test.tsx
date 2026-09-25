@@ -590,6 +590,47 @@ describe('starting and holding a conversation', () => {
     expect(screen.getByLabelText('message')).toHaveValue('look at @src/engine.cs ');
   });
 
+  /**
+   * CONV5: the context ring under the composer reads the conversation's own record — the one the
+   * conversation above it is drawn from, never a second fetch — and follows it live.
+   */
+  it('shows how full the conversation\'s context is, from its record, and follows it live', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: 'c0ffee11', earlier: false, latest: 2,
+          events: [
+            { seq: 1, at: '2026-09-26T10:00:00Z', kind: 'user', origin: 'person', text: 'read it' },
+            { seq: 2, at: '2026-09-26T10:00:02Z', kind: 'usage', used: 34_120, size: 1_000_000 },
+          ],
+        };
+      }
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    expect(await screen.findByRole('meter', { name: 'context' })).toHaveTextContent('3%');
+
+    await waitFor(() => expect(eventHandlers.has('DAORIS.SESSION_EVENTS')).toBe(true));
+    act(() => eventHandlers.get('DAORIS.SESSION_EVENTS')!({
+      session: 'c0ffee11', events: [{ seq: 3, at: '2026-09-26T10:00:03Z', kind: 'usage', used: 850_000, size: 1_000_000 }],
+    }));
+    expect(await screen.findByText('85%')).toBeInTheDocument();
+  });
+
+  /** A structured door that has not reported yet says so, never 0%. */
+  it('says a conversation has not reported its context yet, rather than showing it empty', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'HARNESSES' ? STRUCTURED_ROSTER : DRIVER_STATE));
+
+    show('c0ffee11');
+    expect(await screen.findByRole('img', { name: 'context: not measured' })).toBeInTheDocument();
+    expect(screen.queryByText('0%')).not.toBeInTheDocument();
+  });
+
   /** Unlisted is information: the host's sentence, where the files would be, and the typed path still goes. */
   it('says why the tree cannot be listed, in the host\'s words, where the files would be', async () => {
     SESSIONS = [CHAT];

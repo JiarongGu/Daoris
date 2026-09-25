@@ -225,6 +225,17 @@ describe('the composer', () => {
     expect(screen.getByRole('button', { name: '发送' })).toBeInTheDocument();
     await i18n.changeLanguage('en');
   });
+
+  /** CONV5: the context ring sits under the box, where the reference keeps it — and only where it is handed one. */
+  it('carries the context ring it is handed, and none when it is not', () => {
+    const { unmount } = show({ context: { usage: { used: 34_120, size: 1_000_000, most: 34_120 }, door: 'structured' } });
+    expect(screen.getByRole('meter', { name: 'context' })).toHaveTextContent('3%');
+    unmount();
+
+    show();
+    expect(screen.queryByRole('meter')).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'context: not measured' })).not.toBeInTheDocument();
+  });
 });
 
 /**

@@ -1,7 +1,7 @@
 # Claude Code's structured output, checked against the binary (CONV3, D76)
 
-**Carried by:** D76 and CONV3a (in the archive): the native door's `stream-json` mapping. A record,
-not a contract.
+**Carried by:** D76, CONV3a and CONV5 (in the archive): the native door's `stream-json` mapping, and
+a turn's usage on both doors. A record, not a contract.
 
 **Date:** 2026-09-25 · **Binary:** Claude Code 2.1.281, the machine's own on `PATH` · **Cost:** one
 real two-turn session, a word each, under the owner's authorisation of 2026-09-24.
@@ -86,6 +86,35 @@ The stop is a **control request** on stdin, beside the user lines:
 `aborted_tools` ends as **`cancelled`**, which is what the protocol door calls the same ending (ACP's
 stop reason). So the person's stop reads the same on both doors and never as a failure. A
 `control_response` is the driver's answer, not the conversation's, and stays out of the record.
+
+## A turn's usage, on both doors (CONV5)
+
+**Probed 2026-09-26.** Claude Code 2.1.282 on `PATH`, and `claude-code-acp` 0.79.0 (the dsh probe's
+install). The probe ran two turns on each door: one that read a file with a tool, and one of a single
+word.
+
+- **The native door's `result.usage` is the turn's total**, summed over its API calls. The tool turn's
+  two calls reported input 2 and 2, cache writes 16,605 and 112, and cache reads 17,228 and 33,833.
+  Its `result.usage` said 4, 16,717 and 51,061. Output is the exception: the streamed `assistant`
+  messages said 16 and 4, and `result.usage` said 80. So the result's figure is the one taken, never a
+  sum of the messages. `usage.iterations` held the last call only.
+- **The protocol door's prompt response carries the same four**, as `usage`: `inputTokens`,
+  `outputTokens`, `cachedReadTokens`, `cachedWriteTokens`, and a `totalTokens` that is their sum
+  (4 + 88 + 48,666 + 20,035 = 68,793). It is also the turn's own total: the second turn's figures
+  are its own, not a running sum. `_meta.quota` repeats them by model and names the models, and a
+  small model the harness called on its own (909 input tokens) is counted there and not in `usage`.
+- **Context** arrives as `usage_update` (`used`, `size`) during the turn on the protocol door. The
+  last one of a turn also carries a `cost`.
+- **Neither door reports when the first word came.** `result.duration_ms` is the native door's alone.
+- 🔴 **A stopped turn on the protocol door reports every count as zero** (seen on the window, a turn
+  stopped eight seconds in). The adapter tallies a turn when its `result` arrives, so a turn cancelled
+  before one answers with the empty tally, although it had read about 38,000 tokens of context.
+
+**What Daoris takes.** Each turn's four counts, from `result.usage` on one door and the prompt's
+`usage` on the other, kept on the turn's own event. A report whose every count is zero is kept as no
+report, since no turn that ran read nothing. Time comes from the driver's clock, from the ask
+to the turn's end, so it means the same on both doors. **Left on the wire:** the cost, the models'
+names and the by-model split (D24, TOOL3), and `totalTokens`, which is only the sum.
 
 **Why a message sent mid-turn is held by Daoris, not written at once.** The SDK's own declarations say
 a user line that arrives while a turn runs may be *folded into* that turn rather than answered after

@@ -208,6 +208,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
             // The protocol door's words for an ordinary ending and a stopped one, so each reads as one
             // thing whichever door it happened on.
             StopReason = stopped ? "cancelled" : !failed && subtype == "success" ? "end_turn" : subtype,
+            // The whole turn's counts, as the result sums them over its calls (CONV5) — never a sum of the
+            // streamed messages here, whose output the probe found under-counted.
+            Tokens = frame.TryGetProperty("usage", out var usage)
+                ? TurnTokens.Read(usage, "input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+                : null,
         });
 
         return new(lines, events);

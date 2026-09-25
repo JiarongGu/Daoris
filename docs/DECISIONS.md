@@ -3259,3 +3259,22 @@ the way both doors read it.** Measured first, on both doors
 - **Directories and other sessions are not offered.** The reference offers both. Neither was
   measured on either door, and a spelling nobody checked is how a completion offers what the
   harness then ignores.
+
+**Amended 2026-09-26 (CONV5): the meters are the harness's counts and the driver's clock, and
+nothing reported reads as nothing measured.** Measured on both doors first
+(`docs/2026-09-25-stream-json-evidence.md`, § CONV5).
+- **A turn's tokens are kept on its own `turn` event**: the four counts the wire reported for the
+  whole turn, from `result.usage` on the native door and the prompt response's `usage` on the
+  protocol door. Rejected: summing the streamed messages, whose output the probe found under-counted
+  (20 against the result's 80).
+- **A report whose every count is zero is no report.** `claude-code-acp` answers a turn stopped
+  before its `result` with an empty tally, after reading the whole context, and no turn that ran
+  read nothing. Rejected: showing the zeros as given, which is the one thing TOOL3 forbids.
+- **How long a turn took is the driver's clock**, from the ask to the first thing the agent did and
+  to the turn's end, because neither wire reports when the first word came and only one reports a
+  duration. Rejected: the native door's `duration_ms`, a measure the other door cannot give.
+- **The context ring reads the conversation's own record**, handed up by the organism that holds it.
+  Rejected: a bridge call of its own, which would be a second home for the stream.
+- **Absent says which absence it is.** A structured door that has not reported yet, a door that
+  carries only text, and a door the roster has not named each have their own sentence, and none of
+  them draws 0%.

@@ -6064,3 +6064,46 @@ route's test went), devkit 80, web unit 972 → 975, Playwright 21/21, family 27
 
 Gates: CLI 478, driver 685 → 689, modules 128 → 129, service 502, web unit 975 → 1006, code-map
 green, Playwright 21/21, family 279/279, deploy 39/39.
+
+## CONV5 — the meters (2026-09-26)
+
+- [x] ~~**CONV5 — meters.** A context ring under the composer and per-turn usage, from the usage the
+  wire reports; absent is never zero.~~
+✅ **done 2026-09-26**. D76 carries the amendment.
+
+- **Measured first** (`docs/2026-09-25-stream-json-evidence.md`, § CONV5), on both doors, with two
+  turns each: one that used a tool and one of a single word.
+  - The native door's `result.usage` is the turn's total over its API calls. The streamed messages
+    under-count output, 20 against the result's 80.
+  - The protocol door's prompt response carries the same four counts as `usage`, per turn.
+  - Neither door reports when the first word came.
+- **The driver:** `TurnTokens` on the `turn` event holds input, output, cache read and cache write,
+  each null where the wire said nothing. Both doors map their own names into it, and the record
+  keeps it across a restart. The cost, the models' names and the total stay on the wire.
+- **The page:**
+  - `toTurns` gives each turn its tokens, plus two spans from the driver's clock: how long it took,
+    and how soon the agent first did something.
+  - A finished turn ends with one quiet line, such as *4.9s · 75.9K in · 103 out*. Its tip carries
+    the breakdown and the first answer's time.
+  - `ContextRing`, a new molecule, sits at the far end of the composer's controls. It shows used
+    against the window, turns the warn tone from 80%, and puts the high-water mark in its tip.
+  - The ring reads the conversation's own record, handed up by `SessionConversation`. There is no
+    second fetch.
+  - `span()` formats a turn's seconds, where `elapsed()` formats a session's minutes.
+- **Looked at** on the scratch window with real chats:
+  - On Claude Code's door, a tool turn read *4.9s · 75.9K in · 103 out*, and the ring 4% (38,154 of
+    1,000,000).
+  - On `claude-code-acp`, in dark and 中文, the ring said 未测量 (not measured) before the first
+    turn and 4% four seconds into it, following the live `usage_update`.
+- **The window found two defects, both fixed:**
+  - A turn stopped on the protocol door read *0 in · 0 out*. The adapter answers a turn cancelled
+    before its `result` with an empty tally, so a report whose every count is zero is now no report,
+    test-first. Stopped turns on both doors now read their time alone.
+  - The ring's "not reported yet" sentence promised a report once a turn was under way. The native
+    door reports only when a turn ends, and a stopped turn may report none, so the sentence now
+    says that.
+- **Found on the way:** conversations are missing from what each account has carried, and the
+  Settings copy says only the protocol door reports. That is USAGE1, open in the backlog.
+
+Gates: CLI 478, driver 689 → 694, modules 129, service 502, web unit 1006 → 1026, code-map green,
+Playwright 21/21, family 279/279, deploy 39/39.

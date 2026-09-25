@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { compact, span } from '../format';
 import { cn } from '../lib/cn';
-import { Button, Dot, Icon } from '../ui';
+import { Button, Dot, Icon, Tip } from '../ui';
 import type { Ask, Block, PlanEntry, Turn } from './conversation';
 import { Markdown } from './Markdown';
 import { ToolCard } from './ToolCard';
@@ -107,7 +108,47 @@ function TurnView({ turn, tree, running }: { turn: Turn; tree?: string | null; r
       {turn.ended && turn.ended !== 'end_turn' && turn.ended !== 'cancelled' && (
         <p className="m-0 text-meta text-ink-faint">{t('work.conversation.ended', { reason: turn.ended })}</p>
       )}
+      {turn.ended && <TurnMeter turn={turn} />}
     </div>
+  );
+}
+
+/**
+ * How long a finished turn took and what it consumed (CONV5): the driver's clock, and the counts the
+ * harness reported for the whole turn — one quiet line, with the breakdown on hover. A count the wire
+ * did not give is a dash in the breakdown and absent from the line, never a zero; no price is claimed.
+ */
+function TurnMeter({ turn }: { turn: Turn }) {
+  const { t, i18n } = useTranslation();
+  const { tokens, took, firstAfter } = turn;
+  const exact = (value?: number | null) => (typeof value === 'number' ? value.toLocaleString(i18n.language) : '—');
+
+  // Input is what the harness read this turn, however it arrived: new, from its cache, or into it.
+  const inputs = [tokens?.input, tokens?.cacheRead, tokens?.cacheWrite].filter((n): n is number => typeof n === 'number');
+  const input = inputs.length > 0 ? inputs.reduce((sum, n) => sum + n, 0) : undefined;
+  const line = [
+    took !== undefined ? span(took) : null,
+    input !== undefined ? t('work.meter.in', { tokens: compact(input) }) : null,
+    typeof tokens?.output === 'number' ? t('work.meter.out', { tokens: compact(tokens.output) }) : null,
+  ].filter((part): part is string => part !== null);
+  if (line.length === 0) return null;
+
+  const said = [
+    took === undefined ? null
+      : firstAfter === undefined ? t('work.meter.took', { took: span(took) })
+        : t('work.meter.tookFirst', { took: span(took), first: span(firstAfter) }),
+    tokens ? t('work.meter.tokens', {
+      input: exact(input), fresh: exact(tokens.input), read: exact(tokens.cacheRead),
+      written: exact(tokens.cacheWrite), output: exact(tokens.output),
+    }) : null,
+  ].filter((sentence): sentence is string => sentence !== null)
+    // Sentences are joined the catalogue's way: English puts a space after a full stop, and Chinese does not.
+    .reduce((first, second) => t('work.meter.join', { first, second }));
+
+  return (
+    <Tip content={said} side="top">
+      <span tabIndex={0} className="justify-self-start text-meta text-ink-faint">{line.join(' · ')}</span>
+    </Tip>
   );
 }
 

@@ -49,7 +49,20 @@ export type SessionEvent = {
   used?: number | null;
   size?: number | null;
   stopReason?: string | null;
+  /** For `turn`: what it consumed, where the wire said (CONV5). */
+  tokens?: TurnTokens | null;
   raw?: string | null;
+};
+
+/**
+ * What one turn consumed, as the harness reported it for the whole turn (CONV5) — `TurnTokens` in the
+ * driver. A count the wire did not give is absent, never zero.
+ */
+export type TurnTokens = {
+  input?: number | null;
+  output?: number | null;
+  cacheRead?: number | null;
+  cacheWrite?: number | null;
 };
 
 /** What `SESSION_HISTORY` answers: a page, oldest first. */
@@ -101,8 +114,21 @@ export type ChatMessage = { text: string; files: string[] };
 /**
  * One turn: what was asked, what the agent did about it, and how it ended. A turn with no `ended`
  * is still running — or ended without the wire saying, which reads the same.
+ *
+ * What it consumed is the harness's report (`tokens`). How long it took is the DRIVER's clock, which
+ * stamps every event as it arrives: from the ask to the first thing the agent did (`firstAfter`) and
+ * to the turn's end (`took`), in milliseconds — the same measure on both doors, since neither wire
+ * reports when the first word came (CONV5).
  */
-export type Turn = { key: string; ask?: Ask; items: Block[]; ended?: string };
+export type Turn = {
+  key: string;
+  ask?: Ask;
+  items: Block[];
+  ended?: string;
+  tokens?: TurnTokens;
+  took?: number;
+  firstAfter?: number;
+};
 
 /** Context as the harness reported it: the latest reading and the highest (TOOL3's high-water mark). */
 export type Usage = { used: number; size: number; most: number };
@@ -150,6 +176,8 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
       case 'turn': {
         const turn = here(key);
         turn.ended = event.stopReason ?? 'unknown';
+        if (event.tokens) turn.tokens = event.tokens;
+        if (turn.ask) turn.took = since(turn.ask.at, event.at);
         if (turn.ended === 'cancelled') {
           for (let at = turn.items.length - 1; at >= 0; at -= 1) {
             const item = turn.items[at]!;
@@ -205,7 +233,19 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
     }
   }
 
+  // The first thing the agent did, after the ask: the driver's own note is not the agent answering.
+  for (const turn of turns) {
+    const first = turn.items.find((item) => item.kind !== 'note');
+    if (turn.ask && first) turn.firstAfter = since(turn.ask.at, first.at);
+  }
+
   return { turns, usage };
+}
+
+/** Milliseconds from one stamp to a later one, or undefined when either is not a time. */
+function since(from: string, to: string): number | undefined {
+  const span = Date.parse(to) - Date.parse(from);
+  return Number.isFinite(span) && span >= 0 ? span : undefined;
 }
 
 /**

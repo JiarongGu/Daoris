@@ -112,6 +112,45 @@ describe('toTurns', () => {
   });
 
   /**
+   * CONV5: a turn carries what it consumed as the harness reported it, and how long it took by the
+   * driver's clock — from the ask to the first thing the agent did, and to the turn's end. The driver's
+   * own note is not the agent answering. A turn the wire told nothing of its tokens carries none.
+   */
+  it('carries each turn\'s tokens, and how long it took by the driver\'s clock', () => {
+    const at = (seconds: number) => new Date(Date.UTC(2026, 8, 26, 10, 0, 0) + seconds * 1000).toISOString();
+    const { turns } = toTurns([
+      { seq: 1, at: at(0), kind: 'user', origin: 'person', text: 'read it' },
+      { seq: 2, at: at(0.5), kind: 'note', text: 'the driver says something' },
+      { seq: 3, at: at(1.5), kind: 'tool', id: 't1', title: 'Read a.md', status: 'in_progress' },
+      { seq: 4, at: at(4), kind: 'message', text: 'hello' },
+      { seq: 5, at: at(4.75), kind: 'turn', stopReason: 'end_turn', tokens: { input: 4, output: 80, cacheRead: 51061, cacheWrite: 16717 } },
+      { seq: 6, at: at(10), kind: 'user', origin: 'person', text: 'again' },
+      { seq: 7, at: at(11), kind: 'turn', stopReason: 'end_turn' },
+    ]);
+
+    expect(turns[0]).toMatchObject({
+      tokens: { input: 4, output: 80, cacheRead: 51061, cacheWrite: 16717 }, took: 4750, firstAfter: 1500,
+    });
+    expect(turns[1]!.tokens).toBeUndefined();
+    expect(turns[1]).toMatchObject({ took: 1000 });
+    expect(turns[1]!.firstAfter).toBeUndefined();
+  });
+
+  /** A turn with nothing asked has no start to measure from, and a running one no end. */
+  it('measures no span it has no ends for', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'message', text: 'before any ask' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+      e(3, { kind: 'user', origin: 'person', text: 'still going' }),
+      e(4, { kind: 'message', text: 'working' }),
+    ]);
+
+    expect(turns[0]!.took).toBeUndefined();
+    expect(turns[1]!.took).toBeUndefined();
+    expect(turns[1]!.firstAfter).toBeDefined();
+  });
+
+  /**
    * CONV4b: the calls a stop cut are the ones still open when the turn ended cancelled — whatever the
    * harness called them. Claude Code answers the cut call as failed, another agent leaves it running,
    * and either way the person stopped it. A call that failed earlier and was followed by more work

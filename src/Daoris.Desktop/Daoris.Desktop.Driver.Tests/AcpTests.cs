@@ -615,6 +615,56 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// CONV5: a turn's tokens are the prompt response's <c>usage</c> — the turn's own totals, measured
+    /// on <c>claude-code-acp</c> (the probe's second turn). The total, the cost and the by-model split
+    /// stay on the wire; a response with no <c>usage</c> leaves the turn's tokens unknown, never zero.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_carries_the_tokens_its_prompt_response_reported()
+    {
+        var events = new List<SessionEvent>();
+        var answers = new Queue<string>([
+            """{"stopReason":"end_turn","usage":{"inputTokens":2,"outputTokens":3,"cachedReadTokens":35480,"cachedWriteTokens":39,"totalTokens":35524},"_meta":{"quota":{"model_usage":[{"model":"some-model"}]}}}""",
+            """{"stopReason":"end_turn"}""",
+        ]);
+        var agent = new FakeAgent((frame, self) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1}"""),
+            "session/new" => Ok(frame, """{"sessionId":"s-8"}"""),
+            "session/prompt" => Ok(frame, answers.Dequeue()),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        await session.PromptAsync("one word", CancellationToken.None);
+        await session.PromptAsync("another", CancellationToken.None);
+        session.Release();
+
+        var turns = events.Where(e => e.Kind == SessionEventKind.Turn).ToList();
+        Assert.Equal(new TurnTokens(Input: 2, Output: 3, CacheRead: 35480, CacheWrite: 39), turns[0].Tokens);
+        Assert.Null(turns[1].Tokens);
+        Assert.All(events, e => Assert.DoesNotContain("some-model", e.Raw ?? ""));
+    }
+
+    /// <summary>
+    /// Seen on the window (CONV5): <c>claude-code-acp</c> tallies a turn at its <c>result</c>, so a turn
+    /// cancelled before one answers with every count zero — after reading 38,000 tokens of context. No
+    /// turn that ran read nothing, so a report of nothing at all is no report, and the turn's tokens stay
+    /// unknown rather than reading as a turn that cost nothing.
+    /// </summary>
+    [Fact]
+    public void A_report_whose_every_count_is_zero_is_no_report()
+    {
+        using var zeros = JsonDocument.Parse("""{"inputTokens":0,"outputTokens":0,"cachedReadTokens":0,"cachedWriteTokens":0,"totalTokens":0}""");
+        using var some = JsonDocument.Parse("""{"inputTokens":0,"outputTokens":5,"cachedReadTokens":0,"cachedWriteTokens":0}""");
+
+        Assert.Null(TurnTokens.Read(zeros.RootElement, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens"));
+        Assert.Equal(new TurnTokens(0, 5, 0, 0),
+            TurnTokens.Read(some.RootElement, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens"));
+    }
+
+    /// <summary>
     /// Stopping a TURN is not ending the conversation: `session/cancel` for the turn in flight, its
     /// ending as the agent reports it, and the session still there for the next message.
     /// </summary>

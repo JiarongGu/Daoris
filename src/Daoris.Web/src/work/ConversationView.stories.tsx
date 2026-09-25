@@ -8,7 +8,9 @@ import { type SessionEvent, toTurns } from './conversation';
 // update this version does not know, a door that carries only text, and 中文.
 
 let seq = 0;
-const ev = (over: Partial<SessionEvent>): SessionEvent => ({ seq: ++seq, at: '2026-09-25T09:00:00Z', kind: 'message', ...over });
+// A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).
+const ev = (over: Partial<SessionEvent>): SessionEvent =>
+  ({ seq: ++seq, at: new Date(Date.UTC(2026, 8, 25, 9) + seq * 1500).toISOString(), kind: 'message', ...over });
 
 const DRIVEN: SessionEvent[] = [
   ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget" — with `quest_respond`, do the work in this repository, commit it, and close the quest.\n\nThe game needs a per-frame cap on chunk hydration.' }),
@@ -27,7 +29,7 @@ const DRIVEN: SessionEvent[] = [
     content: [{ type: 'text', text: 'running 4 tests\ntest streaming::cap_holds ... ok\ntest streaming::budget_resets ... ok\n\ntest result: ok. 4 passed' }] }),
   ev({ kind: 'note', text: 'permission refused: git push — the repository\'s own configuration governs, and the driver may not widen it' }),
   ev({ kind: 'message', text: 'Capped hydration at **4 chunks per frame** in `hydrate`:\n\n```rust\nif budget.spent() {\n    break;\n}\n```\n\n| test | result |\n|---|---|\n| cap_holds | ok |\n| budget_resets | ok |\n\nCommitted as `a1b2c3d`. The push is yours.' }),
-  ev({ kind: 'turn', stopReason: 'end_turn' }),
+  ev({ kind: 'turn', stopReason: 'end_turn', tokens: { input: 12, output: 1_840, cacheRead: 214_300, cacheWrite: 18_950 } }),
 ];
 
 const RUNNING: SessionEvent[] = [
@@ -63,7 +65,7 @@ const STOPPED: SessionEvent[] = [
 const CHINESE: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: '把每帧的加载上限做成可配置的。' }),
   ev({ kind: 'message', text: '已在 `level.rs` 中加入 `streaming_budget` 字段，默认值为 **4**。' }),
-  ev({ kind: 'turn', stopReason: 'end_turn' }),
+  ev({ kind: 'turn', stopReason: 'end_turn', tokens: { input: 3, output: 212, cacheRead: 35_480, cacheWrite: 39 } }),
 ];
 
 const meta: Meta<typeof ConversationView> = {

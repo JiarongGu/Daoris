@@ -1,8 +1,8 @@
-import { type RefObject, useMemo } from 'react';
+import { type RefObject, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHarnesses, useSessionEvents } from '../shell';
 import { Icon } from '../ui';
-import { toTurns } from './conversation';
+import { toTurns, type Usage } from './conversation';
 import { ConversationView } from './ConversationView';
 import { useFollowTail } from './followTail';
 
@@ -17,7 +17,7 @@ import { useFollowTail } from './followTail';
  *
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
-export function SessionConversation({ session, adapter, chat = false, tree, live, scroller }: {
+export function SessionConversation({ session, adapter, chat = false, tree, live, scroller, onUsage }: {
   session: string;
   /** The harness it runs on — whose declaration says whether its door keeps a conversation (D76 §1). */
   adapter?: string;
@@ -28,6 +28,11 @@ export function SessionConversation({ session, adapter, chat = false, tree, live
   live: boolean;
   /** The region the conversation scrolls in. */
   scroller: RefObject<HTMLElement | null>;
+  /**
+   * Told the context reading whenever it changes (CONV5), for the ring under the composer — which
+   * reads this record rather than holding a second one: the stream has one home.
+   */
+  onUsage?: (session: string, usage?: Usage) => void;
 }) {
   const { t } = useTranslation();
   const { events, earlier, loaded, loadEarlier } = useSessionEvents(session);
@@ -35,7 +40,13 @@ export function SessionConversation({ session, adapter, chat = false, tree, live
   // as the console sentence: it claims least.
   const harnesses = useHarnesses();
   const structured = harnesses.data?.harnesses?.find((row) => row.harness === adapter)?.structured;
-  const { turns } = useMemo(() => toTurns(events), [events]);
+  const { turns, usage } = useMemo(() => toTurns(events), [events]);
+
+  // Told on a change of reading only: a callback that changed on every render would otherwise tell the
+  // frame, which re-renders, which hands a new callback, round and round.
+  const report = useRef(onUsage);
+  report.current = onUsage;
+  useEffect(() => { report.current?.(session, usage); }, [session, usage]);
 
   // What changes when the conversation grows: the last event, and its text as chunks join it.
   const last = events[events.length - 1];

@@ -96,6 +96,33 @@ public sealed class ClaudeStreamJsonTests
         Assert.All(events, e => Assert.DoesNotContain("some-model", e.Raw ?? ""));
     }
 
+    /// <summary>
+    /// CONV5: a turn's tokens are the result's own totals — the probe's tool turn, whose two calls the
+    /// result sums. The streamed messages under-count the output (16 and 4 against the result's 80), so
+    /// the turn never adds them up itself.
+    /// </summary>
+    [Fact]
+    public void A_turn_carries_the_tokens_its_result_reported_for_the_whole_turn()
+    {
+        const string first = """{"type":"assistant","message":{"id":"msg_a","content":[{"type":"tool_use","id":"t1","name":"Read","input":{"file_path":"a.md"}}],"usage":{"input_tokens":2,"cache_creation_input_tokens":16605,"cache_read_input_tokens":17228,"output_tokens":16}}}""";
+        const string second = """{"type":"assistant","message":{"id":"msg_b","content":[{"type":"text","text":"hello"}],"usage":{"input_tokens":2,"cache_creation_input_tokens":112,"cache_read_input_tokens":33833,"output_tokens":4}}}""";
+        const string result = """{"type":"result","subtype":"success","is_error":false,"num_turns":2,"duration_ms":4751,"usage":{"input_tokens":4,"cache_creation_input_tokens":16717,"cache_read_input_tokens":51061,"output_tokens":80,"iterations":[{"input_tokens":2,"output_tokens":4,"cache_read_input_tokens":33833,"cache_creation_input_tokens":112}]},"modelUsage":{"some-model":{"contextWindow":1000000}}}""";
+
+        var (_, events, _) = Map(first, second, result);
+
+        var turn = Assert.Single(events, e => e.Kind == SessionEventKind.Turn);
+        Assert.Equal(new TurnTokens(Input: 4, Output: 80, CacheRead: 51061, CacheWrite: 16717), turn.Tokens);
+    }
+
+    /// <summary>Absent is never zero: a result that reported no usage leaves the turn's tokens unknown.</summary>
+    [Fact]
+    public void A_result_that_reported_no_usage_leaves_the_turns_tokens_unknown()
+    {
+        var (_, events, _) = Map("""{"type":"result","subtype":"error_during_execution","is_error":true,"result":"Invalid API key"}""");
+
+        Assert.Null(Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Tokens);
+    }
+
     [Fact]
     public void A_tool_call_and_its_result_are_one_card_with_the_edit_as_a_diff()
     {

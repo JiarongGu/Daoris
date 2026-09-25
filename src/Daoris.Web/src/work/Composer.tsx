@@ -5,7 +5,8 @@ import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry
 import { size } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Icon, Tip } from '../ui';
-import type { ChatMessage } from './conversation';
+import { ContextRing } from './ContextRing';
+import type { ChatMessage, Usage } from './conversation';
 import { MentionList } from './MentionList';
 import { mentionAt, rankMentions, withMention } from './mentions';
 
@@ -63,7 +64,7 @@ export type MentionSource = { files: string[] | null; unlisted: number; refusal:
  */
 export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
-  queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning,
+  queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning, context,
   onSend, onFinish, onStop, onStopTurn,
 }: {
   /** Whether anything is listening. False is an ending, not a disabled state. */
@@ -87,6 +88,8 @@ export function Composer({
   mentions?: MentionSource;
   /** Told whether a mention is being written, so the frame asks for the files only then. */
   onMentioning?: (writing: boolean) => void;
+  /** How full the session's context is, for the ring under the box (CONV5). Absent, no ring. */
+  context?: { usage?: Usage; door?: 'structured' | 'text' };
   /** The words and the files attached to them. */
   onSend: (text: string, files: File[]) => void;
   onFinish: () => void;
@@ -341,6 +344,8 @@ export function Composer({
             </Tip>
           </>
         )}
+        {/* How full the context is (CONV5), at the row's far end, where the reference keeps it. */}
+        {context && <span className="ml-auto"><ContextRing usage={context.usage} door={context.door} /></span>}
       </div>
     </form>
   );

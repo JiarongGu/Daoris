@@ -60,6 +60,24 @@ export function elapsed(from: string, to?: string | null): string {
 }
 
 /**
+ * A short span in milliseconds — how long a turn took (CONV5), where `elapsed` measures a session.
+ * Tenths under ten seconds, whole seconds under a minute, then minutes and seconds; an hour and more
+ * reads as `elapsed` says it.
+ */
+export function span(ms: number): string {
+  const seconds = Math.max(0, ms) / 1000;
+  if (seconds < 10) {
+    return i18n.t('duration.seconds', {
+      seconds: (Math.round(seconds * 10) / 10).toLocaleString(i18n.language, { maximumFractionDigits: 1 }),
+    });
+  }
+  if (seconds < 60) return i18n.t('duration.seconds', { seconds: Math.round(seconds) });
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return i18n.t('duration.minuteSeconds', { minutes, seconds: Math.floor(seconds % 60) });
+  return i18n.t('duration.hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 });
+}
+
+/**
  * The sentence a failure puts in front of the person, whichever half of the platform it came from.
  *
  * @remarks

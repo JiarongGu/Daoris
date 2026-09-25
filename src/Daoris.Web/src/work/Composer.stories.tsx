@@ -91,5 +91,10 @@ export const MentioningAFile: Story = {
   },
 };
 
+/** How full the context is (CONV5), at the far end of the controls, where the reference keeps it. */
+export const WithContext: Story = {
+  args: { context: { usage: { used: 34_120, size: 1_000_000, most: 41_000 }, door: 'structured' } },
+};
+
 /** A door that carries only text cannot see a turn end, so it offers no stop — never one that is refused. */
 export const TurnRunningOnATextDoor: Story = { args: { taking: true, stoppable: false, onStopTurn: () => {} } };

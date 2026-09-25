@@ -49,6 +49,40 @@ public sealed record ToolContent(
 public sealed record PlanEntry(string Content, string? Status = null, string? Priority = null);
 
 /// <summary>
+/// What one turn consumed, as the harness reported it for the whole turn (CONV5): new input, output,
+/// input read from its cache, and input written to it. Each is null where the wire did not say — never
+/// zero (TOOL3).
+/// </summary>
+/// <remarks>
+/// Counts only. The total is their sum and is not kept twice; the cost and the models' names stay on
+/// the wire (D24, TOOL3). Measured on both doors: docs/2026-09-25-stream-json-evidence.md, § CONV5.
+/// </remarks>
+public sealed record TurnTokens(long? Input, long? Output, long? CacheRead, long? CacheWrite)
+{
+    /// <summary>
+    /// Four counts from a wire's usage object, by that wire's own names — or null when it named none, or
+    /// named every one as zero.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>All zero is no report</b> (seen on the window, CONV5): <c>claude-code-acp</c> tallies a turn
+    /// at its <c>result</c>, so a turn cancelled before one answers with every count zero, after reading
+    /// the whole context. No turn that ran read nothing, and a zero here would claim one did.
+    /// </remarks>
+    public static TurnTokens? Read(
+        JsonElement usage, string input, string output, string cacheRead, string cacheWrite)
+    {
+        if (usage.ValueKind != JsonValueKind.Object) return null;
+        long? Count(string name) =>
+            usage.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var n)
+                ? n
+                : null;
+        var tokens = new TurnTokens(Count(input), Count(output), Count(cacheRead), Count(cacheWrite));
+        long?[] counts = [tokens.Input, tokens.Output, tokens.CacheRead, tokens.CacheWrite];
+        return counts.All(count => count is null or 0) ? null : tokens;
+    }
+}
+
+/// <summary>
 /// One thing a session did, in Daoris's vocabulary (D76 §1): what the page renders a conversation
 /// from, live and after a restart.
 /// </summary>
@@ -105,6 +139,9 @@ public sealed record SessionEvent
     public long? Size { get; init; }
 
     public string? StopReason { get; init; }
+
+    /// <summary>For <see cref="SessionEventKind.Turn"/>: what the turn consumed, where the wire said (CONV5).</summary>
+    public TurnTokens? Tokens { get; init; }
 
     /// <summary>What an unknown or unreadable frame said, compact and bounded.</summary>
     public string? Raw { get; init; }

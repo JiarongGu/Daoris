@@ -1,6 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from './i18n';
-import { ago, compact, elapsed, sentence, sittingDays } from './format';
+import { ago, compact, elapsed, sentence, sittingDays, span } from './format';
+
+/** CONV5: a turn's span, which is seconds where a session's is minutes. */
+describe('span', () => {
+  it('says a short turn to the tenth, a longer one in whole seconds, then minutes and seconds', () => {
+    expect(span(1500)).toBe('1.5s');
+    expect(span(4000)).toBe('4s');
+    expect(span(42_400)).toBe('42s');
+    expect(span(72_000)).toBe('1m 12s');
+    expect(span(2 * 3_600_000 + 14 * 60_000 + 9_000)).toBe('2h 14m');
+  });
+
+  it('speaks the active catalog', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      expect(span(4_750)).toBe('4.8 秒');
+      expect(span(72_000)).toBe('1 分 12 秒');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
 
 describe('compact', () => {
   it('keeps small counts as locale numbers', () => {

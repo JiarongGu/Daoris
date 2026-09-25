@@ -109,6 +109,25 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Equal(3, next.Seq);
     }
 
+    /// <summary>
+    /// CONV5: a turn's tokens are read back after a restart as they were written — and a count the wire
+    /// never gave stays unknown on the way back, rather than becoming a zero.
+    /// </summary>
+    [Fact]
+    public void A_turns_tokens_read_back_as_written_with_an_unknown_count_still_unknown()
+    {
+        new SessionEvents(_directory).Append("a1b2c3", new SessionEvent
+        {
+            Kind = SessionEventKind.Turn, StopReason = "end_turn",
+            Tokens = new TurnTokens(Input: 4, Output: 80, CacheRead: 51061, CacheWrite: null),
+        });
+
+        var turn = Assert.Single(new SessionEvents(_directory).Page("a1b2c3").Events);
+
+        Assert.Equal(new TurnTokens(4, 80, 51061, null), turn.Tokens);
+        Assert.DoesNotContain("cacheWrite", File.ReadAllText(Path.Combine(_directory, "a1b2c3.events.jsonl")));
+    }
+
     [Fact]
     public void A_page_is_the_latest_events_and_says_when_there_are_earlier_ones()
     {

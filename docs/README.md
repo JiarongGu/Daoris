@@ -48,7 +48,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-24-agt2b-channel-evidence.md` | evidence | D67, AGT2b |
 | `2026-09-24-deploy1-acp-trust-evidence.md` | evidence | D73 |
 | `2026-09-24-reference-gap-study.md` | study | D76, the live direction |
-| `2026-09-25-stream-json-evidence.md` | evidence | D76, CONV3a |
+| `2026-09-25-stream-json-evidence.md` | evidence | D76, CONV3a, CONV5 |
 | `2026-09-25-message-content-evidence.md` | evidence | D76, CONV4c, CONV4d |
 
 ## Records

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, toTurns } from './conversation';
@@ -12,7 +13,7 @@ const at = '2026-09-25T00:00:00Z';
 let seq = 0;
 const ev = (over: Partial<SessionEvent>): SessionEvent => ({ seq: ++seq, at, kind: 'message', ...over });
 const view = (events: SessionEvent[], props: Partial<Parameters<typeof ConversationView>[0]> = {}) =>
-  render(<ConversationView turns={toTurns(events).turns} {...props} />);
+  render(<Tooltip.Provider><ConversationView turns={toTurns(events).turns} {...props} /></Tooltip.Provider>);
 
 const FINISHED = () => [
   ev({ kind: 'user', origin: 'person', text: 'cap the hydration' }),
@@ -42,6 +43,35 @@ describe('ConversationView', () => {
     // An edit says its size closed: one line removed, two added.
     expect(screen.getByText('+2')).toBeTruthy();
     expect(screen.getByText('−1')).toBeTruthy();
+  });
+
+  /**
+   * CONV5: a finished turn says how long it took and what it consumed — the driver's clock and the
+   * harness's counts — on one quiet line, with the breakdown on hover. A turn whose wire reported no
+   * tokens says only its time, and a running turn has no line yet.
+   */
+  it('says under a finished turn how long it took and what it consumed', async () => {
+    const stamp = (seconds: number) => new Date(Date.UTC(2026, 8, 26, 10) + seconds * 1000).toISOString();
+    view([
+      ev({ kind: 'user', origin: 'person', text: 'read it', at: stamp(0) }),
+      ev({ kind: 'tool', id: 't9', title: 'Read a.md', toolKind: 'read', status: 'completed', at: stamp(1.5) }),
+      ev({ kind: 'message', text: 'hello', at: stamp(4) }),
+      ev({ kind: 'turn', stopReason: 'end_turn', at: stamp(4.75), tokens: { input: 4, output: 80, cacheRead: 51_061, cacheWrite: 16_717 } }),
+      ev({ kind: 'user', origin: 'person', text: 'again', at: stamp(10) }),
+      ev({ kind: 'message', text: 'done', at: stamp(10.4) }),
+      ev({ kind: 'turn', stopReason: 'end_turn', at: stamp(11) }),
+      ev({ kind: 'user', origin: 'person', text: 'and more', at: stamp(20) }),
+      ev({ kind: 'message', text: 'on it', at: stamp(21) }),
+    ], { live: true });
+
+    const first = screen.getByText('4.8s · 67.8K in · 80 out');
+    expect(screen.getByText('1s')).toBeTruthy();
+    // The running turn has said nothing about itself yet.
+    expect(screen.queryByText(/on it.*·/)).toBeNull();
+
+    await userEvent.hover(first);
+    expect((await screen.findAllByText(/the first answer came after 1\.5s/))[0]).toBeTruthy();
+    expect(screen.getAllByText(/4 new, 51,061 read from its cache, 16,717 written to it/)[0]).toBeTruthy();
   });
 
   it('keeps a running turn open, and says it is working', () => {
@@ -82,7 +112,7 @@ describe('ConversationView', () => {
     expect(screen.queryByText('3 failing')).toBeNull();
 
     const failed = [...running, ev({ kind: 'tool', id: 'c5', status: 'failed', output: '3 failing' })];
-    rerender(<ConversationView turns={toTurns(failed).turns} />);
+    rerender(<Tooltip.Provider><ConversationView turns={toTurns(failed).turns} /></Tooltip.Provider>);
 
     expect(screen.getByText('3 failing')).toBeTruthy();
   });

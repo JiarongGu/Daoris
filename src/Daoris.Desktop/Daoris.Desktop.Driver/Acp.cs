@@ -280,7 +280,15 @@ public sealed class AcpSession(
         var stopReason = result.TryGetProperty("stopReason", out var reason)
             ? reason.GetString() ?? "unknown"
             : "unknown";
-        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = stopReason });
+        Emit(new SessionEvent
+        {
+            Kind = SessionEventKind.Turn,
+            StopReason = stopReason,
+            // The turn's own counts, where the agent reported them (CONV5): the response's `usage`.
+            Tokens = result.TryGetProperty("usage", out var usage)
+                ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
+                : null,
+        });
         return stopReason;
     }
 
