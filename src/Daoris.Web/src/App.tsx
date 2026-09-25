@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useAsks, useEntry, useImportFolder, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
@@ -8,7 +8,7 @@ import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Drawer, failure, Icon, type IconName, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
-  type ToastItem, useErrorNotify,
+  useErrorNotify, useToasts,
 } from './ui';
 import { OverviewView } from './OverviewView';
 import { ConvergenceView } from './ConvergenceView';
@@ -33,7 +33,6 @@ import { needsAPerson } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
 import { commands } from './commands';
-import { withNotice } from './signals';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
@@ -113,8 +112,7 @@ export function App() {
   // The application's own card. It is where the NAME lives now that the strip carries only the mark.
   const [about, setAbout] = useState(false);
   const [workIntent, setWorkIntent] = useState<'start' | 'review' | null>(null);
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const nextToast = useRef(1);
+  const { toasts, notify, dismiss } = useToasts();
 
   // The window this page is the chrome of (SURF7). In a browser `present` is false and the strip is
   // simply a strip: no caption room, no drag, nothing to command.
@@ -173,18 +171,6 @@ export function App() {
       scope.setWorkspace(null);
     }
   }, [workspaces.data, scope]);
-
-  const dismiss = useCallback((id: number) => {
-    setToasts((current) => current.filter((toast) => toast.id !== id));
-  }, []);
-
-  const notify = useCallback((text: string, kind: 'ok' | 'error' = 'ok') => {
-    const id = nextToast.current;
-    nextToast.current += 1;
-    // Capped, so a burst cannot climb the window — the newest are what a corner can promise to
-    // show. The number has a name and a test now rather than being a `-3` nobody could search for.
-    setToasts((current) => withNotice(current, { id, text, kind }));
-  }, []);
 
   useErrorNotify(reading.error, notify);
 

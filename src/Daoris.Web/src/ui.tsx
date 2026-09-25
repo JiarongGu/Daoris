@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ButtonHTMLAttributes, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { sentence } from './format';
 import * as Toast from '@radix-ui/react-toast';
@@ -15,6 +15,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
 import { cn } from './lib/cn';
+import { withNotice } from './signals';
 
 // The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
 // behaviour — focus traps, dismissal, ARIA, typeahead — and every pixel stays ours, which is how the
@@ -818,6 +819,28 @@ export type ToastItem = { id: number; text: string; kind: 'ok' | 'error' };
 
 /** The one shape a view's outcome channel has — declared once, not restated at every prop. */
 export type Notify = (text: string, kind?: 'ok' | 'error') => void;
+
+/**
+ * A window's notices: the list its corner shows, and the two ways to change it. Capped by
+ * `withNotice`, so a burst cannot climb the window — the newest are what a corner can promise to
+ * show. Both windows hold one; each had written it out (REV3 CLEAN1).
+ */
+export function useToasts(): { toasts: ToastItem[]; notify: Notify; dismiss: (id: number) => void } {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const next = useRef(1);
+
+  const dismiss = useCallback((id: number) => {
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  }, []);
+
+  const notify = useCallback<Notify>((text, kind = 'ok') => {
+    const id = next.current;
+    next.current += 1;
+    setToasts((current) => withNotice(current, { id, text, kind }));
+  }, []);
+
+  return { toasts, notify, dismiss };
+}
 
 /**
  * Outcomes and errors, spoken from one corner — the service's sentence verbatim, because the refusal

@@ -1,9 +1,7 @@
-import { useCallback, useRef, useState } from 'react';
 import { useShenora } from '@shenora/react';
 import { App } from './App';
 import { ShellSignals } from './ShellSignals';
-import { withNotice } from './signals';
-import { Toasts, type ToastItem } from './ui';
+import { Toasts, useToasts } from './ui';
 import { DetachedSession } from './work/DetachedSession';
 import { MonitorWindow } from './work/MonitorWindow';
 import type { SecondaryWindow } from './work/window';
@@ -28,18 +26,7 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
   // platform rather than on an empty imitation of the desktop, which is the same fallback the Work
   // frame already makes for a remembered mode it cannot honour.
   const { isAvailable } = useShenora();
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const nextToast = useRef(1);
-
-  const dismiss = useCallback((id: number) => {
-    setToasts((current) => current.filter((toast) => toast.id !== id));
-  }, []);
-
-  const notify = useCallback((text: string, kind: 'ok' | 'error' = 'ok') => {
-    const id = nextToast.current;
-    nextToast.current += 1;
-    setToasts((current) => withNotice(current, { id, text, kind }));
-  }, []);
+  const { toasts, notify, dismiss } = useToasts();
 
   if (!isAvailable) return <App />;
 
