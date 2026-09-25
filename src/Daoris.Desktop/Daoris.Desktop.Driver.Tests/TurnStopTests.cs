@@ -93,8 +93,15 @@ public sealed class TurnStopTests : IDisposable
 
         Assert.Equal(["user: hold", "interrupt", "result: hold (interrupted)", "user: again", "result: again"], HeardLines());
         Assert.DoesNotContain("person: after", Said(session));
-        Assert.False(session.Queues[^1].Taking);
-        Assert.Empty(session.Queues[^1].Queued);
+        // The queue is told a turn ended AFTER the record holds it (ChatTurns' own ordering), so the
+        // last notice is waited for, as the first turn's is above — read at once, it raced (REV3).
+        await Until(() => LastQueue(session) is { Taking: false }, () => session.Seen());
+        Assert.Empty(LastQueue(session)!.Queued);
+    }
+
+    private static ChatQueue? LastQueue(Session session)
+    {
+        lock (session.Queues) return session.Queues.Count > 0 ? session.Queues[^1] : null;
     }
 
     /// <summary>The same stop on the protocol door: <c>session/cancel</c>, and the turn ends on the agent's own word.</summary>
