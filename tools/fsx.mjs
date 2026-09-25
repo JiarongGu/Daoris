@@ -2,7 +2,7 @@
  * The one filesystem helper the tooling shares. It existed five times — both rehearsals, the package
  * stager, and the web e2e host — each copy carrying the same one-line justification.
  */
-import { copyFileSync, mkdirSync, readdirSync, realpathSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,4 +33,25 @@ export function copyTree(from, to) {
     if (entry.isDirectory()) copyTree(source, target);
     else copyFileSync(source, target);
   }
+}
+
+/** Every file under `root`, as `/`-separated paths relative to it. */
+function filesUnder(root, at = '') {
+  if (!existsSync(join(root, at))) return [];
+  return readdirSync(join(root, at), { withFileTypes: true }).flatMap((entry) => {
+    const path = at ? `${at}/${entry.name}` : entry.name;
+    return entry.isDirectory() ? filesUnder(root, path) : [path];
+  });
+}
+
+/**
+ * The files two trees disagree on, sorted: different bytes, or present on one side only. How a gate
+ * asks "would this change anything?" of a copy, so that asking never repairs the tree being judged.
+ */
+export function treeDiff(left, right) {
+  const leftFiles = new Set(filesUnder(left));
+  const rightFiles = new Set(filesUnder(right));
+  return [...new Set([...leftFiles, ...rightFiles])].sort().filter((path) =>
+    !leftFiles.has(path) || !rightFiles.has(path)
+      || !readFileSync(join(left, path)).equals(readFileSync(join(right, path))));
 }

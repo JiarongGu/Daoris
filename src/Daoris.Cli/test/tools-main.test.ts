@@ -35,3 +35,26 @@ test('an imported tool is not the one being run', async () => {
   const { isMain } = await import(fsx) as { isMain: (url: string) => boolean };
   assert.equal(isMain(fsx), false);
 });
+
+/**
+ * How the family rehearsal asks whether the examples are current (REV3 tools F14): sync a COPY and
+ * compare. Synced in place, the first run repaired the examples it had just found stale, and every
+ * later run passed on the repair.
+ */
+test('two trees disagree on changed bytes and on a file either side lacks, and on nothing else', async () => {
+  const { treeDiff } = await import(fsx) as { treeDiff: (left: string, right: string) => string[] };
+  const fx = makeFixture('tools-tree-diff');
+  const tree = (name: string, files: Record<string, string>) => {
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(dirname(join(fx.root, name, path)), { recursive: true });
+      writeFileSync(join(fx.root, name, path), text);
+    }
+    return join(fx.root, name);
+  };
+  const left = tree('left', { 'same.md': 'a', 'deep/edited.md': 'old', 'gone.md': 'x' });
+  const right = tree('right', { 'same.md': 'a', 'deep/edited.md': 'new', 'added.md': 'y' });
+
+  assert.deepEqual(treeDiff(left, right), ['added.md', 'deep/edited.md', 'gone.md']);
+  assert.deepEqual(treeDiff(left, left), []);
+  fx.cleanup();
+});

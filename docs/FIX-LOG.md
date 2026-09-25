@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The family gate repaired the examples it judged, and one check passed for another reason (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the tools. Phase 1 of the family rehearsal ran `sync` in the
+examples themselves and failed if the tracked tree changed. The first run with stale examples failed
+and also brought them up to date. A second run then passed, because what it measured was the
+difference from a tree the first run had already fixed. Separately, the phase 12 check *a quest in a
+workspace with no remote reaches no deployment* addressed a name nobody had registered. The service
+refused it as unaddressable, so the check passed without any remote being consulted.
+
+**Root cause.** In the first case the gate wrote to the tree it was judging. In the second, the
+check's condition (a refusal, then no quest at the deployment) held for a reason unrelated to its
+title.
+
+**Fix.** Phase 1 syncs a copy of each example and compares the copy with the example file by file
+(`treeDiff` in `tools/fsx.mjs`), so the examples are never written. The phase 12 check adds a second
+member to the unwired circle. The quest must publish locally (200, workspace `tools`), a driver sync
+must run, and the deployment must still not hold it. The quest is then declined, so no later phase
+sees it.
+
+**Verify.** `tools-main.test.ts` covers `treeDiff`. With one canon file changed, phase 1 failed and
+named the four files, and `git status -- examples` stayed empty afterwards. The full family rehearsal
+passes. The phase 12 check was not seen failing against a relay that leaks, since there is no cheap
+way to make one. What changed is that a refusal now fails it.
+
 ## The deployment gate counted other installs' hooks, and a quote broke its process queries (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the tools. Two defects. First, phase 6 of the deployment

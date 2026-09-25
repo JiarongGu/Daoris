@@ -19,7 +19,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { copyTree } from './fsx.mjs';
+import { copyTree, treeDiff } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -184,24 +184,22 @@ function stopEverything() {
 
 section('1. The examples hold current, clean doctrine');
 
-// What the question is: did SYNC change anything? Measured as the tree before against the tree
-// after, tracked-and-modified only (untracked files are the first run of a fresh checkout, not
-// drift). Measured as absolute dirtiness once, which read an in-progress edit to `examples/README.md`
-// — a file sync never touches — as a canon change nobody synced.
-const trackedDirt = () => run('git status --porcelain -- examples', repoRoot)
-  .out.split('\n')
-  .filter((line) => line.trim() && !line.startsWith('??'))
-  .sort();
-const beforeSync = trackedDirt();
+// What the question is: WOULD sync change anything? Asked of a copy, compared file by file with the
+// example. Synced in place, the first run repaired the examples it had just found stale, and every
+// later run passed on the repair (REV3). A gate must not fix the tree it is judging. A git diff was
+// tried once too, and read an in-progress edit to `examples/README.md`, a file sync never touches, as
+// a canon change nobody synced.
+rmSync(scratch, { recursive: true, force: true });
+const changedBySync = [];
 for (const name of EXAMPLES) {
-  const sync = run(`node "${cliBin}" sync`, join(examplesRoot, name));
+  const copy = join(scratch, 'current', name);
+  copyTree(join(examplesRoot, name), copy);
+  const sync = run(`node "${cliBin}" sync`, copy);
   check(`${name}: sync exits 0`, sync.code === 0, sync.out);
+  changedBySync.push(...treeDiff(join(examplesRoot, name), copy).map((path) => `${name}/${path}`));
 }
-
-const afterSync = trackedDirt();
-const changedBySync = afterSync.filter((line) => !beforeSync.includes(line));
 check(
-  'sync changed nothing tracked — the examples are current with the canon',
+  'sync would change nothing — the examples are current with the canon',
   changedBySync.length === 0,
   `${changedBySync.join('; ')}\n          a canon change must sync the examples in the same change (D39)`,
 );
@@ -2085,21 +2083,30 @@ check(
 );
 
 // The unwired circle publishes locally and says nothing to anyone: absence is the default (D21).
+// It needs someone in that circle to ask. Addressed to a name nobody registered, the quest was refused
+// as unaddressable and the check passed without a remote ever being consulted (REV3).
+const anvil = circleMember('anvil', 'An anvil in the tools circle.', 'Temper before you strike.');
+run(`node "${cliBin}" connect --workspace tools`, anvil, { DAORIS_SERVICE_URL: BASE });
 const toolsQuest = await api('POST', '/api/quests', {
   body: {
     from: 'foundry',
-    to: 'foundry-nobody',
+    to: 'anvil',
     title: 'Never delivered',
-    body: 'There is nobody in this circle to ask.',
+    body: 'Asked inside a circle this machine shares with nobody.',
   },
 });
+const toolsQuestId = toolsQuest.json?.quest?.id ?? '';
+driver({ serviceUrl: BASE, config: driverConfig, mode: '--once', remote: { DAORIS_REMOTE_CONFIG: remotesFile } });
 check(
-  'a quest in a workspace with no remote is refused locally, and reaches no deployment',
-  toolsQuest.status === 400
+  'a quest in a workspace with no remote publishes locally, and the next sync takes it to no deployment',
+  toolsQuest.status === 200 && toolsQuest.json?.quest?.workspace === 'tools' && toolsQuestId !== ''
     && ((await api('GET', '/api/quests?includeClosed=true', { base: AURORA_BASE, key: keyC })).json ?? [])
-      .every((q) => q.from !== 'foundry'),
+      .every((q) => q.id !== toolsQuestId),
   toolsQuest.text,
 );
+await api('POST', `/api/quests/${toolsQuestId}/respond`, {
+  body: { action: 'decline', reason: 'a rehearsal of the boundary, not work' },
+});
 
 // Unwiring is a local act: the map loses a row, the deployment loses nothing.
 const unwire = run(`node "${cliBin}" remote remove aurora`, scratch, { DAORIS_REMOTE_CONFIG: remotesFile });
