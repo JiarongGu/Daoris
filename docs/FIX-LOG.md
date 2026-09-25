@@ -54,7 +54,7 @@ before binding anything.
 
 **Symptom.** Found by REV3's reading, then reproduced. `daoris remote add team --url team.example.com:5177`
 was accepted, and so was the same form in `DAORIS_REMOTE_URL`. Every request to it threw. An address
-like that parses as the *scheme* `team.example.com` (`NotSupportedException`), and `192.168.1.5:5177`
+like that parses as the *scheme* `team.example.com` (`NotSupportedException`), and `203.0.113.5:5177`
 parses as relative (`InvalidOperationException`). Neither was in `SendAsync`'s list of three caught
 types, and `QuestSync` catches only `RemoteException`. So `/api/sync` answered a bare 500 with no wall
 on the status bar. A take on a shared quest committed locally and then threw, and a retried take then
@@ -68,6 +68,11 @@ remote's wall, never naming the key. `remote add` refuses an address that is not
 **Verify.** `An_address_with_no_scheme_is_the_remote_s_wall_not_a_crash` covers both shapes, which
 failed with exactly those two exception types. `an address with no scheme is refused before it is
 wired` checks that nothing was written. Service passes 480/480.
+
+🔴 **The first version of this fix broke the sensitive gate.** It used a private LAN address as its
+example of the second shape, in this entry and in the test. The gate caught it on the next `verify`.
+The address is now `203.0.113.5`, from the range RFC 5737 reserves for documentation. It still has
+no scheme, and it fails the same way.
 
 ## One repeated heading failed the whole refresh, one failing embedder failed convergence, and the registry was not safe to share (2026-09-25)
 
@@ -2533,7 +2538,8 @@ a new, optional capability took down the surface it was added to.
 it is not there; the rest of the page stands. Applied to the roster, the per-conversation profile
 picker, and — since SES1 — the console.
 
-**Verification.** `an answer that is not a roster leaves the wiring card standing` and its SES1 twin,
+**Verification.** `an answer that is not a roster leaves the wiring card standing` (now *…draws no
+tools, and takes the page down with it nowhere*, `shell.test.tsx`) and its SES1 twin,
 each driven by a bridge deliberately answering the wrong object. **The trap to inherit, now on its
 second occurrence:** every new IPC request is an optional capability, so **the surface consuming it
 must degrade to absent, never to a crash** — and the test that proves it is a bridge answering the

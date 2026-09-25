@@ -17,7 +17,7 @@ public sealed class HttpRemoteTests
     /// </summary>
     [Theory]
     [InlineData("team.example.com:5177")]
-    [InlineData("192.168.1.5:5177")]
+    [InlineData("203.0.113.5:5177")]
     public async Task An_address_with_no_scheme_is_the_remote_s_wall_not_a_crash(string url)
     {
         var remote = new HttpRemote(new RemoteConfig(url, "dk_test_key"));
