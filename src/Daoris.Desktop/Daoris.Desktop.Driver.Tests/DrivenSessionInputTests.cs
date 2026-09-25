@@ -121,13 +121,41 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.Empty(processes.Running);
     }
 
-    private Daoris.Driver.Driver Driver(string adapter, string heard, StandInService service, SessionProcesses processes)
+    /// <summary>
+    /// 🔴 REV3 driver F9: when the application closes, the tick's own token is cancelled, and the sync
+    /// that runs beside the sessions then threw on it — so the tick left before its sessions had written
+    /// how they ended, and the process exited with their records still saying `working`. A tick
+    /// cancelled mid-session returns only after every session it started is recorded.
+    /// </summary>
+    [Fact]
+    public async Task A_cancelled_tick_returns_only_after_its_sessions_are_recorded()
+    {
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        using var sync = new RemoteSyncSet([]);
+        var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes, sync);
+        using var closing = new CancellationTokenSource();
+
+        var tick = driver.TickAsync(closing.Token);
+        await Until(() => processes.Running.Contains("s1"));
+        await Task.Delay(1500);   // past one beside-sync, so the loop is where the close finds it
+        closing.Cancel();
+
+        try { await tick.WaitAsync(TimeSpan.FromSeconds(30)); }
+        catch (OperationCanceledException) { }
+
+        Assert.NotEqual("working", service.Session("s1")["state"]!.GetValue<string>());
+    }
+
+    private Daoris.Driver.Driver Driver(
+        string adapter, string heard, StandInService service, SessionProcesses processes, RemoteSyncSet? sync = null)
     {
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
             Adapter = adapter,
             TimeoutMinutes = 1,
+            PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>
             {
                 ["stub"] = ["node", PipeAgent()],
@@ -136,7 +164,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         };
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
-            new ServiceClient(service.Url, null), config, adapters, _home, processes: processes,
+            new ServiceClient(service.Url, null), config, adapters, _home, processes: processes, sync: sync,
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
     }
 

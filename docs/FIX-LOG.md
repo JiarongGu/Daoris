@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Closing the application left a driven session's record saying `working` (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the driver. On close, the loop's token is cancelled, and each
+session a tick started ends on it and writes `stopped`. But the sync that runs beside the sessions
+(D68 §6) asked the host for each session's claim on that same cancelled token. It threw
+`OperationCanceledException`, and the tick left before it awaited its sessions. The process then
+exited, and their records still said `working`, holding their trees until the orphan sweep found
+them.
+
+**Root cause.** The beside-loop's catch named the host's failures, and not the closing itself.
+
+**Fix.** The loop stops at cancellation, and ends quietly if the cancellation lands inside a sync.
+The tick always awaits every session it started before it returns.
+
+**Verify.** `A_cancelled_tick_returns_only_after_its_sessions_are_recorded` ticks with a beside-sync,
+cancels after one sync has run, and reads the record the moment the tick returns. It read `working`
+before the fix. Driven-session tests 5/5.
+
 ## Two circles could share one intake room (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the driver. An intake's room is a folder under the home,

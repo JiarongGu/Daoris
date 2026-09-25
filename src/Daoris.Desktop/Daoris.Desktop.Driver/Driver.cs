@@ -279,11 +279,20 @@ public sealed partial class Driver(
         // running — one whose take came back LOST is stopped, because its quest is another machine's
         // and its work would double theirs (D68 §5). An unconfirmed take keeps working.
         var all = Task.WhenAll(runs.Concat(intakeRuns));
-        while (sync is not null && !all.IsCompleted)
+        while (sync is not null && !all.IsCompleted && !ct.IsCancellationRequested)
         {
             if (await Task.WhenAny(all, Task.Delay(_syncBeside, ct)).ConfigureAwait(false) == all) break;
-            await SyncAsync().ConfigureAwait(false);
-            await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            try
+            {
+                await SyncAsync().ConfigureAwait(false);
+                await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // 🔴 Closing (REV3): the sessions below are ending on this same token, and each writes
+                // how it ended. Leaving here left them unrecorded when the process exited.
+                break;
+            }
         }
 
         await all.ConfigureAwait(false);
