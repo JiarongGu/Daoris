@@ -625,7 +625,7 @@
   "work.conversation.driver": "驱动",
   "work.conversation.raw": "此版本不认识的更新：{{title}}",
   "work.conversation.textOnly": "这个会话没有保存对话：它的通道只传文本，或者它运行于开始保存对话之前。它的输出在下方的控制台里。",
-  "work.conversation.nothingYet": "还没有说过话。你发出的消息会出现在这里，代理的回答在它下面。",
+  "work.conversation.nothingYet": "还没有说过话。你发出的消息会出现在这里，智能体的回答在它下面。",
   "work.conversation.nothingSaid": "这次对话里没有说过任何话。",
   "work.code.copy": "复制",
   "work.code.copied": "已复制",
