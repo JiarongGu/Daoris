@@ -8,7 +8,7 @@ import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   useSessionTurns, useStartChat, useStopSession,
 } from '../shell';
-import { Button, Drawer, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
+import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import { isIntake, sessionOrigin } from './identity';
@@ -173,7 +173,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
         if (!result.sessionId) notify(result.message, 'error');
         else { setStarting(false); attend(result.sessionId); }
       },
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      onError: failure(notify),
     });
   };
 
@@ -231,7 +231,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
           ? said.reduce((first, second) => t('work.composer.twoSentences', { first, second }))
           : t('work.composer.noTurn'));
       },
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      onError: failure(notify),
     });
   };
 
@@ -241,7 +241,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     if (!attended) return;
     stop.mutate(attended.id, {
       onSuccess: (answer) => notify(t(stopNotice(answer), { id: attended.id })),
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      onError: failure(notify),
     });
   };
 
@@ -253,7 +253,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
       onSuccess: () => notify(t('work.awaiting.resolved', {
         id: attended.id, state: t(`sessionState.${state}`),
       })),
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      onError: failure(notify),
     });
   };
 
@@ -369,7 +369,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             onSend={onSend}
             onFinish={() => end.mutate(attended.id, {
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),
-              onError: (error: unknown) => notify(sentence(error), 'error'),
+              onError: failure(notify),
             })}
             onStop={onStop}
           />

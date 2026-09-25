@@ -6,7 +6,7 @@ import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { useAsk, useAsks, useCloseAsk, usePublishAsk, useQuests, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
-import { type Notify, SectionTitle, useErrorNotify } from '../ui';
+import { failure, type Notify, SectionTitle, useErrorNotify } from '../ui';
 import { AskCard } from './AskCard';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
@@ -119,18 +119,18 @@ export function AsksSection({
         onComposingChange(false);
         setHeld(result.ask);
       },
-      onError: (e) => notify(sentence(e), 'error'),
+      onError: failure(notify),
     });
   };
 
   const onPublish = (id: string, to: string) => publish.mutate({ id, to }, {
     onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
-    onError: (e) => notify(sentence(e), 'error'),
+    onError: failure(notify),
   });
 
   const onClose = (id: string, reason: string) => close.mutate({ id, reason }, {
     onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
-    onError: (e) => notify(sentence(e), 'error'),
+    onError: failure(notify),
   });
 
   return (

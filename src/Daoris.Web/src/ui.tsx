@@ -894,6 +894,13 @@ export function useErrorNotify(error: unknown, notify: Notify) {
   }, [error, notify]);
 }
 
+/**
+ * A failed action as the person reads it: its own sentence — the service's or the driver's — as an
+ * error toast. Every mutation's `onError` is handed this, so none can forget `sentence` (frontend
+ * architecture §4a); it was written out at some thirty doors (REV3 CLEAN1).
+ */
+export const failure = (notify: Notify) => (error: unknown): void => notify(sentence(error), 'error');
+
 /* ---------------------------------------------------------------- language */
 
 export function LanguageSwitcher({ compact }: { compact?: boolean } = {}) {

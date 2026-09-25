@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from './format';
 import type { Registration } from './api';
 import { useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
-import { Button, Chip, Drawer, Inline, type Notify, SectionTitle, Tip } from './ui';
+import { Button, Chip, Drawer, failure, Inline, type Notify, SectionTitle, Tip } from './ui';
 
 /**
  * Managing the machine's repositories (D48 §7) — the surfaces that exist only where a shell is
@@ -36,7 +35,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
   const choose = () => pick.mutate(undefined, {
     // Null is the person cancelling the dialog: an answer, and not a thing to report as a failure.
     onSuccess: (inspection) => { if (inspection) setFound(inspection); },
-    onError: (error: unknown) => notify(sentence(error), 'error'),
+    onError: failure(notify),
   });
 
   const add = () => {
@@ -61,7 +60,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
         notify(t('projects.manage.added', { name: found.name, workspace: registered.workspace }));
         onClose();
       },
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      onError: failure(notify),
     });
   };
 
@@ -145,7 +144,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
   const [accepts, setAccepts] = useState(project.accepts.join('\n'));
   const [confirming, setConfirming] = useState(false);
 
-  const fail = (error: unknown) => notify(sentence(error), 'error');
+  const fail = failure(notify);
 
   const saveWiring = () => wire.mutate({ repository: project.repository, workspace }, {
     onSuccess: (wired) => notify(t('projects.manage.wired', {

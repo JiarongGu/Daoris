@@ -17,7 +17,7 @@ import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { SignIn } from './SignIn';
 import { byTool, type ToolDoor } from './tools';
 import {
-  Button, Card, CheckField, Chip, Icon, Inline, type Notify, PageHeader, Pill, Prose, SectionTitle,
+  Button, Card, CheckField, Chip, failure, Icon, Inline, type Notify, PageHeader, Pill, Prose, SectionTitle,
   Segmented, SelectField, SettingRow, Tip, useErrorNotify,
 } from './ui';
 import { useThemeChoice } from './theme';
@@ -185,7 +185,7 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
             onSuccess: () => notify(adapter
               ? t('settings.ai.intake.named', { agent: adapter })
               : t('settings.ai.intake.cleared')),
-            onError: (error: unknown) => notify(sentence(error), 'error'),
+            onError: failure(notify),
           }),
         }
         : undefined}
@@ -277,7 +277,7 @@ function DriverSettings({ notify }: { notify: Notify }) {
   // and through "0", and writing either straight to the config would park nothing while the person
   // was still reaching for the second digit.
   const [strikes, setStrikes] = useState<string | null>(null);
-  const onError = (error: unknown) => notify(sentence(error), 'error');
+  const onError = failure(notify);
 
   return (
     <>
@@ -400,7 +400,7 @@ function WiringSettings({ notify }: { notify: Notify }) {
   const [wiringOpen, setWiringOpen] = useState(false);
 
   const remotes = wiring.data?.remotes ?? [];
-  const onError = (error: unknown) => notify(sentence(error), 'error');
+  const onError = failure(notify);
 
   const add = () => wire.mutate(
     { workspace: workspace.trim(), url: url.trim(), key: key.trim() },
@@ -562,7 +562,7 @@ function Rules({ notify }: { notify: Notify }) {
   const where = (scope: string, name: string | undefined) => scope === 'machine'
     ? t('settings.rules.scopeMachine')
     : t(scope === 'workspace' ? 'settings.rules.scopeWorkspace' : 'settings.rules.scopeRepository', { name: name ?? '' });
-  const failed = (error: unknown) => notify(sentence(error), 'error');
+  const failed = failure(notify);
 
   return (
     <AgentRules
@@ -690,7 +690,7 @@ function Plugins({ notify }: { notify: Notify }) {
         ? (result.data ? 'plugin.removedKept' : 'plugin.removed')
         : action === 'enable' ? 'plugin.enabled' : 'plugin.disabled',
       { id, data: result.data ?? '' })),
-    onError: (error: unknown) => notify(sentence(error), 'error'),
+    onError: failure(notify),
   });
 
   const what = (plugin: (typeof plugins)[number]) => {
@@ -829,7 +829,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
     closeKey();
     act.mutate({ harness, action: 'key-add', key }, {
       onSuccess: (result) => notify(t('harness.profile.keyAdded', { profile: result.profile, handle: result.key })),
-      onError: (error: unknown) => notify(sentence(error), 'error'),
+      onError: failure(notify),
     });
   };
   // The same key, readable from the event handler below without re-subscribing on every render.

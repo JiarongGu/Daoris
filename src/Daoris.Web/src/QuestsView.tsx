@@ -14,7 +14,7 @@ import { sittingBecause } from './signals';
 import { buildChain } from './map/chain';
 import { ChainStrip } from './map/ChainStrip';
 import {
-  Button, Card, CheckField, Drawer, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
+  Button, Card, CheckField, Drawer, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
   SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
@@ -197,7 +197,7 @@ export function QuestsView({
         carry.forget();
         setComposing(false);
       },
-      onError: (e) => notify(sentence(e), 'error'),
+      onError: failure(notify),
     });
   };
 
@@ -209,7 +209,7 @@ export function QuestsView({
         setDeclining(false);
         setReason('');
       },
-      onError: (e) => notify(sentence(e), 'error'),
+      onError: failure(notify),
     });
 
   // A person's dismissal (SYNC6c): the drawer stays open on the quest as it now stands, because the
@@ -220,7 +220,7 @@ export function QuestsView({
         notify(result.message);
         setDetail(result.quest);
       },
-      onError: (e) => notify(sentence(e), 'error'),
+      onError: failure(notify),
     });
 
   const openDetail = (quest: Quest) => {
@@ -482,7 +482,7 @@ export function QuestsView({
                       notify(granted.message, granted.verified ? 'ok' : 'error');
                       setTrustingFor(null);
                     },
-                    onError: (e) => notify(sentence(e), 'error'),
+                    onError: failure(notify),
                   })}
                 />
               </div>
@@ -631,7 +631,7 @@ export function QuestsView({
                       disabled={stop.isPending}
                       onClick={() => stop.mutate(session.id, {
                         onSuccess: (answer) => notify(t(stopNotice(answer), { id: session.id })),
-                        onError: (e) => notify(sentence(e), 'error'),
+                        onError: failure(notify),
                       })}
                     >
                       {t('quests.session.stop')}

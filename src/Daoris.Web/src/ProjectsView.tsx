@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from './api';
 import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
 import { DriverChoices } from './projects/DriverChoices';
-import { ago, sentence } from './format';
+import { ago } from './format';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
 import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees } from './shell';
 import { doorOf, type ToolDoor } from './tools';
 import {
-  Button, Card, Chip, EmptyState, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
+  Button, Card, Chip, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
   useErrorNotify,
 } from './ui';
 
@@ -59,7 +59,7 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
   const named = (names: string[], repository: string) =>
     names.some((name) => name.toLowerCase() === repository.toLowerCase());
-  const onDriverError = (e: unknown) => notify(sentence(e), 'error');
+  const onDriverError = failure(notify);
 
   // Which door this machine's starts ride (INT3c): an unadopted repository is carried by the protocol
   // door only (D70), so on a direct one its row says a quest there will sit. Unknown says nothing.

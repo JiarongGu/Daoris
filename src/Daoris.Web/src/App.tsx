@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from './format';
 import {
   useAsks, useEntry, useImportFolder, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
@@ -8,7 +7,7 @@ import {
 import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
-  Button, Drawer, Icon, type IconName, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
+  Button, Drawer, failure, Icon, type IconName, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
   type ToastItem, useErrorNotify,
 } from './ui';
 import { OverviewView } from './OverviewView';
@@ -198,7 +197,7 @@ export function App() {
       // The semantic half's failure is the service's own sentence — dropped nowhere (D24).
       if (report.semanticError) notify(report.semanticError, 'error');
     },
-    onError: (e) => notify(sentence(e), 'error'),
+    onError: failure(notify),
   });
 
   const indexed = (repositories.data ?? []).reduce((sum, r) => sum + r.total, 0);
@@ -236,7 +235,7 @@ export function App() {
       for (const note of report.notes) notify(note);
       if (!report.problem && report.notes.length === 0) notify(t('work.sync.done', { workspace }));
     },
-    onError: (e) => notify(sentence(e), 'error'),
+    onError: failure(notify),
   });
 
   const setView = (next: Tab) => {
@@ -281,9 +280,9 @@ export function App() {
         pickFolder.mutate(undefined, {
           onSuccess: (folder) => folder && importFolder.mutate(folder.path, {
             onSuccess: (result) => notify(result.message),
-            onError: (e) => notify(sentence(e), 'error'),
+            onError: failure(notify),
           }),
-          onError: (e) => notify(sentence(e), 'error'),
+          onError: failure(notify),
         });
         return;
       case 'refresh': onRefresh(); return;
@@ -637,7 +636,7 @@ export function App() {
                 notify(granted.message, granted.verified ? 'ok' : 'error');
                 setTrusting(null);
               },
-              onError: (error) => notify(sentence(error), 'error'),
+              onError: failure(notify),
             })}
           />
         </Drawer>
