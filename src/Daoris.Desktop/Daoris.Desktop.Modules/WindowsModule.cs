@@ -38,9 +38,6 @@ public sealed class WindowsModule(
     {
         switch (request.Type)
         {
-            case "STATE":
-                return Task.FromResult<object?>(State(opened: false));
-
             case "OPEN":
             {
                 var name = PayloadHelper.GetRequiredValue<string>(request.Payload, "name");

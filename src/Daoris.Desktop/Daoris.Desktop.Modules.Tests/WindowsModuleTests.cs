@@ -87,18 +87,6 @@ public sealed class WindowsModuleTests : Bridge
         Assert.Single(again.GetProperty("windows").EnumerateArray());
     }
 
-    [Fact]
-    public async Task State_answers_what_is_open_without_opening_anything()
-    {
-        await AnswerAsync(Module(), "OPEN", new { name = "session:a1b2c3d4" });
-        _windows.Asked.Clear();
-
-        var state = await AnswerAsync(Module(), "STATE");
-
-        Assert.Empty(_windows.Asked);
-        Assert.Equal("session:a1b2c3d4", state.GetProperty("windows")[0].GetString());
-    }
-
     /// <summary>
     /// The name is a filename as well as a URL, so a name that walked out of the geometry directory
     /// would be a page choosing what the shell overwrites. It is refused, not sanitised.

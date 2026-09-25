@@ -32,12 +32,6 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             case "PICK_FOLDER":
                 return Task.FromResult<object?>(pickFolder() is { } folder ? Inspect(folder) : null);
 
-            // A path the person typed, or one a previous pick returned — inspected the same way, so the
-            // two routes cannot disagree about what "already adopted" means.
-            case "INSPECT":
-                return Task.FromResult<object?>(
-                    Inspect(PayloadHelper.GetRequiredValue<string>(request.Payload, "path")));
-
             // The person editing their own tracked file through a form instead of a text editor
             // (D48 §7). The manifest is inert data (D26), not doctrine — and doctrine stays unwritable
             // from every surface (D31). The diff lands uncommitted, for that repository's own review.

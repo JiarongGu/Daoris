@@ -57,14 +57,14 @@ public sealed class RegistryModuleTests : Bridge
     }
 
     /// <summary>
-    /// A path that does not exist is a fact about a folder, not a crash: a person can type one, and a
-    /// registered checkout can be moved between the pick and the look.
+    /// A path that does not exist is a fact about a folder, not a crash: a checkout can be moved
+    /// between the pick and the look.
     /// </summary>
     [Fact]
     public async Task A_folder_that_is_not_there_answers_plainly()
     {
-        var found = await AnswerAsync(
-            Module(), "INSPECT", new { path = Path.Combine(Home, "no-such-folder") });
+        _picked = Path.Combine(Home, "no-such-folder");
+        var found = await AnswerAsync(Module(), "PICK_FOLDER");
 
         Assert.False(found.GetProperty("exists").GetBoolean());
         Assert.False(found.GetProperty("adopted").GetBoolean());
