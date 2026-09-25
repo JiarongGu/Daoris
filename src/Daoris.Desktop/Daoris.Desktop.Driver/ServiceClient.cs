@@ -127,19 +127,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        using var response = await _http.PostAsync(
-            $"{_base}/api/sessions", new StringContent(body, Encoding.UTF8, "application/json"), ct)
-            .ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        using var document = JsonDocument.Parse(payload);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return (null, Text(document.RootElement, "error") ?? payload);
-        }
-
-        var session = document.RootElement.GetProperty("session");
-        return (Text(session, "id"), Text(document.RootElement, "message") ?? "");
+        return await OpenRecordAsync("/api/sessions", body, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -163,19 +151,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        using var response = await _http.PostAsync(
-            $"{_base}/api/sessions/chat", new StringContent(body, Encoding.UTF8, "application/json"), ct)
-            .ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        using var document = JsonDocument.Parse(payload);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return (null, Text(document.RootElement, "error") ?? payload);
-        }
-
-        var session = document.RootElement.GetProperty("session");
-        return (Text(session, "id"), Text(document.RootElement, "message") ?? "");
+        return await OpenRecordAsync("/api/sessions/chat", body, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -224,26 +200,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        using var response = await _http.PostAsync(
-            $"{_base}/api/sessions/intake", new StringContent(body, Encoding.UTF8, "application/json"), ct)
-            .ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-
-        JsonDocument document;
-        try
-        {
-            document = JsonDocument.Parse(payload);
-        }
-        catch (JsonException)
-        {
-            return (null, $"the service at {_base} has no intake door ({(int)response.StatusCode}) — is it older than this driver?");
-        }
-
-        using (document)
-        {
-            if (!response.IsSuccessStatusCode) return (null, Text(document.RootElement, "error") ?? payload);
-            return (Text(document.RootElement.GetProperty("session"), "id"), Text(document.RootElement, "message") ?? "");
-        }
+        return await OpenRecordAsync("/api/sessions/intake", body, ct).ConfigureAwait(false);
     }
 
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
@@ -335,33 +292,20 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        using var response = await _http.PostAsync(
-            $"{_base}{path}", new StringContent(body, Encoding.UTF8, "application/json"), ct)
-            .ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-
-        JsonDocument document;
-        try
+        var (ok, status, payload, answer) = await PostJsonAsync(path, body, ct).ConfigureAwait(false);
+        // A host older than asks answers a bare 404 — said plainly rather than parsed as nothing.
+        if (answer is not { } root)
         {
-            document = JsonDocument.Parse(payload);
-        }
-        catch (JsonException)
-        {
-            // A host older than asks answers a bare 404 — said plainly rather than parsed as nothing.
-            return new AskAnswer(false, $"the service at {_base} has no ask door ({(int)response.StatusCode}) — is it older than this driver?", null, null);
+            return new AskAnswer(false, $"the service at {_base} has no ask door ({status}) — is it older than this driver?", null, null);
         }
 
-        using (document)
-        {
-            var root = document.RootElement;
-            if (!response.IsSuccessStatusCode) return new AskAnswer(false, Text(root, "error") ?? payload, null, null);
+        if (!ok) return new AskAnswer(false, Text(root, "error") ?? payload, null, null);
 
-            return new AskAnswer(
-                true,
-                Text(root, "message") ?? "",
-                root.TryGetProperty("ask", out var ask) ? Text(ask, "id") : null,
-                root.TryGetProperty("quest", out var quest) && quest.ValueKind == JsonValueKind.Object ? Text(quest, "id") : null);
-        }
+        return new AskAnswer(
+            true,
+            Text(root, "message") ?? "",
+            root.TryGetProperty("ask", out var ask) ? Text(ask, "id") : null,
+            root.TryGetProperty("quest", out var quest) && quest.ValueKind == JsonValueKind.Object ? Text(quest, "id") : null);
     }
 
     /// <summary>Move a session's record. The ledger judges; the driver reports what it observed.</summary>
@@ -379,22 +323,19 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        using var response = await _http.PostAsync(
-            $"{_base}/api/sessions/{Uri.EscapeDataString(id)}/state",
-            new StringContent(body, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        using var document = JsonDocument.Parse(payload);
+        var (ok, _, payload, root) = await PostJsonAsync(
+            $"/api/sessions/{Uri.EscapeDataString(id)}/state", body, ct).ConfigureAwait(false);
 
-        if (!response.IsSuccessStatusCode)
+        if (!ok)
         {
             // The refusal sentence is the contract; losing it would make the driver's log say less
             // than the service said.
             throw new DriverException(
                 $"the service refused moving session `{id}` to {state}: "
-                + (Text(document.RootElement, "error") ?? payload));
+                + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
         }
 
-        return Text(document.RootElement, "message") ?? "";
+        return root is { } answer ? Text(answer, "message") ?? "" : "";
     }
 
     // Through DriverHttp, so a refused read carries the service's own sentence — a bare
@@ -543,8 +484,52 @@ public sealed class ServiceClient : IDisposable
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
     internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;
 
+    /// <summary>
+    /// POST a JSON body and read the answer: whether it succeeded, its status, its text, and its root
+    /// when the text is JSON. Every write this client makes goes through here (REV3 CLEAN1: five
+    /// callers each wrote it out, and two of them threw on an answer that was not JSON).
+    /// </summary>
+    private async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
+        string path, string body, CancellationToken ct)
+    {
+        using var response = await _http.PostAsync(
+            $"{_base}{path}", new StringContent(body, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+        JsonElement? root = null;
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            root = document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            // Not JSON: a host older than the door answers a bare 404. Each caller says so its way.
+        }
+
+        return (response.IsSuccessStatusCode, (int)response.StatusCode, payload, root);
+    }
+
+    /// <summary>
+    /// Open a session record — a quest's, a chat's or an intake's, which the ledger answers alike. A
+    /// refusal is an answer, not an exception, and so is a door that did not answer in JSON.
+    /// </summary>
+    private async Task<(string? SessionId, string Message)> OpenRecordAsync(string path, string body, CancellationToken ct)
+    {
+        var (ok, status, payload, root) = await PostJsonAsync(path, body, ct).ConfigureAwait(false);
+        if (root is not { } answer)
+        {
+            return (null, $"the service at {_base} has no `{path}` door ({status}) — is it older than this driver?");
+        }
+
+        if (!ok) return (null, Text(answer, "error") ?? payload);
+        return (answer.TryGetProperty("session", out var session) ? Text(session, "id") : null, Text(answer, "message") ?? "");
+    }
+
+    // An element that is not an object has no fields — asked as one, TryGetProperty would throw.
     private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+        element.ValueKind == JsonValueKind.Object
+        && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
 
