@@ -8,6 +8,7 @@ import { SessionRail } from './SessionRail';
 import { StreamTile } from './StreamTile';
 import { sessionOrigin } from './identity';
 import { sessionWindowName } from './window';
+import { waitingFirst } from './rail';
 
 /** The element id a tile is scrolled to by. Derived, so the rail and the tile cannot disagree. */
 const tileId = (session: string) => `stream-${session}`;
@@ -48,11 +49,9 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   // is read in the main window, where its diff and its record are.
   const live = (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state));
 
-  // What needs a person first, then the longest-running — the rail's rule (components plan §3a),
-  // which matters more here because this window is read from across a desk.
-  const shown = [...live].sort((a, b) =>
-    Number(a.state !== 'awaiting-person') - Number(b.state !== 'awaiting-person')
-    || a.created.localeCompare(b.created));
+  // What needs a person first — the rail's rule (components plan §3a), which matters more here
+  // because this window is read from across a desk — then the longest-running.
+  const shown = [...live].sort((a, b) => waitingFirst(a, b) || a.created.localeCompare(b.created));
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">

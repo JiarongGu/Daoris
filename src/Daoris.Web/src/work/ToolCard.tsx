@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Dot, Icon, type IconName } from '../ui';
 import type { Block, ToolContent } from './conversation';
 import { inTree } from './identity';
-import { diffCounts, lineDiff } from './lineDiff';
+import { type DiffLine, diffCounts, lineDiff } from './lineDiff';
 
 /** A tool call's ACP kind, as the glyph it wears. Anything else is a generic tool. */
 const KIND_ICON: Record<string, IconName> = {
@@ -48,9 +48,14 @@ export function ToolCard({ call, tree }: {
   const [chosen, setChosen] = useState<boolean | null>(null);
   const open = chosen ?? failed;
 
-  const diffs = (call.content ?? []).filter((item) => item.type === 'diff');
+  // Each diff once per content, shared by the header's counts and the body (REV3 CLEAN1): a
+  // conversation re-renders its cards as it streams, and this was worked out twice every time.
+  const lines = useMemo(
+    () => (call.content ?? []).map((item) => (item.type === 'diff' ? lineDiff(item.oldText, item.newText) : null)),
+    [call.content]);
+  const diffs = lines.filter((diff) => diff !== null);
   const counts = diffs.length > 0
-    ? diffs.map((item) => diffCounts(lineDiff(item.oldText, item.newText)))
+    ? diffs.map(diffCounts)
       .reduce((sum, c) => ({ added: sum.added + c.added, removed: sum.removed + c.removed }), { added: 0, removed: 0 })
     : null;
   const where = call.locations?.[0] ? inTree(call.locations[0], tree) : undefined;
@@ -88,7 +93,7 @@ export function ToolCard({ call, tree }: {
 
       {open && hasBody && (
         <div className="grid gap-2 border-t border-line px-2.5 py-2">
-          {(call.content ?? []).map((item, index) => <Content key={index} item={item} tree={tree} />)}
+          {(call.content ?? []).map((item, index) => <Content key={index} item={item} lines={lines[index]} tree={tree} />)}
           {call.input && <Raw label={t('work.tool.input')} text={call.input} />}
           {call.output && <Raw label={t('work.tool.output')} text={call.output} />}
         </div>
@@ -97,7 +102,7 @@ export function ToolCard({ call, tree }: {
   );
 }
 
-function Content({ item, tree }: { item: ToolContent; tree?: string | null }) {
+function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] | null; tree?: string | null }) {
   const { t } = useTranslation();
   if (item.type === 'diff') {
     return (
@@ -106,7 +111,7 @@ function Content({ item, tree }: { item: ToolContent; tree?: string | null }) {
           <figcaption className="border-b border-line bg-page px-2.5 py-1 font-mono text-meta text-ink-soft">{inTree(item.path, tree)}</figcaption>
         )}
         <pre className="m-0 max-h-96 overflow-auto py-1 font-mono text-small leading-relaxed">
-          {lineDiff(item.oldText, item.newText).map((line, index) => (
+          {(lines ?? lineDiff(item.oldText, item.newText)).map((line, index) => (
             <div
               key={index}
               className={cn(

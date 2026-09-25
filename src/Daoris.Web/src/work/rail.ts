@@ -5,6 +5,13 @@ import { SESSION_ACTIVE } from '../ui';
 export const ENDED_SHOWN = 12;
 
 /**
+ * A session waiting on the person before one that is not — the one ordering that earns its keep
+ * (components plan §3a). The rail and the monitor both sort by it; each wrote it out (REV3 CLEAN1).
+ */
+export const waitingFirst = (a: Pick<Session, 'state'>, b: Pick<Session, 'state'>): number =>
+  Number(a.state !== 'awaiting-person') - Number(b.state !== 'awaiting-person');
+
+/**
  * What the rail lists: the live sessions, and beneath them the ones that ended.
  *
  * @remarks

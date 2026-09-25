@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
-import { partition } from './rail';
+import { partition, waitingFirst } from './rail';
 import { useDriver } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { RepositoryGroup } from './RepositoryGroup';
@@ -59,7 +59,7 @@ export function SessionRail({ selected = null, onSelect, notify }: {
   // group, the session that needs a person comes first — the one ordering that earns its keep.
   const ordered = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
   for (const [, rows] of ordered) {
-    rows.sort((a, b) => Number(a.state !== 'awaiting-person') - Number(b.state !== 'awaiting-person'));
+    rows.sort(waitingFirst);
   }
 
   if (sessions.isPending) return <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>;
