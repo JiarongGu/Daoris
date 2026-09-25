@@ -7,6 +7,25 @@ import type { IconName } from './ui';
 /** The application's views (D66): one list, the activity bar's. */
 export type View = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'settings';
 
+/**
+ * Every view, in the activity bar's order, with the glyph both the bar and the palette show. The
+ * bar and the palette each wrote this list (REV3 CLEAN1); the bar is it without Settings, which has
+ * its own gear.
+ */
+export const VIEWS: readonly { view: View; icon: IconName; keywords?: string; shellOnly?: boolean }[] = [
+  { view: 'overview', icon: 'overview' },
+  // A stream never leaves the machine that produced it (D47 §4), so a browser is shown no Sessions.
+  { view: 'sessions', icon: 'frameWork', keywords: 'work watch console conversation', shellOnly: true },
+  { view: 'quests', icon: 'quests' },
+  { view: 'projects', icon: 'projects' },
+  // The workspace map (MAP2, D67 §3): how the repositories are wired, read at a glance.
+  { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
+  { view: 'convergence', icon: 'convergence' },
+  { view: 'search', icon: 'search' },
+  // Everywhere since D66: a browser has appearance to set, if nothing of a machine.
+  { view: 'settings', icon: 'settings', keywords: 'settings theme dark light appearance language machine remote harness account' },
+];
+
 /** A named thing a person can do, from anywhere. */
 export type Command = {
   /** Stable, structural, and never shown: the id is what a test and a keybinding name. */
@@ -67,22 +86,10 @@ export function commands(world: {
    */
   detach?: () => void;
 }): Command[] {
-  // The activity bar's list, in its order (D66). Sessions only where a shell is — a stream never
-  // leaves the machine — and never the view already in front of the person: an entry that does
-  // nothing is noise in a list whose whole value is that everything in it is worth pressing.
-  const views: { view: View; icon: IconName; keywords?: string; shellOnly?: boolean }[] = [
-    { view: 'overview', icon: 'overview' },
-    { view: 'sessions', icon: 'frameWork', keywords: 'work watch console conversation', shellOnly: true },
-    { view: 'quests', icon: 'quests' },
-    { view: 'projects', icon: 'projects' },
-    { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
-    { view: 'convergence', icon: 'convergence' },
-    { view: 'search', icon: 'search' },
-    // Everywhere since D66: a browser has appearance to set, if nothing of a machine.
-    { view: 'settings', icon: 'settings', keywords: 'settings theme dark light appearance language machine remote harness account' },
-  ];
-
-  const list: Command[] = views
+  // Sessions only where a shell is — a stream never leaves the machine — and never the view already
+  // in front of the person: an entry that does nothing is noise in a list whose whole value is that
+  // everything in it is worth pressing.
+  const list: Command[] = VIEWS
     .filter(({ view, shellOnly }) => view !== world.current && (!shellOnly || world.attached))
     .map(({ view, icon, keywords }) => ({
       id: `go.${view}`,

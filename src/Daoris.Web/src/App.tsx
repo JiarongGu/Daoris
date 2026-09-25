@@ -7,7 +7,7 @@ import {
 import { useScope } from './scope';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
-  Button, Drawer, failure, Icon, type IconName, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
+  Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
   useErrorNotify, useToasts,
 } from './ui';
 import { OverviewView } from './OverviewView';
@@ -32,13 +32,14 @@ import type { AttentionDoors } from './work/AttentionBand';
 import { needsAPerson } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
-import { commands } from './commands';
+import { commands, type View, VIEWS } from './commands';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
 import { store, stored } from './lib/stored';
 
-type Tab = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'settings';
+/** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
+type Tab = View;
 
 /**
  * Whether the person was last watching Sessions — a per-browser preference like the language and the
@@ -67,20 +68,9 @@ function rememberedView(): Tab {
   return stored(VIEW) === 'sessions' ? 'sessions' : 'overview';
 }
 
-const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
-  { tab: 'overview', icon: 'overview' },
-  // Sessions is a view (D66), what the Work frame was: the rail, the attended session, the dock and
-  // the console. Absent in a browser rather than disabled — a stream never leaves the machine that
-  // produced it (D47 §4), so there is nothing a browser could be shown there.
-  { tab: 'sessions', icon: 'frameWork', shellOnly: true },
-  { tab: 'quests', icon: 'quests' },
-  { tab: 'projects', icon: 'projects' },
-  // The workspace map (MAP2, D67 §3) — a view of its own, the owner's choice: how the repositories
-  // are wired, read at a glance.
-  { tab: 'map', icon: 'map' },
-  { tab: 'convergence', icon: 'convergence' },
-  { tab: 'search', icon: 'search' },
-];
+// The activity bar: every view but Settings, which has its own gear. Sessions — what the Work frame
+// was (D66) — is absent in a browser rather than disabled.
+const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 
 /**
  * The platform: the person's window over the family (D38), landing on management (D40), wearing the
@@ -385,7 +375,7 @@ export function App() {
             to carry went to the status bar, where ambient state belongs. */}
         <ActivityBar
           label={t('nav.label')}
-          items={NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ tab: target, icon }) => ({
+          items={NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ view: target, icon }) => ({
             tab: target,
             label: t(`nav.${target}`),
             icon,
