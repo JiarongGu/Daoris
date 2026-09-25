@@ -131,6 +131,20 @@ describe('sentence', () => {
    * A page older than the host meets a code it has no entry for. A bare identifier in front of a
    * person is barely better than the generic failure this replaced, so it falls back to a sentence.
    */
+  /**
+   * REV3 web-rest F7: the bridge framework's own codes had no sentences, so a request that timed out —
+   * the driver busy, the host slow — said "something on this machine refused", which it had not.
+   */
+  it('says what the bridge itself failed at, in its own words for each', () => {
+    const said = (code: string) => sentence(Object.assign(new Error('x'), { code, parameters: { module: 'DAORIS.DRIVER', type: 'STOP' } }));
+    const refused = sentence(Object.assign(new Error('x'), { code: 'FROM_A_NEWER_HOST' }));
+
+    for (const code of ['TIMEOUT', 'NO_TRANSPORT', 'NO_HANDLER', 'NO_ROUTE', 'MISSING_PAYLOAD_VALUE', 'INVALID_PAYLOAD_VALUE', 'OPERATION_CANCELLED', 'CAPABILITY_NOT_SUPPORTED']) {
+      expect(said(code), code).not.toBe(refused);
+    }
+    expect(said('TIMEOUT')).toMatch(/answer|time/i);
+  });
+
   it('falls back to a sentence rather than showing a bare code', () => {
     const refusal = Object.assign(new Error('fallback'), { code: 'FROM_A_NEWER_HOST' });
 

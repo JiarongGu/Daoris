@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A bridge timeout said something on this machine had refused (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page. The page turns a bridge failure's code into a
+sentence (`errors.{code}`), and a code with no sentence becomes "Something on this machine refused,
+and did not say why." The bridge framework's own codes had none: `TIMEOUT` (the driver busy),
+`NO_ROUTE` (a page newer than the application), and the rest. So a request that timed out said it
+was refused, and a version mismatch said nothing a person could act on.
+
+**Root cause.** The catalogues carried Daoris's refusals and not the framework's.
+
+**Fix.** A sentence for each of the framework's codes, in English and Chinese, saying what happened
+and what to do (wait, restart).
+
+**Verify.** `says what the bridge itself failed at, in its own words for each` failed first.
+Format tests 19/19. The catalogues agree on 943 keys.
+
 ## A permission rule the driver refused was cleared from its box (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page. Adding a rule on Settings cleared the box as soon
