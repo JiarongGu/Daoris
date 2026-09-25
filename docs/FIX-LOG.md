@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## An answering host was counted down when the adoption notice could not read (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the desktop. When a host already answers, the shell adopts
+it, then compares the bundle it serves with the page the install carries (the notice, case study
+4d). Reading the install's page could throw (a file held open, an unreadable folder), and the throw
+escaped `EnsureAsync` after the host had answered. The loop then counted the host as down and never
+started the driver. It said so on `DRIVER_ERROR` at startup, before any page was listening.
+
+**Root cause.** An informational read on the path that decides whether the host is up.
+
+**Fix.** The notice's failures are caught: no notice, and the host is up.
+
+**Verify.** `A_notice_that_cannot_read_its_own_page_does_not_make_an_answering_host_down` holds the
+install's page open. Without the fix it failed with that `IOException`, and it passes with it.
+Supervisor tests 5/5.
+
 ## Removing a plugin that speaks could strand it half-deleted (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the desktop. A plugin that speaks runs a hook process whose

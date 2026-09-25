@@ -40,7 +40,18 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     {
         if (await AnswersAsync(ct).ConfigureAwait(false))
         {
-            Notice = await AdoptionNoticeAsync(ct).ConfigureAwait(false);
+            // 🔴 The notice informs; it never decides (REV3). A throw while reading the install's own
+            // page — unreadable, locked — used to escape here, and the loop counted a host that had
+            // just answered as down, and never started.
+            try
+            {
+                Notice = await AdoptionNoticeAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+            {
+                Notice = null;
+            }
+
             return true;
         }
 

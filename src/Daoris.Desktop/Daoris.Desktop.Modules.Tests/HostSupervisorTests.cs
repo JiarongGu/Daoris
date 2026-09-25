@@ -74,6 +74,27 @@ public sealed class HostSupervisorTests : IDisposable
         Assert.Null(supervisor.Notice);
     }
 
+    /// <summary>
+    /// A host that answers is up, whatever the notice beside it could read (REV3 modules F8). The
+    /// install's own page, held open by something, threw out of the notice, and the loop counted an
+    /// answering host as down and never started.
+    /// </summary>
+    [Fact]
+    public async Task A_notice_that_cannot_read_its_own_page_does_not_make_an_answering_host_down()
+    {
+        using var running = await StubHost.StartAsync(Page("index-CeYefnb-.js"));
+        var location = Carrying("index-CFwEAMAB.js");
+        var supervisor = new HostSupervisor(running.Url, () => location);
+
+        using (File.Open(Path.Combine(location.WorkingDirectory, "wwwroot", "index.html"), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.True(await supervisor.EnsureAsync());
+        }
+
+        Assert.Null(supervisor.Notice);
+        Assert.Null(supervisor.Trouble);
+    }
+
     private static string Page(string bundle) =>
         $"<!doctype html><html><head><script type=\"module\" crossorigin src=\"/assets/{bundle}\"></script></head></html>";
 
