@@ -222,7 +222,7 @@ public static class IntakeRoom
 
         var hash = Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(name)))[..8].ToLowerInvariant();
-        return safe.Length == 0 ? $"circle-{hash}" : $"{safe}-{hash}";
+        return safe.Length == 0 ? $"workspace-{hash}" : $"{safe}-{hash}";
     }
 
     /// <summary>Beside, then renamed — a harness starting in the room never reads half a file.</summary>

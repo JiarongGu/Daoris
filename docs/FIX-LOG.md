@@ -326,7 +326,7 @@ other's asks, and each intake could read the other circle's family.
 
 **Fix.** A name that is already a folder name stays exactly that, so no existing room moves. One that
 lost anything gets a short hash of the exact (trimmed, lower-cased) name beside the readable part,
-`circle-<hash>` when nothing readable is left.
+`workspace-<hash>` when nothing readable is left.
 
 **Verify.** `Two_circles_never_share_a_room`: all four pairs shared a path before the fix.
 `A_circle_is_one_room_however_its_name_is_cased` holds the other direction. Intake 26/26.
