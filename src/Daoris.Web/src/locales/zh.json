@@ -528,6 +528,7 @@
   "quests.session.stopped": "会话 {{id}} 正在停止——记录会注明这是本人终止的。",
   "quests.session.orphanEnded": "会话 {{id}} 在这台机器上已没有任何进程在运行——记录现已如实注明。",
   "quests.session.notRunning": "会话 {{id}} 并未在这里运行——它如何结束，记录里写着。",
+  "quests.session.runElsewhere": "会话 {{id}} 由本机另一个 Daoris 进程（某个终端）运行——请在那里停止它。",
   "console.label": "控制台",
   "console.live": "实时",
   "console.dropped": "更早的 {{count}} 行已滑出窗口——驱动机上的完整记录仍在",

@@ -988,7 +988,7 @@ export const useEndChat = () => {
  * What the driver answered a stop: whether it ended anything, and whether what it ended was an
  * orphan — a record that said it ran when nothing on this machine ran it (2026-09-25).
  */
-export type StopAnswer = { stopped: boolean; orphan?: boolean };
+export type StopAnswer = { stopped: boolean; orphan?: boolean; elsewhere?: boolean };
 
 /**
  * The notice for a stop, from the driver's answer — never the person's words for an ending that was
@@ -997,7 +997,9 @@ export type StopAnswer = { stopped: boolean; orphan?: boolean };
 export const stopNotice = (answer: StopAnswer) =>
   answer.orphan ? 'quests.session.orphanEnded'
     : answer.stopped ? 'quests.session.stopped'
-      : 'quests.session.notRunning';
+      // Another Daoris process here runs it — a terminal's — so the record still says working (REV3).
+      : answer.elsewhere ? 'quests.session.runElsewhere'
+        : 'quests.session.notRunning';
 
 export const useStopSession = () => {
   const client = useQueryClient();

@@ -474,6 +474,9 @@ describe('starting and holding a conversation', () => {
     [{ stopped: true }, 'session c0ffee11 is being stopped — the record will say the person ended it.'],
     [{ stopped: true, orphan: true }, 'session c0ffee11 had nothing running it on this machine — its record now says so.'],
     [{ stopped: false }, 'session c0ffee11 was not running here — its record says how it ended.'],
+    // REV3 chat F8: another Daoris process on this machine runs it — a terminal's — and the record
+    // still says working, so "its record says how it ended" was untrue.
+    [{ stopped: false, elsewhere: true }, "session c0ffee11 is run by another Daoris process on this machine, a terminal's — stop it there."],
   ])('says what the stop did when the driver answers %j', async (answer, sentence) => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'STOP_SESSION' ? answer : DRIVER_STATE));

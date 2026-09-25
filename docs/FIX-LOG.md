@@ -5,6 +5,64 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A stop sent to a session a terminal runs said its record told how it ended (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the conversation. A session another Daoris process on this
+machine runs (a terminal's `daoris-driver chat`) cannot be stopped from the desktop. The desktop's
+stop found nothing of its own to end, and the orphan sweep rightly skipped a session that is alive.
+The page then said *"was not running here — its record says how it ended"* over a record that
+still read `working`.
+
+**Root cause.** The stop's answer had two facts (stopped, orphan), and the third case fell through
+to the sentence for a session that had finished.
+
+**Fix.** The driver module answers `elsewhere` when a process on this machine still runs the
+session. The page says so, and says to stop it there (en and zh).
+
+**Verify.** The page's `says what the stop did` table gained the case, which failed first. The
+module test checks the field is false when nothing runs the session. Web 55/55, modules 127/127.
+
+## A conversation's open, stop and process each had a gap (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the conversation's protocol door.
+- **The open.** A session that could not open for any reason but a `DriverException` skipped the
+  open's own ending. A `session/new` answer whose id is a number is one such reason. The queue then
+  waited for a session that would never come, the record stayed `working` with nothing in it, and
+  the transcript closed under a stderr pump still writing to it.
+- **A stop mid-turn.** A person's stop ends the agent, so the turn's prompt fails with "the stream
+  ended". That was recorded as *"the turn could not be taken"*, a failure of the agent's, when it was
+  the person's act.
+- **The process.** Nothing disposed a conversation's `Process` or its pipes.
+
+**Root cause.** The open's catch named one exception type. The turn's catch could not tell a stop
+from a failure. There was no `using` for the process.
+
+**Fix.** The open ends on every failure, and `OpenAsync` reads the session id without trusting its
+shape. A turn that fails after a stop was requested ends as `cancelled`, with no failure note. The
+process is disposed last, after it is untracked.
+
+**Verify.** `A_session_that_cannot_open_for_any_reason_ends_the_conversation_with_a_note` timed out
+with the record still `working` before the fix. `A_stop_mid_turn_ends_the_turn_as_cancelled_and_writes_no_failure`
+found the false note. The disposal has no test: it is resource hygiene with no observable output.
+
+## An ACP request of an unexpected shape was never answered (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the ACP client. A `session/request_permission` whose
+`params` or options were not the shape expected (params a string, an option a number, a `kind` a
+number) threw while the options were read. The pump showed the frame as unreadable and read on, and
+the agent waited for its answer for ever: a hung turn. An error answer of an unexpected shape did
+the same to one of this client's own calls.
+
+**Root cause.** Element reads that throw on the wrong kind, on a path whose only way out was an
+answer.
+
+**Fix.** The refusing option is read with every kind checked; nothing readable means `cancelled`,
+which is also a refusal. Any request with an id whose handling still throws is answered with a
+JSON-RPC error. The error branch that completes our own calls reads the message the same way.
+
+**Verify.** `A_permission_request_of_an_unreadable_shape_is_still_answered`: two of its three shapes
+went unanswered before the fix. ACP and chat tests 70/70.
+
 ## Two hosts could open two sessions on one tree, and move a finished one (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. The one-session-per-tree lock (D46, D51) was a

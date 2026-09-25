@@ -302,8 +302,11 @@ public sealed class DriverModule : ModuleBase
                     && _loop.Service is { } service
                     && (await Orphans.EndAsync(service, _loop.Processes, only: id, ct: cancellationToken)
                         .ConfigureAwait(false)).Count > 0;
+                // 🔴 And when another Daoris process on this machine runs it — a terminal's chat — this
+                // host can neither stop it nor call it ended: the record still says working (REV3).
+                var elsewhere = !stopped && !orphan && _loop.Processes.AliveOnThisMachine(id);
                 _loop.Nudge();
-                return new { Stopped = stopped || orphan, Orphan = orphan };
+                return new { Stopped = stopped || orphan, Orphan = orphan, Elsewhere = elsewhere };
             }
 
             // The person's answer to a session parked at a checkpoint (D52 §4). It goes through the

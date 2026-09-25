@@ -365,6 +365,8 @@ public sealed class DriverModuleTests : Bridge
         Assert.False(state.GetProperty("stopped").GetBoolean());
         // Nor an orphan: with no service up there is no record to have ended.
         Assert.False(state.GetProperty("orphan").GetBoolean());
+        // Nor run by another process here: nothing marked it (REV3 chat F8).
+        Assert.False(state.GetProperty("elsewhere").GetBoolean());
     }
 
     /// <summary>
