@@ -152,6 +152,24 @@ describe('ConversationView', () => {
     expect(link.getAttribute('href')).toBe('https://example.invalid/p.png?d=C%3A%5Cwork');
   });
 
+  /**
+   * UX5 U4, seen on the window (CONV4b): an agent answered one item per line and the page drew one
+   * paragraph, because Markdown makes a single newline a space. The agent wrote for a terminal, where
+   * a newline is a newline, so a line it ended stays ended. A blank line is still a paragraph, and a
+   * fenced block keeps its own lines.
+   */
+  it('keeps a line the agent ended, and still makes a paragraph of a blank line', () => {
+    const { container } = view([ev({
+      kind: 'message', text: 'one\ntwo\nthree\n\nafter\n\n```\na\nb\n```',
+    })]);
+
+    const [lines, after] = [...container.querySelectorAll('.markdown p')];
+    expect(lines!.querySelectorAll('br')).toHaveLength(2);
+    expect(lines!.textContent).toBe('one\ntwo\nthree');
+    expect(after!.textContent).toBe('after');
+    expect(container.querySelector('figure code')!.textContent).toBe('a\nb');
+  });
+
   it('highlights a fenced block in its language, names it, and offers a copy', () => {
     const { container } = view([ev({ kind: 'message', text: '```rust\nlet cap = 4;\n```' })]);
 

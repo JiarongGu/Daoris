@@ -18,15 +18,43 @@ import { CodeBlock } from './CodeBlock';
  *
  * **Content, not chrome** (translation-parity): the text is the agent's own, in whatever language it
  * wrote, and nothing here translates it.
+ *
+ * **A line the agent ended stays ended** (UX5 U4). Markdown makes a single newline a space, and an
+ * agent's one-item-per-line answer drew as one paragraph on the window. The agent wrote for a
+ * terminal, where a newline is a newline, as chat surfaces generally read it.
  */
 export function Markdown({ text }: { text: string }) {
   return (
     <div className="markdown text-body leading-relaxed text-ink [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, keepLineBreaks]} components={COMPONENTS}>
         {text}
       </ReactMarkdown>
     </div>
   );
+}
+
+/** The part of a Markdown syntax tree the line rule reads: a text's value, anything's children. */
+type MdNode = { type: string; value?: string; children?: MdNode[] };
+
+/**
+ * Every newline left inside prose becomes a line break. Only a `text` node holds one: code, inline
+ * code and a blank line between paragraphs are other nodes, so each keeps its own meaning.
+ */
+function keepLineBreaks() {
+  const walk = (node: MdNode) => {
+    if (!node.children) return;
+    node.children = node.children.flatMap((child): MdNode[] => {
+      if (child.type !== 'text' || !child.value?.includes('\n')) {
+        walk(child);
+        return [child];
+      }
+      return child.value.split(/\r?\n/).flatMap((part, index): MdNode[] => [
+        ...(index > 0 ? [{ type: 'break' }] : []),
+        ...(part ? [{ type: 'text', value: part }] : []),
+      ]);
+    });
+  };
+  return walk;
 }
 
 type Components = ComponentProps<typeof ReactMarkdown>['components'];
