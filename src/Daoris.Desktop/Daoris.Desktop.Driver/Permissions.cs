@@ -260,8 +260,11 @@ public static class PermissionRules
         }
 
         layers.Add(file.Machine);
-        if (file.Workspaces.TryGetValue(Circle(workspace), out var circle)) layers.Add(circle);
-        if (repository is { Length: > 0 } && file.Repositories.TryGetValue(repository.Trim(), out var own)) layers.Add(own);
+        // 🔴 A scope is a person's name, compared as every other layer compares one — trimmed, case-
+        // insensitive (REV3). Ordinal, a quest to `engine` was handed none of `Engine`'s denies. Every
+        // matching scope is taken, so a file that holds both spellings loses no rule from either.
+        layers.AddRange(Named(file.Workspaces, Circle(workspace)));
+        if (repository is { Length: > 0 }) layers.AddRange(Named(file.Repositories, repository.Trim()));
 
         IReadOnlyList<string> Union(Func<RuleLists, IReadOnlyList<string>> pick) =>
             [.. layers.SelectMany(pick).Distinct(StringComparer.Ordinal)];
@@ -316,8 +319,10 @@ public static class PermissionRules
                 $"a {(scope == RuleScope.Workspace ? "workspace" : "repository")} scope needs its name.");
         }
 
-        var key = given.Trim();
         var held = scope == RuleScope.Workspace ? file.Workspaces : file.Repositories;
+        // The scope's existing spelling, when it has one in another case: one scope, never two.
+        var key = held.Keys.FirstOrDefault(k => string.Equals(k.Trim(), given.Trim(), StringComparison.OrdinalIgnoreCase))
+            ?? given.Trim();
         var next = new Dictionary<string, RuleLists>(held, StringComparer.Ordinal)
         {
             [key] = change(held.GetValueOrDefault(key) ?? RuleLists.Empty),
@@ -329,6 +334,10 @@ public static class PermissionRules
 
     private static RuleLists Drop(RuleLists lists, string rule) => new(
         [.. lists.Allow.Where(r => r != rule)], [.. lists.Ask.Where(r => r != rule)], [.. lists.Deny.Where(r => r != rule)]);
+
+    /// <summary>Every scope held under <paramref name="name"/>, in any case.</summary>
+    private static IEnumerable<RuleLists> Named(IReadOnlyDictionary<string, RuleLists> scopes, string name) =>
+        scopes.Where(pair => string.Equals(pair.Key.Trim(), name, StringComparison.OrdinalIgnoreCase)).Select(pair => pair.Value);
 
     private static string Circle(string? workspace) =>
         workspace is { } named && !string.IsNullOrWhiteSpace(named) ? named.Trim() : RemoteTarget.DefaultWorkspace;

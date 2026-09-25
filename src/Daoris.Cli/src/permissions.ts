@@ -162,10 +162,11 @@ export function composeRules(file: PermissionFile, workspace: string | null, rep
     .filter((shipped) => !file.defaultsOff.includes(shipped.id))
     .map((shipped) => ({ ...empty(), [shipped.list]: shipped.rules }));
   layers.push(file.machine);
-  const circle = file.workspaces[normalizeWorkspace(workspace)];
-  if (circle) layers.push(circle);
-  const own = repository?.trim() ? file.repositories[repository.trim()] : undefined;
-  if (own) layers.push(own);
+  // A scope is a person's name, matched in any case — every matching one, as the driver's `Compose` does.
+  const named = (scopes: Record<string, RuleLists>, name: string) =>
+    Object.entries(scopes).filter(([held]) => held.toLowerCase() === name.toLowerCase()).map(([, lists]) => lists);
+  layers.push(...named(file.workspaces, normalizeWorkspace(workspace)));
+  if (repository?.trim()) layers.push(...named(file.repositories, repository.trim()));
 
   const union = (list: RuleList) => [...new Set(layers.flatMap((layer) => layer[list]))];
   return { allow: union('allow'), ask: union('ask'), deny: union('deny') };
@@ -296,8 +297,9 @@ function edit(file: PermissionFile, scope: RuleScope, name: string | null, chang
     throw new DaorisError(`a ${scope === 'workspace' ? 'workspace' : 'repository'} scope needs its name.`);
   }
 
-  const key = name.trim();
   const field = scope === 'workspace' ? 'workspaces' : 'repositories';
+  // The scope's existing spelling, in any case: one scope, never two — the driver's `Edit` twin (REV3).
+  const key = Object.keys(file[field]).find((held) => held.toLowerCase() === name.trim().toLowerCase()) ?? name.trim();
   const next = { ...file[field], [key]: change(file[field][key] ?? empty()) };
   if (isEmpty(next[key]!)) delete next[key];
   return { ...file, [field]: next };

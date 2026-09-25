@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A repository's deny rules missed its session when its name was spelled in another case (2026-09-25)
+
+**Symptom.** Found by REV3's reading. The person added `deny Bash(rm:*)` for repository `Engine`, the
+spelling its registry row uses. An agent published a quest `to: "engine"`. Publishing and the planner
+both match names case-insensitively, so the session started, but it was handed none of `Engine`'s
+rules. That is a widening nobody chose. Workspace scopes behaved the same way. An edit in another
+case also opened a second scope beside the first.
+
+**Root cause.** Every layer that names a repository or a workspace compares the way a person does,
+trimmed and case-insensitive, except the permission scopes. They were an `Ordinal` dictionary, looked
+up by the quest's `to` exactly as the agent typed it.
+
+**Fix.** `Compose` takes every scope whose name matches in any case, so a file holding both spellings
+loses no rule from either. An edit reuses the spelling the scope already has. The CLI's `edit` and
+`composeRules` do the same, since the file is the contract between the two.
+
+**Verify.** `A_scope_named_in_another_case_still_reaches_its_session_and_an_edit_keeps_one_scope` was
+watched failing before the fix. The permission suites pass on both sides, and the CLI passes 461/461.
+
 ## The tree guard let a write through a link to somewhere that did not exist yet (2026-09-25)
 
 **Symptom.** Found by REV3's reading, then shown by probe and a test. A junction or symlink inside a

@@ -168,6 +168,28 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.DoesNotContain("Bash(make:*)", rules.Allow);
     }
 
+    /// <summary>
+    /// 🔴 REV3: a scope is a name as a person writes it, and every other layer — the registry, the planner,
+    /// the quest's `to` — matches names case-insensitively. Here they were keyed ordinally, so a quest to
+    /// `engine` spawned a session handed none of `Engine`'s denies: a widening nobody chose.
+    /// </summary>
+    [Fact]
+    public void A_scope_named_in_another_case_still_reaches_its_session_and_an_edit_keeps_one_scope()
+    {
+        var file = PermissionRules.Load(_home);
+        file = PermissionRules.Add(file, RuleScope.Repository, "Engine", RuleList.Deny, "Bash(rm:*)");
+        file = PermissionRules.Add(file, RuleScope.Workspace, "Aurora", RuleList.Deny, "WebFetch");
+
+        var rules = PermissionRules.Compose(file, "aurora", "engine");
+        Assert.Contains("Bash(rm:*)", rules.Deny);
+        Assert.Contains("WebFetch", rules.Deny);
+
+        // Edited in another case, it is still the one scope, under the spelling it already had.
+        file = PermissionRules.Add(file, RuleScope.Repository, "ENGINE", RuleList.Deny, "Bash(dd:*)");
+        Assert.Equal(["Engine"], file.Repositories.Keys);
+        Assert.Equal(["Bash(rm:*)", "Bash(dd:*)"], file.Repositories["Engine"].Deny);
+    }
+
     /// <summary>An intake serves an ask in a circle, and belongs to no repository.</summary>
     [Fact]
     public void A_session_of_no_repository_is_handed_its_circles_rules_and_no_repositorys()
