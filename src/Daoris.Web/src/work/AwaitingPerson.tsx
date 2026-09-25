@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui';
+import { Button, WaitingCard } from '../ui';
 
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
 export type Resolution = 'completed' | 'declined' | 'stopped';
@@ -37,8 +37,7 @@ export function AwaitingPerson({ note, pending = false, onResolve }: {
   const [reason, setReason] = useState('');
 
   return (
-    <section className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
-      <h3 className="m-0 text-small font-semibold text-st-open">{t('work.head.waiting')}</h3>
+    <WaitingCard title={t('work.head.waiting')}>
 
       {note && (
         <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{note}</p>
@@ -87,6 +86,6 @@ export function AwaitingPerson({ note, pending = false, onResolve }: {
         )}
 
       <p className="m-0 mt-2 text-small text-ink-faint">{t('work.awaiting.answer')}</p>
-    </section>
+    </WaitingCard>
   );
 }

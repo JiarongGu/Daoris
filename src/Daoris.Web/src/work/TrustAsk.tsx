@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { TrustHold } from '../signals';
-import { Button } from '../ui';
+import { Button, WaitingCard } from '../ui';
 
 /**
  * The agent's trust question, asked by Daoris for a folder the driver is holding (D73).
@@ -30,8 +30,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
   const { t } = useTranslation();
 
   return (
-    <section className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
-      <h3 className="m-0 text-small font-semibold text-st-open">{t('trust.title')}</h3>
+    <WaitingCard title={t('trust.title')}>
       <p className="m-0 mt-1.5 break-all font-mono text-meta text-ink">{hold.folder}</p>
       <p className="m-0 mt-2 text-body leading-relaxed">{t('trust.what')}</p>
       <p className="m-0 mt-1.5 text-small text-ink-soft">
@@ -45,6 +44,6 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
         <Button variant="primary" disabled={busy} onClick={onGrant}>{t('trust.grant')}</Button>
         {onCancel && <Button variant="ghost" onClick={onCancel}>{t('trust.cancel')}</Button>}
       </div>
-    </section>
+    </WaitingCard>
   );
 }

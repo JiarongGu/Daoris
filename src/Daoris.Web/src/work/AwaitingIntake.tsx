@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui';
+import { Button, WaitingCard } from '../ui';
 
 /**
  * A parked INTAKE, and where its answer is (INT4g).
@@ -39,8 +39,7 @@ export function AwaitingIntake({ ask, note, pending = false, onAnswer, onStop }:
   const { t } = useTranslation();
 
   return (
-    <section className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
-      <h3 className="m-0 text-small font-semibold text-st-open">{t('work.intake.waiting')}</h3>
+    <WaitingCard title={t('work.intake.waiting')}>
 
       {note && (
         <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{note}</p>
@@ -64,6 +63,6 @@ export function AwaitingIntake({ ask, note, pending = false, onAnswer, onStop }:
       )}
 
       {onStop && <p className="m-0 mt-2 text-small text-ink-faint">{t('work.intake.stopMeans')}</p>}
-    </section>
+    </WaitingCard>
   );
 }

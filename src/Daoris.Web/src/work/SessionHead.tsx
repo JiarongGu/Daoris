@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago, elapsed, sessionTool } from '../format';
-import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE } from '../ui';
+import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, WaitingCard } from '../ui';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
@@ -82,10 +82,9 @@ export function SessionHead({
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
       {parked && !onResolve && !(intake && onAnswerAsk) && session.note && (
-        <div className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
-          <p className="m-0 text-small font-semibold text-st-open">{t('work.head.waiting')}</p>
+        <WaitingCard title={t('work.head.waiting')}>
           <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{session.note}</p>
-        </div>
+        </WaitingCard>
       )}
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">

@@ -372,6 +372,20 @@ export function Card({ warn, accent, className, children }: {
   );
 }
 
+/**
+ * Something waiting on the person — a parked session, a parked intake, a folder to trust. The one
+ * frame each such card wears: the waiting tone on its left edge and on its heading. Four cards
+ * wrote it out (REV3 CLEAN1), so a change of that tone is now one change.
+ */
+export function WaitingCard({ title, children }: { title: ReactNode; children?: ReactNode }) {
+  return (
+    <section className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
+      <h3 className="m-0 text-small font-semibold text-st-open">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
 export function CardHeader({ title, aside }: { title: ReactNode; aside?: ReactNode }) {
   return (
     <header className="flex items-baseline justify-between gap-4">
