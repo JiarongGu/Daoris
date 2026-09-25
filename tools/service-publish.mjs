@@ -16,9 +16,10 @@
  * its content root there when the working directory has no bundle.
  */
 import { execSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { copyTree } from './fsx.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const argv = process.argv.slice(2);
@@ -81,14 +82,15 @@ if (argv.includes('--install')) {
   }
   const bin = join(home, 'bin');
   mkdirSync(bin, { recursive: true });
-  cpSync(join(out, 'daoris-knowledge', exe('daoris-knowledge')), join(bin, exe('daoris-knowledge')));
+  copyFileSync(join(out, 'daoris-knowledge', exe('daoris-knowledge')), join(bin, exe('daoris-knowledge')));
   // 🔴 REPLACED, not merged into. A copy over the old directory leaves every previous hashed bundle
   // in `wwwroot/assets` — harmless, because `index.html` names the current one, and actively
   // misleading to anybody trying to tell which build is live by listing the folder. That is exactly
   // how a stale deployment was diagnosed the slow way once.
   const installedHost = join(bin, 'daoris-knowledge-http');
   rmSync(installedHost, { recursive: true, force: true });
-  cpSync(join(out, 'daoris-knowledge-http'), installedHost, { recursive: true });
+  // The tools' one recursive copy (REV3 CLEAN1): `fs.cpSync` has crashed on this platform.
+  copyTree(join(out, 'daoris-knowledge-http'), installedHost);
 
   // The published binary has no workspace above it to walk to, so the root must be NAMED — this is
   // exactly the trap the README records, closed here by printing the snippet already filled in.
