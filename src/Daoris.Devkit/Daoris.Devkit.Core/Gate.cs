@@ -37,7 +37,7 @@ public interface IGate
 /// <summary>Everything a gate is allowed to know: where the repository is, and what it declared.</summary>
 /// <remarks>
 /// Deliberately not a service container. A gate that can reach arbitrary services grows dependencies
-/// that the AOT binary then has to carry, and the four universal gates need a path and a declaration.
+/// that the AOT binary then has to carry, and the five universal gates need a path and a declaration.
 /// </remarks>
 public sealed class GateContext(string repositoryRoot, GateDeclaration declaration)
 {

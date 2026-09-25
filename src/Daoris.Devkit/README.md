@@ -156,7 +156,7 @@ the tool refuses rather than write a file the reader would refuse.
 Run it at moments, not on every commit: **before making a repository public**, and after a history
 rewrite to prove the rewrite worked. It reads every reachable object, so its cost grows with the
 history — wiring it into `verify` would tax every run forever to re-check commits that were already
-checked when they were made. It is deliberately not one of the four gates.
+checked when they were made. It is deliberately not one of the five universal gates.
 
 It exists because the other scopes cannot answer the question that matters at those moments. Deleting a
 leak edits the current checkout and leaves the copy in history untouched, and after a push there are
@@ -216,9 +216,10 @@ this is two standard commands rather than a feature.
 The realistic failure — the *wrong* devkit rather than a tampered one — is caught: `daoris.gates.json`
 pins a version, and a mismatch stops the run before any gate, with both versions named.
 
-**Nothing is downloaded implicitly**, and that falls out of D8 rather than being worked around. Nothing
-in the CLI may touch the network — a test greps for the primitives — so the CLI could not fetch a binary
-even if it seemed convenient. A missing binary is an error naming the command to run.
+**Nothing is downloaded implicitly**, and that falls out of D8 rather than being worked around. Only
+the CLI's service client may touch the network — a test holds it, and holds that no doctrine command
+can reach that client — and nothing in the CLI fetches the devkit binary. A missing binary is an error
+naming the command to run.
 
 ## Building
 
