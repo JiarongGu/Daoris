@@ -150,6 +150,29 @@ public sealed class IntakeTests : IDisposable
         Assert.DoesNotContain("..", Path.GetFileName(room));
     }
 
+    /// <summary>
+    /// Two circles are two rooms, whatever their names are written in (REV3 driver F8). Every name with
+    /// no ASCII letter in it was folded to <c>default</c>, so two Chinese-named circles shared one room —
+    /// and the room is the intake's lock and holds each circle's declarations.
+    /// </summary>
+    [Theory]
+    [InlineData("设计", "工作")]
+    [InlineData("设计", "default")]
+    [InlineData("my circle", "my-circle")]
+    [InlineData("a.b", "a-b")]
+    public void Two_circles_never_share_a_room(string one, string other)
+    {
+        Assert.NotEqual(IntakeRoom.PathOf(_home, one), IntakeRoom.PathOf(_home, other));
+    }
+
+    [Fact]
+    public void A_circle_is_one_room_however_its_name_is_cased()
+    {
+        Assert.Equal(IntakeRoom.PathOf(_home, "Aurora"), IntakeRoom.PathOf(_home, " aurora "));
+        Assert.Equal(IntakeRoom.PathOf(_home, "设计"), IntakeRoom.PathOf(_home, "设计"));
+        Assert.Equal(Path.Combine(_home, IntakeRoom.Folder, "default"), IntakeRoom.PathOf(_home, "default"));
+    }
+
     // ——— The instruction.
 
     [Fact]

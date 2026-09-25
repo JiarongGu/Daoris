@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Two circles could share one intake room (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the driver. An intake's room is a folder under the home,
+named after its circle. The name kept ASCII letters, digits, `-` and `_`, turned everything else
+into `-`, and fell back to `default`. Every circle named with no ASCII letter (`设计`, `工作`) became
+`default`, and `my circle` and `my-circle` became one folder. The room is the intake's lock (one
+running per room) and holds its circle's declarations as `AGENTS.md`. So two circles blocked each
+other's asks, and each intake could read the other circle's family.
+
+**Root cause.** A lossy name used as an identity.
+
+**Fix.** A name that is already a folder name stays exactly that, so no existing room moves. One that
+lost anything gets a short hash of the exact (trimmed, lower-cased) name beside the readable part,
+`circle-<hash>` when nothing readable is left.
+
+**Verify.** `Two_circles_never_share_a_room`: all four pairs shared a path before the fix.
+`A_circle_is_one_room_however_its_name_is_cased` holds the other direction. Intake 26/26.
+
 ## A stop sent to a session a terminal runs said its record told how it ended (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the conversation. A session another Daoris process on this
