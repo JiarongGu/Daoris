@@ -5,6 +5,43 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A harness outlived its session when anything failed between its spawn and its wait (2026-09-25)
+
+**Symptom.** Found by REV3's reading of both spawn paths, then reproduced. The trigger was any
+failure after `Process.Start` and before the wait. The plainest case is a person pressing stop on a
+session still `starting`. The stop finds no tracked process, so the orphan sweep ends the record
+`stopped`. The spawn goes ahead anyway, and the move to `working` is then refused, because a
+terminal record does not move. The catch concluded the record and returned. The agent kept working
+the quest with no record, no marker and no stop that could reach it. The tree's lock was free again,
+so the next tick could start a second session on the same open quest in the same tree. The driven,
+intake and conversation spawns all had it. The first test run of this very defect left its stand-in
+harness alive and holding the test runner's pipe, which is how the hang behind it was found.
+
+Two related holes widened it:
+- HttpClient's timeout is an `OperationCanceledException` with nobody having cancelled. Every catch
+  that filtered on "not a cancellation" let it escape the tick, or left a conversation's record at
+  `queued` where neither a stop nor the sweep reaches.
+- The conversation's `Conclude` did not catch it either, so the terminal door waited forever on an
+  `onEnded` that never came.
+
+**Root cause.** Nothing owned the process between its start and its wait. Every exit path assumed
+the wait had run, and the wait is what ends a process that should not live.
+
+**Fix.** `SessionProcesses.EndIfRunning` is the reaper. Each spawn site holds it from the moment the
+process is tracked: the driven and intake paths as a disposer declared after `tracked` so it runs
+first, and the conversation's watch in its catch, while it is still tracked. On the ordinary path the
+process has exited and the reaper does nothing. The failure catches now take everything but the
+shutdown's own cancellation. Their terminal writes ride an unbound token and swallow any second
+failure. A conversation cancelled by its caller before its process started is concluded and then
+rethrown.
+
+**Verify.** Both tests make the stand-in ledger refuse `working`, and have the stand-in harness beat
+a file every 100 ms. Both were watched failing ("still beating"):
+- `A_session_the_record_will_not_let_work_does_not_outlive_its_tick` (driven).
+- `A_conversation_the_record_will_not_let_work_does_not_outlive_it` (conversation).
+
+Driver suite 648/648.
+
 ## A shared deployment kept serving a retired repository's knowledge (2026-09-25)
 
 **Symptom.** Found by REV3's reading. A joined, sharing repository fed its entries to the team's

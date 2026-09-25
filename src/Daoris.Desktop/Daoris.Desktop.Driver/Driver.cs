@@ -508,6 +508,9 @@ public sealed partial class Driver(
             // intake, for the same reason: it was handed its whole quest at once, the pipe door gives
             // it no stdin, and the protocol door's stdin carries the driver's own frames.
             using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(quest));
+            // 🔴 Declared after `tracked`, so it runs first: whatever ends this scope, the agent ends with
+            // it, while it is still tracked — never working on untracked in a tree just unlocked (REV3).
+            using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
             using var _ = new Disposer(() => SpawnServers.Remove(handed));
             using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
             _live[quest.Id] = sessionId;
@@ -605,17 +608,22 @@ public sealed partial class Driver(
                 new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter),
                 null);
         }
-        catch (Exception error) when (error is not OperationCanceledException)
+        catch (Exception error)
         {
+            // Everything but the shutdown above — which includes a client TIMEOUT: HttpClient's is an
+            // OperationCanceledException with nobody having cancelled, and filtering it out let it
+            // escape the tick and leave the record at `starting` (REV3).
             // The record must say what the driver saw, even when what it saw was its own failure —
             // an abandoned "starting" row reads as a session that never ends.
             try
             {
-                await service.AdvanceAsync(sessionId, "failed", note: error.Message, ct: ct).ConfigureAwait(false);
+                await service.AdvanceAsync(
+                    sessionId, "failed", note: error.Message, ct: CancellationToken.None).ConfigureAwait(false);
             }
-            catch (DriverException)
+            catch (Exception)
             {
-                // The terminal write is best-effort by construction: the first failure is the report.
+                // The terminal write is best-effort by construction: the first failure is the report,
+                // and a host that is gone or slow here must not turn that report into a second throw.
             }
 
             return (

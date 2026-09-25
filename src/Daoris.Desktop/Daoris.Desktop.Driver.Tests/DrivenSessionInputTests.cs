@@ -80,6 +80,29 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.Equal("stopped", service.Session("s1")["state"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// 🔴 REV3: a failure between the spawn and the wait — here the record refusing to move to
+    /// `working`, which is what a stop pressed during `starting` makes it do — concluded the record and
+    /// left the harness running: untracked, unmarked, and holding a tree whose lock had just been freed.
+    /// However the tick's session ends, its process ends with it.
+    /// </summary>
+    [Fact]
+    public async Task A_session_the_record_will_not_let_work_does_not_outlive_its_tick()
+    {
+        await using var service = StandInService.Start(_repository, refuses: "working");
+        var processes = new SessionProcesses();
+        var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes);
+
+        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Empty(processes.Running);
+        var heartbeat = Path.Combine(_repository, "heartbeat.txt");
+        var before = File.Exists(heartbeat) ? File.ReadAllText(heartbeat) : null;
+        await Task.Delay(700);
+        var after = File.Exists(heartbeat) ? File.ReadAllText(heartbeat) : null;
+        Assert.True(before == after, "the harness is still beating after its tick ended");
+    }
+
     private Daoris.Driver.Driver Driver(string adapter, string heard, StandInService service, SessionProcesses processes)
     {
         var config = DriverConfig.Empty with
@@ -104,9 +127,13 @@ public sealed class DrivenSessionInputTests : IDisposable
     {
         var script = Path.Combine(_home, "pipe-agent.mjs");
         File.WriteAllText(script, """
+            import { writeFileSync } from 'node:fs';
             if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
             if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
             console.log('stub: driven for quest ' + process.env.DAORIS_QUEST_ID);
+            // Proof of life a test can read after the tick: a beat every 100 ms while this runs. Unref'd,
+            // so it never keeps a leaked stand-in alive past its own minute.
+            setInterval(() => writeFileSync('heartbeat.txt', String(Date.now())), 100).unref();
             await new Promise((resolve) => setTimeout(resolve, 60000));
             """);
         return script;
@@ -172,20 +199,23 @@ public sealed class DrivenSessionInputTests : IDisposable
         private readonly string _root;
         private readonly List<JsonObject> _sessions = [];
         private readonly string? _kept;
+        private readonly string? _refuses;
 
         public string Url { get; }
 
-        private StandInService(HttpListener listener, string url, string root, string? kept)
+        private StandInService(HttpListener listener, string url, string root, string? kept, string? refuses)
         {
             _listener = listener;
             Url = url.TrimEnd('/');
             _root = root;
             _kept = kept;
+            _refuses = refuses;
             _serving = ServeAsync();
         }
 
         /// <param name="kept">Where this machine keeps a file the quest carries, or null for a quest with none (INT4j).</param>
-        public static StandInService Start(string root, string? kept = null)
+        /// <param name="refuses">A state this ledger will not move a record to, as a terminal record refuses every move.</param>
+        public static StandInService Start(string root, string? kept = null, string? refuses = null)
         {
             var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
             probe.Start();
@@ -196,7 +226,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             var listener = new HttpListener();
             listener.Prefixes.Add(url);
             listener.Start();
-            return new StandInService(listener, url, root, kept);
+            return new StandInService(listener, url, root, kept, refuses);
         }
 
         public JsonObject Session(string id)
@@ -276,6 +306,11 @@ public sealed class DrivenSessionInputTests : IDisposable
                     {
                         var id = path["/api/sessions/".Length..^"/state".Length];
                         var body = Body();
+                        if (body["state"]!.GetValue<string>() == _refuses)
+                        {
+                            return (409, $$"""{"error":"session {{id}} will not move to {{_refuses}}"}""");
+                        }
+
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();

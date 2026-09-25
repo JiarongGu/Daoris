@@ -73,6 +73,33 @@ public sealed class SessionProcesses(string? markers = null)
         return true;
     }
 
+    /// <summary>
+    /// End a spawned harness's process tree if it is still running — the reaper every spawn site holds
+    /// from the moment its process started (REV3).
+    /// </summary>
+    /// <remarks>
+    /// A failure between the spawn and the wait — the record refusing to move to `working` (a stop
+    /// pressed during `starting` does exactly that), the host restarting, a client timeout — used to
+    /// conclude the record and leave the agent working the quest untracked, unmarked, in a tree whose
+    /// lock had just been freed for the next session. On the ordinary path the process has already
+    /// exited here and this does nothing.
+    /// </remarks>
+    public static void EndIfRunning(Process process)
+    {
+        try
+        {
+            if (!process.HasExited) process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+            // Exited, or never associated — either way nothing is left running.
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // Access to the tree was refused mid-exit; the root is ending anyway.
+        }
+    }
+
     /// <summary>Whether this session's end was asked for — read by the driver before it concludes.</summary>
     public bool WasStopRequested(string sessionId)
     {

@@ -228,7 +228,10 @@ public sealed class OrphanedSessionTests : IDisposable
             _serving = ServeAsync();
         }
 
-        public static StandInService Start(string root, TimeSpan writeDelay = default)
+        /// <summary>A state this ledger will not move a record to, as a terminal record refuses every move.</summary>
+        public string? Refuses { get; init; }
+
+        public static StandInService Start(string root, TimeSpan writeDelay = default, string? refuses = null)
         {
             var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
             probe.Start();
@@ -239,7 +242,7 @@ public sealed class OrphanedSessionTests : IDisposable
             var listener = new HttpListener();
             listener.Prefixes.Add(url);
             listener.Start();
-            return new StandInService(listener, url, root) { WriteDelay = writeDelay };
+            return new StandInService(listener, url, root) { WriteDelay = writeDelay, Refuses = refuses };
         }
 
         public void Seed(string id, string state)
@@ -325,6 +328,11 @@ public sealed class OrphanedSessionTests : IDisposable
                     {
                         var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/state".Length]);
                         var body = Body();
+                        if (body["state"]!.GetValue<string>() == Refuses)
+                        {
+                            return (409, $$"""{"error":"session {{id}} will not move to {{Refuses}}"}""");
+                        }
+
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();

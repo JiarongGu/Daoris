@@ -188,6 +188,45 @@ public sealed class TurnStopTests : IDisposable
         Assert.Contains("only text", refused.Message);
     }
 
+    /// <summary>
+    /// 🔴 REV3, the conversation's half of the driver's reaper: the record refused to move to `working`
+    /// (as it does once a stop pressed during `starting` has ended it), the watch concluded the record,
+    /// and the harness ran on — untracked, unmarked, until the application exited.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_the_record_will_not_let_work_does_not_outlive_it()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"), refuses: "working");
+        var beat = Path.Combine(_home, "beat.txt");
+        var script = Path.Combine(_home, "beating.mjs");
+        File.WriteAllText(script, """
+            import { writeFileSync } from 'node:fs';
+            if (process.argv.includes('--version')) { console.log('stub 1.0.0'); process.exit(0); }
+            setInterval(() => writeFileSync(process.argv[2], String(Date.now())), 100).unref();
+            await new Promise((resolve) => setTimeout(resolve, 60000));
+            """);
+        var adapters = AdapterSet.Built();
+        using var client = new ServiceClient(service.Url, null);
+        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        using var runner = new ChatRunner(
+            client, adapters, _home, processes,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", script, beat] },
+        };
+
+        var start = await runner.StartAsync("engine", "stub", config);
+        var id = start.SessionId ?? throw new InvalidOperationException(start.Message);
+        await Until(() => service.State(id) == "failed", () => $"state {service.State(id)}");
+        await Until(() => processes.Running.Count == 0);
+
+        var before = File.Exists(beat) ? File.ReadAllText(beat) : null;
+        await Task.Delay(700);
+        var after = File.Exists(beat) ? File.ReadAllText(beat) : null;
+        Assert.True(before == after, "the conversation's harness is still beating after its record concluded");
+    }
+
     // ------------------------------------------------------------------ the harness behind each door
 
     private sealed record Session(

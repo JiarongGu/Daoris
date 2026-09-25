@@ -207,12 +207,19 @@ public sealed class ChatRunner(
             process = Process.Start(info)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
-        catch (Exception error) when (error is not OperationCanceledException)
+        catch (Exception error)
         {
-            // The record exists and must say what happened, or it sits at `starting` forever holding
-            // the repository — the same rule the driven path follows.
+            // The record exists and must say what happened, or it sits at `queued` or `starting` forever
+            // holding the repository — the same rule the driven path follows. EVERY failure: a client
+            // timeout is an OperationCanceledException too, and filtering those out left the record
+            // stranded where no stop and no sweep reaches it (REV3).
             SpawnSettings.Remove(rules);
-            await Conclude(sessionId, "failed", error.Message, onEnded).ConfigureAwait(false);
+            var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
+            await Conclude(
+                sessionId, "failed",
+                cancelled ? "the request that started it was cancelled before its process started." : error.Message,
+                onEnded).ConfigureAwait(false);
+            if (cancelled) throw;
             return new(null, error.Message);
         }
 
@@ -448,6 +455,10 @@ public sealed class ChatRunner(
         }
         catch (Exception error)
         {
+            // 🔴 The harness first, while it is still tracked (REV3): a record that could not move to
+            // `working` — a stop pressed during `starting` ends it so — used to conclude here and leave
+            // the agent running, untracked and unmarked, until the application exited.
+            SessionProcesses.EndIfRunning(process);
             await Conclude(sessionId, "failed", error.Message, onEnded).ConfigureAwait(false);
         }
         finally
@@ -736,10 +747,12 @@ public sealed class ChatRunner(
         {
             await service.AdvanceAsync(sessionId, state, note: note).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is DriverException or HttpRequestException or ObjectDisposedException)
+        catch (Exception)
         {
             // Best-effort by construction: the host — or the client that reaches it — may already be gone
-            // on the same shutdown, and the first failure is the report.
+            // on the same shutdown, and the first failure is the report. EVERY failure, a client timeout
+            // included (an OperationCanceledException nobody asked for): one escaping here never reached
+            // `onEnded`, and the terminal door waited on it forever (REV3).
         }
 
         if (onEnded is not null)

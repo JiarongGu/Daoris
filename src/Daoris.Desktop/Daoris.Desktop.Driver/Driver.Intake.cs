@@ -190,6 +190,8 @@ public sealed partial class Driver
             // and the protocol door's stdin is the driver's own frames — a person's line written
             // there would land in the middle of the JSON-RPC stream.
             using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(ask.Id));
+            // The same reaper a quest's session holds (REV3): whatever ends this scope ends the agent.
+            using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
             using var _ = new Disposer(() => SpawnServers.Remove(handed));
             using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
 
@@ -257,13 +259,15 @@ public sealed partial class Driver
                 true,
                 new SessionEnded(sessionId, $"ask #{ask.Id}", "stopped", ByPerson: true, Adapter: adapterName));
         }
-        catch (Exception error) when (error is not OperationCanceledException)
+        catch (Exception error)
         {
+            // Everything but the shutdown above, a client timeout included (REV3) — see the quest's twin.
             try
             {
-                await service.AdvanceAsync(sessionId, "failed", note: error.Message, ct: ct).ConfigureAwait(false);
+                await service.AdvanceAsync(
+                    sessionId, "failed", note: error.Message, ct: CancellationToken.None).ConfigureAwait(false);
             }
-            catch (DriverException)
+            catch (Exception)
             {
                 // The terminal write is best-effort by construction: the first failure is the report.
             }
