@@ -20,8 +20,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 702 driver,
-130 desktop modules, 80 devkit, 1105 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
+**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 705 driver,
+130 desktop modules, 80 devkit, 1109 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -239,13 +239,14 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),
   against the reference and D41. Written down as it is found, and fixed. **The ledger is
   `docs/2026-09-26-ux5-screen-audit.md`** (opened 2026-09-26). Landed so far: U1 (one hue for
-  waiting), U2 and U13 (the monitor), U4 (line breaks), U5 and U12 (the platform's own controls),
-  U7 (the dock on demand), U8 (paths), U9 (no box where nothing listens), U11 (the frame's tests
-  isolated) and U16 (the owner's: the session follows the window's width, reversing U10). **Open in
-  the ledger:** U3 (the protocol door's console breaks a message at each chunk; make `Acp.Render` and
-  `Acp.Map` one path), U6 (fold §4's dated amendments into the body, surface by surface) and U15 (the
-  command pill runs over the View menu at a narrow window). **Then the pass itself**: the ledger's
-  surface table, every row still unticked.
+  waiting), U2 and U13 (the monitor), U3 (the protocol door's console in lines, not chunks), U4
+  (line breaks), U5 and U12 (the platform's own controls), U7 (the dock on demand), U8 (paths), U9
+  (no box where nothing listens), U11 (the frame's tests isolated), U15 (the command center gives
+  way to the menus) and U16 (the owner's: the session follows the window's width, reversing U10).
+  **Open in the ledger:** U6 (fold §4's dated amendments into the body, surface by surface), and
+  U17 and U18 (a live chat between turns reads *working*; the composer's stop wears red), both to
+  judge at the Sessions surface. **Then the pass itself**: the ledger's surface table, every row
+  still unticked. The strip's row is half done: the activity bar and status bar are next.
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 
