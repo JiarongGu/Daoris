@@ -88,7 +88,11 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
   busy?: boolean;
   onSwitchDefault: (id: string, on: boolean) => void;
   onRemove: (target: { scope: RuleScopeName; name: string | undefined; rule: string }) => void;
-  onAdd: (addition: RuleAddition) => void;
+  /**
+   * Add a rule; call `added` once the driver has taken it. The words stay in the box until then, so
+   * a rule the driver refused can be corrected rather than retyped (REV3).
+   */
+  onAdd: (addition: RuleAddition, added: () => void) => void;
   /** The person's answer to an agent's proposal, by its id: `true` accepts it. */
   onAnswer: (id: string, accept: boolean) => void;
 }) {
@@ -117,8 +121,9 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
 
   const add = () => {
     const [scope, ...named] = where.split(':');
-    onAdd({ list, rule: rule.trim(), scope: scope as RuleScopeName, name: named.length > 0 ? named.join(':') : undefined });
-    setRule('');
+    onAdd(
+      { list, rule: rule.trim(), scope: scope as RuleScopeName, name: named.length > 0 ? named.join(':') : undefined },
+      () => setRule(''));
   };
 
   return (

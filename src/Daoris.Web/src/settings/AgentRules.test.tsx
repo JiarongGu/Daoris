@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
@@ -144,7 +144,28 @@ describe('What agents may do', () => {
 
     await userEvent.type(screen.getByRole('textbox', { name: 'the rule' }), 'Bash(make:*)');
     await userEvent.click(add);
-    expect(props.onAdd).toHaveBeenCalledWith({ list: 'allow', rule: 'Bash(make:*)', scope: 'machine', name: undefined });
+    expect(props.onAdd).toHaveBeenCalledWith(
+      { list: 'allow', rule: 'Bash(make:*)', scope: 'machine', name: undefined }, expect.any(Function));
+  });
+
+  /**
+   * REV3 web-rest F12: the words were cleared the moment they were handed up, so a rule the driver
+   * refused was gone from the box as well. They stay until the organism says the rule was added.
+   */
+  it('keeps the rule it was given until the rule is added, so a refused one can be corrected', async () => {
+    let added: (() => void) | undefined;
+    const props = show({ onAdd: vi.fn((_addition: unknown, done: () => void) => { added = done; }) });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add a rule' }));
+    const box = screen.getByRole('textbox', { name: 'the rule' });
+    await userEvent.type(box, 'Bash(make:*');
+    await userEvent.click(screen.getByRole('button', { name: 'add' }));
+
+    expect(props.onAdd).toHaveBeenCalled();
+    expect((box as HTMLInputElement).value).toBe('Bash(make:*');
+
+    await act(async () => added?.());
+    expect((screen.getByRole('textbox', { name: 'the rule' }) as HTMLInputElement).value).toBe('');
   });
 
   it('says a file that could not be read, in the driver\'s words', () => {

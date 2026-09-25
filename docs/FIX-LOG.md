@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A permission rule the driver refused was cleared from its box (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page. Adding a rule on Settings cleared the box as soon
+as the rule was handed to the driver. A rule the driver refused (a typo, a scope it does not know)
+was then gone as well as refused, and the person retyped it.
+
+**Root cause.** The molecule cleared its state when it handed the addition up, before any answer.
+
+**Fix.** `onAdd` carries an `added` callback. The organism calls it when the driver has taken the
+rule, and only then does the box clear.
+
+**Verify.** `keeps the rule it was given until the rule is added…` failed first: the box emptied on
+press. Rules tests 15/15.
+
 ## "A molecule imports no hook" could not see a hook one step removed (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page. The rule (D52 as amended) is held by

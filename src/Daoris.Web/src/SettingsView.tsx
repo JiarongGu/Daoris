@@ -587,8 +587,11 @@ function Rules({ notify }: { notify: Notify }) {
         onSuccess: () => notify(t('settings.rules.removed', { rule, where: where(scope, name) })),
         onError: failed,
       })}
-      onAdd={({ list, rule, scope, name }) => act.mutate({ action: 'add', list, rule, scope, name }, {
-        onSuccess: () => notify(t('settings.rules.added', { rule, list: t(`settings.rules.list.${list}`), where: where(scope, name) })),
+      onAdd={({ list, rule, scope, name }, added) => act.mutate({ action: 'add', list, rule, scope, name }, {
+        onSuccess: () => {
+          notify(t('settings.rules.added', { rule, list: t(`settings.rules.list.${list}`), where: where(scope, name) }));
+          added();
+        },
         onError: failed,
       })}
     />
