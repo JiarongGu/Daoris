@@ -51,6 +51,26 @@ public sealed class SensitiveGateTests : IDisposable
         Assert.Contains("missing", result.Detail);
     }
 
+    /// <summary>
+    /// REV3: a Windows home written in a JSON, JS or C# literal has two backslashes between its parts,
+    /// and a normalized one has forward slashes. The pattern held only the single-backslash spelling, and
+    /// this repository's own gate file carried the escaped one past it.
+    /// </summary>
+    [Theory]
+    [InlineData(@"\")]
+    [InlineData(@"\\")]
+    [InlineData("/")]
+    public void A_windows_home_is_caught_however_its_separator_is_spelled(string separator)
+    {
+        _fx.Write("README.md", $"see {string.Concat("C:", separator, "Users", separator, "someone")} for it");
+
+        var result = new SensitiveGate(ScanScope.Tree, new FakeGit("README.md"), allowBuiltinsOnly: true)
+            .Run(Context());
+
+        Assert.False(result.Passed);
+        Assert.Contains("Windows user-home absolute path", result.Detail);
+    }
+
     [Fact]
     public void Opting_out_of_the_private_list_is_explicit_and_then_the_builtins_still_run()
     {

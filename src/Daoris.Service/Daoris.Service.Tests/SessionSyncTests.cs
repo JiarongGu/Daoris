@@ -125,13 +125,17 @@ public sealed class SessionSyncTests : IAsyncLifetime
     [Fact]
     public async Task A_note_crosses_without_the_paths_and_the_account_it_names()
     {
+        // Home-shaped paths are assembled at run time: written as literals, they are the very shape the
+        // sensitive gate refuses in a tracked file.
+        var windowsHome = string.Concat("D:", @"\", "Users", @"\", "jane", @"\Daoris\data\sessions\x.log");
+        var unixHome = string.Concat("/", "home", "/", "jane", "/secret");
         var session = await _a.CreateAsync(
             "q1", "Shared", "stub", Now, profile: "janes-own-account", tree: "C:/somewhere/private/tree");
         await _a.SetStateAsync(
             session.Id, SessionState.Failed,
             "opened a session tree at C:\\somewhere\\private\\tree on `daoris/s1`. Its provider refused the "
             + "`claude-code` account `janes-own-account` (401). Could not find a part of the path "
-            + "'D:\\Users\\jane\\Daoris\\data\\sessions\\x.log'. And /home/jane/secret too.",
+            + $"'{windowsHome}'. And {unixHome} too.",
             null, null, Now);
         var remote = Remote("a@one");
 

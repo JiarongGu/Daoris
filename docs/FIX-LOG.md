@@ -5,6 +5,45 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The release workflow could not pass on a fresh runner, and its gate-list test read comments (2026-09-25)
+
+**Symptom.** Found by REV3's reading. The workflow has never been dispatched, and five things in it
+would have failed or lied:
+- **F1: nothing installed.** The `release` job never ran `npm ci` at the root, so `verify` (which opens
+  with `tsc --noEmit`) and `Pack` (whose prepack compiles) could not pass.
+- **F2: the bump broke the rehearsal.** `release-prep` bumps the canon version before the gates.
+  Every provenance header and lock carries that version, so the family rehearsal's first check
+  ("sync changed nothing tracked") would go red on every release that moves it.
+- **F3: files left out of the commit.** The release commit named its files by hand and missed the
+  example manifests `release-prep` pins, so `verify` would be red on main right after a release.
+- **F4: no publish directory.** `npm pack --pack-destination ../../publish` wrote into a directory
+  nothing had made.
+- **F5: the gate-list test read comments.** It matched the whole workflow's text. With the Verify step
+  deleted it stayed green, because a comment elsewhere said `npm run verify`.
+
+Separately, the sensitive gate's Windows home pattern held only the single-backslash spelling. The
+spelling used in JSON, JS and C# literals passed, and `daoris.gates.json` itself carried one. Widening
+the pattern then caught **this review's own commit `2b10cb7`**, whose new test wrote a home-shaped
+path as a literal: the universal gate had been red since. That is the reason to run the gates after
+every landing, not only at the end.
+
+**Fix.**
+- The job installs the root workspace.
+- A step re-syncs this repository and both examples at the new version.
+- The commit stages tracked files under exactly the places `release-prep` and the re-sync write.
+- Pack makes its destination.
+- The gate-list test reads only non-comment lines, and refuses `continue-on-error: true` and
+  `|| true`.
+- The Windows pattern takes one or two backslashes or a forward slash (the CLI's canon scan is its
+  twin). The placeholders it now catches are assembled at run time or reworded.
+
+**Verify.**
+- The gate-list test was watched red against a workflow with the Verify step removed (the removal
+  confirmed applied), then green on restore.
+- `A_windows_home_is_caught_however_its_separator_is_spelled` covers all three spellings.
+- The universal gates pass on the sensitive scan.
+- **Not covered:** the workflow itself. It can only be proven by a dispatch, which is the owner's.
+
 ## A console lost its backlog, and a refresh said less than the service did while wiping what the tick wrote (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page.

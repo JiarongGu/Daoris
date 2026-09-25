@@ -70,7 +70,9 @@ public sealed class SensitiveGate(
     /// </summary>
     private static readonly (Regex Pattern, string Why)[] Builtins =
     [
-        (new Regex(@"[A-Za-z]:\\Users\\[A-Za-z0-9._-]+", RegexOptions.IgnoreCase), "Windows user-home absolute path"),
+        // Every spelling a Windows home takes in a tracked file (REV3): one backslash in prose, two in a
+        // JSON, JS or C# literal, a forward slash in a URI or a normalized path. Only the first was held.
+        (new Regex(@"[A-Za-z]:(?:\\{1,2}|/)Users(?:\\{1,2}|/)[A-Za-z0-9._-]+", RegexOptions.IgnoreCase), "Windows user-home absolute path"),
         (new Regex(@"/(?:home|Users)/[a-z][a-z0-9._-]+", RegexOptions.IgnoreCase), "Unix home absolute path"),
         (new Regex(@"\b(?:ghp|gho|ghs|ghu)_[A-Za-z0-9]{20,}"), "GitHub token"),
         (new Regex(@"\bsk-[A-Za-z0-9]{20,}"), "API secret key"),

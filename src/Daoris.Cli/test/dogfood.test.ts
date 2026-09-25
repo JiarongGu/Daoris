@@ -72,7 +72,8 @@ test('every pack declares a description and ships at least one file', () => {
 
 test('no canon file names a private sibling project or a machine path', () => {
   const canon = readCanon(join(repoRoot, 'canon'));
-  const forbidden = /[A-Z]:\\Users\\|\/home\/[a-z]/i;
+  // Every separator a Windows home is spelled with — the devkit's sensitive gate's twin (REV3).
+  const forbidden = /[A-Z]:(?:\\{1,2}|\/)Users(?:\\{1,2}|\/)|\/home\/[a-z]/i;
   for (const pack of canon.packs.values()) {
     for (const file of pack.files) {
       const text = readText(join(repoRoot, 'canon', file.source));
@@ -140,7 +141,11 @@ test('every declared gate is actually run by the release workflow', () => {
   const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
     gates: { name: string; run: string }[];
   };
-  const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'));
+  // 🔴 What the workflow RUNS, never what it says (REV3): a comment naming a command is not the command,
+  // and deleting the Verify step left this green because a comment beside another step said
+  // `npm run verify`. Full-line comments go; a step's own text stays.
+  const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'))
+    .split('\n').filter((line) => !/^\s*#/.test(line)).join('\n');
 
   assert.ok(gates.gates.length >= 4, 'the gate list emptied — that is not a pass');
   for (const gate of gates.gates) {
@@ -149,6 +154,10 @@ test('every declared gate is actually run by the release workflow', () => {
       `the '${gate.name}' gate is declared in daoris.gates.json but the release workflow never runs `
       + `it: ${gate.run}`);
   }
+
+  // And a step that runs but whose failure is ignored runs nothing that gates.
+  assert.doesNotMatch(workflow, /continue-on-error:\s*true/, 'a release step ignores its own failure');
+  assert.doesNotMatch(workflow, /\|\|\s*true\b/, 'a release step swallows its exit code with `|| true`');
 });
 
 /**

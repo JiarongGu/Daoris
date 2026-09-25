@@ -178,6 +178,12 @@ jobs:
           node-version: '24'
           registry-url: https://registry.npmjs.org
 
+      # The root workspace, TypeScript included (REV3). `verify` opens with `tsc --noEmit` and `Pack`'s
+      # prepack compiles the CLI; with nothing installed both fail on a fresh runner, and this job had
+      # never installed the root in its whole history — it has never been dispatched.
+      - name: Dependencies
+        run: npm ci
+
       # For the family rehearsal below — it spawns the real HTTP host over the example projects.
       - uses: actions/setup-dotnet@v4
         with:
@@ -208,6 +214,19 @@ jobs:
           echo "version=$final" >> "$GITHUB_OUTPUT"
           echo "tag=v$final" >> "$GITHUB_OUTPUT"
           echo "current=$current -> final=$final"
+
+      # 🔴 The canon's version is in every provenance header and every lock `sync` writes, so the bump
+      # above leaves this repository's own doctrine and both examples one version behind — and the
+      # family rehearsal's first check ("sync changed nothing tracked") red on every release that moves
+      # the version (REV3). Re-synced here, and committed with the bump below.
+      - name: Re-sync the doctrine at the new version
+        run: |
+          node src/Daoris.Cli/bin/daoris.mjs sync
+          for example in examples/*/; do
+            if [ -f "$example/daoris.json" ]; then
+              (cd "$example" && node ../../src/Daoris.Cli/bin/daoris.mjs sync)
+            fi
+          done
 
       # The devkit's five universal gates, over THIS repository (DEVKIT3). They were configured in
       # `daoris.gates.json` and read by nothing for as long as that file has existed — the workflow ran
@@ -271,7 +290,10 @@ jobs:
       # Packed from the package directory, where `prepack` stages the canon, the
       # licence and the readme in from the workspace root.
       - name: Pack
-        run: npm pack --pack-destination ../../publish
+        # npm writes into the destination without making it, and nothing earlier in this job does (REV3).
+        run: |
+          mkdir -p ../../publish
+          npm pack --pack-destination ../../publish
         working-directory: src/Daoris.Cli
 
       - name: Dry-run summary
@@ -281,8 +303,9 @@ jobs:
           echo "  version that WOULD ship: ${{ steps.version.outputs.version }}"
           ls -la publish/
 
-      # Publishes the tarball `Pack` produced rather than re-packing, so the
-      # artefact the gates ran against is the artefact that ships.
+      # Publishes the tarball `Pack` produced rather than re-packing, so what ships is exactly what Pack
+      # made once every gate above had passed. (The release rehearsal packs a tarball of its own from the
+      # same tree and drives that one; this one no gate touched.)
       #
       # Idempotent: npm has no --skip-duplicate and fails hard when the version
       # exists, which would otherwise leave every re-run stuck here — unable to
@@ -304,8 +327,11 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          # Named explicitly so no build artefact can ride along into a release commit.
-          git add src/Daoris.Cli/package.json canon/canon.json daoris.json README.md CHANGELOG.md canon/CHANGELOG.md
+          # Tracked files only (`-u`), under exactly the places release-prep and the re-sync write, so no
+          # build artefact can ride along — and none of what they wrote is left behind (REV3): the example
+          # manifests release-prep pins were missing here, and `verify` went red on main after a release.
+          git add -u -- src/Daoris.Cli/package.json canon daoris.json daoris.lock AGENTS.md CLAUDE.md .claude \
+            README.md CHANGELOG.md examples
           git diff --cached --quiet || git commit -m "chore: release ${{ steps.version.outputs.tag }}"
           git push
 

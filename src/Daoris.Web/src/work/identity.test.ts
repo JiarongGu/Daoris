@@ -102,7 +102,7 @@ describe('a tree name', () => {
   });
 
   it('reads a Windows path too — the same tree, spelled the other way', () => {
-    expect(treeName('C:\\Users\\p\\.daoris\\trees\\default\\engine\\streaming-budget'))
+    expect(treeName('C:\\somewhere\\.daoris\\trees\\default\\engine\\streaming-budget'))
       .toBe('streaming-budget');
   });
 

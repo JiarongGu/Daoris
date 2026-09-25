@@ -58,7 +58,7 @@ public sealed class QuestFilesTests : IDisposable
     /// </summary>
     [Theory]
     [InlineData("../../escape.txt", "escape.txt")]
-    [InlineData("C:\\Users\\someone\\secret.txt", "secret.txt")]
+    [InlineData("C:\\work\\private\\secret.txt", "secret.txt")]
     [InlineData("what?.png", "what_.png")]
     [InlineData("  spaced.log  ", "spaced.log")]
     [InlineData("trailing.", "trailing")]
