@@ -8,13 +8,13 @@ import { stopNotice, useConsidered, useDriver, useStopSession, useTrustFolder, u
 import { TrustAsk } from './work/TrustAsk';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
-import { CarryFields, useCarry } from './compose/carry';
+import { CarriedCount, CarryFields, useCarry } from './compose/carry';
 import { AsksSection } from './asks/AsksSection';
 import { sittingBecause } from './signals';
 import { buildChain } from './map/chain';
 import { ChainStrip } from './map/ChainStrip';
 import {
-  Button, Card, CheckField, Drawer, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
+  Button, CheckField, Drawer, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE, RecordCard,
   SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
 } from './ui';
 import { cn } from './lib/cn';
@@ -243,69 +243,43 @@ export function QuestsView({
     const tone = QUEST_TONE[quest.status];
     const session = sessionFor.get(quest.id);
     return (
-      <Card
+      <RecordCard
         key={quest.id}
-        className={cn(
-          'mb-3.5 cursor-pointer transition-colors duration-(--speed) hover:border-line-strong hover:border-l-accent',
-          (quest.status === 'Done' || quest.status === 'Declined') && 'opacity-75',
-        )}
+        closed={quest.status === 'Done' || quest.status === 'Declined'}
+        onOpen={() => openDetail(quest)}
       >
-        <div
-          role="button" tabIndex={0}
-          onClick={() => openDetail(quest)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDetail(quest); }
-          }}
-        >
-          {/* Status FIRST, beside the title it describes — the order D41 §5 already specifies for
-              Overview's rows (`pill · title · route · how long`). Pushed to the far edge it sat a
-              thousand pixels from the thing it was about, and the eye had to cross the whole card to
-              connect them. The secondary marks stay right: they are exceptions, not identity. */}
-          <header className="flex items-baseline gap-2">
-            <Pill tone={tone} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
-            <span className="min-w-0 flex-1 truncate text-body font-semibold">{quest.title}</span>
-            <span className="flex shrink-0 items-baseline gap-1.5">
-              {/* What it carries (D65 §2) — counted, not listed: the card is a summary, the drawer
-                  holds the links and the files themselves. */}
-              {(() => {
-                const links = quest.links?.length ?? 0;
-                const files = quest.attachments?.length ?? 0;
-                if (links === 0 && files === 0) return null;
-                const label = [
-                  links > 0 && t('quests.card.links', { count: links }),
-                  files > 0 && t('quests.card.files', { count: files }),
-                ].filter(Boolean).join(' · ');
-                return (
-                  <span aria-label={label} title={label} className="flex items-center gap-1 font-mono text-meta text-ink-faint">
-                    {links > 0 && <><Icon name="link" size={12} />{links}</>}
-                    {files > 0 && <><Icon name="attach" size={12} />{files}</>}
-                  </span>
-                );
-              })()}
-              {/* A week of silence is the signal this view exists to surface. */}
-              {quest.status === 'Open' && sat >= 7 && (
-                <Pill tone="declined">{t('quests.card.sat', { days: sat })}</Pill>
-              )}
-              {/* A live driven session marks its quest; finished ones live in the drawer's record. */}
-              {session && SESSION_ACTIVE.has(session.state) && (
-                <Pill tone={SESSION_TONE[session.state]} title={t('quests.session.hint')}>
-                  {t(`sessionState.${session.state}`)}
-                </Pill>
-              )}
-            </span>
-          </header>
-          <p className="mt-1 text-body text-accent">
-            {quest.from} → {quest.to}
-            <span className="font-mono text-meta text-ink-faint">
-              {' '}· {t('quests.card.filed', { ago: ago(quest.filed) })}
-              {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
-              {/* A step of a chain says which quest's close published it (D65 §4). */}
-              {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
-            </span>
-          </p>
-          <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{quest.body}</p>
-        </div>
-      </Card>
+        {/* Status FIRST, beside the title it describes — the order D41 §5 already specifies for
+            Overview's rows (`pill · title · route · how long`). Pushed to the far edge it sat a
+            thousand pixels from the thing it was about, and the eye had to cross the whole card to
+            connect them. The secondary marks stay right: they are exceptions, not identity. */}
+        <header className="flex items-baseline gap-2">
+          <Pill tone={tone} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
+          <span className="min-w-0 flex-1 truncate text-body font-semibold">{quest.title}</span>
+          <span className="flex shrink-0 items-baseline gap-1.5">
+            <CarriedCount links={quest.links?.length ?? 0} files={quest.attachments?.length ?? 0} />
+            {/* A week of silence is the signal this view exists to surface. */}
+            {quest.status === 'Open' && sat >= 7 && (
+              <Pill tone="declined">{t('quests.card.sat', { days: sat })}</Pill>
+            )}
+            {/* A live driven session marks its quest; finished ones live in the drawer's record. */}
+            {session && SESSION_ACTIVE.has(session.state) && (
+              <Pill tone={SESSION_TONE[session.state]} title={t('quests.session.hint')}>
+                {t(`sessionState.${session.state}`)}
+              </Pill>
+            )}
+          </span>
+        </header>
+        <p className="mt-1 text-body text-accent">
+          {quest.from} → {quest.to}
+          <span className="font-mono text-meta text-ink-faint">
+            {' '}· {t('quests.card.filed', { ago: ago(quest.filed) })}
+            {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
+            {/* A step of a chain says which quest's close published it (D65 §4). */}
+            {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
+          </span>
+        </p>
+        <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{quest.body}</p>
+      </RecordCard>
     );
   };
 

@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { Ask, AskState, Session } from '../api';
 import { ago } from '../format';
-import { cn } from '../lib/cn';
-import { Card, Dot, Icon, Pill } from '../ui';
+import { Dot, Pill, RecordCard } from '../ui';
+import { CarriedCount } from '../compose/carry';
 
 /**
  * An ask's state as a pill tone: waiting on a person while it is asked or proposed — a proposal is a
@@ -52,12 +52,6 @@ export function AskCard({ ask, intake = null, onOpen }: {
   onOpen: (ask: Ask) => void;
 }) {
   const { t } = useTranslation();
-  const links = ask.links.length;
-  const files = ask.attachments.length;
-  const carried = [
-    links > 0 && t('quests.card.links', { count: links }),
-    files > 0 && t('quests.card.files', { count: files }),
-  ].filter(Boolean).join(' · ');
   const became = ask.quests.map((id) => `#${id.slice(0, 6)}`).join(', ');
   const proposed = ask.proposal.map((match) => match.repository).join(', ');
   const live = ask.state === 'Open' || ask.state === 'Proposed';
@@ -65,42 +59,26 @@ export function AskCard({ ask, intake = null, onOpen }: {
   const askedYou = live && intake === 'awaiting-person';
 
   return (
-    <Card className={cn(
-      'mb-3.5 cursor-pointer transition-colors duration-(--speed) hover:border-line-strong hover:border-l-accent',
-      ask.state === 'Closed' && 'opacity-75',
-    )}>
-      <div
-        role="button" tabIndex={0}
-        onClick={() => onOpen(ask)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(ask); }
-        }}
-      >
-        <header className="flex items-baseline gap-2">
-          <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
-          <span className="min-w-0 flex-1 truncate text-body font-semibold">{firstLine(ask.sentence)}</span>
-          {carried && (
-            <span aria-label={carried} title={carried} className="flex shrink-0 items-center gap-1 font-mono text-meta text-ink-faint">
-              {links > 0 && <><Icon name="link" size={12} />{links}</>}
-              {files > 0 && <><Icon name="attach" size={12} />{files}</>}
-            </span>
-          )}
-        </header>
-        <p className="mt-1 text-body text-accent">
-          {t('asks.card.workspace', { workspace: ask.workspace })}
-          <span className="font-mono text-meta text-ink-faint">
-            {' '}· {tierWords(t, ask.tier, 'short')} · {t('asks.card.asked', { ago: ago(ask.asked) })}
-            {became && <> · {t('asks.card.became', { quests: became })}</>}
-            {!became && proposed && ask.state !== 'Closed' && <> · {t('asks.card.proposed', { repositories: proposed })}</>}
-            {reading && <> · {t('asks.card.intakeReading')}</>}
-          </span>
+    <RecordCard closed={ask.state === 'Closed'} onOpen={() => onOpen(ask)}>
+      <header className="flex items-baseline gap-2">
+        <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
+        <span className="min-w-0 flex-1 truncate text-body font-semibold">{firstLine(ask.sentence)}</span>
+        <CarriedCount links={ask.links.length} files={ask.attachments.length} />
+      </header>
+      <p className="mt-1 text-body text-accent">
+        {t('asks.card.workspace', { workspace: ask.workspace })}
+        <span className="font-mono text-meta text-ink-faint">
+          {' '}· {tierWords(t, ask.tier, 'short')} · {t('asks.card.asked', { ago: ago(ask.asked) })}
+          {became && <> · {t('asks.card.became', { quests: became })}</>}
+          {!became && proposed && ask.state !== 'Closed' && <> · {t('asks.card.proposed', { repositories: proposed })}</>}
+          {reading && <> · {t('asks.card.intakeReading')}</>}
+        </span>
+      </p>
+      {askedYou && (
+        <p className="mt-1 mb-0">
+          <Dot tone="parked" label={t('work.attention.intake')} />
         </p>
-        {askedYou && (
-          <p className="mt-1 mb-0">
-            <Dot tone="parked" label={t('work.attention.intake')} />
-          </p>
-        )}
-      </div>
-    </Card>
+      )}
+    </RecordCard>
   );
 }

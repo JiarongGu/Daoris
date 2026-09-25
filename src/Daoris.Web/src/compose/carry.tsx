@@ -34,6 +34,26 @@ export function useFileChooser(onChoose: (files: File[]) => void, label: string)
   return { open: () => ref.current?.click(), input };
 }
 
+/**
+ * What a record carries, counted rather than listed (D65 §2): a card is a summary, and its record
+ * holds the links and the files themselves. Nothing when it carries neither. The quest and ask
+ * cards each wrote this (REV3 CLEAN1).
+ */
+export function CarriedCount({ links, files }: { links: number; files: number }) {
+  const { t } = useTranslation();
+  if (links === 0 && files === 0) return null;
+  const label = [
+    links > 0 && t('quests.card.links', { count: links }),
+    files > 0 && t('quests.card.files', { count: files }),
+  ].filter(Boolean).join(' · ');
+  return (
+    <span aria-label={label} title={label} className="flex shrink-0 items-center gap-1 font-mono text-meta text-ink-faint">
+      {links > 0 && <><Icon name="link" size={12} />{links}</>}
+      {files > 0 && <><Icon name="attach" size={12} />{files}</>}
+    </span>
+  );
+}
+
 /** Whether a drag carries files — a dragged selection of text is the words' business, not ours. */
 export const carriesFiles = (event: { dataTransfer: DataTransfer | null }) =>
   Array.from(event.dataTransfer?.types ?? []).includes('Files');
