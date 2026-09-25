@@ -41,14 +41,15 @@ public sealed record RemoteTarget(string Url, string Key)
     /// </summary>
     public static string? DefaultPath => DaorisHome.File("remotes.json");
 
+    /// <summary>The file every door reads and writes — the override, or the conventional home, as the driver's and the harnesses' are.</summary>
+    public static string? ResolvePath() => Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
+
     /// <summary>A workspace name as it is stored and compared: trimmed, and the default when unstated.</summary>
     public static string Workspace(string? name) =>
         string.IsNullOrWhiteSpace(name) ? DefaultWorkspace : name.Trim();
 
     /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
-    public static IReadOnlyDictionary<string, RemoteTarget> Load() => Load(
-        Environment.GetEnvironmentVariable,
-        Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath);
+    public static IReadOnlyDictionary<string, RemoteTarget> Load() => Load(Environment.GetEnvironmentVariable, ResolvePath());
 
     /// <summary>
     /// The testable shape: the same judgement over injected surroundings.

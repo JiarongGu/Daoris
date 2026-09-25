@@ -132,6 +132,17 @@ public sealed class DriverLoop(
     public void Nudge() => _watch?.Nudge();
 
     /// <summary>
+    /// A session's console lines, as the page's one event for them. The shape is the page's contract,
+    /// so one writer builds it: the relay's batches and a harness action's lines alike (REV3 CLEAN1).
+    /// </summary>
+    internal static Task EmitOutput(IEventBus bus, string session, IEnumerable<ConsoleLine> lines) =>
+        bus.EmitAsync("DAORIS", "SESSION_OUTPUT", new
+        {
+            Session = session,
+            Lines = lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
+        });
+
+    /// <summary>
     /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
     /// </summary>
     public TrustHolds Trust { get; } = new();
@@ -212,12 +223,7 @@ public sealed class DriverLoop(
         // Live console lines become IPC events, BATCHED by the library's relay (D49 §2). The shell's
         // half is only what a batch becomes: the page asks for the backlog once over `TAIL_SESSION`
         // and takes everything after it from here.
-        using var console = new ConsoleRelay(Output, (session, lines) =>
-            eventBus.EmitAsync("DAORIS", "SESSION_OUTPUT", new
-            {
-                Session = session,
-                Lines = lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
-            }));
+        using var console = new ConsoleRelay(Output, (session, lines) => EmitOutput(eventBus, session, lines));
 
         // The conversation's events, the same way (D76, CONV1): the page reads the history once over
         // `SESSION_HISTORY` and takes everything after it from here, asking for a gap it notices.

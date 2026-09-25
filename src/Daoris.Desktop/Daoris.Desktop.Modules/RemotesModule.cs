@@ -32,10 +32,8 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
     /// hand between calls, and a surface that answered from a cache would report its own last write.
     /// </summary>
     private static string Path =>
-        Environment.GetEnvironmentVariable(RemoteTarget.PathVariable)
         // With no home there is no map to edit, and the home's own sentence says what to set (D63).
-        ?? RemoteTarget.DefaultPath
-        ?? DaorisHome.Require("remotes.json");
+        RemoteTarget.ResolvePath() ?? DaorisHome.Require("remotes.json");
 
     protected override Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)

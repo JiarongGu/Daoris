@@ -1158,11 +1158,8 @@ public sealed class DriverModule : ModuleBase
     private Action<string> Relay(string harness, string action)
     {
         var sequence = 0L;
-        return line => _events.EmitAsync("DAORIS", "SESSION_OUTPUT", new
-        {
-            Session = $"{harness}:{action}",
-            Lines = new[] { new { Sequence = Interlocked.Increment(ref sequence), Text = line } },
-        });
+        return line => DriverLoop.EmitOutput(
+            _events, $"{harness}:{action}", [new ConsoleLine(Interlocked.Increment(ref sequence), line)]);
     }
 
     /// <summary>
