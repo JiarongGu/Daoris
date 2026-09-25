@@ -137,7 +137,11 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
         {
             throw; // Cancellation belongs to the caller, never converted into "unreachable".
         }
-        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or UriFormatException)
+        // 🔴 Everything else is the wall (REV3). An address with no scheme — `team.example.com:5177`, which
+        // `remote add` and the environment both accept — parses as a scheme or as relative, and threw
+        // NotSupportedException or InvalidOperationException past a list of three: a sync pass answered a
+        // bare 500, and a take on a shared quest committed here and then threw.
+        catch (Exception error) when (error is not RemoteException)
         {
             throw new RemoteException($"the remote could not be reached ({error.Message})");
         }

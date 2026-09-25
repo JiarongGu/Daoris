@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A remote address with no scheme threw past the remote's own wall (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then reproduced. `daoris remote add team --url team.example.com:5177`
+was accepted, and so was the same form in `DAORIS_REMOTE_URL`. Every request to it threw. An address
+like that parses as the *scheme* `team.example.com` (`NotSupportedException`), and `192.168.1.5:5177`
+parses as relative (`InvalidOperationException`). Neither was in `SendAsync`'s list of three caught
+types, and `QuestSync` catches only `RemoteException`. So `/api/sync` answered a bare 500 with no wall
+on the status bar. A take on a shared quest committed locally and then threw, and a retried take then
+stood down on its own claim.
+
+**Root cause.** The catch named the failures someone had seen. The address was validated nowhere.
+
+**Fix.** `HttpRemote.SendAsync` turns every failure except the caller's own cancellation into the
+remote's wall, never naming the key. `remote add` refuses an address that is not http(s).
+
+**Verify.** `An_address_with_no_scheme_is_the_remote_s_wall_not_a_crash` covers both shapes, which
+failed with exactly those two exception types. `an address with no scheme is refused before it is
+wired` checks that nothing was written. Service passes 480/480.
+
 ## One repeated heading failed the whole refresh, one failing embedder failed convergence, and the registry was not safe to share (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service.

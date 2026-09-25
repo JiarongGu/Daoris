@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandRemote } from '../src/remotes.ts';
 import { readRemotes, redactKey, remotesPath } from '../src/remotemap.ts';
@@ -202,6 +202,18 @@ test('a workspace name is a person\'s name — case does not make a second row, 
   const removed = await run(['remove', 'AURORA'], path);
   assert.doesNotMatch(removed.out, /not wired/);
   assert.deepEqual(JSON.parse(readFileSync(path, 'utf8')), {});
+  fx.cleanup();
+});
+
+/** REV3: an address with no scheme was wired, and every sync with it then failed at the service's door. */
+test('an address with no scheme is refused before it is wired', async () => {
+  const fx = makeFixture('remotes-scheme');
+  const path = mapAt(fx);
+
+  await assert.rejects(
+    run(['add', 'team', '--url', 'team.example.com:5177', '--key', KEY], path),
+    (error: unknown) => error instanceof DaorisError && /http:\/\/ or https:\/\//.test(error.message));
+  assert.equal(existsSync(path), false, 'nothing was written');
   fx.cleanup();
 });
 

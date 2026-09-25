@@ -109,6 +109,13 @@ export async function commandRemote({ argv, write }: CommandArgs): Promise<ExitC
           `\`remote add ${workspace}\` needs the deployment's address — \`--url https://…\`. `
           + 'The workspace name keys the map; the url and the key are what speak to its server.');
       }
+      // An address with no scheme parses as a scheme of its own, and every sync with it failed at the
+      // service's door rather than here, where it was typed (REV3).
+      if (!/^https?:\/\/[^/]/i.test(url)) {
+        throw new DaorisError(
+          `\`${url}\` is not an address a deployment answers at — one starts http:// or https://, `
+          + 'e.g. `--url https://team.example.com`.');
+      }
 
       // An edit needs a place to land: the override, or the home's file, or a refusal naming what
       // to set (D63) — never a default under the user profile.
