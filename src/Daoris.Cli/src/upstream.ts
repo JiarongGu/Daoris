@@ -1,7 +1,7 @@
 import type { CommandArgs, Lock, LockEntry, Manifest } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { readText, sha256, writeTextAtomic } from './fsx.ts';
 import { parseFrontmatter, stripHeader } from './document.ts';
 import { resolveCanonRoot } from './canon.ts';
@@ -33,7 +33,15 @@ export function upstreamFile(
   }
   if (!existsSync(canonRoot)) throw new DaorisError(`no canon at '${canonRoot}'`);
 
-  const canonFile = join(canonRoot, entry.source);
+  // D18's containment, for the write this direction makes: the lock is generated, so it is the file
+  // nobody reads closely, and a merge-mangled or crafted `source` would otherwise land anywhere.
+  const base = resolve(canonRoot);
+  const canonFile = resolve(base, entry.source);
+  if (!canonFile.startsWith(base + sep)) {
+    throw new DaorisError(
+      `'${entry.source}' resolves outside the canon — refusing to write it.\n`
+      + '  a lock entry whose source escapes the canon means daoris.lock is corrupt or has been tampered with');
+  }
 
   if (entry.in) {
     // A span (D59). The region carries PROSE; the frontmatter was stripped on the way in, so the

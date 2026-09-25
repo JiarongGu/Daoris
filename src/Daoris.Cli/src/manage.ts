@@ -8,7 +8,7 @@
 
 import { isAbsolute, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
-import { refusal, request } from './service.ts';
+import { endpoint, isLocalService, refusal, request } from './service.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -67,6 +67,14 @@ export async function commandImport({ root, argv, write }: CommandArgs): Promise
   if (argv.includes('--dry-run')) {
     write(`daoris: would import ${folder ?? "the service's own knowledge root"}`);
     return 0;
+  }
+
+  // 🔴 A folder is a machine path, and it goes only to a service on this machine — the rule `connect`
+  // keeps for a root (D47 §4). A shared deployment refused it anyway, but only after it arrived.
+  if (folder !== undefined && !isLocalService(endpoint().url)) {
+    throw new DaorisError(
+      `${endpoint().url} is not on this machine, and a folder here means nothing there — import a `
+      + 'folder into this machine\'s own service; a deployment is fed by the machines that join it.');
   }
 
   const { status, json } = await request('POST', '/api/registry/import', folder ? { folder } : {});

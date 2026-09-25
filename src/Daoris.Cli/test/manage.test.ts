@@ -129,6 +129,27 @@ test('import with no folder lets the service use its own root', async () => {
   fx.cleanup();
 });
 
+/**
+ * A folder is a machine path, and a machine path never leaves the machine (D47 §4) — `connect` already
+ * sends its root only to a local service. `import` sent it anywhere, and a shared deployment refused
+ * it only after it had arrived (REV3).
+ */
+test('import names no folder to a service that is not on this machine', async () => {
+  const fx = makeFixture('import-remote');
+  process.env.DAORIS_SERVICE_URL = 'https://team.example.com';
+  stubService(200, {});
+
+  try {
+    await run(commandImport, fx.root, ['./family']).result;
+    assert.fail('expected a refusal');
+  } catch (error) {
+    assert.ok(error instanceof DaorisError);
+    assert.match(error.message, /not on this machine/);
+  }
+  assert.equal(calls.length, 0, 'nothing was sent');
+  fx.cleanup();
+});
+
 /** A refusal is the service's sentence, and it becomes the CLI's — never a bare status code. */
 test('a refusal reaches the person verbatim, as a policy failure', async () => {
   const fx = makeFixture('import-refused');

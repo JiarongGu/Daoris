@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 import { readCanon } from '../src/canon.ts';
@@ -94,6 +95,27 @@ test('a local file has nothing to upstream and says so', () => {
   assert.ok(error instanceof DaorisError);
   assert.equal(error.exitCode, 2);
   assert.match(error.message, /local/i);
+  fx.canonFx.cleanup();
+  fx.repoFx.cleanup();
+});
+
+/**
+ * D18's containment, on the other half of the loop. `sync` refuses a lock entry that leaves the
+ * target directory; `upstream` wrote wherever an entry's `source` pointed, and the lock is the
+ * generated file nobody reads closely in review (REV3).
+ */
+test('a lock entry whose source leaves the canon is refused, and nothing is written outside it', () => {
+  const fx = synced();
+  edit(fx, 'sensitive-info', (body) => `${body}\n\nIMPROVED.`);
+  const lock = JSON.parse(fx.repoFx.read('daoris.lock'));
+  lock.entries.find((e: { target: string }) => e.target === 'rules/sensitive-info.md').source = '../escaped.md';
+  fx.repoFx.write('daoris.lock', JSON.stringify(lock));
+  const outside = join(fx.canonFx.root, '..', 'escaped.md');
+
+  const error = captureError(() => promote(fx, 'rules/sensitive-info.md'));
+  assert.ok(error instanceof DaorisError);
+  assert.match(error.message, /outside the canon/);
+  assert.equal(existsSync(outside), false);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

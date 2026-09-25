@@ -190,7 +190,10 @@ export function runCli(
       write(`daoris: ${error.message}`);
       return error.exitCode;
     }
-    throw error;
+    // 🔴 A failure nobody anticipated is a TOOL error. Rethrown, Node printed a stack trace and exited
+    // 1 — the policy code, which a build gate reads as "the doctrine is wrong" (REV3).
+    write(`daoris: ${error instanceof Error ? error.message : String(error)}`);
+    return 2;
   }
 }
 

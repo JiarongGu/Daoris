@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Three CLI boundaries with no guard: `import`'s folder, `upstream`'s write, and the exit code (2026-09-25)
+
+**Symptom.** Found by REV3's reading. (1) With `DAORIS_SERVICE_URL` pointing at a shared deployment,
+`daoris import ../repos` sent the folder's absolute path there, along with the key. The server
+refused it, but only after the path had left the machine. (2) `daoris upstream` wrote to wherever the
+lock's `source` pointed, so a merge-mangled or crafted entry could land a rule body outside the
+canon. (3) Any exception that was not a `DaorisError` escaped `runCli` as a stack trace with Node's
+exit 1, which is the *policy* code. A build gate would read a failed file-system call as "the doctrine
+is wrong".
+
+**Root cause.** (1) `connect` sends its root only to a local service (`isLocalService`), but `import`
+was written without the same guard. (2) D18's containment exists only in `applySync`, and `upstream`
+writes in the other direction. (3) `report` rethrew anything it did not recognise.
+
+**Fix.** (1) `import` refuses before sending when a folder is named and the service is not on this
+machine. (2) `upstream` resolves the canon file and refuses unless it lies inside the canon.
+(3) `report` writes one line and returns 2.
+
+**Verify.** Three new tests, each watched failing before its fix:
+- `import names no folder to a service that is not on this machine` asserts that nothing was sent.
+- `a lock entry whose source leaves the canon is refused` asserts that nothing was written outside.
+- `a failure nobody anticipated is a tool error (exit 2)` runs `check` over a `daoris.json` that is a
+  directory.
+
 ## `sync` deleted a repository's own rule file, and rewrote its CRLF instruction files (2026-09-25)
 
 **Symptom.** Found by REV3's reading, then shown by probe. Both defects came in with D59.

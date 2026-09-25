@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { runCli } from '../src/cli.ts';
+import { makeFixture } from './_fixture.ts';
 
 test('--help prints usage and exits 0', () => {
   const out: string[] = [];
@@ -40,6 +43,21 @@ test('the agent tools are `daoris agent`, and the old verb says where it went', 
   runCli(['--help'], process.cwd(), (s) => help.push(s));
   assert.match(help.join('\n'), /^ {2}agent \[verb\]/m);
   assert.doesNotMatch(help.join('\n'), /^ {2}harness /m);
+});
+
+/**
+ * Exit codes are the contract, and 1 is POLICY — the code a build gate reads as "the doctrine is
+ * wrong". A failure nobody anticipated (a file system that refused, a shape nobody expected) is a tool
+ * error, 2, said in one line. It escaped as a stack trace and Node's own exit 1 (REV3).
+ */
+test('a failure nobody anticipated is a tool error (exit 2) in one line, never a stack trace', async () => {
+  const fx = makeFixture('cli-unanticipated');
+  mkdirSync(join(fx.root, 'daoris.json'));
+  const out: string[] = [];
+  const code = await runCli(['check'], fx.root, (s) => out.push(s));
+  assert.equal(code, 2);
+  assert.match(out.join('\n'), /^daoris: /);
+  fx.cleanup();
 });
 
 test('no arguments prints usage and exits 2', () => {
