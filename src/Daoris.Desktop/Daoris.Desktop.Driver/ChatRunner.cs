@@ -52,12 +52,10 @@ public sealed class ChatRunner(
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _watching =
         new(StringComparer.OrdinalIgnoreCase);
 
-    // The protocol door's conversations (CONV3b), by session: each one's ACP session and its turns.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProtocolChat> _protocol =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    // The native door's conversations on a structured wire (CONV4a), by session: each one's turns.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, NativeChat> _native =
+    // The conversations whose turns are visible, by session: the protocol door's (CONV3b) and the
+    // native door's on a structured wire (CONV4a). Every question a page asks of a turn is the same on
+    // both, so one map answers it (REV3 CLEAN1: it was two, and each question asked both in turn).
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ITurnedChat> _turned =
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -252,14 +250,14 @@ public sealed class ChatRunner(
             chat = new ProtocolChat(
                 resolved.AcpPosture, meta, workTree, Servers(sessionId), Changed,
                 stopped: () => processes.WasStopRequested(sessionId));
-            _protocol[sessionId] = chat;
+            _turned[sessionId] = chat;
         }
         else if (mapper is not null)
         {
             // 🔴 Turns are only visible where the wire says where one ends (CONV4a). A text-only pipe
             // takes each line at once, as it always did.
             native = new NativeChat(sessionId, resolved, processes, e => Record(sessionId, e), Changed);
-            _native[sessionId] = native;
+            _turned[sessionId] = native;
         }
 
         var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, mapper, chat, native, servers);
@@ -311,16 +309,10 @@ public sealed class ChatRunner(
     /// </remarks>
     public bool Finish(string sessionId)
     {
-        if (_protocol.TryGetValue(sessionId, out var chat))
+        // On the native door too, the turns already asked for run first: finishing is not withdrawing (CONV4a).
+        if (_turned.TryGetValue(sessionId, out var chat))
         {
             _ = chat.FinishAsync(() => processes.CloseInput(sessionId));
-            return true;
-        }
-
-        // The native door's turns already asked for run first too: finishing is not withdrawing (CONV4a).
-        if (_native.TryGetValue(sessionId, out var native))
-        {
-            _ = native.FinishAsync(() => processes.CloseInput(sessionId));
             return true;
         }
 
@@ -342,12 +334,11 @@ public sealed class ChatRunner(
     /// <exception cref="DriverException">The files are more than a message carries.</exception>
     public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null)
     {
-        var held = _protocol.ContainsKey(sessionId) || _native.ContainsKey(sessionId) || _talking.ContainsKey(sessionId);
+        var held = _turned.ContainsKey(sessionId) || _talking.ContainsKey(sessionId);
         var kept = held && files is { Count: > 0 } ? ChatFiles.Keep(home, sessionId, files) : [];
         var said = new ChatMessage(message, kept);
 
-        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Turns.Say(said);
-        if (_native.TryGetValue(sessionId, out var native)) return native.Turns.Say(said);
+        if (_turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Say(said);
 
         // A text-only door keeps the person's words where it keeps the agent's — the console. In the
         // record they would be half a conversation: questions with no answers beside them. A file it is
@@ -358,15 +349,11 @@ public sealed class ChatRunner(
     }
 
     /// <summary>Whether a conversation's turn is on its way to the harness or running there — false on a text-only door.</summary>
-    public bool Taking(string sessionId) =>
-        _protocol.TryGetValue(sessionId, out var chat) ? chat.Turns.Running
-        : _native.TryGetValue(sessionId, out var native) && native.Turns.Running;
+    public bool Taking(string sessionId) => _turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running;
 
     /// <summary>Where a conversation's turns stand; <see cref="ChatQueue.Idle"/> for one nothing here holds.</summary>
     public ChatQueue Queue(string sessionId) =>
-        _protocol.TryGetValue(sessionId, out var chat) ? chat.Turns.State
-        : _native.TryGetValue(sessionId, out var native) ? native.Turns.State
-        : ChatQueue.Idle;
+        _turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
 
     /// <summary>
     /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
@@ -376,8 +363,7 @@ public sealed class ChatRunner(
     /// <exception cref="DriverException">The conversation's door carries only text, so it has no turn to stop.</exception>
     public Task<TurnStop> CancelTurnAsync(string sessionId)
     {
-        if (_protocol.TryGetValue(sessionId, out var chat)) return chat.Turns.StopAsync();
-        if (_native.TryGetValue(sessionId, out var native)) return native.Turns.StopAsync();
+        if (_turned.TryGetValue(sessionId, out var chat)) return chat.Turns.StopAsync();
         if (_talking.TryGetValue(sessionId, out var adapter))
         {
             throw new DriverException(
@@ -420,8 +406,7 @@ public sealed class ChatRunner(
         using var talking = new Disposer(() =>
         {
             _talking.TryRemove(sessionId, out _);
-            _protocol.TryRemove(sessionId, out _);
-            _native.TryRemove(sessionId, out _);
+            _turned.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied.
             chat?.Turns.Gone();
             native?.Gone();
@@ -562,6 +547,15 @@ public sealed class ChatRunner(
         if (failed is not null) throw new DriverException($"the ACP session could not open: {failed.Message}");
     }
 
+    /// <summary>A conversation whose turns are visible — what every door's question about a turn asks.</summary>
+    private interface ITurnedChat
+    {
+        ChatTurns Turns { get; }
+
+        /// <summary>Let the turns already asked for run, then end the input.</summary>
+        Task FinishAsync(Action endInput);
+    }
+
     /// <summary>
     /// One conversation on the protocol door (CONV3b): its session once opened, and its turns one at a
     /// time, in the order the person sent them (<see cref="ChatTurns"/>).
@@ -576,7 +570,7 @@ public sealed class ChatRunner(
     /// <para><b>A turn that could not be sent is said</b>, on the transcript and in the record, and the
     /// conversation goes on: the process is still there, and so is the person.</para>
     /// </remarks>
-    private sealed class ProtocolChat
+    private sealed class ProtocolChat : ITurnedChat
     {
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
@@ -691,7 +685,7 @@ public sealed class ChatRunner(
     /// <para><b>The person's words are recorded, then sent</b>: the harness can answer before a record
     /// written afterwards lands, and the answer would sit above the question.</para>
     /// </remarks>
-    private sealed class NativeChat
+    private sealed class NativeChat : ITurnedChat
     {
         private readonly object _gate = new();
         private TaskCompletionSource? _turn;
