@@ -78,9 +78,9 @@ export function AttendedSession({
   }
 
   return (
-    // The conversation's measure (UX5 U10): the head, the words and the composer are one column, so
-    // the pill stays beside the title it names however wide the centre is.
-    <article className="grid w-full max-w-3xl content-start gap-4">
+    // 🔴 The centre's width, whatever it is (UX5 U16, the owner): a 768px measure here left the record
+    // at half a maximized window. The pill stays beside its title in the head instead.
+    <article className="grid w-full content-start gap-4">
       <SessionHead
         session={session}
         quest={quest}

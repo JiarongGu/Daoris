@@ -89,7 +89,9 @@ export function SessionHead({
         </WaitingCard>
       )}
 
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
+      {/* The state follows the title rather than the far edge (§4: status leads): the head is as wide
+          as the centre (UX5 U16), and at the edge the pill sat a thousand pixels from what it names. */}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
         <h2 className="m-0 text-title font-[650] leading-[1.35]">{sessionTitle(session, quest, opening)}</h2>
         <span className="flex shrink-0 items-baseline gap-2">
           <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>

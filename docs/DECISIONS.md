@@ -3321,5 +3321,14 @@ unified or side by side.**
   never chose, opened at 45% by a tab, a row's review or the palette, and remembered either way.
   Rejected: open by default, which left a 1400px window's conversation 442px. Also rejected: opening
   narrower until Review is asked for, which is two defaults and still crowds the conversation.
-- **The head, the conversation and the composer are one column** (U10), at the conversation's
-  measure. The rules and the console strip still span the centre.
+- ~~**The head, the conversation and the composer are one column** (U10), at the conversation's
+  measure.~~ **They follow the centre's width** (U16, the owner: *"when window is maxed, the inner
+  content still only half the size, and this also appears in the chat box"*). The agent's words are
+  content, and content is shown as it is (platform language §4). The head's pill follows its title
+  rather than the far edge, which keeps what U10 was for. Rejected: a measure on the column, which
+  is U10 and was half a maximized window. Also rejected: a measure on the agent's paragraphs alone,
+  which at that width reads as half a window again.
+- **Every window hears of a session started or ended elsewhere** (U13): the driver's tick signs the
+  active sessions and forwards when they changed, as it already did for the asks (INT4d). Rejected:
+  a second event for chat lifecycle, which would be one more channel for a fact the tick already
+  carries, and would miss a session moved by another door.

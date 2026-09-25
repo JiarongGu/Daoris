@@ -61,8 +61,10 @@ export function ConversationView({
 
   return (
     // `minmax(0,1fr)`: a code block's long line scrolls inside its own box, and never widens the
-    // conversation past its measure (seen on the window with a real session, CONV3).
-    <section aria-label={t('work.conversation.label')} className="grid w-full max-w-3xl grid-cols-[minmax(0,1fr)] gap-3">
+    // conversation past the centre (seen on the window with a real session, CONV3). No measure of its
+    // own: the agent's words are content, shown at the width they are given (UX5 U16, the owner: a
+    // 768px cap was half a maximized window).
+    <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
       {earlier && onLoadEarlier && (
         <Button variant="ghost" onClick={onLoadEarlier} className="justify-self-center text-small">
           {t('work.conversation.earlier')}

@@ -202,8 +202,9 @@ export function Composer({
 
   return (
     <form
-      // The rule spans the centre; what is written under it keeps the conversation's measure (UX5 U10).
-      className="grid gap-2 border-t border-line px-4 py-3 [&>*]:max-w-3xl"
+      // The box follows the centre's width, as the conversation above it does (UX5 U16, the owner:
+      // capped, it was half a maximized window).
+      className="grid gap-2 border-t border-line px-4 py-3"
       onSubmit={(event) => { event.preventDefault(); say(); }}
       {...(live ? attach.handlers : {})}
     >

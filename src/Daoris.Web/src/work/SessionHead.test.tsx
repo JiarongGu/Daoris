@@ -76,6 +76,19 @@ describe('the attended session\'s head', () => {
     expect(screen.getByText('#7a82cc')).toBeInTheDocument();
   });
 
+  /**
+   * The state stays beside the title it names, however wide the head is (platform language §4:
+   * status leads). The head follows the centre's width now (UX5 U16), and pushed to the far edge the
+   * pill sat a thousand pixels from its title on a wide window, which is what U10 had capped around.
+   */
+  it('keeps the state beside the title rather than at the far edge', () => {
+    render(<SessionHead session={session()} quest={quest()} />);
+
+    const row = screen.getByRole('heading', { level: 2 }).parentElement!;
+    expect(row).toContainElement(screen.getByText('working'));
+    expect(row.className).not.toContain('justify-between');
+  });
+
   it('measures a running session to now and a finished one to where it ended', () => {
     const { unmount } = render(<SessionHead session={session()} />);
     expect(screen.getByText('running')).toBeInTheDocument();

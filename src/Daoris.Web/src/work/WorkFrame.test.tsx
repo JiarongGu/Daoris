@@ -136,20 +136,21 @@ describe('the Work frame', () => {
   });
 
   /**
-   * UX5 U10: with the dock closed by default (U7) the centre is wide, and only the conversation held
-   * a measure. The composer ran under it a quarter wider, and the head's pill sat a thousand pixels
-   * from the title it names. The three are one column. jsdom lays nothing out, so this holds the
-   * shared measure and the window holds the look.
+   * UX5 U16, the owner (2026-09-26): *"when window is maxed, the inner content still only half the
+   * size, and this also appears in the chat box"*. U10 had held the head, the conversation and the
+   * composer to a 768px measure, and on a maximized window that is half of it. They follow the
+   * centre's width, as content does everywhere (platform language §4: content is shown as it is).
+   * jsdom lays nothing out, so this holds the absence of a cap and the window holds the look.
    */
-  it('keeps the head, the conversation and the composer to one measure, however wide the centre', async () => {
+  it('lets the head and the composer follow the centre\'s width, however wide the window', async () => {
     SESSIONS = [DRIVEN, CHAT];
     show('c0ffee11');
 
-    // The conversation's own measure is ConversationView's, held beside its other tests.
+    // The conversation's own width is ConversationView's, held beside its other tests.
     const head = (await screen.findByRole('heading', { level: 2 })).closest('article')!;
     const composer = screen.getByRole('textbox', { name: 'message' }).closest('form')!;
-    expect(head.className).toContain('max-w-3xl');
-    expect(composer.className).toContain('[&>*]:max-w-3xl');
+    expect(head.className).not.toMatch(/max-w-/);
+    expect(composer.className).not.toMatch(/max-w-/);
   });
 
   it('is the rail and the attended session, bound by one selection', async () => {
