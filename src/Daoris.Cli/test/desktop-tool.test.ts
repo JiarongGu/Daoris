@@ -234,7 +234,7 @@ test('no install named is no install, rather than a path built from undefined', 
  * comparison never matches either.
  */
 test('a path is quoted for PowerShell with its apostrophes doubled and its backslashes untouched', () => {
-  assert.equal(psQuote('C:\\Users\\o\'brien\\app.exe'), "'C:\\Users\\o''brien\\app.exe'");
+  assert.equal(psQuote('D:\\builds\\o\'brien\\app.exe'), "'D:\\builds\\o''brien\\app.exe'");
   assert.equal(psQuote('plain'), "'plain'");
   assert.equal(psQuote("''"), "''''''");
 });
