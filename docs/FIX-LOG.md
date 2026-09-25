@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The doctrine gate could not start `daoris` on Windows (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the devkit. The doctrine gate runs `daoris check`, and its
+default command is `daoris`. npm installs that on Windows as `daoris.cmd`. Started without a shell,
+.NET looks for `daoris.exe` only, so on every Windows machine that had installed the CLI the gate
+said the tool "could not be run". This repository never saw it, because it names
+`node …/daoris.mjs` explicitly.
+
+**Root cause.** The devkit started programs as a shell would not: no `PATHEXT` lookup. The driver's
+harness actions had learned the same thing (the `WindowsShim` entry above).
+
+**Fix.** `Process.Run` resolves an extensionless command on Windows by `PATHEXT`, and runs a `.cmd`
+or `.bat` through `cmd.exe /d /c`. An argument carrying `cmd`'s metacharacters is refused rather
+than re-read by `cmd`.
+
+**Verify.** `ProcessTests` (Windows only, since a `.cmd` is a Windows shape): a `fake.cmd` named
+without its extension runs and answers, and an argument with `&` is refused. Both failed first with
+"the system cannot find the file". Devkit 80/80.
+
 ## A tool run through a junction ran nothing and exited 0 (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the tools. Each `tools/` script whose helpers are also

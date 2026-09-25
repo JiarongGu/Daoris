@@ -19,6 +19,7 @@ public static class Process
     /// </remarks>
     public static ProcessOutput Run(string file, IReadOnlyList<string> arguments, string workingDirectory)
     {
+        (file, arguments) = Resolve(file, arguments);
         var start = new ProcessStartInfo
         {
             FileName = file,
@@ -39,6 +40,55 @@ public static class Process
         process.WaitForExit();
 
         return new ProcessOutput(process.ExitCode, output.Result, error.Result);
+    }
+
+    /// <summary>
+    /// A command as a person types it, made startable (REV3): on Windows a name with no extension is
+    /// looked up by `PATHEXT` — as `cmd` would — and a `.cmd` or `.bat` is run through `cmd.exe`.
+    /// </summary>
+    /// <remarks>
+    /// Started without a shell, .NET looks for `name.exe` only, and npm installs a command as
+    /// `name.cmd`: the doctrine gate's default `daoris` could not start on any Windows machine that had
+    /// installed it. The driver's harness actions learned the same thing (FIX-LOG, `WindowsShim`).
+    /// Through `cmd.exe` an argument is re-read by `cmd`, so one carrying its metacharacters is refused
+    /// rather than passed.
+    /// </remarks>
+    private static (string File, IReadOnlyList<string> Arguments) Resolve(string file, IReadOnlyList<string> arguments)
+    {
+        if (!OperatingSystem.IsWindows() || Path.HasExtension(file)) return (file, arguments);
+
+        var extensions = (Environment.GetEnvironmentVariable("PATHEXT") ?? ".COM;.EXE;.BAT;.CMD")
+            .Split(';', StringSplitOptions.RemoveEmptyEntries);
+        var places = file.Contains(Path.DirectorySeparatorChar) || file.Contains(Path.AltDirectorySeparatorChar)
+            ? [file]
+            : (Environment.GetEnvironmentVariable("PATH") ?? "")
+                .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+                .Select(directory => Path.Combine(directory, file));
+
+        foreach (var place in places)
+        {
+            foreach (var extension in extensions)
+            {
+                var candidate = place + extension;
+                if (!File.Exists(candidate)) continue;
+                if (!extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase)
+                    && !extension.Equals(".bat", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (candidate, arguments);
+                }
+
+                if (arguments.FirstOrDefault(a => a.IndexOfAny(['"', '%', '&', '|', '<', '>', '^', '\r', '\n']) >= 0) is { } unsafeArgument)
+                {
+                    throw new DevkitException(
+                        $"'{candidate}' is a command script, and cmd would re-read the argument '{unsafeArgument}' — "
+                        + "name the program itself under 'doctrine.command' instead.");
+                }
+
+                return ("cmd.exe", ["/d", "/c", candidate, .. arguments]);
+            }
+        }
+
+        return (file, arguments);
     }
 
     /// <summary>
