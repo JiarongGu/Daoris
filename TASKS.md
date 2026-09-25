@@ -87,7 +87,9 @@ reference gap* below.
   (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
   composer's turn, queue and drafts) and CONV4c (attachments), with the fixes the looks found. All
   are in the archive under 2026-09-25.
-- **Next:** **CONV4d, `@` a file in the session's tree** — measured with CONV4c: both doors expand
+- 🔴 **Next: REV3, the full review of code and docs the owner asked for (2026-09-25)**, under
+  *The review the owner asked for* below. It comes before anything else.
+- **Then:** **CONV4d, `@` a file in the session's tree** — measured with CONV4c: both doors expand
   `@path` text themselves, so the work is the completion list and the bridge call behind it.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
@@ -126,22 +128,9 @@ it. Signing in sits on the account's row (`SignIn`), tooltips follow the editor'
 no spawn opens a console window — all three were the owner's asks that day, all three seen on the
 installed shell, all three in `docs/FIX-LOG.md` or `docs/2026-09-19-platform-ux.md` §4.
 
-🔴 **The driven loop over the pipe door is blocked on a human step, and the driver now says so**
-(DEPLOY1). Claude Code ignores a repository's `permissions.allow` until a person has accepted that
-path in their own `~/.claude.json`; three real runs did the work and none could take its quest.
-The driver reads that record and **holds** rather than spending nine minutes and a login. **What is
-still the owner's**: whether adoption should ever *ask* and write that flag. 🔴 Never silently — the
-flag is the person's grant. And **measure the ACP door first**: it runs the Agent SDK rather than the
-CLI's trust flow, so it may not have the problem at all. One driven run answers it.
-
-**Two things spend a real login and are the owner's to authorise**, both one command:
-
-```
-node tools/acp2-proof.mjs --drive      # ACP2 — D23's "on proof". DRV6 caps it at three attempts.
-```
-
-…and a driven run over `claude-code-acp` against the testbed, which would settle the trust question
-above. Until ACP2 passes, `claude-code` over the pipe door remains what a machine drives with.
+**The pipe door's trust flag is settled** (DEPLOY1 and ACP2, both in the archive, 2026-09-24): the
+driver holds an untrusted folder and says so, Daoris asks per folder and then writes the flag (D73),
+and the protocol door was proven on a real login (17/17). What D73 leaves unmeasured is TRUST2.
 
 **The testbed is live and wired** (`tools/testbed.mjs --root <folder>`): three repositories in
 workspace `testbed`, each with its own `.mcp.json` and trust settings, registered against the running
@@ -162,24 +151,9 @@ finding what the fixture could not show, every one in `docs/FIX-LOG.md` (the wid
 never worked in the SQLite index, now cut into bigrams). The next pass is the same pass after the
 next change.
 
-🔴 **The old backlog is exhausted rather than abandoned**: every remaining row waits on the owner
-(four) or on something arriving (seven), and the list is in the Backlog's own introduction. Surface
-work now comes from looking at the deployed application and writing down what is wrong with it.
-
-🔴 **TOOL5 was read against what is built and is a trigger, not work** — every sentence of the
-toolchain design's §5 is realised, and what is waiting is a tool somebody names. It joins the held
-set on CANON2's bar. The reading found one real gap and it is fixed: the toolchain twin tables
-pinned the three ACP arrivals and left `claude-code` — what a machine actually drives with —
-asserted on neither side.
-🔴 **HELP3 is a design question before it is a build** — *where the guard lives* — and its row now
-carries a measured third answer beside the two that were refused: Claude Code takes `--settings` at
-spawn, so the guard can be wiring Daoris carries rather than a file anyone writes (ACP4's shape).
-The owner decides; only a **structured deny** blocks under a 5.1 executor, never exit 2 (probe 4).
-**Three are decisions, not work**:
-ACP2 and DEPLOY1's second half both cost a real login to settle, and PLUG2 reopens D4's *"core
-installs with no opt-out"*. DEPLOY4 was decided the other way from its recommendation (**D63**, the
-application folder is the home, nothing under the profile) and is in the archive. Four **held** items
-sit at the bottom; do not pick one up until its trigger has arrived.
+**The decisions that were waiting are made and archived**: ACP2 and DEPLOY1 (D73), PLUG2 (D71),
+HELP3 (folded into PERM1) and DEPLOY4 (D63). TOOL5 is a trigger, not work (its row says why). Three
+**held** items sit at the bottom; do not pick one up until its trigger has arrived.
 
 **Start by reading the contract the item cites** — every backlog row names one. The bullets below are
 the traps that are not in any contract, because they were found rather than designed.
@@ -281,14 +255,45 @@ the traps that are not in any contract, because they were found rather than desi
 
 **The D48/D49/D50 arc is closed** — all eight items are built and in the archive, and REV2 reviewed
 them. **SURF1 designed the next direction and is in the archive too**, and **DSH1 evaluated dsh** (in
-the archive; its decision is **D53, accepted**). **Nineteen rows are open**: D76's six and its
-held file tools, three leftovers (FLAKE1, DEPLOY3, TEST1), three on the owner (TRUST2, AGT2c,
-INT6) and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this
+the archive; its decision is **D53, accepted**). **Twenty rows are open**: REV3, the owner's
+review, first; D76's six and its held file tools; three leftovers (FLAKE1, DEPLOY3, TEST1); three on
+the owner (TRUST2, AGT2c, INT6); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this
 file holds no ticked rows, by the `task-lifecycle` rule it also ships.
 
 🔴 **D68's SYNC arc, D67's buildable items and the regular task's buildable items are closed**
 (2026-09-24, in the archive). Each landing is one session-sized item, TDD, gates green, moved to the
 archive.
+
+### The review the owner asked for (owner, 2026-09-25) — FIRST next session
+
+> *"next session let's do a full code review include docs"*
+
+- [ ] **REV3 — a full review, code and docs.** REV2 is the precedent (archive, 2026-09-20): by
+  *reading* rather than re-running, it found two defects no gate could see. Gates prove what they
+  assert; a review looks for what nothing asserts.
+  - **Scope, every artefact:** `src/Daoris.Cli`, `src/Daoris.Service`, `src/Daoris.Devkit`,
+    `src/Daoris.Web`, `src/Daoris.Desktop` (driver, modules, app, headless host), `tools/`, `canon/`
+    and `examples/`.
+  - **Scope, docs:** `CLAUDE.md`, `AGENTS.md`'s local rows, `README.md` and each artefact's README,
+    `TASKS.md`, `ROADMAP.md`, `CHANGELOG.md`, `docs/DECISIONS.md`, `docs/FIX-LOG.md`, and the
+    design documents under `docs/`.
+  - **Code, for correctness first:** concurrency, error paths, what crosses a boundary (D47 §4), a
+    refusal that reaches nobody, a twin set that drifted. Weigh the newest code most:
+    - D76's landings, CONV1–CONV4c: `ChatTurns`, `ChatRunner`, `ChatFiles`, the stream-json mapper,
+      the event record, and the page's conversation;
+    - the D72–D75 permission, proposal and menu work.
+  - **Docs, by `claims-need-checks`:** behavioural prose checked against the code, never against the
+    design. Look for stale counts and claims, *as built* notes that diverge, duplicated rules,
+    status in prose, and history outside the records that hold it (the `post-feature` prose pass).
+  - **Method:**
+    1. Run the discovery skills, then scope by artefact.
+    2. Verify every finding before reporting it: a concrete failure, or the line that is untrue.
+    3. Land each confirmed defect as a fix (TDD, its own commit, a FIX-LOG entry when it is a
+       defect), or as a backlog row when it is not session-sized.
+    4. The archive gets the findings, as REV2's entry has them.
+  - A fan-out, one reviewer per artefact and one for the docs, needs the owner's go-ahead for its
+    scale.
+  - **Already known, so not re-found:** TEST1, FLAKE1, DEPLOY3, REH1 and UX1's written findings.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
 
