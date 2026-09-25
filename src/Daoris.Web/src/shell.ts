@@ -186,7 +186,7 @@ export const useSetIntake = () => {
     mutationFn: (change: { adapter: string | null }) => call<DriverState>('SET_INTAKE', change),
     onSuccess: (state) => {
       client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: ['harnesses', 'starts'] });
+      void client.invalidateQueries({ queryKey: keys.allStarts });
     },
   });
 };
@@ -905,7 +905,7 @@ export const useRefreshHarnesses = () => {
     onSuccess: (roster) => {
       client.setQueryData(keys.harnesses, roster);
       // Looking again also lets a refused account through (AGT3b), which changes what a start takes.
-      void client.invalidateQueries({ queryKey: ['harnesses', 'starts'] });
+      void client.invalidateQueries({ queryKey: keys.allStarts });
     },
   });
 };
