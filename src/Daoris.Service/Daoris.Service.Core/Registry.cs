@@ -143,6 +143,11 @@ public sealed class Registry
     /// <returns>Whether there was a row to retire; false is an answer, not a failure.</returns>
     public bool Retire(string repository) => _known.TryRemove(repository, out _);
 
+    /// <summary>Every repository this service knows of, as registered — for a reader that needs no counts.</summary>
+    public IReadOnlyList<Registration> Read() => Read(NoCounts);
+
+    private static readonly IReadOnlyDictionary<string, int> NoCounts = new Dictionary<string, int>();
+
     /// <summary>Every repository this service knows of, with the index's entry counts applied.</summary>
     public IReadOnlyList<Registration> Read(IReadOnlyDictionary<string, int> entryCounts) =>
         _known.Values

@@ -27,9 +27,6 @@ public sealed record IntakeScope(string? Ask, string? Session)
     /// <summary>Which session — the intake's own record.</summary>
     public const string SessionVariable = "DAORIS_SESSION_ID";
 
-    /// <summary>A session that answers no ask — every session but an intake.</summary>
-    public static IntakeScope None { get; } = new(null, null);
-
     /// <summary>What this process was spawned with. Blank is nothing said.</summary>
     public static IntakeScope FromEnvironment() => new(
         Blank(Environment.GetEnvironmentVariable(AskVariable)),

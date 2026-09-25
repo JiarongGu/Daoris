@@ -242,7 +242,7 @@ public static class ServiceFactory
     /// machine path, so it cannot carry one.
     /// </remarks>
     private static IReadOnlyList<string> RegisteredRoots(Registry registry) =>
-        registry.Read(new Dictionary<string, int>())
+        registry.Read()
             .Select(r => r.Root)
             .Where(root => !string.IsNullOrWhiteSpace(root))
             .Select(root => root!)

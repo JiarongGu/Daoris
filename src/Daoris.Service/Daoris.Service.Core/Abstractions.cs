@@ -68,9 +68,12 @@ public interface IKnowledgeSearch
 /// several repositories in this family are private and their doctrine names things that are
 /// deliberately kept out of tracked files.
 ///
-/// Making it a seam means shared mode cannot be built without answering it, and local mode answers
-/// it trivially — <see cref="DisclosurePolicy.LocalOnly"/> permits everything, because nothing is
-/// leaving. A rule that lives only in prose is one that gets remembered until it doesn't.
+/// <b>As built, no host passes one</b>: every index runs <see cref="DisclosurePolicy.LocalOnly"/>,
+/// which permits everything, so a refresh reports nothing withheld. Shared mode draws the boundary at
+/// the feed instead — a deployment takes a repository's knowledge only when its manifest joins and
+/// shares (D47 §4), refuses the rest at the door, and drops what a repository fed once it stops
+/// sharing. This seam is where a policy over the index itself would go (REV3 CLEAN1 corrected the
+/// claim that shared mode could not be built without it).
 /// </remarks>
 public interface IDisclosurePolicy
 {

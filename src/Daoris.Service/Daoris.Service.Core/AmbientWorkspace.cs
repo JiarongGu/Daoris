@@ -24,9 +24,6 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class AmbientWorkspace(string workingDirectory, string? circle = null)
 {
-    /// <summary>Where this process was started — for a stdio host, the repository that spawned it.</summary>
-    public static AmbientWorkspace Here() => new(Directory.GetCurrentDirectory());
-
     /// <summary>
     /// The circle named for this session, or the workspace of the repository this directory sits in,
     /// or null when it sits in none.

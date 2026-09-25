@@ -732,7 +732,7 @@ public sealed class KnowledgeService(
 
             // The wiring, read once per refresh rather than once per entry: it is a small table and the
             // corpus is not. Read BEFORE the scan so every entry of one repository is stamped alike.
-            var wiring = (registry?.Read(new Dictionary<string, int>()) ?? [])
+            var wiring = (registry?.Read() ?? [])
                 .ToDictionary(r => r.Repository, r => r.InWorkspace, StringComparer.OrdinalIgnoreCase);
 
             var report = await _index.RefreshAsync(
@@ -789,8 +789,7 @@ public sealed class KnowledgeService(
     public async Task<CodeMapRead?> CodeMapAsync(string repository, CancellationToken ct = default)
     {
         await ReloadRegistryAsync(ct).ConfigureAwait(false);
-        var registration = (registry?.Read(new Dictionary<string, int>()) ?? [])
-            .Named(repository);
+        var registration = (registry?.Read() ?? []).Named(repository);
         if (registration is null) return null;
 
         if (!string.IsNullOrWhiteSpace(registration.Root) && Directory.Exists(registration.Root))
@@ -861,7 +860,7 @@ public sealed class KnowledgeService(
     /// screen of false alarms.
     /// </remarks>
     private IReadOnlyList<string> AbsentCheckouts() =>
-        (registry?.Read(new Dictionary<string, int>()) ?? [])
+        (registry?.Read() ?? [])
             .Where(r => !string.IsNullOrWhiteSpace(r.Root) && !Directory.Exists(r.Root))
             .Select(r => r.Repository)
             .OrderBy(name => name, StringComparer.Ordinal)
