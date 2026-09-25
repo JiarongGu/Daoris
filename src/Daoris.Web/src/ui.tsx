@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ButtonHTMLAttributes, Fragment, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { sentence } from './format';
 import * as Toast from '@radix-ui/react-toast';
@@ -365,15 +365,29 @@ export function MetaLine({ items, className }: {
       {shown.map((item) => (
         <div key={item.label} className="flex min-w-0 items-baseline gap-1.5">
           <dt className="shrink-0 text-ink-faint">{item.label}</dt>
-          <dd className={cn(
-            'm-0 min-w-0 text-ink-soft', item.mono && 'break-all font-mono text-small',
-          )}
-          >
-            {item.value}
+          <dd className={cn('m-0 min-w-0 text-ink-soft', item.mono && 'font-mono text-small')}>
+            {item.mono && typeof item.value === 'string' ? <PathText path={item.value} /> : item.value}
           </dd>
         </div>
       ))}
     </dl>
+  );
+}
+
+/**
+ * A path or a URL that may have to wrap: it breaks after a separator, and inside a name only when
+ * that one name is wider than the line. `break-all` broke anywhere, so a session's tree read
+ * `family\g` over `ame` (UX5 U8). The text is unchanged: a `<wbr>` adds a place to break and no
+ * character, so a copy is still the path.
+ */
+export function PathText({ path, className }: { path: string; className?: string }) {
+  const parts = path.split(/(?<=[\\/])/);
+  return (
+    <span className={cn('font-mono wrap-anywhere', className)}>
+      {parts.map((part, index) => (
+        <Fragment key={index}>{part}{index < parts.length - 1 && <wbr />}</Fragment>
+      ))}
+    </span>
   );
 }
 

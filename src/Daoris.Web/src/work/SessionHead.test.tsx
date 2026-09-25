@@ -91,11 +91,14 @@ describe('the attended session\'s head', () => {
    * it machine-local, which is a guard at the door, not a reason for the machine's own surface to
    * hide it from the person who owns the checkout).
    */
-  it('shows the whole tree path, breakable rather than overflowing', () => {
+  it('shows the whole tree path, breakable at its separators rather than overflowing', () => {
     const tree = 'C:/somewhere/.daoris/trees/default/engine/streaming-budget';
     render(<SessionHead session={session({ tree })} />);
 
-    expect(screen.getByText(tree).className).toContain('break-all');
+    // Whole, and broken after a separator before inside a name (UX5 U8: `family\g` / `ame`).
+    const path = screen.getByText((_, element) => element?.tagName === 'SPAN' && element.textContent === tree);
+    expect(path.className).toContain('wrap-anywhere');
+    expect(path.querySelectorAll('wbr')).toHaveLength(6);
   });
 
   /**

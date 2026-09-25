@@ -324,7 +324,7 @@ function RawLine({ block }: { block: Block }) {
         {t('work.conversation.raw', { title: block.title ?? '' })}
       </button>
       {open && (
-        <pre className="m-0 mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-control bg-page px-2.5 py-1.5 font-mono">
+        <pre className="m-0 mt-1 max-h-48 overflow-auto whitespace-pre-wrap wrap-anywhere rounded-control bg-page px-2.5 py-1.5 font-mono">
           {[block.text, block.raw].filter(Boolean).join('\n')}
         </pre>
       )}

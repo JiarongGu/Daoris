@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { TrustHold } from '../signals';
-import { Button, WaitingCard } from '../ui';
+import { Button, PathText, WaitingCard } from '../ui';
 
 /**
  * The agent's trust question, asked by Daoris for a folder the driver is holding (D73).
@@ -31,7 +31,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
 
   return (
     <WaitingCard title={t('trust.title')}>
-      <p className="m-0 mt-1.5 break-all font-mono text-meta text-ink">{hold.folder}</p>
+      <p className="m-0 mt-1.5 text-meta text-ink"><PathText path={hold.folder} /></p>
       <p className="m-0 mt-2 text-body leading-relaxed">{t('trust.what')}</p>
       <p className="m-0 mt-1.5 text-small text-ink-soft">
         {hold.quest
@@ -39,7 +39,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
           : t('trust.holding.ask', { id: hold.ask ?? '' })}
       </p>
       <p className="m-0 mt-2 text-small text-ink-faint">{t('trust.file')}</p>
-      <p className="m-0 mt-0.5 break-all font-mono text-meta text-ink-faint">{hold.trustFile}</p>
+      <p className="m-0 mt-0.5 text-meta text-ink-faint"><PathText path={hold.trustFile} /></p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="primary" disabled={busy} onClick={onGrant}>{t('trust.grant')}</Button>
         {onCancel && <Button variant="ghost" onClick={onCancel}>{t('trust.cancel')}</Button>}

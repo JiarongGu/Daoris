@@ -17,8 +17,8 @@ import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { SignIn } from './SignIn';
 import { byTool, type ToolDoor } from './tools';
 import {
-  Button, Card, CheckField, Chip, failure, Icon, Inline, type Notify, PageHeader, Pill, Prose, SectionTitle,
-  Segmented, SelectField, SettingRow, Tip, useErrorNotify,
+  Button, Card, CheckField, Chip, failure, Icon, Inline, type Notify, PageHeader, PathText, Pill, Prose,
+  SectionTitle, Segmented, SelectField, SettingRow, Tip, useErrorNotify,
 } from './ui';
 import { useThemeChoice } from './theme';
 import { workspacesOf } from './workspaces';
@@ -301,7 +301,7 @@ function DriverSettings({ notify }: { notify: Notify }) {
           <SettingRow
             label={t('settings.home.label')}
             why={t('settings.home.hint')}
-            control={<span className="break-all font-mono text-small text-ink-soft">{driver.data.home}</span>}
+            control={<PathText path={driver.data.home} className="text-small text-ink-soft" />}
           >
             {driver.data.homeNotice && (
               <p className="max-w-prose border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
@@ -432,7 +432,7 @@ function WiringSettings({ notify }: { notify: Notify }) {
           hint={t('settings.wiring.hint')}
           why={t('settings.wiring.body')}
           control={wiring.data && (
-            <span className="break-all font-mono text-small text-ink-faint">{wiring.data.path}</span>
+            <PathText path={wiring.data.path} className="text-small text-ink-faint" />
           )}
         />
 
@@ -455,7 +455,7 @@ function WiringSettings({ notify }: { notify: Notify }) {
                 className="flex flex-wrap items-baseline gap-3 border-t border-line py-2 first:border-t-0"
               >
                 <Chip accent>{remote.workspace}</Chip>
-                <span className="break-all font-mono text-small">{remote.url}</span>
+                <PathText path={remote.url} className="text-small" />
                 <Tip content={t('settings.wiring.keyTip')}>
                   <span className="font-mono text-small text-ink-faint">{remote.key}</span>
                 </Tip>
@@ -708,7 +708,7 @@ function Plugins({ notify }: { notify: Notify }) {
         label={t('plugin.folder')}
         hint={t('plugin.terminal')}
         why={t('plugin.body')}
-        control={<span className="break-all font-mono text-small text-ink-faint">{catalog.data.folder}</span>}
+        control={<PathText path={catalog.data.folder} className="text-small text-ink-faint" />}
       />
 
       {plugins.length === 0 ? (
@@ -949,7 +949,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
         label={t('harness.body')}
         hint={t('harness.secrets')}
         why={t('harness.profile.note')}
-        control={<span className="break-all font-mono text-small text-ink-faint">{answered.settingsPath}</span>}
+        control={<PathText path={answered.settingsPath} className="text-small text-ink-faint" />}
       />
 
       {/* 🔴 A card per TOOL, and the adapters are its ways in (owner, 2026-09-22: *"'harness

@@ -4,7 +4,7 @@ import type { Registration } from './api';
 import { workspaceOf } from './workspaces';
 import { useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
-import { Button, Chip, Drawer, failure, Inline, type Notify, SectionTitle, Tip } from './ui';
+import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from './ui';
 
 /**
  * Managing the machine's repositories (D48 §7) — the surfaces that exist only where a shell is
@@ -90,7 +90,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
 
       {found && (
         <div className="mt-4 border-t border-line pt-3.5">
-          <p className="break-all font-mono text-small text-ink-soft">{found.path}</p>
+          <p className="text-small text-ink-soft"><PathText path={found.path} /></p>
           <p className="mt-2 flex flex-wrap items-baseline gap-1.5">
             <Chip accent>{found.name}</Chip>
             <Chip>{found.adopted ? t('projects.manage.adopted') : t('projects.manage.notAdopted')}</Chip>
@@ -186,7 +186,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
   return (
     <Drawer
       title={t('projects.manage.title', { name: project.repository })}
-      meta={project.root && <span className="break-all font-mono text-small">{project.root}</span>}
+      meta={project.root && <PathText path={project.root} className="text-small" />}
       onClose={onClose}
     >
       <SectionTitle>{t('projects.manage.wiring')}</SectionTitle>

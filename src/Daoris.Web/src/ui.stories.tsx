@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Button, CheckField, Chip, Dot, Drawer, EmptyState, MetaLine, MonoWell, Pill, SettingRow,
+  Button, CheckField, Chip, Dot, Drawer, EmptyState, MetaLine, MonoWell, PathText, Pill, SettingRow,
   SkeletonRows, Tile, Toasts,
 } from './ui';
 
@@ -64,7 +64,7 @@ export const SettingRows: StoryObj = {
       <SettingRow
         label="Daoris home"
         hint="Every file on this page lives under it."
-        control={<span className="break-all font-mono text-small text-ink">C:/somewhere/Daoris/data</span>}
+        control={<PathText path="C:/somewhere/Daoris/data" className="text-small text-ink" />}
       />
     </div>
   ),

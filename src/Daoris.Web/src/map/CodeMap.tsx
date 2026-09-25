@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { CodeDependency, CodeModule, Provenance } from '../api';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
+import { PathText } from '../ui';
 import { layerModules } from './codeLayout';
 
 const BOX_W = 136;
@@ -212,8 +213,8 @@ export function CodeMapDetail({ modules, dependencies, selected, file, fed, onSe
   return (
     <div className="grid gap-3">
       <header className="grid gap-1">
-        <span className="break-all font-mono text-body font-semibold text-ink">{module.id}</span>
-        <span className="break-all font-mono text-meta text-ink-faint">{module.path}</span>
+        <span className="font-mono text-body font-semibold text-ink wrap-anywhere">{module.id}</span>
+        <PathText path={module.path} className="text-meta text-ink-faint" />
       </header>
       {module.summary && <p className="m-0 text-small text-ink-soft">{module.summary}</p>}
       <section>

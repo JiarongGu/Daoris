@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, CheckField, Icon, Inline, Pill, Prose, SectionTitle, SelectField, SettingRow } from '../ui';
+import {
+  Button, Card, CheckField, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingRow,
+} from '../ui';
 import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
 export type RuleListName = 'allow' | 'ask' | 'deny';
@@ -135,7 +137,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
         label={t('settings.rules.file')}
         hint={t('settings.rules.hint')}
         why={t('settings.rules.why')}
-        control={<span className="break-all font-mono text-small text-ink-faint">{rules.path}</span>}
+        control={<PathText path={rules.path} className="text-small text-ink-faint" />}
       />
 
       {/* The driver's own sentence, verbatim: the defaults still hold when the file does not. */}
@@ -159,7 +161,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <Pill tone="open">{t(`settings.rules.proposals.state.${proposal.state}`)}</Pill>
-                    <span className="min-w-0 flex-1 break-all font-mono text-body">{proposalChange(proposal)}</span>
+                    <span className="min-w-0 flex-1 font-mono text-body wrap-anywhere">{proposalChange(proposal)}</span>
                     <Button disabled={busy} onClick={() => onAnswer(proposal.id, true)}>
                       {t('settings.rules.proposals.accept')}
                     </Button>
@@ -196,7 +198,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <Pill tone={SETTLED_TONE[proposal.state]}>{t(`settings.rules.proposals.state.${proposal.state}`)}</Pill>
-                        <span className="min-w-0 flex-1 break-all font-mono text-body">{proposalChange(proposal)}</span>
+                        <span className="min-w-0 flex-1 font-mono text-body wrap-anywhere">{proposalChange(proposal)}</span>
                       </div>
                       <p className="m-0 mt-0.5 text-meta text-ink-faint">
                         {t('settings.rules.proposals.from', { author: proposalAuthor(proposal) })}

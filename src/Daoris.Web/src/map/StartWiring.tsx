@@ -49,7 +49,7 @@ export function StartWiringList({ starts, nameOf }: {
             </dd>
             <dt className="text-ink-faint">{t('wiring.account')}</dt>
             <dd className="m-0 min-w-0">
-              <span className="break-all text-ink">
+              <span className="text-ink wrap-anywhere">
                 {start.profile ? nameOf(start.owner, start.profile) : t('wiring.ownSignIn')}
               </span>
               <span className="ml-2 text-meta text-ink-faint">{accountFrom(t, start.profileFrom)}</span>

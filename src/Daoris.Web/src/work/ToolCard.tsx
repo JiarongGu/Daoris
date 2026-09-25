@@ -140,7 +140,7 @@ function Raw({ label, text }: { label: string; text: string }) {
   return (
     <div>
       <span className="text-meta text-ink-faint">{label}</span>
-      <pre className="m-0 mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-control bg-page px-2.5 py-1.5 font-mono text-meta text-ink-soft">
+      <pre className="m-0 mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap wrap-anywhere rounded-control bg-page px-2.5 py-1.5 font-mono text-meta text-ink-soft">
         {text}
       </pre>
     </div>

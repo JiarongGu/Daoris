@@ -72,6 +72,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   dot, *What needs you*'s card and rows, the map's ring and word. It had three hues, one of them
   declined's red, and a session waiting on its person read as one that had failed. **Red is only ever
   an outcome**: declined, failed, a failed tool call. A liveness mark never borrows an outcome's hue.
+- **A path breaks at its separators** (UX5): `PathText`, never `break-all`, which broke a tree
+  inside a name (`family\g` / `ame`). Anything else that may be wider than its line (an account
+  name, a tool's raw output) wraps `anywhere`, which breaks inside a word only when that one word
+  will not fit.
 - **Motion**: 140ms ease-out on overlays and hovers; `prefers-reduced-motion` disables it. No shimmer
   anywhere — loading placeholders are static two-tone.
 

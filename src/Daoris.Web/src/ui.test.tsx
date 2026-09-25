@@ -5,7 +5,7 @@ import type { SessionState } from './api';
 import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, Pill, Segmented, SESSION_ACTIVE,
+  Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, PathText, Pill, Segmented, SESSION_ACTIVE,
   SESSION_DOT, SESSION_TONE, SettingRow, Tile, Tip, WaitingCard,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
@@ -192,9 +192,24 @@ describe('the meta line', () => {
     expect(screen.queryByText('tree')).not.toBeInTheDocument();
   });
 
-  it('lets a long path break rather than pushing the line off the surface', () => {
-    render(<MetaLine items={[{ label: 'tree', value: 'a/very/long/checkout/path', mono: true }]} />);
-    expect(screen.getByText('a/very/long/checkout/path').className).toContain('break-all');
+  /**
+   * UX5 U8, seen on the window: `break-all` broke a tree anywhere, so the head read `family\g` over
+   * `ame`. A path breaks after a separator, and inside a name only when that one name is wider than
+   * the line, which is what `anywhere` means once the separators offer somewhere better.
+   */
+  it('lets a long path break after a separator rather than inside a name', () => {
+    const { container } = render(
+      <MetaLine items={[{ label: 'tree', value: 'D:\\work\\family\\game', mono: true }]} />);
+    const path = container.querySelector('dd > span')!;
+    expect(path.textContent).toBe('D:\\work\\family\\game');
+    expect(path.className).not.toContain('break-all');
+    expect(path.className).toContain('wrap-anywhere');
+    expect(path.innerHTML).toBe('D:\\<wbr>work\\<wbr>family\\<wbr>game');
+  });
+
+  it('breaks a URL and a forward-slashed path the same way', () => {
+    const { container } = render(<PathText path="https://host.example/a/b" />);
+    expect(container.firstElementChild!.innerHTML).toBe('https:/<wbr>/<wbr>host.example/<wbr>a/<wbr>b');
   });
 });
 

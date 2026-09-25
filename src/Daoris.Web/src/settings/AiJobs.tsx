@@ -116,7 +116,7 @@ function Intake({ intake }: { intake: IntakeJob }) {
                 ) : (
                   <>
                     <span className="text-ink-faint">{t('settings.ai.intake.runsAs')}</span>
-                    <span className="break-all text-ink">
+                    <span className="text-ink wrap-anywhere">
                       {start.profile ? intake.nameOf(start.owner, start.profile) : t('wiring.ownSignIn')}
                     </span>
                     <span className="text-meta text-ink-faint">{t(`wiring.accountFrom.${start.profileFrom}`)}</span>

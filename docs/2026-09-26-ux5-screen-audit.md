@@ -29,7 +29,7 @@ Numbered in the order found. U1–U8 were found before UX5 opened (the backlog r
 | U5 | StartSession's three selects and checkbox, and DiffFileRow's checkbox, are native controls beside `ui.tsx`'s own | `work/StartSession.tsx`, `work/DiffFileRow.tsx` | open |
 | U6 | `platform-ux.md` §4 has grown a dated amendment per pass; the rules they settled belong in the body they amend | `docs/2026-09-19-platform-ux.md` | open, done surface by surface |
 | U7 | The dock is open by default at 45%, where the reference's opens on demand: on a 1400px window the conversation starts at 442px, near its floor | `work/layout.ts`, `work/WorkFrame.tsx` | open |
-| U8 | The head's tree path breaks mid-word in a narrow centre (`family\g` / `ame`) | `ui.tsx` `MetaLine` (`break-all`) | open |
+| U8 | The head's tree path breaks mid-word in a narrow centre (`family\g` / `ame`) | `ui.tsx` `MetaLine` (`break-all`) | fixed: `PathText` breaks after a separator (a `<wbr>`, so a copy is still the path) and inside a name only when one name is wider than the line; every path and URL site moved onto it, and the account names and raw output wells from `break-all` to `wrap-anywhere`. Looked at: the head of a chat at a 660px centre |
 | U9 | An ended session opened from the rail shows an empty composer and a *send*, under *This session is over. What you typed is still here; nothing is listening to it.* Nothing was typed, and it is a box where nothing listens (INT4h's rule). The sentence is right only for a session that ended while the person was typing | `work/Composer.tsx`, `work/WorkFrame.tsx` | open |
 
 ## Surfaces
