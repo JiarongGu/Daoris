@@ -12,7 +12,7 @@ import { HARNESSES, DEFAULT_HARNESS } from './harness.ts';
 import { readRemotes, redactKey } from './remotemap.ts';
 import { DaorisError } from './errors.ts';
 
-const DEFAULT_TARGET = '.claude';
+const DEFAULT_TARGET = HARNESSES[DEFAULT_HARNESS]!.defaultTarget;
 
 /**
  * Everything under the target dir that the lock does not claim is this repo's

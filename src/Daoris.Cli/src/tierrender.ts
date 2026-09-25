@@ -18,7 +18,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { makeHeader, parseFrontmatter, SKILL_FIELDS, stripFrontmatter } from './document.ts';
 import { readText } from './fsx.ts';
-import { regionIn } from './harness.ts';
+import { DEFAULT_HARNESS, HARNESSES, regionIn } from './harness.ts';
 import { findRegion } from './region.ts';
 
 /** One document on its way into the region: where it came from, and what it says. */
@@ -97,7 +97,7 @@ export function renderTier(input: TierInput): string {
  * canon change belongs.
  */
 export function renderRoster(input: TierInput): string {
-  const target = input.target ?? '.claude';
+  const target = input.target ?? HARNESSES[DEFAULT_HARNESS]!.defaultTarget;
   // 🔴 The region's own headings sit at the SAME level the rule bodies use, and the bodies are not
   // touched. Nesting them under a `## Doctrine` wrapper reads better in a table of contents and
   // requires demoting every `#` inside eight rules — a transformation that has to be exactly
