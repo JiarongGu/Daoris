@@ -4,6 +4,10 @@
 > decision deliberately left open. It is the contract for `Daoris.Desktop` re-scoped (DRV2). Read with
 > `docs/DECISIONS.md` D45 (the direction), D37 (the operating model), D32 (quests), D22/D23 (composition
 > and the one-supported-harness seam), and `src/Daoris.Desktop/README.md` (the brief this settles).
+>
+> **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
+> (2026-09-23) the home is `$DAORIS_HOME`, the install's own `data/`, and nothing lives under the user
+> profile. The tree beneath it is unchanged.
 
 ## 1. What it is for
 
@@ -142,7 +146,10 @@ descriptor with four obligations:
 3. **Map the harness's permission surface onto the D37 boundary** — reversible in-repository work
    proceeds; nothing at the outward boundary is ever auto-approved. The repository's own checked-in
    permission configuration governs; the adapter grants nothing beyond what an interactive session there
-   would have.
+   would have. *Amended by D72 (2026-09-24): what a session may call is the union of Daoris's
+   defaults and scopes, handed to the harness at spawn, and the repository's own settings — the
+   harness merges them and a `deny` beats an `allow`. Daoris adds allowances (the connector, a commit)
+   and refusals (no push, the tree guard); it never lifts a repository's deny.*
 4. **Report process lifetime**, and declare capabilities (resume, richer progress) honestly.
 
 **`claude-code` is first and supported.** **`codex` is second and explicit.** An unknown adapter is a

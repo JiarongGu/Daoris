@@ -65,4 +65,6 @@ agent measured so far.
   session whose last lines carry them ends with a sentence naming the account and the fix. The
   roster then **holds every further start on that account**, on either door, until a person looks
   again: any account action, or *look again*. One session pays the retries, and the rest do not.
+  *(Since CONV3, 2026-09-25, the direct door runs `--output-format stream-json`, so a retry is on its
+  wire too. Nothing reads `api_retry` yet. The words above are still what ends the session.)*
 - **Codex key accounts**, once measured.

@@ -199,7 +199,9 @@ session reads the declarations and decides; a person can always say `--to`. What
 named workspace is **declarations for 29 repositories**, which is the Projects view's *declare*
 form per repository (WSP2) or `daoris init` inside each — the adoption playbook, agent-executed
 with the owner's review. A repository nobody has declared is not addressable, and the intake says
-so rather than guessing.
+so rather than guessing. *(Amended by D70, §1e: a registered repository is addressable whether or not
+it declared anything. What an undeclared one lacks is something for the intake to match a sentence
+against.)*
 
 ### 1e. Develop — registered is drivable
 
@@ -231,8 +233,8 @@ file Daoris writes **under its home**, never into the repository (the shape HELP
 through the change, reads the page. *"Testing directly in Daoris instead of a browser extension"*
 is exactly this — the session drives a browser; no extension, no Daoris runtime in the loop. The
 example plugin ships with the Playwright MCP declared, so a machine with Node has a browser one
-`daoris plugin add` away. Permission posture is unchanged: the session's tool calls are the
-harness's, under the repository's own configuration (D37, D46 §5).
+`daoris plugin add` away. Permission posture is the harness's, under Daoris's rules handed at spawn
+together with the repository's own configuration (D72, which amended this design's "unchanged").
 
 ### 1g. Workflow — a chain of quests, and the driver is the engine
 
@@ -341,6 +343,9 @@ you*, and its record says who answered it.
   reads the names.
 
 ## 3. Build order
+
+**Status (2026-09-25):** INT1–INT5 are built, INT4 as INT4a–INT4j, and the archive has each outcome.
+INT6 is open, and it is the owner's to run.
 
 | Item | What lands | Proven by |
 |---|---|---|

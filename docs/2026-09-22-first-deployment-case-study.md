@@ -7,6 +7,13 @@
 >
 > Paths here are neutral by `sensitive-info`: the install folder is `<install>`, the family root
 > `<family>`. The machine's own copies live in `local/`.
+>
+> **What later work overturned** (the account below stays as it was found). §4a's *"the driven loop
+> cannot complete on a repository nobody opened"*: PERM1 (D72) hands Daoris's own rules at spawn, and
+> they reach an untrusted folder, measured. §4a's *"not Daoris's to write"*: D73 writes the trust
+> flag, on a person's act that names the folder. §5's *"the protocol door may not have this problem"*:
+> it does, measured on both doors (`2026-09-24-deploy1-acp-trust-evidence.md`). §5's missing
+> deployment gate: `rehearse:deploy` (D60). And `~/.daoris/bin` is `$DAORIS_HOME/bin` (D63).
 
 ## 1. What was deployed, and how
 

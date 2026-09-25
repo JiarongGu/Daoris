@@ -4,6 +4,11 @@ Numbered, dated, with the reasoning. A decision recorded here is not re-litigate
 reopen it — and a decision that was *considered and rejected* is recorded too, because without the reason
 someone reverses it later and rediscovers the problem.
 
+**Order.** A number is given when a decision is made, and the entry stays where it was written. Two
+runs are therefore out of numeric order, deliberately: D17–D24, written in one session in the order
+they were argued, and D54, filed beside D28 because it is the budget decision it amends. An amendment
+lands in the entry it amends, dated, or — where it was written elsewhere — with a pointer from it.
+
 ---
 
 ## D1 — Daoris is process tooling, not an LLM library (2026-08-04)
@@ -373,7 +378,10 @@ needs no check, because the failure is its own report.
 
 **Rejected:** guessing at a translation into another layout. A half-generated `AGENTS.md` would be
 doctrine nobody chose, in a format nobody verified, and it would look like support — which is worse
-than an honest gap, because an honest gap gets fixed the day it is hit.
+than an honest gap, because an honest gap gets fixed the day it is hit. *(Reversed 2026-09-22 by
+D59, on a measurement rather than a guess: `AGENTS.md` is the one file all three driven harnesses
+read. The always-loaded tier is now a region in it that Daoris owns — not a translation of this
+layout, but the tier itself moved.)*
 
 **Consequence.** This is the seam a second harness grows from, and building it now would be building
 for a consumer that does not exist — the same reasoning that keeps a pack unwritten until a repository
@@ -897,6 +905,10 @@ repository that owns it, through review.
 needs from another is a **quest** posted to that repository's backlog, taken and answered there.
 `daoris quest post` writes it; `take`, `done` and `decline` move it through four states.
 
+> **Amended the same day** — filed under D33 below, where it was written: `quest post` wrote into
+> the receiving repository, which is what this decision forbids. **The service holds quests, the
+> receiver pulls them, and the CLI has no quest command.** Addressability followed D34, then D70.
+
 **Why.** This is the design the family was already following informally, and the reason Daoris exists at
 all. One repository keeps a "waiting on the sibling repository" section in its backlog; another
 separates work needing a decision elsewhere from work it can do itself. Nobody agreed on that — it was
@@ -968,7 +980,7 @@ the types describe what the code does, so the code proving itself first is what 
 trustworthy.
 
 **Amended 2026-08-05, the same day — quests are a SERVICE responsibility, and the first version got it
-wrong.** `daoris quest post <path>` wrote the quest straight into the receiving repository's `TASKS.md`.
+wrong.** *(This amends D32, not the TypeScript decision above; it was written here and stays here.)* `daoris quest post <path>` wrote the quest straight into the receiving repository's `TASKS.md`.
 That is the very thing this decision forbids: an outside edit is still an outside edit when it is one
 file and uncommitted, and it still arrives from the party that knows that codebase least. The tooling
 for the rule broke the rule, which is the most embarrassing way to find a design error and the most
@@ -985,7 +997,8 @@ command at all, and stays the offline doctrine tool it was.
 
 **Adoption is the gate.** Only a repository the index knows has adopted can be addressed, because one
 without the client has no way to see the quest — and a quest nobody can read looks exactly like a quest
-that was read and ignored.
+that was read and ignored. *(Amended by D70, 2026-09-24: registered is addressable; adopted is
+disciplined.)*
 
 Stored beside the index in the same database: quests are service state as the index is service state,
 and two files would be two things to back up and two that can disagree about which repositories exist.
@@ -1536,6 +1549,8 @@ from the platform, and Daoris installs and updates those harness CLIs itself. Th
   names. Switching accounts is choosing a profile (machine default per harness, optional default per
   workspace, per-session picker), and the record names the profile at spawn. Rejected: Daoris holding
   tokens itself — a second credential store is a second thing to leak, and the harness already has one.
+  *Amended 2026-09-23 by D67 §1: an account that is an API key is kept by Daoris, in `keys.json` under
+  the home; a sign-in is still the tool's own store, and never read.*
 
 **What this preserves.** Driving stays additive (D46): outside sessions, hand work, and the browser's
 read-only view are untouched. The service stays spawn-free and model-free; processes and streams stay
@@ -1558,10 +1573,12 @@ own tooling — mostly no network at all), registration verbs beside `connect`, 
 half that matters unchanged and still held by the same transitive-import test: **nothing a doctrine
 command reaches may touch the network.** `check`, `sync`, `upstream` and the rest stay offline by
 construction; the management class is opt-in and loopback-talking, as `connect` always was. The
-zero-dependency guarantee is untouched.
+zero-dependency guarantee is untouched. *(As built, the list never grew: the management modules reach
+the network through **one** module, `service.ts`, and spawn through one, `toolchain.ts`. Each rule is
+held by its own test, and so is the transitive one — CLAUDE.md, Conventions.)*
 
 **Boundaries that do not move:** server key minting stays the deployment console's operator act, never
-a client verb; quests stay out of the CLI (D31 as amended) — parity there is satisfied by the platform
+a client verb; quests stay out of the CLI (D32 as amended) — parity there is satisfied by the platform
 and MCP; doctrine stays unwritable from every management surface.
 
 ## D51 — The tree is the unit of exclusion, and a repository may have more than one (2026-09-21)
@@ -2289,7 +2306,10 @@ folder"*. So: **every machine-local file Daoris owns lives under one home** — 
 `harnesses/<tool>/<profile>/`, `toolchain/`, `bin/` — **and the home is the application's own
 folder**, `<install>/data/`, beside the WebView2 profile and the window's geometry that were already
 there. `~/.daoris` is no longer a default anywhere, and no artefact writes a file under the user
-profile — not a config, not a pointer.
+profile — not a config, not a pointer. *(Amended 2026-09-24 by D73: one write can land there —
+`agent trust` moves one flag in the harness's own account file, which is under the profile when no
+Daoris profile is named. It is the harness's file, not Daoris's, and moves only on a person's act
+that names the folder.)*
 
 **The one seam is `DAORIS_HOME`.** Every default derives from it, in all three artefacts (the CLI,
 the service hosts, the driver — three twins sharing no code, the same shape as the remotes map's
@@ -2538,7 +2558,8 @@ map will also show for the repo itself for code)"*.
 1. **Daoris may hold an API key for an account** (amends D49 §4 for keys only). An account can be a
    key rather than a sign-in, and Daoris keeps it: machine-local under the home, tracked by nothing,
    never on the HTTP surface (D47 §4), never printed back beyond an audit prefix (WSP3's rule for a
-   deployment key), and handed to the agent at spawn through that tool's own variable. A **sign-in**
+   deployment key; *as built, the last four characters, since every key of one maker shares its
+   prefix — `docs/2026-09-23-api-key-accounts.md` §2*), and handed to the agent at spawn through that tool's own variable. A **sign-in**
    stays where D49 §4 put it: the tool's own store, which Daoris never reads. How a key is held at
    rest is AGT3's design.
 2. **Two loops, and each keeps its own.** Daoris's loop is the higher one: which work, which agent
@@ -2586,7 +2607,8 @@ a remote branch orders commits. The owner answered its three trade-offs the same
 
 1. **Claim by push.** Before a driven session starts, the take is pushed and awaited when the remote
    is reachable, so there is no duplicate work online. Offline, the take stays local and unconfirmed,
-   and the session runs.
+   and the session runs. *(D69 chose the mechanism: the session's own take pushes and awaits, before
+   any work. The driver does not take on the session's behalf before the spawn.)*
 2. **First push wins, and the loser is kept.** The operation that reached the remote second becomes a
    `conflict` on the quest, with what it attempted and its evidence, for a person. Nothing is dropped
    and nothing is merged into a second truth. A losing session still running is stopped by its own

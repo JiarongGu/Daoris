@@ -7,8 +7,7 @@
 > still makes no model calls. It does **not** describe the whole project: `Daoris.Service` arrived later,
 > depends on the cognition sibling, and may call an embedding endpoint — see
 > [`2026-08-05-knowledge-service-design.md`](2026-08-05-knowledge-service-design.md) and D24. The split is
-> deliberate, and §1's "no model calls at all" is a statement about this artefact rather than a promise
-> the project as a whole ever made.
+> deliberate: §1's "no model calls at all" describes this artefact, not the project.
 
 ## 1. What Daoris is
 
@@ -30,8 +29,7 @@ The same doctrine has been independently re-derived in every repo, and the copie
 
 - Two public siblings each maintain their own always-loaded core, their own index format, and their own
   tooling for it — one exposes `verify`-style gates, the other a separate `knowledge` command with
-  `new`/`check`/`footprint`. A third is described in its own notes as carrying the "latest org-system design",
-  i.e. a third variant.
+  `new`/`check`/`footprint`. A third carries a third variant.
 - Rules that are genuinely universal — no leaked machine paths or private names, no OS temp for repo files,
   the task/backlog lifecycle, file-tool discipline — exist as independent rewrites in each repo. A fix to one
   reaches none of the others.
@@ -74,7 +72,7 @@ until the always-loaded tier moved into a region of `AGENTS.md`, the one file al
 Always-loaded is that region; `.claude/knowledge/` is read on demand and `.claude/skills/` is invoked by
 name. Placement *is* the tier; a `tier:` field would be a second source of truth for something the platform
 already decides. It also means the always-loaded footprint is measurable — a region has a byte count exactly
-as a directory did — so "keep the core small" becomes a gate rather than an aspiration.
+as a directory did — so "keep the core small" becomes a number rather than an aspiration (reported, D54).
 
 **D8 — `check` works offline.** It is pure local hashing against the lock, with no network and no registry
 access, because it is meant to run inside repo build gates — including one in a .NET repo that has no node
@@ -101,6 +99,9 @@ its files) and a per-repo vendored shim (the drift checker would itself be drift
     rules/RULES_INDEX.md                        ← generated
     rules|knowledge/<own>.md                    ← local: not in the lock, never touched
 ```
+
+*D59: the always-loaded rules and their index are now a region of `AGENTS.md` (D7 as amended), so
+`RULES_INDEX.md` is gone. §6–§9 read accordingly.*
 
 `daoris.json`:
 
@@ -160,7 +161,7 @@ such call is made deliberately and recorded, not resolved by whichever file was 
 |---|---|
 | `daoris init` | Detect what the repo already has, propose packs, write `daoris.json` |
 | `daoris sync` | Materialize packs into the target, write the lock. Refuses to clobber a drifted file without `--force`; `--dry-run` prints the plan |
-| `daoris check` | Drift, staleness, index freshness, core budget. Non-zero exit; offline; wired into each repo's own verify gate |
+| `daoris check` | Drift, staleness, index freshness; core budget reported (D54). Non-zero exit; offline; wired into each repo's own verify gate |
 | `daoris upstream <file>` | Copy a locally-improved vendored file back into the canon checkout for review and commit there |
 | `daoris index` | Regenerate `RULES_INDEX.md` from what is on disk — canonical and local alike |
 | `daoris status` | Human summary: packs, versions, drift, what is local |
@@ -201,7 +202,8 @@ tests drive fixture repos materialized under a gitignored scratch directory in t
 
 The cases that must hold: fresh sync writes the expected tree and lock; a local edit is detected and named; a
 retired canonical file disappears from the repo; a local file is never touched; `upstream` round-trips content
-into the canon; `index` output is deterministic; an over-budget core fails `check`.
+into the canon; `index` output is deterministic; an over-budget core fails `check` *(D54: reported,
+never failing)*.
 
 ## 10. Bootstrap and adoption
 

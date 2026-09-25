@@ -12,7 +12,7 @@ import { captureError, makeFixture } from './_fixture.ts';
 /**
  * `daoris agent rules` — what an agent Daoris starts may do (PERM1, D72), from a terminal (D50).
  *
- * The CLI's half of a TWIN CONTRACT: the driver's `PermissionRules.cs` reads and writes the same
+ * The CLI's half of a TWIN CONTRACT: the driver's `PermissionRules` (`Permissions.cs`) reads and writes the same
  * `permissions.json` under the home by the same rules, because the two artefacts share no code — THE
  * FILE is the contract. The union asserted here is the one the driver hands the harness at spawn, and
  * the defaults tables are held together by a driver test that reads this side's source.

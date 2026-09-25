@@ -6,6 +6,10 @@
 > (`docs/2026-09-19-driver-design.md`) without weakening its contract: sessions stay observed,
 > processes stay on the machine, and Daoris still makes no model calls at all. The direction is D49 in
 > `docs/DECISIONS.md`; the companion is `docs/2026-09-20-workspace-design.md`.
+>
+> **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
+> (2026-09-23) the home is `$DAORIS_HOME`, the install's own `data/`, and nothing lives under the user
+> profile. The tree beneath it is unchanged.
 
 ## 1. What it is for
 
@@ -148,7 +152,7 @@ memory. The toolchain manager makes it Daoris's job — **explicitly, never auto
   missing harness with the sentence naming the install action, instead of a bare not-found.
 - **Versions are recorded**: the session record's `adapter` gains the harness version observed at
   spawn, so "which tool produced this" is answerable later — the same authorship instinct as
-  version-stamping (D-release), applied to the tool that did the work.
+  version-stamping (the release workflow, `tools/release-prep.mjs`), applied to the tool that did the work.
 - **Credential profiles: one harness, many accounts** (set by the owner, 2026-09-20). A harness holds
   one login per configuration home, so switching accounts today means re-logging-in — the toolchain
   manager makes accounts **named profiles** instead: each profile is an isolated harness configuration
@@ -158,7 +162,9 @@ memory. The toolchain manager makes it Daoris's job — **explicitly, never auto
   harness's own flow, run into the profile** — a person-action streamed through §2's console like an
   install — so **Daoris never sees, stores, or copies a credential**: the harness's own store holds
   it, inside the profile, under the user's OS account, which is the same boundary it lives behind
-  today. Switching accounts is choosing a profile: a machine default per harness, an optional default
+  today. *Amended by D67 §1 (2026-09-23): an account that IS an API key is kept by Daoris, in the
+  home's `keys.json` — the one credential it holds; a sign-in stays the tool's own store, never read.*
+  Switching accounts is choosing a profile: a machine default per harness, an optional default
   per **workspace** (the natural cut — a work account for the work workspace, a personal one at home;
   the wiring layer of the workspace design §2, not anything tracked), and a per-session picker for a
   chat. The session record carries the **profile name** at spawn beside the version — never anything
@@ -170,7 +176,8 @@ memory. The toolchain manager makes it Daoris's job — **explicitly, never auto
   pinning harness versions in the manifest** (the harness is machine tooling, not repository doctrine —
   the repository's own docs may demand a minimum, but the manifest stays inert data about doctrine);
   **Daoris holding tokens itself** (a second credential store is a second thing to leak, and the
-  harness already has one — Daoris manages directories and names, never secrets).
+  harness already has one — Daoris manages directories and names, never secrets; amended by D67 §1
+  for API keys alone).
 
 **Built 2026-09-20 (SES3).** The mechanisms were verified against the real binaries *before* a line was
 written, because every one of them is a claim about somebody else's program and a guessed one fails in

@@ -8,6 +8,10 @@
 > `docs/2026-08-05-knowledge-service-design.md` (§4 disclosure, §5 identity — this narrows both),
 > `docs/2026-09-20-remote-design.md` (the remote this multiplies), and D48 in `docs/DECISIONS.md`
 > (the direction). The companion is `docs/2026-09-20-interactive-design.md`.
+>
+> **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
+> (2026-09-23) the home is `$DAORIS_HOME`, the install's own `data/`, and nothing lives under the user
+> profile. The tree beneath it is unchanged.
 
 ## 1. What it is for
 
@@ -133,11 +137,12 @@ working because the file, not the surface, is the truth.
 | Driver choices (drivable, holds, cap) | `~/.daoris/driver.json` | `daoris driver ...` (file-local, offline) — **built (SES3)**, and it preserves every field it has no verb for, since the C# side owns that file | the existing controls (D46 §6) |
 | Harness toolchain + credential profiles | the profile directories (`~/.daoris/harnesses/<harness>/<profile>/`) + `~/.daoris/harnesses.json`; the credential is each harness's own store | `daoris agent list\|install\|update\|login\|profile ...` (spawns the harness's own tooling; no secret touched) — **built (SES3)** | the roster, and a per-conversation picker (interactive design §4) — **built (SES3)** |
 | Server keys | the deployment's store | stays the **server binary's** console (`keys mint\|...`) — an operator act on the deployment, deliberately not a client verb | shown, never minted, except for a host the shell itself owns |
-| Quests and sessions | the store, via the doors | deliberately none (D31 as amended) — parity is satisfied by the platform and MCP | the platform, as today |
+| Quests and sessions | the store, via the doors | deliberately none (D32 as amended) — parity is satisfied by the platform and MCP | the platform, as today |
 
 **What this does to the CLI's offline discipline — deliberately, and structurally.** The guarantee was
 "only `connect.ts` may contain a network primitive"; it becomes "**only the named management modules
-may**", with the load-bearing half unchanged and still tested: *nothing `check` — or any doctrine
+may**" *(as built: one module, `service.ts`, holds every network primitive and `toolchain.ts` every
+spawn, each held by a test — D50)*, with the load-bearing half unchanged and still tested: *nothing `check` — or any doctrine
 command — transitively imports may reach a network primitive.* Doctrine commands stay offline by
 construction; management commands are the opt-in, loopback-talking class `connect` already founded.
 Most of the new verbs need no network at all — they edit machine-local files — and none of this

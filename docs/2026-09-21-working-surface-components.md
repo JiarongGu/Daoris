@@ -191,7 +191,10 @@ presentational boundary. `AttendedSession` reaches no data either: it is handed 
 the one hook in the region belongs to `SessionConsole`, which already held it. A component's layer
 is what it imports, not what the plan guessed before the derivation existed.
 
-### Page and shell — **revised by D55**
+### Page and shell — **revised by D55**, then by **D66**
+
+*D66 (2026-09-23): one frame. `ModeSwitch` is gone and Work is the **Sessions** view of the activity
+bar; the rest of the table below stands.*
 
 ~~`WorkView` (the full-bleed layout, rail + attended), the sixth nav item with its two counts, and the
 last-view memory.~~ Work is the **second frame**, not a sixth nav item

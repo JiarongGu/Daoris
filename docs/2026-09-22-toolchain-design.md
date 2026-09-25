@@ -10,6 +10,10 @@
 > measurement first**, and breadth is **native adapters that match each tool's own API and interfaces,
 > *and* the ACP door** — not a provider registry. This is the contract; `TASKS.md` carries the build
 > items.
+>
+> **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
+> (2026-09-23) the home is `$DAORIS_HOME`, the install's own `data/`, and nothing lives under the user
+> profile. The tree beneath it is unchanged.
 
 ## 1. What is true today, measured before anything was proposed
 
@@ -295,7 +299,8 @@ console. All three need either a credential or an API Daoris has no business hol
 
 ## 7. What does not move
 
-- **D49 §4 — Daoris never sees, stores or copies a credential.** Measurement needs no credential, and
+- **D49 §4 — Daoris never sees, stores or copies a credential** *(amended by D67 §1, 2026-09-23: an
+  account that is an API key is kept in the home's `keys.json`; a sign-in stays the tool's)*. Measurement needs no credential, and
   rotation as designed needs none either. The reference's approach is the opposite and was read
   before this was written; adopting it was considered and declined on those terms.
 - **D24 — a feature is specified without naming a model.** No registry, no price table.

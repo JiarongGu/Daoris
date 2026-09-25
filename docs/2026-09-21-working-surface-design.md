@@ -9,6 +9,10 @@
 > surface) — this extends both without weakening either — and with D41's design language, which does
 > not move.
 >
+> **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
+> (2026-09-23) the home is `$DAORIS_HOME`, the install's own `data/`, and nothing lives under the user
+> profile. The tree beneath it is unchanged.
+>
 > **Amended 2026-09-21 by D55.** The owner reset the positioning mid-build — *"the desktop is becoming
 > more a dev ide (but code gen driven)"* — with the method note *"you should reference more existing
 > application"*. A second study answered it (`docs/2026-09-21-ide-reference-study.md`: IDEs, not
@@ -16,6 +20,10 @@
 > Work is a **second frame** beside Manage, not a sixth nav item, and it brings a status bar, a
 > growable output panel and a mode switch with it. §3's rail, attended session, stream and timeline
 > are unchanged in content — see §3b for the three places the study adds to them.
+>
+> **Amended 2026-09-23 by D66.** The second frame is gone. The activity bar is the one navigation,
+> and *Sessions* is a view in it: the rail, the attended session, the dock and the console, as Work
+> was. The mode switch went with the frame. The session is still that view's organising object.
 
 ## 1. What it is for
 

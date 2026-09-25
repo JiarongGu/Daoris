@@ -91,9 +91,13 @@ family.
 
 1. **Person-auth for a remote deployment** — OIDC per the service design §5, tracked as SVC2. Until
    then a keyed remote is a read-only platform, and that is stated rather than worked around.
+   *(Superseded by §3's "Remote honesty": a shared deployment serves no page at all, so there is no
+   read-only platform over a remote. A person's window is the desktop over its own local host.)*
 2. **Notification** — whether a sitting quest should reach the person without them opening the window.
    Nothing is built; the ledger answered this need locally and the window answers it now. If polling a
    page proves insufficient in real multi-project use, that evidence decides the mechanism.
+   *(Since built for sessions, SURF5b: the desktop raises an OS notification when a session parks or
+   ends unasked, behind the Driver card's switch. A sitting quest still notifies nobody.)*
 3. **The landing view** — convergence today (D30, measured). If real platform use shows the person
    opening Quests first every time, that is evidence to reopen D30 with, not a reason to preempt it.
 

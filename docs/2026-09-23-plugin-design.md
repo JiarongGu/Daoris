@@ -94,7 +94,8 @@ repository names one, and a scratch run redirects it with everything else.
   a harness that takes a file at spawn is handed one written under the home for that session — never
   the repository's own `.mcp.json`. The knowledge host's name is refused, and a name two plugins
   claim keeps the first by id. A server handed is a tool *available*, not a tool *approved*: what a
-  session may call stays the repository's allow-list (D37).
+  session may call is its permission rules — Daoris's scopes handed at spawn and the repository's own,
+  a deny winning (D72, which amended "the repository's allow-list" here).
 
 A plugin with only `harnesses` never runs anything — it is Yaorin's `definitions: true`, and most
 plugins will be that.
@@ -162,7 +163,8 @@ carries what ran, not where the declaration lived.
 - **No code loads into a host.** Not an assembly, not a script, not a package. The wire is the whole
   contract, and a plugin that wants more than the wire offers asks for a point, not for a door.
 - **Core doctrine stays non-optional.** PLUG2 is still the owner's, and nothing here touches what
-  `sync` writes.
+  `sync` writes. *(PLUG2 was decided 2026-09-24 as D71: a **pack** may offer to switch a core row
+  off, and the manifest must confirm it. A plugin still touches nothing `sync` writes.)*
 - **The service has no hook points yet.** The same manifest and the same wire reach the knowledge
   service when a point there is asked for (an entry as it is indexed; a quest as it is published);
   the first points are the driver's because the driver is where a plugin's answer costs something.

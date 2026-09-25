@@ -17,7 +17,7 @@ same thing twice, and **ask each other for changes instead of reaching in**.
 That last part is the constraint everything else serves: **repositories are not developed across.** A
 change you need elsewhere is a quest published to the service, taken by whoever knows that code —
 because the *why* behind a codebase does not travel, and a request does (`quest_publish` over MCP, or
-the platform's Quests view; the CLI deliberately has no quest command, D31 as amended).
+the platform's Quests view; the CLI deliberately has no quest command, D32 as amended).
 
 The **CLI is a zero-dependency Node program plus a canon of markdown** — not a library, not a framework,
 and it makes no model calls at all. The **service** is the half that may use one: it indexes the family's

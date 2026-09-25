@@ -8,7 +8,10 @@
 >
 > 🔴 **§2's first rule, §5 and the quest half of §9 are superseded by D68**
 > (`docs/2026-09-23-sync-design.md`). A quest has no home and its verbs do not write through: every
-> machine commits locally, and sync is fetch, rebase, push. The rest of this document stands.
+> machine commits locally, and sync is fetch, rebase, push. So is **how §6 and §9 move records**.
+> Session records travel by cursor, not by a snapshot re-sent every tick (SYNC4). Registrations,
+> knowledge and the code map fast-forward by ancestry instead of last-writer-wins (SYNC5). Sync design
+> §7 lists what went. The rest of this document stands.
 
 ## 1. What it is for
 

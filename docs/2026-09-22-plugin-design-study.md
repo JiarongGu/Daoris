@@ -7,6 +7,10 @@
 > Both references were **read on this machine**, never built or modified — one is another
 > repository's installed application and the other a vendored package tree. Nothing here changed
 > either.
+>
+> **What followed:** the plugin design is `2026-09-23-plugin-design.md` (D64). PLUG2, the question of
+> D4's "no opt-out", was decided as **D71**: a pack may switch a core row off, and the repository
+> confirms it.
 
 ## 1. The finding that reorders the question
 

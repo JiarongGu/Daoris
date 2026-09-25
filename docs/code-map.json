@@ -74,7 +74,7 @@
     {
       "id": "daoris-web",
       "path": "src/Daoris.Web",
-      "summary": "The platform: knowledge, quests and projects over the service. Doctrine read-only; convergence first. Built into the HTTP host's wwwroot."
+      "summary": "The platform: knowledge, quests and projects over the service. Doctrine read-only; Overview first (D40), sessions a view (D66). Built into the HTTP host's wwwroot."
     }
   ],
   "dependencies": [

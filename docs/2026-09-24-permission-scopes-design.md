@@ -118,7 +118,9 @@ harness, and the person can switch `commit` off by id like any default.
   **Unproven until a real session runs**: that the harness honours a hook handed in the command-line
   tier. Its reference lists hook scopes and does not name `--settings`; the permission rules in the
   same tier are honoured, measured. That is one prompt per door, asking the agent to write a file
-  outside its folder. Also unproven: that the hook's deny outranks an `allow` rule a person wrote for
+  outside its folder. *(Measured the same day, on both doors, in an untrusted folder: the guard fired
+  and refused the write with its own sentence — `2026-09-24-deploy1-acp-trust-evidence.md`, PERM3.)*
+  Still unproven: that the hook's deny outranks an `allow` rule a person wrote for
   that path. The reference says the permission flow runs when a hook makes no decision, but it does
   not state the case where both do.
 
@@ -171,7 +173,7 @@ still carries the guard.
   each, and an *add a rule* form one press away.
 
 Both doors write the same file, and a hand edit keeps working because **the file is the contract**:
-the CLI's `permissions.ts` and the driver's `PermissionRules.cs` read it by the same rules, with a
+the CLI's `permissions.ts` and the driver's `PermissionRules` (`Permissions.cs`) read it by the same rules, with a
 test on each side and a test that holds the two defaults tables together.
 
 ## 6. An agent updating the rules — PERM2, as built (D74)

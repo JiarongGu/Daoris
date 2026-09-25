@@ -6,7 +6,7 @@
 // union to the harness at spawn as its command-line tier. Precedence is the harness's, never a second
 // one here: `deny` beats `ask` beats `allow` across every scope the harness merges.
 //
-// It is the CLI's twin of the driver's `PermissionRules.cs`. The two artefacts share no code, so THE
+// It is the CLI's twin of the driver's `PermissionRules` (`Permissions.cs`). The two artefacts share no code, so THE
 // FILE is the contract, and these rules hold in both, each with a test saying so:
 //
 //   1. Absent is empty; unreadable is empty and says why — and the defaults still hold.
@@ -65,7 +65,7 @@ const CONNECTOR_TOOLS = [
   'knowledge_convergence', 'quest_list', 'quest_respond', 'quest_publish', 'permission_propose',
 ];
 
-/** What Daoris ships. 🔴 The driver's `PermissionRules.cs` holds the same table, and a test reads this one. */
+/** What Daoris ships. 🔴 The driver's `PermissionRules` (`Permissions.cs`) holds the same table, and a test reads this one. */
 export const DEFAULTS: readonly PermissionDefault[] = [
   {
     id: 'connector',

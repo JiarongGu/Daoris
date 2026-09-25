@@ -3,6 +3,10 @@
 **Status: design, nothing built.** Written before code so the shape is argued rather than discovered.
 The contract for the CLI is `2026-08-04-daoris-design.md`; this is its knowledge layer.
 
+> **Since written (2026-09-25):** built, as `src/Daoris.Service` — an MCP host and an HTTP host over
+> one store, in local and shared modes. All four of §8's questions have been answered. Where this
+> document and a later decision disagree, the decision wins; §8 names each one.
+
 ---
 
 ## 1. What it is for
@@ -239,3 +243,8 @@ is a third party. Local mode should be able to run against a local model for exa
    than a web UI, and it is less to build. The UI may be the second client rather than the first.
 4. **Where does the desktop shell sit** — a client of a remote service, or the host of the local one?
    If local-first wins, the shell *is* the product and there is no deployment.
+
+*Answered since:* (1) yes — the shared mode of the same HTTP host, with minted per-person keys (D47).
+(2) local checkouts, read by the host on its own machine; a remote is fed from the canonical line only,
+and each feed names its commit (WSP4, D68). (3) MCP first, and the platform page second (D38). (4)
+both: the desktop hosts the machine's service and syncs up to a remote (D45, D62, D68).
