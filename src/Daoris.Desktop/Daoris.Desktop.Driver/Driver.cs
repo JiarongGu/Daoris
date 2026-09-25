@@ -116,6 +116,10 @@ public sealed partial class Driver(
     // one tick or every quest would re-detect every harness. Per-instance when nobody passes one.
     private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
 
+    // The build's own adapters, which each tick's plugins are laid over — held as a field so the
+    // primary constructor's parameter is captured in one place only (CS9124).
+    private readonly AdapterSet _built = adapters;
+
     // The adapters this tick spawns with: the build's, plus whatever the plugins read this tick
     // declare (D64 §3). Set once per tick, before any start is run.
     private AdapterSet _adapters = adapters;
@@ -182,8 +186,8 @@ public sealed partial class Driver(
         // last look is spawnable now, a server declared since is handed now, a hook process
         // disabled since is stopped now. The catalogue refuses a name this build carries before
         // anything of that plugin is taken.
-        var catalog = PluginCatalog.Load(home, adapters.Names);
-        _adapters = adapters.WithPlugins(catalog);
+        var catalog = PluginCatalog.Load(home, _built.Names);
+        _adapters = _built.WithPlugins(catalog);
         _servers = catalog.Servers;
         _harnesses.Use(_adapters);
         if (hooks is not null)
