@@ -38,8 +38,8 @@ import {
   existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { copyTree } from './fsx.mjs';
+import { fileURLToPath } from 'node:url';
+import { copyTree, isMain } from './fsx.mjs';
 
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -712,6 +712,6 @@ async function main(command, args) {
   }
 }
 
-if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+if (isMain(import.meta.url)) {
   await main(process.argv[2], process.argv.slice(3));
 }

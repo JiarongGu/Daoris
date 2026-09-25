@@ -27,7 +27,8 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { isMain } from './fsx.mjs';
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider is the guard, exported so `src/Daoris.Cli/test/desktop-publish.test.ts`
@@ -233,4 +234,4 @@ Re-publish over this folder to update it; nothing here is edited by hand.
 
 // Guarded, because the guard above is imported by a unit test — and `node --test` importing this
 // file must not publish anything. `desktop.mjs` and `deployment-rehearsal.mjs` guard the same way.
-if (pathToFileURL(process.argv[1]).href === import.meta.url) main();
+if (isMain(import.meta.url)) main();

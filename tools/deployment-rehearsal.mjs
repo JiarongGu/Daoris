@@ -45,9 +45,9 @@ import {
   existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync,
 } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { copyTree } from './fsx.mjs';
+import { copyTree, isMain } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -671,6 +671,6 @@ if (!done.ok) throw new Error(done.text);
  * Only when this file is what was run — the same guard `tools/desktop.mjs` carries, for the same
  * reason and after the same mistake.
  */
-if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+if (isMain(import.meta.url)) {
   await main();
 }

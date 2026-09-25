@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A tool run through a junction ran nothing and exited 0 (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the tools. Each `tools/` script whose helpers are also
+imported guards its runner so `node --test` does not run it. The guard compared `process.argv[1]` with
+`import.meta.url`. Node resolves the main module's links, so a script reached through a junction or
+a symlink sees its REAL path in `import.meta.url` and the typed path in `argv[1]`. The guard read
+false, the deployment gate ran nothing, and it exited 0: a pass nobody earned.
+
+**Root cause.** A path comparison that ignored links, written three ways in three scripts.
+
+**Fix.** `isMain(import.meta.url)` in `tools/fsx.mjs` compares real paths, and the three scripts use
+it (REV3 tools C8). CLAUDE.md's convention names it.
+
+**Verify.** The premise was checked first: the old form printed `skipped` through a junction. The new
+`tools-main.test.ts` runs a probe directly and through a junction, and both run; imported, it does not.
+
 ## The pre-commit leak scan read the wrong copy, and skipped non-ASCII names (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the devkit.
