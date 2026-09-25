@@ -768,10 +768,11 @@ app.MapPost("/api/registry/{repository}/workspace", async (
     ComposedService s, string repository, WireRequest body, CancellationToken ct) =>
 {
     // Re-wiring across a shared deployment's own boundary is the same refusal the registration door
-    // gives (D48 §5) — a host that serves one circle cannot hold a row belonging to another.
-    if (Access.RefuseForeignWorkspace(hostWorkspace, repository, body.Workspace) is { } foreign)
+    // gives (D48 §5) — a host that serves one circle cannot hold a row belonging to another. And a
+    // re-wire must name where to: silence became `default`, out of a shared host's circle (REV3).
+    if (Access.RefuseRewire(hostWorkspace, repository, body.Workspace) is { } refused)
     {
-        return Results.Conflict(new ErrorResponse(foreign));
+        return Results.Conflict(new ErrorResponse(refused));
     }
 
     var existing = (await s.Service.RegistryAsync(ct: ct))

@@ -115,6 +115,19 @@ public static class Access
               + $"`{hostWorkspace}` on that machine, or point `{Workspaces.Normalize(stated)}` at its own deployment.";
 
     /// <summary>
+    /// Why a re-wire is refused — or null when it may move the row to <paramref name="stated"/>.
+    /// </summary>
+    /// <remarks>
+    /// The registration door's boundary, plus one rule of its own: a re-wire must NAME a workspace.
+    /// Silence is right for a registration, where the receiving host's wiring decides. For a re-wire
+    /// it became `default`, which on a shared host moved the row out of the one circle it serves (REV3).
+    /// </remarks>
+    public static string? RefuseRewire(string? hostWorkspace, string repository, string? stated) =>
+        string.IsNullOrWhiteSpace(stated)
+            ? $"Re-wiring `{repository}` needs the workspace to wire it to, and this request named none."
+            : RefuseForeignWorkspace(hostWorkspace, repository, stated);
+
+    /// <summary>
     /// Whether a bind address stays on this machine. Anything unparseable — including Kestrel's `+`
     /// and `*` wildcards, which bind everything — is NOT loopback: when in doubt, the answer that
     /// refuses to serve a network is the safe one.

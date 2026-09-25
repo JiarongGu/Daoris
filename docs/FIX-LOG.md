@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A re-wire that named no workspace moved the row to `default` (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. `POST /api/registry/{repository}/workspace`
+with an empty `workspace` passed the shared host's boundary check, where silence means "the host's
+own circle". It then normalized to `default`. On a deployment serving `aurora`, the row moved out of
+the one circle the host serves.
+
+**Root cause.** The re-wire door reused the registration door's refusal, and its rule for silence.
+Silence suits a registration. A re-wire exists only to name a workspace.
+
+**Fix.** `Access.RefuseRewire` refuses a re-wire that names none, on any host, then applies the
+registration door's boundary. The route asks it.
+
+**Verify.** `A_rewire_that_names_no_workspace_is_refused` and `A_rewire_keeps_the_registration_door_s_boundary`
+in `AccessTests`. The route itself is not unit-tested: the service suite never starts the HTTP host,
+which is REV3's service F19 and a backlog row.
+
 ## A request that went away mid-transaction could roll back somebody else's write (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. A host holds one SQLite connection for every

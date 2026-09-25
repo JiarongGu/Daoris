@@ -164,4 +164,32 @@ public sealed class HostWorkspaceTests
     {
         Assert.Null(Access.RefuseForeignWorkspace(null, "foundry", "tools"));
     }
+
+    /// <summary>
+    /// A re-wire that names no workspace is refused, on either kind of host (REV3 service F12).
+    /// </summary>
+    /// <remarks>
+    /// Silence is right for a registration: the receiving host's wiring decides. For a re-wire,
+    /// whose only job is to name a workspace, silence became `default`, and on a shared host that
+    /// moved the row out of the one circle the deployment serves.
+    /// </remarks>
+    [Theory]
+    [InlineData("aurora", null)]
+    [InlineData("aurora", " ")]
+    [InlineData(null, "")]
+    public void A_rewire_that_names_no_workspace_is_refused(string? host, string? stated)
+    {
+        var refusal = Access.RefuseRewire(host, "atelier", stated);
+
+        Assert.NotNull(refusal);
+        Assert.Contains("atelier", refusal);
+    }
+
+    [Fact]
+    public void A_rewire_keeps_the_registration_door_s_boundary()
+    {
+        Assert.Null(Access.RefuseRewire("aurora", "atelier", "Aurora"));
+        Assert.Null(Access.RefuseRewire(null, "atelier", "tools"));
+        Assert.Contains("tools", Access.RefuseRewire("aurora", "atelier", "tools"));
+    }
 }
