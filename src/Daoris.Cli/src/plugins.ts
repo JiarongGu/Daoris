@@ -22,7 +22,7 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
-import { readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
+import { onPath, readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
 import type { ExitCode } from './errors.ts';
 import { daorisHome, HOME_SENTENCE } from './home.ts';
 import { TOOLCHAINS } from './toolchain.ts';
@@ -58,13 +58,7 @@ export function reservedHarnesses(): ReadonlySet<string> {
  * bare waits on its stdin.
  */
 export function resolvable(command: string, env: Record<string, string | undefined> = process.env): boolean {
-  if (!command.trim()) return false;
-  if (isAbsolute(command) || command.includes('/') || command.includes('\\')) return existsSync(command);
-  const extensions = process.platform === 'win32'
-    ? ['', ...(env.PATHEXT ?? '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean)]
-    : [''];
-  const directories = (env.PATH ?? '').split(process.platform === 'win32' ? ';' : ':').filter(Boolean);
-  return directories.some((dir) => extensions.some((ext) => existsSync(join(dir, command + ext))));
+  return onPath(command, { env }) !== null;
 }
 
 export interface PluginHarness {

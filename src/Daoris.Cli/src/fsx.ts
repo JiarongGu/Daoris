@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { DaorisError } from './errors.ts';
 
 /**
@@ -82,3 +82,33 @@ export function listFiles(dir: string, keep: (name: string) => boolean = () => t
 }
 
 export const listMarkdown = (dir: string): string[] => listFiles(dir, (name) => name.endsWith('.md'));
+
+/**
+ * The file a command names: itself when it is a path, else the first match on `PATH` with Windows's
+ * extensions tried, or null where there is none. The CLI's half of the driver's
+ * `CommandPresence.Resolve`, with the same defaults.
+ *
+ * @param startable Only what Windows can START. npm puts an extensionless POSIX script beside
+ * `npm.cmd`, and the bare name found first is a file no Windows process can run.
+ */
+export function onPath(
+  command: string,
+  { env = process.env, startable = false }: { env?: Record<string, string | undefined>; startable?: boolean } = {},
+): string | null {
+  if (!command.trim()) return null;
+  if (isAbsolute(command) || command.includes('/') || command.includes('\\')) {
+    return existsSync(command) ? command : null;
+  }
+
+  const windows = process.platform === 'win32';
+  const pathExt = (env.PATHEXT ?? '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean);
+  const extensions = !windows ? [''] : startable ? pathExt : ['', ...pathExt];
+  for (const directory of (env.PATH ?? '').split(windows ? ';' : ':')) {
+    if (!directory) continue;
+    for (const extension of extensions) {
+      const candidate = join(directory, command + extension);
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return null;
+}

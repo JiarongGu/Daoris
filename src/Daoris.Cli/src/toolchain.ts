@@ -44,7 +44,7 @@ import { flagValue, operands } from './args.ts';
 /** The `agent` flags that take a value — so that value is never read as an operand. */
 const AGENT_VALUED: ReadonlySet<string> = new Set(['--profile', '--workspace']);
 import { DaorisError } from './errors.ts';
-import { readJsonObject, writeJsonAtomic } from './fsx.ts';
+import { onPath, readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
@@ -1360,17 +1360,8 @@ function spawnable(command: string[]): [string, string[], boolean] {
 function windowsExecutable(command: string): string {
   if (/[\\/]/.test(command) || /\.[a-z]+$/i.test(command)) return command;
 
-  const pathExt = (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean);
-  for (const directory of (process.env.PATH ?? '').split(';')) {
-    if (!directory) continue;
-    for (const extension of pathExt) {
-      const candidate = join(directory, command + extension.toLowerCase());
-      if (existsSync(candidate)) return candidate;
-    }
-  }
-
   // Not found is not this function's decision to make: spawning reports it, with its own sentence.
-  return command;
+  return onPath(command, { startable: true }) ?? command;
 }
 
 function firstLine(output: string): string | null {
