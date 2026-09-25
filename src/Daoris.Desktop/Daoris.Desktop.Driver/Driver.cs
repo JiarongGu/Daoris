@@ -516,12 +516,7 @@ public sealed partial class Driver(
             // The servers the plugins hand this session (D65 §1f). The protocol door carries them on
             // the wire below; a pipe-door harness that takes a file at spawn is handed one under
             // Daoris's home, and the file goes when the session does.
-            string? handed = null;
-            if (adapter.Wire == SessionWire.Pipe && _servers.Count > 0)
-            {
-                handed = SpawnServers.Write(home, sessionId, _servers);
-                if (handed is not null) adapter.HandServers(info, handed);
-            }
+            var handed = SpawnServers.Hand(adapter, info, home, sessionId, _servers);
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.

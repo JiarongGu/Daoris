@@ -210,12 +210,8 @@ public sealed class ChatRunner(
             // pipe is handed a file — and a conversation on the pipe was handed nothing at all.
             if (resolved.Wire == SessionWire.Pipe)
             {
-                var plugged = PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers;
-                if (plugged.Count > 0 && SpawnServers.Write(home, sessionId, plugged) is { } file)
-                {
-                    servers = file;
-                    resolved.HandServers(info, file);
-                }
+                servers = SpawnServers.Hand(
+                    resolved, info, home, sessionId, PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers);
             }
 
             process = Process.Start(info)

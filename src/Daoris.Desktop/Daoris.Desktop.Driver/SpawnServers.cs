@@ -46,6 +46,21 @@ public static class SpawnServers
         return path;
     }
 
+    /// <summary>
+    /// Hand a pipe-door harness its servers: write the file and point the harness at it. Null, with
+    /// nothing handed, on the protocol door, which carries servers on the wire, or when there are none.
+    /// Which servers a session gets is its caller's decision; this is only how a pipe receives them.
+    /// </summary>
+    public static string? Hand(
+        ISessionAdapter adapter, System.Diagnostics.ProcessStartInfo info, string home, string sessionId,
+        IReadOnlyList<AcpMcpServer> servers)
+    {
+        if (adapter.Wire != SessionWire.Pipe) return null;
+        var file = Write(home, sessionId, servers);
+        if (file is not null) adapter.HandServers(info, file);
+        return file;
+    }
+
     /// <summary>The file is the session's; it goes when the session does.</summary>
     public static void Remove(string? path)
     {

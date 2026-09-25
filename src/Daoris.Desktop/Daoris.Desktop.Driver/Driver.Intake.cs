@@ -175,8 +175,7 @@ public sealed partial class Driver
             {
                 var connector = Connector(sessionId, scope);
                 if (connector is null) preamble = NoConnectorForIntake;
-                handed = SpawnServers.Write(home, sessionId, connector is null ? _servers : [connector, .. _servers]);
-                if (handed is not null) adapter.HandServers(info, handed);
+                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? _servers : [connector, .. _servers]);
             }
 
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
