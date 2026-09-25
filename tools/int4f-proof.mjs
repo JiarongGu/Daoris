@@ -29,40 +29,12 @@
  * default allows `quest_publish`, which is all an intake needs to publish, and it reaches an untrusted
  * room (D72, D73) — which is what this run also proves.
  */
-import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { setTimeout as sleep } from 'node:timers/promises';
-import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
-// The real resolution, not a second copy of it (TOOL2/D57): this script cannot disagree with the CLI
-// and the driver about which binary would run.
-import {
-  harnessHome, harnessesPath, managedBinary, readHarnessSettings, resolveVersion,
-} from '../src/Daoris.Cli/src/toolchain.ts';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { capture } from './rehearsal-kit.mjs';
+import { ADAPTER, cliBin, openProof, repoRoot } from './proof-kit.mjs';
 
-const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
-const httpDll = join(
-  repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http',
-  'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
-const driverDll = join(
-  repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host',
-  'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
-// The connector the intake publishes through. The driver finds it by walking up from its own binary to
-// this workspace's build (`KnowledgeConnector.Candidates`) — so if it is not built, the intake has no
-// voice, and the run would prove nothing about the one thing it exists to prove.
-const mcpHost = join(
-  repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp',
-  'bin', 'Debug', 'net10.0', process.platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge');
-
-const scratch = join(repoRoot, '_fixtures', 'int4f-proof');
-// Its own port: ACP2's proof holds 5201, and two proofs must be able to share a machine.
-const BASE = 'http://localhost:5202';
-const ADAPTER = 'claude-code-acp';
-// 🔴 The adapter's Daoris name and its BINARY differ — the package ships `claude-agent-acp`.
-const BINARY = 'claude-agent-acp';
-const PACKAGE = '@agentclientprotocol/claude-agent-acp';
 const WORKSPACE = 'default';
 
 const drive = process.argv.includes('--drive');
@@ -106,72 +78,15 @@ const SENTENCE = 'The iron sword costs 40 gold in the shop, but the design says 
 const LINK = 'https://tickets.example/T-41';
 const FILE = { name: 'design-note.txt', text: 'Design note: the iron sword costs 25 gold.\n' };
 
-/** The scratch host — declared above every statement that can reach it (ACP2's temporal-dead-zone lesson). */
-let host = null;
-
-openTranscript(repoRoot, 'int4f', { beforeExit: () => stopHost() });
-const { totals, check, section } = makeChecker();
-
-/** What the person still has to do — collected, and never a failure. */
-const missing = [];
-const needs = (what, command) => missing.push({ what, command });
-
-/** A readiness fact: true, or true-with-a-todo. Never a failure. */
-function ready(label, satisfied, detail = '') {
-  console.log(satisfied
-    ? `  ok    ${label}`
-    : `  todo  ${label}${detail ? `\n          ${detail}` : ''}`);
-  return satisfied;
-}
+// Its own port: ACP2's proof holds 5201, and two proofs must be able to share a machine.
+const {
+  scratch, totals, check, section, missing, readiness, ask, post, born,
+  freshScratch, startHost, stopHost, adopt, runDriver, verdict,
+} = openProof('int4f', { label: 'INT4f', port: 5202 });
 
 // ─── readiness ────────────────────────────────────────────────────────────────────────────────────
 
-section('Readiness — what this machine has, and what is left');
-
-const built = ready('the host and the driver are built', existsSync(httpDll) && existsSync(driverDll));
-if (!built) needs('the host and driver binaries', 'npm run desktop -- build');
-
-const connectorBuilt = ready('the connector (the MCP host) is built', existsSync(mcpHost),
-  'an intake publishes through it; without it the intake has no voice');
-if (!connectorBuilt) needs('the MCP host', 'dotnet build src/Daoris.Service/Daoris.Service.Mcp');
-
-const settings = readHarnessSettings(harnessesPath());
-const home = harnessHome(harnessesPath());
-const managed = (harness, binary) =>
-  managedBinary(home, harness, resolveVersion(settings, harness, null, null), [binary]);
-
-/** Ask a harness about itself the way `daoris agent list` does, tolerating absence. */
-function present(harness, binary, args = ['--version']) {
-  const where = managed(harness, binary) ?? binary;
-  const found = capture(`"${where}" ${args.join(' ')}`, repoRoot, { timeout: 30_000 });
-  return found.code === 0
-    ? { version: found.out.trim().split('\n')[0] ?? '', where }
-    : null;
-}
-
-const claude = present('claude-code', 'claude');
-ready('`claude` is on this machine', Boolean(claude),
-  claude ? `${claude.version}  (${claude.where})` : 'not pinned, and not on PATH');
-if (!claude) {
-  needs('the Claude Code CLI', 'daoris agent install claude-code   (or pin one: daoris agent pin claude-code <version>)');
-}
-
-const acpAdapter = present(ADAPTER, BINARY);
-const adapterVersion = acpAdapter?.version ?? null;
-ready(`\`${ADAPTER}\` is on this machine`, Boolean(adapterVersion), adapterVersion ?? 'not on PATH');
-if (!adapterVersion) {
-  needs(`the ACP adapter (${PACKAGE})`, `daoris agent pin ${ADAPTER} 0.79.0   — the version ACP2 was proven on`);
-}
-
-// `claude auth status` answers JSON and exits 0 either way, so the OUTPUT is the answer.
-const authStatus = capture('claude auth status', repoRoot, { timeout: 30_000 });
-const loggedIn = /"loggedIn"\s*:\s*true/i.test(authStatus.out);
-ready('a Claude account is logged in', loggedIn,
-  loggedIn ? '' : 'the profile this run would use reports logged out');
-if (!loggedIn) {
-  needs('a logged-in account',
-    'daoris agent login claude-code [--profile <name>]   — runs the agent\'s own flow, into a directory Daoris owns');
-}
+readiness({ connector: 'an intake publishes through it; without it the intake has no voice' });
 
 // ─── the keyless half ─────────────────────────────────────────────────────────────────────────────
 //
@@ -206,57 +121,9 @@ if (drive && missing.length === 0) {
 
 // ─── the verdict ──────────────────────────────────────────────────────────────────────────────────
 
-console.log('');
-if (missing.length > 0) {
-  console.log('This machine is not ready for the real run yet. What is left:');
-  for (const { what, command } of missing) {
-    console.log(`\n  ${what}`);
-    console.log(`    ${command}`);
-  }
-  console.log('\nThen: node tools/int4f-proof.mjs --drive');
-  console.log('\nNothing above failed — this is a readiness report, not a gate.');
-}
-
-console.log(`\n  ${totals.checks - totals.failures}/${totals.checks} checks passed`);
-process.exitCode = totals.failures > 0 ? 1 : 0;
+verdict('run');
 
 // ─── the pieces ───────────────────────────────────────────────────────────────────────────────────
-
-function stopHost() {
-  try { host?.kill(); } catch { /* already gone */ }
-  host = null;
-}
-
-/** One GET against the scratch host, bounded — bare `fetch` has no timeout. */
-async function ask(path) {
-  try {
-    const answered = await fetch(`${BASE}${path}`, { signal: AbortSignal.timeout(30_000) });
-    return await answered.json();
-  } catch {
-    return null;
-  }
-}
-
-/** A fresh git repository with one commit in it. */
-function born(name, summary) {
-  const where = join(scratch, name);
-  mkdirSync(where, { recursive: true });
-  const git = (command) => execFileSync('git', command, { cwd: where, encoding: 'utf8' });
-  git(['init', '-q', '-b', 'main']);
-  git(['config', 'user.email', 'proof@example.com']);
-  git(['config', 'user.name', 'INT4f proof']);
-  writeFileSync(join(where, 'README.md'), `# ${name}\n\n${summary}\n`);
-  git(['add', '-A']);
-  git(['commit', '-qm', 'the starting point']);
-  return where;
-}
-
-function declare(where, domain) {
-  const manifest = join(where, 'daoris.json');
-  const held = JSON.parse(readFileSync(manifest, 'utf8'));
-  held.domain = domain;
-  writeFileSync(manifest, `${JSON.stringify(held, null, 2)}\n`);
-}
 
 /** Where a repository stands: its HEAD and whether anything is uncommitted. */
 function standing(where) {
@@ -271,72 +138,27 @@ function standing(where) {
  * only session that can start is the intake, and nothing needs a commit.
  */
 async function intakeRun() {
-  rmSync(scratch, { recursive: true, force: true });
-  mkdirSync(scratch, { recursive: true });
-
+  freshScratch();
   const repos = CIRCLE.map((repo) => ({ ...repo, where: born(repo.name, repo.readme) }));
 
-  // 🔴 CONFINE THE HOST TO THIS SCRATCH FAMILY (ACP2's lesson): the index and the scan stay here.
-  const env = {
-    DAORIS_SERVICE_URL: BASE,
-    ASPNETCORE_URLS: BASE,
-    DAORIS_KNOWLEDGE_ROOT: scratch,
-    DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
-    DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
-  };
+  const env = await startHost();
+  if (!env) return;
 
-  host = spawn('dotnet', [httpDll], { cwd: scratch, env: { ...process.env, ...env }, stdio: 'ignore' });
-  host.unref();
-  let up = false;
-  for (let attempt = 0; attempt < 40 && !up; attempt++) {
-    await sleep(500);
-    up = await fetch(`${BASE}/api/status`, { signal: AbortSignal.timeout(5_000) })
-      .then((r) => r.ok).catch(() => false);
-  }
-  check('the scratch host answers', up);
-  if (!up) return;
-
-  const seen = await ask('/api/registry');
-  const strangers = (seen ?? []).map((r) => r.repository).filter((n) => !n.startsWith('proof-'));
-  check('the host sees this scratch family and nothing else', strangers.length === 0,
-    strangers.length ? `it also indexed: ${strangers.join(', ')}` : '');
-  if (strangers.length > 0) {
-    console.log('        Refusing to go further: DAORIS_KNOWLEDGE_ROOT is not confining the scan.');
-    return;
-  }
-
-  let joined = true;
-  for (const repo of repos) {
-    const adopt = capture(`node "${cliBin}" init --name ${repo.name}`, repo.where, { env });
-    declare(repo.where, repo.domain);
-    capture(`node "${cliBin}" sync`, repo.where, { env });
-    const connect = capture(`node "${cliBin}" connect`, repo.where, { env });
-    // Adopted in a commit, not left dirty — and it is the baseline "nothing was written" is read against.
-    execFileSync('git', ['add', '-A'], { cwd: repo.where, encoding: 'utf8' });
-    execFileSync('git', ['commit', '-qm', 'adopt daoris'], { cwd: repo.where, encoding: 'utf8' });
-    const ok = adopt.code === 0 && connect.code === 0;
-    check(`\`${repo.name}\` adopts, declares what it owns, and registers`, ok, `${adopt.out}\n${connect.out}`);
-    joined &&= ok;
-  }
-  if (!joined) return;
+  // Adopted in a commit, not left dirty — and it is the baseline "nothing was written" is read against.
+  if (!adopt(repos, env)) return;
   const before = Object.fromEntries(repos.map((repo) => [repo.name, standing(repo.where)]));
 
   // The ask, over the platform's own door: a sentence at the WORKSPACE, no receiver named.
-  const posted = await fetch(`${BASE}/api/asks`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    signal: AbortSignal.timeout(30_000),
-    body: JSON.stringify({
-      workspace: WORKSPACE,
-      sentence: SENTENCE,
-      ...(carry
-        ? {
-          links: [LINK],
-          attachments: [{ name: FILE.name, content: Buffer.from(FILE.text, 'utf8').toString('base64') }],
-        }
-        : {}),
-    }),
-  }).then((r) => r.json()).catch(() => ({}));
+  const posted = await post('/api/asks', {
+    workspace: WORKSPACE,
+    sentence: SENTENCE,
+    ...(carry
+      ? {
+        links: [LINK],
+        attachments: [{ name: FILE.name, content: Buffer.from(FILE.text, 'utf8').toString('base64') }],
+      }
+      : {}),
+  });
   const askId = posted.ask?.id;
   check('the ask is kept, and the declarations tier only proposes — Proposed, published nothing',
     Boolean(askId) && posted.ask?.state === 'Proposed' && posted.ask?.tier === 'declarations'
@@ -346,18 +168,10 @@ async function intakeRun() {
   console.log(`        carrying: ${carry ? `a link and \`${FILE.name}\`` : 'nothing (--no-carry)'}`);
 
   // Nothing drivable, so the only session that can start is the intake; cap 1 is its one slot.
-  const configPath = join(scratch, 'driver.json');
-  writeFileSync(configPath, `${JSON.stringify({
+  runDriver(env, {
     drivable: [], holds: [], trees: [], cap: 1,
     adapter: ADAPTER, intakeAdapter: ADAPTER, timeoutMinutes: 10, pollSeconds: 5, notify: false,
-  }, null, 2)}\n`);
-
-  console.log('  ..    the intake runs — this is the step that spends the login');
-  const run = capture(`dotnet "${driverDll}" --until-idle`, scratch, {
-    env: { ...env, DAORIS_DRIVER_CONFIG: configPath },
-    timeout: 15 * 60_000,
-  });
-  console.log(run.out.split('\n').map((line) => `        ${line}`).join('\n'));
+  }, 'the intake runs');
 
   // ── what happened, read back from the record — never from what the session said about itself.
   const sessions = ((await ask('/api/sessions?includeClosed=true')) ?? []).filter((s) => s.ask === askId);

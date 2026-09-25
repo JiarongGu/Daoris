@@ -17,124 +17,23 @@
  * machine's real profile is never written to (the handshake runs under a scratch `CLAUDE_CONFIG_DIR`,
  * which is exactly what the evaluation's §1a established keylessly).
  */
-import { execFileSync, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
-// The real resolution, not a second copy of it: a pinned harness is found exactly the way the CLI
-// and the driver find one (TOOL2/D57), so this script cannot disagree with them about what would run.
-import {
-  harnessHome, harnessesPath, managedBinary, readHarnessSettings, resolveVersion,
-} from '../src/Daoris.Cli/src/toolchain.ts';
-
-const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
-const httpDll = join(
-  repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http',
-  'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
-const driverDll = join(
-  repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host',
-  'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
-
-const scratch = join(repoRoot, '_fixtures', 'acp2-proof');
-const BASE = 'http://localhost:5201';
-const ADAPTER = 'claude-code-acp';
-// 🔴 The adapter's Daoris name and its BINARY are different strings — the package ships
-// `claude-agent-acp`. Guessing the second from the first is how a pin reports itself missing.
-const BINARY = 'claude-agent-acp';
-const PACKAGE = '@agentclientprotocol/claude-agent-acp';
+import { capture } from './rehearsal-kit.mjs';
+import { ADAPTER, BINARY, cliBin, openProof, repoRoot } from './proof-kit.mjs';
 
 const drive = process.argv.includes('--drive');
 
-/**
- * The scratch host this run's records live in.
- *
- * 🔴 Declared HERE, above every statement that can reach it. `let` is hoisted but not initialised,
- * so a declaration further down the file leaves `stopHost` and `drivenRun` in its temporal dead
- * zone — which fails as "Cannot access 'host' before initialization" at the moment of use, long
- * after the line that actually caused it.
- */
-let host = null;
-
-openTranscript(repoRoot, 'acp2', { beforeExit: () => stopHost() });
-const { totals, check, section } = makeChecker();
-
-/**
- * What the person still has to do. Collected rather than thrown, so they get the whole list once.
- *
- * 🔴 **A readiness item is not a check.** A machine that has not installed the adapter yet has
- * failed nothing — it is simply not set up — so these report as `todo` and never touch the failure
- * count. Mixing the two produced a run that said "FAIL" and "nothing above failed" in the same
- * breath, which is worse than either.
- */
-const missing = [];
-const needs = (what, command) => missing.push({ what, command });
-
-/** A readiness fact: true, or true-with-a-todo. Never a failure. */
-function ready(label, satisfied, detail = '') {
-  console.log(satisfied
-    ? `  ok    ${label}`
-    : `  todo  ${label}${detail ? `\n          ${detail}` : ''}`);
-  return satisfied;
-}
+const {
+  scratch, totals, check, section, missing, readiness, ask, post, born, scratchDomain,
+  freshScratch, startHost, stopHost, adopt, runDriver, verdict,
+} = openProof('acp2', { label: 'ACP2', port: 5201 });
 
 // ─── readiness ────────────────────────────────────────────────────────────────────────────────────
-//
-// Each of these is a fact about this machine, and each names the one command that changes it. The
-// order is the order a person would do them in.
 
-section('Readiness — what this machine has, and what is left');
-
-const built = ready('the host and the driver are built', existsSync(httpDll) && existsSync(driverDll));
-if (!built) needs('the host and driver binaries', 'npm run desktop -- build');
-
-/**
- * Which binary this machine would actually run for a harness: the managed pin, else `PATH` — the
- * same order a spawn resolves (TOOL2's twin rule, minus the explicit-command case, which is a
- * driver-config choice this script does not make).
- */
-const settings = readHarnessSettings(harnessesPath());
-const home = harnessHome(harnessesPath());
-const managed = (harness, binary) =>
-  managedBinary(home, harness, resolveVersion(settings, harness, null, null), [binary]);
-
-/** Ask a harness about itself the way `daoris agent list` does, tolerating absence. */
-function present(harness, binary, args = ['--version']) {
-  const where = managed(harness, binary) ?? binary;
-  const found = capture(`"${where}" ${args.join(' ')}`, repoRoot, { timeout: 30_000 });
-  return found.code === 0
-    ? { version: found.out.trim().split('\n')[0] ?? '', where }
-    : null;
-}
-
-const claude = present('claude-code', 'claude');
-const claudeVersion = claude?.version ?? null;
-ready('`claude` is on this machine', Boolean(claude),
-  claude ? `${claude.version}  (${claude.where})` : 'not pinned, and not on PATH');
-if (!claudeVersion) {
-  needs('the Claude Code CLI', 'daoris agent install claude-code   (or pin one: daoris agent pin claude-code <version>)');
-}
-
-const acpAdapter = present(ADAPTER, BINARY);
-const adapterVersion = acpAdapter?.version ?? null;
-ready(`\`${ADAPTER}\` is on this machine`, Boolean(adapterVersion), adapterVersion ?? 'not on PATH');
-if (!adapterVersion) {
-  needs(`the ACP adapter (${PACKAGE})`,
-    `daoris agent pin ${ADAPTER} 0.79.0   — the version the evaluation ran`);
-}
-
-// The account. `claude auth status` answers JSON and exits 0 either way, so the OUTPUT is the answer
-// — the same reading the toolchain's own login check makes, and the reason it is written down twice.
-const authStatus = capture('claude auth status', repoRoot, { timeout: 30_000 });
-const loggedIn = /"loggedIn"\s*:\s*true/i.test(authStatus.out);
-ready('a Claude account is logged in', loggedIn,
-  loggedIn ? '' : 'the profile this run would use reports logged out');
-if (!loggedIn) {
-  needs('a logged-in account',
-    'daoris agent login claude-code [--profile <name>]   — runs the agent\'s own flow, into a directory Daoris owns');
-}
+const { adapter: acpAdapter, loggedIn } = readiness();
 
 // ─── the keyless half ─────────────────────────────────────────────────────────────────────────────
 //
@@ -147,7 +46,7 @@ const adapters = capture(`node "${cliBin}" --help`, repoRoot).out;
 check('the CLI still has no session verbs', !/\bdrive\b.*session/i.test(adapters),
   'the CLI is offline and spawns nothing (D35); sessions are the driver\'s');
 
-if (adapterVersion) {
+if (acpAdapter?.version) {
   // §1a's probe, run here: initialize + session/new under a SCRATCH config dir, no prompt. It costs
   // nothing — the model is only reached by `session/prompt`, which is deliberately not sent.
   const probeHome = join(scratch, 'handshake-profile');
@@ -191,23 +90,10 @@ if (drive && missing.length === 0) {
 
 // ─── the verdict ──────────────────────────────────────────────────────────────────────────────────
 
-console.log('');
-if (missing.length > 0) {
-  console.log('This machine is not ready for the real run yet. What is left:');
-  for (const { what, command } of missing) {
-    console.log(`\n  ${what}`);
-    console.log(`    ${command}`);
-  }
-  console.log('\nThen: node tools/acp2-proof.mjs --drive');
-  console.log('\nNothing above failed — this is a readiness report, not a gate.');
-}
-
-console.log(`\n  ${totals.checks - totals.failures}/${totals.checks} checks passed`);
+verdict('run');
 if (drive && missing.length === 0 && totals.failures === 0) {
   console.log('  ACP2 is proven: a real quest, over the protocol door, to a real commit.');
 }
-
-process.exitCode = totals.failures > 0 ? 1 : 0;
 
 // ─── the pieces ───────────────────────────────────────────────────────────────────────────────────
 
@@ -223,12 +109,7 @@ async function acpHandshake(configDir) {
   const child = spawn(acpAdapter?.where ?? BINARY, [], {
     cwd: repoRoot,
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: {
-      ...process.env,
-      CLAUDE_CONFIG_DIR: configDir,
-      // The seam ACP2 exists to use: whichever `claude` this machine would run.
-      ...(claudeVersion ? {} : {}),
-    },
+    env: { ...process.env, CLAUDE_CONFIG_DIR: configDir },
     shell: process.platform === 'win32',
   });
 
@@ -293,68 +174,13 @@ async function acpHandshake(configDir) {
   return result;
 }
 
-function stopHost() {
-  try { host?.kill(); } catch { /* already gone */ }
-  host = null;
-}
-
-/**
- * One GET against the scratch host, bounded.
- *
- * @remarks
- * Bare `fetch` has no timeout, so a host that accepts a connection and never answers hangs the whole
- * run with nothing on screen — which is exactly what happened before this existed.
- */
-async function ask(path) {
-  try {
-    const answered = await fetch(`${BASE}${path}`, { signal: AbortSignal.timeout(30_000) });
-    return await answered.json();
-  } catch {
-    return null;
-  }
-}
-
-/** A fresh git repository with one commit in it — the starting point a session is measured from. */
-function born(name, summary) {
-  const where = join(scratch, name);
-  mkdirSync(where, { recursive: true });
-  const git = (command) => execFileSync('git', command, { cwd: where, encoding: 'utf8' });
-  git(['init', '-q', '-b', 'main']);
-  git(['config', 'user.email', 'proof@example.com']);
-  git(['config', 'user.name', 'ACP2 proof']);
-  writeFileSync(join(where, 'README.md'), `# ${name}\n\n${summary}\n`);
-  git(['add', '-A']);
-  git(['commit', '-qm', 'the starting point']);
-  return where;
-}
-
-/**
- * Say what a repository is, which `connect` requires before it will register one.
- *
- * @remarks
- * 🔴 Not a formality, and the refusal says so: *"that declaration is how siblings know whether a
- * quest is yours"*. A fixture that skipped it was refused by name — the system defending its own
- * premise against a script that had not read it.
- */
-function declare(where, name) {
-  const manifest = join(where, 'daoris.json');
-  const held = JSON.parse(readFileSync(manifest, 'utf8'));
-  held.domain = {
-    summary: `A scratch repository, born for ACP2's proof run. Not real work.`,
-    owns: [`everything inside \`${name}\`, which is nothing anybody depends on`],
-    accepts: ['a small, reversible change to its own files'],
-  };
-  writeFileSync(manifest, `${JSON.stringify(held, null, 2)}\n`);
-}
-
 /**
  * DRV4's shape, over the protocol door: a scratch repository, a real quest, one driven tick, and the
  * record read back. The assertions are what D23's "on proof" means — the work landed, the quest
  * closed itself through the session's own connector, and the record names what produced it.
  */
 async function drivenRun() {
-  rmSync(scratch, { recursive: true, force: true });
-  mkdirSync(scratch, { recursive: true });
+  freshScratch();
 
   // 🔴 TWO repositories, because a quest is work for SOMEBODY ELSE — the service refuses one
   // addressed to the repository it came from, by name, which is the whole premise of the thing
@@ -362,91 +188,28 @@ async function drivenRun() {
   const asker = born('proof-asker', 'The asker: it needs something from the receiver.');
   const repo = born('proof-repo', 'The receiver: the repository this proof drives.');
 
-  // 🔴 CONFINE THE HOST TO THIS SCRATCH FAMILY. Without `DAORIS_KNOWLEDGE_ROOT` the host falls back
-  // to a parent-of-CWD heuristic and indexes every repository beside this one — measured: a run
-  // without it read the developer's neighbouring projects into its registry. Nothing was written to
-  // them, and nothing should have been read either. `DAORIS_KNOWLEDGE_DB` keeps the index here too,
-  // so a scratch run never touches the machine's real one.
-  const env = {
-    DAORIS_SERVICE_URL: BASE,
-    ASPNETCORE_URLS: BASE,
-    DAORIS_KNOWLEDGE_ROOT: scratch,
-    DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
-    DAORIS_REMOTE_CONFIG: join(scratch, 'no-remote.json'),
-  };
+  const env = await startHost();
+  if (!env) return;
 
-  host = spawn('dotnet', [httpDll], { cwd: scratch, env: { ...process.env, ...env }, stdio: 'ignore' });
-  // 🔴 A live child keeps Node's event loop alive, and the only thing that kills this one runs on
-  // `beforeExit` — which therefore never fires. Every early `return` below then sat forever with its
-  // last check printed and nothing following it, which is indistinguishable from a hung driver.
-  host.unref();
-  let up = false;
-  for (let attempt = 0; attempt < 40 && !up; attempt++) {
-    await sleep(500);
-    up = await fetch(`${BASE}/api/status`, { signal: AbortSignal.timeout(5_000) })
-      .then((r) => r.ok).catch(() => false);
-  }
-  check('the scratch host answers', up);
-  if (!up) return;
-
-  // 🔴 The guard that would have caught the scan escaping. A scratch host that can see a repository
-  // this run did not create is pointed at the wrong world, and everything after it is meaningless —
-  // so this refuses BEFORE a quest is published or a model is spent.
-  const seen = await ask('/api/registry');
-  const strangers = (seen ?? []).map((r) => r.repository).filter((n) => !n.startsWith('proof-'));
-  check('the host sees this scratch family and nothing else', strangers.length === 0,
-    strangers.length ? `it also indexed: ${strangers.join(', ')}` : '');
-  if (strangers.length > 0) {
-    console.log('        Refusing to go further: DAORIS_KNOWLEDGE_ROOT is not confining the scan.');
-    return;
-  }
-
-  let joined = true;
-  for (const [name, where] of [['proof-asker', asker], ['proof-repo', repo]]) {
-    const adopt = capture(`node "${cliBin}" init --name ${name}`, where, { env });
-    declare(where, name);
-    capture(`node "${cliBin}" sync`, where, { env });
-    // 🔴 `connect` has NO `--service` flag — the address is `DAORIS_SERVICE_URL`, and an unknown flag
-    // is ignored in silence. Passing `env` here is what points it at the scratch host; without it the
-    // command answered "no DAORIS_SERVICE_URL" while the script had every appearance of having told it.
-    const connect = capture(`node "${cliBin}" connect`, where, { env });
-    // 🔴 COMMIT THE ADOPTION. `init` and `sync` leave `daoris.json`, `daoris.lock` and `.claude/`
-    // uncommitted, and the driver refuses a tree with work in flight — *"somebody's work in flight;
-    // the driver holds rather than entangling a session with it"*. It was right and the fixture was
-    // wrong: a repository is adopted in a commit, not left dirty.
-    execFileSync('git', ['add', '-A'], { cwd: where, encoding: 'utf8' });
-    execFileSync('git', ['commit', '-qm', 'adopt daoris'], { cwd: where, encoding: 'utf8' });
-    const ok = adopt.code === 0 && connect.code === 0;
-    check(`\`${name}\` adopts and registers`, ok, `${adopt.out}\n${connect.out}`);
-    joined &&= ok;
-  }
-
+  const joined = adopt([
+    { name: 'proof-asker', where: asker, domain: scratchDomain('proof-asker') },
+    { name: 'proof-repo', where: repo, domain: scratchDomain('proof-repo') },
+  ], env);
   if (!joined) return;
 
-  const quest = await fetch(`${BASE}/api/quests`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    signal: AbortSignal.timeout(30_000),
-    body: JSON.stringify({
-      from: 'proof-asker',
-      to: 'proof-repo',
-      title: 'Note in the README that this is a scratch repository',
-      body: 'Append one line to README.md saying this repository exists only for a proof run, '
-        + 'then commit it. Nothing else.',
-    }),
-  }).then((r) => r.json()).catch(() => ({}));
+  const quest = await post('/api/quests', {
+    from: 'proof-asker',
+    to: 'proof-repo',
+    title: 'Note in the README that this is a scratch repository',
+    body: 'Append one line to README.md saying this repository exists only for a proof run, '
+      + 'then commit it. Nothing else.',
+  });
   // The POST answers `{ quest, message }` — the record AND the sentence a person is meant to read
   // ("It is held by the service, not written into that repository"). Reading `.id` off the envelope
   // finds nothing while the quest is perfectly real, which is what happened.
   const questId = quest.quest?.id ?? quest.id;
   check('a real quest is open', Boolean(questId), JSON.stringify(quest));
   if (!questId) return;
-
-  const configPath = join(scratch, 'driver.json');
-  writeFileSync(configPath, `${JSON.stringify({
-    drivable: ['proof-repo'], holds: [], trees: [], cap: 1,
-    adapter: ADAPTER, timeoutMinutes: 10, pollSeconds: 5, notify: false,
-  }, null, 2)}\n`);
 
   // 🔴 The person's rule that lets a session COMMIT (PERM1, D72). The driver's home is the folder its
   // driver.json sits in, so the rules live beside it. Without them the first real runs (2026-09-24)
@@ -459,12 +222,10 @@ async function drivenRun() {
     machine: { allow: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'] },
   }, null, 2)}\n`);
 
-  console.log('  ..    driving — this is the step that spends the login');
-  const run = capture(`dotnet "${driverDll}" --until-idle`, scratch, {
-    env: { ...env, DAORIS_DRIVER_CONFIG: configPath },
-    timeout: 15 * 60_000,
-  });
-  console.log(run.out.split('\n').map((line) => `        ${line}`).join('\n'));
+  runDriver(env, {
+    drivable: ['proof-repo'], holds: [], trees: [], cap: 1,
+    adapter: ADAPTER, timeoutMinutes: 10, pollSeconds: 5, notify: false,
+  }, 'driving');
 
   const sessions = (await ask('/api/sessions?includeClosed=true')) ?? [];
   const session = sessions.find((s) => s.adapter === ADAPTER);
