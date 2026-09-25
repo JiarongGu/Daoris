@@ -173,9 +173,15 @@ public sealed class RepositoryScanner
         var absolute = Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
         if (!File.Exists(absolute)) yield break;
 
+        // 🔴 An anchor is unique within its file (REV3). Two sections under one heading — date-only fix
+        // headings do it — shared an id, and the store's primary key threw on the second, failing the
+        // whole refresh. The first keeps the id it always had; each repeat is told apart by its count.
+        var used = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var section in MarkdownSections.Split(Text.ReadDocument(absolute)))
         {
             if (section.Body.Length == 0) continue;
+            var seen = used.GetValueOrDefault(section.Heading) + 1;
+            used[section.Heading] = seen;
             // A log is always the repository's own: canonical files are rules, knowledge and skills.
             yield return new KnowledgeEntry(
                 repository,
@@ -184,7 +190,7 @@ public sealed class RepositoryScanner
                 section.Heading,
                 section.Body,
                 relativePath,
-                section.Heading);
+                seen == 1 ? section.Heading : $"{section.Heading} ({seen})");
         }
     }
 }

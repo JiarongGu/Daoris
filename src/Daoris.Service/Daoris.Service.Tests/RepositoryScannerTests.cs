@@ -135,6 +135,25 @@ public sealed class RepositoryScannerTests : IDisposable
         Assert.All(ids, id => Assert.Contains("docs/DECISIONS.md#", id));
     }
 
+    /// <summary>
+    /// 🔴 REV3: two sections under one heading — date-only fix headings do it — shared an id, and the
+    /// SQLite store's primary key threw on the second, failing the WHOLE refresh for every repository
+    /// sorted after this one. The in-memory store the tests used took the duplicate without a word. Every
+    /// section keeps an id of its own; the second is told apart, the first keeps the id it always had.
+    /// </summary>
+    [Fact]
+    public void Two_sections_under_one_heading_are_two_entries_with_two_ids()
+    {
+        Write("docs/FIX-LOG.md", "## 2026-09-25\n\nThe first fix.\n\n## 2026-09-25\n\nThe second fix.\n");
+
+        var fixes = new RepositoryScanner().Scan(_root).Where(e => e.RelativePath == "docs/FIX-LOG.md").ToList();
+
+        Assert.Equal(2, fixes.Count);
+        Assert.Equal(2, fixes.Select(e => e.Id).Distinct().Count());
+        Assert.EndsWith("#2026-09-25", fixes[0].Id);
+        Assert.All(fixes, e => Assert.Equal("2026-09-25", e.Title));
+    }
+
     [Fact]
     public void The_generated_index_is_not_indexed()
     {

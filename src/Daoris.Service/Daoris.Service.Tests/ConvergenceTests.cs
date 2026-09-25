@@ -1,4 +1,5 @@
 using Daoris.Knowledge;
+using Lyntai.Inference;
 using Lyntai.Memory;
 
 namespace Daoris.Service.Tests;
@@ -76,6 +77,47 @@ public class ConvergenceTests
 
         Assert.Contains(found, c => c.Method == ConvergenceMethod.Identical);
         Assert.Contains(found, c => c.Method == ConvergenceMethod.Convergent);
+    }
+
+    /// <summary>
+    /// 🔴 REV3: the semantic tier failing threw out of the whole call — the copies and restatements
+    /// already found were thrown away with it, and the landing view answered 500. "An embedding
+    /// exception means the semantic tier did not answer, and the lexical half carries on" (D24).
+    /// </summary>
+    [Fact]
+    public async Task An_embedder_that_fails_costs_the_semantic_half_and_nothing_else()
+    {
+        // Two the text passes cannot pair, so the semantic pass has something to embed and is reached.
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [
+            Entry("alpha", "copied", "identical text here"),
+            Entry("alpha", "shell", "Reading files through the terminal prompts every time."),
+        ]);
+        await store.ReplaceRepositoryAsync("beta", [
+            Entry("beta", "copied-too", "identical text here"),
+            Entry("beta", "tools", "Dedicated readers integrate with approvals, so lookups never interrupt."),
+        ]);
+
+        var found = await new ConvergenceDetector(store, new FailingEmbedder(), new InMemoryVectorStore())
+            .FindAsync(new ConvergenceOptions(MinimumSimilarity: 0.5));
+
+        Assert.Equal(ConvergenceMethod.Identical, Assert.Single(found).Method);
+    }
+
+    /// <summary>An endpoint started without embeddings: the verdict beside empty vectors, as the real one answers.</summary>
+    private sealed class FailingEmbedder : IVectorProvider
+    {
+        public string Id => "test-failing";
+
+        public ProviderCapabilities Capabilities { get; } = new()
+        {
+            Accepts = [ProviderKinds.Text],
+            Produces = [ProviderKinds.Vector],
+            Operations = [ProviderOperation.Complete],
+        };
+
+        public Task<VectorResponse> CallAsync(VectorRequest request, CancellationToken ct = default) =>
+            Task.FromResult(VectorResponse.Failure(ProviderVerdict.Failed, "This server does not support embeddings."));
     }
 
     private static KnowledgeEntry Entry(

@@ -97,8 +97,18 @@ public sealed class ConvergenceDetector(
 
         if (SemanticAvailable)
         {
-            candidates.AddRange(
-                await FindConvergentAsync(considered, claimed, options, ct).ConfigureAwait(false));
+            // 🔴 The semantic tier not answering costs the semantic half and nothing else (D24; REV3):
+            // an embedding failure threw out of the whole call, the copies and restatements above went
+            // with it, and the landing view answered 500.
+            try
+            {
+                candidates.AddRange(
+                    await FindConvergentAsync(considered, claimed, options, ct).ConfigureAwait(false));
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // What the text passes found stands; the service's status says which tier is configured.
+            }
         }
 
         return candidates
@@ -239,7 +249,8 @@ public sealed class ConvergenceDetector(
     /// it every move re-embedded the whole corpus: measured at 31 seconds per call over 449 entries,
     /// which is long enough that the honest answer to "is it working?" is "probably".
     /// </remarks>
-    private readonly Dictionary<string, float[]> _memo = new(StringComparer.Ordinal);
+    // Concurrent (REV3): two overlapping calls — a person dragging the threshold — wrote it at once.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, float[]> _memo = new(StringComparer.Ordinal);
 
     private async Task<Dictionary<string, float[]>> EmbedAllAsync(
         IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct, int batchSize = 32)

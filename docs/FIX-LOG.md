@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## One repeated heading failed the whole refresh, one failing embedder failed convergence, and the registry was not safe to share (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service.
+- **A repeated heading.** Two sections under one heading in a registered repository's fix log,
+  decisions or archive gave both entries one id. Date-only fix headings do exactly this. SQLite's
+  primary key threw on the second, so `RefreshAsync` failed for every repository sorted after that one,
+  and on an empty store every door that ensures the index kept failing.
+- **A failing embedder.** A configured embedder that failed (the endpoint down, or started without
+  embeddings) threw out of convergence. The copies and restatements already found were thrown away,
+  and the landing view answered 500.
+- **Shared dictionaries.** `Registry._known` and the convergence memo were plain dictionaries under
+  concurrent requests, so a registration inserted during any read answered 500 with "collection was
+  modified".
+
+**Root cause.**
+- The log scanner anchored on the heading alone. The tests ran on the in-memory store, which accepts
+  duplicate ids.
+- The semantic pass had no catch. `Embedding.cs` promises the opposite ("the lexical half carries
+  on").
+- Nothing guarded the two dictionaries.
+
+**Fix.** A repeated heading's section gets its own anchor (`(2)`, `(3)`), and the first keeps the id
+it always had. A failing semantic pass costs the semantic half only. Both dictionaries are concurrent.
+
+**Verify.** Both tests were watched failing before the fix:
+- `Two_sections_under_one_heading_are_two_entries_with_two_ids`.
+- `An_embedder_that_fails_costs_the_semantic_half_and_nothing_else`. Its first draft passed without
+  the fix, because the identical pass claimed both entries and the embedder was never reached. A test
+  that could not fail. Two unpaired entries make it reach the embedder.
+
+Service 478/478. **Not covered by a test:** the concurrency. It rests on the collection types.
+
 ## The release workflow could not pass on a fresh runner, and its gate-list test read comments (2026-09-25)
 
 **Symptom.** Found by REV3's reading. The workflow has never been dispatched, and five things in it

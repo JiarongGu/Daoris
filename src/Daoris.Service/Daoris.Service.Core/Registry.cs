@@ -99,7 +99,11 @@ public sealed record Registration(
 /// </remarks>
 public sealed class Registry
 {
-    private readonly Dictionary<string, Registration> _known = new(StringComparer.OrdinalIgnoreCase);
+    // 🔴 Concurrent (REV3): a host's requests register and read at once — an import loop, a sync
+    // mirroring a teammate's row — and a plain dictionary enumerated during an insert threw "collection
+    // was modified", answering 500 on whichever door was reading.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Registration> _known =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Record what a repository said about itself. Re-registering replaces: the name is the identity.</summary>
     public void Register(Registration registration) => _known[registration.Repository] = registration;
@@ -110,7 +114,7 @@ public sealed class Registry
     /// <see cref="KnowledgeService.RetireAsync"/>, which is the caller that holds the store.
     /// </summary>
     /// <returns>Whether there was a row to retire; false is an answer, not a failure.</returns>
-    public bool Retire(string repository) => _known.Remove(repository);
+    public bool Retire(string repository) => _known.TryRemove(repository, out _);
 
     /// <summary>Every repository this service knows of, with the index's entry counts applied.</summary>
     public IReadOnlyList<Registration> Read(IReadOnlyDictionary<string, int> entryCounts) =>
