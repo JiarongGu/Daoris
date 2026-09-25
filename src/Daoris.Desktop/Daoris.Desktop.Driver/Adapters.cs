@@ -641,8 +641,8 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         // The same harness underneath, so the same trust record governs this door too.
         TrustFile: ClaudeTrust.FileName);
 
-    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : ["claude-agent-acp"];
+    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 } ? command : Toolchain!.Binary;
 }
 
 /// <summary>
@@ -726,8 +726,8 @@ public sealed class DshAdapter : ISessionAdapter
         // No login flow and no login question: there is no account here to be out of.
         Package: "@deepseek-ai/dsh");
 
-    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : ["dsh"];
+    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 } ? command : Toolchain!.Binary;
 }
 
 /// <summary>
@@ -792,8 +792,8 @@ public sealed class CodexAcpAdapter : ISessionAdapter
         AccountOf: "codex",
         ProfileMustExist: true);
 
-    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : ["codex-acp"];
+    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 } ? command : Toolchain!.Binary;
 }
 
 /// <summary>The seam that points the Agent SDK at a <c>claude</c> Daoris chose (ACP2, §1a).</summary>
@@ -1004,8 +1004,8 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     internal static readonly IReadOnlyDictionary<string, string> StayPinned =
         new Dictionary<string, string> { ["DISABLE_UPDATES"] = "1" };
 
-    private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
-        command is { Count: > 0 } ? command : ["claude"];
+    private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
+        command is { Count: > 0 } ? command : Toolchain!.Binary;
 }
 
 /// <summary>
