@@ -41,7 +41,16 @@ public sealed class Fixture : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(Path)) Directory.Delete(Path, recursive: true);
+        if (!Directory.Exists(Path)) return;
+
+        // A fixture that ran `git init` holds git's objects, which git writes read-only — and a
+        // recursive delete on Windows refuses a read-only file.
+        foreach (var file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
+        {
+            File.SetAttributes(file, FileAttributes.Normal);
+        }
+
+        Directory.Delete(Path, recursive: true);
     }
 
     /// <summary>

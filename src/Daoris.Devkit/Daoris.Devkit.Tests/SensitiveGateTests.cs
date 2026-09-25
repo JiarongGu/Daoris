@@ -35,6 +35,49 @@ public sealed class SensitiveGateTests : IDisposable
         public IReadOnlyList<string> TrackedFiles() => files;
     }
 
+    private void Git(params string[] arguments)
+    {
+        var ran = Process.Run("git", arguments, _fx.Path);
+        Assert.True(ran.ExitCode == 0, ran.Error);
+    }
+
+    /// <summary>
+    /// REV3 tools F6: the pre-commit scan listed the STAGED paths and then read each file's working copy.
+    /// A leak staged, then cleaned in the working copy without re-staging, was committed by a scan that
+    /// passed. What is scanned is what the commit will hold.
+    /// </summary>
+    [Fact]
+    public void A_staged_scan_reads_what_is_staged_not_the_working_copy()
+    {
+        Git("init", "-q");
+        _fx.Write("notes.md", $"see {WindowsHomePath()}\n");
+        Git("add", "notes.md");
+        _fx.Write("notes.md", "nothing to see\n");
+
+        var result = new SensitiveGate(ScanScope.Staged, new CommandLineGit(_fx.Path), allowBuiltinsOnly: true)
+            .Run(Context());
+
+        Assert.False(result.Passed, result.Detail);
+    }
+
+    /// <summary>
+    /// REV3 tools F7: git quotes a path outside ASCII (`"\346\226\207.md"`), the quoted name matched no
+    /// file on disk, and its content was never read — only the path, which says nothing.
+    /// </summary>
+    [Fact]
+    public void A_file_named_outside_ascii_is_read_not_skipped()
+    {
+        Git("init", "-q");
+        _fx.Write("文档.md", $"see {WindowsHomePath()}\n");
+        Git("add", "文档.md");
+
+        var result = new SensitiveGate(ScanScope.Tree, new CommandLineGit(_fx.Path), allowBuiltinsOnly: true)
+            .Run(Context());
+
+        Assert.False(result.Passed, result.Detail);
+        Assert.Contains("文档.md", result.Detail);
+    }
+
     /// <summary>
     /// The property the eleven copies were inconsistent about. A missing private list used to print a
     /// notice and continue, so on a fresh clone the half of the guard that knows the private names

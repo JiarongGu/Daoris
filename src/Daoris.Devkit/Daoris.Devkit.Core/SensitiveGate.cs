@@ -163,6 +163,15 @@ public sealed class SensitiveGate(
             // whose bytes may be perfectly innocent.
             yield return ($"{relative} (path)", relative);
 
+            // 🔴 Staged means the STAGED content (REV3): the working copy is what the next commit
+            // might hold, the index is what this one will. A leak staged and then cleaned in the
+            // working copy passed a scan of the copy and was committed.
+            if (scope == ScanScope.Staged)
+            {
+                if (git.StagedText(relative) is { } staged && !staged.Contains('\0')) yield return (relative, staged);
+                continue;
+            }
+
             var absolute = context.Path(relative);
             if (!File.Exists(absolute) || IsBinary(absolute)) continue;
             yield return (relative, File.ReadAllText(absolute));
@@ -219,6 +228,9 @@ public interface IGit
     IReadOnlyList<string> StagedFiles();
 
     IReadOnlyList<string> TrackedFiles();
+
+    /// <summary>A staged file's content as the commit will hold it — null when there is none to read.</summary>
+    string? StagedText(string path) => null;
 }
 
 /// <summary>git, through the command line.</summary>
@@ -232,11 +244,23 @@ public sealed class CommandLineGit(string repositoryRoot) : IGit
     /// no scan ever looked at, and a file renamed INTO a banned name went straight through.
     /// </remarks>
     public IReadOnlyList<string> StagedFiles() =>
-        Lines("diff", "--cached", "--name-only", "--diff-filter=ACMR");
+        Paths("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z");
 
-    public IReadOnlyList<string> TrackedFiles() => Lines("ls-files");
+    public IReadOnlyList<string> TrackedFiles() => Paths("ls-files", "-z");
 
-    private IReadOnlyList<string> Lines(params string[] arguments)
+    /// <summary>The index's copy (`git show :path`), which is what the commit being made will hold.</summary>
+    public string? StagedText(string path)
+    {
+        var output = Process.Run("git", ["show", $":{path}"], repositoryRoot);
+        return output.ExitCode == 0 ? output.Output : null;
+    }
+
+    /// <summary>
+    /// Paths NUL-separated (`-z`), which git never quotes (REV3). One a line, a path outside ASCII came
+    /// back quoted and escaped, matched no file on disk, and its content was never scanned — by this
+    /// gate, or by the links gate that reads the same list.
+    /// </summary>
+    private IReadOnlyList<string> Paths(params string[] arguments)
     {
         var output = Process.Run("git", arguments, repositoryRoot);
         if (output.ExitCode != 0)
@@ -244,8 +268,6 @@ public sealed class CommandLineGit(string repositoryRoot) : IGit
             throw new DevkitException($"git {string.Join(' ', arguments)} failed: {output.Error.Trim()}");
         }
 
-        return output.Output
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
+        return output.Output.Split('\0', StringSplitOptions.RemoveEmptyEntries).ToList();
     }
 }
