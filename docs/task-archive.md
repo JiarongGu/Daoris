@@ -5960,3 +5960,59 @@ tools' runner guard compared a path string, so run through a junction a gate ran
 
 Gates: CLI 446 → 475, service 473 → 497, driver 646 → 681, modules 126 → 129, devkit 73 → 80, web
 unit 948 → 972, Playwright 21/21, family 279/279, deploy 39/39.
+
+## CLEAN1 — the review's cleanup lists (2026-09-25)
+
+- [x] ~~**CLEAN1 — the review's cleanup lists.** Each ledger section ends in a C or K row: duplication
+  and dead code a reviewer reported and nobody here has re-read. Examples are a JSON helper written
+  seven times in the service, "driver not ready" five times in the modules, and the session centre
+  built twice in the web. Take one section at a time. Confirm each item, and land the ones worth
+  the change as refactors under the tests already there.~~
+
+✅ done 2026-09-25. Every C and K row of REV3's ledger was re-read against the code, one section at a
+time, and settled in the ledger's *CLEAN1* section with its verdict and the commit that landed it
+(`git log --grep=CLEAN1`, 62 commits). 98 items: 81 landed (a few by REV3 itself, before CLEAN1
+re-read them), 12 were dropped with the reason, 3 folded into UX5, 1 became a row, and 1 was not
+confirmed. Each landing is a refactor under the tests that were already there; where one exposed a
+behaviour difference, the difference got a test.
+
+**What re-reading found that the reviewers had filed as cleanup:**
+
+- The service threw on a JSON list whose items were not objects, in a publish or a push's answer,
+  where it should refuse (`cc0b949`, FIX-LOG).
+- The desktop's editors saved the empty read of a torn `permissions.json`, `harnesses.json` or
+  `plugins.json`, dropping every deny, account choice or disabled plugin. REV3 had fixed the CLI's
+  side; the driver's was still live (`b7cc512`, FIX-LOG).
+- `status` missed a change to a rule the canon moved into a pack (`22f2f73`). `plugin add` took a
+  reserved name spelled in another case (`ad1e8bf`). The in-memory store accepted a duplicate id
+  the SQLite one refuses (`80ad80e`). The account-default picker could not set `default`
+  (`aaceb1c`). `NUDGE` had no caller, so a publish waited out the poll (`7081ff6`). The deployment
+  rehearsal's stub read a refused take by its sentence (`0d3bd02`), and neither rehearsal bounded a
+  call to its hosts (`dc6dcce`, `0d3bd02`).
+
+**The largest cuts.** The three real-run proofs share a kit, about 300 lines fewer. The
+always-loaded `CLAUDE.md` dropped its counts, two history sentences and a closed arc's recital
+(3,727 words to 3,601). `TASKS.md` lost its closed stubs and its handover history (6,512 words to
+about 3,970). The desktop README's 1,167-word chronology became two tables. `docs/README.md` says
+what each document is now, four finished documents moved to the archive, and the twin arrangement
+has a knowledge document of its own (`.claude/knowledge/twins.md`).
+
+**My own mistakes, each caught by the gates or the method:**
+
+- a typecheck run through a pipe hid its exit code, so a test that did not typecheck landed, and
+  the next commit fixed it (`f669d32`);
+- a heredoc turned `'\\'` into `'\'` in a source file, caught before commit; source was written with
+  the edit tools after that;
+- a helper was inserted between a member and its doc comment, found by the doc-comment scan
+  (`465a5d7`);
+- an operator-precedence slip in a refactored `ServiceClient` line, caught before commit;
+- the new documents index attributed three decision notes its documents do not carry, and checking
+  each claim corrected them before commit.
+
+**What it left:** RETRY1 (the screen's door for retrying a quest parked by its strikes), and three
+folds into UX5: the protocol door's two line-from-event paths, the native controls beside `ui.tsx`'s
+own, and `platform-ux.md` §4's amendments restated as the body's rules.
+
+Gates: CLI 475 → 478, service 497 → 502, driver 681 → 685, modules 129 → 128 (the removed `STATE`
+route's test went), devkit 80, web unit 972 → 975, Playwright 21/21, family 279/279, deploy 39/39, release
+66/66.

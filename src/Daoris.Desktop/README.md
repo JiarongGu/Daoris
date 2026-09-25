@@ -38,7 +38,8 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   own components and not a second frontend. They keep their **native frame**; each builds its **own
   WebView2 environment** (🔴 an environment is affine to the thread that created it, and sharing the
   main window's fails the bring-up); each follows the OS theme directly, having no `SET_THEME`
-  channel; and they are disposed on shutdown, before their geometry saves would be killed.
+  channel; and they are disposed on shutdown rather than abandoned, because their threads are
+  background and an unwaited exit kills them before their geometry is saved.
 - **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
   asking, raises an OS balloon unless one of its windows has focus. `AttentionWatch` in the library
   makes the judgement, so `daoris-driver` prints the same one as a line.
