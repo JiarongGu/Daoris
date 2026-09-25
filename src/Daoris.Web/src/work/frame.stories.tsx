@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { SessionConsole } from '../SessionConsole';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { OutputPanel, StatusBar } from './frame';
 import { StartSession } from './StartSession';
@@ -35,10 +36,10 @@ export const Statuses: StoryObj = {
 export const Panels: StoryObj = {
   render: () => (
     <div className="grid gap-6">
-      <OutputPanel sessionId="s1a2b3c4" height={140} collapsed={false} onResize={() => {}} onToggle={() => {}} />
-      <OutputPanel sessionId="s1a2b3c4" height={360} collapsed={false} onResize={() => {}} onToggle={() => {}} />
-      <OutputPanel sessionId="s1a2b3c4" height={200} collapsed onResize={() => {}} onToggle={() => {}} />
-      <OutputPanel sessionId={null} height={140} collapsed={false} onResize={() => {}} onToggle={() => {}} />
+      <OutputPanel console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />} height={140} collapsed={false} onResize={() => {}} onToggle={() => {}} />
+      <OutputPanel console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />} height={360} collapsed={false} onResize={() => {}} onToggle={() => {}} />
+      <OutputPanel console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />} height={200} collapsed onResize={() => {}} onToggle={() => {}} />
+      <OutputPanel console={null} height={140} collapsed={false} onResize={() => {}} onToggle={() => {}} />
     </div>
   ),
 };

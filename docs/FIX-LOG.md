@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## "A molecule imports no hook" could not see a hook one step removed (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page. The rule (D52 as amended) is held by
+`presentational.test.ts`, which reads each presentational file for a forbidden import: the query
+layer, the shell bridge and the rest. It did not forbid importing an organism, a component allowed to
+hold hooks. The output panel in `work/frame.tsx` rendered the `SessionConsole` organism itself, so a
+molecule reached the bridge one step removed, and the check stayed green.
+
+**Root cause.** A per-file check that names modules, missing the one kind of module that is a hook
+by proxy.
+
+**Fix.** Importing any listed organism is now forbidden too. A type-only import is allowed, since it
+is only a shape. The panel takes its console as a node, which `WorkFrame`, the organism above it,
+supplies.
+
+**Verify.** The sabotage test now includes an organism import (flagged) and a type-only one (not
+flagged). The boundary holds across every presentational file. Panel, frame and boundary tests
+76/76.
+
 ## One folder held in two accounts' files shared one row key (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page. *What needs you* lists a folder the agent has not

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
 import { useQuests, useRegistry, useSessions } from '../queries';
@@ -393,7 +394,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
         )}
 
         <OutputPanel
-          sessionId={attended?.id ?? null}
+          // The panel keeps its height; a session with nothing held here says so as a sentence, not as
+          // an empty bordered well, which read as a field on the installed window.
+          console={attended ? <SessionConsole id={attended.id} fill quiet={t('work.panel.silent')} /> : null}
           height={Math.max(PANEL_MIN, height)}
           collapsed={collapsed}
           onResize={resize}

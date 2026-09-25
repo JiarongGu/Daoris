@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, CountBadge, Dot, Icon, type IconName, Tip } from '../ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
-import { SessionConsole } from '../SessionConsole';
 import { cn } from '../lib/cn';
 import { Mark } from '../Mark';
 
@@ -427,9 +426,13 @@ const PANEL_STEP = 48;
  * console's rule, and the reason is that a layout which springs back on a window resize teaches
  * people not to trust the control.
  */
-export function OutputPanel({ sessionId, height, collapsed, onResize, onToggle }: {
-  /** Whose stream — null when nothing is attended, which is a state rather than an absence. */
-  sessionId: string | null;
+export function OutputPanel({ console: stream, height, collapsed, onResize, onToggle }: {
+  /**
+   * The attended session's console, or null when nothing is attended — a state rather than an
+   * absence. Handed in by the organism above, because the console reaches the bridge and a molecule
+   * imports no hook, not even through an organism (REV3).
+   */
+  console: ReactNode | null;
   height: number;
   collapsed: boolean;
   onResize: (height: number) => void;
@@ -486,9 +489,7 @@ export function OutputPanel({ sessionId, height, collapsed, onResize, onToggle }
         <div className="flex min-h-0 flex-col px-4 pb-3" style={{ height }}>
           {/* The panel keeps its height; a session with nothing held here keeps it as a sentence,
               not as an empty bordered well, which read as a field on the installed window. */}
-          {sessionId
-            ? <SessionConsole id={sessionId} fill quiet={t('work.panel.silent')} />
-            : <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
+          {stream ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
         </div>
       )}
     </section>

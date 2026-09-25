@@ -47,9 +47,24 @@ const ORGANISMS = new Set<string>([
   './work/WorkFrame.tsx',
 ]);
 
+/**
+ * An organism, imported by a molecule, is the data reached one step removed (REV3): the output panel
+ * rendered the console organism itself, and every check above stayed green. A TYPE from an organism
+ * is only a shape, and is allowed.
+ */
+const organismRules = [...ORGANISMS].map((path) => {
+  const name = path.replace(/^.*\//, '').replace(/\.tsx?$/, '');
+  return {
+    what: `the organism ${name}`,
+    pattern: new RegExp(`^import\\s+(?!type\\s)[^;]*?from\\s+'(?:\\.\\.?\\/)+(?:[\\w-]+\\/)*${name}'`, 'm'),
+  };
+});
+
 export function offenders(files: [path: string, source: string][]): string[] {
   return files.flatMap(([path, source]) =>
-    FORBIDDEN.filter((rule) => rule.pattern.test(source)).map((rule) => `${path} imports ${rule.what}`));
+    [...FORBIDDEN, ...organismRules]
+      .filter((rule) => rule.pattern.test(source))
+      .map((rule) => `${path} imports ${rule.what}`));
 }
 
 // `map/` since MAP2: the map's drawing and detail are molecules, and MapView above them is the view.
@@ -73,6 +88,11 @@ describe('the presentational boundary', () => {
     expect(offenders([['./work/SessionRow.tsx', "import { useShenora } from '@shenora/react';\n"]]))
       .toEqual(["./work/SessionRow.tsx imports the bridge library ('@shenora/react')"]);
     expect(offenders([['./work/SessionRow.tsx', "import type { Session } from '../api';\n"]]))
+      .toEqual([]);
+    // One step removed: an organism holds the hook, and importing it reaches the data all the same.
+    expect(offenders([['./work/frame.tsx', "import { SessionConsole } from '../SessionConsole';\n"]]))
+      .toEqual(['./work/frame.tsx imports the organism SessionConsole']);
+    expect(offenders([['./work/Row.tsx', "import type { AttentionDoors } from './AttentionBand';\n"]]))
       .toEqual([]);
   });
 

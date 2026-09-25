@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import i18n from '../i18n';
+import { SessionConsole } from '../SessionConsole';
 import { ActivityBar, AppStrip, OutputPanel, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
@@ -282,7 +283,10 @@ describe('the output panel', () => {
     // No shell in a unit test, so the console holds nothing and is not live: an ended session after
     // the app restarted, which is exactly the case the window showed.
     const { container } = render(
-      <OutputPanel sessionId="s1a2b3c4" height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} />,
+      <OutputPanel
+        console={<SessionConsole id="s1a2b3c4" fill quiet={i18n.t('work.panel.silent')} />}
+        height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
+      />,
     );
     expect(screen.getByText(/keeps what a session prints while this app runs/)).toBeTruthy();
     expect(container.querySelector('pre')).toBeNull();
