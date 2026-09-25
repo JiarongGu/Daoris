@@ -455,6 +455,33 @@ describe('the machine settings surface', () => {
     expect(screen.queryByText(/Nobody should have to watch a driver/)).toBeNull();
   });
 
+  /**
+   * REV3: passing through the field was a write. `Number(null)` and `Number('')` are both 0, which is
+   * the one value that means "never park" — and a keyboard user tabbing through the card sent it, with
+   * a toast that read like a confirmation.
+   */
+  it('writes the strikes only when the person changed them — focus, blur and a cleared box write nothing', async () => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, strikes: 3 } : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const field = await screen.findByLabelText('Park a quest after this many failed sessions');
+
+    await userEvent.click(field);
+    await userEvent.tab();
+    await userEvent.clear(field);
+    await userEvent.tab();
+    await userEvent.clear(field);
+    await userEvent.type(field, '3');
+    await userEvent.tab();
+    expect(invoke.mock.calls.some(([, type]) => type === 'SET_STRIKES')).toBe(false);
+    expect((field as HTMLInputElement).value).toBe('3');
+
+    await userEvent.clear(field);
+    await userEvent.type(field, '5');
+    await userEvent.tab();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_STRIKES', { payload: { strikes: 5 } });
+  });
+
   it('keeps the wiring form one press away, not open on every visit', async () => {
     invoke.mockImplementation(async (module: string) => (
       module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));

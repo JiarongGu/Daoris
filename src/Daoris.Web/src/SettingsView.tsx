@@ -350,9 +350,13 @@ function DriverSettings({ notify }: { notify: Notify }) {
               value={strikes ?? String(driver.data?.strikes ?? 3)}
               onChange={(event) => setStrikes(event.target.value)}
               onBlur={() => {
-                const value = Number(strikes);
-                if (!Number.isInteger(value) || value < 0) {
-                  setStrikes(String(driver.data?.strikes ?? 3));
+                // 🔴 Passing through is not a write (REV3): `Number(null)` and `Number('')` are both 0,
+                // the one value that means "never park". Nothing typed, a cleared box, or the value it
+                // already holds all leave the config alone and put the held value back.
+                const held = driver.data?.strikes ?? 3;
+                const value = strikes === null || strikes.trim() === '' ? held : Number(strikes);
+                if (!Number.isInteger(value) || value < 0 || value === held) {
+                  setStrikes(null);
                   return;
                 }
 
