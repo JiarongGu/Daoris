@@ -33,6 +33,7 @@ public static class Refusals
 
     /// <summary>A harness action this build does not have.</summary>
     public const string HarnessActionUnknown = "HARNESS_ACTION_UNKNOWN";
+    public const string HarnessProfileNeeded = "HARNESS_PROFILE_NEEDED";
 
     /// <summary>An answer or a stop for a harness action that is not running.</summary>
     public const string HarnessActionIdle = "HARNESS_ACTION_IDLE";
@@ -74,6 +75,8 @@ public static class Refusals
     /// does one that predates the base commit being recorded.
     /// </summary>
     public const string SessionNotReviewable = "SESSION_NOT_REVIEWABLE";
+    public const string SessionNoBase = "SESSION_NO_BASE";
+    public const string SessionRangeUnreadable = "SESSION_RANGE_UNREADABLE";
 
     /// <summary>
     /// A window name this build does not open (SURF8). Refused rather than sanitised: the name
@@ -93,7 +96,8 @@ public static class Refusals
     [
         RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, HarnessActionIdle,
         HarnessActionBusy, DriverRefused,
-        SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, WindowUnknown,
+        SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, SessionNoBase, SessionRangeUnreadable,
+        HarnessProfileNeeded, WindowUnknown,
         PluginUnknown, PluginActionUnknown, PluginBusy,
     ];
 

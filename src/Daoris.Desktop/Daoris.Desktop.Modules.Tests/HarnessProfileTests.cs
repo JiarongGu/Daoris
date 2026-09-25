@@ -285,14 +285,17 @@ public sealed class HarnessProfileTests : Bridge
         return string.Join("\n", json.GetProperty("Lines").EnumerateArray().Select(l => l.GetProperty("Text").GetString()));
     }
 
-    /// <summary>A profile verb with no profile is refused rather than guessing one.</summary>
+    /// <summary>
+    /// A profile verb with no profile is refused rather than guessing one — under its own code, so the
+    /// page says the name is missing rather than that no such action exists (REV3 modules F9).
+    /// </summary>
     [Fact]
     public async Task A_profile_verb_without_a_name_is_refused()
     {
         var refusal = await RefusalAsync(
             Module(), "HARNESS_ACTION", new { harness = "claude-code", action = "profile-add" });
 
-        Assert.Contains(Refusals.HarnessActionUnknown, refusal);
+        Assert.Contains(Refusals.HarnessProfileNeeded, refusal);
     }
 
     /// <summary>

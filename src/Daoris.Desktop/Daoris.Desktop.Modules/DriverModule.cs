@@ -925,7 +925,7 @@ public sealed class DriverModule : ModuleBase
         if (string.IsNullOrWhiteSpace(baseCommit))
         {
             throw Refusals.Because(
-                Refusals.SessionNotReviewable,
+                Refusals.SessionNoBase,
                 "this session's record does not say which commit its tree stood at when it began, so "
                 + "there is no range to measure. Records made before Daoris started writing that down "
                 + "keep their evidence line and cannot gain a diff.",
@@ -936,7 +936,7 @@ public sealed class DriverModule : ModuleBase
         if (diff is null)
         {
             throw Refusals.Because(
-                Refusals.SessionNotReviewable,
+                Refusals.SessionRangeUnreadable,
                 "git could not read that range where the session ran — the tree has moved, been "
                 + "discarded, or no longer holds the commit it started from.",
                 ("session", id));
@@ -1419,7 +1419,7 @@ public sealed class DriverModule : ModuleBase
         Optional(request, "profile") is { Length: > 0 } profile
             ? profile
             : throw Refusals.Because(
-                Refusals.HarnessActionUnknown,
+                Refusals.HarnessProfileNeeded,
                 "that action needs a profile name.",
                 ("action", "profile"));
 

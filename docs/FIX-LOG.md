@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Two refusal codes said the wrong sentence for most of their causes (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the desktop. The page translates a refusal's CODE into a
+sentence, so one code is one sentence. `SESSION_NOT_REVIEWABLE` was thrown for four causes: no tree
+here, no recorded starting commit, a range git could not read, and nothing here to merge or discard.
+Its sentence fitted the first two. `HARNESS_ACTION_UNKNOWN` was also thrown for a profile verb with no
+profile name, where the page said "there is no agent action called profile".
+
+**Root cause.** A code reused for a new cause without a new sentence. REV3's F10 finding (nothing
+checks a throw site against its sentence) is how it went unnoticed; that one is a backlog row.
+
+**Fix.** Three codes of their own: `SESSION_NO_BASE`, `SESSION_RANGE_UNREADABLE` and
+`HARNESS_PROFILE_NEEDED`, in English and Chinese. `SESSION_NOT_REVIEWABLE` keeps the one cause it now
+has (the work is not on this machine), and its sentence says that for a diff and a merge alike. The zh
+sentence for an unknown agent action says 智能体 like the rest of the catalogue.
+
+**Verify.** `A_profile_verb_without_a_name_is_refused` names the new code. The page's review test
+reads the new sentence. The refusal-parity test holds that every code has both sentences: modules
+129/129, 933 keys in each catalogue.
+
 ## An answering host was counted down when the adoption notice could not read (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the desktop. When a host already answers, the shell adopts

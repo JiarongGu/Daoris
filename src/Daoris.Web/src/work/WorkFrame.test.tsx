@@ -939,7 +939,7 @@ describe('reviewing what a session landed', () => {
     show('s1a2b3c4');
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
 
-    expect(await screen.findByText(/no diff to read for this session/)).toBeTruthy();
+    expect(await screen.findByText(/work is not on this machine/)).toBeTruthy();
   });
 
   /** A session that committed nothing changed nothing — an answer, not an empty list. */
