@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Every closed monitor or detached window kept buffering the whole bus (2026-09-25)
+
+**Symptom.** Found by REV3's reading, against the Shenora source. Opening and closing a monitor window
+or a detached session left that window's IPC bridge subscribed to the whole event bus. The bridge's
+flush timer ran on the closed window's thread, which had ended, so every later event was queued
+until its 10,000 cap and held there for the life of the process. That includes the sessions' console
+lines and conversation events. It happened once for every window the person ever opened.
+
+**Root cause.** `SecondaryForm` unhooked its theme handler on close and never disposed its
+`WebViewIpcBridge`. The package says to "dispose with the owning window".
+
+**Fix.** `OnFormClosed` disposes the bridge.
+
+**Verify.** Build only. The App project has no tests, because it is the WinForms half that D46 keeps
+thin. **Not covered by a test:** the disposal itself. The next look at an installed shell with a
+monitor opened and closed is where it is seen.
+
 ## A second Sign in took the first one's place, and the first could no longer be answered (2026-09-25)
 
 **Symptom.** Found by REV3's reading of both halves. `HARNESS_ACTION` answers `started` as soon as the

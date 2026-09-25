@@ -110,9 +110,16 @@ public sealed class SecondaryForm : OptimizedForm
     /// closed without unsubscribing is kept alive by it — and every monitor the person ever opened
     /// would still be handling theme changes.
     /// </summary>
+    /// <remarks>
+    /// 🔴 And dispose the bridge (REV3). It subscribes to the WHOLE bus, and its flush timer lived on this
+    /// window's thread, which ends here — so a closed window's bridge queued every later event, the
+    /// sessions' console lines and conversations included, up to its ten-thousand cap, for as long as
+    /// the application ran. Once per window the person ever opened.
+    /// </remarks>
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= _themeChanged;
+        _bridge.Dispose();
         base.OnFormClosed(e);
     }
 
