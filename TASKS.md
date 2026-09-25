@@ -292,7 +292,10 @@ archive.
        defect), or as a backlog row when it is not session-sized.
     4. The archive gets the findings, as REV2's entry has them.
   - A fan-out, one reviewer per artefact and one for the docs, needs the owner's go-ahead for its
-    scale.
+    scale. **Given 2026-09-25**: ten read-only reviewers (CLI, service, the driver's conversation
+    half, the rest of the driver, modules and app, the web's `work/`, the rest of the web, tools
+    with devkit, canon and examples, and two for the docs), every finding then verified here before
+    it lands. **Widened the same day**: refactor, dedup and cleanup too, reported after correctness.
   - **Already known, so not re-found:** TEST1, FLAKE1, DEPLOY3, REH1 and UX1's written findings.
 
 ### The protocol door — ACP (D53, accepted 2026-09-21)
