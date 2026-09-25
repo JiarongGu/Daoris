@@ -196,12 +196,7 @@ public static class CodeMapReader
     private static bool Array(JsonElement root, string name, out JsonElement value) =>
         root.TryGetProperty(name, out value) && value.ValueKind == JsonValueKind.Array;
 
-    private static string Field(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object
-        && element.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? ""
-            : "";
+    private static string Field(JsonElement element, string name) => JsonFields.Text(element, name) ?? "";
 
     private static bool OneLine(string text) => !text.Contains('\n') && !text.Contains('\r');
 

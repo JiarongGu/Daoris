@@ -576,6 +576,40 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Null(QuestWire.ReadPage("[]"));
     }
 
+    /// <summary>
+    /// 🔴 REV3 CLEAN1: a publish whose attachments or chain hold something other than objects is not
+    /// whole, and is refused like any other half-made operation. The reader looked inside each item as
+    /// if it were an object, and on a number it threw instead, so a remote's malformed push was a 500
+    /// at the door rather than a refusal.
+    /// </summary>
+    [Theory]
+    [InlineData("\"attachments\": [1]")]
+    [InlineData("\"then\": [\"not a step\"]")]
+    public void A_publish_whose_items_are_not_objects_is_refused_not_thrown(string items)
+    {
+        var push = $$"""
+            { "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "published",
+              "at": "2026-09-24T10:00:00Z",
+              "asked": { "from": "a", "to": "b", "title": "t", "body": "b", {{items}} } }] }
+            """;
+
+        Assert.Null(QuestWire.ReadPush(push));
+    }
+
+    /// <summary>
+    /// The push's answer, read back on this machine, holds to the same rule: an acceptance that is not an
+    /// object makes the answer not one, and a <c>behind</c> item that is not a quest id is skipped, as a
+    /// link that is not a string is. Both threw.
+    /// </summary>
+    [Fact]
+    public void A_push_answer_with_items_of_the_wrong_kind_is_read_not_thrown()
+    {
+        Assert.Null(QuestWire.ReadPushed("""{ "accepted": [1], "behind": [], "refused": [] }"""));
+
+        var skipped = QuestWire.ReadPushed("""{ "accepted": [], "behind": [1, "abcdefabcdef"], "refused": [] }""");
+        Assert.Equal(["abcdefabcdef"], skipped!.Behind);
+    }
+
     /// <summary>A dismissal crosses naming the conflict it dismisses; one that names none is half-made and does not cross.</summary>
     [Fact]
     public void A_dismissal_crosses_the_wire_naming_its_conflict()

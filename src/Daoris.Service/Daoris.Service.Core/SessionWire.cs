@@ -1,5 +1,5 @@
-using System.Text;
 using System.Text.Json;
+using static Daoris.Knowledge.JsonFields;
 
 namespace Daoris.Knowledge;
 
@@ -20,7 +20,7 @@ namespace Daoris.Knowledge;
 public static class SessionWire
 {
     /// <summary>A feed of this machine's own records, as the remote's feed door reads it.</summary>
-    public static string Feed(IReadOnlyList<FedSessionRecord> records) => Json(writer =>
+    public static string Feed(IReadOnlyList<FedSessionRecord> records) => Written(writer =>
     {
         writer.WriteStartObject();
         writer.WriteStartArray("records");
@@ -39,9 +39,9 @@ public static class SessionWire
     /// <summary>A feed read back at the door — null when it is not one. Each record is judged by <see cref="SessionFeed"/>.</summary>
     public static IReadOnlyList<FedSessionRecord>? ReadFeed(string json)
     {
-        if (Parse(json) is not { } root) return null;
+        if (ParseObject(json) is not { } root) return null;
         var records = new List<FedSessionRecord>();
-        foreach (var item in Array(root, "records"))
+        foreach (var item in Items(root, "records"))
         {
             if (item.ValueKind != JsonValueKind.Object || Time(item, "created") is not { } created
                 || Time(item, "updated") is not { } updated)
@@ -59,7 +59,7 @@ public static class SessionWire
     }
 
     /// <summary>A page of the team's records the remote holds — each keyed `origin/id`, carrying its origin.</summary>
-    public static string Page(SessionFetch page) => Json(writer =>
+    public static string Page(SessionFetch page) => Written(writer =>
     {
         writer.WriteStartObject();
         writer.WriteNumber("through", page.Through);
@@ -81,9 +81,9 @@ public static class SessionWire
     /// <summary>A page read back on a machine, or null when it is not one — or when any record in it is not whole.</summary>
     public static SessionFetch? ReadPage(string json)
     {
-        if (Parse(json) is not { } root) return null;
+        if (ParseObject(json) is not { } root) return null;
         var records = new List<Session>();
-        foreach (var item in Array(root, "records"))
+        foreach (var item in Items(root, "records"))
         {
             if (item.ValueKind != JsonValueKind.Object
                 || Text(item, "id") is not { Length: > 0 } id || Text(item, "origin") is not { Length: > 0 } origin
@@ -131,32 +131,6 @@ public static class SessionWire
         if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
     }
 
-    private static JsonElement? Parse(string json)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(json);
-            return document.RootElement.ValueKind == JsonValueKind.Object ? document.RootElement.Clone() : null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static IEnumerable<JsonElement> Array(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array ? value.EnumerateArray() : [];
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
     private static DateTimeOffset? Time(JsonElement element, string name) =>
         Text(element, name) is { } text && DateTimeOffset.TryParse(text, out var at) ? at : null;
-
-    private static string Json(Action<Utf8JsonWriter> write)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream)) write(writer);
-        return Encoding.UTF8.GetString(stream.ToArray());
-    }
 }

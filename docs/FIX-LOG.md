@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A remote's malformed quest JSON threw at the door instead of being refused (2026-09-25)
+
+**Symptom.** Found by CLEAN1, while deduplicating the service's JSON helpers. `QuestWire.ReadPush`
+refuses a half-made operation by returning null, and the door answers that with its shape sentence.
+But a publish whose `attachments` or `then` held a number or a string reached `Text(1, "name")`,
+and `TryGetProperty` on a non-object throws `InvalidOperationException`. So a malformed push was an
+exception at the door, not a refusal. `ReadPushed` on the machine threw the same way on an
+`accepted` item that was not an object, or a `behind` item that was not a string.
+
+**Root cause.** Seven private copies of the same few JSON helpers, and only one of them
+(`CodeMapWire.Text`) checked that the element was an object before asking it for a field. The rest
+relied on each caller having checked, and the attachment and step loops had not.
+
+**Fix.** `JsonFields` holds `ParseObject`, `Text`, `Number`, `Items` and the `Written` builder once,
+and every reader answers *absent* for an element of the wrong kind. QuestWire, SessionWire,
+CodeMapWire, RemoteConfig, CodeMap and RegistryImport use it. `behind` filters by kind, as `links`
+already did. The attachment shape `{name, sha256, bytes}` has one writer and one store reader on
+`QuestAttachment`. The wire keeps its own judging reader, since a remote's JSON is not the store's.
+
+**Verify.** `QuestSyncTests`: a push whose attachments or chain hold a non-object is refused, and a
+push answer with a non-object acceptance is not one, while a non-string `behind` item is skipped.
+All three threw `InvalidOperationException` against the previous code. Service 500/500.
+
 ## A chat test failed when its poll landed inside the stub's write (2026-09-25)
 
 **Symptom.** REV3's final driver run failed one of 679 tests,

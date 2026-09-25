@@ -84,9 +84,7 @@ public static class RegistryImport
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 
     private static string? String(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString() is { Length: > 0 } text ? text : null
-            : null;
+        JsonFields.Text(element, name) is { Length: > 0 } text ? text : null;
 
     private static IReadOnlyList<string> Strings(JsonElement element, string name)
     {

@@ -83,7 +83,27 @@ public sealed record QuestStep(string To, string Title, string Body);
 /// <param name="Name">The file's own name, made safe to keep: what a reader and a session see.</param>
 /// <param name="Sha256">Its content's hash, lowercase hex — the file's identity, and how it is found.</param>
 /// <param name="Bytes">Its size.</param>
-public sealed record QuestAttachment(string Name, string Sha256, long Bytes);
+public sealed record QuestAttachment(string Name, string Sha256, long Bytes)
+{
+    /// <summary>Its one shape in JSON, the same in a store's column and on the wire.</summary>
+    public void Write(System.Text.Json.Utf8JsonWriter writer)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("name", Name);
+        writer.WriteString("sha256", Sha256);
+        writer.WriteNumber("bytes", Bytes);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// One read back out of a store's own column, which only this service writes. The wire's reader
+    /// judges what it reads instead (<see cref="QuestWire"/>), because a remote's JSON is not ours.
+    /// </summary>
+    public static QuestAttachment Stored(System.Text.Json.JsonElement item) => new(
+        item.GetProperty("name").GetString() ?? "",
+        item.GetProperty("sha256").GetString() ?? "",
+        item.GetProperty("bytes").GetInt64());
+}
 
 /// <param name="Quest">The quest as it now stands — null when no such id exists.</param>
 /// <param name="Moved">Whether THIS call moved it. False with a non-null quest is a refused move.</param>
@@ -1328,7 +1348,7 @@ public sealed class QuestStore
     /// a replay needs to make the quest, on this machine or another — and a move carries its note.
     /// </summary>
     private static string PayloadJson(
-        string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null) => Json(writer =>
+        string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null) => JsonFields.Written(writer =>
     {
         if (dismisses is not null)
         {
@@ -1372,7 +1392,7 @@ public sealed class QuestStore
         writer.WriteEndObject();
     });
 
-    private static string ConflictsJson(IReadOnlyList<QuestConflict> conflicts) => Json(writer =>
+    private static string ConflictsJson(IReadOnlyList<QuestConflict> conflicts) => JsonFields.Written(writer =>
     {
         writer.WriteStartArray();
         foreach (var conflict in conflicts)
@@ -1403,7 +1423,7 @@ public sealed class QuestStore
             .ToList();
     }
 
-    private static string StepsJson(IReadOnlyList<QuestStep> steps) => Json(writer => WriteSteps(writer, steps));
+    private static string StepsJson(IReadOnlyList<QuestStep> steps) => JsonFields.Written(writer => WriteSteps(writer, steps));
 
     private static void WriteSteps(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<QuestStep> steps)
     {
@@ -1436,7 +1456,7 @@ public sealed class QuestStore
 
     // Written and read by hand rather than through the reflection serializer, for the same reason the
     // registration store's lists are: nothing here may quietly stop working under AOT.
-    private static string LinksJson(IReadOnlyList<string> links) => Json(writer => WriteLinks(writer, links));
+    private static string LinksJson(IReadOnlyList<string> links) => JsonFields.Written(writer => WriteLinks(writer, links));
 
     private static void WriteLinks(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<string> links)
     {
@@ -1446,29 +1466,15 @@ public sealed class QuestStore
     }
 
     private static string AttachmentsJson(IReadOnlyList<QuestAttachment> attachments) =>
-        Json(writer => WriteAttachments(writer, attachments));
+        JsonFields.Written(writer => WriteAttachments(writer, attachments));
 
     private static void WriteAttachments(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<QuestAttachment> attachments)
     {
         writer.WriteStartArray();
-        foreach (var attachment in attachments)
-        {
-            writer.WriteStartObject();
-            writer.WriteString("name", attachment.Name);
-            writer.WriteString("sha256", attachment.Sha256);
-            writer.WriteNumber("bytes", attachment.Bytes);
-            writer.WriteEndObject();
-        }
-
+        foreach (var attachment in attachments) attachment.Write(writer);
         writer.WriteEndArray();
     }
 
-    private static string Json(Action<System.Text.Json.Utf8JsonWriter> write)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new System.Text.Json.Utf8JsonWriter(stream)) write(writer);
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
-    }
 
     private static IReadOnlyList<string> ReadLinks(string json)
     {
@@ -1489,10 +1495,5 @@ public sealed class QuestStore
     }
 
     private static IReadOnlyList<QuestAttachment> ReadAttachments(System.Text.Json.JsonElement attachments) =>
-        attachments.EnumerateArray()
-            .Select(item => new QuestAttachment(
-                item.GetProperty("name").GetString() ?? "",
-                item.GetProperty("sha256").GetString() ?? "",
-                item.GetProperty("bytes").GetInt64()))
-            .ToList();
+        attachments.EnumerateArray().Select(QuestAttachment.Stored).ToList();
 }

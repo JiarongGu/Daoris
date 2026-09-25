@@ -1,5 +1,5 @@
-using System.Text;
 using System.Text.Json;
+using static Daoris.Knowledge.JsonFields;
 
 namespace Daoris.Knowledge;
 
@@ -26,7 +26,7 @@ public static class QuestWire
         + "what it attempted; a dismissal names the conflict's machine and sequence";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
-    public static string Page(QuestFetch page) => Json(writer =>
+    public static string Page(QuestFetch page) => Written(writer =>
     {
         writer.WriteStartObject();
         writer.WriteNumber("through", page.Through);
@@ -40,7 +40,7 @@ public static class QuestWire
     /// <summary>A page read back, or null when it is not one.</summary>
     public static QuestFetch? ReadPage(string json)
     {
-        if (Parse(json) is not { } root) return null;
+        if (ParseObject(json) is not { } root) return null;
         if (Operations(root, numbered: true) is not { } operations) return null;
         return new QuestFetch(
             operations,
@@ -49,7 +49,7 @@ public static class QuestWire
     }
 
     /// <summary>A push: what is pending, rebased on <paramref name="base"/>.</summary>
-    public static string Push(long @base, IReadOnlyList<QuestOperation> operations) => Json(writer =>
+    public static string Push(long @base, IReadOnlyList<QuestOperation> operations) => Written(writer =>
     {
         writer.WriteStartObject();
         writer.WriteNumber("base", @base);
@@ -62,14 +62,14 @@ public static class QuestWire
     /// <summary>A push read back at the remote, or null when any operation in it is not whole.</summary>
     public static (long Base, IReadOnlyList<QuestOperation> Operations)? ReadPush(string json)
     {
-        if (Parse(json) is not { } root) return null;
+        if (ParseObject(json) is not { } root) return null;
         if (Operations(root, numbered: false) is not { } operations) return null;
         return (root.TryGetProperty("base", out var @base) && @base.ValueKind == JsonValueKind.Number ? @base.GetInt64() : 0,
             operations);
     }
 
     /// <summary>The remote's answer to a push.</summary>
-    public static string Pushed(QuestPush push) => Json(writer =>
+    public static string Pushed(QuestPush push) => Written(writer =>
     {
         writer.WriteStartObject();
         writer.WriteStartArray("accepted");
@@ -102,9 +102,9 @@ public static class QuestWire
     /// <summary>A push's answer read back, or null when it is not one.</summary>
     public static QuestPush? ReadPushed(string json)
     {
-        if (Parse(json) is not { } root) return null;
+        if (ParseObject(json) is not { } root) return null;
         var accepted = new List<QuestAcceptance>();
-        foreach (var item in Array(root, "accepted"))
+        foreach (var item in Items(root, "accepted"))
         {
             if (Text(item, "machine") is not { Length: > 0 } machine || Number(item, "sequence") is not { } sequence
                 || Number(item, "number") is not { } number)
@@ -117,8 +117,8 @@ public static class QuestWire
 
         return new QuestPush(
             accepted,
-            Array(root, "behind").Select(b => b.GetString()).OfType<string>().ToList(),
-            Array(root, "refused").Select(r => new QuestPushRefusal(Text(r, "quest") ?? "", Text(r, "reason") ?? "")).ToList());
+            Items(root, "behind").Select(b => b.ValueKind == JsonValueKind.String ? b.GetString() : null).OfType<string>().ToList(),
+            Items(root, "refused").Select(r => new QuestPushRefusal(Text(r, "quest") ?? "", Text(r, "reason") ?? "")).ToList());
     }
 
     private static void Write(Utf8JsonWriter writer, QuestOperation operation)
@@ -151,15 +151,7 @@ public static class QuestWire
             foreach (var link in asked.Links) writer.WriteStringValue(link);
             writer.WriteEndArray();
             writer.WriteStartArray("attachments");
-            foreach (var file in asked.Attachments)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("name", file.Name);
-                writer.WriteString("sha256", file.Sha256);
-                writer.WriteNumber("bytes", file.Bytes);
-                writer.WriteEndObject();
-            }
-
+            foreach (var file in asked.Attachments) file.Write(writer);
             writer.WriteEndArray();
             writer.WriteStartArray("then");
             foreach (var step in asked.Then)
@@ -186,7 +178,7 @@ public static class QuestWire
     private static List<QuestOperation>? Operations(JsonElement root, bool numbered)
     {
         var operations = new List<QuestOperation>();
-        foreach (var item in Array(root, "operations"))
+        foreach (var item in Items(root, "operations"))
         {
             if (Read(item, numbered) is not { } operation) return null;
             operations.Add(operation);
@@ -249,7 +241,7 @@ public static class QuestWire
             }
 
             var files = new List<QuestAttachment>();
-            foreach (var file in Array(asked, "attachments"))
+            foreach (var file in Items(asked, "attachments"))
             {
                 if (Text(file, "name") is not { } name || Text(file, "sha256") is not { } sha || Number(file, "bytes") is not { } size)
                 {
@@ -260,7 +252,7 @@ public static class QuestWire
             }
 
             var steps = new List<QuestStep>();
-            foreach (var step in Array(asked, "then"))
+            foreach (var step in Items(asked, "then"))
             {
                 if (Text(step, "to") is not { } stepTo || Text(step, "title") is not { } stepTitle
                     || Text(step, "body") is not { } stepBody)
@@ -273,7 +265,7 @@ public static class QuestWire
 
             published = new Quest(quest, from, to, title, body, QuestStatus.Open, null, at, at)
             {
-                Links = Array(asked, "links").Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null)
+                Links = Items(asked, "links").Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null)
                     .OfType<string>().ToList(),
                 Attachments = files,
                 Then = steps,
@@ -286,36 +278,4 @@ public static class QuestWire
             dismisses);
     }
 
-    private static JsonElement? Parse(string json)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(json);
-            return document.RootElement.ValueKind == JsonValueKind.Object ? document.RootElement.Clone() : null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static IEnumerable<JsonElement> Array(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
-            ? value.EnumerateArray()
-            : [];
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
-    private static long? Number(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var n)
-            ? n
-            : null;
-
-    private static string Json(Action<Utf8JsonWriter> write)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream)) write(writer);
-        return Encoding.UTF8.GetString(stream.ToArray());
-    }
 }

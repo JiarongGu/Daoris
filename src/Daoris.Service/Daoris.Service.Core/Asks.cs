@@ -122,14 +122,7 @@ public sealed class AskStore
         command.Parameters.AddWithValue("$asker", (object?)ask.Asker ?? DBNull.Value);
         command.Parameters.AddWithValue("$note", (object?)ask.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$links", Json(ask.Links, (w, link) => w.WriteStringValue(link)));
-        command.Parameters.AddWithValue("$attachments", Json(ask.Attachments, (w, a) =>
-        {
-            w.WriteStartObject();
-            w.WriteString("name", a.Name);
-            w.WriteString("sha256", a.Sha256);
-            w.WriteNumber("bytes", a.Bytes);
-            w.WriteEndObject();
-        }));
+        command.Parameters.AddWithValue("$attachments", Json(ask.Attachments, (w, a) => a.Write(w)));
         command.Parameters.AddWithValue("$proposal", Json(ask.Proposal, (w, m) =>
         {
             w.WriteStartObject();
@@ -238,9 +231,7 @@ public sealed class AskStore
             DateTimeOffset.Parse(Text("asked")), DateTimeOffset.Parse(Text("updated")), Maybe("asker"), Maybe("note"))
         {
             Links = Items(Text("links"), e => e.GetString() ?? ""),
-            Attachments = Items(Text("attachments"), e => new QuestAttachment(
-                e.GetProperty("name").GetString() ?? "", e.GetProperty("sha256").GetString() ?? "",
-                e.GetProperty("bytes").GetInt64())),
+            Attachments = Items(Text("attachments"), QuestAttachment.Stored),
             Proposal = Items(Text("proposal"), e => new DeclarationMatch(
                 e.GetProperty("repository").GetString() ?? "", e.GetProperty("score").GetInt32(),
                 e.GetProperty("matched").EnumerateArray().Select(w => w.GetString() ?? "").ToList())),
@@ -250,18 +241,12 @@ public sealed class AskStore
     }
 
     // Hand-rolled for the same reason every store's lists are: nothing here may stop working under AOT.
-    private static string Json<T>(IEnumerable<T> items, Action<Utf8JsonWriter, T> write)
+    private static string Json<T>(IEnumerable<T> items, Action<Utf8JsonWriter, T> write) => JsonFields.Written(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartArray();
-            foreach (var item in items) write(writer, item);
-            writer.WriteEndArray();
-        }
-
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
-    }
+        writer.WriteStartArray();
+        foreach (var item in items) write(writer, item);
+        writer.WriteEndArray();
+    });
 
     private static IReadOnlyList<T> Items<T>(string json, Func<JsonElement, T> read)
     {

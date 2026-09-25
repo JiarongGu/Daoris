@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Text;
 using System.Text.Json;
+using static Daoris.Knowledge.JsonFields;
 
 namespace Daoris.Knowledge;
 
@@ -23,7 +23,7 @@ public sealed record FedCodeMap(string? File, string? Body, FeedProvenance Fed);
 public static class CodeMapWire
 {
     /// <summary>The door's answer for one repository.</summary>
-    public static string Answer(string repository, CodeMapRead read) => Json(writer =>
+    public static string Answer(string repository, CodeMapRead read) => Written(writer =>
     {
         writer.WriteStartObject();
         writer.WriteString("repository", repository);
@@ -74,81 +74,44 @@ public static class CodeMapWire
     /// </summary>
     public static FedCodeMap? Read(string json)
     {
-        JsonDocument document;
-        try
-        {
-            document = JsonDocument.Parse(json);
-        }
-        catch (JsonException)
+        if (ParseObject(json) is not { } root || Text(root, "problem") is not null) return null;
+        if (!root.TryGetProperty("fed", out var fed) || fed.ValueKind != JsonValueKind.Object
+            || Text(fed, "commit") is not { Length: > 0 } commit
+            || Text(fed, "branch") is not { Length: > 0 } branch
+            || Text(fed, "committedAt") is not { } at
+            || !DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var committedAt))
         {
             return null;
         }
 
-        using (document)
+        var provenance = new FeedProvenance(commit, committedAt, branch, Text(fed, "origin"));
+        if (Text(root, "file") is not { } file) return new FedCodeMap(null, null, provenance);
+
+        var modules = new List<CodeModule>();
+        foreach (var module in Items(root, "modules"))
         {
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object || Text(root, "problem") is not null) return null;
-            if (!root.TryGetProperty("fed", out var fed) || fed.ValueKind != JsonValueKind.Object
-                || Text(fed, "commit") is not { Length: > 0 } commit
-                || Text(fed, "branch") is not { Length: > 0 } branch
-                || Text(fed, "committedAt") is not { } at
-                || !DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var committedAt))
+            if (Text(module, "id") is not { } id || Text(module, "path") is not { } path
+                || Text(module, "summary") is not { } summary)
             {
                 return null;
             }
 
-            var provenance = new FeedProvenance(commit, committedAt, branch, Text(fed, "origin"));
-            if (Text(root, "file") is not { } file) return new FedCodeMap(null, null, provenance);
-
-            var modules = new List<CodeModule>();
-            foreach (var module in Items(root, "modules"))
-            {
-                if (Text(module, "id") is not { } id || Text(module, "path") is not { } path
-                    || Text(module, "summary") is not { } summary)
-                {
-                    return null;
-                }
-
-                modules.Add(new CodeModule(id, path, summary));
-            }
-
-            var dependencies = new List<CodeDependency>();
-            foreach (var dependency in Items(root, "dependencies"))
-            {
-                if (Text(dependency, "from") is not { } from || Text(dependency, "to") is not { } to
-                    || Text(dependency, "kind") is not { } kind)
-                {
-                    return null;
-                }
-
-                dependencies.Add(new CodeDependency(from, to, kind));
-            }
-
-            var (map, problem) = CodeMapReader.Parse(CodeMapReader.Write(new CodeMap(modules, dependencies)), file);
-            return problem is null ? new FedCodeMap(file, CodeMapReader.Write(map!), provenance) : null;
+            modules.Add(new CodeModule(id, path, summary));
         }
-    }
 
-    // An element that is not an object has no fields — asked as one, TryGetProperty would throw.
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object
-        && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-
-    private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
-            ? value.EnumerateArray().ToList()
-            : [];
-
-    private static string Json(Action<Utf8JsonWriter> write)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
+        var dependencies = new List<CodeDependency>();
+        foreach (var dependency in Items(root, "dependencies"))
         {
-            write(writer);
+            if (Text(dependency, "from") is not { } from || Text(dependency, "to") is not { } to
+                || Text(dependency, "kind") is not { } kind)
+            {
+                return null;
+            }
+
+            dependencies.Add(new CodeDependency(from, to, kind));
         }
 
-        return Encoding.UTF8.GetString(stream.ToArray());
+        var (map, problem) = CodeMapReader.Parse(CodeMapReader.Write(new CodeMap(modules, dependencies)), file);
+        return problem is null ? new FedCodeMap(file, CodeMapReader.Write(map!), provenance) : null;
     }
 }

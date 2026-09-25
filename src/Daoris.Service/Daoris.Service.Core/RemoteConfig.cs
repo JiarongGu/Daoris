@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Knowledge.JsonFields;
 
 namespace Daoris.Knowledge;
 
@@ -66,35 +67,22 @@ public sealed record RemoteConfig(string Url, string Key)
 
         if (!File.Exists(path)) return map;
 
-        try
-        {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
-            if (document.RootElement.ValueKind != JsonValueKind.Object) return map;
+        // A file that will not parse is a file that names no remote. The sync loop, not this reader, is
+        // where "you configured a remote and it does not work" gets said out loud.
+        if (ParseObject(File.ReadAllText(path)) is not { } root) return map;
 
-            foreach (var entry in document.RootElement.EnumerateObject())
-            {
-                if (entry.Value.ValueKind != JsonValueKind.Object) continue;
-                var entryUrl = Text(entry.Value, "url");
-                var entryKey = Text(entry.Value, "key");
-                // An entry missing half its pair is one workspace with no remote, never a machine with
-                // none: a typo in one circle must not silently unwire the others.
-                if (string.IsNullOrWhiteSpace(entryUrl) || string.IsNullOrWhiteSpace(entryKey)) continue;
-
-                map[Workspaces.Normalize(entry.Name)] = new(entryUrl.TrimEnd('/'), entryKey);
-            }
-        }
-        catch (JsonException)
+        foreach (var entry in root.EnumerateObject())
         {
-            // A file that will not parse is a file that names no remote. The sync loop, not this
-            // reader, is where "you configured a remote and it does not work" gets said out loud.
-            return new Dictionary<string, RemoteConfig>(StringComparer.OrdinalIgnoreCase);
+            if (entry.Value.ValueKind != JsonValueKind.Object) continue;
+            var entryUrl = Text(entry.Value, "url");
+            var entryKey = Text(entry.Value, "key");
+            // An entry missing half its pair is one workspace with no remote, never a machine with
+            // none: a typo in one circle must not silently unwire the others.
+            if (string.IsNullOrWhiteSpace(entryUrl) || string.IsNullOrWhiteSpace(entryKey)) continue;
+
+            map[Workspaces.Normalize(entry.Name)] = new(entryUrl.TrimEnd('/'), entryKey);
         }
 
         return map;
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }
