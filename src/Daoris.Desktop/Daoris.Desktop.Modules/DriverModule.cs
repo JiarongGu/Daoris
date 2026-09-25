@@ -172,15 +172,9 @@ public sealed class DriverModule : ModuleBase
             case "SESSION_HISTORY":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-                long? Number(string name) => request.Payload is { } payload
-                    && payload.TryGetProperty(name, out var value)
-                    && value.ValueKind == JsonValueKind.Number
-                        ? value.GetInt64()
-                        : null;
-
-                var page = Number("after") is { } after
+                var page = Number(request, "after") is { } after
                     ? _loop.Events.After(id, after)
-                    : _loop.Events.Page(id, Number("before"), (int)(Number("limit") ?? SessionEvents.PageLimit));
+                    : _loop.Events.Page(id, Number(request, "before"), (int)(Number(request, "limit") ?? SessionEvents.PageLimit));
                 return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest };
             }
 
@@ -189,12 +183,7 @@ public sealed class DriverModule : ModuleBase
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 // Absent means "everything you have": a page opening a drawer has seen nothing, and
                 // making it say so explicitly would be ceremony with a wrong default available.
-                var after = request.Payload is { } payload
-                    && payload.TryGetProperty("after", out var seen)
-                    && seen.ValueKind == JsonValueKind.Number
-                        ? seen.GetInt64()
-                        : 0;
-                var tail = _loop.Output.Tail(id, after);
+                var tail = _loop.Output.Tail(id, Number(request, "after") ?? 0);
                 return new
                 {
                     Session = id,
@@ -214,11 +203,9 @@ public sealed class DriverModule : ModuleBase
                 var chat = _loop.Chat ?? throw NotReady();
 
                 var config = DriverConfig.Load(_loop.ConfigPath);
-                var adapter = request.Payload is { } payload
-                    && payload.TryGetProperty("adapter", out var named)
-                    && named.ValueKind == JsonValueKind.String
-                        ? named.GetString()!
-                        : config.Adapter;
+                // A blank adapter is none named, and the machine's own is the answer. This route took a
+                // blank one as a name (REV3 CLEAN1); the page happens never to send one.
+                var adapter = Optional(request, "adapter") ?? config.Adapter;
 
                 var start = await chat.StartAsync(
                     repository, adapter, config,
@@ -231,9 +218,7 @@ public sealed class DriverModule : ModuleBase
                     profile: Optional(request, "profile"),
                     // The per-conversation tree choice (D51). Absent falls back to the repository's
                     // standing opt-in, which the runner reads from the same config.
-                    ownTree: request.Payload is { } chosen
-                        && chosen.TryGetProperty("ownTree", out var tree)
-                        && tree.ValueKind == JsonValueKind.True,
+                    ownTree: Flag(request, "ownTree"),
                     ct: cancellationToken);
 
                 _loop.Nudge();
@@ -331,9 +316,7 @@ public sealed class DriverModule : ModuleBase
             // the page may ask whenever it likes; `refresh` is the person pressing "look again".
             case "HARNESSES":
             {
-                var refresh = request.Payload is { } payload
-                    && payload.TryGetProperty("refresh", out var again)
-                    && again.ValueKind == JsonValueKind.True;
+                var refresh = Flag(request, "refresh");
 
                 var config = DriverConfig.Load(_loop.ConfigPath);
                 var roster = await _loop.Harnesses.RosterAsync(config, refresh, cancellationToken);
@@ -966,9 +949,7 @@ public sealed class DriverModule : ModuleBase
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var merging = request.Type == "MERGE_SESSION_TREE";
-        var force = request.Payload is { } payload
-            && payload.TryGetProperty("force", out var meant)
-            && meant.ValueKind == JsonValueKind.True;
+        var force = Flag(request, "force");
 
         var service = _loop.Service ?? throw NotReady();
 
@@ -1099,12 +1080,31 @@ public sealed class DriverModule : ModuleBase
         var other => throw new DriverException($"a rule reaches the `machine`, a `workspace` or a `repository`, not `{other}`."),
     };
 
+    // What the page may leave out, read one way (REV3 CLEAN1). The routes read optional values by hand,
+    // and differently: one took an empty `adapter` as a name where this takes it as absent.
+
+    /// <summary>A string the page may send, or null — blank is absent.</summary>
     private static string? Optional(IpcRequest request, string name) =>
         request.Payload is { } payload
         && payload.TryGetProperty(name, out var value)
         && value.ValueKind == JsonValueKind.String
         && value.GetString() is { Length: > 0 } text
             ? text
+            : null;
+
+    /// <summary>A flag the page may send: true only when it says true.</summary>
+    private static bool Flag(IpcRequest request, string name) =>
+        request.Payload is { } payload
+        && payload.TryGetProperty(name, out var value)
+        && value.ValueKind == JsonValueKind.True;
+
+    /// <summary>A whole number the page may send, or null.</summary>
+    private static long? Number(IpcRequest request, string name) =>
+        request.Payload is { } payload
+        && payload.TryGetProperty(name, out var value)
+        && value.ValueKind == JsonValueKind.Number
+        && value.TryGetInt64(out var number)
+            ? number
             : null;
 
     /// <summary>
