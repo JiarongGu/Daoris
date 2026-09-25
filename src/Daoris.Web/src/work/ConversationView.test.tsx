@@ -71,6 +71,22 @@ describe('ConversationView', () => {
     expect(screen.getByText('rejected')).toBeTruthy();
   });
 
+  /**
+   * REV3 web-work F9: a call is drawn while it runs and fails later, on the same card. The card read
+   * "failed" once, when it first drew, so a call that failed mid-turn stayed closed over the line the
+   * reader came for. It opens when it fails — unless the person has already opened or closed it.
+   */
+  it('opens a tool call that fails after it was drawn running', () => {
+    const running = [ev({ kind: 'tool', id: 'c5', title: 'npm test', toolKind: 'execute', status: 'in_progress' })];
+    const { rerender } = view(running);
+    expect(screen.queryByText('3 failing')).toBeNull();
+
+    const failed = [...running, ev({ kind: 'tool', id: 'c5', status: 'failed', output: '3 failing' })];
+    rerender(<ConversationView turns={toTurns(failed).turns} />);
+
+    expect(screen.getByText('3 failing')).toBeTruthy();
+  });
+
   /** D76 §5: the agent's text is content, never markup — raw HTML is shown as the text it is. */
   it('never renders the agent\'s HTML as markup, and opens links outside the window', () => {
     view([ev({ kind: 'message', text: 'see <img src=x onerror="alert(1)"> and [the docs](https://docs.example)' })]);

@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A tool call that failed mid-turn stayed closed (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page. The conversation draws a tool call as it runs, and
+the same card changes when the call ends. The design is "closed by default, open when it failed",
+but the card read "failed" once, when it first drew. A call drawn running that then failed stayed
+closed over the output a reader came for. Only a call that had already failed when the page first
+loaded opened.
+
+**Root cause.** `useState(failed)`: an initial value that was then never read again.
+
+**Fix.** The card follows the call's status until the person opens or closes it. After that, their
+choice stands.
+
+**Verify.** `opens a tool call that fails after it was drawn running` draws the call running,
+redraws it failed, and failed before the fix. Conversation tests 21/21.
+
 ## Starting a session offered the default harness's accounts for any harness (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page. The *Start a session* form lets a person choose the

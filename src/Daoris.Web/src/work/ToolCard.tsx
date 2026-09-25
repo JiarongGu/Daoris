@@ -43,7 +43,10 @@ export function ToolCard({ call, tree }: {
   const { t } = useTranslation();
   const stopped = Boolean(call.stopped);
   const failed = call.status === 'failed' && !stopped;
-  const [open, setOpen] = useState(failed);
+  // Follows the call until the person opens or closes it (REV3): read once at the first draw, a call
+  // drawn running and failing later stayed closed over the line the reader came for.
+  const [chosen, setChosen] = useState<boolean | null>(null);
+  const open = chosen ?? failed;
 
   const diffs = (call.content ?? []).filter((item) => item.type === 'diff');
   const counts = diffs.length > 0
@@ -61,7 +64,7 @@ export function ToolCard({ call, tree }: {
         type="button"
         aria-expanded={open}
         disabled={!hasBody}
-        onClick={() => setOpen((was) => !was)}
+        onClick={() => setChosen(!open)}
         className="flex w-full min-w-0 cursor-pointer items-center gap-2 border-0 bg-transparent px-2.5 py-1.5 text-left disabled:cursor-default"
       >
         <Icon name={hasBody ? (open ? 'chevronDown' : 'chevronRight') : 'tool'} size={13} className="shrink-0 text-ink-faint" />
