@@ -304,6 +304,11 @@ public sealed class DriverModule : ModuleBase
             case "SESSION_DIFF":
                 return await DiffAsync(request, cancellationToken);
 
+            // What a person may `@` in a conversation (CONV4d): the files in the tree the record names.
+            // Desktop-only for the diff's reason — it is read off a checkout — and read-only.
+            case "SESSION_FILES":
+                return await FilesAsync(request, cancellationToken);
+
             // The two acts on a reviewed session (SURF6b, D51 rules 6–7). Both are the PERSON's —
             // nothing merges itself and nothing deletes itself — so both are their own route rather
             // than anything the diff route could do as a side effect.
@@ -909,6 +914,37 @@ public sealed class DriverModule : ModuleBase
                 file.Patch,
             }).ToArray(),
         };
+    }
+
+    /// <summary>
+    /// The files in one session's tree, for the composer's `@` (CONV4d).
+    /// </summary>
+    /// <remarks>
+    /// <b>Unlisted is INFORMATION</b>, in the review's class: a record from another machine names no
+    /// tree here, and a tree that is gone or not a repository of its own has nothing git will answer
+    /// for. One code for both, because the person's next move is the same — type the path, which both
+    /// doors expand as typed (`docs/2026-09-25-message-content-evidence.md`).
+    /// </remarks>
+    private async Task<object?> FilesAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+
+        var service = _loop.Service ?? throw NotReady();
+
+        var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
+        var files = string.IsNullOrWhiteSpace(tree)
+            ? null
+            : await WorkingTree.FilesAsync(tree, cancellationToken);
+        if (files is null)
+        {
+            throw Refusals.Because(
+                Refusals.SessionTreeUnlisted,
+                "git cannot list this session's tree here — its record names no tree on this machine, or "
+                + "the tree is gone or not a repository of its own. A path typed after @ still reaches the agent.",
+                ("session", id));
+        }
+
+        return new { Session = id, files.Files, files.Unlisted };
     }
 
     /// <summary>

@@ -1,7 +1,8 @@
 # What a message can carry, checked against both doors (CONV4c)
 
-**Carried by:** D76 and CONV4c (in the archive), and it is CONV4d's premise (open): both doors expand
-`@path` themselves. A record, not a contract.
+**Carried by:** D76, CONV4c and CONV4d (both in the archive). CONV4d's premise was that both doors
+expand `@path` themselves, and its own section below measures how a path has to be spelled. A
+record, not a contract.
 
 **Date:** 2026-09-25 · **Binaries:** Claude Code 2.1.281 on `PATH`; `claude-code-acp` 0.79.0 (the
 dsh probe's install under `_fixtures/dsh/npm`) · **Cost:** two real sessions of four and six
@@ -63,3 +64,22 @@ dropped.
   file's bytes on the wire inside the message, and a door that cannot take a kind (an embedded blob
   is dropped) would need a second way. A kept file is read by the agent when it needs it, and every
   kind of file travels one way, image or not.
+
+## CONV4d: how a path the composer offers has to be spelled (2026-09-26)
+
+The composer's `@` completion inserts a path the person did not type, so each spelling it can
+produce was measured first. The fixture was a git room holding `plain.md`, `my notes.md`,
+`docs/deep file.md` and `笔记.md`, each naming one word. Every read tool (`Read`, `Glob`, `Grep`,
+`Bash`, `LS`, `Task`) was disallowed, so only the harness's own expansion could answer. The
+binaries were the same as above, and the cost was eight one-line turns.
+
+| Mention | Native door | Protocol door |
+|---|---|---|
+| `@plain.md` | `marigold`, no tool call | `marigold`, no tool call |
+| `@"my notes.md"` | `heliotrope`, no tool call | `heliotrope`, no tool call |
+| `@"docs/deep file.md"` | `juniper`, no tool call | `juniper`, no tool call |
+| `@my\ notes.md` | **not expanded**: the agent said the mention attached nothing | not tried |
+| `@笔记.md` | `saffron`, no tool call | `saffron`, no tool call |
+
+**What Daoris takes from it.** A path with whitespace goes in double quotes, `@"…"`, and every other
+path goes bare, whatever its script. A backslash escape is not a spelling either door reads.

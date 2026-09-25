@@ -68,5 +68,28 @@ export const WithFilesAttached: Story = {
   },
 };
 
+/**
+ * `@` a file (CONV4d): after the `@`, the session tree's files, best first. Arrows move, Enter or Tab
+ * writes the one chosen, Escape leaves what was typed.
+ */
+export const MentioningAFile: Story = {
+  decorators: [(Story) => <div className="pt-72"><Story /></div>],
+  args: {
+    draft: 'read @de',
+    onDraft: () => {},
+    mentions: {
+      files: ['README.md', 'docs/design.md', 'docs/deep file.md', 'src/engine/render.ts'],
+      unlisted: 0,
+      refusal: null,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const box = canvasElement.querySelector<HTMLTextAreaElement>('textarea');
+    if (!box) return;
+    box.focus();
+    box.setSelectionRange(box.value.length, box.value.length);
+  },
+};
+
 /** A door that carries only text cannot see a turn end, so it offers no stop — never one that is refused. */
 export const TurnRunningOnATextDoor: Story = { args: { taking: true, stoppable: false, onStopTurn: () => {} } };

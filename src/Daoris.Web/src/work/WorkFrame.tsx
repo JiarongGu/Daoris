@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  useSessionTurns, useStartChat, useStopSession,
+  useSessionTurns, useStartChat, useStopSession, useTreeFiles,
 } from '../shell';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -134,6 +134,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // Where its turns stand, as the driver holds them: the stop and the queue follow this, not the
   // record, which learns a turn began only when its first event lands (CONV4a).
   const turns = useSessionTurns(talking ? attended!.id : null);
+  // The tree's files for `@` (CONV4d), asked for only while the person is writing a mention.
+  const [mentioning, setMentioning] = useState(false);
+  const treeFiles = useTreeFiles(talking ? attended!.id : null, mentioning);
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that. 🔴 And only a record this
@@ -366,6 +369,12 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
             stopping={cancelTurn.isPending}
             onStopTurn={onStopTurn}
+            mentions={{
+              files: treeFiles.data?.files ?? null,
+              unlisted: treeFiles.data?.unlisted ?? 0,
+              refusal: treeFiles.error ? sentence(treeFiles.error) : null,
+            }}
+            onMentioning={setMentioning}
             onSend={onSend}
             onFinish={() => end.mutate(attended.id, {
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),

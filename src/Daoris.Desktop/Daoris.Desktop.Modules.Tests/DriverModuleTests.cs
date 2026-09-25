@@ -95,6 +95,21 @@ public sealed class DriverModuleTests : Bridge
         await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "SESSION_DIFF", new { }));
     }
 
+    /// <summary>
+    /// The files a person may `@` (CONV4d) are found through the session's record, as its review is —
+    /// so on a cold start the answer is the same sentence, never an empty list, which would read as a
+    /// tree with nothing in it.
+    /// </summary>
+    [Fact]
+    public async Task Asking_what_a_session_tree_holds_before_the_driver_is_up_is_a_sentence()
+    {
+        var refusal = await RefusalAsync(Module(), "SESSION_FILES", new { id = "s1a2b3c4" });
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+        Assert.Contains("still coming up", refusal);
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "SESSION_FILES", new { }));
+    }
+
     [Fact]
     public async Task Opting_a_repository_in_writes_the_file_the_loop_reads()
     {

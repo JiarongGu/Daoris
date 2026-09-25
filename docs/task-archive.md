@@ -6016,3 +6016,51 @@ own, and `platform-ux.md` §4's amendments restated as the body's rules.
 Gates: CLI 475 → 478, service 497 → 502, driver 681 → 685, modules 129 → 128 (the removed `STATE`
 route's test went), devkit 80, web unit 972 → 975, Playwright 21/21, family 279/279, deploy 39/39, release
 66/66.
+
+## CONV4d — `@` a file in the session's tree (2026-09-26)
+
+- [x] ~~**CONV4d — `@` a file in the session's tree.** Measured: both doors expand `@path` text
+  themselves, so the wire needs nothing. The work is the completion: a bridge call listing the
+  tree's files, and the composer offering them after `@`.~~
+✅ **done 2026-09-26**, the last part of CONV4. D76 carries the amendment.
+
+- **Measured first** (`docs/2026-09-25-message-content-evidence.md`, § CONV4d). Both doors were
+  probed with every read tool disallowed, eight one-line turns in all.
+  - `@"my notes.md"` and `@"docs/deep file.md"` expand on both doors.
+  - `@笔记.md` expands bare on both.
+  - `@my\ notes.md` does not expand on the native door.
+- **The driver:** `WorkingTree.FilesAsync` returns what git says the tree holds: tracked files
+  still there, plus new ones git does not ignore. It reads with `-z`, because git otherwise quotes a
+  CJK name as octal escapes. It is bounded at 20,000 paths, and the rest are counted. It sits behind
+  the diff's "git walks up" guard, now one helper for both.
+- **Both doors (D50):** `SESSION_FILES` is read-only and desktop-only, like the diff. It refuses in
+  one catalogued sentence (`SESSION_TREE_UNLISTED`), saying the typed path still reaches the agent.
+  A terminal types the path, and both doors expand it.
+- **The page:**
+  - `work/mentions.ts` holds the pure parts: the mention at the caret, the ranking, the spelling and
+    the insertion.
+  - `MentionList` is a new molecule with a story per state.
+  - The composer offers the files after an `@`. The arrows move, Enter or Tab writes the chosen one,
+    and Escape leaves what was typed. The box keeps the focus and announces the row through
+    `aria-activedescendant`.
+  - The frame lists the tree only while a mention is being written (`useTreeFiles`).
+  - The placeholder says *@ names a file*.
+- **Looked at** on the scratch window with real sessions:
+  - On Claude Code's door, the untracked `design notes.md` was taken as `@"design notes.md"` and
+    answered *heliotrope*, with no tool call.
+  - On `claude-code-acp`, in 中文 and dark, `@设计笔记.md` was answered *saffron*, with no tool call.
+  - The `engine` fixture is not a repository of its own, since git walks up to Daoris, and it
+    showed the refusal. Unguarded, it would have offered Daoris's own 770 files.
+  - A long 中文 name, eight folders deep: the folder gives way far faster than the name, and the
+    list never scrolls sideways. As first written, the name could not shrink at all.
+- **The window found two defects, both fixed test-first:**
+  - React reads the selection on the same keydown that takes a file, and that reading, taken as the
+    caret, reopened the list on the half-word just replaced. A second test covers the case where
+    taking the file changes no text, which would otherwise leave the caret jumping back later.
+  - Letters scattered across folder names (`.claude/rules/…`) filled seven of the eight rows for
+    `des`. They are now a last resort, offered only when nothing better matched.
+- **Found running every declared gate:** the `code-map` gate had been red on main since REV3, which
+  corrected the generated map by hand. The FIX-LOG has it.
+
+Gates: CLI 478, driver 685 → 689, modules 128 → 129, service 502, web unit 975 → 1006, code-map
+green, Playwright 21/21, family 279/279, deploy 39/39.

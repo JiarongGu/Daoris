@@ -239,15 +239,7 @@ public static class WorkingTree
     {
         if (string.IsNullOrWhiteSpace(before)) return null;
 
-        // 🔴 git WALKS UP. Run it in a directory that is not a repository and it answers for whatever
-        // repository encloses it — so a session tree that has since been deleted would quietly return
-        // the diff of the parent checkout, presented as that session's work. Found by a test that
-        // pointed at an empty directory inside this repository and got a clean exit code back.
-        // Requiring the top level to BE this path also rejects a subdirectory, which the driver never
-        // passes and which would silently narrow the review if it ever did.
-        var (topCode, topOut, _) = await GitAsync(
-            root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
-        if (topCode != 0 || !SamePath(topOut.Trim(), root)) return null;
+        if (!await IsTopLevelAsync(root, ct).ConfigureAwait(false)) return null;
 
         // `--numstat` and `--name-status` in one pass would need parsing two formats out of one
         // stream; two cheap calls read plainly and cannot mis-align, because each is keyed by path.
@@ -322,6 +314,80 @@ public static class WorkingTree
               + "`git diff` in the tree has all of it.";
 
         return new TreeDiff(files, truncated, before);
+    }
+
+    /// <summary>The files a tree holds, for a person to `@` one (CONV4d).</summary>
+    /// <param name="Files">Tree-relative, with forward slashes, in ordinal order.</param>
+    /// <param name="Unlisted">How many more the bound left out — counted, so the page can say so.</param>
+    public sealed record TreeFiles(IReadOnlyList<string> Files, int Unlisted);
+
+    /// <summary>How many paths a completion list is handed before the rest are only counted.</summary>
+    /// <remarks>
+    /// The console's rule again (design §5): a tree has no upper size, so the bound is stated. A path
+    /// the list leaves out can still be typed, and both doors expand it as typed.
+    /// </remarks>
+    public const int FileLimit = 20_000;
+
+    /// <summary>
+    /// What a person may mention in this tree: every file git tracks that is still there, and every new
+    /// one it does not ignore — or null when git cannot say.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Untracked files are in.</b> A file the agent wrote a minute ago is as mentionable as one
+    /// from last year, and the harness expands either. What git ignores is out, which is what keeps a
+    /// dependency folder from burying the tree's own files.</para>
+    ///
+    /// <para><b>A tracked file deleted from the tree is out</b>: it is still in the index, and no
+    /// harness can expand a file that is not there.</para>
+    ///
+    /// <para>`-z` rather than lines, because git quotes a name outside ASCII as octal escapes
+    /// otherwise, and a completion would then offer a file nobody has.</para>
+    /// </remarks>
+    public static async Task<TreeFiles?> FilesAsync(string root, CancellationToken ct = default) =>
+        await FilesAsync(root, FileLimit, ct).ConfigureAwait(false);
+
+    /// <inheritdoc cref="FilesAsync(string, CancellationToken)"/>
+    public static async Task<TreeFiles?> FilesAsync(string root, int limit, CancellationToken ct = default)
+    {
+        if (!await IsTopLevelAsync(root, ct).ConfigureAwait(false)) return null;
+
+        var (code, stdout, _) = await GitAsync(
+            root, ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], ct).ConfigureAwait(false);
+        if (code != 0) return null;
+
+        var (deletedCode, deletedOut, _) = await GitAsync(root, ["ls-files", "-z", "--deleted"], ct).ConfigureAwait(false);
+        var deleted = deletedCode == 0
+            ? new HashSet<string>(deletedOut.Split('\0', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal)
+            : [];
+
+        // A conflicted file is in the index once per stage, so the set is taken before the order.
+        var files = stdout.Split('\0', StringSplitOptions.RemoveEmptyEntries)
+            .Where(path => !deleted.Contains(path))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        return files.Count <= limit
+            ? new TreeFiles(files, 0)
+            : new TreeFiles(files[..limit], files.Count - limit);
+    }
+
+    /// <summary>
+    /// 🔴 Whether <paramref name="root"/> is the top of a repository of its own, which is what every
+    /// question about a session's tree has to confirm before git's answer means anything.
+    /// </summary>
+    /// <remarks>
+    /// git WALKS UP. Run it in a directory that is not a repository and it answers for whatever
+    /// repository encloses it — so a session tree that has since been deleted would quietly return the
+    /// diff of the parent checkout, presented as that session's work. Found by a test that pointed at
+    /// an empty directory inside this repository and got a clean exit code back. Requiring the top level
+    /// to BE this path also rejects a subdirectory, which the driver never passes and which would
+    /// silently narrow the answer if it ever did.
+    /// </remarks>
+    private static async Task<bool> IsTopLevelAsync(string root, CancellationToken ct)
+    {
+        var (code, stdout, _) = await GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
+        return code == 0 && SamePath(stdout.Trim(), root);
     }
 
     /// <summary>

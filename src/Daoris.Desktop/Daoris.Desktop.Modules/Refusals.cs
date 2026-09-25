@@ -79,6 +79,13 @@ public static class Refusals
     public const string SessionRangeUnreadable = "SESSION_RANGE_UNREADABLE";
 
     /// <summary>
+    /// The files a person may `@` asked for where git cannot list them (CONV4d): the record names no
+    /// tree here, or the tree is not a repository of its own. INFORMATION, like the review's: a path
+    /// typed after `@` still reaches the agent, because both doors expand it as typed.
+    /// </summary>
+    public const string SessionTreeUnlisted = "SESSION_TREE_UNLISTED";
+
+    /// <summary>
     /// A window name this build does not open (SURF8). Refused rather than sanitised: the name
     /// becomes both an address and a filename, and "nearly a window name" is not one.
     /// </summary>
@@ -97,7 +104,7 @@ public static class Refusals
         RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, HarnessActionIdle,
         HarnessActionBusy, DriverRefused,
         SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, SessionNoBase, SessionRangeUnreadable,
-        HarnessProfileNeeded, WindowUnknown,
+        SessionTreeUnlisted, HarnessProfileNeeded, WindowUnknown,
         PluginUnknown, PluginActionUnknown, PluginBusy,
     ];
 

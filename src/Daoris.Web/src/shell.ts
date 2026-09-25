@@ -1021,6 +1021,32 @@ export const useSessionDiff = (session: string | null) => {
   });
 };
 
+/** The files a person may `@` in a session's tree, and how many more the host's bound left out. */
+export type TreeFiles = { session: string; files: string[]; unlisted: number };
+
+/**
+ * The files in the session's tree, for the composer's `@` (CONV4d).
+ *
+ * @remarks
+ * **Asked for only while a mention is being written** (`wanted`), and then kept by session, so the
+ * list is one `git` call per tree rather than one per keystroke. It goes stale after a while, because
+ * the agent writes files as it works and a file it wrote a minute ago is worth offering.
+ *
+ * Shell-only for the diff's reason: it is read off a checkout on this machine. A refusal is the
+ * host's sentence, and it says the typed path still reaches the agent.
+ */
+export const useTreeFiles = (session: string | null, wanted: boolean) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.treeFiles(session ?? ''),
+    queryFn: () => call<TreeFiles>('SESSION_FILES', { id: session }),
+    enabled: isAvailable && Boolean(session) && wanted,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+};
+
 /**
  * The two acts on a reviewed session (SURF6b, D51 rules 6–7).
  *

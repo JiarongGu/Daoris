@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The code map was corrected by hand, so its gate was red on main and nothing said so (2026-09-26)
+
+**Symptom.** Found by CONV4d running every declared gate: `map --check` said module `daoris-web`
+had changed. Regenerating it would have put back the old summary, *convergence first*, which REV3
+had corrected to *Overview first (D40), sessions a view (D66)*.
+
+**Root cause.** `docs/code-map.json` is generated from each project's own description, and REV3
+(`3042a19`) corrected the web module's sentence in the generated file rather than in
+`src/Daoris.Web/package.json`, where the generator reads it. The `code-map` gate is declared in
+`daoris.gates.json` but is not part of `npm run verify`, so no gate run since REV3 had run it.
+
+**Fix.** The corrected sentence is now the package's own description, and the map regenerates to
+exactly what was committed.
+
+**Verification.** `map --check` red before the fix, green after, with `docs/code-map.json`
+unchanged from HEAD.
+
+**The trap to inherit.** A generated file's correction belongs in its source. And `verify` is the CLI
+and the universal gates only: every other gate `daoris.gates.json` declares, `code-map` among them,
+runs only when someone runs it.
+
 ## The desktop wrote an edit over a home file it could not read, dropping what the file held (2026-09-25)
 
 **Symptom.** Found by CLEAN1, confirming the driver's *one unreadable-config convention* item. REV3

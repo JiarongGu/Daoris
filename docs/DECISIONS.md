@@ -3240,3 +3240,22 @@ Rejected:
   person's (D32 in spirit; the tree guard in fact).
 - **`additionalDirectories`.** INT4j already refused it, because under `acceptEdits` it would also let
   edits there through unasked.
+
+**Amended 2026-09-26 (CONV4d): `@` completes from what git says the tree holds, and writes a path
+the way both doors read it.** Measured first, on both doors
+(`docs/2026-09-25-message-content-evidence.md`, § CONV4d).
+- **The files are git's answer** for the tree the record names: tracked files still there, and new
+  ones git does not ignore. This comes from one bridge call, `SESSION_FILES`, read-only and
+  desktop-only like the diff, behind the same "git walks up" guard. A tree that is not a repository
+  of its own is refused in a sentence, and the typed path still goes.
+  Rejected: walking the folder, which knows no ignore rules and would bury a tree's own files under
+  its dependencies.
+- **Asked for once per mention and ranked on the page.** The bound is 20,000 paths, and what it
+  leaves out is counted. Rejected: filtering on the host per keystroke. It is a `git` process per
+  letter for a list that changes only as the agent writes, and a tree that size is rare enough to
+  state rather than engineer for.
+- **A path with whitespace is written `@"…"`**, and every other path bare, whatever its script.
+  Both doors expand the quoted form, and neither expands a backslash escape (measured).
+- **Directories and other sessions are not offered.** The reference offers both. Neither was
+  measured on either door, and a spelling nobody checked is how a completion offers what the
+  harness then ignores.

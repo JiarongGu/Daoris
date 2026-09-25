@@ -43,6 +43,8 @@ export const keys = {
   rules: ['rules'] as const,
   /** One session's landed work, read off the checkout — shell-only for the console's reason (SURF6). */
   diff: (session: string) => ['diff', session] as const,
+  /** The files in one session's tree, for `@` (CONV4d) — shell-only for the same reason. */
+  treeFiles: (session: string) => ['tree-files', session] as const,
   entry: (id: string) => ['entry', id] as const,
   convergence: (minimumSimilarity: number, workspace: string | null) =>
     ['convergence', minimumSimilarity, workspace ?? '*'] as const,

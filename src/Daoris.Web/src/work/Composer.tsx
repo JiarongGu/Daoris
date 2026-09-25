@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
@@ -6,6 +6,14 @@ import { size } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Icon, Tip } from '../ui';
 import type { ChatMessage } from './conversation';
+import { MentionList } from './MentionList';
+import { mentionAt, rankMentions, withMention } from './mentions';
+
+/**
+ * What the frame knows of the session's tree, for `@` (CONV4d): its files, or null while they are
+ * being asked for; how many the host's bound left out; and the host's sentence when it cannot list them.
+ */
+export type MentionSource = { files: string[] | null; unlisted: number; refusal: string | null };
 
 /**
  * The input a person talks to a session through (SES2), with its **two distinct endings** and, since
@@ -36,6 +44,13 @@ import type { ChatMessage } from './conversation';
  * are no words — and are let go of once sent. They are the form's own and last one message: switching
  * sessions starts a fresh form, and a reload loses them, because a browser's file cannot be kept.
  *
+ * **`@` names a file in the session's tree** (CONV4d). The mention is text, and both doors expand it
+ * as typed, so the form only helps write it: after an `@` it offers the tree's files (`mentions`),
+ * arrows move, Enter or Tab writes the one chosen — quoted when it holds a space, the spelling both
+ * doors read — and Escape leaves what was typed. While the list offers something, Enter is the list's
+ * and not a send. The frame is told when a mention is being written (`onMentioning`), so the tree is
+ * listed only then.
+ *
  * **A refusal renders verbatim**, as every service and driver sentence does: "nothing is listening"
  * is the ledger's answer, and rewriting it here would be the second copy of a sentence.
  *
@@ -48,7 +63,7 @@ import type { ChatMessage } from './conversation';
  */
 export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
-  queued = [], taking = false, stoppable = false, stopping = false,
+  queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning,
   onSend, onFinish, onStop, onStopTurn,
 }: {
   /** Whether anything is listening. False is an ending, not a disabled state. */
@@ -68,6 +83,10 @@ export function Composer({
   /** Whether this session's door can stop a turn at all. */
   stoppable?: boolean;
   stopping?: boolean;
+  /** The session tree's files, for `@`. Absent, an `@` is only text. */
+  mentions?: MentionSource;
+  /** Told whether a mention is being written, so the frame asks for the files only then. */
+  onMentioning?: (writing: boolean) => void;
   /** The words and the files attached to them. */
   onSend: (text: string, files: File[]) => void;
   onFinish: () => void;
@@ -83,6 +102,86 @@ export function Composer({
   const attach = useCarry(carry, setCarry, live);
   const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const files = carry.files;
+
+  // `@` a file (CONV4d): where the caret is decides whether a mention is being written.
+  const field = useRef<HTMLTextAreaElement>(null);
+  const listId = useId();
+  const [caret, setCaret] = useState(0);
+  const [active, setActive] = useState(0);
+  // The mention the person pressed Escape on, by where its `@` stands. It stays closed until the caret
+  // leaves it, and a new `@` is a new question.
+  const [dismissed, setDismissed] = useState<number | null>(null);
+  // Where the caret goes once a chosen file is in the box — after the box holds the new text.
+  const placeCaret = useRef<number | null>(null);
+
+  const mention = mentions && live ? mentionAt(text, caret) : null;
+  const open = mention !== null && mention.start !== dismissed;
+  const options = open && mentions?.files ? rankMentions(mentions.files, mention.query) : [];
+  // The selection follows the list, as the palette's does: an index past the end would take nothing.
+  const chosen = Math.min(active, Math.max(0, options.length - 1));
+  const offering = open && options.length > 0;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    onMentioning?.(true);
+    return () => onMentioning?.(false);
+  }, [open, onMentioning]);
+
+  useLayoutEffect(() => {
+    if (placeCaret.current === null) return;
+    field.current?.setSelectionRange(placeCaret.current, placeCaret.current);
+    placeCaret.current = null;
+  }, [text]);
+
+  const follow = (box: HTMLTextAreaElement) => {
+    // 🔴 While a taken file is on its way into the box, the box still holds the text before it. React
+    // reads the selection on the same keydown that takes one (seen on the window), and that reading,
+    // taken as the caret, put it back inside the mention and opened the list again.
+    if (placeCaret.current !== null) return;
+    setCaret(box.selectionStart);
+    if (!mentionAt(box.value, box.selectionStart)) setDismissed(null);
+  };
+
+  const pick = (path: string) => {
+    if (!mention) return;
+    const next = withMention(text, mention, path);
+    if (next.text === text) {
+      // The file was already written in full: no new text will arrive to place the caret after, so it
+      // is placed now — left pending, it would jump back here on the next keystroke.
+      field.current?.setSelectionRange(next.caret, next.caret);
+    } else {
+      placeCaret.current = next.caret;
+      setText(next.text);
+    }
+    setCaret(next.caret);
+    setActive(0);
+  };
+
+  // The list's keys first, while it offers something; then the form's own.
+  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (offering && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      event.preventDefault();
+      const by = event.key === 'ArrowDown' ? 1 : -1;
+      // Wraps, because a list you can leave by the bottom is one you have to scroll back up.
+      setActive(((chosen + by) % options.length + options.length) % options.length);
+      return;
+    }
+    if (offering && ((event.key === 'Enter' || event.key === 'Tab') && !event.shiftKey)) {
+      event.preventDefault();
+      pick(options[chosen]!);
+      return;
+    }
+    if (open && event.key === 'Escape') {
+      // The list's Escape, and nobody else's.
+      event.preventDefault();
+      event.stopPropagation();
+      setDismissed(mention.start);
+      return;
+    }
+    // Enter sends, because this is a conversation; a newline needs the modifier, because a paste of
+    // several lines is one message and should stay one.
+    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); say(); }
+  };
 
   const say = () => {
     const message = text.trim();
@@ -152,26 +251,49 @@ export function Composer({
         </p>
       )}
 
-      <label className="grid gap-1 text-small text-ink-faint">
-        <span className="sr-only">{t('work.composer.label')}</span>
-        <textarea
-          value={text}
-          disabled={!live}
-          aria-label={t('work.composer.label')}
-          onChange={(event) => setText(event.target.value)}
-          // Enter sends, because this is a conversation; a newline needs the modifier, because a
-          // paste of several lines is one message and should stay one.
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); say(); }
-          }}
-          placeholder={t('work.composer.placeholder')}
-          className={cn(
-            'min-h-14 resize-y rounded-control border bg-raised px-2.5 py-1.5 text-body text-ink transition-colors duration-(--speed) disabled:opacity-55',
-            // Where a dragged file will go: the whole form takes it, and the box lights up to say so.
-            attach.dragging ? 'border-accent bg-accent-soft' : 'border-line-strong',
-          )}
-        />
-      </label>
+      <div className="relative grid">
+        {mention && open && mentions && (
+          <MentionList
+            id={listId}
+            options={options}
+            active={chosen}
+            query={mention.query}
+            listing={mentions.files === null && !mentions.refusal}
+            refusal={mentions.refusal}
+            empty={mentions.files?.length === 0}
+            unlisted={mentions.unlisted}
+            onPick={pick}
+            onActive={setActive}
+          />
+        )}
+        <label className="grid gap-1 text-small text-ink-faint">
+          <span className="sr-only">{t('work.composer.label')}</span>
+          <textarea
+            ref={field}
+            value={text}
+            disabled={!live}
+            aria-label={t('work.composer.label')}
+            // The files are the box's list, and the box keeps the focus: a screen reader follows the
+            // arrows through `aria-activedescendant`, as the palette's does.
+            aria-autocomplete={mentions ? 'list' : undefined}
+            aria-controls={offering ? listId : undefined}
+            aria-activedescendant={offering ? `${listId}-${chosen}` : undefined}
+            onChange={(event) => {
+              setText(event.target.value);
+              setActive(0);
+              follow(event.target);
+            }}
+            onSelect={(event) => follow(event.currentTarget)}
+            onKeyDown={onKeyDown}
+            placeholder={t('work.composer.placeholder')}
+            className={cn(
+              'min-h-14 resize-y rounded-control border bg-raised px-2.5 py-1.5 text-body text-ink transition-colors duration-(--speed) disabled:opacity-55',
+              // Where a dragged file will go: the whole form takes it, and the box lights up to say so.
+              attach.dragging ? 'border-accent bg-accent-soft' : 'border-line-strong',
+            )}
+          />
+        </label>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         {/* The form's submit, and nothing else: its submit handler is the one path a press takes.

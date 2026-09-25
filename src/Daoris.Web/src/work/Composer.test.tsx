@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
@@ -224,5 +224,147 @@ describe('the composer', () => {
     show();
     expect(screen.getByRole('button', { name: '发送' })).toBeInTheDocument();
     await i18n.changeLanguage('en');
+  });
+});
+
+/**
+ * CONV4d: `@` a file in the session's tree. The mention is text and both doors expand it, so the
+ * composer only helps write it — the files come from the frame, which asks for them only while one is
+ * being written.
+ */
+describe('a mention', () => {
+  const tree = { files: ['README.md', 'docs/design.md', 'docs/deep file.md', 'src/main.ts'], unlisted: 0, refusal: null };
+  const files = () => screen.getByRole('listbox', { name: "files in this session's tree" });
+
+  it('offers the tree\'s files after @, and Enter writes the one chosen instead of sending', async () => {
+    const send = vi.fn();
+    show({ onSend: send, mentions: tree });
+
+    await userEvent.type(box(), 'read @de');
+    expect(within(files()).getAllByRole('option').map((option) => option.getAttribute('aria-label')))
+      .toEqual(['docs/design.md', 'docs/deep file.md', 'README.md']);
+    // The box points at the one Enter would take, so a screen reader follows the arrows.
+    expect(box()).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: 'docs/design.md' }).id);
+
+    await userEvent.keyboard('{Enter}');
+    expect(send).not.toHaveBeenCalled();
+    expect(box()).toHaveValue('read @docs/design.md ');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    await userEvent.type(box(), 'please{Enter}');
+    expect(send).toHaveBeenCalledWith('read @docs/design.md please', []);
+  });
+
+  /**
+   * Seen on the window (CONV4d): React reads the selection on the same keydown that takes a file, and
+   * that reading is the box BEFORE the file is in it. Taken as the caret, it put the caret back inside
+   * the mention, and the list opened again on the half-word it had just replaced.
+   */
+  it('closes once a file is taken, whatever the selection said on the way', () => {
+    show({ mentions: tree });
+    const field = box() as HTMLTextAreaElement;
+    field.focus();
+    fireEvent.change(field, { target: { value: 'read @des' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    expect(field).toHaveValue('read @docs/design.md ');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  /** Taking the file already written in full changes no text — and must still close, and let go of the caret. */
+  it('takes a file already written in full, and keeps following the caret after', async () => {
+    show({ mentions: tree });
+
+    await userEvent.type(box(), 'read @docs/design.md please');
+    await userEvent.keyboard('{ArrowLeft>7/}');
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    await userEvent.keyboard('{Enter}');
+
+    expect(box()).toHaveValue('read @docs/design.md please');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    await userEvent.keyboard('{End} @ma');
+    expect(box()).toHaveValue('read @docs/design.md please @ma');
+    expect(screen.getByRole('option', { name: 'src/main.ts' })).toBeInTheDocument();
+  });
+
+  it('moves with the arrows, takes Tab as well, and quotes a path with a space', async () => {
+    show({ mentions: tree });
+
+    await userEvent.type(box(), '@de');
+    await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('option', { name: 'docs/deep file.md' })).toHaveAttribute('aria-selected', 'true');
+    await userEvent.keyboard('{Tab}');
+
+    // Both doors expand the quoted spelling and neither the escaped one (measured, CONV4d).
+    expect(box()).toHaveValue('@"docs/deep file.md" ');
+  });
+
+  it('takes a click without losing the box', async () => {
+    show({ mentions: tree });
+
+    await userEvent.type(box(), 'see @ma');
+    await userEvent.click(screen.getByRole('option', { name: 'src/main.ts' }));
+
+    expect(box()).toHaveValue('see @src/main.ts ');
+    expect(box()).toHaveFocus();
+  });
+
+  it('closes on Escape, and Enter then sends what was typed', async () => {
+    const send = vi.fn();
+    show({ onSend: send, mentions: tree });
+
+    await userEvent.type(box(), 'mail @me');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    await userEvent.keyboard('{Enter}');
+    expect(send).toHaveBeenCalledWith('mail @me', []);
+  });
+
+  it('tells the frame while one is being written, so the files are asked for only then', async () => {
+    const mentioning = vi.fn();
+    show({ mentions: tree, onMentioning: mentioning });
+
+    await userEvent.type(box(), 'no mention yet');
+    expect(mentioning).not.toHaveBeenCalledWith(true);
+
+    await userEvent.type(box(), ' @');
+    expect(mentioning).toHaveBeenLastCalledWith(true);
+    await userEvent.type(box(), 'x ');
+    expect(mentioning).toHaveBeenLastCalledWith(false);
+  });
+
+  it('says what it is doing when it has no files to offer', async () => {
+    const { rerender } = show({ mentions: { files: null, unlisted: 0, refusal: null } });
+    await userEvent.type(box(), '@eng');
+    expect(screen.getByText("listing this tree's files…")).toBeInTheDocument();
+
+    const again = (mentions: Parameters<typeof Composer>[0]['mentions']) => rerender(
+      <Tooltip.Provider>
+        <Composer live onSend={() => {}} onFinish={() => {}} onStop={() => {}} mentions={mentions} />
+      </Tooltip.Provider>,
+    );
+
+    again({ files: ['README.md'], unlisted: 0, refusal: null });
+    expect(screen.getByText('no file in this tree matches “eng”.')).toBeInTheDocument();
+
+    // The host's sentence, verbatim: the typed path still reaches the agent.
+    again({ files: null, unlisted: 0, refusal: 'git cannot list this session’s files here.' });
+    expect(screen.getByText('git cannot list this session’s files here.')).toBeInTheDocument();
+
+    again({ files: ['engine.cs'], unlisted: 3, refusal: null });
+    expect(screen.getByRole('option', { name: 'engine.cs' })).toBeInTheDocument();
+    expect(screen.getByText(/3 more files are not offered here/)).toBeInTheDocument();
+  });
+
+  it('is only text where nothing offers files, and never opens on an address', async () => {
+    const { unmount } = show();
+    await userEvent.type(box(), '@readme');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    unmount();
+
+    show({ mentions: tree });
+    await userEvent.type(box(), 'mail me@README');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 });

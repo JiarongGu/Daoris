@@ -569,6 +569,44 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * CONV4d: the tree's files are asked for only once a mention is being written, so a conversation
+   * nobody mentions a file in costs no `git` listing at all — and then they are offered under the `@`.
+   */
+  it('asks the driver for the tree\'s files only once an @ is written, and offers them', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_FILES') return { session: 'c0ffee11', files: ['README.md', 'src/engine.cs'], unlisted: 0 };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    await userEvent.type(await screen.findByLabelText('message'), 'look at ');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_FILES', expect.anything());
+
+    await userEvent.type(screen.getByLabelText('message'), '@eng');
+    await userEvent.click(await screen.findByRole('option', { name: 'src/engine.cs' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_FILES', { payload: { id: 'c0ffee11' } });
+    expect(screen.getByLabelText('message')).toHaveValue('look at @src/engine.cs ');
+  });
+
+  /** Unlisted is information: the host's sentence, where the files would be, and the typed path still goes. */
+  it('says why the tree cannot be listed, in the host\'s words, where the files would be', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type !== 'SESSION_FILES') return DRIVER_STATE;
+      throw Object.assign(new Error('fallback'), {
+        code: 'SESSION_TREE_UNLISTED', parameters: { session: 'c0ffee11' },
+      });
+    });
+
+    show('c0ffee11');
+    await userEvent.type(await screen.findByLabelText('message'), '@eng');
+
+    expect(await screen.findByText(/A path you type after @ still reaches the agent/)).toBeInTheDocument();
+  });
+
+  /**
    * CONV4c: a file cannot come back into the box — the page no longer holds its bytes — so a stop that
    * hands back a message with files says which were not sent, for the person to attach again.
    */
