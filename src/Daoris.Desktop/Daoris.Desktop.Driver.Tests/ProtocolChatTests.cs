@@ -30,7 +30,7 @@ public sealed class ProtocolChatTests : IDisposable
 
     private string Heard => Path.Combine(_home, "heard.txt");
 
-    private string[] HeardLines() => File.Exists(Heard) ? File.ReadAllLines(Heard) : [];
+    private string[] HeardLines() => StubFile.Lines(Heard);
 
     /// <summary>
     /// The whole conversation, end to end: one handshake and one session; two messages sent back to back

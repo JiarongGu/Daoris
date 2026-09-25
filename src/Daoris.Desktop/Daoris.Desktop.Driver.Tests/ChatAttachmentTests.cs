@@ -27,7 +27,7 @@ public sealed class ChatAttachmentTests : IDisposable
 
     private string Heard => Path.Combine(_home, "heard.txt");
 
-    private string HeardText() => File.Exists(Heard) ? File.ReadAllText(Heard) : "";
+    private string HeardText() => StubFile.Text(Heard);
 
     private static ChatUpload Upload(string name, string content) => new(name, Encoding.UTF8.GetBytes(content));
 

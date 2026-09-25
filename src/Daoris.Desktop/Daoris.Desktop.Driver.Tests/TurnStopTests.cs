@@ -34,7 +34,7 @@ public sealed class TurnStopTests : IDisposable
 
     private string Heard => Path.Combine(_home, "heard.txt");
 
-    private string[] HeardLines() => File.Exists(Heard) ? File.ReadAllLines(Heard) : [];
+    private string[] HeardLines() => StubFile.Lines(Heard);
 
     /// <summary>
     /// 🔴 The native door holds a mid-turn message until the turn's <c>result</c>, and the record takes

@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A chat test failed when its poll landed inside the stub's write (2026-09-25)
+
+**Symptom.** REV3's final driver run failed one of 679 tests,
+`ProtocolChatTests.A_chat_on_the_protocol_door_is_one_session_and_each_message_a_turn_in_order`,
+with *the process cannot access the file … heard.txt because it is being used by another process*.
+Nothing in the driver was wrong.
+
+**Root cause.** The test polls the file its stub agent appends to. `File.ReadAllLines` opens with
+`FileShare.Read`, meaning nobody else may write while it reads, and Windows refuses that open while
+node holds the file for writing. A poll that landed inside an append threw instead of reading.
+`TurnStopTests` and `ChatAttachmentTests` polled the same way.
+
+**Fix.** A `StubFile` test helper opens the file sharing read and write, as the writer does. All
+three suites read their stub's file through it.
+
+**Verify.** `StubFileTests` holds a file open for writing the way node does, and asserts that
+`File.ReadAllLines` throws while `StubFile.Lines` reads the whole file. The throw reproduces on
+every run, not by timing. The three chat suites pass (22/22), and so does the full driver suite.
+
 ## The family gate repaired the examples it judged, and one check passed for another reason (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the tools. Phase 1 of the family rehearsal ran `sync` in the
