@@ -19,6 +19,11 @@ public sealed class InMemoryKnowledgeStore : IKnowledgeStore
     public Task<IReadOnlyList<KnowledgeEntry>> AllAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<KnowledgeEntry>>(_byRepository.Values.SelectMany(e => e).ToList());
 
+    public Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyDictionary<string, int>>(_byRepository
+            .Where(pair => pair.Value.Count > 0)
+            .ToDictionary(pair => pair.Key, pair => pair.Value.Count, StringComparer.Ordinal));
+
     public Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default) =>
         Task.FromResult(_byRepository.Values.SelectMany(e => e)
             .FirstOrDefault(e => string.Equals(e.Id, id, StringComparison.Ordinal)));

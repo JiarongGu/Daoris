@@ -39,6 +39,9 @@ public interface IKnowledgeStore
 
     /// <summary>One entry by its <see cref="KnowledgeEntry.Id"/>, or null.</summary>
     Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default);
+
+    /// <summary>How many entries each repository holds — a count, never a read of every body (REV3 C1).</summary>
+    Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default);
 }
 
 /// <summary>

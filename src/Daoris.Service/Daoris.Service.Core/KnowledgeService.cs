@@ -239,9 +239,7 @@ public sealed class KnowledgeService(
     {
         await ReloadRegistryAsync(ct).ConfigureAwait(false);
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        var counts = (await store.AllAsync(ct).ConfigureAwait(false))
-            .GroupBy(entry => entry.Repository, StringComparer.Ordinal)
-            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+        var counts = await store.CountByRepositoryAsync(ct).ConfigureAwait(false);
 
         var all = registry?.Read(counts) ?? [];
         return workspace is null
@@ -877,7 +875,7 @@ public sealed class KnowledgeService(
     {
         if (_everRefreshed) return;
 
-        var existing = await store.AllAsync(ct).ConfigureAwait(false);
+        var existing = await store.CountByRepositoryAsync(ct).ConfigureAwait(false);
         if (existing.Count > 0)
         {
             _everRefreshed = true;

@@ -170,6 +170,16 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         return await ReadAllAsync(command, ct).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT repository, COUNT(*) FROM entries GROUP BY repository;";
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) counts[reader.GetString(0)] = reader.GetInt32(1);
+        return counts;
+    }
+
     public async Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
