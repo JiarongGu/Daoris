@@ -21,6 +21,9 @@ public sealed class DriverModule : ModuleBase
     // two things a screen may do to it while it runs: answer the prompt it printed, or stop it.
     private readonly ConcurrentDictionary<string, HarnessRun> _actions = new();
 
+    // Which `harness:action` holds the one slot, from its start until `RunActionAsync` ends it (REV3).
+    private string? _acting;
+
     /// <remarks>
     /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
     /// D49 §3, raises one of its own — a conversation ending is news the page wants without asking.
@@ -601,6 +604,20 @@ public sealed class DriverModule : ModuleBase
                     // `daoris agent pin|unpin`, over the same file.
                     _ => () => PinAsync(harness, toolchain, stream, request, CancellationToken.None, track),
                 };
+
+                // 🔴 One at a time on this machine, claimed as the action starts and released by
+                // `RunActionAsync` however it ends (REV3). The page re-enabled its buttons once the
+                // request answered `started`, and a second login under the same name took the first's
+                // place in `_actions`: the first could no longer be answered or stopped, and its end
+                // removed the second's entry. Claimed last, so nothing above can throw with it held.
+                if (Interlocked.CompareExchange(ref _acting, key, null) is { } busy)
+                {
+                    throw Refusals.Because(
+                        Refusals.HarnessActionBusy,
+                        $"{busy} is still running — wait for it to end, or stop it, before starting another.",
+                        ("running", busy));
+                }
+
                 var work = RunActionAsync(key, harness, action, fresh ?? profile, run, started.Task, config);
 
                 await Task.WhenAny(started.Task, work);
@@ -1162,6 +1179,8 @@ public sealed class DriverModule : ModuleBase
         finally
         {
             _actions.TryRemove(key, out _);
+            // The slot goes with the action, however it ended — before it started included.
+            Volatile.Write(ref _acting, null);
         }
 
         await AnnounceAsync(harness, action, profile, code, null, config);

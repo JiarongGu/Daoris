@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A second Sign in took the first one's place, and the first could no longer be answered (2026-09-25)
+
+**Symptom.** Found by REV3's reading of both halves. `HARNESS_ACTION` answers `started` as soon as the
+process starts, and the page gated every button on the request alone. So *Sign in* was enabled again
+while the first login still waited on a browser. A second press, a common reaction to "Opening browser…"
+with nothing visible, had three effects:
+- The host's `_actions["claude-code:login"]` was overwritten, so the first process could no longer be
+  answered or stopped.
+- When the first ended, its `finally` removed the second's entry, and a code pasted into the second
+  was refused as "nothing is running".
+- On the page, the first's `HARNESS_ENDED` matched the running key and closed the second's panel.
+
+"One at a time by construction" was a comment on both sides, and nothing enforced it.
+
+**Root cause.** The host keyed running actions by name with no claim. The page's "running" lasted as
+long as the request, not the action.
+
+**Fix.** The host holds one slot on this machine. It is claimed atomically as an action starts, after
+everything that could throw first, and `RunActionAsync` releases it however the action ends. A second
+start is refused with a new catalogued code, `HARNESS_ACTION_BUSY`, naming what runs. The page holds
+`inFlight` from `started` until that action's `HARNESS_ENDED`, and the roster's buttons are disabled
+on it.
+
+**Verify.** `A_second_harness_action_while_one_runs_is_refused_and_the_first_stays_answerable` was
+watched failing. Its second press is refused naming `claude-code:login`, the first is still answered,
+and the slot frees at its end. The catalogue test holds the new code in both languages. **Not covered
+by a test:** the page's button gating. It was checked by reading, and the host's refusal is what
+holds the line if it regresses.
+
 ## A plugin answering the hook wire in the wrong shape killed every tick, naming nobody (2026-09-25)
 
 **Symptom.** Found by REV3's reading. Several answers from a plugin's hook process made the driver

@@ -796,6 +796,12 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // Which action is running, so its console can be shown under the harness that is doing it. One at
   // a time by construction: two installers racing over one PATH is not a thing to make easy.
   const [running, setRunning] = useState<string | null>(null);
+  // 🔴 …and "running" lasts until the END, not the request (REV3). A process action answers `started`
+  // at once, so gating on the request re-enabled every button while a login still waited on a browser;
+  // a second press overwrote which action this roster was following, and the first's end closed the
+  // second's panel. The host refuses a second one too.
+  const [inFlight, setInFlight] = useState<string | null>(null);
+  const busy = act.isPending || inFlight !== null;
   // Which ACCOUNT a login is for, while it runs — so the sign-in lands on that row, not under the
   // door a card below it (2026-09-23). Cleared when the login ends either way; the result is the
   // row's own pill and a sentence, not a panel left open.
@@ -869,6 +875,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // closed on a login that was still running. Only the action this roster started is this roster's.
   useHarnessEnded((news) => {
     if (runningRef.current !== `${news.harness}:${news.action}`) return;
+    setInFlight(null);
     ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept);
   });
   // The version being typed per harness (TOOL2). Local to the form: a pin only exists once the
@@ -896,6 +903,8 @@ function HarnessRoster({ notify }: { notify: Notify }) {
     version?: string,
     workspace?: string,
   ) => {
+    // Never over one still running: whose end the news belongs to is the one thing this must not lose.
+    if (inFlight !== null) return;
     setRunning(`${harness}:${action}`);
     runningRef.current = `${harness}:${action}`;
     setRunningProfile(action === 'login' ? profile ?? null : null);
@@ -904,7 +913,10 @@ function HarnessRoster({ notify }: { notify: Notify }) {
       // A file edit ends inside the request; a process answers `started` and ends as news, heard
       // below. Either way the end is said once, by the same sentence.
       onSuccess: (result) => {
-        if (result.started) return;
+        if (result.started) {
+          setInFlight(`${harness}:${action}`);
+          return;
+        }
         ended(action, profile, result.exitCode ?? 0, null);
       },
       onError: (error: unknown) => {
@@ -1000,7 +1012,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                 {tool.machineDefault !== null && (
                   <Button
                     variant="ghost"
-                    disabled={act.isPending}
+                    disabled={busy}
                     onClick={() => run(tool.doors[0]!.harness, 'profile-default')}
                   >
                     {t('harness.profile.use')}
@@ -1076,7 +1088,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                     {tool.doors[0]!.signsIn !== false && !profile.key && (
                       <Button
                         variant={profile.login === 'in' ? 'ghost' : 'default'}
-                        disabled={act.isPending || !tool.present}
+                        disabled={busy || !tool.present}
                         onClick={() => run(tool.doors[0]!.harness, 'login', profile.name)}
                       >
                         {t(profile.login === 'in' ? 'harness.login.again' : 'harness.login.action')}
@@ -1085,7 +1097,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                     {tool.machineDefault !== profile.name && (
                       <Button
                         variant="ghost"
-                        disabled={act.isPending}
+                        disabled={busy}
                         onClick={() => run(tool.doors[0]!.harness, 'profile-default', profile.name)}
                       >
                         {t('harness.profile.use')}
@@ -1098,7 +1110,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                     {removing !== profile.home && (
                       <Button
                         variant="ghost"
-                        disabled={act.isPending}
+                        disabled={busy}
                         onClick={() => setRemoving(profile.home)}
                       >
                         <Icon name="remove" size={13} />
@@ -1127,7 +1139,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       </span>
                       <Button
                         variant="danger"
-                        disabled={act.isPending}
+                        disabled={busy}
                         onClick={() => {
                           setRemoving(null);
                           run(tool.doors[0]!.harness, 'profile-remove', profile.name);
@@ -1184,7 +1196,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                 placeholder={t('harness.profile.keyPlaceholder')}
                 className="min-w-72 flex-1 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
-              <Button type="submit" variant="primary" disabled={act.isPending || !keyDraft.trim()}>
+              <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>
                 {t('harness.profile.keySave')}
               </Button>
               <Button variant="ghost" onClick={closeKey}>{t('common.cancel')}</Button>
@@ -1197,7 +1209,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               {tool.doors[0]!.signsIn !== false && (
                 <Button
                   variant="ghost"
-                  disabled={act.isPending || !tool.present}
+                  disabled={busy || !tool.present}
                   onClick={() => run(tool.doors[0]!.harness, 'login-new')}
                 >
                   <Icon name="plus" size={13} />
@@ -1207,7 +1219,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               {tool.doors[0]!.takesKey && (
                 <Button
                   variant="ghost"
-                  disabled={act.isPending || !tool.present}
+                  disabled={busy || !tool.present}
                   onClick={() => setKeying(tool.name)}
                 >
                   <Icon name="account" size={13} />
@@ -1238,12 +1250,12 @@ function HarnessRoster({ notify }: { notify: Notify }) {
 
                 <span className="ml-auto flex gap-2">
                   {!harness.present && (
-                    <Button disabled={act.isPending} onClick={() => run(harness.harness, 'install')}>
+                    <Button disabled={busy} onClick={() => run(harness.harness, 'install')}>
                       {t('harness.install')}
                     </Button>
                   )}
                   {harness.present && (
-                    <Button variant="ghost" disabled={act.isPending} onClick={() => run(harness.harness, 'update')}>
+                    <Button variant="ghost" disabled={busy} onClick={() => run(harness.harness, 'update')}>
                       {t('harness.update')}
                     </Button>
                   )}
@@ -1286,7 +1298,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                 <Button
                   variant="ghost"
                   className="ml-auto"
-                  disabled={act.isPending}
+                  disabled={busy}
                   onClick={() => run(harness.harness, 'unpin')}
                 >
                   {t('harness.pin.unpin')}
@@ -1332,7 +1344,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               />
               <Button
                 type="submit"
-                disabled={act.isPending || !(pinning[harness.harness] ?? '').trim()}
+                disabled={busy || !(pinning[harness.harness] ?? '').trim()}
               >
                 {t('harness.pin.action')}
               </Button>

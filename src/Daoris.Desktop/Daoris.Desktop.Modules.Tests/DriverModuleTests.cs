@@ -1007,6 +1007,45 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains(Refusals.HarnessActionIdle, late);
     }
 
+    /// <summary>
+    /// 🔴 REV3: one at a time. A second *Sign in* while the first still waited on a browser took the
+    /// first's place in the running map — the first could no longer be answered or stopped, and its end
+    /// removed the second's entry. The second is refused naming what runs; the first is still answerable;
+    /// and once it ends, the slot is free again.
+    /// </summary>
+    [Fact]
+    public async Task A_second_harness_action_while_one_runs_is_refused_and_the_first_stays_answerable()
+    {
+        var fake = Path.Combine(Home, "fake-claude.mjs");
+        File.WriteAllText(fake, """
+            const args = process.argv.slice(2).join(' ');
+            if (args === 'auth status') { console.log(JSON.stringify({ loggedIn: true })); process.exit(0); }
+            if (args === 'auth login') {
+              process.stdout.write('Paste code here if prompted >');
+              process.stdin.once('data', () => process.exit(0));
+              setTimeout(() => process.exit(3), 20000);
+            } else { console.log('claude 9.9.9'); }
+            """);
+        File.WriteAllText(DriverConfigPath, $$"""
+            { "drivable": [], "holds": [], "commands": { "claude-code": ["node", {{JsonSerializer.Serialize(fake)}}] } }
+            """);
+        var module = Module();
+
+        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "work" });
+        var second = await RefusalAsync(
+            module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "home" });
+        Assert.Contains(Refusals.HarnessActionBusy, second);
+        Assert.Contains("claude-code:login", second);
+
+        await AnswerAsync(module, "HARNESS_INPUT", new { harness = "claude-code", action = "login", text = "abc-123" });
+        await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
+
+        // Free again: the next one starts.
+        var again = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "home" });
+        Assert.True(again.GetProperty("started").GetBoolean());
+        await AnswerAsync(module, "HARNESS_CANCEL", new { harness = "claude-code", action = "login" });
+    }
+
     private static async Task UntilAsync(Func<bool> condition)
     {
         var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);

@@ -220,6 +220,7 @@
   "errors.DRIVER_NOT_READY": "驱动仍在启动，其服务尚未应答。稍候。",
   "errors.HARNESS_ACTION_UNKNOWN": "没有名为 {{action}} 的工具链操作。",
   "errors.HARNESS_ACTION_IDLE": "{{harness}} 没有正在运行的 {{action}}——它已经结束，或者从未开始。",
+  "errors.HARNESS_ACTION_BUSY": "{{running}} 仍在运行——等它结束或先停止它，再开始另一个。",
   "errors.PLUGIN_UNKNOWN": "本机没有名为 {{id}} 的插件。",
   "errors.PLUGIN_ACTION_UNKNOWN": "没有名为 {{action}} 的插件操作。",
   "errors.DRIVER_REFUSED": "{{message}}",

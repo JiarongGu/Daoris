@@ -220,6 +220,7 @@
   "errors.DRIVER_NOT_READY": "The driver is still coming up — its service is not answering yet. A moment.",
   "errors.HARNESS_ACTION_UNKNOWN": "There is no agent action called {{action}}.",
   "errors.HARNESS_ACTION_IDLE": "Nothing is running for {{harness}} {{action}} — it finished, or was never started.",
+  "errors.HARNESS_ACTION_BUSY": "{{running}} is still running — wait for it to end, or stop it, before starting another.",
   "errors.PLUGIN_UNKNOWN": "There is no plugin called {{id}} on this machine.",
   "errors.PLUGIN_ACTION_UNKNOWN": "There is no plugin action called {{action}}.",
   "errors.DRIVER_REFUSED": "{{message}}",

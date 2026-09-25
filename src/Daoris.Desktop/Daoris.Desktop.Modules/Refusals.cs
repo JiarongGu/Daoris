@@ -38,6 +38,13 @@ public static class Refusals
     public const string HarnessActionIdle = "HARNESS_ACTION_IDLE";
 
     /// <summary>
+    /// A harness action started while another still runs (REV3). One at a time: two installers racing
+    /// over one PATH is not a thing to make easy, and a second login under the same name took the
+    /// first's place in the map, so the first could no longer be answered or stopped.
+    /// </summary>
+    public const string HarnessActionBusy = "HARNESS_ACTION_BUSY";
+
+    /// <summary>
     /// The driver itself refused, in its own words — an unknown adapter, a harness with no toolchain,
     /// an installer that would not start.
     /// </summary>
@@ -83,7 +90,8 @@ public static class Refusals
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
-        RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, HarnessActionIdle, DriverRefused,
+        RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, HarnessActionIdle,
+        HarnessActionBusy, DriverRefused,
         SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, WindowUnknown,
         PluginUnknown, PluginActionUnknown,
     ];
