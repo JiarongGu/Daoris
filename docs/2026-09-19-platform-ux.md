@@ -68,6 +68,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   normal-vision 17.5. The red/green pair is separated by lightness as well as hue, which is what moved
   deutan from a failing 3.9 to passing. Status never appears color-alone: every pill carries its text
   label.
+- **Waiting on the person is open's hue, everywhere it is shown** (UX5): a session's pill and its
+  dot, *What needs you*'s card and rows, the map's ring and word. It had three hues, one of them
+  declined's red, and a session waiting on its person read as one that had failed. **Red is only ever
+  an outcome**: declined, failed, a failed tool call. A liveness mark never borrows an outcome's hue.
 - **Motion**: 140ms ease-out on overlays and hovers; `prefers-reduced-motion` disables it. No shimmer
   anywhere — loading placeholders are static two-tone.
 

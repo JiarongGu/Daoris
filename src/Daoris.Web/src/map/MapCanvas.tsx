@@ -40,9 +40,9 @@ export function placeLabel(x: number, y: number): {
  * @remarks
  * **Status is never colour alone** (D41): an open quest edge is solid and accented, a closed one
  * faint, a shared finding dashed, and a repository with a session there is ringed AND says so in its
- * label — *working now*, or *waiting on you* for one parked on the person, in the warn tone the band
- * gives that fact. Every node and edge is a button a keyboard can reach, and its name says what it
- * holds.
+ * label — *working now*, or *waiting on you* for one parked on the person, in the waiting hue the
+ * band and the rail give that fact (UX5 U1). Every node and edge is a button a keyboard can reach, and
+ * its name says what it holds.
  */
 export function MapCanvas({ topology, selected, onSelect }: {
   topology: Topology;
@@ -197,7 +197,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
             {there && (
               <circle
                 cx={x} cy={y} r={RADIUS + 6} fill="none" strokeDasharray="3 3"
-                className={cn('stroke-2', there === 'parked' ? 'stroke-warn' : 'stroke-st-taken')}
+                className={cn('stroke-2', there === 'parked' ? 'stroke-st-open' : 'stroke-st-taken')}
               />
             )}
             <circle
@@ -213,7 +213,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
             {there && (
               <text
                 x={label.x} y={label.y + label.next} textAnchor={label.anchor}
-                className={cn('text-meta', there === 'parked' ? 'fill-warn' : 'fill-ink-soft')}
+                className={cn('text-meta', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}
               >
                 {t(there === 'parked' ? 'map.parked' : 'map.working')}
               </text>

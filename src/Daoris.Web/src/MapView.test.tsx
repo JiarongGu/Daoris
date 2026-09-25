@@ -76,8 +76,12 @@ describe('the workspace map', () => {
     try {
       show();
       expect(await screen.findByRole('button', { name: 'engine, 1 open, a session waiting on you' })).toBeTruthy();
-      expect(screen.getByText('waiting on you')).toBeTruthy();
+      const word = screen.getByText('waiting on you');
       expect(screen.queryByText('working now')).toBeNull();
+      // UX5 U1: the hue the rail's dot and the band's card give the same fact, not the notice tone.
+      expect(word.getAttribute('class')).toContain('fill-st-open');
+      expect(word.closest('g')!.querySelector('circle[stroke-dasharray]')!.getAttribute('class'))
+        .toContain('stroke-st-open');
     } finally {
       SESSIONS[0] = { ...SESSIONS[0]!, state: 'working' };
     }

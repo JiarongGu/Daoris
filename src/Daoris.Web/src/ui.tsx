@@ -168,14 +168,15 @@ export const QUEST_TONE: Record<Quest['status'], keyof typeof PILL_TONE> = {
  * and shared for a second one: the rail, the head and the quest card must not disagree about what
  * `stood-down` looks like, and three copies of a nine-row map disagree eventually.
  *
- * `awaiting-person` wears the attention tone deliberately: it is the one state nothing but a person
- * can clear, so it should not sit quietly among the running ones.
+ * `awaiting-person` wears the waiting tone deliberately: it is the one state nothing but a person
+ * can clear, so it should not sit quietly among the running ones, and it is not an outcome, so it
+ * does not wear declined's red (UX5 U1). It shares its hue with `queued`; the word tells them apart.
  */
 export const SESSION_TONE: Record<SessionState, keyof typeof PILL_TONE> = {
   'queued': 'open',
   'starting': 'taken',
   'working': 'taken',
-  'awaiting-person': 'declined',
+  'awaiting-person': 'open',
   'completed': 'done',
   'declined': 'declined',
   'stood-down': 'neutral',
@@ -248,7 +249,11 @@ export function Chip({ accent, children }: { accent?: boolean; children: ReactNo
 
 const DOT_TONE: Record<string, { mark: string; word: string }> = {
   live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent' },
-  parked: { mark: 'bg-st-declined', word: 'text-st-declined' },
+  // Waiting on a person is the status palette's waiting hue, the one `WaitingCard` and the map wear.
+  // It wore declined's red, and a session waiting on its person read as one that had failed (UX5 U1).
+  parked: { mark: 'bg-st-open', word: 'text-st-open' },
+  // A failure is an outcome, and red is its hue: a tool call that failed, never a session's liveness.
+  failed: { mark: 'bg-st-declined', word: 'text-st-declined' },
   // Ended is completed, failed, declined and stopped at once, so it wears no outcome's hue: done's
   // green put a success mark beside a failed session in the rail. The pill beside it names the outcome.
   ended: { mark: 'bg-ink-faint', word: 'text-ink-soft' },

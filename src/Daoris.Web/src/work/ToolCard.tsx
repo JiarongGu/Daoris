@@ -15,8 +15,8 @@ const KIND_ICON: Record<string, IconName> = {
 };
 
 /** A tool call's status, as a liveness mark: running is live, a failure is the one alarm. */
-const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'parked'> = {
-  pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'parked',
+const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'failed'> = {
+  pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'failed',
 };
 
 /**

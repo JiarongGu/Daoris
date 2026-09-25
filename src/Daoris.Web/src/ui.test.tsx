@@ -6,7 +6,7 @@ import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, Pill, Segmented, SESSION_ACTIVE,
-  SESSION_DOT, SESSION_TONE, SettingRow, Tile, Tip,
+  SESSION_DOT, SESSION_TONE, SettingRow, Tile, Tip, WaitingCard,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -93,13 +93,13 @@ describe('the liveness dot', () => {
     expect(marks[0].className).toContain('bg-accent');
   });
 
-  it('spends a different hue per meaning, so the four are told apart with the label AND without', () => {
-    const hue = (tone: 'live' | 'parked' | 'ended' | 'idle') => {
+  it('spends a different hue per meaning, so the five are told apart with the label AND without', () => {
+    const hue = (tone: 'live' | 'parked' | 'failed' | 'ended' | 'idle') => {
       const { container } = render(<Dot tone={tone} label={tone} />);
       return container.querySelector('[aria-hidden="true"]')!.className;
     };
-    const hues = [hue('live'), hue('parked'), hue('ended'), hue('idle')];
-    expect(new Set(hues).size).toBe(4);
+    const hues = [hue('live'), hue('parked'), hue('failed'), hue('ended'), hue('idle')];
+    expect(new Set(hues).size).toBe(5);
   });
 
   /**
@@ -110,6 +110,20 @@ describe('the liveness dot', () => {
   it('never borrows an outcome hue for ended, which is every outcome at once', () => {
     const { container } = render(<Dot tone="ended" label="failed" />);
     expect(container.querySelector('[aria-hidden="true"]')!.className).not.toMatch(/\bbg-st-/);
+  });
+
+  /**
+   * UX5 U1: waiting on the person wore declined's red on the dot and the pill, `--warn` on the map,
+   * and open's amber on the band's card, three hues for one fact. It is the status palette's waiting
+   * hue everywhere, and red stays an outcome's, which is what a failed tool call is.
+   */
+  it('wears the waiting hue for a person, the one the band\'s card wears, and keeps red for a failure', () => {
+    const mark = (tone: 'parked' | 'failed') =>
+      render(<Dot tone={tone} label={tone} />).container.querySelector('[aria-hidden="true"]')!.className;
+    expect(mark('parked')).toContain('bg-st-open');
+    expect(mark('failed')).toContain('bg-st-declined');
+    const card = render(<WaitingCard title="waiting" />).container.querySelector('section')!;
+    expect(card.className).toContain('border-l-st-open');
   });
 });
 
@@ -192,10 +206,11 @@ describe('the session tone map', () => {
     'completed', 'declined', 'stood-down', 'failed', 'stopped',
   ];
 
-  it('tones every session state, and awaiting-person wears the one only a person can clear', () => {
+  it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of STATES) expect(SESSION_TONE[state]).toBeTruthy();
     expect(Object.keys(SESSION_TONE).sort()).toEqual([...STATES].sort());
-    expect(SESSION_TONE['awaiting-person']).toBe('declined');
+    // Declined's red beside the word "awaiting you" read as a session that had failed (UX5 U1).
+    expect(SESSION_TONE['awaiting-person']).toBe('open');
   });
 
   it('marks every session state as a dot too — the pill says which, the dot says whether', () => {
