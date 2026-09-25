@@ -31,7 +31,7 @@ import { QuestsView } from './QuestsView';
 import { SettingsView } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from './queries';
-import { useSyncNow } from './shell';
+import { useNudge, useSyncNow } from './shell';
 
 const DRIVER_STATE = { drivable: [], holds: [], running: ['s1a2b3c4'] };
 
@@ -1558,6 +1558,21 @@ describe('the shell push channel (ShellSignals)', () => {
     for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.driver, keys.allRepositories, keys.allSync, keys.rules]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
+  });
+
+  /**
+   * A publish is looked at now, not at the next poll: the route existed and nothing called it (REV3
+   * CLEAN1). A refused nudge is swallowed — the poll looks anyway, and it is not the person's news.
+   */
+  it('a nudge lands on DAORIS.DRIVER, and a refused one says nothing', async () => {
+    invoke.mockImplementation(async () => null);
+    const { result } = renderHook(() => useNudge());
+
+    result.current();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'NUDGE', {});
+
+    invoke.mockImplementation(async () => { throw new Error('no driver'); });
+    expect(() => result.current()).not.toThrow();
   });
 
   /**

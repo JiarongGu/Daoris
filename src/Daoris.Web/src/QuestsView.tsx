@@ -4,7 +4,7 @@ import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api
 import {
   useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
 } from './queries';
-import { stopNotice, useConsidered, useDriver, useStopSession, useTrustFolder, useUntrusted } from './shell';
+import { stopNotice, useConsidered, useDriver, useNudge, useStopSession, useTrustFolder, useUntrusted } from './shell';
 import { TrustAsk } from './work/TrustAsk';
 import { ago, sentence, sessionTool, sittingDays, size } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
@@ -140,6 +140,8 @@ export function QuestsView({
   const registry = useRegistry();
   const sessions = useSessions(null, true);
   const driver = useDriver();
+  // A quest just published is looked at now, not at the driver's next poll.
+  const nudge = useNudge();
   const considered = useConsidered().data ?? [];
   const stop = useStopSession();
   // A start the driver is holding for the agent's trust (D73), and the person's grant of it. The
@@ -196,6 +198,7 @@ export function QuestsView({
         setDraft(EMPTY_DRAFT);
         carry.forget();
         setComposing(false);
+        nudge();
       },
       onError: failure(notify),
     });

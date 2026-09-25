@@ -192,6 +192,22 @@ export const useSetIntake = () => {
 };
 
 /** What a pass said: the wall it hit, and what the remote understood and did not take — the driver's words. */
+/**
+ * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath
+ * rather than at its next poll (fifteen seconds by default). The DAORIS.DRIVER route has said this
+ * since it was written; nothing called it (REV3 CLEAN1). Nothing in a browser, which has no driver,
+ * and nothing said when it cannot be asked — the poll looks anyway.
+ */
+export const useNudge = () => {
+  const { isAvailable } = useShenora();
+  return useCallback(() => {
+    if (!isAvailable) return;
+    call<null>('NUDGE').catch(() => {
+      // The poll is the fallback, and a missed nudge is not the person's problem.
+    });
+  }, [isAvailable]);
+};
+
 export type SyncNowReport = { workspace: string; problem?: string | null; notes: string[] };
 
 /**

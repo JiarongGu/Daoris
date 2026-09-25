@@ -6,6 +6,7 @@ import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { useAsk, useAsks, useCloseAsk, usePublishAsk, useQuests, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
+import { useNudge } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, SectionTitle, useErrorNotify } from '../ui';
 import { AskCard } from './AskCard';
@@ -53,6 +54,7 @@ export function AsksSection({
   const everything = useQuests(null, true);
   const sessions = useSessions(null, true);
   const ask = useAsk();
+  const nudge = useNudge();
   const publish = usePublishAsk();
   const close = useCloseAsk();
   useErrorNotify(asks.error, notify);
@@ -119,13 +121,15 @@ export function AsksSection({
         setDraft(EMPTY_DRAFT);
         onComposingChange(false);
         setHeld(result.ask);
+        // An intake or a published quest is the driver's next move: looked at now, not at the poll.
+        nudge();
       },
       onError: failure(notify),
     });
   };
 
   const onPublish = (id: string, to: string) => publish.mutate({ id, to }, {
-    onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
+    onSuccess: (result) => { notify(result.message); setHeld(result.ask); nudge(); },
     onError: failure(notify),
   });
 
