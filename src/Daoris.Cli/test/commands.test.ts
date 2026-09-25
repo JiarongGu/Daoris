@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { makeFixture, captureError } from './_fixture.ts';
 import { readManifest } from '../src/config.ts';
 import { commandInit, commandStatus } from '../src/commands.ts';
@@ -130,6 +132,41 @@ test('status names what changed, ignoring a pure version bump', () => {
   assert.match(text, /new\s+rules\/task-lifecycle\.md/);
   // gotchas.md is untouched — only its header version moved.
   assert.equal(/gotchas/.test(text), false, 'a header-only difference is not a change');
+
+  delete process.env.DAORIS_CANON;
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
+/**
+ * A rule that moved packs under the same name is still one rule on disk, written under the LOCK's
+ * provenance. `status` read the span by the canon's new provenance, found nothing, and left a real
+ * change out of the list (REV3 CLEAN1: the span lookup now has one reader, and it reads by the lock).
+ */
+test('status names a change to a rule the canon moved into a pack', () => {
+  const canonFx = canonFixture();
+  const repoFx = makeFixture('cmd-status-moved');
+  repoFx.write('daoris.json', '{"source":"s","packs":["win"]}');
+  process.env.DAORIS_CANON = canonFx.root;
+
+  const manifest = readManifest(repoFx.root);
+  const before = readCanon(canonFx.root);
+  applySync({
+    root: repoFx.root,
+    manifest,
+    canonVersion: before.version,
+    force: false,
+    plan: planSync({ root: repoFx.root, manifest, canon: before, lock: null }),
+  });
+
+  // The canon moves sensitive-info from core into the selected pack, and rewords it on the way.
+  canonFx.write('canon.json', '{"version":"0.2.0"}');
+  rmSync(join(canonFx.root, 'core', 'rules', 'sensitive-info.md'));
+  canonFx.write('packs/win/rules/sensitive-info.md', `${doc('sensitive-info')}REWORDED\n`);
+
+  const out: string[] = [];
+  commandStatus({ root: repoFx.root, write: (s: string) => out.push(s), packageRoot: '' });
+  assert.match(out.join('\n'), /changed\s+rules\/sensitive-info\.md/);
 
   delete process.env.DAORIS_CANON;
   canonFx.cleanup();

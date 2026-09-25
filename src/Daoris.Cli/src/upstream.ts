@@ -1,4 +1,4 @@
-import type { CommandArgs, Lock, LockEntry, Manifest } from './types.ts';
+import type { CommandArgs, Lock, Manifest } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
@@ -6,9 +6,7 @@ import { readText, sha256, writeTextAtomic } from './fsx.ts';
 import { parseFrontmatter, stripHeader } from './document.ts';
 import { resolveCanonRoot } from './canon.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
-import { findRegion } from './region.ts';
-import { tierRuleBody } from './tierrender.ts';
-import { resolveHarness } from './harness.ts';
+import { spanBody } from './tierrender.ts';
 import { DaorisError } from './errors.ts';
 
 /**
@@ -48,7 +46,7 @@ export function upstreamFile(
     // canon's own is kept and only the body is replaced. That is the honest limit of promoting from a
     // region, and it is stated rather than discovered: an improvement to `applies_when` or `enforces`
     // is a canon edit, not something a repository can push from its instruction file.
-    const body = regionRuleBody({ root, manifest, entry });
+    const body = spanBody(root, manifest.harnessDescriptor, entry);
     if (body === null) {
       throw new DaorisError(
         `'${file}' is canonical here but is not in the doctrine region of ${entry.in} —\n`
@@ -68,21 +66,6 @@ export function upstreamFile(
   return { target: entry.target, source: entry.source };
 }
 
-/** One rule's body, out of the region its lock entry names. */
-function regionRuleBody(
-  { root, manifest, entry }: { root: string; manifest: Manifest; entry: LockEntry },
-): string | null {
-  const harness = manifest.harnessDescriptor ?? resolveHarness(manifest.harness);
-  const tier = Object.values(harness.tiers).find((candidate) => candidate.region?.file === entry.in);
-  if (!tier?.region) return null;
-
-  const abs = join(root, entry.in!);
-  if (!existsSync(abs)) return null;
-
-  const held = findRegion(readText(abs), tier.region.name);
-  return held.kind === 'present' ? tierRuleBody(held.body, `${entry.pack}/${entry.source}`) : null;
-}
-
 /**
  * Promote every canonical file that differs from what the lock recorded. A
  * working session usually improves several rules at once, and one command per
@@ -95,7 +78,7 @@ export function upstreamAll(
   const promoted = [];
   for (const entry of lock?.entries ?? []) {
     if (entry.in) {
-      const body = regionRuleBody({ root, manifest, entry });
+      const body = spanBody(root, manifest.harnessDescriptor, entry);
       if (body === null || sha256(body) === entry.sha256) continue;
       promoted.push(upstreamFile({ root, manifest, lock, canonRoot, file: entry.target }));
       continue;

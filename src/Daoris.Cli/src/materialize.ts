@@ -9,7 +9,7 @@ import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
 import { readTier } from './indexgen.ts';
-import { renderRoster, renderRules, tierRuleBody } from './tierrender.ts';
+import { renderRoster, renderRules, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
 import { resolveHarness } from './harness.ts';
 import { parseFrontmatter } from './document.ts';
@@ -153,12 +153,7 @@ export function planSync(
   const previousAt = (target: string): string | null => {
     const entry = locked.get(target);
     if (!entry) return null;
-    if (entry.in) {
-      const name = regionOf(target)?.name ?? harness.tiers.rules?.region?.name;
-      if (!name) return null;
-      const held = findRegion(regionAt(entry.in), name);
-      return held.kind === 'present' ? tierRuleBody(held.body, `${entry.pack}/${entry.source}`) : null;
-    }
+    if (entry.in) return spanBody(root, harness, entry, regionAt);
 
     const abs = join(root, manifest.target, target);
     return existsSync(abs) ? readText(abs) : null;
@@ -308,14 +303,9 @@ export function planChanges(
     }
 
     if (entry.in) {
-      // A span (D59): what is held is the rule's BODY, so the comparison is body against body.
-      const tier = Object.values(harness.tiers).find((t) => t.region?.file === entry.in);
-      if (!tier?.region) continue;
-      const abs = join(root, entry.in);
-      if (!existsSync(abs)) continue;
-      const held = findRegion(readText(abs), tier.region.name);
-      if (held.kind !== 'present') continue;
-      const body = tierRuleBody(held.body, `${file.pack}/${file.source}`);
+      // A span (D59): what is held is the rule's BODY, so the comparison is body against body. Read
+      // by the LOCK's provenance, as every other reader does — what is on disk is what was written.
+      const body = spanBody(root, harness, entry);
       // Untouched here, and different from what the canon now says: an upstream improvement.
       if (body === null || sha256(body) !== entry.sha256) continue;
       if (body !== stripFrontmatter(readText(join(canon.root, file.source)))) changed.push(file.target);

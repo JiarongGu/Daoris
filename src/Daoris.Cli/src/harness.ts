@@ -112,6 +112,10 @@ export const tierNames = (harness: Harness): string[] => Object.keys(harness.tie
 export const alwaysLoadedTiers = (harness: Harness): string[] =>
   Object.entries(harness.tiers).filter(([, tier]) => tier.alwaysLoaded).map(([name]) => name);
 
+/** The region this harness keeps in `file` (D59), or null when it keeps none there. */
+export const regionIn = (harness: Harness, file: string): { file: string; name: string } | null =>
+  Object.values(harness.tiers).find((tier) => tier.region?.file === file)?.region ?? null;
+
 /** Every harness this repository shows a sign of, with the evidence that said so. */
 export function detectHarnesses(root: string): DetectedHarness[] {
   const found: DetectedHarness[] = [];

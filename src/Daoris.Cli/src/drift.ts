@@ -6,7 +6,7 @@ import { listMarkdown, readText, sha256 } from './fsx.ts';
 import { readLock, readManifest } from './config.ts';
 import { rosterFromDisk } from './indexgen.ts';
 import { findRegion } from './region.ts';
-import { tierRuleBody } from './tierrender.ts';
+import { spanBody } from './tierrender.ts';
 import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from './harness.ts';
 
 /**
@@ -24,15 +24,6 @@ function onDemandHalf(text: string): string {
   return (end === -1 ? text.slice(start) : text.slice(start, end)).trim();
 }
 
-/** Which region a lock entry's file belongs to, per the manifest's harness. */
-function regionNameFor(manifest: Manifest, file: string): string | null {
-  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
-  for (const tier of Object.values(harness.tiers)) {
-    if (tier.region?.file === file) return tier.region.name;
-  }
-  return null;
-}
-
 /**
  * Pure local hashing against the lock — no network, no canon, no package
  * resolution. That is what lets `check` sit inside a build gate in a repo that
@@ -43,26 +34,28 @@ export function inspect(
 ): DriftReport {
   const drifted: string[] = [];
   const missing: string[] = [];
+  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
 
-  // A span's region is read once, however many rules live in it.
-  const regions = new Map<string, string | null>();
-  const regionBody = (file: string, name: string): string | null => {
-    const key = `${file}\u0000${name}`;
-    if (!regions.has(key)) {
+  // A file holding a span is read once, however many rules live in it.
+  const files = new Map<string, string | null>();
+  const fileText = (file: string): string | null => {
+    if (!files.has(file)) {
       const abs = join(root, file);
-      const held = existsSync(abs) ? findRegion(readText(abs), name) : { kind: 'absent' as const };
-      regions.set(key, held.kind === 'present' ? held.body : null);
+      files.set(file, existsSync(abs) ? readText(abs) : null);
     }
-    return regions.get(key)!;
+    return files.get(file)!;
+  };
+  const regionBody = (file: string, name: string): string | null => {
+    const text = fileText(file);
+    const held = text === null ? null : findRegion(text, name);
+    return held?.kind === 'present' ? held.body : null;
   };
 
   for (const entry of lock?.entries ?? []) {
     if (entry.in) {
       // A span inside a file the repository owns (D59). Its identity is still `rules/<name>.md`, and
       // what is hashed is the rule's BODY — which is what keeps drift per rule inside one region.
-      const name = regionNameFor(manifest, entry.in);
-      const region = name === null ? null : regionBody(entry.in, name);
-      const body = region === null ? null : tierRuleBody(region, `${entry.pack}/${entry.source}`);
+      const body = spanBody(root, harness, entry, fileText);
       if (body === null) missing.push(entry.target);
       else if (sha256(body) !== entry.sha256) drifted.push(entry.target);
       continue;
@@ -93,7 +86,6 @@ export function inspect(
   // The tier is the LOCATION, so the always-loaded footprint is still measurable — a region has a
   // byte count exactly as a directory did, which is the half of D7 that survives D59. Which tiers
   // those are is the harness's answer, not a constant here.
-  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
   let coreBytes = 0;
   for (const name of alwaysLoadedTiers(harness)) {
     const tier = harness.tiers[name]!;

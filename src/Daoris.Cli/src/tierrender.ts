@@ -13,8 +13,13 @@
 //      an agent learns they exist; the rules rows are cheap and carry the `applies_when`/`enforces`
 //      the stripped frontmatter held.
 
-import type { CanonFile } from './types.ts';
+import type { CanonFile, Harness, LockEntry } from './types.ts';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { makeHeader, parseFrontmatter, SKILL_FIELDS } from './document.ts';
+import { readText } from './fsx.ts';
+import { regionIn } from './harness.ts';
+import { findRegion } from './region.ts';
 
 /** One document on its way into the region: where it came from, and what it says. */
 export interface TierDocument {
@@ -208,4 +213,28 @@ export function tierRuleBody(region: string, source: string): string | null {
   }
 
   return lines.slice(start + 1, end).join('\n').trim();
+}
+
+/**
+ * A span's rule body as it stands on disk: the region its lock entry names, then the rule inside it.
+ *
+ * @param read The file's text, or null when there is none. A caller reading many spans passes a
+ * cached reader so each file is read once.
+ * @returns null when the entry is not a span, or its file, region or rule is not there.
+ */
+export function spanBody(
+  root: string,
+  harness: Harness,
+  entry: LockEntry,
+  read: (file: string) => string | null = (file) => {
+    const abs = join(root, file);
+    return existsSync(abs) ? readText(abs) : null;
+  },
+): string | null {
+  const region = entry.in ? regionIn(harness, entry.in) : null;
+  if (!region) return null;
+  const text = read(entry.in!);
+  if (text === null) return null;
+  const held = findRegion(text, region.name);
+  return held.kind === 'present' ? tierRuleBody(held.body, `${entry.pack}/${entry.source}`) : null;
 }

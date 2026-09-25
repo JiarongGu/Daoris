@@ -1,33 +1,16 @@
-import type { CommandArgs, Lock, LockEntry, Manifest, Twin } from './types.ts';
+import type { CommandArgs, Lock, Manifest, Twin } from './types.ts';
 import type { ExitCode } from './errors.ts';
-import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listMarkdown, readText } from './fsx.ts';
 import { parseFrontmatter, stripHeader } from './document.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
-import { findRegion } from './region.ts';
-import { tierRuleBody } from './tierrender.ts';
+import { spanBody } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES, tierNames } from './harness.ts';
 
 // The pre-D59 generated roster. A repository that adopted before the tier moved still has one on
 // disk, and a generated file is never a twin of a canonical one.
 const INDEX_FILE = 'RULES_INDEX.md';
 const TIERS = tierNames(HARNESSES[DEFAULT_HARNESS]!);
-
-/** One canonical rule's text, out of the region its lock entry names (D59). */
-function regionRule(
-  { root, manifest, entry }: { root: string; manifest: Manifest; entry: LockEntry },
-): string | null {
-  const harness = manifest.harnessDescriptor ?? HARNESSES[DEFAULT_HARNESS]!;
-  const tier = Object.values(harness.tiers).find((candidate) => candidate.region?.file === entry.in);
-  if (!tier?.region) return null;
-
-  const abs = join(root, entry.in!);
-  if (!existsSync(abs)) return null;
-
-  const held = findRegion(readText(abs), tier.region.name);
-  return held.kind === 'present' ? tierRuleBody(held.body, `${entry.pack}/${entry.source}`) : null;
-}
 
 /** Words this common carry no signal about what a document is about. */
 const STOPWORDS = new Set([
@@ -108,7 +91,7 @@ export function findTwins(
   // now sitting in the region a few lines away.
   for (const entry of lock?.entries ?? []) {
     if (!entry.in) continue;
-    const body = regionRule({ root, manifest, entry });
+    const body = spanBody(root, manifest.harnessDescriptor, entry);
     if (body === null) continue;
     canonical.push({
       tier: entry.target.split('/')[0]!,
