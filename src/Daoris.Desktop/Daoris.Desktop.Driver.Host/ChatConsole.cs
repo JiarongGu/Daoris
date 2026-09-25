@@ -21,7 +21,30 @@ namespace Daoris.Driver.Host;
 /// </remarks>
 internal static class ChatConsole
 {
+    /// <summary>
+    /// The door, with its sibling consoles' contract (REV3): a driver that could not run at all — no home,
+    /// no service, a service that did not answer, a file it could not read — says so in one line and
+    /// exits 2. It sat outside the host's catch, so each of those was a stack trace.
+    /// </summary>
     public static async Task<int> RunAsync(string[] args)
+    {
+        try
+        {
+            return await ConverseAsync(args).ConfigureAwait(false);
+        }
+        catch (DriverException error)
+        {
+            Console.Error.WriteLine($"chat: {error.Message}");
+            return 2;
+        }
+        catch (HttpRequestException error)
+        {
+            Console.Error.WriteLine($"chat: could not reach the service — {error.Message}");
+            return 2;
+        }
+    }
+
+    private static async Task<int> ConverseAsync(string[] args)
     {
         var repository = Flag(args, "--repository");
         if (string.IsNullOrWhiteSpace(repository))
@@ -87,14 +110,23 @@ internal static class ChatConsole
         Console.Error.WriteLine($"chat: {start.Message}");
 
         // Stopping the turn is the terminal's third verb (CONV4a, D50): Ctrl+C while a turn runs, as a
-        // person at a prompt expects of any program that is busy. With no turn running it does what it
-        // always did, because a person pressing it then means to leave.
+        // person at a prompt expects of any program that is busy.
         var id = start.SessionId;
         ConsoleCancelEventHandler interrupt = (_, pressed) =>
         {
-            if (!runner.Taking(id)) return;
             pressed.Cancel = true;
-            _ = StopTurnAsync(runner, id);
+            if (runner.Taking(id))
+            {
+                _ = StopTurnAsync(runner, id);
+                return;
+            }
+
+            // 🔴 At rest, a person pressing it means to leave — and the conversation is STOPPED, by them,
+            // on the record (REV3). Letting the runtime terminate here ran no `finally` and disposed no
+            // runner: the harness exited on end of input, and the record stayed `working`, holding the
+            // repository, with no terminal verb that could end it.
+            Console.Error.WriteLine("chat: stopping the conversation.");
+            processes.Stop(id);
         };
         Console.CancelKeyPress += interrupt;
 
@@ -105,8 +137,14 @@ internal static class ChatConsole
         var attaching = new List<ChatUpload>();
         try
         {
-            while (await Console.In.ReadLineAsync().ConfigureAwait(false) is { } line)
+            while (true)
             {
+                // The conversation can end while the person is not typing — the harness exits, or they
+                // stopped it with Ctrl+C — and a read that waited for a line would wait for ever.
+                var reading = Console.In.ReadLineAsync();
+                if (await Task.WhenAny(reading, ended.Task).ConfigureAwait(false) == ended.Task) break;
+                if (await reading.ConfigureAwait(false) is not { } line) break;
+
                 // A script has no Ctrl+C to press: a line that is only the character it stands for is the
                 // same stop, which is also how the family rehearsal holds this door.
                 if (line == "\u0003")
@@ -126,7 +164,26 @@ internal static class ChatConsole
                         continue;
                     }
 
-                    attaching.Add(new ChatUpload(Path.GetFileName(path), await File.ReadAllBytesAsync(path).ConfigureAwait(false)));
+                    // Judged from its size before a byte is read, and a file that will not open is a
+                    // line, never the end of the conversation (REV3): a locked, unreadable or 1 GB file
+                    // threw out of this loop, and disposing the runner stopped the conversation with it.
+                    if (new FileInfo(path).Length > ChatFiles.MaxBytes)
+                    {
+                        Console.Error.WriteLine(
+                            $"chat: `{Path.GetFileName(path)}` is larger than {ChatFiles.MaxBytes / (1024 * 1024)} MB, so nothing was attached.");
+                        continue;
+                    }
+
+                    try
+                    {
+                        attaching.Add(new ChatUpload(Path.GetFileName(path), await File.ReadAllBytesAsync(path).ConfigureAwait(false)));
+                    }
+                    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                    {
+                        Console.Error.WriteLine($"chat: `{Path.GetFileName(path)}` could not be read ({error.Message}), so nothing was attached.");
+                        continue;
+                    }
+
                     Console.Error.WriteLine($"chat: {Path.GetFileName(path)} goes with your next message.");
                     continue;
                 }

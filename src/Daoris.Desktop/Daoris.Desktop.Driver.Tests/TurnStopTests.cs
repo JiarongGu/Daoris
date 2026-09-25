@@ -234,6 +234,54 @@ public sealed class TurnStopTests : IDisposable
         Assert.True(before == after, "the conversation's harness is still beating after its record concluded");
     }
 
+    /// <summary>
+    /// 🔴 REV3: "servers every session is handed" (D64) — a conversation on the protocol door got the
+    /// plugins' servers on `session/new`, and a driven or intake session on the pipe got a file, but a
+    /// conversation on Claude Code's own door got nothing. It is handed the same file now.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_on_the_native_door_is_handed_the_plugins_servers()
+    {
+        var plugin = Path.Combine(_home, "plugins", "browser");
+        Directory.CreateDirectory(plugin);
+        File.WriteAllText(Path.Combine(plugin, "plugin.json"),
+            """{ "id": "browser", "servers": [ { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest"] } ] }""");
+        var argvFile = Path.Combine(_home, "argv.json");
+        var script = Path.Combine(_home, "argv-claude.mjs");
+        File.WriteAllText(script, """
+            import { writeFileSync } from 'node:fs';
+            const argv = process.argv.slice(2);
+            if (argv.includes('--version')) { console.log('2.1.281 (Claude Code)'); process.exit(0); }
+            if (argv.includes('auth')) { console.log('{"loggedIn": true}'); process.exit(0); }
+            writeFileSync(argv[0], JSON.stringify(argv));
+            process.stdin.resume();
+            process.stdin.on('end', () => process.exit(0));
+            """);
+
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var adapters = AdapterSet.Built();
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", script, argvFile] },
+        };
+
+        var start = await runner.StartAsync("engine", "claude-code", config);
+        var id = start.SessionId ?? throw new InvalidOperationException(start.Message);
+        await Until(() => File.Exists(argvFile), () => $"state {service.State(id)}");
+
+        var argv = System.Text.Json.JsonSerializer.Deserialize<string[]>(File.ReadAllText(argvFile))!;
+        var at = Array.IndexOf(argv, "--mcp-config");
+        Assert.True(at >= 0, string.Join(" ", argv));
+        Assert.Contains("@playwright/mcp@latest", File.ReadAllText(argv[at + 1]));
+
+        runner.Finish(id);
+        await Until(() => service.State(id) is "completed" or "stopped");
+    }
+
     // ------------------------------------------------------------------ the harness behind each door
 
     private sealed record Session(

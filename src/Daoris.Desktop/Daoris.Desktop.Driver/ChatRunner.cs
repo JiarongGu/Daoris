@@ -168,6 +168,7 @@ public sealed class ChatRunner(
 
         Process process;
         string? rules = null;
+        string? servers = null;
         object? meta = null;
         try
         {
@@ -204,6 +205,19 @@ public sealed class ChatRunner(
                 else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
             }
 
+            // 🔴 The servers the plugins hand every session (D64, D65 §1f), on this door too (REV3). The
+            // protocol door carries them on `session/new` (`Servers`); a driven or intake session on the
+            // pipe is handed a file — and a conversation on the pipe was handed nothing at all.
+            if (resolved.Wire == SessionWire.Pipe)
+            {
+                var plugged = PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers;
+                if (plugged.Count > 0 && SpawnServers.Write(home, sessionId, plugged) is { } file)
+                {
+                    servers = file;
+                    resolved.HandServers(info, file);
+                }
+            }
+
             process = Process.Start(info)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
@@ -214,6 +228,7 @@ public sealed class ChatRunner(
             // timeout is an OperationCanceledException too, and filtering those out left the record
             // stranded where no stop and no sweep reaches it (REV3).
             SpawnSettings.Remove(rules);
+            SpawnServers.Remove(servers);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await Conclude(
                 sessionId, "failed",
@@ -249,7 +264,7 @@ public sealed class ChatRunner(
             _native[sessionId] = native;
         }
 
-        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, mapper, chat, native);
+        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, mapper, chat, native, servers);
         _watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -404,9 +419,11 @@ public sealed class ChatRunner(
     /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
     /// <param name="chat">The conversation's session on the protocol door (CONV3b), or null on the pipe.</param>
     /// <param name="native">The conversation's turns on the native door's structured wire (CONV4a), or null.</param>
+    /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
     private async Task WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
-        string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null, NativeChat? native = null)
+        string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null, NativeChat? native = null,
+        string? servers = null)
     {
         using var tracked = processes.Track(sessionId, process);
         using var talking = new Disposer(() =>
@@ -465,6 +482,7 @@ public sealed class ChatRunner(
         {
             output?.Close(sessionId);
             SpawnSettings.Remove(rules);
+            SpawnServers.Remove(servers);
         }
     }
 

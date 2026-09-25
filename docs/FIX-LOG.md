@@ -5,6 +5,39 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The terminal's conversation: Ctrl+C left it `working`, an unreadable attach ended it, and plugin servers never reached it (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the conversation's two doors.
+- **Ctrl+C at rest.** Pressing Ctrl+C at the terminal's prompt, with no turn running, let the runtime
+  terminate. No `finally` ran and no runner was disposed. The harness exited on end of input, and the
+  record stayed `working`, holding the repository, with no terminal verb that could end it.
+- **Attaching a file.** `:attach` of a locked, unreadable or 1 GB file threw out of the read loop, so
+  disposing the runner stopped the whole conversation. A huge file was read into memory before the
+  20 MB limit refused it.
+- **No catch at the door.** A missing home or an unreachable service was a stack trace, not the door's
+  own exit 2.
+- **Plugin servers.** A conversation on Claude Code's own door was handed no plugin servers, while
+  driven, intake and protocol-door sessions all were ("servers every session is handed", D64).
+
+**Root cause.** The terminal door's interrupt handler returned early at rest. Its read loop waited on
+stdin alone, and `ChatConsole.RunAsync` sat outside the host's catch. `ChatRunner` wrote the servers
+file only on the protocol door's path. The pipe half was written for driven and intake spawns, and the
+chat path never got it.
+
+**Fix.**
+- Ctrl+C at rest is the person's stop: it ends the conversation `stopped`, on the record. The read loop
+  races stdin against the conversation's end, so either one ends the loop.
+- `:attach` judges the size first, and a file that will not read is a line saying so.
+- The door carries its sibling consoles' `DriverException`/`HttpRequestException` → exit 2.
+- A chat on the pipe door is handed the plugins' servers file, and it is removed when the conversation
+  goes.
+
+**Verify.** `A_conversation_on_the_native_door_is_handed_the_plugins_servers` failed before the fix: a
+stand-in Claude Code records its argv, and the test finds `--mcp-config` naming the plugin's server.
+The family rehearsal passes 279/279, and it drives this door's scripted conversation. **Not covered
+by a test:** Ctrl+C at an idle prompt, and `:attach` of an unreadable file. Both are the terminal's
+interactive half, and neither has a harness yet.
+
 ## Every closed monitor or detached window kept buffering the whole bus (2026-09-25)
 
 **Symptom.** Found by REV3's reading, against the Shenora source. Opening and closing a monitor window
