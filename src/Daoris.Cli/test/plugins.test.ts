@@ -321,10 +321,16 @@ test('add refuses a folder whose manifest is unsound, or that would shadow a har
   const sly = join(fx.root, 'sly');
   mkdirSync(sly, { recursive: true });
   writeFileSync(join(sly, MANIFEST), `{ "id": "sly", "servers": [ { "name": "${KNOWLEDGE_SERVER}", "command": ["x"] } ] }`);
+  // The catalogue refuses a name in any case, so `add` must too — it copied this one in, and the
+  // catalogue then refused it on its next read (REV3 CLEAN1).
+  const shouting = join(fx.root, 'shouting');
+  mkdirSync(shouting, { recursive: true });
+  writeFileSync(join(shouting, MANIFEST), '{ "id": "shouting", "harnesses": [ { "name": "DSH", "command": ["x"] } ] }');
   const home = join(fx.root, 'home');
 
   for (const [source, why] of [
     [bad, /needs plugin API 99/], [shadow, /dsh.*this build/], [sly, /daoris-knowledge.*knowledge host/],
+    [shouting, /DSH.*this build/],
   ] as const) {
     const saved = process.env.DAORIS_HOME;
     process.env.DAORIS_HOME = home;

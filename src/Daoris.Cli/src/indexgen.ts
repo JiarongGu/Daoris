@@ -71,13 +71,13 @@ export function rosterFromDisk(
 }
 
 /**
- * `daoris index` — rebuild the region from the canon and this repository's disk.
+ * `daoris index` — says where the roster went, and writes nothing.
  *
  * @remarks
  * It used to write `RULES_INDEX.md`, a generated file in an always-loaded directory. The roster now
  * lives inside the region (D59), where it is loaded rather than merely present, so regenerating it is
- * regenerating the region — which needs the canon's rule bodies and is therefore `sync`'s own path,
- * run with nothing else to do.
+ * regenerating the region — which needs the canon's rule bodies and is therefore `sync`'s job. The
+ * command stays as a signpost for anyone whose habit is to run it.
  */
 export function commandIndex({ root, write }: Pick<CommandArgs, 'root' | 'write'>): ExitCode {
   const manifest = readManifest(root);

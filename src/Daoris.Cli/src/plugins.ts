@@ -294,6 +294,27 @@ export function readManifest(folderName: string, folder: string): { manifest: Pl
 }
 
 /**
+ * What in a manifest this build refuses, whatever else is installed: a harness it already carries, or
+ * a server under the knowledge host's name. Case-blind, as every name here is. The catalogue and
+ * `plugin add` ask this one question, so they refuse the same plugin in the same words (REV3 CLEAN1:
+ * `add` compared harness names case-sensitively, and copied in a plugin the catalogue then refused).
+ */
+function refusedByThisBuild(manifest: PluginManifest, reserved: Iterable<string>): string | null {
+  const taken = new Set([...reserved].map((name) => name.toLowerCase()));
+  const harness = manifest.harnesses.find((declared) => taken.has(declared.name.toLowerCase()));
+  if (harness) {
+    return `declares harness \`${harness.name}\`, which this build already carries — `
+      + 'a plugin adds a harness and never replaces one.';
+  }
+  const server = manifest.servers.find((declared) => declared.name.toLowerCase() === KNOWLEDGE_SERVER);
+  if (server) {
+    return `declares server \`${server.name}\`, which is Daoris's own knowledge host — `
+      + 'a plugin hands a session servers beside it, never in its place.';
+  }
+  return null;
+}
+
+/**
  * The home's plugins, in folder order by id — the host drives whatever is here and names no plugin.
  *
  * @param reserved the harness names this build carries; a plugin declaring one is refused naming both.
@@ -304,7 +325,6 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
   if (!existsSync(root)) return { plugins, contributing: [] };
 
   const disabled = new Set(readPluginState(home).disabled.map((d) => d.toLowerCase()));
-  const taken = new Set([...reserved].map((name) => name.toLowerCase()));
   const declaredBy = new Map<string, string>();
   const servedBy = new Map<string, string>();
 
@@ -318,13 +338,9 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
     const enabled = !disabled.has(manifest.id.toLowerCase());
 
     if (problem === null && enabled) {
-      for (const harness of manifest.harnesses) {
+      problem = refusedByThisBuild(manifest, reserved);
+      for (const harness of problem === null ? manifest.harnesses : []) {
         const key = harness.name.toLowerCase();
-        if (taken.has(key)) {
-          problem = `declares harness \`${harness.name}\`, which this build already carries — `
-            + 'a plugin adds a harness and never replaces one.';
-          break;
-        }
         const other = declaredBy.get(key);
         if (other) {
           problem = `declares harness \`${harness.name}\`, which plugin \`${other}\` already declares — `
@@ -336,11 +352,6 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
       // two tools under one name. The knowledge host's name is Daoris's own.
       for (const server of problem === null ? manifest.servers : []) {
         const key = server.name.toLowerCase();
-        if (key === KNOWLEDGE_SERVER) {
-          problem = `declares server \`${server.name}\`, which is Daoris's own knowledge host — `
-            + 'a plugin hands a session servers beside it, never in its place.';
-          break;
-        }
         const other = servedBy.get(key);
         if (other) {
           problem = `declares server \`${server.name}\`, which plugin \`${other}\` already declares — `
@@ -450,16 +461,8 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
       if (problem !== null) {
         throw new DaorisError(`${MANIFEST} in ${from}: ${problem} Nothing was copied.`);
       }
-      for (const harness of manifest.harnesses) {
-        if (reservedHarnesses().has(harness.name)) {
-          throw new DaorisError(`plugin \`${manifest.id}\` declares harness \`${harness.name}\`, which this build already `
-            + 'carries — a plugin adds a harness and never replaces one. Nothing was copied.');
-        }
-      }
-      if (manifest.servers.some((server) => server.name.toLowerCase() === KNOWLEDGE_SERVER)) {
-        throw new DaorisError(`plugin \`${manifest.id}\` declares server \`${KNOWLEDGE_SERVER}\`, which is Daoris's own `
-          + 'knowledge host — a plugin hands a session servers beside it, never in its place. Nothing was copied.');
-      }
+      const refused = refusedByThisBuild(manifest, reservedHarnesses());
+      if (refused !== null) throw new DaorisError(`plugin \`${manifest.id}\` ${refused} Nothing was copied.`);
 
       const target = join(pluginsRoot(home), manifest.id);
       if (resolve(from) === resolve(target)) {
