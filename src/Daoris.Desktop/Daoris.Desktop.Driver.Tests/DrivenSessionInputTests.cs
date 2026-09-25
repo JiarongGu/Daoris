@@ -141,7 +141,9 @@ public sealed class DrivenSessionInputTests : IDisposable
         await Task.Delay(1500);   // past one beside-sync, so the loop is where the close finds it
         closing.Cancel();
 
-        try { await tick.WaitAsync(TimeSpan.FromSeconds(30)); }
+        // About 50 ms on a quiet machine (measured). Bounded generously because the full suite runs
+        // classes in parallel, each spawning node, and one loaded run went past 30 s (2026-09-25).
+        try { await tick.WaitAsync(TimeSpan.FromSeconds(90)); }
         catch (OperationCanceledException) { }
 
         Assert.NotEqual("working", service.Session("s1")["state"]!.GetValue<string>());

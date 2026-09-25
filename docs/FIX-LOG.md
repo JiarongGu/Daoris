@@ -42,7 +42,11 @@ The tick always awaits every session it started before it returns.
 
 **Verify.** `A_cancelled_tick_returns_only_after_its_sessions_are_recorded` ticks with a beside-sync,
 cancels after one sync has run, and reads the record the moment the tick returns. It read `working`
-before the fix. Driven-session tests 5/5.
+before the fix. Driven-session tests 5/5. 🔴 **Not fully explained:** in one full driver run of five,
+under heavy load, the test timed out after 35 s. Its message was not captured, and it did not recur
+in three more full runs. Alone, the tick returns about 50 ms after the cancel (measured). The bound is
+now 90 s. If it recurs, capture the message first: a tick that outlives a close by that long is a
+bug in its own right.
 
 ## Two circles could share one intake room (2026-09-25)
 
