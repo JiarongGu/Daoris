@@ -160,11 +160,14 @@ public static class RuleProposals
     public static IReadOnlyList<string> Settle(string home, DateTimeOffset at)
     {
         var said = new List<string>();
-        var rules = PermissionRules.Load(home);
         foreach (var proposal in Load(home).Where(p => p.State == ProposalState.Proposed).Reverse())
         {
             var path = PathOf(home, proposal.Id);
             ChangeEffect effect;
+            // 🔴 Read afresh for each proposal, and saved at once (REV3): one copy read before the loop
+            // and saved after each narrowing wrote back whatever the person had changed meanwhile —
+            // a deny they had just added could be undone by the driver applying something else.
+            var rules = PermissionRules.Load(home);
             try
             {
                 effect = Effect(rules, proposal.Change);

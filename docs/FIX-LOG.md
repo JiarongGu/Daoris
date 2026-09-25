@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Settling an agent's proposals could undo a person's deny (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the driver. Each tick, `RuleProposals.Settle` applies every
+narrowing an agent proposed (D74). It read the rules once, before its loop, and saved that copy after
+each narrowing it applied. A person's edit that landed during the loop (`daoris agent rules deny …`,
+or the Settings page) was written over by the stale copy. So a deny the person had just added could
+vanish because the driver applied something else.
+
+**Root cause.** One read serving a loop of writes.
+
+**Fix.** The rules are read afresh for each proposal, immediately before its change is judged and
+applied: the same load-apply-save that `Answer` uses.
+
+**Verify.** No test: the static method offers no point at which to land a person's write between
+two proposals, and a test that raced the file would be timing, not proof. The window is now one
+proposal's read-to-write, not the whole loop. Rule-proposal tests 31/31.
+
 ## Two writers of one file failed a finished session (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the driver. Fourteen places in the driver wrote a file
