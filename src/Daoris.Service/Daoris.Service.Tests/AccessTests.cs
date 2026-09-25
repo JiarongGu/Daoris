@@ -65,6 +65,21 @@ public sealed class AccessTests
     {
         Assert.Null(Access.RefuseStartup(ServiceMode.Shared, "http://0.0.0.0:5177"));
     }
+
+    /// <summary>
+    /// 🔴 REV3: Kestrel's own endpoint configuration OVERRIDES the urls at bind time. With the urls at
+    /// their loopback default and `Kestrel__Endpoints__Http__Url=http://0.0.0.0:5177` set, the judgement
+    /// passed and the host bound every interface with loopback trust.
+    /// </summary>
+    [Fact]
+    public void Local_mode_refuses_a_kestrel_endpoint_beyond_loopback_whatever_the_urls_say()
+    {
+        var refusal = Access.RefuseStartup(ServiceMode.Local, "http://localhost:5177", ["http://0.0.0.0:5177"]);
+
+        Assert.NotNull(refusal);
+        Assert.Contains("0.0.0.0", refusal);
+        Assert.Null(Access.RefuseStartup(ServiceMode.Local, "http://localhost:5177", ["http://127.0.0.1:5178"]));
+    }
 }
 
 /// <summary>

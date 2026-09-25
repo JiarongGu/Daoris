@@ -44,11 +44,18 @@ public static class Access
     /// local trusts the loopback and may bind nothing else; shared gates everything with minted keys
     /// and may bind anywhere.
     /// </summary>
-    public static string? RefuseStartup(ServiceMode mode, string urls)
+    /// <param name="endpoints">
+    /// The addresses Kestrel's own endpoint configuration names (`Kestrel:Endpoints:*:Url`). They
+    /// OVERRIDE <paramref name="urls"/> at bind time, so a judgement that read only the urls passed a
+    /// host that then bound wherever an environment variable, an argument or an appsettings.json said
+    /// (REV3). Judged by the same rule.
+    /// </param>
+    public static string? RefuseStartup(ServiceMode mode, string urls, IEnumerable<string>? endpoints = null)
     {
         if (mode == ServiceMode.Local)
         {
             var beyond = urls.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Concat(endpoints ?? [])
                 .FirstOrDefault(url => !IsLoopbackUrl(url));
             if (beyond is not null)
             {

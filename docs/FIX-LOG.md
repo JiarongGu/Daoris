@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A local host could bind every interface through Kestrel's own configuration (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then shown on the real host. A local-mode host refuses to bind
+beyond loopback (D21, D47 §3), and it judged that from `urls`. `Kestrel__Endpoints__Http__Url=http://0.0.0.0:5177`
+was set as an environment variable (an argument or a content-root `appsettings.json` works the same).
+`urls` stayed at its loopback default, so the judgement passed. Kestrel then logged "Overriding
+address(es)…" and bound every interface, with loopback trust: no key, and roots, transcripts and
+profiles served to anything that reached the port. The code's own comment claimed "the RESOLVED value
+is what both the startup judgement below and the bind itself use".
+
+**Root cause.** Kestrel's endpoint section overrides `UseUrls` at bind time, and the judgement read
+only the urls.
+
+**Fix.** `Access.RefuseStartup` also takes the configured endpoints' URLs and judges them by the same
+loopback rule.
+
+**Verify.** `Local_mode_refuses_a_kestrel_endpoint_beyond_loopback_whatever_the_urls_say`. The built
+host was also started in local mode with that variable set, and it refused with the D21 sentence
+before binding anything.
+
 ## A remote address with no scheme threw past the remote's own wall (2026-09-25)
 
 **Symptom.** Found by REV3's reading, then reproduced. `daoris remote add team --url team.example.com:5177`

@@ -106,7 +106,11 @@ var urls = builder.Configuration["urls"]
 builder.WebHost.UseUrls(urls.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
 // The startup judgement (D47 §3): local trust bound beyond loopback does not warn — it does not start.
-if (Access.RefuseStartup(mode, urls) is { } refusal)
+// Kestrel's own endpoints are judged too: they override the urls above when the host binds (REV3).
+var endpoints = builder.Configuration.GetSection("Kestrel:Endpoints").GetChildren()
+    .Select(endpoint => endpoint["Url"])
+    .OfType<string>();
+if (Access.RefuseStartup(mode, urls, endpoints) is { } refusal)
 {
     Console.Error.WriteLine(refusal);
     return 2;
