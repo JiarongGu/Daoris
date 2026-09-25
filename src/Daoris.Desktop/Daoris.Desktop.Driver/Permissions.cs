@@ -26,13 +26,6 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
     public static RuleLists Empty { get; } = new([], [], []);
 
     public bool IsEmpty => Allow.Count == 0 && Ask.Count == 0 && Deny.Count == 0;
-
-    public IReadOnlyList<string> Of(RuleList list) => list switch
-    {
-        RuleList.Allow => Allow,
-        RuleList.Ask => Ask,
-        _ => Deny,
-    };
 }
 
 /// <summary>A rule set Daoris ships, with the reason it exists — switchable off by id, removable by nothing else.</summary>

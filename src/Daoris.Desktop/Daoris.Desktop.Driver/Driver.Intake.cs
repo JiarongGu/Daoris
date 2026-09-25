@@ -183,60 +183,44 @@ public sealed partial class Driver
             var rules = HandRules(
                 adapter, info, sessionId, ask.Workspace, repository: null, tree: room, kept: target.AttachmentsDirectory);
 
-            using var process = Process.Start(info)
-                ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
-            // 🔴 One turn takes no messages (INT4h), on either door: the pipe door gives it no stdin,
-            // and the protocol door's stdin is the driver's own frames — a person's line written
-            // there would land in the middle of the JSON-RPC stream.
-            using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(ask.Id));
-            // The same reaper a quest's session holds (REV3): whatever ends this scope ends the agent.
-            using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
-            using var _ = new Disposer(() => SpawnServers.Remove(handed));
-            using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
+            return await HoldAsync(
+                adapter, info, target, sessionId, transcript, room, harnessNotice, rules, handed,
+                // 🔴 One turn takes no messages (INT4h), on either door: the pipe door gives it no stdin,
+                // and the protocol door's stdin is the driver's own frames — a person's line written
+                // there would land in the middle of the JSON-RPC stream.
+                refusesInput: TakesNoMessages(ask.Id),
+                ct: ct,
+                scope: scope,
+                preamble: preamble,
+                conclude: async (exitCode, used) =>
+                {
+                    if (used is not null)
+                    {
+                        usage?.Record(new UsageEntry(
+                            sessionId, $"ask #{ask.Id}", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
 
-            // Held as its own type for the same reason a quest's is: the usage lives in the outcome.
-            var acp = adapter.Wire == SessionWire.Acp
-                ? CaptureAcpAsync(
-                    process, transcript, sessionId, room, TargetPrompt.Compose(target), adapter.AcpPosture,
-                    harnessNotice, ct, scope, rules.Meta)
-                : null;
-            // The native door's structure too (CONV3): an intake on the pipe is drawn like any session.
-            var structured = acp is null
-                ? Structured(adapter, process, transcript, sessionId, TargetPrompt.Compose(target), ct, preamble)
-                : null;
-            Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
+                    // What became of the ask is the observation — the intake's own account of it is not.
+                    var after = await service.FindAskAsync(ask.Id, ct).ConfigureAwait(false);
+                    var byPerson = _processes.WasStopRequested(sessionId);
+                    var conclusion = byPerson
+                        ? new SessionConclusion("stopped", "the person stopped it.")
+                        : exitCode is int code
+                            ? IntakeObservation.Conclude(code, ask.Quests.Count, after)
+                            : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
+                    conclusion = AccountRefused(conclusion, adapter, selection, transcript);
 
-            await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
+                    await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct).ConfigureAwait(false);
 
-            var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
-            await capture.ConfigureAwait(false);
-
-            if ((acp is not null ? (await acp.ConfigureAwait(false))?.Usage : structured is not null ? await structured.ConfigureAwait(false) : null) is { } used)
-            {
-                usage?.Record(new UsageEntry(
-                    sessionId, $"ask #{ask.Id}", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
-            }
-
-            // What became of the ask is the observation — the intake's own account of it is not.
-            var after = await service.FindAskAsync(ask.Id, ct).ConfigureAwait(false);
-            var byPerson = _processes.WasStopRequested(sessionId);
-            var conclusion = byPerson
-                ? new SessionConclusion("stopped", "the person stopped it.")
-                : exitCode is int code
-                    ? IntakeObservation.Conclude(code, ask.Quests.Count, after)
-                    : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
-            conclusion = AccountRefused(conclusion, adapter, selection, transcript);
-
-            await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct).ConfigureAwait(false);
-
-            return (
-                $"{conclusion.State}  intake {sessionId} ({named}): {conclusion.Note}",
-                true,
-                SessionStates.IsParked(conclusion.State)
-                    ? null
-                    : new SessionEnded(
-                        sessionId, $"ask #{ask.Id}", conclusion.State, byPerson, conclusion.Note,
-                        Adapter: adapter.Name, Account: selection.Profile));
+                    return (
+                        $"{conclusion.State}  intake {sessionId} ({named}): {conclusion.Note}",
+                        true,
+                        SessionStates.IsParked(conclusion.State)
+                            ? null
+                            : new SessionEnded(
+                                sessionId, $"ask #{ask.Id}", conclusion.State, byPerson, conclusion.Note,
+                                Adapter: adapter.Name, Account: selection.Profile));
+                }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

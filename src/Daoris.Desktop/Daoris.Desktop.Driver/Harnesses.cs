@@ -438,7 +438,7 @@ public sealed record HarnessSettings(
 
     /// <summary>Where a managed version of a harness lives. Daoris owns this location, binary and all.</summary>
     public static string ManagedHome(string home, string harness, string version) =>
-        Path.Combine(home, "toolchain", SafeName(harness, "agent name"), SafeName(version, "version"));
+        Path.Combine(home, "toolchain", Name(harness, "agent name"), Name(version, "version"));
 
     /// <summary>
     /// The executable inside a managed install, or null when nothing is pinned or nothing is
@@ -582,9 +582,6 @@ public sealed record HarnessSettings(
                 + "directory Daoris owns the location of, so it may not point anywhere else.")
             : trimmed;
     }
-
-    /// <inheritdoc cref="Name"/>
-    private static string SafeName(string value, string what) => Name(value, what);
 
     /// <summary>One workspace → harness → value map, read from a named property.</summary>
     private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> ReadCircles(

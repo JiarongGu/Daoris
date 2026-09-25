@@ -522,86 +522,60 @@ public sealed partial class Driver(
             // handed over as the harness's own settings tier.
             var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory);
 
-            using var process = Process.Start(info)
-                ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
-            // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for an
-            // intake, for the same reason: it was handed its whole quest at once, the pipe door gives
-            // it no stdin, and the protocol door's stdin carries the driver's own frames.
-            using var tracked = _processes.Track(sessionId, process, refusesInput: TakesNoMessages(quest));
-            // 🔴 Declared after `tracked`, so it runs first: whatever ends this scope, the agent ends with
-            // it, while it is still tracked — never working on untracked in a tree just unlocked (REV3).
-            using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
-            using var _ = new Disposer(() => SpawnServers.Remove(handed));
-            using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
             _live[quest.Id] = sessionId;
             using var live = new Disposer(() => _live.TryRemove(quest.Id, out var _));
 
-            // Which door this harness is held over (D53). The protocol door drives an ACP session on
-            // the same process; the pipe door reads its text. Both end the same way — the record is
-            // concluded below from the exit code and the quest's state, never from what the session
-            // said about itself (D46 §4).
-            // 🔴 The ACP task is held AS ITS OWN TYPE. Assigning it to a bare `Task` compiles and
-            // silently discards the outcome — which is where the usage measurement lives (TOOL3).
-            var acp = adapter.Wire == SessionWire.Acp
-                // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses
-                // name the same D37 boundary three different ways, and one of them does not name it
-                // on the wire at all.
-                ? CaptureAcpAsync(
-                    process, transcript, sessionId, workTree, TargetPrompt.Compose(target),
-                    adapter.AcpPosture, harnessNotice, ct, meta: rules.Meta)
-                : null;
-            // The native door's structure, where the harness's own wire carries one (D76, CONV3).
-            var structured = acp is null ? Structured(adapter, process, transcript, sessionId, TargetPrompt.Compose(target), ct) : null;
-            Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct);
+            return await HoldAsync(
+                adapter, info, target, sessionId, transcript, workTree, harnessNotice, rules, handed,
+                // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for
+                // an intake, for the same reason: it was handed its whole quest at once, the pipe door
+                // gives it no stdin, and the protocol door's stdin carries the driver's own frames.
+                refusesInput: TakesNoMessages(quest),
+                ct: ct,
+                conclude: async (exitCode, used) =>
+                {
+                    if (used is not null)
+                    {
+                        usage?.Record(new UsageEntry(
+                            sessionId, quest.To, adapter.Name, selection.Profile,
+                            used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
 
-            await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
+                    // The person's stop outranks the observation: a killed session leaves the same
+                    // signals as a crashed one, and only this flag knows whose decision the end was.
+                    var status = await service.QuestStatusAsync(quest.Id, ct).ConfigureAwait(false) ?? "Open";
+                    var stoppedFor = _processes.StopReason(sessionId);
+                    var conclusion = stoppedFor is not null
+                        // The driver's own stop, for a take that lost (D68 §5): the quest was someone
+                        // else's, which is what standing down has always meant — and the reason says who.
+                        ? new SessionConclusion("stood-down", stoppedFor)
+                        : _processes.WasStopRequested(sessionId)
+                        ? new SessionConclusion("stopped", "the person stopped it.")
+                        : exitCode is int code
+                            ? Observation.Conclude(code, status)
+                            : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
-            var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
-            await capture.ConfigureAwait(false);
+                    conclusion = AccountRefused(conclusion, adapter, selection, transcript);
 
-            // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text
-            // reports nothing and records nothing — a surface then says "not measured" rather than zero.
-            if ((acp is not null ? (await acp.ConfigureAwait(false))?.Usage : structured is not null ? await structured.ConfigureAwait(false) : null) is { } used)
-            {
-                usage?.Record(new UsageEntry(
-                    sessionId, quest.To, adapter.Name, selection.Profile,
-                    used.Used, used.Size, DateTimeOffset.UtcNow));
-            }
+                    var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
+                    await service.AdvanceAsync(
+                        sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct).ConfigureAwait(false);
 
-            // The person's stop outranks the observation: a killed session leaves the same signals as
-            // a crashed one, and only this flag knows whose decision the end was.
-            var status = await service.QuestStatusAsync(quest.Id, ct).ConfigureAwait(false) ?? "Open";
-            var stoppedFor = _processes.StopReason(sessionId);
-            var conclusion = stoppedFor is not null
-                // The driver's own stop, for a take that lost (D68 §5): the quest was someone else's,
-                // which is what standing down has always meant — and the reason says who decided.
-                ? new SessionConclusion("stood-down", stoppedFor)
-                : _processes.WasStopRequested(sessionId)
-                ? new SessionConclusion("stopped", "the person stopped it.")
-                : exitCode is int code
-                    ? Observation.Conclude(code, status)
-                    : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
-
-            conclusion = AccountRefused(conclusion, adapter, selection, transcript);
-
-            var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
-            await service.AdvanceAsync(
-                sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct).ConfigureAwait(false);
-
-            // The tree stays, whole — nothing merges itself and nothing deletes itself (D51 rules
-            // 6–7): the person merges from the root and discards from a surface that refuses to
-            // destroy work. The line names it so a terminal watcher knows where the work is sitting.
-            var where = opened is null ? "" : $" [own tree: {opened.Path}]";
-            return (
-                $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
-                true,
-                // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same one
-                // that outranks the observation two lines above. Read once, used for both.
-                new SessionEnded(
-                    sessionId, quest.To, conclusion.State,
-                    ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
-                    Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
-                null);
+                    // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
+                    // rules 6–7): the person merges from the root and discards from a surface that
+                    // refuses to destroy work. The line names it so a terminal watcher knows where.
+                    var where = opened is null ? "" : $" [own tree: {opened.Path}]";
+                    return (
+                        $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
+                        true,
+                        // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
+                        // one that outranks the observation above. Read once, used for both.
+                        (SessionEnded?)new SessionEnded(
+                            sessionId, quest.To, conclusion.State,
+                            ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
+                            Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
+                        (string?)null);
+                }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -773,6 +747,65 @@ public sealed partial class Driver(
             + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
         _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
         return conclusion with { Note = $"{conclusion.Note} {char.ToUpperInvariant(reason[0])}{reason[1..]}" };
+    }
+
+    /// <summary>
+    /// Start a prepared session and hold it to its conclusion — the part a quest's session and an
+    /// intake share. REV3's F1 was one defect in two copies of this, fixed twice; CLEAN1 made it one.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>The conclusion runs inside the scope that tracks the process</b>, and must. The stop
+    /// flags it reads live in the tracking entry, and a record still saying <c>working</c> with nothing
+    /// tracked here is what the orphan sweep concludes for itself.</para>
+    ///
+    /// <para>🔴 <b>Whatever ends this call ends the agent while it is still tracked</b> — the reaper is
+    /// declared after <c>tracked</c>, so it runs first — never working on untracked in a tree just
+    /// unlocked (REV3).</para>
+    ///
+    /// <para>The ACP task is held <b>as its own type</b>: assigning it to a bare <c>Task</c> compiles and
+    /// silently discards the outcome, which is where the usage measurement lives (TOOL3).</para>
+    /// </remarks>
+    /// <param name="conclude">
+    /// The exit code (null when the timeout killed it) and the usage the door reported (null when it
+    /// reported none), to the caller's conclusion — which reads the stop flags and moves the record.
+    /// </param>
+    private async Task<T> HoldAsync<T>(
+        ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
+        string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
+        Func<int?, AcpUsage?, Task<T>> conclude, CancellationToken ct,
+        IReadOnlyDictionary<string, string>? scope = null, string? preamble = null)
+    {
+        using var process = Process.Start(info)
+            ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+        using var tracked = _processes.Track(sessionId, process, refusesInput);
+        using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
+        using var servers = new Disposer(() => SpawnServers.Remove(handed));
+        using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
+
+        // Which door this harness is held over (D53). The protocol door drives an ACP session on the
+        // same process; the pipe door reads its text, or its structure where its own wire carries one
+        // (D76, CONV3). All of them end the same way: the record is concluded from the exit code and
+        // what the session was for, never from what the session said about itself (D46 §4).
+        var prompt = TargetPrompt.Compose(target);
+        var acp = adapter.Wire == SessionWire.Acp
+            // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
+            // same D37 boundary three different ways, and one of them does not name it on the wire.
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta)
+            : null;
+        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble) : null;
+        Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
+
+        await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
+
+        var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
+        await capture.ConfigureAwait(false);
+
+        // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
+        // nothing, and a surface then says "not measured" rather than zero.
+        var used = acp is not null ? (await acp.ConfigureAwait(false))?.Usage
+            : structured is not null ? await structured.ConfigureAwait(false)
+            : null;
+        return await conclude(exitCode, used).ConfigureAwait(false);
     }
 
     /// <summary>
