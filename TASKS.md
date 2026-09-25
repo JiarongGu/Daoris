@@ -484,6 +484,12 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
+- [ ] **DIST1 — how a consumer installs Daoris** (found by REV3; the owner's call). The README's
+  `npx github:JiarongGu/Daoris#v0.0.1 …` cannot run: the root package is a private workspace with no
+  `bin`, and no tag exists. Choose npm's `daoris@X` (the release workflow already publishes it) or a
+  git ref with a root `bin`; the README, `init`'s written `source`, `release-prep` and
+  `version.test.ts` then move together.
+
 - [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the
   intake opened, and its stub agent published nothing onto the ask (2026-09-25, under a loaded full

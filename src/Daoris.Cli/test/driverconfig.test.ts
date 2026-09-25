@@ -370,6 +370,11 @@ test('retrying a quest marks it at its current failures rather than erasing them
   assert.equal(readDriverChoices(at(fx)).forgiven['a78553'], 4);
   assert.match(said.out, /a78553/);
 
+  // A flag's value is not the quest, wherever the flag stands (REV3): `--at 2 42` forgave quest #2.
+  run(['retry', '--at', '2', 'b9c7d1'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).forgiven['b9c7d1'], 2);
+  assert.equal(readDriverChoices(at(fx)).forgiven['2'], undefined);
+
   fx.cleanup();
 });
 

@@ -30,7 +30,7 @@ const USAGE = `daoris <command> [options]
   check                drift, staleness, index freshness (offline); the core budget is reported,
                        never enforced
   upstream <file>      promote a locally-edited canonical file back to the canon
-  index                regenerate RULES_INDEX.md from what is on disk
+  index                say where the roster went: the AGENTS.md region sync writes
   status               summary of packs, drift, local files, and any pending
                        canon update; --machine adds this machine's wiring;
                        --json for an agent to act on
@@ -75,6 +75,12 @@ const USAGE = `daoris <command> [options]
                                                    time it runs in a folder, granted
                                                    in its own file; without --yes,
                                                    the question and nothing written
+                         rules [allow|ask|deny|remove <rule>]
+                               [--workspace W | --repository R]
+                                                   what a session Daoris starts may
+                                                   do; rules default <id> on|off
+                         rules proposals|accept|decline <id>
+                                                   what agents asked to change
   driver [verb]        what this machine drives ($DAORIS_HOME/driver.json):
                          list                      adapter, cap, what is opted in
                          drive|undrive <repo>      opt a repository in, or out
@@ -87,6 +93,9 @@ const USAGE = `daoris <command> [options]
                          intake <adapter>|off      answer an ask the declarations
                                                    do not settle with a session
                                                    on that harness, a login each
+                         strikes <n>               park a quest after n failed
+                                                   sessions; 0 never parks
+                         retry <quest> [--at <n>]  start a parked quest again
                          cap <n> · adapter <name>
   plugin [verb]        this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json):
                          list                      each one, what it declares and

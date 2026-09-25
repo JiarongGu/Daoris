@@ -5,8 +5,8 @@ host carries the same service for a browser or a remote deployment. The core rea
 knowledge into addressable entries, classifies each as canonical or local, stores them in SQLite,
 answers ranked queries over FTS5, and finds where repositories learned the same lesson independently.
 Quests and pushed registrations persist in the same database, so what one session publishes another
-session — or another machine's `connect` — finds waiting. **275 tests**, two of which run against the
-real sibling repositories rather than fixtures.
+session — or another machine's `connect` — finds waiting. Its tests are the `service` gate in
+`daoris.gates.json`; the count lives in `TASKS.md`, where a count is kept current.
 
 Since **D59** the always-loaded tier is a region of `AGENTS.md` rather than a directory, so the
 scanner reads `DoctrineRegion` for a repository's rules and a gate holds that a canonical rule stays
@@ -88,9 +88,9 @@ drift, and the same ask would be deliverable through one door and refused at the
 quest system is the worst available bug: it looks like the sibling ignoring you.
 
 Four states, because anything finer is status for its own sake. A quest is **taken**, not assigned,
-which is the property that keeps declining a real answer. **Only an adopted repository can be
-addressed**, because one without the client cannot see the quest — and an unread quest looks exactly
-like an ignored one.
+which is the property that keeps declining a real answer. **An adopted repository, or one registered
+here with a root, can be addressed** (D70): registered is addressable, adopted is disciplined. Anything
+else is refused naming who can be, because an unread quest looks exactly like an ignored one.
 
 Stored beside the index in the same database: quests are service state as the index is, and two files
 would be two things to back up and two that can disagree about which repositories exist.
@@ -164,7 +164,7 @@ bare, and `daoris-knowledge-http-<rid>.tar.gz` carrying its web bundle beside th
 | `knowledge_get` | The full text of one entry |
 | `knowledge_repositories` | What is searchable, and how much each repository contributes |
 | `knowledge_convergence` | Which repositories learned the same lesson independently? |
-| `knowledge_refresh` | Re-read every repository from disk — and retire what is no longer there: a repository renamed or removed leaves the index instead of being served forever (guarded: a scan that saw nothing retires nothing, because that is a mis-set root, not an emptied family) |
+| `knowledge_refresh` | Re-read every repository from disk — and retire what is no longer there: a repository renamed or removed leaves the index instead of being served forever (on a host that reads its registered roots, the registry decides — retiring the last repository empties the index, POLISH5; a fed host never refreshes) |
 
 **Remote — transfer of request and task, opt-in.** The HTTP host is the deployable half. It runs with
 **no model at all** (D24) and still carries what a remote deployment exists to carry: registrations

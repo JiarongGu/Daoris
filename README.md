@@ -31,7 +31,8 @@ differed in 12 of 19 files.
 
 ## Install
 
-Nothing to install. Every command runs through `npx` against a pinned reference:
+Nothing is published yet (DIST1); once it is, every command runs through `npx` against a pinned
+reference:
 
 ```sh
 npx github:JiarongGu/Daoris#v0.0.1 init     # write daoris.json, report available packs
@@ -51,7 +52,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `sync` | Materializes the manifest's packs — the rules region into `AGENTS.md`, knowledge and skills into `.claude/` — writes `daoris.lock`, regenerates the index |
 | `check` | Drift, staleness, index freshness. **Offline.** Exit 1 on any failure; the core budget is reported, never enforced |
 | `upstream <file>` | Promotes a locally-improved canonical file back into the canon |
-| `index` | Regenerates `RULES_INDEX.md` from what is on disk |
+| `index` | Says where the roster went: the `AGENTS.md` region, which `sync` regenerates (D59) |
 | `status` | Packs, versions, drift, local files, and what a pending update would change; `--json` for an agent |
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
 | `connect` | Registers this repo with a knowledge service: what it owns and accepts, and (`--workspace`) its circle |
@@ -66,7 +67,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
 promote every locally-edited canonical file at once. `connect` accepts `--workspace <name>`,
 `status` accepts `--machine` to report this machine's wiring beside the repository's own declaration,
-and `harness login` accepts `--profile <name>`.
+and `agent login` accepts `--profile <name>`.
 
 **A workspace is the unit of sharing**: knowledge, quests and session records cross between repositories
 within one and never across one, so a machine can hold a game family and a work family without either
@@ -95,15 +96,15 @@ has never been trusted in refuses **naming the action that fixes it**.
 `docs/2026-09-22-toolchain-design.md` is the contract.
 
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
-no gate ever runs them. `remote`, `agent` and `driver` are management too; they edit files under
+no gate ever runs them. `remote`, `agent`, `driver` and `plugin` are management too; they edit files under
 **the Daoris home** (`DAORIS_HOME` — the installed application's own `data/`, set once for your
 account, never your profile; D63), refusing with none set. `agent` runs each agent's own installer,
 updater or login flow, `agent pin` fetches from a maker's verified channel, and `agent trust --yes`
 sets one flag in the agent's own file. Every other
 command above is offline by construction. **The machine's registry
 is the authority** on who is in the family: being in a folder is not being a member, so a repository
-joins by connecting and leaves by retiring. `import` is the old folder scan, demoted to something a
-person runs, and safe to re-run: unstated wiring is preserved. A never-managed store imports its
+joins by connecting and leaves by retiring. `import` is safe to re-run: unstated wiring is
+preserved. A never-managed store imports its
 configured root **once**, and says so. A registered checkout that is no longer
 where the registry says it is gets **named** by the next refresh rather than silently skipped.
 

@@ -913,7 +913,7 @@ export function commandHarness(
 
     default:
       throw new DaorisError(
-        `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile, rules`);
+        `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile, trust, rules`);
   }
 
   /**

@@ -372,7 +372,9 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
   function named(args: string[], verb: string): string {
     for (let at = 1; at < args.length; at += 1) {
       const token = args[at]!;
-      if (!token.startsWith('--')) return token;
+      // A flag's value is never the name (REV3): `retry --at 2 42` read `2` as the quest.
+      if (token === '--at') at += 1;
+      else if (!token.startsWith('--')) return token;
     }
 
     throw new DaorisError(
