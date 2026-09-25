@@ -170,14 +170,32 @@ const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env
 const { CLEARED, REDIRECTED, powershell, psQuote, running, stopAll } = await import('./desktop.mjs');
 const { freePort } = await import('./cdp.mjs');
 
-/** One HTTP call against whichever host is being asked. Local trust — no key on this door (D21). */
+const API_TIMEOUT = 30_000;
+
+/**
+ * One HTTP call against whichever host is being asked. Local trust — no key on this door (D21).
+ *
+ * Bounded (REV3 CLEAN1), as the family rehearsal's is: no answer in time is an answer a check fails
+ * on, where a bare `fetch` would hang the gate. A refused connection still throws, which is what
+ * `answers` waits through.
+ */
 async function api(method, path, base, body) {
-  const response = await fetch(`${base}${path}`, {
-    method,
-    headers: body ? { 'content-type': 'application/json' } : {},
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const text = await response.text();
+  let response;
+  let text;
+  try {
+    response = await fetch(`${base}${path}`, {
+      method,
+      headers: body ? { 'content-type': 'application/json' } : {},
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(API_TIMEOUT),
+    });
+    text = await response.text();
+  } catch (error) {
+    if (error?.name !== 'TimeoutError') throw error;
+    return {
+      status: 0, json: null, text: `no answer to ${method} ${path} within ${API_TIMEOUT / 1000}s`, headers: new Headers(),
+    };
+  }
   let json = null;
   try {
     json = JSON.parse(text);
@@ -441,11 +459,13 @@ const respond = async (action, reason) => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ action, reason }),
   });
-  return { ok: response.ok, text: await response.text() };
+  return { ok: response.ok, status: response.status, text: await response.text() };
 };
 
+// Somebody else's quest is a clean stand-down, read by the status the door answers and never by its
+// wording (the family rehearsal's stub, REV3 CLEAN1: this one had drifted to matching the sentence).
 const take = await respond('take', null);
-if (!take.ok) { if (/already taken/i.test(take.text)) process.exit(0); throw new Error(take.text); }
+if (!take.ok) { if (take.status === 409) process.exit(0); throw new Error(take.text); }
 
 // 🔴 The line this gate exists for. Node writes UTF-8 to a pipe whatever the console is set to, so
 // what reaches the transcript is decided entirely by how the DEPLOYED SHELL decodes this stream.
