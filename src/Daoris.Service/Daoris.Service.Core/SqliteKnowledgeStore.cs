@@ -104,7 +104,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         await gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            await ReplaceRepositoryInAsync(repository, entries, ct).ConfigureAwait(false);
+            // Not the caller's token once the transaction begins: a cancelled replace would roll back,
+            // and a rollback takes every statement that joined it meanwhile with it (REV3, Quests.cs).
+            await ReplaceRepositoryInAsync(repository, entries, CancellationToken.None).ConfigureAwait(false);
         }
         finally
         {

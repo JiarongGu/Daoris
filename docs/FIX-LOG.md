@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A request that went away mid-transaction could roll back somebody else's write (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. A host holds one SQLite connection for every
+store. A statement another request runs while a quest transaction is open joins that transaction
+rather than failing. `InTransactionAsync` already knew this, and commits even a refusal for that
+reason. But every statement inside the transaction ran on the request's own token. A client that went
+away mid-take threw `OperationCanceledException` halfway, and the rollback that followed took the
+joined writes with it: a session record, a registration, an ask.
+
+**Root cause.** The body's cancellation was the caller's. It was captured by nine lambdas, and by the
+index's replace.
+
+**Fix.** Once `BEGIN` has run, the work is handed `CancellationToken.None` as a parameter, so no body
+can capture the caller's token, and the commit uses none either. Waiting for the connection's gate
+still honours the caller. The index's `ReplaceRepositoryAsync` follows the same rule.
+
+**Verify.** No test: a cancellation landing between two statements of a live transaction cannot be
+timed from outside, and the transaction helper is private. The change is mechanical. The build proves
+no body still names the caller's token, and service 483/483 proves nothing else moved. Stated here so
+nobody reads the suite as having tested it.
+
 ## A schema bump emptied a shared index until every repository committed again (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. A build that bumps the index schema rebuilds it

@@ -183,22 +183,22 @@ public sealed class QuestStore
             if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
         }
 
-        await InTransactionAsync(async transaction =>
+        await InTransactionAsync(async (transaction, inside) =>
         {
             var ids = new List<string>();
             await using (var select = _connection.CreateCommand())
             {
                 select.Transaction = transaction;
                 select.CommandText = Unnamed;
-                await using var reader = await select.ExecuteReaderAsync(ct).ConfigureAwait(false);
-                while (await reader.ReadAsync(ct).ConfigureAwait(false)) ids.Add(reader.GetString(0));
+                await using var reader = await select.ExecuteReaderAsync(inside).ConfigureAwait(false);
+                while (await reader.ReadAsync(inside).ConfigureAwait(false)) ids.Add(reader.GetString(0));
             }
 
             foreach (var id in ids)
             {
-                if (QuestLog.Replay(await HistoryAsync(id, transaction, ct).ConfigureAwait(false)) is { } quest)
+                if (QuestLog.Replay(await HistoryAsync(id, transaction, inside).ConfigureAwait(false)) is { } quest)
                 {
-                    await WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
+                    await WriteCacheAsync(quest, transaction, inside).ConfigureAwait(false);
                 }
             }
 
@@ -359,18 +359,18 @@ public sealed class QuestStore
             if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
         }
 
-        await InTransactionAsync(async transaction =>
+        await InTransactionAsync(async (transaction, inside) =>
         {
             var unlogged = new List<Quest>();
             await using (var select = _connection.CreateCommand())
             {
                 select.Transaction = transaction;
                 select.CommandText = Unlogged;
-                await using var reader = await select.ExecuteReaderAsync(ct).ConfigureAwait(false);
-                while (await reader.ReadAsync(ct).ConfigureAwait(false)) unlogged.Add(Read(reader));
+                await using var reader = await select.ExecuteReaderAsync(inside).ConfigureAwait(false);
+                while (await reader.ReadAsync(inside).ConfigureAwait(false)) unlogged.Add(Read(reader));
             }
 
-            foreach (var quest in unlogged) await GiveHistoryAsync(quest, transaction, ct).ConfigureAwait(false);
+            foreach (var quest in unlogged) await GiveHistoryAsync(quest, transaction, inside).ConfigureAwait(false);
             return unlogged.Count;
         }, ct).ConfigureAwait(false);
     }
@@ -406,16 +406,22 @@ public sealed class QuestStore
     /// <para>It COMMITS whenever the work returns, including a refusal that wrote nothing. A statement
     /// another request runs meanwhile, outside any transaction, joins this one rather than failing
     /// (measured on this driver version, and pinned by a test) — so a rollback would quietly undo
-    /// somebody else's write along with our nothing. Only a throw rolls back.</para>
+    /// somebody else's write along with our nothing. Only a throw rolls back — and cancellation is not
+    /// one, once the transaction has begun.</para>
     /// </remarks>
-    private async Task<T> InTransactionAsync<T>(Func<SqliteTransaction, Task<T>> work, CancellationToken ct)
+    private async Task<T> InTransactionAsync<T>(
+        Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct)
     {
+        // The wait honours the caller; the transaction does not. Once BEGIN has run, a cancelled
+        // request (a client that went away) must not throw halfway, because the rollback that follows
+        // takes every write that joined meanwhile with it (REV3). So the work runs to its end, and the
+        // work is handed a token nobody cancels rather than capturing the caller's.
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             await using var transaction = _connection.BeginTransaction(deferred: false);
-            var result = await work(transaction).ConfigureAwait(false);
-            await transaction.CommitAsync(ct).ConfigureAwait(false);
+            var result = await work(transaction, CancellationToken.None).ConfigureAwait(false);
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
             return result;
         }
         finally
@@ -458,11 +464,11 @@ public sealed class QuestStore
         CancellationToken ct = default)
     {
         var id = MakeId(from, to, title);
-        return await InTransactionAsync(async transaction =>
+        return await InTransactionAsync(async (transaction, inside) =>
         {
             // The same ask already held is the answer, whichever width of id it was published under.
-            var existing = await FindAsync(id, transaction, ct).ConfigureAwait(false)
-                           ?? await FindAsync(id[..LegacyIdLength], transaction, ct).ConfigureAwait(false);
+            var existing = await FindAsync(id, transaction, inside).ConfigureAwait(false)
+                           ?? await FindAsync(id[..LegacyIdLength], transaction, inside).ConfigureAwait(false);
             if (existing is not null) return existing;
 
             var asked = new Quest(
@@ -474,7 +480,7 @@ public sealed class QuestStore
                 Then = then ?? [],
             };
 
-            return await PublishInAsync(asked, transaction, ct).ConfigureAwait(false);
+            return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
         }, ct).ConfigureAwait(false);
     }
 
@@ -651,9 +657,9 @@ public sealed class QuestStore
     /// </returns>
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async transaction =>
+        InTransactionAsync(async (transaction, inside) =>
         {
-            var held = await FindAsync(id, transaction, ct).ConfigureAwait(false);
+            var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
 
             // Every verb commits here, whichever machines share the quest (D68 §1) — and nothing moves
             // TO open.
@@ -662,13 +668,13 @@ public sealed class QuestStore
                 return new QuestMove(held, Moved: false);
             }
 
-            var history = await HistoryAsync(id, transaction, ct).ConfigureAwait(false);
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
             if (history.Count == 0)
             {
                 // A row the log never saw — written by something older than the log since this store
                 // was opened. It is given its history now, exactly as the open would have, and keeps it
                 // even if the move is refused: that write is the store's, and true.
-                history = await GiveHistoryAsync(held, transaction, ct).ConfigureAwait(false);
+                history = await GiveHistoryAsync(held, transaction, inside).ConfigureAwait(false);
             }
 
             if (!QuestTransitions.Allows(QuestLog.Replay(history)!.Status, status))
@@ -676,9 +682,9 @@ public sealed class QuestStore
                 return new QuestMove(held, Moved: false);
             }
 
-            var operation = await AppendAsync(id, kind, now, note, null, transaction, ct).ConfigureAwait(false);
+            var operation = await AppendAsync(id, kind, now, note, null, transaction, inside).ConfigureAwait(false);
             var moved = QuestLog.Replay([.. history, operation])!;
-            await WriteCacheAsync(moved, transaction, ct).ConfigureAwait(false);
+            await WriteCacheAsync(moved, transaction, inside).ConfigureAwait(false);
 
             // A close that finishes a chain's step publishes the next one IN THE SAME TRANSACTION
             // (D65 §4): there is no moment at which the work is done and the chain lost, and a close
@@ -687,8 +693,8 @@ public sealed class QuestStore
             Quest? followUp = null;
             if (status == QuestStatus.Done && NextStep(moved, now) is { } next)
             {
-                followUp = await FindAsync(next.Id, transaction, ct).ConfigureAwait(false)
-                           ?? await PublishInAsync(next, transaction, ct).ConfigureAwait(false);
+                followUp = await FindAsync(next.Id, transaction, inside).ConfigureAwait(false)
+                           ?? await PublishInAsync(next, transaction, inside).ConfigureAwait(false);
             }
 
             return new QuestMove(moved, Moved: true, followUp);
@@ -703,13 +709,13 @@ public sealed class QuestStore
     /// <returns>The quest as it now stands (null: no such quest) and how many conflicts went.</returns>
     public Task<QuestDismissal> DismissAsync(
         string id, string? machine, long? sequence, DateTimeOffset now, CancellationToken ct = default) =>
-        InTransactionAsync(async transaction =>
+        InTransactionAsync(async (transaction, inside) =>
         {
-            var history = await HistoryAsync(id, transaction, ct).ConfigureAwait(false);
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
             if (QuestLog.Replay(history) is not { } quest)
             {
                 // No such quest — or a row the log never saw, which has raced nobody and carries none.
-                return new QuestDismissal(await FindAsync(id, transaction, ct).ConfigureAwait(false), 0);
+                return new QuestDismissal(await FindAsync(id, transaction, inside).ConfigureAwait(false), 0);
             }
 
             var named = quest.Conflicts
@@ -720,12 +726,12 @@ public sealed class QuestStore
             foreach (var conflict in named)
             {
                 written.Add(await AppendAsync(
-                    id, QuestOperationKind.Dismissed, now, note: null, published: null, transaction, ct,
+                    id, QuestOperationKind.Dismissed, now, note: null, published: null, transaction, inside,
                     new QuestOperationRef(conflict.Machine, conflict.Sequence)).ConfigureAwait(false));
             }
 
             var standing = QuestLog.Replay(written)!;
-            if (named.Count > 0) await WriteCacheAsync(standing, transaction, ct).ConfigureAwait(false);
+            if (named.Count > 0) await WriteCacheAsync(standing, transaction, inside).ConfigureAwait(false);
             return new QuestDismissal(standing, named.Count);
         }, ct);
 
@@ -762,23 +768,23 @@ public sealed class QuestStore
     /// </remarks>
     public Task<QuestIntegration> IntegrateAsync(
         string workspace, IReadOnlyList<QuestOperation> fetched, long through, CancellationToken ct = default) =>
-        InTransactionAsync(async transaction =>
+        InTransactionAsync(async (transaction, inside) =>
         {
             var circle = Workspaces.Normalize(workspace);
             var touched = new List<string>();
             foreach (var operation in fetched.Where(o => o.Number is not null).OrderBy(o => o.Number))
             {
-                if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false)
+                if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, inside).ConfigureAwait(false)
                     is { } held)
                 {
-                    await NumberAsync(held, operation.Number!.Value, transaction, ct).ConfigureAwait(false);
+                    await NumberAsync(held, operation.Number!.Value, transaction, inside).ConfigureAwait(false);
                 }
                 else
                 {
                     var filed = operation.Published is null
                         ? operation
                         : operation with { Published = operation.Published with { Workspace = circle } };
-                    await KeepAsync(filed, operation.Number, transaction, ct).ConfigureAwait(false);
+                    await KeepAsync(filed, operation.Number, transaction, inside).ConfigureAwait(false);
                 }
 
                 if (!touched.Contains(operation.Quest, StringComparer.Ordinal)) touched.Add(operation.Quest);
@@ -787,10 +793,10 @@ public sealed class QuestStore
             var conflicts = new List<QuestOperation>();
             foreach (var quest in touched)
             {
-                conflicts.AddRange(await RebaseAsync(quest, transaction, ct).ConfigureAwait(false));
+                conflicts.AddRange(await RebaseAsync(quest, transaction, inside).ConfigureAwait(false));
             }
 
-            var cursor = Math.Max(await CursorAsync(circle, transaction, ct).ConfigureAwait(false), through);
+            var cursor = Math.Max(await CursorAsync(circle, transaction, inside).ConfigureAwait(false), through);
             await using (var command = _connection.CreateCommand())
             {
                 command.Transaction = transaction;
@@ -800,7 +806,7 @@ public sealed class QuestStore
                     """;
                 command.Parameters.AddWithValue("$workspace", circle);
                 command.Parameters.AddWithValue("$number", cursor);
-                await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             }
 
             return new QuestIntegration(cursor, conflicts);
@@ -993,7 +999,7 @@ public sealed class QuestStore
     /// the last try did not are two facts.
     /// </summary>
     public Task RecordPassAsync(string workspace, QuestSyncReport report, DateTimeOffset at, CancellationToken ct = default) =>
-        InTransactionAsync(async transaction =>
+        InTransactionAsync(async (transaction, inside) =>
         {
             await using var command = _connection.CreateCommand();
             command.Transaction = transaction;
@@ -1009,7 +1015,7 @@ public sealed class QuestStore
             // A list of quest ids, kept the way links are: a plain array of strings.
             command.Parameters.AddWithValue("$behind", LinksJson(report.Behind));
             command.Parameters.AddWithValue("$problem", (object?)report.Problem ?? DBNull.Value);
-            return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            return await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
         }, ct);
 
     /// <summary>
@@ -1061,14 +1067,14 @@ public sealed class QuestStore
 
     /// <summary>Record the numbers a push was given — the operations stop being pending.</summary>
     public Task AcceptedAsync(IReadOnlyList<QuestAcceptance> accepted, CancellationToken ct = default) =>
-        InTransactionAsync(async transaction =>
+        InTransactionAsync(async (transaction, inside) =>
         {
             foreach (var acceptance in accepted)
             {
-                if (await PositionOfAsync(acceptance.Machine, acceptance.Sequence, transaction, ct).ConfigureAwait(false)
+                if (await PositionOfAsync(acceptance.Machine, acceptance.Sequence, transaction, inside).ConfigureAwait(false)
                     is { } position)
                 {
-                    await NumberAsync(position, acceptance.Number, transaction, ct).ConfigureAwait(false);
+                    await NumberAsync(position, acceptance.Number, transaction, inside).ConfigureAwait(false);
                 }
             }
 
@@ -1114,7 +1120,7 @@ public sealed class QuestStore
     public Task<QuestPush> ReceiveAsync(
         long @base, IReadOnlyList<QuestOperation> pushed, Func<Quest, string?> judge, Func<Quest, string> workspaceOf,
         CancellationToken ct = default) =>
-        InTransactionAsync(async transaction =>
+        InTransactionAsync(async (transaction, inside) =>
         {
             var accepted = new List<QuestAcceptance>();
             var behind = new List<string>();
@@ -1127,7 +1133,7 @@ public sealed class QuestStore
                 foreach (var operation in group)
                 {
                     // Already here — a push retried after its answer was lost: the number it was given.
-                    if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct).ConfigureAwait(false)
+                    if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, inside).ConfigureAwait(false)
                         is { } held)
                     {
                         accepted.Add(new(operation.Machine, operation.Sequence, held));
@@ -1139,13 +1145,13 @@ public sealed class QuestStore
                 }
 
                 if (fresh.Count == 0) continue;
-                if (await MovedSinceAsync(group.Key, @base, carried, transaction, ct).ConfigureAwait(false))
+                if (await MovedSinceAsync(group.Key, @base, carried, transaction, inside).ConfigureAwait(false))
                 {
                     behind.Add(group.Key);
                     continue;
                 }
 
-                var quest = QuestLog.Replay(await HistoryAsync(group.Key, transaction, ct).ConfigureAwait(false));
+                var quest = QuestLog.Replay(await HistoryAsync(group.Key, transaction, inside).ConfigureAwait(false));
                 string? why = null;
                 var staged = new List<QuestOperation>();
                 foreach (var operation in fresh)
@@ -1174,11 +1180,11 @@ public sealed class QuestStore
 
                 foreach (var operation in staged)
                 {
-                    var number = await KeepAsync(operation, number: null, transaction, ct).ConfigureAwait(false);
+                    var number = await KeepAsync(operation, number: null, transaction, inside).ConfigureAwait(false);
                     accepted.Add(new(operation.Machine, operation.Sequence, number));
                 }
 
-                await WriteCacheAsync(quest!, transaction, ct).ConfigureAwait(false);
+                await WriteCacheAsync(quest!, transaction, inside).ConfigureAwait(false);
             }
 
             return new QuestPush(accepted, behind, refused);
