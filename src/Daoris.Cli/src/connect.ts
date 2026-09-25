@@ -17,6 +17,11 @@ import type { ExitCode } from './errors.ts';
 
 const REGISTRY_PATH = '/api/registry';
 
+/** A directory's name — the repository's identity everywhere in Daoris. */
+export function repositoryName(root: string): string {
+  return root.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? 'unknown';
+}
+
 /**
  * What this repository tells a service about itself.
  *
@@ -115,7 +120,7 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
   }
 
   const manifest = readManifest(root);
-  const name = root.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? 'unknown';
+  const name = repositoryName(root);
 
   if (!isDeclared(manifest.domain)) {
     // Registering an empty declaration is worse than not registering: it puts the repository on the

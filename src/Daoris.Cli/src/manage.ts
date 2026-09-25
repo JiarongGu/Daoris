@@ -10,13 +10,9 @@ import { isAbsolute, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
 import { operands } from './args.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
+import { repositoryName } from './connect.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
-
-/** This directory's name — the repository's identity everywhere in Daoris. */
-function here(root: string): string {
-  return root.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? 'unknown';
-}
 
 /** The first bare argument, if there is one. Flags are never a value. */
 function named(argv: string[]): string | undefined {
@@ -33,7 +29,7 @@ function named(argv: string[]): string | undefined {
  * is touched: files, history and doctrine are the repository's own, and its entries leave the index.
  */
 export async function commandRetire({ root, argv, write }: CommandArgs): Promise<ExitCode> {
-  const repository = named(argv) ?? here(root);
+  const repository = named(argv) ?? repositoryName(root);
 
   if (argv.includes('--dry-run')) {
     write(`daoris: would retire ${repository} — the registration only; no file is ever touched`);
