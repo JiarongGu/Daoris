@@ -39,7 +39,9 @@ public static class SessionSync
                 .Where(c => joined.Contains(c.Session.Repository))
                 .Select(c => new FedSessionRecord(
                     c.Session.Id, c.Session.Quest, c.Session.Repository, c.Session.Adapter, c.Session.StateName,
-                    c.Session.Note, c.Session.Evidence, c.Session.Created, c.Session.Updated,
+                    // Free text the driver wrote, cleaned of what is machine-local in it (REV3).
+                    SessionNote.ForAnotherMachine(c.Session.Note, c.Session), c.Session.Evidence,
+                    c.Session.Created, c.Session.Updated,
                     c.Session.Kind.ToString(), c.Session.HarnessVersion))
                 .ToList();
             if (feed.Count > 0) await remote.PushSessionsAsync(feed, ct).ConfigureAwait(false);

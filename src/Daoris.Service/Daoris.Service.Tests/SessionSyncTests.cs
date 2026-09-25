@@ -118,6 +118,34 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 REV3: the wire had no FIELD for a tree or a profile, and the driver wrote both into the NOTE —
+    /// "opened a session tree at C:/…", "its provider refused the `claude-code` account `jane`", an
+    /// exception's own text. A note crosses; what is machine-local in it does not.
+    /// </summary>
+    [Fact]
+    public async Task A_note_crosses_without_the_paths_and_the_account_it_names()
+    {
+        var session = await _a.CreateAsync(
+            "q1", "Shared", "stub", Now, profile: "janes-own-account", tree: "C:/somewhere/private/tree");
+        await _a.SetStateAsync(
+            session.Id, SessionState.Failed,
+            "opened a session tree at C:\\somewhere\\private\\tree on `daoris/s1`. Its provider refused the "
+            + "`claude-code` account `janes-own-account` (401). Could not find a part of the path "
+            + "'D:\\Users\\jane\\Daoris\\data\\sessions\\x.log'. And /home/jane/secret too.",
+            null, null, Now);
+        var remote = Remote("a@one");
+
+        await SyncAsync(_a, "a@one", remote);
+
+        Assert.Contains("(401)", remote.LastFeed);
+        Assert.Contains("daoris/s1", remote.LastFeed);
+        Assert.DoesNotContain("janes-own-account", remote.LastFeed);
+        Assert.DoesNotContain("private", remote.LastFeed);
+        Assert.DoesNotContain("jane", remote.LastFeed);
+        Assert.DoesNotContain("somewhere", remote.LastFeed);
+    }
+
+    /// <summary>
     /// Every machine sees the team's (SYNC4): b's record comes down to a keyed `origin/id`, carrying its
     /// origin and nothing machine-local — and a's own, which the remote also holds, never comes back.
     /// </summary>

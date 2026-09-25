@@ -839,7 +839,7 @@
   "projects.manage.declared": "{{name}} 的 daoris.json 已写入并重新注册。diff 尚未提交——请到那边审阅。",
   "projects.manage.noCheckout": "本机没有它的检出——这条注册来自队友的机器。它的清单归他们编辑，从这里伸手进去正是 Daoris 从不做的那件事。",
   "projects.manage.retire": "注销",
-  "projects.manage.retireBody": "把它从本机的注册表中移除。它将不再可被寻址、不再被索引；它的条目会在下一次刷新时离开索引。",
+  "projects.manage.retireBody": "把它从本机的注册表中移除。它将不再可被寻址、不再被索引，它的条目也随即离开索引。",
   "projects.manage.retireNotDelete": "不会删除任何东西。没有文件、没有历史、没有教义——仓库原封不动，重新添加即可完全恢复。",
   "projects.manage.retireConfirm": "确认注销",
   "projects.manage.doctrine": "教义无法在此编辑。",

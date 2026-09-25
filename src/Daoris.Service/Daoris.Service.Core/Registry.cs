@@ -106,8 +106,8 @@ public sealed class Registry
 
     /// <summary>
     /// Take a repository off the map. <b>Nothing on disk is touched</b> — retiring is the registration
-    /// lifecycle's end, not a delete, and its knowledge leaves the index on the next refresh by the
-    /// ghost rule.
+    /// lifecycle's end, not a delete. Its knowledge leaves the index at once, by
+    /// <see cref="KnowledgeService.RetireAsync"/>, which is the caller that holds the store.
     /// </summary>
     /// <returns>Whether there was a row to retire; false is an answer, not a failure.</returns>
     public bool Retire(string repository) => _known.Remove(repository);

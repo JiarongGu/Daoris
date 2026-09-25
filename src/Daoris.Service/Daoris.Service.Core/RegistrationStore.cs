@@ -335,6 +335,21 @@ public sealed class RegistrationStore
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }
 
+    /// <summary>
+    /// Stop holding what a repository fed — its knowledge's commit and its code map — while its
+    /// registration stays: it joined without sharing, or unjoined, and its knowledge is home now (REV3).
+    /// </summary>
+    public async Task ForgetKnowledgeAsync(string repository, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            DELETE FROM feed_provenance WHERE repository = $repository COLLATE NOCASE;
+            DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE;
+            """;
+        command.Parameters.AddWithValue("$repository", repository);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
     /// <summary>Every repository's fed provenance, for the one read a summary needs.</summary>
     public async Task<IReadOnlyDictionary<string, FeedProvenance>> AllProvenanceAsync(CancellationToken ct = default)
     {

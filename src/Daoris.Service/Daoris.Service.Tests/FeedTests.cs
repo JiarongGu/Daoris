@@ -259,6 +259,46 @@ public sealed class FeedTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 REV3: retiring took the row and left the ENTRIES — and a fed host never refreshes, so its
+    /// search kept serving a retired repository's knowledge to every keyed caller, forever. The entries
+    /// go with the registration.
+    /// </summary>
+    [Fact]
+    public async Task Retiring_takes_the_repository_s_knowledge_out_of_the_index()
+    {
+        await Register("Open", joined: true, shares: true, defaultBranch: "main");
+        await _service.FeedAsync("Open", [Entry("A retired lesson")], From());
+
+        await _service.RetireAsync("Open");
+
+        Assert.Empty(await _store.AllAsync());
+    }
+
+    /// <summary>
+    /// The same, for a declaration that stops sharing (or unjoins) at a shared deployment (SYNC5b): its
+    /// knowledge stays home from then on, so what it fed while sharing leaves — and the commit it was
+    /// held at goes too, or sharing again from the same commit would be "already held" into an empty index.
+    /// </summary>
+    [Fact]
+    public async Task A_declaration_that_stops_sharing_takes_its_knowledge_with_it()
+    {
+        await _service.RegisterFedAsync(Declaration(), From("aaaa1111bbbb2222", at: "2026-09-20T09:00:00Z"), Now);
+        await _service.FeedAsync("Open", [Entry("Shared while it shared")], From("aaaa1111bbbb2222", at: "2026-09-20T09:00:00Z"));
+
+        await _service.RegisterFedAsync(
+            Declaration() with { SharesKnowledge = false },
+            From("cccc3333dddd4444", at: "2026-09-20T10:00:00Z", onBase: "aaaa1111bbbb2222"), Now);
+        Assert.Empty(await _store.AllAsync());
+
+        await _service.RegisterFedAsync(
+            Declaration(), From("eeee5555ffff6666", at: "2026-09-20T11:00:00Z", onBase: "cccc3333dddd4444"), Now);
+        var again = await _service.FeedAsync(
+            "Open", [Entry("Shared while it shared")], From("aaaa1111bbbb2222", at: "2026-09-20T09:00:00Z"));
+        Assert.True(again.Accepted);
+        Assert.Single(await _store.AllAsync());
+    }
+
+    /// <summary>
     /// A fed host reads nothing from disk, so a refresh there must keep what it was fed — the case the
     /// ghost rule's guard exists for, and the one POLISH5's registry rule must never reach: only a host
     /// that reads its registered roots lets the registry decide what is a ghost.

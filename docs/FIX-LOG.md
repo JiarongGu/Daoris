@@ -5,6 +5,55 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A shared deployment kept serving a retired repository's knowledge (2026-09-25)
+
+**Symptom.** Found by REV3's reading. A joined, sharing repository fed its entries to the team's
+deployment. Its machine then retired it, which SYNC5b carries as `DELETE /api/registry/{repo}`. The
+deployment deleted the row but kept its entries, and `/api/search`, `/api/entry` and convergence
+went on serving them to every keyed caller. The same happened when a repository stopped sharing
+knowledge or unjoined, because the new declaration only flipped a flag. The retire answer promised
+"its entries leave the index on the next refresh". A shared host never refreshes: it is fed, not
+scanned.
+
+**Root cause.** `RetireAsync` removed the registration and relied on the ghost rule to take the
+entries. That rule runs only in a refresh, which only a host that reads its registered roots does. A
+declaration that stopped sharing was never treated as taking anything back.
+
+**Fix.** Retiring removes the repository's entries at once, on every kind of host. A fed declaration
+that no longer joins and shares removes what it fed, and the commit that feed was held at goes with
+it. Otherwise sharing again from that same commit would be "already held" into an empty index. The
+retire sentence, its doc comments and the Projects page's retire text now say what happens.
+
+**Verify.** Two tests in `FeedTests`, both watched failing without the fix:
+- `Retiring_takes_the_repository_s_knowledge_out_of_the_index`.
+- `A_declaration_that_stops_sharing_takes_its_knowledge_with_it`, which also re-shares and re-feeds
+  from the old commit.
+
+## A session's note carried its tree's path and its account's name off the machine (2026-09-25)
+
+**Symptom.** Found by REV3's reading. Sessions must not carry a tree, a transcript or a profile off
+the machine, and the wire enforces that by having no field for any of them (D47 §4, D49 §4, D51).
+But the driver writes three kinds of free-text note:
+- "opened a session tree at `<absolute path>`";
+- "its provider refused the `claude-code` account `<profile>`";
+- an exception's own words, which can name a file under the home.
+
+SYNC4 pushed the note verbatim, so the team's deployment and every teammate's machine held the
+path and the account name. The HTTP host also returned the note as-is to non-loopback callers.
+
+**Root cause.** "A field that does not exist cannot be filled in by accident" holds for a field and
+not for a sentence. The note was the one free-text field on the record, and nothing looked inside it.
+
+**Fix.** `SessionNote.ForAnotherMachine` cleans a note wherever it leaves the machine: SessionSync's
+push, and `ToSession` for any caller that is not local. It takes out the record's own tree and
+transcript in either slash spelling, the profile as a whole word, and any other drive, UNC or
+home-rooted path. It keeps what a teammate needs: branches, exit codes, the refusal's code. This
+machine's own page still sees the note whole.
+
+**Verify.** `A_note_crosses_without_the_paths_and_the_account_it_names` in `SessionSyncTests` checks
+that `(401)` and `daoris/s1` cross and that no path or profile does. It failed with the push
+uncleaned.
+
 ## A send that did not arrive lost the paragraph, and a chat's end went unheard (2026-09-25)
 
 **Symptom.** Found by REV3's reading. Three parts of one failure:

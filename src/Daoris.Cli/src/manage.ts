@@ -28,8 +28,7 @@ function named(argv: string[]): string | undefined {
  * @remarks
  * The counterpart to `connect`, and the verb a person is most right to be nervous about — so the
  * service's own sentence, which says what retiring does NOT do, is printed verbatim. Nothing on disk
- * is touched: files, history and doctrine are the repository's own, and its entries leave the index on
- * the next refresh by the ghost rule.
+ * is touched: files, history and doctrine are the repository's own, and its entries leave the index.
  */
 export async function commandRetire({ root, argv, write }: CommandArgs): Promise<ExitCode> {
   const repository = named(argv) ?? here(root);

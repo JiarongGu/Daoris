@@ -753,7 +753,7 @@ app.MapDelete("/api/registry/{repository}", async (
         retired
             ? $"`{repository}` is no longer registered here. Nothing was deleted: its files, its history "
               + "and its doctrine are its own — it has simply stopped being addressable and indexed on "
-              + "this machine, and its entries leave the index on the next refresh."
+              + "this machine, and its entries have left the index."
               + (circle is null ? "" : $" It leaves the `{circle}` workspace's deployment too, on the next sync.")
             : $"`{repository}` was not registered here, so there was nothing to retire."));
 });
@@ -1151,7 +1151,9 @@ static EntryResponse ToEntry(KnowledgeEntry entry) => new(
 // themselves. So is the TREE (D51), which is a filesystem path outright. The harness version is a
 // fact about a tool and travels with the record.
 static SessionResponse ToSession(Session s, bool loopback) => new(
-    s.Id, s.Quest, s.Repository, s.Adapter, s.StateName, s.Note, s.Evidence,
+    s.Id, s.Quest, s.Repository, s.Adapter, s.StateName,
+    // The note is free text the driver wrote, and it named the tree and the account (REV3).
+    loopback ? s.Note : SessionNote.ForAnotherMachine(s.Note, s), s.Evidence,
     Transcript: loopback ? s.Transcript : null,
     s.Created, s.Updated, s.Workspace, s.Kind.ToString().ToLowerInvariant(),
     s.HarnessVersion,

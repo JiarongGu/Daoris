@@ -253,8 +253,8 @@ public sealed class KnowledgeService(
     /// </summary>
     /// <remarks>
     /// <b>Nothing on disk is touched.</b> This ends a registration: the repository stops being
-    /// addressable and stops being indexed here, and its entries leave on the next refresh by the ghost
-    /// rule. Its files, its history and its doctrine are its own — the one thing a person must be able
+    /// addressable and stops being indexed here, and its entries leave the index now. Its files, its
+    /// history and its doctrine are its own — the one thing a person must be able
     /// to trust about a remove is what it does not do.
     /// </remarks>
     /// <returns>Whether there was a registration to retire; false is an answer, not a failure.</returns>
@@ -263,6 +263,11 @@ public sealed class KnowledgeService(
         var stored = registrations is not null
             && await registrations.DeleteAsync(repository, ct).ConfigureAwait(false);
         var known = registry?.Retire(repository) ?? false;
+
+        // 🔴 Its entries go with it (REV3). "They leave on the next refresh" held only for a host that
+        // refreshes — a fed deployment never does, so it served a retired repository's knowledge to
+        // every keyed caller for as long as it ran.
+        if (stored || known) await store.ReplaceRepositoryAsync(repository, [], ct).ConfigureAwait(false);
         return stored || known;
     }
 
@@ -403,6 +408,16 @@ public sealed class KnowledgeService(
             }
 
             var registered = await RegisterAsync(registration, now, ct).ConfigureAwait(false);
+
+            // 🔴 A declaration that no longer joins-and-shares takes back what it fed while it did (REV3):
+            // from here its knowledge stays home, and a deployment that kept serving it would be the
+            // disclosure the declaration was written to prevent. Its held commit goes too, or sharing
+            // again from that commit would be "already held" into an index that holds nothing.
+            if (!(registered.Joined && registered.SharesKnowledge))
+            {
+                await store.ReplaceRepositoryAsync(registered.Repository, [], ct).ConfigureAwait(false);
+                await held.ForgetKnowledgeAsync(registered.Repository, ct).ConfigureAwait(false);
+            }
 
             // After the row, as the knowledge feed records its commit after its entries: a store that
             // failed between the two must never claim a declaration it does not hold.
